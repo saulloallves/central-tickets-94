@@ -223,7 +223,7 @@ serve(async (req) => {
       .from('tickets')
       .insert({
         unidade_id: unidade.id,
-        franqueado_id: franqueadoId,
+        // Não usar franqueado_id pois é UUID mas franqueados.Id é bigint
         descricao_problema: message,
         categoria: null, // Deixar em branco para a IA definir
         prioridade: 'padrao_24h',
@@ -259,12 +259,12 @@ serve(async (req) => {
       });
 
     // Se tiver senha web, adicionar informação do franqueado
-    if (web_password) {
+    if (web_password && franqueadoId) {
       await supabase
         .from('ticket_mensagens')
         .insert({
           ticket_id: ticket.id,
-          mensagem: `Senha web do usuário: ${web_password}`,
+          mensagem: `Franqueado ID: ${franqueadoId} (Senha web: ${web_password})`,
           direcao: 'entrada',
           canal: 'typebot'
         });
