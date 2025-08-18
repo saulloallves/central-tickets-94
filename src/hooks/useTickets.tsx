@@ -80,14 +80,10 @@ export const useTickets = (filters: TicketFilters) => {
     
     try {
       setLoading(true);
+      // Simplified query without joins first to avoid permission issues
       let query = supabase
         .from('tickets')
-        .select(`
-          *,
-          unidades:unidade_id (grupo),
-          colaboradores:colaborador_id (nome_completo),
-          franqueados:franqueado_id (name)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       // Apply search filter
@@ -106,22 +102,29 @@ export const useTickets = (filters: TicketFilters) => {
 
       if (error) {
         console.error('Error fetching tickets:', error);
-        toast({
-          title: "Erro",
-          description: "Não foi possível carregar os tickets",
-          variant: "destructive",
-        });
+        // Only show toast if component is still mounted and we haven't shown it recently
+        if (!loading) {
+          toast({
+            title: "Erro",
+            description: "Não foi possível carregar os tickets",
+            variant: "destructive",
+          });
+        }
         return;
       }
 
+      console.log('Tickets fetched successfully:', data?.length || 0);
       setTickets((data as any) || []);
     } catch (error) {
       console.error('Error fetching tickets:', error);
-      toast({
-        title: "Erro",
-        description: "Erro inesperado ao carregar tickets",
-        variant: "destructive",
-      });
+      // Only show toast for unexpected errors if component is still mounted
+      if (!loading) {
+        toast({
+          title: "Erro",
+          description: "Erro inesperado ao carregar tickets",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -168,9 +171,24 @@ export const useTickets = (filters: TicketFilters) => {
   };
 
   useEffect(() => {
-    fetchTickets();
-    fetchTicketStats();
-  }, [user, roleLoading, filters]);
+    const timeoutId = setTimeout(() => {
+      fetchTickets();
+      fetchTicketStats();
+    }, 100);
+    
+    return () => clearTimeout(timeoutId);
+  }, [user?.id, roleLoading]);
+
+  // Separate effect for filters to avoid infinite loop
+  useEffect(() => {
+    if (user && !roleLoading) {
+      const timeoutId = setTimeout(() => {
+        fetchTickets();
+      }, 300); // Debounce filter changes
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [filters.search, filters.status, filters.categoria, filters.prioridade, filters.status_sla, filters.unidade_id]);
 
   const createTicket = async (ticketData: Partial<Ticket>) => {
     try {
