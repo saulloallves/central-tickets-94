@@ -4,8 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTickets, type TicketFilters } from '@/hooks/useTickets';
-import { formatDistanceToNow } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { formatDistanceToNowInSaoPaulo } from '@/lib/date-utils';
 import { cn } from '@/lib/utils';
 
 interface TicketsListProps {
@@ -124,10 +123,7 @@ export const TicketsList = ({ filters, onTicketSelect, selectedTicketId }: Ticke
                   )}
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  {formatDistanceToNow(new Date(ticket.created_at), { 
-                    addSuffix: true,
-                    locale: ptBR 
-                  })}
+                  {formatDistanceToNowInSaoPaulo(ticket.created_at, { addSuffix: true })}
                 </p>
               </div>
               

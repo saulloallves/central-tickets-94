@@ -10,8 +10,7 @@ import { useTicketMessages } from '@/hooks/useTickets';
 import { CrisisButton } from './CrisisButton';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { formatDistanceToNow } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { formatDistanceToNowInSaoPaulo, formatDateTimeBR } from '@/lib/date-utils';
 
 interface TicketDetailProps {
   ticketId: string;
@@ -265,11 +264,8 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                   <p>{message.mensagem}</p>
                   <div className="flex items-center justify-between mt-2 text-xs opacity-70">
                     <span>{message.profiles?.nome_completo || 'Sistema'}</span>
-                    <span>
-                      {formatDistanceToNow(new Date(message.created_at), { 
-                        addSuffix: true, 
-                        locale: ptBR 
-                      })}
+                    <span title={formatDateTimeBR(message.created_at)}>
+                      {formatDistanceToNowInSaoPaulo(message.created_at, { addSuffix: true })}
                     </span>
                   </div>
                 </div>
