@@ -214,9 +214,17 @@ serve(async (req) => {
 
     // Se tiver dados do usuário, adicionar como contexto
     if (user) {
-      const userInfo = Object.entries(user)
-        .map(([key, value]) => `${key}: ${value}`)
-        .join('\n');
+      let userInfo = '';
+      
+      if (typeof user === 'object') {
+        // Se user é um objeto, processar as propriedades
+        userInfo = Object.entries(user)
+          .map(([key, value]) => `${key}: ${value}`)
+          .join('\n');
+      } else {
+        // Se user é string (compatibilidade com formato antigo)
+        userInfo = user;
+      }
       
       await supabase
         .from('ticket_mensagens')
