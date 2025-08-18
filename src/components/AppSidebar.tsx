@@ -31,7 +31,7 @@ const adminItems = [
   { title: "Franqueados", url: "/admin/franqueados", icon: Users },
   { title: "Colaboradores", url: "/admin/colaboradores", icon: UserCheck },
   { title: "Tickets", url: "/admin/tickets", icon: ClipboardList },
-  { title: "IA Assistente", url: "/admin/ia-settings", icon: Settings },
+  { title: "Configurações", url: "/admin/configuracoes", icon: Settings },
   { title: "Auditoria", url: "/admin/audit", icon: Settings },
 ];
 

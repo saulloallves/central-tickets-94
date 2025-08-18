@@ -1,0 +1,78 @@
+import React from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Settings, Brain, BookOpen, TrendingUp, Shield, Database } from "lucide-react";
+import { IASettingsTab } from "@/components/configuracoes/IASettingsTab";
+import { BaseConhecimentoTab } from "@/components/configuracoes/BaseConhecimentoTab";
+import { SugestoesIATab } from "@/components/configuracoes/SugestoesIATab";
+import { RegrasUsoTab } from "@/components/configuracoes/RegrasUsoTab";
+import { RelatoriosTab } from "@/components/configuracoes/RelatoriosTab";
+
+export default function Configuracoes() {
+  return (
+    <div className="min-h-screen bg-gradient-subtle p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="text-center space-y-2">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="p-3 rounded-lg bg-gradient-primary">
+              <Settings className="h-8 w-8 text-primary-foreground" />
+            </div>
+            <h1 className="text-4xl font-bold text-foreground">Configurações do Sistema</h1>
+          </div>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Gerencie as configurações de IA, base de conhecimento e aprendizado contínuo do sistema
+          </p>
+        </div>
+
+        <Card className="shadow-elegant border-0 bg-gradient-card">
+          <CardContent className="p-6">
+            <Tabs defaultValue="ia" className="w-full">
+              <TabsList className="grid w-full grid-cols-5 mb-6">
+                <TabsTrigger value="ia" className="flex items-center gap-2">
+                  <Brain className="h-4 w-4" />
+                  IA
+                </TabsTrigger>
+                <TabsTrigger value="conhecimento" className="flex items-center gap-2">
+                  <BookOpen className="h-4 w-4" />
+                  Base de Conhecimento
+                </TabsTrigger>
+                <TabsTrigger value="sugestoes" className="flex items-center gap-2">
+                  <Database className="h-4 w-4" />
+                  Sugestões da IA
+                </TabsTrigger>
+                <TabsTrigger value="regras" className="flex items-center gap-2">
+                  <Shield className="h-4 w-4" />
+                  Regras de Uso
+                </TabsTrigger>
+                <TabsTrigger value="relatorios" className="flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4" />
+                  Relatórios
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="ia" className="space-y-6">
+                <IASettingsTab />
+              </TabsContent>
+
+              <TabsContent value="conhecimento" className="space-y-6">
+                <BaseConhecimentoTab />
+              </TabsContent>
+
+              <TabsContent value="sugestoes" className="space-y-6">
+                <SugestoesIATab />
+              </TabsContent>
+
+              <TabsContent value="regras" className="space-y-6">
+                <RegrasUsoTab />
+              </TabsContent>
+
+              <TabsContent value="relatorios" className="space-y-6">
+                <RelatoriosTab />
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}

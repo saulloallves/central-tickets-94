@@ -14,6 +14,7 @@ import Tickets from "./pages/admin/Tickets";
 import Unidades from "./pages/admin/Unidades";
 import Franqueados from "./pages/admin/Franqueados";
 import Colaboradores from "./pages/admin/Colaboradores";
+import Configuracoes from "./pages/admin/Configuracoes";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +51,11 @@ const App = () => (
             <Route path="/admin/colaboradores" element={
               <AdminLayout>
                 <Colaboradores />
+              </AdminLayout>
+            } />
+            <Route path="/admin/configuracoes" element={
+              <AdminLayout>
+                <Configuracoes />
               </AdminLayout>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
