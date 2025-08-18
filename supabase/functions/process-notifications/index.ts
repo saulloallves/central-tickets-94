@@ -192,21 +192,17 @@ async function getEscalationRecipients(supabase: any, unidadeId: string, nivel: 
 }
 
 async function sendWhatsAppNotifications(recipients: string[], message: string, settings: any) {
-  const zapiBaseUrl = Deno.env.get('ZAPI_BASE_URL'); // https://api.z-api.io
-  const zapiInstance = Deno.env.get('ZAPI_TOKEN'); // SUA_INSTANCIA
-  const zapiClientToken = Deno.env.get('ZAPI_CLIENT_TOKEN');
-
-  if (!zapiBaseUrl || !zapiInstance || !zapiClientToken) {
-    console.warn('Z-API credentials not configured');
-    return;
-  }
-
-  // Token fixo conforme documentação
+  // Valores fixos conforme documentação Z-API
+  const zapiBaseUrl = "https://api.z-api.io";
+  const zapiInstance = "3E4305B20C51F0086DA02EE02AE98ECC";
   const zapiToken = "192935E00458CED4AD4E9118";
-  
+  const zapiClientToken = "F660410ff4e544c24b14b557020ce3f62S";
+
   for (const recipient of recipients) {
     try {
       const url = `${zapiBaseUrl}/instances/${zapiInstance}/token/${zapiToken}/send-text`;
+      
+      console.log(`Sending WhatsApp to ${recipient} via Z-API:`, url);
       
       const response = await fetch(url, {
         method: 'POST',
@@ -216,8 +212,7 @@ async function sendWhatsAppNotifications(recipients: string[], message: string, 
         },
         body: JSON.stringify({
           phone: recipient,
-          message: message,
-          delayMessage: Math.floor(settings.delay_mensagem / 1000) || 2 // Convert to seconds
+          message: message
         }),
       });
 
