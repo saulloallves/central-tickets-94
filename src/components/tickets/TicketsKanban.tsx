@@ -8,6 +8,7 @@ import {
   useSensor,
   useSensors,
   closestCorners,
+  useDroppable,
 } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
@@ -144,8 +145,15 @@ interface KanbanColumnProps {
 }
 
 const KanbanColumn = ({ status, tickets, selectedTicketId, onTicketSelect }: KanbanColumnProps) => {
+  const { setNodeRef } = useDroppable({
+    id: status,
+  });
+
   return (
-    <div className={cn("rounded-lg border-2 border-dashed p-4 min-h-[600px]", COLUMN_COLORS[status])}>
+    <div 
+      ref={setNodeRef}
+      className={cn("rounded-lg border-2 border-dashed p-4 min-h-[600px]", COLUMN_COLORS[status])}
+    >
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-semibold text-sm">{COLUMN_STATUS[status]}</h3>
         <Badge variant="secondary" className="text-xs">
@@ -265,20 +273,13 @@ export const TicketsKanban = ({ filters, onTicketSelect, selectedTicketId }: Tic
     >
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {Object.keys(COLUMN_STATUS).map((status) => (
-          <div
+          <KanbanColumn
             key={status}
-            id={status}
-            data-status={status}
-            style={{ minHeight: '600px' }}
-            className="droppable-area"
-          >
-            <KanbanColumn
-              status={status as keyof typeof COLUMN_STATUS}
-              tickets={getTicketsByStatus(status as keyof typeof COLUMN_STATUS)}
-              selectedTicketId={selectedTicketId}
-              onTicketSelect={handleTicketClick}
-            />
-          </div>
+            status={status as keyof typeof COLUMN_STATUS}
+            tickets={getTicketsByStatus(status as keyof typeof COLUMN_STATUS)}
+            selectedTicketId={selectedTicketId}
+            onTicketSelect={handleTicketClick}
+          />
         ))}
       </div>
 
