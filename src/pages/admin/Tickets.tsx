@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Filter, Calendar, Users, Clock, AlertTriangle } from 'lucide-react';
+import { Plus, Filter, Calendar, Users, Clock, AlertTriangle, List, LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRole } from '@/hooks/useRole';
 import { TicketsList } from '@/components/tickets/TicketsList';
+import { TicketsKanban } from '@/components/tickets/TicketsKanban';
 import { TicketDetail } from '@/components/tickets/TicketDetail';
 import { CreateTicketDialog } from '@/components/tickets/CreateTicketDialog';
 import { SLAAlerts } from '@/components/tickets/SLAAlerts';
@@ -16,6 +17,7 @@ const Tickets = () => {
   const { isAdmin, isGerente } = useRole();
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
   const [filters, setFilters] = useState({
     search: '',
     status: 'all',
@@ -53,10 +55,30 @@ const Tickets = () => {
           </p>
         </div>
         
-        <Button onClick={() => setCreateDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Ticket
-        </Button>
+        <div className="flex gap-2">
+          <div className="flex border rounded-lg p-1">
+            <Button
+              variant={viewMode === 'kanban' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('kanban')}
+            >
+              <LayoutGrid className="h-4 w-4 mr-2" />
+              Kanban
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('list')}
+            >
+              <List className="h-4 w-4 mr-2" />
+              Lista
+            </Button>
+          </div>
+          <Button onClick={() => setCreateDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Ticket
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -137,18 +159,20 @@ const Tickets = () => {
               onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
             />
             
-            <Select value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="aberto">Aberto</SelectItem>
-                <SelectItem value="em_atendimento">Em Atendimento</SelectItem>
-                <SelectItem value="escalonado">Escalonado</SelectItem>
-                <SelectItem value="concluido">Concluído</SelectItem>
-              </SelectContent>
-            </Select>
+            {viewMode === 'list' && (
+              <Select value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="aberto">Aberto</SelectItem>
+                  <SelectItem value="em_atendimento">Em Atendimento</SelectItem>
+                  <SelectItem value="escalonado">Escalonado</SelectItem>
+                  <SelectItem value="concluido">Concluído</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
             
             <Select value={filters.categoria} onValueChange={(value) => setFilters(prev => ({ ...prev, categoria: value }))}>
               <SelectTrigger>
@@ -208,30 +232,57 @@ const Tickets = () => {
       </Card>
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <TicketsList 
-            filters={filters}
-            onTicketSelect={handleTicketSelect}
-            selectedTicketId={selectedTicketId}
-          />
-        </div>
-        
-        <div>
-          {selectedTicketId ? (
-            <TicketDetail 
-              ticketId={selectedTicketId}
-              onClose={handleCloseDetail}
+      {viewMode === 'kanban' ? (
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+          <div className="xl:col-span-4">
+            <TicketsKanban 
+              filters={filters}
+              onTicketSelect={handleTicketSelect}
+              selectedTicketId={selectedTicketId}
             />
-          ) : (
-            <Card>
-              <CardContent className="p-6 text-center text-muted-foreground">
-                <p>Selecione um ticket para ver os detalhes</p>
-              </CardContent>
-            </Card>
-          )}
+          </div>
+          
+          <div>
+            {selectedTicketId ? (
+              <TicketDetail 
+                ticketId={selectedTicketId}
+                onClose={handleCloseDetail}
+              />
+            ) : (
+              <Card>
+                <CardContent className="p-6 text-center text-muted-foreground">
+                  <p>Selecione um ticket para ver os detalhes</p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <TicketsList 
+              filters={filters}
+              onTicketSelect={handleTicketSelect}
+              selectedTicketId={selectedTicketId}
+            />
+          </div>
+          
+          <div>
+            {selectedTicketId ? (
+              <TicketDetail 
+                ticketId={selectedTicketId}
+                onClose={handleCloseDetail}
+              />
+            ) : (
+              <Card>
+                <CardContent className="p-6 text-center text-muted-foreground">
+                  <p>Selecione um ticket para ver os detalhes</p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+      )}
 
       <CreateTicketDialog 
         open={createDialogOpen}
