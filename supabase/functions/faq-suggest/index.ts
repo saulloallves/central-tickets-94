@@ -51,27 +51,87 @@ serve(async (req) => {
       );
     }
 
-    // Get knowledge articles
-    const { data: articles, error: articlesError } = await supabase
-      .from('knowledge_articles')
-      .select('titulo, conteudo, categoria, tags')
-      .eq('ativo', true);
+    // Hybrid RAG Retrieval: Search relevant documents
+    console.log('Searching for relevant documents for:', pergunta);
+    
+    // Search keywords from the question (simple keyword extraction)
+    const searchTerms = pergunta.toLowerCase()
+      .split(/\s+/)
+      .filter(term => term.length > 3)
+      .slice(0, 5); // Limit to first 5 meaningful words
+    
+    console.log('Search terms:', searchTerms);
 
-    if (articlesError) {
-      console.error('Error fetching knowledge articles:', articlesError);
-      return new Response(
-        JSON.stringify({ error: 'Erro ao buscar base de conhecimento' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
+    // 1. Search in RAG_DOCUMENTOS table
+    const ragPromises = searchTerms.map(term => 
+      supabase
+        .from('RAG DOCUMENTOS')
+        .select('content, metadata')
+        .or(`content.ilike.%${term}%,metadata->>title.ilike.%${term}%,metadata->>category.ilike.%${term}%`)
+        .limit(3)
+    );
+
+    // 2. Search in knowledge_articles table  
+    const kbPromises = searchTerms.map(term =>
+      supabase
+        .from('knowledge_articles')
+        .select('titulo, conteudo, categoria, tags')
+        .eq('ativo', true)
+        .or(`titulo.ilike.%${term}%,conteudo.ilike.%${term}%,categoria.ilike.%${term}%`)
+        .limit(3)
+    );
+
+    // Execute all searches in parallel
+    const [ragResults, kbResults] = await Promise.all([
+      Promise.all(ragPromises),
+      Promise.all(kbPromises)
+    ]);
+
+    // Process RAG documents
+    const ragDocuments = ragResults
+      .filter(result => !result.error && result.data)
+      .flatMap(result => result.data)
+      .filter((doc, index, self) => 
+        index === self.findIndex(d => d.content === doc.content)
+      ) // Deduplicate
+      .slice(0, 5); // Limit results
+
+    // Process Knowledge Base articles
+    const kbArticles = kbResults
+      .filter(result => !result.error && result.data)
+      .flatMap(result => result.data)
+      .filter((article, index, self) =>
+        index === self.findIndex(a => a.titulo === article.titulo)
+      ) // Deduplicate
+      .slice(0, 5); // Limit results
+
+    console.log(`Found ${ragDocuments.length} RAG documents and ${kbArticles.length} KB articles`);
+
+    // Build knowledge base context from relevant documents only
+    let knowledgeBase = '';
+
+    // Add RAG documents
+    if (ragDocuments.length > 0) {
+      knowledgeBase += '=== DOCUMENTOS RAG ===\n';
+      ragDocuments.forEach((doc, index) => {
+        const title = doc.metadata?.title || `Documento ${index + 1}`;
+        const category = doc.metadata?.category || 'Geral';
+        knowledgeBase += `**${title}** (${category})\n${doc.content}\n\n`;
+      });
     }
 
-    // Prepare knowledge base context
-    const knowledgeBase = articles?.map(article => 
-      `**${article.titulo}** (${article.categoria})\n${article.conteudo}\nTags: ${article.tags?.join(', ')}`
-    ).join('\n\n') || '';
+    // Add Knowledge Base articles
+    if (kbArticles.length > 0) {
+      knowledgeBase += '=== ARTIGOS BASE DE CONHECIMENTO ===\n';
+      kbArticles.forEach(article => {
+        knowledgeBase += `**${article.titulo}** (${article.categoria})\n${article.conteudo}\nTags: ${article.tags?.join(', ') || 'Nenhuma'}\n\n`;
+      });
+    }
+
+    // Fallback: if no relevant documents found, inform AI
+    if (knowledgeBase.trim() === '') {
+      knowledgeBase = 'NENHUM DOCUMENTO RELEVANTE ENCONTRADO PARA ESTA PERGUNTA.\nSugira ao usuário abrir um ticket para atendimento especializado.';
+    }
 
     // Prepare OpenAI prompt
     const systemPrompt = `${settings.base_conhecimento_prompt}
@@ -149,7 +209,10 @@ Responda de forma clara e objetiva. Se não houver informação suficiente na ba
       model: settings.modelo,
       temperature: settings.temperatura,
       max_tokens: settings.max_tokens,
-      articles_count: articles?.length || 0,
+      search_terms: searchTerms,
+      rag_hits: ragDocuments.length,
+      kb_hits: kbArticles.length,
+      total_context_length: knowledgeBase.length,
       timestamp: new Date().toISOString()
     };
 
@@ -157,7 +220,9 @@ Responda de forma clara e objetiva. Se não houver informação suficiente na ba
       JSON.stringify({
         resposta_ia_sugerida: resposta,
         log_prompt_faq: logPromptFaq,
-        articles_found: articles?.length || 0
+        articles_found: ragDocuments.length + kbArticles.length,
+        rag_hits: ragDocuments.length,
+        kb_hits: kbArticles.length
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
