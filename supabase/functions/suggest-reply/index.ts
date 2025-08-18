@@ -25,7 +25,7 @@ serve(async (req) => {
       throw new Error('ticketId is required');
     }
 
-    console.log('Generating AI suggestion for ticket:', ticketId);
+    console.log('Generating suggestion for ticket:', ticketId);
 
     // 1. Fetch ticket details
     const { data: ticket, error: ticketError } = await supabase
@@ -48,81 +48,6 @@ serve(async (req) => {
       throw new Error('Ticket not found');
     }
 
-    // 2. Fetch recent messages for context
-    const { data: messages } = await supabase
-      .from('ticket_mensagens')
-      .select('mensagem, direcao, created_at')
-      .eq('ticket_id', ticketId)
-      .order('created_at', { ascending: false })
-      .limit(5);
-
-    // 3. Hybrid RAG Retrieval: Search relevant documents
-    console.log('Searching for relevant documents for ticket:', ticket.categoria, ticket.subcategoria);
-    
-    // Generate search terms from ticket description, category, and subcategory
-    const searchTerms = [
-      ...ticket.descricao_problema.toLowerCase().split(/\s+/).filter(term => term.length > 3).slice(0, 5),
-      ...(ticket.categoria ? [ticket.categoria.toLowerCase()] : []),
-      ...(ticket.subcategoria ? ticket.subcategoria.toLowerCase().split(/\s+/).filter(term => term.length > 3) : [])
-    ].filter((term, index, self) => self.indexOf(term) === index).slice(0, 8); // Deduplicate and limit
-
-    console.log('Search terms:', searchTerms);
-
-    // Search in RAG_DOCUMENTOS table
-    const ragPromises = searchTerms.map(term => 
-      supabase
-        .from('RAG DOCUMENTOS')
-        .select('content, metadata')
-        .or(`content.ilike.%${term}%,metadata->>title.ilike.%${term}%,metadata->>category.ilike.%${term}%`)
-        .limit(2)
-    );
-
-    // Search in knowledge_articles table  
-    const kbPromises = searchTerms.map(term =>
-      supabase
-        .from('knowledge_articles')
-        .select('titulo, conteudo, categoria, tags')
-        .eq('ativo', true)
-        .or(`titulo.ilike.%${term}%,conteudo.ilike.%${term}%,categoria.ilike.%${term}%`)
-        .limit(2)
-    );
-
-    // Execute all searches in parallel
-    const [ragResults, kbResults] = await Promise.all([
-      Promise.all(ragPromises),
-      Promise.all(kbPromises)
-    ]);
-
-    // Process RAG documents
-    const ragDocuments = ragResults
-      .filter(result => !result.error && result.data)
-      .flatMap(result => result.data)
-      .filter((doc, index, self) => 
-        index === self.findIndex(d => d.content === doc.content)
-      ) // Deduplicate
-      .slice(0, 4); // Limit results
-
-    // Process Knowledge Base articles
-    const kbArticles = kbResults
-      .filter(result => !result.error && result.data)
-      .flatMap(result => result.data)
-      .filter((article, index, self) =>
-        index === self.findIndex(a => a.titulo === article.titulo)
-      ) // Deduplicate
-      .slice(0, 4); // Limit results
-
-    console.log(`Found ${ragDocuments.length} RAG documents and ${kbArticles.length} KB articles`);
-
-    // 4. Fetch similar recent tickets from same unit
-    const { data: similarTickets } = await supabase
-      .from('tickets')
-      .select('descricao_problema, resposta_resolucao, prioridade, status, resolvido_em')
-      .eq('unidade_id', ticket.unidade_id)
-      .neq('id', ticketId)
-      .not('resposta_resolucao', 'is', null)
-      .order('created_at', { ascending: false })
-      .limit(5);
-
     // 5. Fetch AI settings
     const { data: aiSettings, error: settingsError } = await supabase
       .from('faq_ai_settings')
@@ -140,22 +65,92 @@ serve(async (req) => {
       throw new Error('AI settings not configured');
     }
 
+    // Hybrid RAG Retrieval: Search relevant documents
+    console.log('Searching for relevant documents for suggestion:', ticket.descricao_problema);
+    
+    // Generate search terms from ticket description and category
+    const searchTerms = [
+      ...ticket.descricao_problema.toLowerCase().split(/\s+/).filter(term => term.length > 3).slice(0, 5),
+      ...(ticket.categoria ? [ticket.categoria.toLowerCase()] : [])
+    ].filter((term, index, self) => self.indexOf(term) === index).slice(0, 6); // Deduplicate and limit
+
+    console.log('Search terms:', searchTerms);
+
+    // Search in RAG_DOCUMENTOS table
+    const ragPromises = searchTerms.map(term => 
+      supabase
+        .from('RAG DOCUMENTOS')
+        .select('content, metadata')
+        .or(`content.ilike.%${term}%,metadata->>title.ilike.%${term}%,metadata->>category.ilike.%${term}%`)
+        .limit(2)
+    );
+
+    // Search in knowledge_articles table with advanced filtering
+    const kbQuery = supabase
+      .from('knowledge_articles')
+      .select('id, titulo, conteudo, categoria, tags')
+      .eq('ativo', true)
+      .eq('aprovado', aiSettings.use_only_approved || true);
+
+    // Apply category filtering if configured
+    if (aiSettings.allowed_categories && aiSettings.allowed_categories.length > 0) {
+      kbQuery.in('categoria', aiSettings.allowed_categories);
+    }
+
+    const kbPromises = searchTerms.map(term =>
+      kbQuery
+        .or(`titulo.ilike.%${term}%,conteudo.ilike.%${term}%,categoria.ilike.%${term}%`)
+        .limit(2)
+    );
+
+    // Execute all searches in parallel
+    const [ragResults, kbResults] = await Promise.all([
+      Promise.all(ragPromises),
+      Promise.all(kbPromises)
+    ]);
+
+    // Process RAG documents
+    const ragDocuments = ragResults
+      .filter(result => !result.error && result.data)
+      .flatMap(result => result.data)
+      .filter((doc, index, self) => 
+        index === self.findIndex(d => d.content === doc.content)
+      ) // Deduplicate
+      .slice(0, 3); // Limit results
+
+    // Process Knowledge Base articles
+    const kbArticles = kbResults
+      .filter(result => !result.error && result.data)
+      .flatMap(result => result.data)
+      .filter((article, index, self) =>
+        index === self.findIndex(a => a.titulo === article.titulo)
+      ) // Deduplicate
+      .slice(0, 3); // Limit results
+
+    // Add forced articles if configured
+    let forcedArticles = [];
+    if (aiSettings.forced_article_ids && aiSettings.forced_article_ids.length > 0) {
+      const { data: forced } = await supabase
+        .from('knowledge_articles')
+        .select('id, titulo, conteudo, categoria, tags')
+        .in('id', aiSettings.forced_article_ids)
+        .eq('ativo', true);
+      
+      forcedArticles = forced || [];
+    }
+
+    console.log(`Found ${ragDocuments.length} RAG documents, ${kbArticles.length} KB articles, ${forcedArticles.length} forced articles`);
+
     // 6. Build context for AI
     const contextSections = [];
     
-    contextSections.push(`INFORMAÇÕES DO TICKET:
+    contextSections.push(`CONTEXTO DO TICKET:
 - Código: ${ticket.codigo_ticket}
 - Unidade: ${ticket.unidades?.grupo || ticket.unidade_id}
 - Categoria: ${ticket.categoria || 'Não especificada'}
 - Prioridade: ${ticket.prioridade}
 - Status: ${ticket.status}
-- Descrição: ${ticket.descricao_problema}
-- Reaberto: ${ticket.reaberto_count} vez(es)`);
-
-    if (messages && messages.length > 0) {
-      contextSections.push(`HISTÓRICO DE MENSAGENS:
-${messages.map(m => `[${m.direcao}] ${m.mensagem}`).join('\n')}`);
-    }
+- Descrição: ${ticket.descricao_problema}`);
 
     // Add RAG documents if found
     if (ragDocuments.length > 0) {
@@ -163,19 +158,15 @@ ${messages.map(m => `[${m.direcao}] ${m.mensagem}`).join('\n')}`);
 ${ragDocuments.map(doc => {
         const title = doc.metadata?.title || 'Documento';
         const category = doc.metadata?.category || 'Geral';
-        return `**${title}** (${category})\n${doc.content.substring(0, 300)}...`;
+        return `**${title}** (${category})\n${doc.content.substring(0, 200)}...`;
       }).join('\n\n')}`);
     }
 
     // Add Knowledge Base articles if found
-    if (kbArticles.length > 0) {
+    if (kbArticles.length > 0 || forcedArticles.length > 0) {
+      const allKBArticles = [...forcedArticles, ...kbArticles];
       contextSections.push(`=== BASE DE CONHECIMENTO ===
-${kbArticles.map(a => `**${a.titulo}** (${a.categoria})\n${a.conteudo.substring(0, 300)}...\nTags: ${a.tags?.join(', ') || 'Nenhuma'}`).join('\n\n')}`);
-    }
-
-    if (similarTickets && similarTickets.length > 0) {
-      contextSections.push(`TICKETS SIMILARES DA UNIDADE:
-${similarTickets.map(t => `Problema: ${t.descricao_problema.substring(0, 100)}...\nResolução: ${t.resposta_resolucao?.substring(0, 150)}...`).join('\n\n')}`);
+${allKBArticles.map(a => `**${a.titulo}** (${a.categoria})\n${a.conteudo.substring(0, 200)}...\nTags: ${a.tags?.join(', ') || 'Nenhuma'}`).join('\n\n')}`);
     }
 
     const context = contextSections.join('\n\n');
@@ -228,28 +219,29 @@ ${similarTickets.map(t => `Problema: ${t.descricao_problema.substring(0, 100)}..
     };
 
     // 7. Build AI prompt with strict brevity rules
-    const systemPrompt = `${aiSettings.base_conhecimento_prompt}
+    const systemPrompt = `Você é um assistente especializado em suporte técnico para atendentes de uma franquia.
 
 REGRAS OBRIGATÓRIAS:
 - NUNCA use saudações (olá, oi, bom dia, etc.)
 - NUNCA use despedidas (tchau, abraços, atenciosamente, etc.)
 - Máximo 2-4 frases curtas OU 3 tópicos com bullet points
 - Seja direto, específico e objetivo
-- Use informações da base de conhecimento e tickets similares quando relevante
-- Forneça uma resposta clara e acionável
-- Se necessário, sugira próximos passos
-- Mantenha o tom adequado ao contexto da franquia
+- Ajude o atendente com informações, estratégias e sugestões
+- Use a base de conhecimento para fundamentar suas respostas
+- Considere o contexto do ticket
+- Forneça respostas acionáveis e específicas
+- Mantenha tom profissional mas acessível
 
 FORMATO: Resposta direta sem introdução ou conclusão.`;
 
-    const userPrompt = `Com base no contexto abaixo, sugira uma resposta profissional para este ticket:
-
+    const userPrompt = `CONTEXTO:
 ${context}
 
-Gere uma sugestão de resposta que o atendente possa usar diretamente ou adaptar.`;
+SUGESTAO DE RESPOSTA:
+Gere uma resposta concisa e útil para o atendente.`;
 
     // 8. Call OpenAI
-    const model = aiSettings.modelo_sugestao || 'gpt-4o-mini';
+    const model = aiSettings.modelo_suggestion || 'gpt-4o-mini';
     const isNewerModel = model.includes('gpt-4.1') || model.includes('gpt-5') || model.includes('o3') || model.includes('o4');
     
     const requestBody: any = {
@@ -268,7 +260,7 @@ Gere uma sugestão de resposta que o atendente possa usar diretamente ou adaptar
       requestBody.top_p = aiSettings.top_p || 1.0;
     }
 
-    console.log('Calling OpenAI with model:', model);
+    console.log('Calling OpenAI for suggestion with model:', model);
 
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -290,8 +282,8 @@ Gere uma sugestão de resposta que o atendente possa usar diretamente ou adaptar
     // Sanitize the AI output
     const { sanitized, removed_greeting, removed_signoff } = sanitizeOutput(rawResponse);
 
-    // 9. Save to database
-    const { data: suggestion, error: saveError } = await supabase
+    // Save to database
+    const { data: suggestionRecord, error: saveError } = await supabase
       .from('ticket_ai_interactions')
       .insert({
         ticket_id: ticketId,
@@ -305,7 +297,8 @@ Gere uma sugestão de resposta que o atendente possa usar diretamente ou adaptar
           context_sections: contextSections.length,
           search_terms: searchTerms,
           rag_hits: ragDocuments.length,
-          kb_hits: kbArticles.length,
+          kb_hits: kbArticles.length + forcedArticles.length,
+          forced_articles: forcedArticles.length,
           total_context_length: context.length,
           used_sanitizer: true,
           removed_greeting,
@@ -323,13 +316,32 @@ Gere uma sugestão de resposta que o atendente possa usar diretamente ou adaptar
       throw saveError;
     }
 
+    // Track knowledge article usage
+    const allUsedArticles = [...forcedArticles, ...kbArticles];
+    if (allUsedArticles.length > 0) {
+      const usageRecords = allUsedArticles.map(article => ({
+        interaction_id: suggestionRecord.id,
+        ticket_id: ticketId,
+        article_id: article.id,
+        used_as: forcedArticles.some(f => f.id === article.id) ? 'forced' : 'context'
+      }));
+
+      const { error: usageError } = await supabase
+        .from('knowledge_article_usage')
+        .insert(usageRecords);
+
+      if (usageError) {
+        console.error('Error tracking article usage:', usageError);
+      }
+    }
+
     console.log('AI suggestion generated successfully');
 
     return new Response(JSON.stringify({
-      suggestionId: suggestion.id,
       resposta: sanitized,
       rag_hits: ragDocuments.length,
-      kb_hits: kbArticles.length,
+      kb_hits: kbArticles.length + forcedArticles.length,
+      forced_articles: forcedArticles.length,
       total_context_length: context.length,
       sanitization: {
         removed_greeting,

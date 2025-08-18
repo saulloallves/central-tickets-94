@@ -14,6 +14,58 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_feedback: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          interaction_id: string | null
+          motivo: string | null
+          ticket_id: string
+          util: boolean
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          interaction_id?: string | null
+          motivo?: string | null
+          ticket_id: string
+          util: boolean
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          interaction_id?: string | null
+          motivo?: string | null
+          ticket_id?: string
+          util?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_feedback_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_feedback_interaction_id_fkey"
+            columns: ["interaction_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_ai_interactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_feedback_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_log: {
         Row: {
           action: string
@@ -236,10 +288,13 @@ export type Database = {
       }
       faq_ai_settings: {
         Row: {
+          allowed_categories: string[] | null
           ativo: boolean
           base_conhecimento_prompt: string
+          blocked_tags: string[] | null
           created_at: string
           estilo_resposta: string | null
+          forced_article_ids: string[] | null
           frequency_penalty: number
           id: string
           max_tokens: number
@@ -250,12 +305,16 @@ export type Database = {
           temperatura: number
           top_p: number
           updated_at: string
+          use_only_approved: boolean
         }
         Insert: {
+          allowed_categories?: string[] | null
           ativo?: boolean
           base_conhecimento_prompt?: string
+          blocked_tags?: string[] | null
           created_at?: string
           estilo_resposta?: string | null
+          forced_article_ids?: string[] | null
           frequency_penalty?: number
           id?: string
           max_tokens?: number
@@ -266,12 +325,16 @@ export type Database = {
           temperatura?: number
           top_p?: number
           updated_at?: string
+          use_only_approved?: boolean
         }
         Update: {
+          allowed_categories?: string[] | null
           ativo?: boolean
           base_conhecimento_prompt?: string
+          blocked_tags?: string[] | null
           created_at?: string
           estilo_resposta?: string | null
+          forced_article_ids?: string[] | null
           frequency_penalty?: number
           id?: string
           max_tokens?: number
@@ -282,6 +345,7 @@ export type Database = {
           temperatura?: number
           top_p?: number
           updated_at?: string
+          use_only_approved?: boolean
         }
         Relationships: []
       }
@@ -453,38 +517,198 @@ export type Database = {
         }
         Relationships: []
       }
+      knowledge_article_usage: {
+        Row: {
+          article_id: string
+          created_at: string
+          id: string
+          interaction_id: string | null
+          ticket_id: string | null
+          used_as: string
+        }
+        Insert: {
+          article_id: string
+          created_at?: string
+          id?: string
+          interaction_id?: string | null
+          ticket_id?: string | null
+          used_as?: string
+        }
+        Update: {
+          article_id?: string
+          created_at?: string
+          id?: string
+          interaction_id?: string | null
+          ticket_id?: string | null
+          used_as?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_article_usage_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_articles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "knowledge_article_usage_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "v_kb_articles_usage"
+            referencedColumns: ["article_id"]
+          },
+          {
+            foreignKeyName: "knowledge_article_usage_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "v_kb_resolution_rate"
+            referencedColumns: ["article_id"]
+          },
+          {
+            foreignKeyName: "knowledge_article_usage_interaction_id_fkey"
+            columns: ["interaction_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_ai_interactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "knowledge_article_usage_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       knowledge_articles: {
         Row: {
+          aprovado: boolean
           ativo: boolean
           categoria: string | null
           conteudo: string
           created_at: string
+          criado_por: string | null
+          feedback_negativo: number
+          feedback_positivo: number
           id: string
+          link_arquivo: string | null
           tags: string[] | null
+          tipo_midia: Database["public"]["Enums"]["knowledge_media_type"] | null
           titulo: string
           updated_at: string
+          usado_pela_ia: boolean
         }
         Insert: {
+          aprovado?: boolean
           ativo?: boolean
           categoria?: string | null
           conteudo: string
           created_at?: string
+          criado_por?: string | null
+          feedback_negativo?: number
+          feedback_positivo?: number
           id?: string
+          link_arquivo?: string | null
           tags?: string[] | null
+          tipo_midia?:
+            | Database["public"]["Enums"]["knowledge_media_type"]
+            | null
           titulo: string
           updated_at?: string
+          usado_pela_ia?: boolean
         }
         Update: {
+          aprovado?: boolean
           ativo?: boolean
           categoria?: string | null
           conteudo?: string
           created_at?: string
+          criado_por?: string | null
+          feedback_negativo?: number
+          feedback_positivo?: number
           id?: string
+          link_arquivo?: string | null
           tags?: string[] | null
+          tipo_midia?:
+            | Database["public"]["Enums"]["knowledge_media_type"]
+            | null
           titulo?: string
           updated_at?: string
+          usado_pela_ia?: boolean
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_articles_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      knowledge_suggestions: {
+        Row: {
+          avaliado_por: string | null
+          created_at: string
+          id: string
+          modelo_nome: string | null
+          modelo_provedor: Database["public"]["Enums"]["ai_model_provider"]
+          publicado_em: string | null
+          status: string
+          sugerido_por: string | null
+          texto_sugerido: string
+          ticket_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          avaliado_por?: string | null
+          created_at?: string
+          id?: string
+          modelo_nome?: string | null
+          modelo_provedor?: Database["public"]["Enums"]["ai_model_provider"]
+          publicado_em?: string | null
+          status?: string
+          sugerido_por?: string | null
+          texto_sugerido: string
+          ticket_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avaliado_por?: string | null
+          created_at?: string
+          id?: string
+          modelo_nome?: string | null
+          modelo_provedor?: Database["public"]["Enums"]["ai_model_provider"]
+          publicado_em?: string | null
+          status?: string
+          sugerido_por?: string | null
+          texto_sugerido?: string
+          ticket_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_suggestions_avaliado_por_fkey"
+            columns: ["avaliado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "knowledge_suggestions_sugerido_por_fkey"
+            columns: ["sugerido_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "knowledge_suggestions_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notification_settings: {
         Row: {
@@ -597,6 +821,27 @@ export type Database = {
           nome_completo?: string | null
           telefone?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      "RAG DOCUMENTOS": {
+        Row: {
+          content: string | null
+          embedding: Json | null
+          id: number
+          metadata: Json | null
+        }
+        Insert: {
+          content?: string | null
+          embedding?: Json | null
+          id: number
+          metadata?: Json | null
+        }
+        Update: {
+          content?: string | null
+          embedding?: Json | null
+          id?: number
+          metadata?: Json | null
         }
         Relationships: []
       }
@@ -1053,6 +1298,29 @@ export type Database = {
       }
     }
     Views: {
+      v_kb_articles_usage: {
+        Row: {
+          aprovado: boolean | null
+          article_id: string | null
+          categoria: string | null
+          feedback_negativo: number | null
+          feedback_positivo: number | null
+          titulo: string | null
+          usado_pela_ia: boolean | null
+          usos_total: number | null
+        }
+        Relationships: []
+      }
+      v_kb_resolution_rate: {
+        Row: {
+          article_id: string | null
+          resolucoes_negativas: number | null
+          resolucoes_positivas: number | null
+          taxa_resolucao: number | null
+          titulo: string | null
+        }
+        Relationships: []
+      }
       v_tickets_por_unidade_mes: {
         Row: {
           mes: string | null
@@ -1116,6 +1384,7 @@ export type Database = {
     }
     Enums: {
       ai_interaction_kind: "suggestion" | "chat"
+      ai_model_provider: "openai" | "lambda"
       app_role: "admin" | "gerente" | "diretor" | "colaborador"
       canal_origem: "typebot" | "whatsapp_zapi" | "web"
       canal_resposta: "web" | "whatsapp" | "typebot" | "interno"
@@ -1128,6 +1397,7 @@ export type Database = {
         | "diretor"
         | "admin"
       colaborador_status: "ativo" | "inativo"
+      knowledge_media_type: "texto" | "video" | "pdf" | "link"
       mensagem_direcao: "entrada" | "saida" | "interna"
       ticket_categoria:
         | "juridico"
@@ -1273,6 +1543,7 @@ export const Constants = {
   public: {
     Enums: {
       ai_interaction_kind: ["suggestion", "chat"],
+      ai_model_provider: ["openai", "lambda"],
       app_role: ["admin", "gerente", "diretor", "colaborador"],
       canal_origem: ["typebot", "whatsapp_zapi", "web"],
       canal_resposta: ["web", "whatsapp", "typebot", "interno"],
@@ -1286,6 +1557,7 @@ export const Constants = {
         "admin",
       ],
       colaborador_status: ["ativo", "inativo"],
+      knowledge_media_type: ["texto", "video", "pdf", "link"],
       mensagem_direcao: ["entrada", "saida", "interna"],
       ticket_categoria: [
         "juridico",

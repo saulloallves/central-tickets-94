@@ -65,7 +65,7 @@ serve(async (req) => {
       .order('created_at', { ascending: false })
       .limit(3);
 
-    // 4. Hybrid RAG Retrieval: Search relevant documents
+    // 4. Hybrid RAG Retrieval: Search relevant documents with advanced filtering
     console.log('Searching for relevant documents for chat question:', mensagem);
     
     // Generate search terms from current message and ticket description
@@ -86,12 +86,20 @@ serve(async (req) => {
         .limit(2)
     );
 
-    // Search in knowledge_articles table  
+    // Search in knowledge_articles table with advanced filtering
+    const kbQuery = supabase
+      .from('knowledge_articles')
+      .select('id, titulo, conteudo, categoria, tags')
+      .eq('ativo', true)
+      .eq('aprovado', aiSettings.use_only_approved || true);
+
+    // Apply category filtering if configured
+    if (aiSettings.allowed_categories && aiSettings.allowed_categories.length > 0) {
+      kbQuery.in('categoria', aiSettings.allowed_categories);
+    }
+
     const kbPromises = searchTerms.map(term =>
-      supabase
-        .from('knowledge_articles')
-        .select('titulo, conteudo, categoria, tags')
-        .eq('ativo', true)
+      kbQuery
         .or(`titulo.ilike.%${term}%,conteudo.ilike.%${term}%,categoria.ilike.%${term}%`)
         .limit(2)
     );
@@ -120,7 +128,19 @@ serve(async (req) => {
       ) // Deduplicate
       .slice(0, 3); // Limit results
 
-    console.log(`Found ${ragDocuments.length} RAG documents and ${kbArticles.length} KB articles`);
+    // Add forced articles if configured
+    let forcedArticles = [];
+    if (aiSettings.forced_article_ids && aiSettings.forced_article_ids.length > 0) {
+      const { data: forced } = await supabase
+        .from('knowledge_articles')
+        .select('id, titulo, conteudo, categoria, tags')
+        .in('id', aiSettings.forced_article_ids)
+        .eq('ativo', true);
+      
+      forcedArticles = forced || [];
+    }
+
+    console.log(`Found ${ragDocuments.length} RAG documents, ${kbArticles.length} KB articles, ${forcedArticles.length} forced articles`);
 
     // 5. Fetch AI settings
     const { data: aiSettings, error: settingsError } = await supabase
@@ -171,9 +191,10 @@ ${ragDocuments.map(doc => {
     }
 
     // Add Knowledge Base articles if found
-    if (kbArticles.length > 0) {
+    if (kbArticles.length > 0 || forcedArticles.length > 0) {
+      const allKBArticles = [...forcedArticles, ...kbArticles];
       contextSections.push(`=== BASE DE CONHECIMENTO ===
-${kbArticles.map(a => `**${a.titulo}** (${a.categoria})\n${a.conteudo.substring(0, 200)}...\nTags: ${a.tags?.join(', ') || 'Nenhuma'}`).join('\n\n')}`);
+${allKBArticles.map(a => `**${a.titulo}** (${a.categoria})\n${a.conteudo.substring(0, 200)}...\nTags: ${a.tags?.join(', ') || 'Nenhuma'}`).join('\n\n')}`);
     }
 
     const context = contextSections.join('\n\n');
@@ -308,7 +329,8 @@ Responda de forma clara e útil, considerando todo o contexto do ticket.`;
           context_sections: contextSections.length,
           search_terms: searchTerms,
           rag_hits: ragDocuments.length,
-          kb_hits: kbArticles.length,
+          kb_hits: kbArticles.length + forcedArticles.length,
+          forced_articles: forcedArticles.length,
           total_context_length: context.length,
           used_sanitizer: true,
           removed_greeting,
@@ -326,12 +348,32 @@ Responda de forma clara e útil, considerando todo o contexto do ticket.`;
       throw saveError;
     }
 
+    // Track knowledge article usage
+    const allUsedArticles = [...forcedArticles, ...kbArticles];
+    if (allUsedArticles.length > 0) {
+      const usageRecords = allUsedArticles.map(article => ({
+        interaction_id: chatRecord.id,
+        ticket_id: ticketId,
+        article_id: article.id,
+        used_as: forcedArticles.some(f => f.id === article.id) ? 'forced' : 'context'
+      }));
+
+      const { error: usageError } = await supabase
+        .from('knowledge_article_usage')
+        .insert(usageRecords);
+
+      if (usageError) {
+        console.error('Error tracking article usage:', usageError);
+      }
+    }
+
     console.log('AI chat processed successfully');
 
     return new Response(JSON.stringify({
       resposta: sanitized,
       rag_hits: ragDocuments.length,
-      kb_hits: kbArticles.length,
+      kb_hits: kbArticles.length + forcedArticles.length,
+      forced_articles: forcedArticles.length,
       total_context_length: context.length,
       sanitization: {
         removed_greeting,
