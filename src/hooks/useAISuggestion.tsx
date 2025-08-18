@@ -123,12 +123,6 @@ export const useAISuggestion = (ticketId: string) => {
     getLatestSuggestion();
   }, [ticketId]);
 
-  // Auto-generate suggestion if none exists
-  useEffect(() => {
-    if (ticketId && suggestion === null && !loading) {
-      generateSuggestion();
-    }
-  }, [ticketId, suggestion, loading]);
 
   return {
     suggestion,
