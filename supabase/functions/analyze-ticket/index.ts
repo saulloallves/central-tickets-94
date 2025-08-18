@@ -105,6 +105,7 @@ serve(async (req) => {
     
     try {
       analysis = JSON.parse(aiContent);
+      console.log('Raw AI analysis:', analysis);
     } catch (e) {
       console.error('Failed to parse AI response:', aiContent);
       // Fallback para análise padrão
@@ -114,16 +115,35 @@ serve(async (req) => {
         subcategoria: 'Análise automática indisponível',
         is_crise: false,
         motivo_crise: null,
-        sla_sugerido_horas: 24
+        sla_sugerido_horas: 24,
+        equipe_responsavel: null
       };
     }
 
-    // Validar e sanitizar campos obrigatórios
-    if (!analysis.prioridade || analysis.prioridade.trim() === '') {
+    // Validar e sanitizar TODOS os campos obrigatórios
+    const validPrioridades = ['urgente', 'alta', 'hoje_18h', 'padrao_24h', 'crise'];
+    const validCategorias = ['juridico', 'sistema', 'midia', 'operacoes', 'rh', 'financeiro', 'outro'];
+
+    if (!analysis.prioridade || !validPrioridades.includes(analysis.prioridade)) {
+      console.log('Invalid prioridade:', analysis.prioridade, 'using default');
       analysis.prioridade = 'padrao_24h';
     }
-    if (!analysis.categoria || analysis.categoria.trim() === '') {
+    
+    if (!analysis.categoria || !validCategorias.includes(analysis.categoria)) {
+      console.log('Invalid categoria:', analysis.categoria, 'using default');
       analysis.categoria = categoria || 'outro';
+    }
+
+    if (!analysis.subcategoria || typeof analysis.subcategoria !== 'string') {
+      analysis.subcategoria = 'Categoria não especificada';
+    }
+
+    if (typeof analysis.is_crise !== 'boolean') {
+      analysis.is_crise = false;
+    }
+
+    if (typeof analysis.sla_sugerido_horas !== 'number' || analysis.sla_sugerido_horas <= 0) {
+      analysis.sla_sugerido_horas = 24;
     }
 
     console.log('Validated analysis:', analysis);
