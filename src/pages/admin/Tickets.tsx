@@ -9,6 +9,7 @@ import { useRole } from '@/hooks/useRole';
 import { TicketsList } from '@/components/tickets/TicketsList';
 import { TicketDetail } from '@/components/tickets/TicketDetail';
 import { CreateTicketDialog } from '@/components/tickets/CreateTicketDialog';
+import { SLAAlerts } from '@/components/tickets/SLAAlerts';
 import { useTickets } from '@/hooks/useTickets';
 
 const Tickets = () => {
@@ -116,6 +117,9 @@ const Tickets = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* SLA Alerts */}
+      <SLAAlerts />
 
       {/* Filters */}
       <Card>

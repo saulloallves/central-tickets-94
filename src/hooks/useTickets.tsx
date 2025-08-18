@@ -269,6 +269,28 @@ export const useTickets = (filters: TicketFilters) => {
 
       console.log('Ticket created successfully:', data);
       
+      // Disparar análise da IA automaticamente
+      try {
+        await supabase.functions.invoke('analyze-ticket', {
+          body: {
+            ticketId: data.id,
+            descricao: ticketData.descricao_problema,
+            categoria: ticketData.categoria
+          }
+        });
+
+        // Disparar notificação de novo ticket
+        await supabase.functions.invoke('process-notifications', {
+          body: {
+            ticketId: data.id,
+            type: 'ticket_criado'
+          }
+        });
+      } catch (aiError) {
+        console.error('Error in AI analysis or notifications:', aiError);
+        // Não falhar a criação do ticket por causa da IA
+      }
+      
       toast({
         title: "Sucesso",
         description: `Ticket ${data.codigo_ticket} criado com sucesso`,

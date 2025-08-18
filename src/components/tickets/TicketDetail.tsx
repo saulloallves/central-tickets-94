@@ -1,18 +1,17 @@
-import { useState, useRef } from 'react';
-import { X, Clock, User, MessageSquare, Paperclip, Send, Download, Eye } from 'lucide-react';
+
+import { useState, useEffect } from 'react';
+import { X, Clock, User, Building, Tag, AlertTriangle, MessageSquare, Send, Paperclip, Zap } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { useTickets, useTicketMessages, type Ticket } from '@/hooks/useTickets';
-import { useRole } from '@/hooks/useRole';
+import { useTicketMessages } from '@/hooks/useTickets';
+import { CrisisButton } from './CrisisButton';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
 
 interface TicketDetailProps {
   ticketId: string;
@@ -20,38 +19,55 @@ interface TicketDetailProps {
 }
 
 export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
-  const { tickets, updateTicket, loading: ticketsLoading } = useTickets({
-    search: '', status: '', categoria: '', prioridade: '', unidade_id: '', status_sla: ''
-  });
-  const { messages, sendMessage, loading: messagesLoading } = useTicketMessages(ticketId);
-  const { isAdmin, isGerente } = useRole();
+  const [ticket, setTicket] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [newMessage, setNewMessage] = useState('');
-  const [sending, setSending] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { messages, sendMessage, loading: messagesLoading } = useTicketMessages(ticketId);
+  const { toast } = useToast();
 
-  const ticket = tickets.find(t => t.id === ticketId);
-
-  const canUpdate = isAdmin || isGerente;
-
-  const handleStatusUpdate = async (newStatus: string) => {
-    if (!ticket || !canUpdate) return;
-    await updateTicket(ticket.id, { status: newStatus as any });
-  };
-
-  const handleSendMessage = async () => {
-    if (!newMessage.trim() || sending) return;
-    
-    setSending(true);
+  const fetchTicketDetails = async () => {
     try {
-      await sendMessage(newMessage);
-      setNewMessage('');
+      const { data, error } = await supabase
+        .from('tickets')
+        .select(`
+          *,
+          unidades!tickets_unidade_id_fkey(grupo, id),
+          colaboradores(nome_completo),
+          franqueados(name),
+          profiles!tickets_criado_por_fkey(nome_completo)
+        `)
+        .eq('id', ticketId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching ticket details:', error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar os detalhes do ticket",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setTicket(data);
+    } catch (error) {
+      console.error('Error fetching ticket details:', error);
     } finally {
-      setSending(false);
+      setLoading(false);
     }
   };
 
-  const handleFileUpload = () => {
-    fileInputRef.current?.click();
+  useEffect(() => {
+    fetchTicketDetails();
+  }, [ticketId]);
+
+  const handleSendMessage = async () => {
+    if (!newMessage.trim()) return;
+
+    const success = await sendMessage(newMessage);
+    if (success) {
+      setNewMessage('');
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -64,24 +80,60 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
     }
   };
 
-  const getSLAColor = (status_sla: string) => {
-    switch (status_sla) {
-      case 'vencido': return 'text-destructive';
-      case 'alerta': return 'text-yellow-500';
-      case 'dentro_prazo': return 'text-green-500';
-      default: return 'text-muted-foreground';
+  const getPriorityVariant = (prioridade: string) => {
+    switch (prioridade) {
+      case 'crise': return 'destructive';
+      case 'urgente': return 'destructive';
+      case 'alta': return 'outline';
+      default: return 'secondary';
     }
   };
 
-  if (ticketsLoading) {
+  const getSLAStatus = () => {
+    if (!ticket?.data_limite_sla) return null;
+    
+    const now = Date.now();
+    const deadline = new Date(ticket.data_limite_sla).getTime();
+    const remaining = deadline - now;
+    const isOverdue = remaining < 0;
+    
+    if (isOverdue) {
+      return {
+        color: 'text-red-600',
+        icon: <AlertTriangle className="h-4 w-4" />,
+        text: `Vencido há ${Math.abs(Math.round(remaining / (1000 * 60)))} min`
+      };
+    }
+    
+    const hoursRemaining = Math.round(remaining / (1000 * 60 * 60));
+    if (hoursRemaining < 2) {
+      return {
+        color: 'text-orange-600',
+        icon: <Clock className="h-4 w-4" />,
+        text: `${Math.round(remaining / (1000 * 60))} min restantes`
+      };
+    }
+    
+    return {
+      color: 'text-green-600',
+      icon: <Clock className="h-4 w-4" />,
+      text: `${hoursRemaining}h restantes`
+    };
+  };
+
+  if (loading) {
     return (
       <Card>
         <CardHeader>
-          <Skeleton className="h-6 w-40" />
+          <div className="flex items-center justify-between">
+            <CardTitle>Carregando...</CardTitle>
+            <Button variant="ghost" size="sm" onClick={onClose}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <Skeleton className="h-20 w-full" />
-          <Skeleton className="h-32 w-full" />
+        <CardContent>
+          <p className="text-muted-foreground">Carregando detalhes do ticket...</p>
         </CardContent>
       </Card>
     );
@@ -90,201 +142,146 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
   if (!ticket) {
     return (
       <Card>
-        <CardContent className="p-6 text-center text-muted-foreground">
-          <p>Ticket não encontrado</p>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Erro</CardTitle>
+            <Button variant="ghost" size="sm" onClick={onClose}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">Ticket não encontrado</p>
         </CardContent>
       </Card>
     );
   }
 
+  const slaStatus = getSLAStatus();
+
   return (
-    <Card className="h-[calc(100vh-12rem)]">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-        <CardTitle className="text-lg font-mono">{ticket.codigo_ticket}</CardTitle>
-        <Button variant="ghost" size="sm" onClick={onClose}>
-          <X className="h-4 w-4" />
-        </Button>
+    <Card className="h-full flex flex-col">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-lg">{ticket.codigo_ticket}</CardTitle>
+            <div className="flex items-center gap-2 mt-1">
+              <div className={`w-2 h-2 rounded-full ${getStatusColor(ticket.status)}`} />
+              <span className="text-sm text-muted-foreground capitalize">{ticket.status}</span>
+              {slaStatus && (
+                <div className={`flex items-center gap-1 ${slaStatus.color}`}>
+                  {slaStatus.icon}
+                  <span className="text-xs font-medium">{slaStatus.text}</span>
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <CrisisButton ticketId={ticket.id} currentPriority={ticket.prioridade} />
+            <Button variant="ghost" size="sm" onClick={onClose}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
       </CardHeader>
 
-      <CardContent className="flex flex-col h-full space-y-4">
+      <CardContent className="flex-1 flex flex-col space-y-4">
         {/* Ticket Info */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <div className={cn("w-2 h-2 rounded-full", getStatusColor(ticket.status))} />
-              <span className="font-medium capitalize">{ticket.status.replace('_', ' ')}</span>
+              <Building className="h-4 w-4 text-muted-foreground" />
+              <span>{ticket.unidades?.grupo || ticket.unidade_id}</span>
             </div>
-            
-            {canUpdate && (
-              <Select value={ticket.status} onValueChange={handleStatusUpdate}>
-                <SelectTrigger className="w-40">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="aberto">Aberto</SelectItem>
-                  <SelectItem value="em_atendimento">Em Atendimento</SelectItem>
-                  <SelectItem value="escalonado">Escalonado</SelectItem>
-                  <SelectItem value="concluido">Concluído</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4 text-muted-foreground" />
+              <span>{ticket.colaboradores?.nome_completo || ticket.franqueados?.name || 'N/A'}</span>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Badge variant={getPriorityVariant(ticket.prioridade)} className="w-fit">
+              {ticket.prioridade === 'crise' && <Zap className="h-3 w-3 mr-1" />}
+              {ticket.prioridade}
+            </Badge>
+            {ticket.categoria && (
+              <div className="flex items-center gap-2">
+                <Tag className="h-4 w-4 text-muted-foreground" />
+                <span className="capitalize">{ticket.categoria}</span>
+              </div>
             )}
           </div>
+        </div>
 
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <span className="text-muted-foreground">Prioridade:</span>
-              <Badge variant="secondary" className="ml-2">
-                {ticket.prioridade.replace('_', ' ')}
-              </Badge>
-            </div>
-            <div>
-              <span className="text-muted-foreground">SLA:</span>
-              <span className={cn("ml-2 font-medium", getSLAColor(ticket.status_sla))}>
-                {ticket.status_sla.replace('_', ' ')}
-              </span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Categoria:</span>
-              <span className="ml-2 capitalize">{ticket.categoria || 'Não definida'}</span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Canal:</span>
-              <span className="ml-2 capitalize">{ticket.canal_origem}</span>
-            </div>
-          </div>
-
-          <div>
-            <span className="text-muted-foreground text-sm">Criado:</span>
-            <span className="ml-2 text-sm">
-              {formatDistanceToNow(new Date(ticket.created_at), { 
-                addSuffix: true,
-                locale: ptBR 
-              })}
-            </span>
-          </div>
-
-          <div>
-            <h4 className="font-medium mb-2">Descrição do Problema</h4>
-            <p className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
-              {ticket.descricao_problema}
-            </p>
-          </div>
-
-          {ticket.arquivos && ticket.arquivos.length > 0 && (
-            <div>
-              <h4 className="font-medium mb-2">Arquivos Anexados</h4>
-              <div className="flex flex-wrap gap-2">
-                {ticket.arquivos.map((arquivo, index) => (
-                  <Button key={index} variant="outline" size="sm">
-                    <Paperclip className="h-3 w-3 mr-1" />
-                    {arquivo.name || `Arquivo ${index + 1}`}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          )}
+        {/* Problem Description */}
+        <div>
+          <h4 className="font-medium mb-2">Descrição do Problema</h4>
+          <p className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
+            {ticket.descricao_problema}
+          </p>
         </div>
 
         <Separator />
 
-        {/* Messages Timeline */}
+        {/* Messages */}
         <div className="flex-1 flex flex-col">
-          <h4 className="font-medium mb-3 flex items-center gap-2">
+          <div className="flex items-center gap-2 mb-3">
             <MessageSquare className="h-4 w-4" />
-            Timeline de Mensagens
-          </h4>
+            <h4 className="font-medium">Conversas</h4>
+            <Badge variant="secondary">{messages.length}</Badge>
+          </div>
 
-          <ScrollArea className="flex-1 pr-4">
+          <div className="flex-1 space-y-3 max-h-60 overflow-y-auto">
             {messagesLoading ? (
-              <div className="space-y-3">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="space-y-2">
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-16 w-full" />
-                  </div>
-                ))}
-              </div>
+              <p className="text-sm text-muted-foreground">Carregando mensagens...</p>
             ) : messages.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">
-                Nenhuma mensagem ainda
-              </p>
+              <p className="text-sm text-muted-foreground">Nenhuma mensagem ainda</p>
             ) : (
-              <div className="space-y-4">
-                {messages.map((message) => (
-                  <div 
-                    key={message.id}
-                    className={cn(
-                      "p-3 rounded-lg",
-                      message.direcao === 'saida' 
-                        ? "bg-primary text-primary-foreground ml-8" 
-                        : "bg-muted mr-8"
-                    )}
-                  >
-                    <div className="flex items-center gap-2 mb-2">
-                      <User className="h-3 w-3" />
-                      <span className="text-xs font-medium">
-                        {message.profiles?.nome_completo || 'Sistema'}
-                      </span>
-                      <span className="text-xs opacity-70">
-                        {formatDistanceToNow(new Date(message.created_at), { 
-                          addSuffix: true,
-                          locale: ptBR 
-                        })}
-                      </span>
-                    </div>
-                    <p className="text-sm">{message.mensagem}</p>
-                    
-                    {message.anexos && message.anexos.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {message.anexos.map((anexo, index) => (
-                          <Button key={index} variant="ghost" size="sm" className="h-6 px-2">
-                            <Paperclip className="h-3 w-3 mr-1" />
-                            <span className="text-xs">{anexo.name}</span>
-                          </Button>
-                        ))}
-                      </div>
-                    )}
+              messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`p-3 rounded-md text-sm ${
+                    message.direcao === 'saida' 
+                      ? 'bg-primary text-primary-foreground ml-8' 
+                      : 'bg-muted mr-8'
+                  }`}
+                >
+                  <p>{message.mensagem}</p>
+                  <div className="flex items-center justify-between mt-2 text-xs opacity-70">
+                    <span>{message.profiles?.nome_completo || 'Sistema'}</span>
+                    <span>
+                      {formatDistanceToNow(new Date(message.created_at), { 
+                        addSuffix: true, 
+                        locale: ptBR 
+                      })}
+                    </span>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))
             )}
-          </ScrollArea>
+          </div>
 
-          {/* Message Input */}
-          <div className="pt-4 space-y-2">
+          {/* Send Message */}
+          <div className="mt-4 space-y-2">
             <Textarea
               placeholder="Digite sua mensagem..."
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage();
-                }
-              }}
               rows={3}
             />
-            <div className="flex items-center justify-between">
-              <Button variant="outline" size="sm" onClick={handleFileUpload}>
+            <div className="flex justify-between">
+              <Button variant="outline" size="sm">
                 <Paperclip className="h-4 w-4 mr-2" />
                 Anexar
               </Button>
               <Button 
-                onClick={handleSendMessage} 
-                disabled={!newMessage.trim() || sending}
-                size="sm"
+                size="sm" 
+                onClick={handleSendMessage}
+                disabled={!newMessage.trim()}
               >
                 <Send className="h-4 w-4 mr-2" />
-                {sending ? 'Enviando...' : 'Enviar'}
+                Enviar
               </Button>
             </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              className="hidden"
-              accept="image/*,.pdf,.xlsx,.csv,.mp3,.m4a,.ogg"
-            />
           </div>
         </div>
       </CardContent>
