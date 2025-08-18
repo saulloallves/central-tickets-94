@@ -328,6 +328,16 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                   </div>
                 )}
               </div>
+            ) : suggestionLoading ? (
+              <div className="text-center py-4">
+                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mb-3">
+                  <Bot className="h-4 w-4 animate-spin" />
+                  Gerando sugestão da IA...
+                </div>
+                <div className="w-full bg-muted rounded-full h-2">
+                  <div className="bg-primary h-2 rounded-full w-1/2 animate-pulse"></div>
+                </div>
+              </div>
             ) : (
               <div className="text-center py-4">
                 <p className="text-sm text-muted-foreground mb-3">
@@ -339,7 +349,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                   size="sm"
                 >
                   <Sparkles className="h-4 w-4 mr-2" />
-                  {suggestionLoading ? 'Gerando...' : 'Gerar Sugestão'}
+                  Gerar Sugestão
                 </Button>
               </div>
             )}
