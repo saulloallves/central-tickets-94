@@ -37,9 +37,15 @@ serve(async (req) => {
         franqueados(name, email)
       `)
       .eq('id', ticketId)
-      .single();
+      .maybeSingle();
 
-    if (ticketError || !ticket) {
+    if (ticketError) {
+      console.error('Error fetching ticket:', ticketError);
+      throw new Error(`Database error: ${ticketError.message}`);
+    }
+
+    if (!ticket) {
+      console.error('Ticket not found with ID:', ticketId);
       throw new Error('Ticket not found');
     }
 
@@ -118,14 +124,20 @@ serve(async (req) => {
     console.log(`Found ${ragDocuments.length} RAG documents and ${kbArticles.length} KB articles`);
 
     // 5. Fetch AI settings
-    const { data: aiSettings } = await supabase
+    const { data: aiSettings, error: settingsError } = await supabase
       .from('faq_ai_settings')
       .select('*')
       .eq('ativo', true)
-      .single();
+      .maybeSingle();
+
+    if (settingsError) {
+      console.error('Error fetching AI settings:', settingsError);
+      throw new Error(`AI settings error: ${settingsError.message}`);
+    }
 
     if (!aiSettings) {
-      throw new Error('AI settings not found');
+      console.error('No active AI settings found');
+      throw new Error('AI settings not configured');
     }
 
     // 6. Build context for AI
