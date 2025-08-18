@@ -234,6 +234,84 @@ export type Database = {
           },
         ]
       }
+      faq_ai_settings: {
+        Row: {
+          ativo: boolean
+          base_conhecimento_prompt: string
+          created_at: string
+          frequency_penalty: number
+          id: string
+          max_tokens: number
+          modelo: string
+          presence_penalty: number
+          temperatura: number
+          top_p: number
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          base_conhecimento_prompt?: string
+          created_at?: string
+          frequency_penalty?: number
+          id?: string
+          max_tokens?: number
+          modelo?: string
+          presence_penalty?: number
+          temperatura?: number
+          top_p?: number
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          base_conhecimento_prompt?: string
+          created_at?: string
+          frequency_penalty?: number
+          id?: string
+          max_tokens?: number
+          modelo?: string
+          presence_penalty?: number
+          temperatura?: number
+          top_p?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      faq_logs: {
+        Row: {
+          created_at: string
+          id: string
+          justificativa_abertura: string | null
+          log_prompt_faq: Json
+          pergunta_usuario: string
+          resposta_ia_sugerida: string
+          ticket_id: string | null
+          usar_resposta_simples: boolean
+          usuario_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          justificativa_abertura?: string | null
+          log_prompt_faq?: Json
+          pergunta_usuario: string
+          resposta_ia_sugerida: string
+          ticket_id?: string | null
+          usar_resposta_simples?: boolean
+          usuario_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          justificativa_abertura?: string | null
+          log_prompt_faq?: Json
+          pergunta_usuario?: string
+          resposta_ia_sugerida?: string
+          ticket_id?: string | null
+          usar_resposta_simples?: boolean
+          usuario_id?: string | null
+        }
+        Relationships: []
+      }
       franqueados: {
         Row: {
           academic_education: string | null
@@ -363,6 +441,39 @@ export type Database = {
           was_nominated?: string | null
           web_password?: number | null
           who_nominated?: string | null
+        }
+        Relationships: []
+      }
+      knowledge_articles: {
+        Row: {
+          ativo: boolean
+          categoria: string | null
+          conteudo: string
+          created_at: string
+          id: string
+          tags: string[] | null
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          categoria?: string | null
+          conteudo: string
+          created_at?: string
+          id?: string
+          tags?: string[] | null
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          categoria?: string | null
+          conteudo?: string
+          created_at?: string
+          id?: string
+          tags?: string[] | null
+          titulo?: string
+          updated_at?: string
         }
         Relationships: []
       }
