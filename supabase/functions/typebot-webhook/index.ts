@@ -291,7 +291,7 @@ serve(async (req) => {
 
     console.log('Ticket created successfully:', finalTicket.codigo_ticket);
 
-    // Resposta de sucesso
+    // Resposta de sucesso com análise da IA
     return new Response(JSON.stringify({
       statusCode: 200,
       data: {
@@ -305,7 +305,13 @@ serve(async (req) => {
         prioridade: finalTicket.prioridade,
         data_limite_sla: finalTicket.data_limite_sla,
         message: `Ticket ${finalTicket.codigo_ticket} criado com sucesso!`,
-        metadata: {}
+        metadata: {
+          ai_analysis_completed: !!finalTicket.log_ia,
+          equipe_responsavel_id: finalTicket.equipe_responsavel_id,
+          is_crise: finalTicket.log_ia?.analysis?.is_crise || false,
+          sla_sugerido_horas: finalTicket.log_ia?.analysis?.sla_sugerido_horas || 24,
+          analysis_model: 'gpt-4o-mini'
+        }
       }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

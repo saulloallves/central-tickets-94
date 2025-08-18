@@ -208,30 +208,64 @@ serve(async (req) => {
       console.log('Equipe encontrada:', equipeEncontrada?.nome, 'ID:', equipeResponsavelId, 'Match:', equipeMatchLog);
     }
 
-    // Atualizar ticket com análise da IA
+    // Preparar payload de atualização
+    const updatePayload = {
+      categoria: analysis.categoria,
+      subcategoria: analysis.subcategoria,
+      equipe_responsavel_id: equipeResponsavelId,
+      data_limite_sla: dataLimiteSla.toISOString(),
+      sla_half_time: slaHalfTime.toISOString(),
+      log_ia: {
+        analysis,
+        equipe_responsavel_id: equipeResponsavelId,
+        equipe_match_log: equipeMatchLog,
+        timestamp: now.toISOString(),
+        model: 'gpt-4o-mini',
+        available_teams: equipes?.map(e => e.nome) || [],
+        update_attempt: 'with_prioridade'
+      }
+    };
+
+    // Só incluir prioridade se for válida
+    if (analysis.prioridade && validPrioridades.includes(analysis.prioridade)) {
+      updatePayload.prioridade = analysis.prioridade;
+    }
+
+    console.log('Update payload:', JSON.stringify(updatePayload, null, 2));
+
+    // Primeira tentativa: atualizar com todos os campos
     const { error: updateError } = await supabase
       .from('tickets')
-      .update({
-        prioridade: analysis.prioridade,
-        categoria: analysis.categoria,
-        subcategoria: analysis.subcategoria,
-        equipe_responsavel_id: equipeResponsavelId,
-        data_limite_sla: dataLimiteSla.toISOString(),
-        sla_half_time: slaHalfTime.toISOString(),
-        log_ia: {
-          analysis,
-          equipe_responsavel_id: equipeResponsavelId,
-          equipe_match_log: equipeMatchLog,
-          timestamp: now.toISOString(),
-          model: 'gpt-4o-mini',
-          available_teams: equipes?.map(e => e.nome) || []
-        }
-      })
+      .update(updatePayload)
       .eq('id', ticketId);
 
     if (updateError) {
-      console.error('Error updating ticket:', updateError);
-      throw updateError;
+      console.error('Error updating ticket with prioridade:', updateError);
+      
+      // Segunda tentativa: atualizar sem prioridade se houver erro
+      if (updatePayload.prioridade) {
+        delete updatePayload.prioridade;
+        updatePayload.log_ia.update_attempt = 'without_prioridade';
+        updatePayload.log_ia.prioridade_error = updateError.message;
+        
+        console.log('Retrying update without prioridade:', JSON.stringify(updatePayload, null, 2));
+        
+        const { error: retryError } = await supabase
+          .from('tickets')
+          .update(updatePayload)
+          .eq('id', ticketId);
+        
+        if (retryError) {
+          console.error('Error in retry update:', retryError);
+          throw retryError;
+        } else {
+          console.log('Retry update successful');
+        }
+      } else {
+        throw updateError;
+      }
+    } else {
+      console.log('Update successful with prioridade');
     }
 
     // Se for crise, marcar status e escalar imediatamente

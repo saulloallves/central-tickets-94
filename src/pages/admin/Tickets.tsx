@@ -11,6 +11,7 @@ import { TicketsKanban } from '@/components/tickets/TicketsKanban';
 import { TicketDetail } from '@/components/tickets/TicketDetail';
 import { CreateTicketDialog } from '@/components/tickets/CreateTicketDialog';
 import { SLAAlerts } from '@/components/tickets/SLAAlerts';
+import { TestAIButton } from '@/components/tickets/TestAIButton';
 import { useTickets } from '@/hooks/useTickets';
 
 const Tickets = () => {
@@ -74,6 +75,7 @@ const Tickets = () => {
               Lista
             </Button>
           </div>
+          <TestAIButton />
           <Button onClick={() => setCreateDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Novo Ticket
