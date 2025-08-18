@@ -180,17 +180,67 @@ ${similarTickets.map(t => `Problema: ${t.descricao_problema.substring(0, 100)}..
 
     const context = contextSections.join('\n\n');
 
-    // 7. Build AI prompt
+    // Sanitization function to remove greetings and ensure brevity
+    const sanitizeOutput = (text: string): { sanitized: string, removed_greeting: boolean, removed_signoff: boolean } => {
+      let sanitized = text.trim();
+      let removed_greeting = false;
+      let removed_signoff = false;
+      
+      // Remove common greetings (case insensitive)
+      const greetingPatterns = [
+        /^(olá|oi|bom dia|boa tarde|boa noite|prezado|caro)[^\n]*/gi,
+        /^(hello|hi|dear)[^\n]*/gi
+      ];
+      
+      for (const pattern of greetingPatterns) {
+        if (pattern.test(sanitized)) {
+          sanitized = sanitized.replace(pattern, '').trim();
+          removed_greeting = true;
+        }
+      }
+      
+      // Remove common sign-offs
+      const signoffPatterns = [
+        /(atenciosamente|cordialmente|abraços|tchau|até mais|qualquer dúvida)[^\n]*$/gi,
+        /(regards|best|sincerely|bye)[^\n]*$/gi,
+        /se precisar de mais alguma coisa[^\n]*$/gi,
+        /estou aqui para ajudar[^\n]*$/gi
+      ];
+      
+      for (const pattern of signoffPatterns) {
+        if (pattern.test(sanitized)) {
+          sanitized = sanitized.replace(pattern, '').trim();
+          removed_signoff = true;
+        }
+      }
+      
+      // Remove excessive whitespace and limit to 3 lines or 450 characters
+      sanitized = sanitized.replace(/\n\s*\n/g, '\n').trim();
+      const lines = sanitized.split('\n');
+      if (lines.length > 3) {
+        sanitized = lines.slice(0, 3).join('\n');
+      }
+      if (sanitized.length > 450) {
+        sanitized = sanitized.substring(0, 450) + '...';
+      }
+      
+      return { sanitized, removed_greeting, removed_signoff };
+    };
+
+    // 7. Build AI prompt with strict brevity rules
     const systemPrompt = `${aiSettings.base_conhecimento_prompt}
 
-Estilo de resposta: ${aiSettings.estilo_resposta}
-
-Regras:
-- Seja ${aiSettings.estilo_resposta.toLowerCase()} e profissional
+REGRAS OBRIGATÓRIAS:
+- NUNCA use saudações (olá, oi, bom dia, etc.)
+- NUNCA use despedidas (tchau, abraços, atenciosamente, etc.)
+- Máximo 2-4 frases curtas OU 3 tópicos com bullet points
+- Seja direto, específico e objetivo
 - Use informações da base de conhecimento e tickets similares quando relevante
 - Forneça uma resposta clara e acionável
 - Se necessário, sugira próximos passos
-- Mantenha o tom adequado ao contexto da franquia`;
+- Mantenha o tom adequado ao contexto da franquia
+
+FORMATO: Resposta direta sem introdução ou conclusão.`;
 
     const userPrompt = `Com base no contexto abaixo, sugira uma resposta profissional para este ticket:
 
@@ -235,7 +285,10 @@ Gere uma sugestão de resposta que o atendente possa usar diretamente ou adaptar
     }
 
     const openaiData = await openaiResponse.json();
-    const suggestionText = openaiData.choices[0].message.content;
+    const rawResponse = openaiData.choices[0].message.content;
+    
+    // Sanitize the AI output
+    const { sanitized, removed_greeting, removed_signoff } = sanitizeOutput(rawResponse);
 
     // 9. Save to database
     const { data: suggestion, error: saveError } = await supabase
@@ -243,7 +296,7 @@ Gere uma sugestão de resposta que o atendente possa usar diretamente ou adaptar
       .insert({
         ticket_id: ticketId,
         kind: 'suggestion',
-        resposta: suggestionText,
+        resposta: sanitized,
         model,
         params: requestBody,
         log: {
@@ -254,6 +307,11 @@ Gere uma sugestão de resposta que o atendente possa usar diretamente ou adaptar
           rag_hits: ragDocuments.length,
           kb_hits: kbArticles.length,
           total_context_length: context.length,
+          used_sanitizer: true,
+          removed_greeting,
+          removed_signoff,
+          original_length: rawResponse.length,
+          sanitized_length: sanitized.length,
           openai_response: openaiData
         }
       })
@@ -269,10 +327,16 @@ Gere uma sugestão de resposta que o atendente possa usar diretamente ou adaptar
 
     return new Response(JSON.stringify({
       suggestionId: suggestion.id,
-      resposta: suggestionText,
+      resposta: sanitized,
       rag_hits: ragDocuments.length,
       kb_hits: kbArticles.length,
-      total_context_length: context.length
+      total_context_length: context.length,
+      sanitization: {
+        removed_greeting,
+        removed_signoff,
+        original_length: rawResponse.length,
+        sanitized_length: sanitized.length
+      }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

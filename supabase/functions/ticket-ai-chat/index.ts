@@ -178,18 +178,68 @@ ${kbArticles.map(a => `**${a.titulo}** (${a.categoria})\n${a.conteudo.substring(
 
     const context = contextSections.join('\n\n');
 
-    // 7. Build AI prompt
+    // Sanitization function to remove greetings and ensure brevity
+    const sanitizeOutput = (text: string): { sanitized: string, removed_greeting: boolean, removed_signoff: boolean } => {
+      let sanitized = text.trim();
+      let removed_greeting = false;
+      let removed_signoff = false;
+      
+      // Remove common greetings (case insensitive)
+      const greetingPatterns = [
+        /^(olá|oi|bom dia|boa tarde|boa noite|prezado|caro)[^\n]*/gi,
+        /^(hello|hi|dear)[^\n]*/gi
+      ];
+      
+      for (const pattern of greetingPatterns) {
+        if (pattern.test(sanitized)) {
+          sanitized = sanitized.replace(pattern, '').trim();
+          removed_greeting = true;
+        }
+      }
+      
+      // Remove common sign-offs
+      const signoffPatterns = [
+        /(atenciosamente|cordialmente|abraços|tchau|até mais|qualquer dúvida)[^\n]*$/gi,
+        /(regards|best|sincerely|bye)[^\n]*$/gi,
+        /se precisar de mais alguma coisa[^\n]*$/gi,
+        /estou aqui para ajudar[^\n]*$/gi
+      ];
+      
+      for (const pattern of signoffPatterns) {
+        if (pattern.test(sanitized)) {
+          sanitized = sanitized.replace(pattern, '').trim();
+          removed_signoff = true;
+        }
+      }
+      
+      // Remove excessive whitespace and limit to 3 lines or 450 characters
+      sanitized = sanitized.replace(/\n\s*\n/g, '\n').trim();
+      const lines = sanitized.split('\n');
+      if (lines.length > 3) {
+        sanitized = lines.slice(0, 3).join('\n');
+      }
+      if (sanitized.length > 450) {
+        sanitized = sanitized.substring(0, 450) + '...';
+      }
+      
+      return { sanitized, removed_greeting, removed_signoff };
+    };
+
+    // 7. Build AI prompt with strict brevity rules
     const systemPrompt = `Você é um assistente especializado em suporte técnico para atendentes de uma franquia.
 
-Estilo de resposta: ${aiSettings.estilo_resposta}
-
-Regras:
-- Seja ${aiSettings.estilo_resposta.toLowerCase()}, prático e direto
+REGRAS OBRIGATÓRIAS:
+- NUNCA use saudações (olá, oi, bom dia, etc.)
+- NUNCA use despedidas (tchau, abraços, atenciosamente, etc.)
+- Máximo 2-4 frases curtas OU 3 tópicos com bullet points
+- Seja direto, específico e objetivo
 - Ajude o atendente com informações, estratégias e sugestões
 - Use a base de conhecimento para fundamentar suas respostas
 - Considere o contexto do ticket e histórico de mensagens
 - Forneça respostas acionáveis e específicas
-- Mantenha tom profissional mas acessível`;
+- Mantenha tom profissional mas acessível
+
+FORMATO: Resposta direta sem introdução ou conclusão.`;
 
     const userPrompt = `CONTEXTO:
 ${context}
@@ -236,7 +286,10 @@ Responda de forma clara e útil, considerando todo o contexto do ticket.`;
     }
 
     const openaiData = await openaiResponse.json();
-    const aiResponse = openaiData.choices[0].message.content;
+    const rawResponse = openaiData.choices[0].message.content;
+    
+    // Sanitize the AI output
+    const { sanitized, removed_greeting, removed_signoff } = sanitizeOutput(rawResponse);
 
     // 9. Save to database
     const { data: chatRecord, error: saveError } = await supabase
@@ -246,7 +299,7 @@ Responda de forma clara e útil, considerando todo o contexto do ticket.`;
         kind: 'chat',
         user_id: userId,
         mensagem,
-        resposta: aiResponse,
+        resposta: sanitized,
         model,
         params: requestBody,
         log: {
@@ -257,6 +310,11 @@ Responda de forma clara e útil, considerando todo o contexto do ticket.`;
           rag_hits: ragDocuments.length,
           kb_hits: kbArticles.length,
           total_context_length: context.length,
+          used_sanitizer: true,
+          removed_greeting,
+          removed_signoff,
+          original_length: rawResponse.length,
+          sanitized_length: sanitized.length,
           openai_response: openaiData
         }
       })
@@ -271,10 +329,16 @@ Responda de forma clara e útil, considerando todo o contexto do ticket.`;
     console.log('AI chat processed successfully');
 
     return new Response(JSON.stringify({
-      resposta: aiResponse,
+      resposta: sanitized,
       rag_hits: ragDocuments.length,
       kb_hits: kbArticles.length,
-      total_context_length: context.length
+      total_context_length: context.length,
+      sanitization: {
+        removed_greeting,
+        removed_signoff,
+        original_length: rawResponse.length,
+        sanitized_length: sanitized.length
+      }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
