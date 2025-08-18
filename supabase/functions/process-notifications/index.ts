@@ -192,15 +192,24 @@ async function getEscalationRecipients(supabase: any, unidadeId: string, nivel: 
 }
 
 async function sendWhatsAppNotifications(recipients: string[], message: string, settings: any) {
-  // Valores fixos conforme documentação Z-API
+  // Configurações Z-API via variáveis de ambiente
   const zapiBaseUrl = "https://api.z-api.io";
-  const zapiInstance = "3E4305B20C51F0086DA02EE02AE98ECC";
-  const zapiToken = "192935E00458CED4AD4E9118";
-  const zapiClientToken = "F660410ff4e544c24b14b557020ce3f62S";
+  const zapiInstanceId = Deno.env.get('ZAPI_INSTANCE_ID'); // 3E4305B20C51F0086DA02EE02AE98ECC
+  const zapiInstanceToken = Deno.env.get('ZAPI_INSTANCE_TOKEN'); // 192935E00458CED4AD4E9118
+  const zapiClientToken = Deno.env.get('ZAPI_CLIENT_TOKEN'); // F660410ff4e544c24b14b557020ce3f62S
+
+  if (!zapiInstanceId || !zapiInstanceToken || !zapiClientToken) {
+    console.warn('Z-API credentials not configured:', { 
+      hasInstanceId: !!zapiInstanceId, 
+      hasInstanceToken: !!zapiInstanceToken, 
+      hasClientToken: !!zapiClientToken 
+    });
+    return;
+  }
 
   for (const recipient of recipients) {
     try {
-      const url = `${zapiBaseUrl}/instances/${zapiInstance}/token/${zapiToken}/send-text`;
+      const url = `${zapiBaseUrl}/instances/${zapiInstanceId}/token/${zapiInstanceToken}/send-text`;
       
       console.log(`Sending WhatsApp to ${recipient} via Z-API:`, url);
       
