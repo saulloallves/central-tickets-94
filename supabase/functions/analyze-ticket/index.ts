@@ -28,6 +28,15 @@ serve(async (req) => {
 
     console.log('Analyzing ticket:', ticketId, descricao.substring(0, 100));
 
+    // Buscar equipes ativas para orientar a IA
+    const { data: equipes } = await supabase
+      .from('equipes')
+      .select('id, nome, introducao')
+      .eq('ativo', true)
+      .order('nome');
+
+    const equipesContext = equipes?.map(e => `${e.nome}: ${e.introducao}`).join('\n') || '';
+
     // Análise de IA para determinar prioridade, categoria e se é crise
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -48,8 +57,12 @@ serve(async (req) => {
               "subcategoria": "string descritiva",
               "is_crise": boolean,
               "motivo_crise": "string ou null",
-              "sla_sugerido_horas": number
+              "sla_sugerido_horas": number,
+              "equipe_responsavel": "string nome da equipe" | null
             }
+
+            EQUIPES DISPONÍVEIS:
+            ${equipesContext}
 
             Critérios para CRISE:
             - Sistema completamente fora do ar
@@ -63,6 +76,7 @@ serve(async (req) => {
             - Falhas de sistema com impacto direto nas vendas
             - Problemas de segurança
 
+            IMPORTANTE: Baseie-se nas descrições das equipes acima para definir a categoria e equipe_responsavel mais adequada para o problema.
             Seja preciso e considere o contexto de uma franquia de varejo.`
           },
           {
@@ -114,6 +128,15 @@ serve(async (req) => {
     const dataLimiteSla = new Date(now.getTime() + (slaHours * 60 * 60 * 1000));
     const slaHalfTime = new Date(now.getTime() + ((slaHours / 2) * 60 * 60 * 1000));
 
+    // Buscar ID da equipe responsável se especificada
+    let equipeResponsavelId = null;
+    if (analysis.equipe_responsavel && equipes) {
+      const equipeEncontrada = equipes.find(e => 
+        e.nome.toLowerCase() === analysis.equipe_responsavel.toLowerCase()
+      );
+      equipeResponsavelId = equipeEncontrada?.id || null;
+    }
+
     // Atualizar ticket com análise da IA
     const { error: updateError } = await supabase
       .from('tickets')
@@ -121,10 +144,12 @@ serve(async (req) => {
         prioridade: analysis.prioridade,
         categoria: analysis.categoria,
         subcategoria: analysis.subcategoria,
+        equipe_responsavel_id: equipeResponsavelId,
         data_limite_sla: dataLimiteSla.toISOString(),
         sla_half_time: slaHalfTime.toISOString(),
         log_ia: {
           analysis,
+          equipe_responsavel_id: equipeResponsavelId,
           timestamp: now.toISOString(),
           model: 'gpt-4.1-2025-04-14'
         }

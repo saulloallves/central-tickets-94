@@ -14,6 +14,7 @@ import Tickets from "./pages/admin/Tickets";
 import Unidades from "./pages/admin/Unidades";
 import Franqueados from "./pages/admin/Franqueados";
 import Colaboradores from "./pages/admin/Colaboradores";
+import Equipes from "./pages/admin/Equipes";
 import Configuracoes from "./pages/admin/Configuracoes";
 
 const queryClient = new QueryClient();
@@ -51,6 +52,11 @@ const App = () => (
             <Route path="/admin/colaboradores" element={
               <AdminLayout>
                 <Colaboradores />
+              </AdminLayout>
+            } />
+            <Route path="/admin/equipes" element={
+              <AdminLayout>
+                <Equipes />
               </AdminLayout>
             } />
             <Route path="/admin/configuracoes" element={

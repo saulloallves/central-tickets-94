@@ -174,6 +174,36 @@ export type Database = {
           },
         ]
       }
+      equipes: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          descricao: string
+          id: string
+          introducao: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          descricao: string
+          id?: string
+          introducao: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string
+          id?: string
+          introducao?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       escalation_levels: {
         Row: {
           ativo: boolean

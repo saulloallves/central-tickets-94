@@ -5,7 +5,8 @@ import {
   ClipboardList, 
   Settings, 
   LogOut,
-  Home
+  Home,
+  Users2
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -31,6 +32,7 @@ const adminItems = [
   { title: "Franqueados", url: "/admin/franqueados", icon: Users },
   { title: "Colaboradores", url: "/admin/colaboradores", icon: UserCheck },
   { title: "Tickets", url: "/admin/tickets", icon: ClipboardList },
+  { title: "Equipes", url: "/admin/equipes", icon: Users2 },
   { title: "Configurações", url: "/admin/configuracoes", icon: Settings },
   { title: "Auditoria", url: "/admin/audit", icon: Settings },
 ];
