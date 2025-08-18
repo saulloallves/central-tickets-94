@@ -4,14 +4,108 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-webhook-token',
 };
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const webhookToken = Deno.env.get('TYPEBOT_WEBHOOK_TOKEN');
+const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+// Função para extrair termos de busca do texto
+function extractSearchTerms(text: string): string[] {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s]/g, ' ')
+    .split(/\s+/)
+    .filter(term => term.length > 3)
+    .slice(0, 10);
+}
+
+// Módulo de resposta por Knowledge Base
+async function searchKnowledgeBase(message: string) {
+  console.log('Searching knowledge base for:', message);
+  
+  const searchTerms = extractSearchTerms(message);
+  console.log('Search terms:', searchTerms);
+
+  if (searchTerms.length === 0) {
+    return { hasAnswer: false, articles: [] };
+  }
+
+  // Buscar artigos relevantes na base de conhecimento
+  const { data: articles, error } = await supabase
+    .from('knowledge_articles')
+    .select('id, titulo, conteudo, categoria, tags')
+    .eq('ativo', true)
+    .eq('aprovado', true)
+    .eq('usado_pela_ia', true);
+
+  if (error) {
+    console.error('Error fetching KB articles:', error);
+    return { hasAnswer: false, articles: [] };
+  }
+
+  // Filtrar artigos que contenham os termos de busca
+  const relevantArticles = articles?.filter(article => {
+    const searchText = `${article.titulo} ${article.conteudo} ${article.categoria} ${article.tags?.join(' ') || ''}`.toLowerCase();
+    return searchTerms.some(term => searchText.includes(term));
+  }) || [];
+
+  console.log(`Found ${relevantArticles.length} relevant articles`);
+
+  // Se temos artigos relevantes, tentar gerar resposta com OpenAI
+  if (relevantArticles.length > 0 && openaiApiKey) {
+    const knowledgeContext = relevantArticles
+      .map(article => `**${article.titulo}**\n${article.conteudo}`)
+      .join('\n\n---\n\n');
+
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openaiApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: `Você é um assistente de suporte técnico. Use APENAS as informações fornecidas na base de conhecimento para responder. Se a informação não estiver disponível na base de conhecimento, responda "Não encontrei informações suficientes na base de conhecimento para responder essa pergunta."
+
+Base de Conhecimento:
+${knowledgeContext}`
+            },
+            {
+              role: 'user',
+              content: message
+            }
+          ],
+          max_tokens: 500,
+          temperature: 0.3,
+        }),
+      });
+
+      const aiResponse = await response.json();
+      const answer = aiResponse.choices?.[0]?.message?.content;
+
+      if (answer && !answer.includes('Não encontrei informações suficientes')) {
+        return {
+          hasAnswer: true,
+          answer,
+          sources: relevantArticles.map(a => ({ id: a.id, titulo: a.titulo }))
+        };
+      }
+    } catch (error) {
+      console.error('Error calling OpenAI:', error);
+    }
+  }
+
+  return { hasAnswer: false, articles: relevantArticles };
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -22,10 +116,9 @@ serve(async (req) => {
   try {
     console.log('Typebot webhook called');
     
-    // Verificar token se configurado
+    // Validar token via header X-Webhook-Token
     if (webhookToken) {
-      const authHeader = req.headers.get('authorization');
-      const providedToken = authHeader?.replace('Bearer ', '') || req.headers.get('x-webhook-token');
+      const providedToken = req.headers.get('x-webhook-token');
       
       if (providedToken !== webhookToken) {
         console.log('Invalid webhook token');
@@ -39,22 +132,20 @@ serve(async (req) => {
     const body = await req.json();
     console.log('Received data from Typebot:', JSON.stringify(body, null, 2));
 
-    // Extrair dados do payload do Typebot
     const {
-      nome_cliente,
-      email_cliente,
-      telefone_cliente,
-      descricao_problema,
-      categoria,
-      prioridade = 'padrao_24h',
+      message,
       unidade_id = 'default',
-      canal_origem = 'typebot'
+      user,
+      attachments,
+      category_hint,
+      force_create = false,
+      metadata
     } = body;
 
     // Validar dados obrigatórios
-    if (!descricao_problema) {
+    if (!message) {
       return new Response(JSON.stringify({ 
-        error: 'Descrição do problema é obrigatória',
+        error: 'Campo "message" é obrigatório',
         success: false 
       }), {
         status: 400,
@@ -62,17 +153,38 @@ serve(async (req) => {
       });
     }
 
-    // Criar ticket no sistema
+    // Primeiro, tentar responder pela base de conhecimento (se não forçar criação)
+    if (!force_create) {
+      const kbResult = await searchKnowledgeBase(message);
+      
+      if (kbResult.hasAnswer) {
+        console.log('Answer found in knowledge base');
+        return new Response(JSON.stringify({
+          action: 'answer',
+          success: true,
+          answer: kbResult.answer,
+          sources: kbResult.sources,
+          message: 'Resposta encontrada na base de conhecimento'
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    // Se não encontrou resposta na KB ou forçou criação, criar ticket
+    console.log('Creating ticket - no suitable KB answer found');
+
     const { data: ticket, error: ticketError } = await supabase
       .from('tickets')
       .insert({
         unidade_id,
-        descricao_problema,
-        categoria: categoria || 'geral',
-        prioridade,
-        canal_origem,
+        descricao_problema: message,
+        categoria: category_hint || 'geral',
+        prioridade: 'padrao_24h',
+        canal_origem: 'typebot',
         status: 'aberto',
         data_abertura: new Date().toISOString(),
+        arquivos: attachments || [],
       })
       .select()
       .single();
@@ -89,40 +201,76 @@ serve(async (req) => {
       });
     }
 
-    // Se tiver informações do cliente, adicionar como primeira mensagem
-    let clientInfo = '';
-    if (nome_cliente || email_cliente || telefone_cliente) {
-      const info = [];
-      if (nome_cliente) info.push(`Nome: ${nome_cliente}`);
-      if (email_cliente) info.push(`Email: ${email_cliente}`);
-      if (telefone_cliente) info.push(`Telefone: ${telefone_cliente}`);
-      clientInfo = info.join('\n');
+    // Inserir primeira mensagem do usuário
+    await supabase
+      .from('ticket_mensagens')
+      .insert({
+        ticket_id: ticket.id,
+        mensagem: message,
+        direcao: 'entrada',
+        canal: 'typebot',
+        anexos: attachments || []
+      });
 
-      // Adicionar mensagem com dados do cliente
+    // Se tiver dados do usuário, adicionar como contexto
+    if (user) {
+      const userInfo = Object.entries(user)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join('\n');
+      
       await supabase
         .from('ticket_mensagens')
         .insert({
           ticket_id: ticket.id,
-          mensagem: `Dados do cliente:\n${clientInfo}`,
+          mensagem: `Dados do usuário:\n${userInfo}`,
           direcao: 'entrada',
-          canal: 'web'
+          canal: 'typebot'
         });
     }
 
-    console.log('Ticket created successfully:', ticket.codigo_ticket);
+    // Invocar análise automática do ticket
+    try {
+      const { data: analysisResult, error: analysisError } = await supabase.functions.invoke('analyze-ticket', {
+        body: {
+          ticketId: ticket.id,
+          descricao: message,
+          categoria: category_hint
+        }
+      });
 
-    // Resposta de sucesso para o Typebot
-    return new Response(JSON.stringify({
-      success: true,
-      ticket_id: ticket.id,
-      codigo_ticket: ticket.codigo_ticket,
-      message: `Ticket ${ticket.codigo_ticket} criado com sucesso!`,
-      data: {
-        ticket_id: ticket.id,
-        codigo: ticket.codigo_ticket,
-        status: ticket.status,
-        prioridade: ticket.prioridade
+      if (analysisError) {
+        console.error('Error analyzing ticket:', analysisError);
+      } else {
+        console.log('Ticket analysis completed:', analysisResult);
       }
+    } catch (error) {
+      console.error('Error calling analyze-ticket function:', error);
+    }
+
+    // Buscar dados atualizados do ticket após análise
+    const { data: updatedTicket } = await supabase
+      .from('tickets')
+      .select('*')
+      .eq('id', ticket.id)
+      .single();
+
+    const finalTicket = updatedTicket || ticket;
+
+    console.log('Ticket created successfully:', finalTicket.codigo_ticket);
+
+    // Resposta de sucesso
+    return new Response(JSON.stringify({
+      action: 'ticket_created',
+      success: true,
+      ticket_id: finalTicket.id,
+      codigo_ticket: finalTicket.codigo_ticket,
+      status: finalTicket.status,
+      categoria: finalTicket.categoria,
+      subcategoria: finalTicket.subcategoria,
+      prioridade: finalTicket.prioridade,
+      data_limite_sla: finalTicket.data_limite_sla,
+      message: `Ticket ${finalTicket.codigo_ticket} criado com sucesso!`,
+      metadata: metadata || {}
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
