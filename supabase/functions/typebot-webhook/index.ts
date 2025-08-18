@@ -135,7 +135,7 @@ serve(async (req) => {
     const {
       message,
       codigo_unidade,
-      user,
+      user: { web_password } = {},
       attachments,
       category_hint,
       force_create = false,
@@ -181,6 +181,23 @@ serve(async (req) => {
       });
     }
 
+    // Buscar franqueado pela senha web se fornecida
+    let franqueadoId = null;
+    if (web_password) {
+      const { data: franqueado } = await supabase
+        .from('franqueados')
+        .select('id')
+        .eq('web_password', web_password)
+        .maybeSingle();
+      
+      if (franqueado) {
+        franqueadoId = franqueado.id;
+        console.log('Franqueado encontrado:', franqueado.id);
+      } else {
+        console.log('Franqueado não encontrado para senha web:', web_password);
+      }
+    }
+
     // Primeiro, tentar responder pela base de conhecimento (se não forçar criação)
     if (!force_create) {
       const kbResult = await searchKnowledgeBase(message);
@@ -206,6 +223,7 @@ serve(async (req) => {
       .from('tickets')
       .insert({
         unidade_id: unidade.id,
+        franqueado_id: franqueadoId,
         descricao_problema: message,
         categoria: null, // Deixar em branco para a IA definir
         prioridade: 'padrao_24h',
@@ -240,25 +258,13 @@ serve(async (req) => {
         anexos: attachments || []
       });
 
-    // Se tiver dados do usuário, adicionar como contexto
-    if (user) {
-      let userInfo = '';
-      
-      if (typeof user === 'object') {
-        // Se user é um objeto, processar as propriedades
-        userInfo = Object.entries(user)
-          .map(([key, value]) => `${key}: ${value}`)
-          .join('\n');
-      } else {
-        // Se user é string (compatibilidade com formato antigo)
-        userInfo = user;
-      }
-      
+    // Se tiver senha web, adicionar informação do franqueado
+    if (web_password) {
       await supabase
         .from('ticket_mensagens')
         .insert({
           ticket_id: ticket.id,
-          mensagem: `Dados do usuário:\n${userInfo}`,
+          mensagem: `Senha web do usuário: ${web_password}`,
           direcao: 'entrada',
           canal: 'typebot'
         });
