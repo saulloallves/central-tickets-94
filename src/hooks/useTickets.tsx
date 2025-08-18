@@ -96,11 +96,11 @@ export const useTickets = (filters: TicketFilters) => {
       }
 
       // Apply status filters
-      if (filters.status) query = query.eq('status', filters.status as any);
-      if (filters.categoria) query = query.eq('categoria', filters.categoria as any);
-      if (filters.prioridade) query = query.eq('prioridade', filters.prioridade as any);
-      if (filters.status_sla) query = query.eq('status_sla', filters.status_sla as any);
-      if (filters.unidade_id) query = query.eq('unidade_id', filters.unidade_id);
+      if (filters.status && filters.status !== 'all') query = query.eq('status', filters.status as any);
+      if (filters.categoria && filters.categoria !== 'all') query = query.eq('categoria', filters.categoria as any);
+      if (filters.prioridade && filters.prioridade !== 'all') query = query.eq('prioridade', filters.prioridade as any);
+      if (filters.status_sla && filters.status_sla !== 'all') query = query.eq('status_sla', filters.status_sla as any);
+      if (filters.unidade_id && filters.unidade_id !== 'all') query = query.eq('unidade_id', filters.unidade_id);
 
       const { data, error } = await query;
 

@@ -17,11 +17,11 @@ const Tickets = () => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [filters, setFilters] = useState({
     search: '',
-    status: '',
-    categoria: '',
-    prioridade: '',
-    unidade_id: '',
-    status_sla: ''
+    status: 'all',
+    categoria: 'all',
+    prioridade: 'all',
+    unidade_id: 'all',
+    status_sla: 'all'
   });
 
   const { ticketStats } = useTickets(filters);
@@ -138,7 +138,7 @@ const Tickets = () => {
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos</SelectItem>
+                <SelectItem value="all">Todos</SelectItem>
                 <SelectItem value="aberto">Aberto</SelectItem>
                 <SelectItem value="em_atendimento">Em Atendimento</SelectItem>
                 <SelectItem value="escalonado">Escalonado</SelectItem>
@@ -151,7 +151,7 @@ const Tickets = () => {
                 <SelectValue placeholder="Categoria" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todas</SelectItem>
+                <SelectItem value="all">Todas</SelectItem>
                 <SelectItem value="juridico">Jurídico</SelectItem>
                 <SelectItem value="sistema">Sistema</SelectItem>
                 <SelectItem value="midia">Mídia</SelectItem>
@@ -167,7 +167,7 @@ const Tickets = () => {
                 <SelectValue placeholder="Prioridade" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todas</SelectItem>
+                <SelectItem value="all">Todas</SelectItem>
                 <SelectItem value="crise">Crise</SelectItem>
                 <SelectItem value="urgente">Urgente</SelectItem>
                 <SelectItem value="alta">Alta</SelectItem>
@@ -181,7 +181,7 @@ const Tickets = () => {
                 <SelectValue placeholder="SLA" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos</SelectItem>
+                <SelectItem value="all">Todos</SelectItem>
                 <SelectItem value="dentro_prazo">Dentro do Prazo</SelectItem>
                 <SelectItem value="alerta">Alerta</SelectItem>
                 <SelectItem value="vencido">Vencido</SelectItem>
@@ -194,7 +194,7 @@ const Tickets = () => {
                   <SelectValue placeholder="Unidade" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas</SelectItem>
+                  <SelectItem value="all">Todas</SelectItem>
                   {/* Unidades will be loaded dynamically */}
                 </SelectContent>
               </Select>
