@@ -208,7 +208,7 @@ serve(async (req) => {
       console.log('Equipe encontrada:', equipeEncontrada?.nome, 'ID:', equipeResponsavelId, 'Match:', equipeMatchLog);
     }
 
-    // Preparar payload de atualização
+    // Preparar dados para atualização (sem prioridade por enquanto)
     const updatePayload = {
       categoria: analysis.categoria,
       subcategoria: analysis.subcategoria,
@@ -222,50 +222,70 @@ serve(async (req) => {
         timestamp: now.toISOString(),
         model: 'gpt-4o-mini',
         available_teams: equipes?.map(e => e.nome) || [],
-        update_attempt: 'with_prioridade'
+        update_attempt: 'basic_fields_only'
       }
     };
 
-    // Só incluir prioridade se for válida
-    if (analysis.prioridade && validPrioridades.includes(analysis.prioridade)) {
-      updatePayload.prioridade = analysis.prioridade;
-    }
+    console.log('Update payload (basic):', JSON.stringify(updatePayload, null, 2));
 
-    console.log('Update payload:', JSON.stringify(updatePayload, null, 2));
-
-    // Primeira tentativa: atualizar com todos os campos
+    // Atualizar campos básicos primeiro
     const { error: updateError } = await supabase
       .from('tickets')
       .update(updatePayload)
       .eq('id', ticketId);
 
     if (updateError) {
-      console.error('Error updating ticket with prioridade:', updateError);
+      console.error('Error updating ticket basic fields:', updateError);
       
-      // Segunda tentativa: atualizar sem prioridade se houver erro
-      if (updatePayload.prioridade) {
-        delete updatePayload.prioridade;
-        updatePayload.log_ia.update_attempt = 'without_prioridade';
-        updatePayload.log_ia.prioridade_error = updateError.message;
-        
-        console.log('Retrying update without prioridade:', JSON.stringify(updatePayload, null, 2));
-        
-        const { error: retryError } = await supabase
-          .from('tickets')
-          .update(updatePayload)
-          .eq('id', ticketId);
-        
-        if (retryError) {
-          console.error('Error in retry update:', retryError);
-          throw retryError;
-        } else {
-          console.log('Retry update successful');
-        }
-      } else {
-        throw updateError;
+      // Tentar pelo menos salvar o log da IA
+      const { error: logError } = await supabase
+        .from('tickets')
+        .update({
+          log_ia: {
+            analysis,
+            error: updateError.message,
+            timestamp: now.toISOString(),
+            model: 'gpt-4o-mini',
+            status: 'failed_basic_update'
+          }
+        })
+        .eq('id', ticketId);
+      
+      if (logError) {
+        console.error('Error saving IA log:', logError);
       }
-    } else {
-      console.log('Update successful with prioridade');
+      
+      throw updateError;
+    }
+
+    console.log('Basic update successful');
+
+    // Agora tentar atualizar a prioridade separadamente se for válida e diferente da atual
+    if (analysis.prioridade && validPrioridades.includes(analysis.prioridade) && analysis.prioridade !== 'padrao_24h') {
+      console.log('Attempting to update prioridade to:', analysis.prioridade);
+      
+      const { error: prioridadeError } = await supabase
+        .from('tickets')
+        .update({ prioridade: analysis.prioridade })
+        .eq('id', ticketId);
+      
+      if (prioridadeError) {
+        console.error('Error updating prioridade:', prioridadeError);
+        
+        // Salvar o erro no log mas não falhar a operação toda
+        await supabase
+          .from('tickets')
+          .update({
+            log_ia: {
+              ...updatePayload.log_ia,
+              prioridade_error: prioridadeError.message,
+              prioridade_attempted: analysis.prioridade
+            }
+          })
+          .eq('id', ticketId);
+      } else {
+        console.log('Prioridade updated successfully to:', analysis.prioridade);
+      }
     }
 
     // Se for crise, marcar status e escalar imediatamente

@@ -27,25 +27,19 @@ export const TestAIButton = () => {
 
     try {
       // Simular um POST para o webhook do typebot
-      const webhookResponse = await fetch('https://hryurntaljdisohawpqf.supabase.co/functions/v1/typebot-webhook', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhyeXVybnRhbGpkaXNvaGF3cHFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcwODg3MzksImV4cCI6MjA2MjY2NDczOX0.gcxKFR1H4E1hpg17zAc17ESmje_m0vHV-IsKaqZKmxk'}`
-        },
-        body: JSON.stringify({
+      // Usar o cliente Supabase para chamar a função
+      const { data: webhookData, error: webhookError } = await supabase.functions.invoke('typebot-webhook', {
+        body: {
           message: "Teste da IA: O sistema de vendas está apresentando lentidão e travamentos frequentes. Os clientes estão reclamando.",
           codigo_unidade: "1659",
           user: { web_password: "16331783" },
           category_hint: "sistema",
           force_create: true
-        })
+        }
       });
 
-      const webhookData = await webhookResponse.json();
-
-      if (!webhookResponse.ok) {
-        throw new Error(`Webhook failed: ${webhookData.error || 'Unknown error'}`);
+      if (webhookError) {
+        throw new Error(`Webhook failed: ${webhookError.message}`);
       }
 
       // Buscar os dados do ticket criado para verificar se a IA funcionou
@@ -55,7 +49,7 @@ export const TestAIButton = () => {
           .from('tickets')
           .select('*')
           .eq('id', ticketId)
-          .single();
+          .maybeSingle();
 
         setResult({
           success: true,
