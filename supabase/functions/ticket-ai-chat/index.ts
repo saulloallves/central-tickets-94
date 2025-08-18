@@ -19,20 +19,26 @@ serve(async (req) => {
   }
 
   try {
+    console.log('=== TICKET AI CHAT DEBUG START ===');
     const { ticketId, mensagem, userId } = await req.json();
+    console.log('Request data:', { ticketId, mensagem, userId });
     
     if (!ticketId || !mensagem) {
+      console.error('Missing required fields:', { ticketId: !!ticketId, mensagem: !!mensagem });
       throw new Error('ticketId and mensagem are required');
     }
 
     console.log('Processing AI chat for ticket:', ticketId);
 
     // 1. Fetch AI settings FIRST
+    console.log('Fetching AI settings...');
     const { data: aiSettings, error: settingsError } = await supabase
       .from('faq_ai_settings')
       .select('*')
       .eq('ativo', true)
       .maybeSingle();
+    
+    console.log('AI settings result:', { aiSettings, settingsError });
 
     if (settingsError) {
       console.error('Error fetching AI settings:', settingsError);
@@ -417,7 +423,10 @@ Responda de forma clara e útil, considerando todo o contexto do ticket.`;
     });
 
   } catch (error) {
-    console.error('Error in ticket-ai-chat function:', error);
+    console.error('=== TICKET AI CHAT ERROR ===');
+    console.error('Error details:', error);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
     return new Response(JSON.stringify({ 
       error: error.message 
     }), {
