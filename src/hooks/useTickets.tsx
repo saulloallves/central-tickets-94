@@ -191,18 +191,69 @@ export const useTickets = (filters: TicketFilters) => {
   }, [filters.search, filters.status, filters.categoria, filters.prioridade, filters.status_sla, filters.unidade_id]);
 
   const createTicket = async (ticketData: Partial<Ticket>) => {
+    if (!user?.id) {
+      toast({
+        title: "Erro",
+        description: "Usuário não autenticado",
+        variant: "destructive",
+      });
+      return null;
+    }
+
     try {
+      console.log('Creating ticket with data:', ticketData);
+
+      // Get user profile to establish relationships
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('id', user.id)
+        .single();
+
+      let colaborador_id = null;
+      let franqueado_id = null;
+
+      if (profile?.email) {
+        // Check if user is a colaborador
+        const { data: colaborador } = await supabase
+          .from('colaboradores')
+          .select('id')
+          .eq('email', profile.email)
+          .single();
+        
+        if (colaborador) {
+          colaborador_id = colaborador.id;
+        } else {
+          // Check if user is a franqueado
+          const { data: franqueado } = await supabase
+            .from('franqueados')
+            .select('Id')
+            .eq('email', profile.email)
+            .single();
+          
+          if (franqueado) {
+            franqueado_id = franqueado.Id;
+          }
+        }
+      }
+
+      const ticketInsertData = {
+        unidade_id: ticketData.unidade_id!,
+        descricao_problema: ticketData.descricao_problema!,
+        categoria: ticketData.categoria || null,
+        prioridade: ticketData.prioridade || 'padrao_24h',
+        subcategoria: ticketData.subcategoria || null,
+        colaborador_id,
+        franqueado_id,
+        criado_por: user.id,
+        canal_origem: 'web' as const
+      };
+
+      console.log('Inserting ticket data:', ticketInsertData);
+
       const { data, error } = await supabase
         .from('tickets')
-        .insert({
-          unidade_id: ticketData.unidade_id!,
-          descricao_problema: ticketData.descricao_problema!,
-          categoria: ticketData.categoria,
-          prioridade: ticketData.prioridade || 'padrao_24h',
-          subcategoria: ticketData.subcategoria,
-          criado_por: user?.id,
-          canal_origem: 'web'
-        } as any)
+        .insert(ticketInsertData as any)
         .select()
         .single();
 
@@ -210,17 +261,20 @@ export const useTickets = (filters: TicketFilters) => {
         console.error('Error creating ticket:', error);
         toast({
           title: "Erro",
-          description: "Não foi possível criar o ticket",
+          description: `Não foi possível criar o ticket: ${error.message}`,
           variant: "destructive",
         });
         return null;
       }
 
+      console.log('Ticket created successfully:', data);
+      
       toast({
         title: "Sucesso",
         description: `Ticket ${data.codigo_ticket} criado com sucesso`,
       });
 
+      // Refresh tickets list
       fetchTickets();
       fetchTicketStats();
       return data;

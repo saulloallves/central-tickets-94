@@ -110,28 +110,49 @@ export const CreateTicketDialog = ({ open, onOpenChange }: CreateTicketDialogPro
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.unidade_id || !formData.descricao_problema.trim()) return;
+    
+    // Validações
+    if (!formData.unidade_id) {
+      alert('Por favor, selecione uma unidade');
+      return;
+    }
+    
+    if (!formData.descricao_problema.trim()) {
+      alert('Por favor, descreva o problema');
+      return;
+    }
+
+    if (formData.descricao_problema.trim().length < 10) {
+      alert('A descrição deve ter pelo menos 10 caracteres');
+      return;
+    }
 
     setSubmitting(true);
     try {
+      console.log('Submitting ticket with data:', formData);
+      
       const ticket = await createTicket({
         unidade_id: formData.unidade_id,
-        descricao_problema: formData.descricao_problema,
-        categoria: formData.categoria as any || undefined,
+        descricao_problema: formData.descricao_problema.trim(),
+        categoria: (formData.categoria as any) || undefined,
         prioridade: formData.prioridade,
-        subcategoria: formData.subcategoria || undefined
+        subcategoria: formData.subcategoria?.trim() || undefined
       });
 
       if (ticket) {
-        onOpenChange(false);
+        console.log('Ticket created successfully:', ticket);
+        // Reset form
         setFormData({
-          unidade_id: '',
+          unidade_id: unidades.length === 1 ? unidades[0].id : '',
           descricao_problema: '',
           categoria: '',
           prioridade: 'padrao_24h',
           subcategoria: ''
         });
+        onOpenChange(false);
       }
+    } catch (error) {
+      console.error('Error in handleSubmit:', error);
     } finally {
       setSubmitting(false);
     }
