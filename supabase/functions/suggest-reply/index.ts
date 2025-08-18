@@ -78,10 +78,28 @@ serve(async (req) => {
     console.log('Searching for relevant documents for suggestion:', ticket.descricao_problema);
     
     // Generate search terms from ticket description and category
-    const searchTerms = [
-      ...ticket.descricao_problema.toLowerCase().split(/\s+/).filter(term => term.length > 3).slice(0, 5),
+    const description = ticket.descricao_problema.toLowerCase();
+    
+    // Extract key terms and add common variations
+    const basicTerms = description.split(/\s+/).filter(term => term.length > 2);
+    const keyTerms = [
+      ...basicTerms.filter(term => term.length > 3).slice(0, 5),
       ...(ticket.categoria ? [ticket.categoria.toLowerCase()] : [])
-    ].filter((term, index, self) => self.indexOf(term) === index).slice(0, 6); // Deduplicate and limit
+    ];
+
+    // Add specific search patterns for common queries
+    const enhancedTerms = [...keyTerms];
+    if (description.includes('senha') || description.includes('password') || description.includes('reset')) {
+      enhancedTerms.push('senha', 'reset', 'login', 'resetar');
+    }
+    if (description.includes('sistema') || description.includes('system')) {
+      enhancedTerms.push('sistema', 'login', 'acesso');
+    }
+    if (description.includes('relatório') || description.includes('report')) {
+      enhancedTerms.push('relatório', 'relatórios', 'gerar', 'download');
+    }
+
+    const searchTerms = [...new Set(enhancedTerms)].slice(0, 8); // Deduplicate and limit
 
     console.log('Search terms:', searchTerms);
 
@@ -95,22 +113,42 @@ serve(async (req) => {
     );
 
     // Search in knowledge_articles table with advanced filtering
-    const kbQuery = supabase
+    let kbBaseQuery = supabase
       .from('knowledge_articles')
       .select('id, titulo, conteudo, categoria, tags')
-      .eq('ativo', true)
-      .eq('aprovado', aiSettings.use_only_approved || true);
+      .eq('ativo', true);
+
+    // Only filter by approved if use_only_approved is true
+    if (aiSettings.use_only_approved) {
+      kbBaseQuery = kbBaseQuery.eq('aprovado', true);
+    }
 
     // Apply category filtering if configured
     if (aiSettings.allowed_categories && aiSettings.allowed_categories.length > 0) {
-      kbQuery.in('categoria', aiSettings.allowed_categories);
+      kbBaseQuery = kbBaseQuery.in('categoria', aiSettings.allowed_categories);
     }
 
-    const kbPromises = searchTerms.map(term =>
-      kbQuery
-        .or(`titulo.ilike.%${term}%,conteudo.ilike.%${term}%,categoria.ilike.%${term}%`)
-        .limit(2)
-    );
+    // Create more comprehensive search for KB articles
+    const kbPromises = [
+      // Search by exact description match
+      supabase
+        .from('knowledge_articles')
+        .select('id, titulo, conteudo, categoria, tags')
+        .eq('ativo', true)
+        .eq('aprovado', aiSettings.use_only_approved || true)
+        .or(`titulo.ilike.%${ticket.descricao_problema.toLowerCase()}%,conteudo.ilike.%${ticket.descricao_problema.toLowerCase()}%`)
+        .limit(3),
+      // Search by individual terms
+      ...searchTerms.map(term =>
+        supabase
+          .from('knowledge_articles')
+          .select('id, titulo, conteudo, categoria, tags')
+          .eq('ativo', true)
+          .eq('aprovado', aiSettings.use_only_approved || true)
+          .or(`titulo.ilike.%${term}%,conteudo.ilike.%${term}%,categoria.ilike.%${term}%`)
+          .limit(2)
+      )
+    ];
 
     // Execute all searches in parallel
     const [ragResults, kbResults] = await Promise.all([
