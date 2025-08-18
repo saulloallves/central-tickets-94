@@ -10,6 +10,9 @@ interface KnowledgeSuggestion {
   modelo_provedor: 'openai' | 'lambda';
   modelo_nome?: string;
   status: string;
+  sugerido_por?: string;
+  avaliado_por?: string;
+  publicado_em?: string;
   created_at: string;
   updated_at: string;
 }
