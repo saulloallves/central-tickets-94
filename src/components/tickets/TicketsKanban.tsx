@@ -211,21 +211,42 @@ export const TicketsKanban = ({ filters, onTicketSelect, selectedTicketId }: Tic
     const { active, over } = event;
     setActiveTicket(null);
 
-    if (!over) return;
+    console.log('Drag end event:', { active: active.id, over: over?.id });
+
+    if (!over) {
+      console.log('No drop target');
+      return;
+    }
 
     const ticketId = active.id as string;
     const ticket = active.data.current?.ticket as Ticket;
     const newStatus = over.id as string;
 
-    if (!newStatus || ticket.status === newStatus || !Object.keys(COLUMN_STATUS).includes(newStatus)) return;
+    console.log('Drag details:', { 
+      ticketId, 
+      currentStatus: ticket?.status, 
+      newStatus, 
+      validStatuses: Object.keys(COLUMN_STATUS) 
+    });
+
+    if (!newStatus || !ticket || ticket.status === newStatus || !Object.keys(COLUMN_STATUS).includes(newStatus)) {
+      console.log('Skipping update - invalid move');
+      return;
+    }
 
     try {
-      await updateTicket(ticketId, { status: newStatus as keyof typeof COLUMN_STATUS });
-      toast({
-        title: "Status atualizado",
-        description: `Ticket movido para ${COLUMN_STATUS[newStatus as keyof typeof COLUMN_STATUS]}`,
-      });
+      console.log('Updating ticket status...');
+      const result = await updateTicket(ticketId, { status: newStatus as keyof typeof COLUMN_STATUS });
+      console.log('Update result:', result);
+      
+      if (result) {
+        toast({
+          title: "Status atualizado",
+          description: `Ticket movido para ${COLUMN_STATUS[newStatus as keyof typeof COLUMN_STATUS]}`,
+        });
+      }
     } catch (error) {
+      console.error('Error updating ticket:', error);
       toast({
         title: "Erro ao atualizar",
         description: "Não foi possível atualizar o status do ticket",
