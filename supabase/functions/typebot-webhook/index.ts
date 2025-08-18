@@ -134,7 +134,7 @@ serve(async (req) => {
 
     const {
       message,
-      unidade_id = 'default',
+      unidade_id,
       user,
       attachments,
       category_hint,
