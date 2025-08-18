@@ -26,18 +26,21 @@ serve(async (req) => {
     // Buscar dados do ticket
     const { data: ticket, error: ticketError } = await supabase
       .from('tickets')
-      .select(`
-        *,
-        unidades!tickets_unidade_id_fkey(grupo, id),
-        colaboradores(nome_completo),
-        franqueados(name)
-      `)
+      .select('*')
       .eq('id', ticketId)
       .single();
 
     if (ticketError || !ticket) {
       throw new Error(`Ticket not found: ${ticketError?.message}`);
     }
+
+    // Buscar unidade separadamente para obter id_grupo_branco
+    const { data: unidade } = await supabase
+      .from('unidades')
+      .select('grupo, id, id_grupo_branco')
+      .eq('id', ticket.unidade_id)
+      .single();
+
 
     // Buscar configurações de notificação
     const { data: settings } = await supabase
@@ -60,37 +63,34 @@ serve(async (req) => {
       case 'ticket_criado':
         message = `🎫 *Novo Ticket Criado*\n\n` +
                  `*Código:* ${ticket.codigo_ticket}\n` +
-                 `*Unidade:* ${ticket.unidades?.grupo || ticket.unidade_id}\n` +
+                 `*Unidade:* ${unidade?.grupo || ticket.unidade_id}\n` +
                  `*Prioridade:* ${ticket.prioridade}\n` +
                  `*Problema:* ${ticket.descricao_problema.substring(0, 100)}...\n\n` +
                  `⏰ SLA: ${new Date(ticket.data_limite_sla).toLocaleString('pt-BR')}`;
         
-        // Buscar equipe responsável pela unidade
-        const { data: escalationLevels } = await supabase
-          .from('escalation_levels')
-          .select('destino_whatsapp')
-          .eq('unidade_id', ticket.unidade_id)
-          .eq('ordem', 1)
-          .eq('ativo', true);
-        
-        recipients = escalationLevels?.map(level => level.destino_whatsapp).filter(Boolean) || [];
+        // Usar id_grupo_branco da unidade para envio
+        if (unidade?.id_grupo_branco) {
+          recipients = [unidade.id_grupo_branco];
+        }
         break;
 
       case 'sla_half_time':
         message = `⚠️ *Alerta SLA - 50% do Prazo*\n\n` +
                  `*Ticket:* ${ticket.codigo_ticket}\n` +
-                 `*Unidade:* ${ticket.unidades?.grupo || ticket.unidade_id}\n` +
+                 `*Unidade:* ${unidade?.grupo || ticket.unidade_id}\n` +
                  `*Tempo Restante:* ${Math.round((new Date(ticket.data_limite_sla).getTime() - Date.now()) / (1000 * 60 * 60))}h\n\n` +
                  `🔄 Status: ${ticket.status}\n` +
                  `📝 ${ticket.descricao_problema.substring(0, 80)}...`;
         
-        recipients = await getEscalationRecipients(supabase, ticket.unidade_id, ticket.escalonamento_nivel);
+        if (unidade?.id_grupo_branco) {
+          recipients = [unidade.id_grupo_branco];
+        }
         break;
 
       case 'sla_vencido':
         message = `🚨 *SLA VENCIDO!*\n\n` +
                  `*Ticket:* ${ticket.codigo_ticket}\n` +
-                 `*Unidade:* ${ticket.unidades?.grupo || ticket.unidade_id}\n` +
+                 `*Unidade:* ${unidade?.grupo || ticket.unidade_id}\n` +
                  `*Vencido há:* ${Math.round((Date.now() - new Date(ticket.data_limite_sla).getTime()) / (1000 * 60))} min\n\n` +
                  `🔥 AÇÃO NECESSÁRIA IMEDIATA`;
         
@@ -115,19 +115,23 @@ serve(async (req) => {
             message: 'Escalado automaticamente por SLA vencido'
           });
         
-        recipients = await getEscalationRecipients(supabase, ticket.unidade_id, nextLevel);
+        if (unidade?.id_grupo_branco) {
+          recipients = [unidade.id_grupo_branco];
+        }
         break;
 
       case 'crise_detectada':
         message = `🚨🚨 *CRISE DETECTADA* 🚨🚨\n\n` +
                  `*Ticket:* ${ticket.codigo_ticket}\n` +
-                 `*Unidade:* ${ticket.unidades?.grupo || ticket.unidade_id}\n` +
+                 `*Unidade:* ${unidade?.grupo || ticket.unidade_id}\n` +
                  `*Problema:* ${ticket.descricao_problema}\n\n` +
                  `⚡ ATENDIMENTO IMEDIATO NECESSÁRIO\n` +
                  `📞 CONTATE A UNIDADE AGORA`;
         
-        // Para crise, notificar todos os níveis
-        recipients = await getEscalationRecipients(supabase, ticket.unidade_id, 5, true);
+        // Para crise, usar grupo da unidade
+        if (unidade?.id_grupo_branco) {
+          recipients = [unidade.id_grupo_branco];
+        }
         break;
     }
 
@@ -190,28 +194,33 @@ async function getEscalationRecipients(supabase: any, unidadeId: string, nivel: 
 async function sendWhatsAppNotifications(recipients: string[], message: string, settings: any) {
   const zapiBaseUrl = Deno.env.get('ZAPI_BASE_URL');
   const zapiToken = Deno.env.get('ZAPI_TOKEN');
+  const zapiClientToken = Deno.env.get('ZAPI_CLIENT_TOKEN');
 
-  if (!zapiBaseUrl || !zapiToken) {
+  if (!zapiBaseUrl || !zapiToken || !zapiClientToken) {
     console.warn('Z-API credentials not configured');
     return;
   }
 
+  // Remove /instances/INSTANCE/token/TOKEN part if present, as we'll construct the full URL
+  const baseUrl = zapiBaseUrl.replace(/\/instances\/.*/, '');
+  
   for (const recipient of recipients) {
     try {
-      const response = await fetch(`${zapiBaseUrl}/send-text`, {
+      const response = await fetch(`${baseUrl}/instances/${zapiToken}/token/${zapiClientToken}/send-text`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${zapiToken}`,
+          'Client-Token': zapiClientToken,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           phone: recipient,
-          message: message
+          message: message,
+          delayMessage: Math.floor(settings.delay_mensagem / 1000) || 2 // Convert to seconds
         }),
       });
 
       const result = await response.json();
-      console.log(`WhatsApp sent to ${recipient}:`, result.success ? 'SUCCESS' : 'FAILED');
+      console.log(`WhatsApp sent to ${recipient}:`, result.zaapId ? 'SUCCESS' : 'FAILED', result);
 
       // Delay entre envios
       if (settings.delay_mensagem > 0) {

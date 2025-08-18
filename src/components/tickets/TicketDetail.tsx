@@ -27,31 +27,48 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
 
   const fetchTicketDetails = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch ticket first
+      const { data: ticketData, error: ticketError } = await supabase
         .from('tickets')
-        .select(`
-          *,
-          unidades!tickets_unidade_id_fkey(grupo, id),
-          colaboradores(nome_completo),
-          franqueados(name),
-          profiles!tickets_criado_por_fkey(nome_completo)
-        `)
+        .select('*')
         .eq('id', ticketId)
         .single();
 
-      if (error) {
-        console.error('Error fetching ticket details:', error);
+      if (ticketError || !ticketData) {
+        console.error('Error fetching ticket:', ticketError);
         toast({
           title: "Erro",
-          description: "Não foi possível carregar os detalhes do ticket",
+          description: "Não foi possível carregar o ticket",
           variant: "destructive",
         });
         return;
       }
 
-      setTicket(data);
+      // Fetch related data separately to avoid RLS issues
+      const [unidadeRes, colaboradorRes, franqueadoRes, profileRes] = await Promise.all([
+        supabase.from('unidades').select('grupo, id').eq('id', ticketData.unidade_id).single(),
+        ticketData.colaborador_id ? supabase.from('colaboradores').select('nome_completo').eq('id', ticketData.colaborador_id).single() : Promise.resolve({ data: null }),
+        ticketData.franqueado_id ? supabase.from('franqueados').select('name').eq('Id', Number(ticketData.franqueado_id)).single() : Promise.resolve({ data: null }),
+        ticketData.criado_por ? supabase.from('profiles').select('nome_completo').eq('id', ticketData.criado_por).single() : Promise.resolve({ data: null })
+      ]);
+
+      // Combine the data
+      const combinedData = {
+        ...ticketData,
+        unidades: unidadeRes.data,
+        colaboradores: colaboradorRes.data,
+        franqueados: franqueadoRes.data,
+        profiles: profileRes.data
+      };
+
+      setTicket(combinedData);
     } catch (error) {
       console.error('Error fetching ticket details:', error);
+      toast({
+        title: "Erro",
+        description: "Erro interno ao carregar ticket",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
