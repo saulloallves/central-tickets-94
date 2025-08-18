@@ -4,13 +4,14 @@ import {
   DragEndEvent,
   DragOverlay,
   DragStartEvent,
+  DragOverEvent,
   PointerSensor,
   useSensor,
   useSensors,
   closestCorners,
   useDroppable,
 } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Clock, AlertTriangle, CheckCircle } from 'lucide-react';
@@ -195,11 +196,12 @@ export const TicketsKanban = ({ filters, onTicketSelect, selectedTicketId }: Tic
   const { toast } = useToast();
   const [activeTicket, setActiveTicket] = useState<Ticket | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [draggedOverColumn, setDraggedOverColumn] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 3,
+        distance: 8,
       },
     })
   );
@@ -218,16 +220,25 @@ export const TicketsKanban = ({ filters, onTicketSelect, selectedTicketId }: Tic
     const { active } = event;
     const ticket = active.data.current?.ticket;
     setActiveTicket(ticket);
+    setDraggedOverColumn(null);
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    const { over } = event;
+    
+    if (over && over.data.current?.type === 'column') {
+      setDraggedOverColumn(over.id as string);
+    } else {
+      setDraggedOverColumn(null);
+    }
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveTicket(null);
+    setDraggedOverColumn(null);
 
-    console.log('Drag end event:', { active: active.id, over: over?.id });
-
-    if (!over) {
-      console.log('No drop target');
+    if (!over || over.data.current?.type !== 'column') {
       return;
     }
 
@@ -235,22 +246,12 @@ export const TicketsKanban = ({ filters, onTicketSelect, selectedTicketId }: Tic
     const ticket = active.data.current?.ticket as Ticket;
     const newStatus = over.id as string;
 
-    console.log('Drag details:', { 
-      ticketId, 
-      currentStatus: ticket?.status, 
-      newStatus, 
-      validStatuses: Object.keys(COLUMN_STATUS) 
-    });
-
     if (!newStatus || !ticket || ticket.status === newStatus || !Object.keys(COLUMN_STATUS).includes(newStatus)) {
-      console.log('Skipping update - invalid move');
       return;
     }
 
     try {
-      console.log('Updating ticket status...');
       const result = await updateTicket(ticketId, { status: newStatus as keyof typeof COLUMN_STATUS });
-      console.log('Update result:', result);
       
       if (result) {
         toast({
@@ -303,6 +304,7 @@ export const TicketsKanban = ({ filters, onTicketSelect, selectedTicketId }: Tic
       sensors={sensors}
       collisionDetection={closestCorners}
       onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -319,12 +321,22 @@ export const TicketsKanban = ({ filters, onTicketSelect, selectedTicketId }: Tic
 
       <DragOverlay>
         {activeTicket && (
-          <Card className="rotate-6">
+          <Card className="rotate-3 shadow-2xl scale-105 transition-all duration-200 border-primary">
             <CardContent className="p-3">
-              <div className="text-xs font-mono mb-1">{activeTicket.codigo_ticket}</div>
-              <div className="text-sm font-medium line-clamp-2">
+              <div className="text-xs font-mono mb-1 text-muted-foreground">
+                {activeTicket.codigo_ticket}
+              </div>
+              <div className="text-sm font-medium line-clamp-2 mb-2">
                 {activeTicket.descricao_problema}
               </div>
+              <Badge variant="outline" className="text-xs">
+                {COLUMN_STATUS[activeTicket.status]}
+              </Badge>
+              {draggedOverColumn && draggedOverColumn !== activeTicket.status && (
+                <div className="mt-2 text-xs text-primary font-medium">
+                  → {COLUMN_STATUS[draggedOverColumn as keyof typeof COLUMN_STATUS]}
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
