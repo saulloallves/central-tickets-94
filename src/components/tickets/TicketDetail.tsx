@@ -253,8 +253,18 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
             </div>
             <div className="flex items-center gap-2">
               <User className="h-4 w-4 text-muted-foreground" />
-              <span>{ticket.colaboradores?.nome_completo || ticket.franqueados?.name || 'N/A'}</span>
+              <span>
+                {ticket.colaboradores?.nome_completo || 
+                 (ticket.franqueados?.name ? `${ticket.franqueados.name} (Franqueado)` : null) ||
+                 (ticket.profiles?.nome_completo ? `${ticket.profiles.nome_completo} (Criador)` : null) ||
+                 'N/A'}
+              </span>
             </div>
+            {ticket.franqueados && (
+              <div className="text-xs text-muted-foreground">
+                Franqueado ID: {ticket.franqueado_id}
+              </div>
+            )}
           </div>
           <div className="space-y-2">
             <Badge variant={getPriorityVariant(ticket.prioridade)} className="w-fit">

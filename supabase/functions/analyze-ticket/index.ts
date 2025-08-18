@@ -45,7 +45,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4.1-2025-04-14',
+        model: 'gpt-4o-mini',
         messages: [
           {
             role: 'system',
@@ -76,8 +76,11 @@ serve(async (req) => {
             - Falhas de sistema com impacto direto nas vendas
             - Problemas de segurança
 
-            IMPORTANTE: Baseie-se nas descrições das equipes acima para definir a categoria e equipe_responsavel mais adequada para o problema.
-            Seja preciso e considere o contexto de uma franquia de varejo.`
+            IMPORTANTE: 
+            1. Sempre tente definir uma equipe_responsavel baseada nas descrições acima
+            2. Se não encontrar correspondência exata, escolha a equipe mais próxima
+            3. Seja preciso e considere o contexto de uma franquia de varejo
+            4. SEMPRE retorne JSON válido`
           },
           {
             role: 'user',
@@ -86,6 +89,7 @@ serve(async (req) => {
         ],
         max_tokens: 300,
         temperature: 0.3,
+        response_format: { type: "json_object" }
       }),
     });
 
@@ -129,13 +133,59 @@ serve(async (req) => {
     const dataLimiteSla = new Date(now.getTime() + (slaHours * 60 * 60 * 1000));
     const slaHalfTime = new Date(now.getTime() + ((slaHours / 2) * 60 * 60 * 1000));
 
-    // Buscar ID da equipe responsável se especificada
+    // Buscar ID da equipe responsável com busca inteligente
     let equipeResponsavelId = null;
+    let equipeMatchLog = null;
+    
     if (analysis.equipe_responsavel && equipes) {
-      const equipeEncontrada = equipes.find(e => 
-        e.nome.toLowerCase() === analysis.equipe_responsavel.toLowerCase()
+      const nomeEquipeIA = analysis.equipe_responsavel.toLowerCase().trim();
+      console.log('Buscando equipe para:', nomeEquipeIA);
+      
+      // Busca exata primeiro
+      let equipeEncontrada = equipes.find(e => 
+        e.nome.toLowerCase().trim() === nomeEquipeIA
       );
+      
+      // Busca parcial se não encontrou exata
+      if (!equipeEncontrada) {
+        equipeEncontrada = equipes.find(e => 
+          e.nome.toLowerCase().includes(nomeEquipeIA) || 
+          nomeEquipeIA.includes(e.nome.toLowerCase())
+        );
+      }
+      
+      // Busca por palavras-chave
+      if (!equipeEncontrada) {
+        const palavrasChave = {
+          'sistema': ['tech', 'ti', 'sistema', 'tecnologia'],
+          'juridico': ['legal', 'direito', 'juridico'],
+          'rh': ['recursos humanos', 'pessoas', 'rh'],
+          'financeiro': ['financas', 'contabil', 'financeiro'],
+          'operacoes': ['operacional', 'operacoes', 'vendas'],
+          'midia': ['marketing', 'social', 'midia']
+        };
+        
+        for (const [categoria, palavras] of Object.entries(palavrasChave)) {
+          if (palavras.some(p => nomeEquipeIA.includes(p) || analysis.categoria === categoria)) {
+            equipeEncontrada = equipes.find(e => 
+              palavras.some(palavra => e.nome.toLowerCase().includes(palavra))
+            );
+            if (equipeEncontrada) {
+              equipeMatchLog = `Matched by keyword: ${categoria}`;
+              break;
+            }
+          }
+        }
+      }
+      
+      // Fallback: primeira equipe ativa se nenhuma correspondência
+      if (!equipeEncontrada && equipes.length > 0) {
+        equipeEncontrada = equipes[0];
+        equipeMatchLog = 'Fallback to first active team';
+      }
+      
       equipeResponsavelId = equipeEncontrada?.id || null;
+      console.log('Equipe encontrada:', equipeEncontrada?.nome, 'ID:', equipeResponsavelId, 'Match:', equipeMatchLog);
     }
 
     // Atualizar ticket com análise da IA
@@ -151,8 +201,10 @@ serve(async (req) => {
         log_ia: {
           analysis,
           equipe_responsavel_id: equipeResponsavelId,
+          equipe_match_log: equipeMatchLog,
           timestamp: now.toISOString(),
-          model: 'gpt-4.1-2025-04-14'
+          model: 'gpt-4o-mini',
+          available_teams: equipes?.map(e => e.nome) || []
         }
       })
       .eq('id', ticketId);
