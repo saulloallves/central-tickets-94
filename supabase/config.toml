@@ -25,6 +25,9 @@ verify_jwt = false
 [functions.notification-scheduler]
 verify_jwt = false
 
+[functions.typebot-webhook]
+verify_jwt = false
+
 [db]
 port = 54322
 shadow_port = 54320
