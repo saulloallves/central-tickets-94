@@ -14,6 +14,266 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_log: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          new_values: Json | null
+          old_values: Json | null
+          record_id: string
+          table_name: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          record_id: string
+          table_name: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          record_id?: string
+          table_name?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      colaboradores: {
+        Row: {
+          aceitou_termos: boolean
+          acessos: string[] | null
+          beneficios: string[] | null
+          cargo: Database["public"]["Enums"]["cargo"]
+          cpf: string
+          created_at: string
+          data_admissao: string | null
+          data_nascimento: string | null
+          email: string
+          id: string
+          nome_completo: string
+          remuneracao: number | null
+          senha_sistema: string | null
+          status: Database["public"]["Enums"]["colaborador_status"]
+          telefone: string | null
+          unidade_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          aceitou_termos?: boolean
+          acessos?: string[] | null
+          beneficios?: string[] | null
+          cargo: Database["public"]["Enums"]["cargo"]
+          cpf: string
+          created_at?: string
+          data_admissao?: string | null
+          data_nascimento?: string | null
+          email: string
+          id?: string
+          nome_completo: string
+          remuneracao?: number | null
+          senha_sistema?: string | null
+          status?: Database["public"]["Enums"]["colaborador_status"]
+          telefone?: string | null
+          unidade_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          aceitou_termos?: boolean
+          acessos?: string[] | null
+          beneficios?: string[] | null
+          cargo?: Database["public"]["Enums"]["cargo"]
+          cpf?: string
+          created_at?: string
+          data_admissao?: string | null
+          data_nascimento?: string | null
+          email?: string
+          id?: string
+          nome_completo?: string
+          remuneracao?: number | null
+          senha_sistema?: string | null
+          status?: Database["public"]["Enums"]["colaborador_status"]
+          telefone?: string | null
+          unidade_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "colaboradores_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      franqueados: {
+        Row: {
+          academic_education: string | null
+          additional_address_details: string | null
+          address: string | null
+          address_number: string | null
+          availability: string | null
+          birth_date: string | null
+          city: string | null
+          confidentiality_term_accepted: string | null
+          cpf_rnm: string | null
+          CreatedAt: string | null
+          description_extra_activities: string | null
+          email: string | null
+          franchisee_subtype: string | null
+          franchisee_type: string | null
+          have_extra_activities: string | null
+          Id: number
+          instagram: string | null
+          is_in_social_contract: string | null
+          labor_value: string | null
+          landline: string | null
+          lead_source: string | null
+          lgpd_term_accepted: string | null
+          link_units: string | null
+          name: string | null
+          nationality: string | null
+          neighborhood: string | null
+          phone: number | null
+          profile_picture: string | null
+          receive_for_labor: string | null
+          state: string | null
+          system_term_accepted: string | null
+          uf: string | null
+          unit_code: Json | null
+          unit_code_indicated: string | null
+          unit_id_group: string | null
+          unit_name: Json | null
+          UpdatedAt: string | null
+          was_entrepreneur: string | null
+          was_nominated: string | null
+          web_password: number | null
+          who_nominated: string | null
+        }
+        Insert: {
+          academic_education?: string | null
+          additional_address_details?: string | null
+          address?: string | null
+          address_number?: string | null
+          availability?: string | null
+          birth_date?: string | null
+          city?: string | null
+          confidentiality_term_accepted?: string | null
+          cpf_rnm?: string | null
+          CreatedAt?: string | null
+          description_extra_activities?: string | null
+          email?: string | null
+          franchisee_subtype?: string | null
+          franchisee_type?: string | null
+          have_extra_activities?: string | null
+          Id: number
+          instagram?: string | null
+          is_in_social_contract?: string | null
+          labor_value?: string | null
+          landline?: string | null
+          lead_source?: string | null
+          lgpd_term_accepted?: string | null
+          link_units?: string | null
+          name?: string | null
+          nationality?: string | null
+          neighborhood?: string | null
+          phone?: number | null
+          profile_picture?: string | null
+          receive_for_labor?: string | null
+          state?: string | null
+          system_term_accepted?: string | null
+          uf?: string | null
+          unit_code?: Json | null
+          unit_code_indicated?: string | null
+          unit_id_group?: string | null
+          unit_name?: Json | null
+          UpdatedAt?: string | null
+          was_entrepreneur?: string | null
+          was_nominated?: string | null
+          web_password?: number | null
+          who_nominated?: string | null
+        }
+        Update: {
+          academic_education?: string | null
+          additional_address_details?: string | null
+          address?: string | null
+          address_number?: string | null
+          availability?: string | null
+          birth_date?: string | null
+          city?: string | null
+          confidentiality_term_accepted?: string | null
+          cpf_rnm?: string | null
+          CreatedAt?: string | null
+          description_extra_activities?: string | null
+          email?: string | null
+          franchisee_subtype?: string | null
+          franchisee_type?: string | null
+          have_extra_activities?: string | null
+          Id?: number
+          instagram?: string | null
+          is_in_social_contract?: string | null
+          labor_value?: string | null
+          landline?: string | null
+          lead_source?: string | null
+          lgpd_term_accepted?: string | null
+          link_units?: string | null
+          name?: string | null
+          nationality?: string | null
+          neighborhood?: string | null
+          phone?: number | null
+          profile_picture?: string | null
+          receive_for_labor?: string | null
+          state?: string | null
+          system_term_accepted?: string | null
+          uf?: string | null
+          unit_code?: Json | null
+          unit_code_indicated?: string | null
+          unit_id_group?: string | null
+          unit_name?: Json | null
+          UpdatedAt?: string | null
+          was_entrepreneur?: string | null
+          was_nominated?: string | null
+          web_password?: number | null
+          who_nominated?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          nome_completo: string | null
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id: string
+          nome_completo?: string | null
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome_completo?: string | null
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       unidades: {
         Row: {
           bairro: string | null
@@ -173,15 +433,51 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "gerente" | "diretor" | "colaborador"
+      cargo:
+        | "caixa"
+        | "avaliador"
+        | "midia"
+        | "rh"
+        | "gerente"
+        | "diretor"
+        | "admin"
+      colaborador_status: "ativo" | "inativo"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -308,6 +604,18 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "gerente", "diretor", "colaborador"],
+      cargo: [
+        "caixa",
+        "avaliador",
+        "midia",
+        "rh",
+        "gerente",
+        "diretor",
+        "admin",
+      ],
+      colaborador_status: ["ativo", "inativo"],
+    },
   },
 } as const
