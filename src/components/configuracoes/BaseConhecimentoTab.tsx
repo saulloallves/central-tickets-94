@@ -53,9 +53,9 @@ export function BaseConhecimentoTab() {
   const { articles, loading, createArticle, updateArticle, approveArticle, toggleAIUsage, fetchArticles } = useKnowledgeArticles();
   
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterCategoria, setFilterCategoria] = useState<string>('');
-  const [filterAprovado, setFilterAprovado] = useState<string>('');
-  const [filterUsadoPelaIA, setFilterUsadoPelaIA] = useState<string>('');
+  const [filterCategoria, setFilterCategoria] = useState<string>('all');
+  const [filterAprovado, setFilterAprovado] = useState<string>('all');
+  const [filterUsadoPelaIA, setFilterUsadoPelaIA] = useState<string>('all');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingArticle, setEditingArticle] = useState<any>(null);
   
@@ -72,9 +72,9 @@ export function BaseConhecimentoTab() {
   const filteredArticles = articles.filter(article => {
     const matchesSearch = article.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          article.conteudo.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategoria = !filterCategoria || article.categoria === filterCategoria;
-    const matchesAprovado = !filterAprovado || article.aprovado.toString() === filterAprovado;
-    const matchesUsadoPelaIA = !filterUsadoPelaIA || article.usado_pela_ia.toString() === filterUsadoPelaIA;
+    const matchesCategoria = !filterCategoria || filterCategoria === 'all' || article.categoria === filterCategoria;
+    const matchesAprovado = !filterAprovado || filterAprovado === 'all' || article.aprovado.toString() === filterAprovado;
+    const matchesUsadoPelaIA = !filterUsadoPelaIA || filterUsadoPelaIA === 'all' || article.usado_pela_ia.toString() === filterUsadoPelaIA;
     
     return matchesSearch && matchesCategoria && matchesAprovado && matchesUsadoPelaIA;
   });
@@ -280,7 +280,7 @@ export function BaseConhecimentoTab() {
                   <SelectValue placeholder="Todas as categorias" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas as categorias</SelectItem>
+                  <SelectItem value="all">Todas as categorias</SelectItem>
                   {categorias.map(cat => (
                     <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                   ))}
@@ -295,7 +295,7 @@ export function BaseConhecimentoTab() {
                   <SelectValue placeholder="Todos os status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os status</SelectItem>
+                  <SelectItem value="all">Todos os status</SelectItem>
                   <SelectItem value="true">Aprovados</SelectItem>
                   <SelectItem value="false">Pendentes</SelectItem>
                 </SelectContent>
@@ -309,7 +309,7 @@ export function BaseConhecimentoTab() {
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="all">Todos</SelectItem>
                   <SelectItem value="true">Usados pela IA</SelectItem>
                   <SelectItem value="false">Não usados</SelectItem>
                 </SelectContent>
