@@ -1,6 +1,8 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { calculateTimeRemaining } from '@/lib/date-utils';
 import { useToast } from '@/hooks/use-toast';
 
 export interface SLAAlert {
@@ -21,7 +23,7 @@ export const useSLAMonitor = () => {
     try {
       const { data: tickets, error } = await supabase
         .from('tickets')
-        .select('id, codigo_ticket, data_limite_sla, sla_half_time, prioridade, status')
+        .select('id, codigo_ticket, data_limite_sla, sla_half_time, prioridade, status, data_abertura')
         .in('status', ['aberto', 'em_atendimento', 'escalonado'])
         .not('data_limite_sla', 'is', null);
 
@@ -34,27 +36,21 @@ export const useSLAMonitor = () => {
       const alerts: SLAAlert[] = [];
 
       tickets.forEach(ticket => {
-        const slaDeadline = new Date(ticket.data_limite_sla);
-        const slaHalfTime = ticket.sla_half_time ? new Date(ticket.sla_half_time) : null;
-        const minutesRemaining = Math.round((slaDeadline.getTime() - now.getTime()) / (1000 * 60));
-        const isOverdue = minutesRemaining < 0;
+        const timeRemaining = calculateTimeRemaining(ticket.data_limite_sla);
         
-        // Calcular porcentagem do SLA consumido
-        let slaPercentage = 0;
-        if (slaHalfTime) {
-          const totalTime = slaDeadline.getTime() - (slaDeadline.getTime() - (slaHalfTime.getTime() * 2));
-          const elapsedTime = now.getTime() - (slaDeadline.getTime() - totalTime);
-          slaPercentage = Math.round((elapsedTime / totalTime) * 100);
-        }
+        // Calcular porcentagem do SLA consumido baseado no tempo total
+        const totalSlaMs = new Date(ticket.data_limite_sla).getTime() - new Date(ticket.data_abertura).getTime();
+        const elapsedMs = new Date().getTime() - new Date(ticket.data_abertura).getTime();
+        const slaPercentage = Math.min(100, Math.max(0, (elapsedMs / totalSlaMs) * 100));
 
         // Alertar se SLA > 50% ou vencido
-        if (slaPercentage >= 50 || isOverdue) {
+        if (slaPercentage >= 50 || timeRemaining.isOverdue) {
           alerts.push({
             ticketId: ticket.id,
             codigo_ticket: ticket.codigo_ticket,
-            sla_percentage: isOverdue ? 100 : slaPercentage,
-            minutes_remaining: minutesRemaining,
-            is_overdue: isOverdue,
+            sla_percentage: timeRemaining.isOverdue ? 100 : Math.round(slaPercentage),
+            minutes_remaining: timeRemaining.minutes,
+            is_overdue: timeRemaining.isOverdue,
             prioridade: ticket.prioridade
           });
         }

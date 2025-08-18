@@ -99,14 +99,20 @@ serve(async (req) => {
       };
     }
 
-    // Calcular data limite do SLA (timezone São Paulo UTC-3)
+    // Validar e sanitizar campos obrigatórios
+    if (!analysis.prioridade || analysis.prioridade.trim() === '') {
+      analysis.prioridade = 'padrao_24h';
+    }
+    if (!analysis.categoria || analysis.categoria.trim() === '') {
+      analysis.categoria = categoria || 'outro';
+    }
+
+    console.log('Validated analysis:', analysis);
+    // Calcular data limite do SLA (sem modificar timezone manualmente)
     const now = new Date();
-    const saoPauloOffset = -3 * 60 * 60 * 1000; // UTC-3
-    const saoPauloNow = new Date(now.getTime() + saoPauloOffset);
-    
     const slaHours = analysis.sla_sugerido_horas || 24;
-    const dataLimiteSla = new Date(saoPauloNow.getTime() + (slaHours * 60 * 60 * 1000));
-    const slaHalfTime = new Date(saoPauloNow.getTime() + ((slaHours / 2) * 60 * 60 * 1000));
+    const dataLimiteSla = new Date(now.getTime() + (slaHours * 60 * 60 * 1000));
+    const slaHalfTime = new Date(now.getTime() + ((slaHours / 2) * 60 * 60 * 1000));
 
     // Atualizar ticket com análise da IA
     const { error: updateError } = await supabase
