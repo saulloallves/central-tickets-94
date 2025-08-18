@@ -8,6 +8,11 @@ interface AIChatMessage {
   resposta: string;
   created_at: string;
   user_id?: string;
+  log?: {
+    rag_hits?: number;
+    kb_hits?: number;
+    [key: string]: any;
+  };
 }
 
 export const useAIChat = (ticketId: string) => {
@@ -21,14 +26,14 @@ export const useAIChat = (ticketId: string) => {
     try {
       const { data, error } = await supabase
         .from('ticket_ai_interactions')
-        .select('id, mensagem, resposta, created_at, user_id')
+        .select('id, mensagem, resposta, created_at, user_id, log')
         .eq('ticket_id', ticketId)
         .eq('kind', 'chat')
         .order('created_at', { ascending: true });
 
       if (error) throw error;
 
-      setChatHistory(data || []);
+      setChatHistory(data as AIChatMessage[] || []);
     } catch (error) {
       console.error('Error fetching chat history:', error);
     }

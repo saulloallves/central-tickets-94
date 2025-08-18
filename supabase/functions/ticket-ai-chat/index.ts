@@ -60,13 +60,62 @@ serve(async (req) => {
       .order('created_at', { ascending: false })
       .limit(3);
 
-    // 4. Fetch knowledge articles (prioritize by category)
-    const { data: knowledgeArticles } = await supabase
-      .from('knowledge_articles')
-      .select('titulo, conteudo, categoria')
-      .eq('ativo', true)
-      .or(`categoria.eq.${ticket.categoria},categoria.is.null`)
-      .limit(8);
+    // 4. Hybrid RAG Retrieval: Search relevant documents
+    console.log('Searching for relevant documents for chat question:', mensagem);
+    
+    // Generate search terms from current message and ticket description
+    const searchTerms = [
+      ...mensagem.toLowerCase().split(/\s+/).filter(term => term.length > 3).slice(0, 5),
+      ...ticket.descricao_problema.toLowerCase().split(/\s+/).filter(term => term.length > 3).slice(0, 3),
+      ...(ticket.categoria ? [ticket.categoria.toLowerCase()] : [])
+    ].filter((term, index, self) => self.indexOf(term) === index).slice(0, 6); // Deduplicate and limit
+
+    console.log('Search terms:', searchTerms);
+
+    // Search in RAG_DOCUMENTOS table
+    const ragPromises = searchTerms.map(term => 
+      supabase
+        .from('RAG DOCUMENTOS')
+        .select('content, metadata')
+        .or(`content.ilike.%${term}%,metadata->>title.ilike.%${term}%,metadata->>category.ilike.%${term}%`)
+        .limit(2)
+    );
+
+    // Search in knowledge_articles table  
+    const kbPromises = searchTerms.map(term =>
+      supabase
+        .from('knowledge_articles')
+        .select('titulo, conteudo, categoria, tags')
+        .eq('ativo', true)
+        .or(`titulo.ilike.%${term}%,conteudo.ilike.%${term}%,categoria.ilike.%${term}%`)
+        .limit(2)
+    );
+
+    // Execute all searches in parallel
+    const [ragResults, kbResults] = await Promise.all([
+      Promise.all(ragPromises),
+      Promise.all(kbPromises)
+    ]);
+
+    // Process RAG documents
+    const ragDocuments = ragResults
+      .filter(result => !result.error && result.data)
+      .flatMap(result => result.data)
+      .filter((doc, index, self) => 
+        index === self.findIndex(d => d.content === doc.content)
+      ) // Deduplicate
+      .slice(0, 3); // Limit results
+
+    // Process Knowledge Base articles
+    const kbArticles = kbResults
+      .filter(result => !result.error && result.data)
+      .flatMap(result => result.data)
+      .filter((article, index, self) =>
+        index === self.findIndex(a => a.titulo === article.titulo)
+      ) // Deduplicate
+      .slice(0, 3); // Limit results
+
+    console.log(`Found ${ragDocuments.length} RAG documents and ${kbArticles.length} KB articles`);
 
     // 5. Fetch AI settings
     const { data: aiSettings } = await supabase
@@ -100,9 +149,20 @@ ${ticketMessages.map(m => `[${m.direcao}] ${m.mensagem}`).join('\n')}`);
 ${chatHistory.reverse().map(c => `P: ${c.mensagem}\nR: ${c.resposta}`).join('\n\n')}`);
     }
 
-    if (knowledgeArticles && knowledgeArticles.length > 0) {
-      contextSections.push(`BASE DE CONHECIMENTO RELEVANTE:
-${knowledgeArticles.map(a => `${a.titulo}: ${a.conteudo.substring(0, 200)}...`).join('\n\n')}`);
+    // Add RAG documents if found
+    if (ragDocuments.length > 0) {
+      contextSections.push(`=== DOCUMENTOS RAG ===
+${ragDocuments.map(doc => {
+        const title = doc.metadata?.title || 'Documento';
+        const category = doc.metadata?.category || 'Geral';
+        return `**${title}** (${category})\n${doc.content.substring(0, 200)}...`;
+      }).join('\n\n')}`);
+    }
+
+    // Add Knowledge Base articles if found
+    if (kbArticles.length > 0) {
+      contextSections.push(`=== BASE DE CONHECIMENTO ===
+${kbArticles.map(a => `**${a.titulo}** (${a.categoria})\n${a.conteudo.substring(0, 200)}...\nTags: ${a.tags?.join(', ') || 'Nenhuma'}`).join('\n\n')}`);
     }
 
     const context = contextSections.join('\n\n');
@@ -182,6 +242,10 @@ Responda de forma clara e útil, considerando todo o contexto do ticket.`;
           prompt: userPrompt,
           system_prompt: systemPrompt,
           context_sections: contextSections.length,
+          search_terms: searchTerms,
+          rag_hits: ragDocuments.length,
+          kb_hits: kbArticles.length,
+          total_context_length: context.length,
           openai_response: openaiData
         }
       })
@@ -196,7 +260,10 @@ Responda de forma clara e útil, considerando todo o contexto do ticket.`;
     console.log('AI chat processed successfully');
 
     return new Response(JSON.stringify({
-      resposta: aiResponse
+      resposta: aiResponse,
+      rag_hits: ragDocuments.length,
+      kb_hits: kbArticles.length,
+      total_context_length: context.length
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

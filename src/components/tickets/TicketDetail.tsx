@@ -299,7 +299,14 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                 <div className="p-3 bg-muted rounded-md">
                   <p className="text-sm">{suggestion.resposta}</p>
                   <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
-                    <span>Gerada em {formatDateTimeBR(suggestion.created_at)}</span>
+                    <div className="flex items-center gap-2">
+                      <span>Gerada em {formatDateTimeBR(suggestion.created_at)}</span>
+                      {suggestion.log?.rag_hits !== undefined && suggestion.log?.kb_hits !== undefined && (
+                        <span className="text-primary">
+                          ({(suggestion.log.rag_hits + suggestion.log.kb_hits)} docs)
+                        </span>
+                      )}
+                    </div>
                     {suggestion.foi_usada && (
                       <Badge variant="secondary" className="text-xs">✓ Utilizada</Badge>
                     )}
@@ -378,7 +385,14 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                       <p className="text-sm">{chat.mensagem}</p>
                     </div>
                     <div className="p-2 bg-green-50 rounded-md">
-                      <p className="text-sm font-medium">IA:</p>
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-sm font-medium">IA:</p>
+                        {chat.log?.rag_hits !== undefined && chat.log?.kb_hits !== undefined && (
+                          <span className="text-xs text-primary">
+                            {(chat.log.rag_hits + chat.log.kb_hits)} docs
+                          </span>
+                        )}
+                      </div>
                       <p className="text-sm">{chat.resposta}</p>
                     </div>
                   </div>

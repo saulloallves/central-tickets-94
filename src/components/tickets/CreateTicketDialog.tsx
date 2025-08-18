@@ -36,6 +36,8 @@ export const CreateTicketDialog = ({ open, onOpenChange }: CreateTicketDialogPro
   const [faqResponse, setFaqResponse] = useState<{
     resposta_ia_sugerida: string;
     log_prompt_faq: any;
+    rag_hits?: number;
+    kb_hits?: number;
   } | null>(null);
   const [showFAQStep, setShowFAQStep] = useState(false);
   const [justificativa, setJustificativa] = useState('');
@@ -295,7 +297,14 @@ export const CreateTicketDialog = ({ open, onOpenChange }: CreateTicketDialogPro
                   </div>
                   
                   <div>
-                    <h4 className="font-medium text-sm text-muted-foreground mb-2">Sugestão da IA:</h4>
+                    <h4 className="font-medium text-sm text-muted-foreground mb-2">
+                      Sugestão da IA:
+                      {(faqResponse.rag_hits || 0) + (faqResponse.kb_hits || 0) > 0 && (
+                        <span className="ml-2 text-xs text-primary">
+                          ({(faqResponse.rag_hits || 0) + (faqResponse.kb_hits || 0)} docs consultados)
+                        </span>
+                      )}
+                    </h4>
                     <div className="text-sm bg-primary/5 p-3 rounded-md border border-primary/20">
                       {faqResponse.resposta_ia_sugerida.split('\n').map((line, index) => (
                         <p key={index} className="mb-2 last:mb-0">{line}</p>

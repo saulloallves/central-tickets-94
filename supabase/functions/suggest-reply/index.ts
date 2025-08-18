@@ -51,13 +51,62 @@ serve(async (req) => {
       .order('created_at', { ascending: false })
       .limit(5);
 
-    // 3. Fetch knowledge articles (prioritize by category)
-    const { data: knowledgeArticles } = await supabase
-      .from('knowledge_articles')
-      .select('titulo, conteudo, categoria')
-      .eq('ativo', true)
-      .or(`categoria.eq.${ticket.categoria},categoria.is.null`)
-      .limit(10);
+    // 3. Hybrid RAG Retrieval: Search relevant documents
+    console.log('Searching for relevant documents for ticket:', ticket.categoria, ticket.subcategoria);
+    
+    // Generate search terms from ticket description, category, and subcategory
+    const searchTerms = [
+      ...ticket.descricao_problema.toLowerCase().split(/\s+/).filter(term => term.length > 3).slice(0, 5),
+      ...(ticket.categoria ? [ticket.categoria.toLowerCase()] : []),
+      ...(ticket.subcategoria ? ticket.subcategoria.toLowerCase().split(/\s+/).filter(term => term.length > 3) : [])
+    ].filter((term, index, self) => self.indexOf(term) === index).slice(0, 8); // Deduplicate and limit
+
+    console.log('Search terms:', searchTerms);
+
+    // Search in RAG_DOCUMENTOS table
+    const ragPromises = searchTerms.map(term => 
+      supabase
+        .from('RAG DOCUMENTOS')
+        .select('content, metadata')
+        .or(`content.ilike.%${term}%,metadata->>title.ilike.%${term}%,metadata->>category.ilike.%${term}%`)
+        .limit(2)
+    );
+
+    // Search in knowledge_articles table  
+    const kbPromises = searchTerms.map(term =>
+      supabase
+        .from('knowledge_articles')
+        .select('titulo, conteudo, categoria, tags')
+        .eq('ativo', true)
+        .or(`titulo.ilike.%${term}%,conteudo.ilike.%${term}%,categoria.ilike.%${term}%`)
+        .limit(2)
+    );
+
+    // Execute all searches in parallel
+    const [ragResults, kbResults] = await Promise.all([
+      Promise.all(ragPromises),
+      Promise.all(kbPromises)
+    ]);
+
+    // Process RAG documents
+    const ragDocuments = ragResults
+      .filter(result => !result.error && result.data)
+      .flatMap(result => result.data)
+      .filter((doc, index, self) => 
+        index === self.findIndex(d => d.content === doc.content)
+      ) // Deduplicate
+      .slice(0, 4); // Limit results
+
+    // Process Knowledge Base articles
+    const kbArticles = kbResults
+      .filter(result => !result.error && result.data)
+      .flatMap(result => result.data)
+      .filter((article, index, self) =>
+        index === self.findIndex(a => a.titulo === article.titulo)
+      ) // Deduplicate
+      .slice(0, 4); // Limit results
+
+    console.log(`Found ${ragDocuments.length} RAG documents and ${kbArticles.length} KB articles`);
 
     // 4. Fetch similar recent tickets from same unit
     const { data: similarTickets } = await supabase
@@ -97,9 +146,20 @@ serve(async (req) => {
 ${messages.map(m => `[${m.direcao}] ${m.mensagem}`).join('\n')}`);
     }
 
-    if (knowledgeArticles && knowledgeArticles.length > 0) {
-      contextSections.push(`BASE DE CONHECIMENTO:
-${knowledgeArticles.map(a => `${a.titulo}: ${a.conteudo.substring(0, 300)}...`).join('\n\n')}`);
+    // Add RAG documents if found
+    if (ragDocuments.length > 0) {
+      contextSections.push(`=== DOCUMENTOS RAG ===
+${ragDocuments.map(doc => {
+        const title = doc.metadata?.title || 'Documento';
+        const category = doc.metadata?.category || 'Geral';
+        return `**${title}** (${category})\n${doc.content.substring(0, 300)}...`;
+      }).join('\n\n')}`);
+    }
+
+    // Add Knowledge Base articles if found
+    if (kbArticles.length > 0) {
+      contextSections.push(`=== BASE DE CONHECIMENTO ===
+${kbArticles.map(a => `**${a.titulo}** (${a.categoria})\n${a.conteudo.substring(0, 300)}...\nTags: ${a.tags?.join(', ') || 'Nenhuma'}`).join('\n\n')}`);
     }
 
     if (similarTickets && similarTickets.length > 0) {
@@ -179,6 +239,10 @@ Gere uma sugestão de resposta que o atendente possa usar diretamente ou adaptar
           prompt: userPrompt,
           system_prompt: systemPrompt,
           context_sections: contextSections.length,
+          search_terms: searchTerms,
+          rag_hits: ragDocuments.length,
+          kb_hits: kbArticles.length,
+          total_context_length: context.length,
           openai_response: openaiData
         }
       })
@@ -194,7 +258,10 @@ Gere uma sugestão de resposta que o atendente possa usar diretamente ou adaptar
 
     return new Response(JSON.stringify({
       suggestionId: suggestion.id,
-      resposta: suggestionText
+      resposta: suggestionText,
+      rag_hits: ragDocuments.length,
+      kb_hits: kbArticles.length,
+      total_context_length: context.length
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

@@ -8,6 +8,11 @@ interface AISuggestion {
   foi_usada: boolean;
   resposta_final?: string;
   created_at: string;
+  log?: {
+    rag_hits?: number;
+    kb_hits?: number;
+    [key: string]: any;
+  };
 }
 
 export const useAISuggestion = (ticketId: string) => {
@@ -21,7 +26,7 @@ export const useAISuggestion = (ticketId: string) => {
     try {
       const { data, error } = await supabase
         .from('ticket_ai_interactions')
-        .select('id, resposta, foi_usada, resposta_final, created_at')
+        .select('id, resposta, foi_usada, resposta_final, created_at, log')
         .eq('ticket_id', ticketId)
         .eq('kind', 'suggestion')
         .order('created_at', { ascending: false })
@@ -30,7 +35,7 @@ export const useAISuggestion = (ticketId: string) => {
       if (error) throw error;
 
       if (data && data.length > 0) {
-        setSuggestion(data[0]);
+        setSuggestion(data[0] as AISuggestion);
       } else {
         setSuggestion(null);
       }
