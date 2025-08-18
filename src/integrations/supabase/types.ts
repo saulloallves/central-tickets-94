@@ -115,6 +115,89 @@ export type Database = {
           },
         ]
       }
+      escalation_levels: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          destino_user_id: string | null
+          destino_whatsapp: string | null
+          id: string
+          ordem: number
+          role: Database["public"]["Enums"]["app_role"] | null
+          unidade_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          destino_user_id?: string | null
+          destino_whatsapp?: string | null
+          id?: string
+          ordem: number
+          role?: Database["public"]["Enums"]["app_role"] | null
+          unidade_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          destino_user_id?: string | null
+          destino_whatsapp?: string | null
+          id?: string
+          ordem?: number
+          role?: Database["public"]["Enums"]["app_role"] | null
+          unidade_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      escalation_logs: {
+        Row: {
+          canal: string
+          created_at: string
+          event_type: string
+          from_level: number | null
+          id: string
+          message: string | null
+          response: Json | null
+          ticket_id: string
+          to_level: number | null
+          to_user_id: string | null
+        }
+        Insert: {
+          canal?: string
+          created_at?: string
+          event_type: string
+          from_level?: number | null
+          id?: string
+          message?: string | null
+          response?: Json | null
+          ticket_id: string
+          to_level?: number | null
+          to_user_id?: string | null
+        }
+        Update: {
+          canal?: string
+          created_at?: string
+          event_type?: string
+          from_level?: number | null
+          id?: string
+          message?: string | null
+          response?: Json | null
+          ticket_id?: string
+          to_level?: number | null
+          to_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "escalation_logs_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       franqueados: {
         Row: {
           academic_education: string | null
@@ -247,6 +330,86 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_settings: {
+        Row: {
+          created_at: string
+          delay_mensagem: number
+          id: string
+          limite_retentativas: number
+          modelo_mensagem_sla: string | null
+          numero_remetente: string | null
+          updated_at: string
+          webhook_entrada: string | null
+          webhook_saida: string | null
+        }
+        Insert: {
+          created_at?: string
+          delay_mensagem?: number
+          id?: string
+          limite_retentativas?: number
+          modelo_mensagem_sla?: string | null
+          numero_remetente?: string | null
+          updated_at?: string
+          webhook_entrada?: string | null
+          webhook_saida?: string | null
+        }
+        Update: {
+          created_at?: string
+          delay_mensagem?: number
+          id?: string
+          limite_retentativas?: number
+          modelo_mensagem_sla?: string | null
+          numero_remetente?: string | null
+          updated_at?: string
+          webhook_entrada?: string | null
+          webhook_saida?: string | null
+        }
+        Relationships: []
+      }
+      notifications_queue: {
+        Row: {
+          attempts: number
+          created_at: string
+          id: string
+          payload: Json
+          processed_at: string | null
+          scheduled_at: string
+          status: string
+          ticket_id: string
+          type: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          payload?: Json
+          processed_at?: string | null
+          scheduled_at?: string
+          status?: string
+          ticket_id: string
+          type: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          payload?: Json
+          processed_at?: string | null
+          scheduled_at?: string
+          status?: string
+          ticket_id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_queue_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -360,6 +523,7 @@ export type Database = {
           descricao_problema: string
           equipe_responsavel_id: string | null
           escalonado_para: string | null
+          escalonamento_nivel: number
           franqueado_id: string | null
           id: string
           log_ia: Json | null
@@ -367,6 +531,7 @@ export type Database = {
           reaberto_count: number
           resolvido_em: string | null
           resposta_resolucao: string | null
+          sla_half_time: string | null
           status: Database["public"]["Enums"]["ticket_status"]
           status_sla: Database["public"]["Enums"]["ticket_sla_status"]
           subcategoria: string | null
@@ -387,6 +552,7 @@ export type Database = {
           descricao_problema: string
           equipe_responsavel_id?: string | null
           escalonado_para?: string | null
+          escalonamento_nivel?: number
           franqueado_id?: string | null
           id?: string
           log_ia?: Json | null
@@ -394,6 +560,7 @@ export type Database = {
           reaberto_count?: number
           resolvido_em?: string | null
           resposta_resolucao?: string | null
+          sla_half_time?: string | null
           status?: Database["public"]["Enums"]["ticket_status"]
           status_sla?: Database["public"]["Enums"]["ticket_sla_status"]
           subcategoria?: string | null
@@ -414,6 +581,7 @@ export type Database = {
           descricao_problema?: string
           equipe_responsavel_id?: string | null
           escalonado_para?: string | null
+          escalonamento_nivel?: number
           franqueado_id?: string | null
           id?: string
           log_ia?: Json | null
@@ -421,6 +589,7 @@ export type Database = {
           reaberto_count?: number
           resolvido_em?: string | null
           resposta_resolucao?: string | null
+          sla_half_time?: string | null
           status?: Database["public"]["Enums"]["ticket_status"]
           status_sla?: Database["public"]["Enums"]["ticket_sla_status"]
           subcategoria?: string | null
@@ -636,6 +805,10 @@ export type Database = {
       }
     }
     Functions: {
+      add_24h_skip_weekend: {
+        Args: { ts: string }
+        Returns: string
+      }
       can_create_ticket: {
         Args: { ticket_unidade_id: string }
         Returns: boolean
