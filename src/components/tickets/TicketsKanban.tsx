@@ -251,7 +251,10 @@ export const TicketsKanban = ({ filters, onTicketSelect, selectedTicketId }: Tic
     }
 
     try {
-      const result = await updateTicket(ticketId, { status: newStatus as keyof typeof COLUMN_STATUS });
+      // Ensure we only update the status field
+      const result = await updateTicket(ticketId, { 
+        status: newStatus as keyof typeof COLUMN_STATUS
+      });
       
       if (result) {
         toast({
