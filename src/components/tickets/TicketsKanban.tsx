@@ -145,14 +145,22 @@ interface KanbanColumnProps {
 }
 
 const KanbanColumn = ({ status, tickets, selectedTicketId, onTicketSelect }: KanbanColumnProps) => {
-  const { setNodeRef } = useDroppable({
+  const { setNodeRef, isOver } = useDroppable({
     id: status,
+    data: {
+      type: 'column',
+      status: status
+    }
   });
 
   return (
     <div 
       ref={setNodeRef}
-      className={cn("rounded-lg border-2 border-dashed p-4 min-h-[600px]", COLUMN_COLORS[status])}
+      className={cn(
+        "rounded-lg border-2 border-dashed p-4 min-h-[600px] transition-colors",
+        COLUMN_COLORS[status],
+        isOver && "bg-opacity-30 border-solid"
+      )}
     >
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-semibold text-sm">{COLUMN_STATUS[status]}</h3>
@@ -171,6 +179,11 @@ const KanbanColumn = ({ status, tickets, selectedTicketId, onTicketSelect }: Kan
               onSelect={onTicketSelect}
             />
           ))}
+          {tickets.length === 0 && (
+            <div className="text-center text-muted-foreground text-sm py-8">
+              Nenhum ticket nesta coluna
+            </div>
+          )}
         </div>
       </SortableContext>
     </div>
