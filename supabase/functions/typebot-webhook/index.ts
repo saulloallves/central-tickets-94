@@ -293,17 +293,20 @@ serve(async (req) => {
 
     // Resposta de sucesso
     return new Response(JSON.stringify({
-      action: 'ticket_created',
-      success: true,
-      ticket_id: finalTicket.id,
-      codigo_ticket: finalTicket.codigo_ticket,
-      status: finalTicket.status,
-      categoria: finalTicket.categoria,
-      subcategoria: finalTicket.subcategoria,
-      prioridade: finalTicket.prioridade,
-      data_limite_sla: finalTicket.data_limite_sla,
-      message: `Ticket ${finalTicket.codigo_ticket} criado com sucesso!`,
-      metadata: metadata || {}
+      statusCode: 200,
+      data: {
+        action: 'ticket_created',
+        success: true,
+        ticket_id: finalTicket.id,
+        codigo_ticket: finalTicket.codigo_ticket,
+        status: finalTicket.status,
+        categoria: finalTicket.categoria,
+        subcategoria: finalTicket.subcategoria,
+        prioridade: finalTicket.prioridade,
+        data_limite_sla: finalTicket.data_limite_sla,
+        message: `Ticket ${finalTicket.codigo_ticket} criado com sucesso!`,
+        metadata: {}
+      }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
