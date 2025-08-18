@@ -8,7 +8,7 @@ export interface Ticket {
   id: string;
   codigo_ticket: string;
   unidade_id: string;
-  franqueado_id?: string;
+  franqueado_id?: number;
   colaborador_id?: string;
   descricao_problema: string;
   canal_origem: 'typebot' | 'whatsapp_zapi' | 'web';

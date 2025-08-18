@@ -1035,7 +1035,7 @@ export type Database = {
           equipe_responsavel_id: string | null
           escalonado_para: string | null
           escalonamento_nivel: number
-          franqueado_id: string | null
+          franqueado_id: number | null
           id: string
           log_ia: Json | null
           prioridade: Database["public"]["Enums"]["ticket_prioridade"]
@@ -1064,7 +1064,7 @@ export type Database = {
           equipe_responsavel_id?: string | null
           escalonado_para?: string | null
           escalonamento_nivel?: number
-          franqueado_id?: string | null
+          franqueado_id?: number | null
           id?: string
           log_ia?: Json | null
           prioridade?: Database["public"]["Enums"]["ticket_prioridade"]
@@ -1093,7 +1093,7 @@ export type Database = {
           equipe_responsavel_id?: string | null
           escalonado_para?: string | null
           escalonamento_nivel?: number
-          franqueado_id?: string | null
+          franqueado_id?: number | null
           id?: string
           log_ia?: Json | null
           prioridade?: Database["public"]["Enums"]["ticket_prioridade"]
