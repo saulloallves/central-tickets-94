@@ -9,6 +9,7 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import { AdminLayout } from "./pages/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
+import Tickets from "./pages/admin/Tickets";
 import Unidades from "./pages/admin/Unidades";
 import Franqueados from "./pages/admin/Franqueados";
 import Colaboradores from "./pages/admin/Colaboradores";
@@ -28,6 +29,11 @@ const App = () => (
             <Route path="/admin" element={
               <AdminLayout>
                 <Dashboard />
+              </AdminLayout>
+            } />
+            <Route path="/admin/tickets" element={
+              <AdminLayout>
+                <Tickets />
               </AdminLayout>
             } />
             <Route path="/admin/unidades" element={

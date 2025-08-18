@@ -274,6 +274,161 @@ export type Database = {
         }
         Relationships: []
       }
+      ticket_mensagens: {
+        Row: {
+          anexos: Json | null
+          canal: Database["public"]["Enums"]["canal_resposta"]
+          created_at: string
+          direcao: Database["public"]["Enums"]["mensagem_direcao"]
+          id: string
+          mensagem: string
+          ticket_id: string
+          updated_at: string
+          usuario_id: string | null
+        }
+        Insert: {
+          anexos?: Json | null
+          canal?: Database["public"]["Enums"]["canal_resposta"]
+          created_at?: string
+          direcao?: Database["public"]["Enums"]["mensagem_direcao"]
+          id?: string
+          mensagem: string
+          ticket_id: string
+          updated_at?: string
+          usuario_id?: string | null
+        }
+        Update: {
+          anexos?: Json | null
+          canal?: Database["public"]["Enums"]["canal_resposta"]
+          created_at?: string
+          direcao?: Database["public"]["Enums"]["mensagem_direcao"]
+          id?: string
+          mensagem?: string
+          ticket_id?: string
+          updated_at?: string
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_mensagens_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_sequences: {
+        Row: {
+          ano: number
+          created_at: string
+          id: string
+          ultimo_numero: number
+          unidade_id: string
+          updated_at: string
+        }
+        Insert: {
+          ano: number
+          created_at?: string
+          id?: string
+          ultimo_numero?: number
+          unidade_id: string
+          updated_at?: string
+        }
+        Update: {
+          ano?: number
+          created_at?: string
+          id?: string
+          ultimo_numero?: number
+          unidade_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tickets: {
+        Row: {
+          arquivos: Json | null
+          canal_origem: Database["public"]["Enums"]["canal_origem"]
+          canal_resposta: Database["public"]["Enums"]["canal_resposta"] | null
+          categoria: Database["public"]["Enums"]["ticket_categoria"] | null
+          codigo_ticket: string
+          colaborador_id: string | null
+          created_at: string
+          criado_por: string | null
+          data_abertura: string
+          data_limite_sla: string | null
+          descricao_problema: string
+          equipe_responsavel_id: string | null
+          escalonado_para: string | null
+          franqueado_id: string | null
+          id: string
+          log_ia: Json | null
+          prioridade: Database["public"]["Enums"]["ticket_prioridade"]
+          reaberto_count: number
+          resolvido_em: string | null
+          resposta_resolucao: string | null
+          status: Database["public"]["Enums"]["ticket_status"]
+          status_sla: Database["public"]["Enums"]["ticket_sla_status"]
+          subcategoria: string | null
+          unidade_id: string
+          updated_at: string
+        }
+        Insert: {
+          arquivos?: Json | null
+          canal_origem: Database["public"]["Enums"]["canal_origem"]
+          canal_resposta?: Database["public"]["Enums"]["canal_resposta"] | null
+          categoria?: Database["public"]["Enums"]["ticket_categoria"] | null
+          codigo_ticket: string
+          colaborador_id?: string | null
+          created_at?: string
+          criado_por?: string | null
+          data_abertura?: string
+          data_limite_sla?: string | null
+          descricao_problema: string
+          equipe_responsavel_id?: string | null
+          escalonado_para?: string | null
+          franqueado_id?: string | null
+          id?: string
+          log_ia?: Json | null
+          prioridade?: Database["public"]["Enums"]["ticket_prioridade"]
+          reaberto_count?: number
+          resolvido_em?: string | null
+          resposta_resolucao?: string | null
+          status?: Database["public"]["Enums"]["ticket_status"]
+          status_sla?: Database["public"]["Enums"]["ticket_sla_status"]
+          subcategoria?: string | null
+          unidade_id: string
+          updated_at?: string
+        }
+        Update: {
+          arquivos?: Json | null
+          canal_origem?: Database["public"]["Enums"]["canal_origem"]
+          canal_resposta?: Database["public"]["Enums"]["canal_resposta"] | null
+          categoria?: Database["public"]["Enums"]["ticket_categoria"] | null
+          codigo_ticket?: string
+          colaborador_id?: string | null
+          created_at?: string
+          criado_por?: string | null
+          data_abertura?: string
+          data_limite_sla?: string | null
+          descricao_problema?: string
+          equipe_responsavel_id?: string | null
+          escalonado_para?: string | null
+          franqueado_id?: string | null
+          id?: string
+          log_ia?: Json | null
+          prioridade?: Database["public"]["Enums"]["ticket_prioridade"]
+          reaberto_count?: number
+          resolvido_em?: string | null
+          resposta_resolucao?: string | null
+          status?: Database["public"]["Enums"]["ticket_status"]
+          status_sla?: Database["public"]["Enums"]["ticket_sla_status"]
+          subcategoria?: string | null
+          unidade_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       unidades: {
         Row: {
           bairro: string | null
@@ -456,9 +611,43 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      v_tickets_por_unidade_mes: {
+        Row: {
+          mes: string | null
+          nome_unidade: string | null
+          tempo_medio_resolucao_horas: number | null
+          tickets_reabertos: number | null
+          tickets_sla_vencido: number | null
+          total_tickets: number | null
+          unidade_id: string | null
+        }
+        Relationships: []
+      }
+      v_tickets_sla_overview: {
+        Row: {
+          abertos: number | null
+          categoria: Database["public"]["Enums"]["ticket_categoria"] | null
+          concluidos: number | null
+          em_atendimento: number | null
+          status_sla: Database["public"]["Enums"]["ticket_sla_status"] | null
+          total: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      can_create_ticket: {
+        Args: { ticket_unidade_id: string }
+        Returns: boolean
+      }
+      can_update_ticket: {
+        Args: { ticket_unidade_id: string }
+        Returns: boolean
+      }
+      can_view_ticket: {
+        Args: { ticket_unidade_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -466,9 +655,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      next_ticket_code: {
+        Args: { p_unidade_id: string }
+        Returns: string
+      }
     }
     Enums: {
       app_role: "admin" | "gerente" | "diretor" | "colaborador"
+      canal_origem: "typebot" | "whatsapp_zapi" | "web"
+      canal_resposta: "web" | "whatsapp" | "typebot" | "interno"
       cargo:
         | "caixa"
         | "avaliador"
@@ -478,6 +673,23 @@ export type Database = {
         | "diretor"
         | "admin"
       colaborador_status: "ativo" | "inativo"
+      mensagem_direcao: "entrada" | "saida" | "interna"
+      ticket_categoria:
+        | "juridico"
+        | "sistema"
+        | "midia"
+        | "operacoes"
+        | "rh"
+        | "financeiro"
+        | "outro"
+      ticket_prioridade:
+        | "urgente"
+        | "alta"
+        | "hoje_18h"
+        | "padrao_24h"
+        | "crise"
+      ticket_sla_status: "dentro_prazo" | "alerta" | "vencido"
+      ticket_status: "aberto" | "em_atendimento" | "escalonado" | "concluido"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -606,6 +818,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "gerente", "diretor", "colaborador"],
+      canal_origem: ["typebot", "whatsapp_zapi", "web"],
+      canal_resposta: ["web", "whatsapp", "typebot", "interno"],
       cargo: [
         "caixa",
         "avaliador",
@@ -616,6 +830,19 @@ export const Constants = {
         "admin",
       ],
       colaborador_status: ["ativo", "inativo"],
+      mensagem_direcao: ["entrada", "saida", "interna"],
+      ticket_categoria: [
+        "juridico",
+        "sistema",
+        "midia",
+        "operacoes",
+        "rh",
+        "financeiro",
+        "outro",
+      ],
+      ticket_prioridade: ["urgente", "alta", "hoje_18h", "padrao_24h", "crise"],
+      ticket_sla_status: ["dentro_prazo", "alerta", "vencido"],
+      ticket_status: ["aberto", "em_atendimento", "escalonado", "concluido"],
     },
   },
 } as const
