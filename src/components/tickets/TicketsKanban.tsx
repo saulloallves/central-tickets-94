@@ -117,9 +117,6 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect }: KanbanTicketCardProp
       <CardContent className="p-3">
         <div className="flex items-start justify-between mb-2">
           <div className="flex items-center gap-1 text-xs">
-            <span className="font-mono font-medium">
-              {ticket.codigo_ticket}
-            </span>
             {getSLAIcon(ticket.status_sla)}
           </div>
           <Badge variant={getPriorityColor(ticket.prioridade)} className="text-xs">
