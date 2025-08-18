@@ -30,11 +30,16 @@ export const UnidadeCombobox = ({
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
 
-  const selectedUnidade = unidades.find((unidade) => unidade.id === value);
+  const selectedUnidade = unidades.find((unidade) => 
+    unidade && unidade.id === value
+  );
 
   const filteredUnidades = useMemo(() => {
-    if (!searchValue) return unidades;
+    if (!searchValue) return unidades.filter(u => u && u.grupo);
     return unidades.filter((unidade) =>
+      unidade && 
+      unidade.grupo && 
+      typeof unidade.grupo === 'string' &&
       unidade.grupo.toLowerCase().includes(searchValue.toLowerCase())
     );
   }, [unidades, searchValue]);
@@ -54,7 +59,7 @@ export const UnidadeCombobox = ({
           aria-expanded={open}
           className="w-full justify-between"
         >
-          {selectedUnidade ? selectedUnidade.grupo : placeholder}
+          {selectedUnidade?.grupo ? selectedUnidade.grupo : placeholder}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -75,24 +80,28 @@ export const UnidadeCombobox = ({
             </div>
           ) : (
             <div className="p-1">
-              {filteredUnidades.map((unidade) => (
-                <div
-                  key={unidade.id}
-                  className={cn(
-                    "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                    value === unidade.id && "bg-accent text-accent-foreground"
-                  )}
-                  onClick={() => handleSelect(unidade.id)}
-                >
-                  <Check
+              {filteredUnidades.map((unidade) => {
+                if (!unidade || !unidade.id || !unidade.grupo) return null;
+                
+                return (
+                  <div
+                    key={unidade.id}
                     className={cn(
-                      "mr-2 h-4 w-4",
-                      value === unidade.id ? "opacity-100" : "opacity-0"
+                      "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                      value === unidade.id && "bg-accent text-accent-foreground"
                     )}
-                  />
-                  {unidade.grupo}
-                </div>
-              ))}
+                    onClick={() => handleSelect(unidade.id)}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        value === unidade.id ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    {unidade.grupo}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
