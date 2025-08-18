@@ -7,12 +7,8 @@ const SAO_PAULO_TIMEZONE = 'America/Sao_Paulo';
 export function formatDistanceToNowInSaoPaulo(date: Date | string, options?: { addSuffix?: boolean }) {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   
-  // Converter a data para o timezone de São Paulo
-  const saoPauloDate = toZonedTime(dateObj, SAO_PAULO_TIMEZONE);
-  const now = new Date();
-  const saoPauloNow = toZonedTime(now, SAO_PAULO_TIMEZONE);
-  
-  return formatDistanceToNow(saoPauloDate, {
+  // Usar o tempo atual corretamente
+  return formatDistanceToNow(dateObj, {
     addSuffix: options?.addSuffix || false,
     locale: ptBR
   });
@@ -44,11 +40,7 @@ export function calculateTimeRemaining(targetDate: Date | string) {
   const target = typeof targetDate === 'string' ? new Date(targetDate) : targetDate;
   const now = new Date();
   
-  // Converter ambas as datas para São Paulo
-  const saoPauloTarget = toZonedTime(target, SAO_PAULO_TIMEZONE);
-  const saoPauloNow = toZonedTime(now, SAO_PAULO_TIMEZONE);
-  
-  const diffMs = saoPauloTarget.getTime() - saoPauloNow.getTime();
+  const diffMs = target.getTime() - now.getTime();
   const diffMinutes = Math.round(diffMs / (1000 * 60));
   
   return {

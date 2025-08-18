@@ -12,12 +12,13 @@ import {
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Clock, AlertTriangle, CheckCircle, Building, MoreVertical } from 'lucide-react';
+import { Clock, AlertTriangle, CheckCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTickets, type TicketFilters, type Ticket } from '@/hooks/useTickets';
+import { TicketDetail } from './TicketDetail';
 import { formatDistanceToNowInSaoPaulo } from '@/lib/date-utils';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -74,20 +75,7 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect }: KanbanTicketCardProp
       case 'crise': return 'destructive';
       case 'urgente': return 'destructive';
       case 'alta': return 'outline';
-      case 'hoje_18h': return 'secondary';
-      case 'padrao_24h': return 'secondary';
       default: return 'secondary';
-    }
-  };
-
-  const getPriorityLabel = (prioridade: string) => {
-    switch (prioridade) {
-      case 'crise': return 'Crise';
-      case 'urgente': return 'Urgente';
-      case 'alta': return 'Alta';
-      case 'hoje_18h': return 'Hoje 18h';
-      case 'padrao_24h': return 'Padrão';
-      default: return prioridade;
     }
   };
 
@@ -108,7 +96,7 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect }: KanbanTicketCardProp
         className="opacity-30 rotate-6 border-dashed"
       >
         <CardContent className="p-3">
-          <div className="h-20"></div>
+          <div className="h-16"></div>
         </CardContent>
       </Card>
     );
@@ -133,42 +121,18 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect }: KanbanTicketCardProp
               {ticket.codigo_ticket}
             </span>
             {getSLAIcon(ticket.status_sla)}
-            {ticket.reaberto_count > 0 && (
-              <Badge variant="outline" className="text-xs px-1 py-0">
-                {ticket.reaberto_count}x
-              </Badge>
-            )}
           </div>
-          <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-            <MoreVertical className="h-3 w-3" />
-          </Button>
+          <Badge variant={getPriorityColor(ticket.prioridade)} className="text-xs">
+            {ticket.prioridade === 'padrao_24h' ? 'Padrão' : ticket.prioridade}
+          </Badge>
         </div>
 
         <h4 className="text-sm font-medium mb-2 line-clamp-2">
           {ticket.descricao_problema}
         </h4>
 
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Badge variant={getPriorityColor(ticket.prioridade)} className="text-xs">
-              {getPriorityLabel(ticket.prioridade)}
-            </Badge>
-            {ticket.categoria && (
-              <Badge variant="secondary" className="text-xs">
-                {ticket.categoria}
-              </Badge>
-            )}
-          </div>
-
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <Building className="h-3 w-3" />
-              <span>{ticket.unidade_id}</span>
-            </div>
-            <span>
-              {formatDistanceToNowInSaoPaulo(ticket.created_at, { addSuffix: true })}
-            </span>
-          </div>
+        <div className="text-xs text-muted-foreground">
+          {formatDistanceToNowInSaoPaulo(ticket.created_at, { addSuffix: true })}
         </div>
       </CardContent>
     </Card>
@@ -212,6 +176,7 @@ export const TicketsKanban = ({ filters, onTicketSelect, selectedTicketId }: Tic
   const { tickets, loading, updateTicket } = useTickets(filters);
   const { toast } = useToast();
   const [activeTicket, setActiveTicket] = useState<Ticket | null>(null);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -220,6 +185,16 @@ export const TicketsKanban = ({ filters, onTicketSelect, selectedTicketId }: Tic
       },
     })
   );
+
+  const handleTicketClick = (ticketId: string) => {
+    onTicketSelect(ticketId);
+    setDetailModalOpen(true);
+  };
+
+  const closeDetailModal = () => {
+    setDetailModalOpen(false);
+    onTicketSelect('');
+  };
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
@@ -304,7 +279,7 @@ export const TicketsKanban = ({ filters, onTicketSelect, selectedTicketId }: Tic
               status={status as keyof typeof COLUMN_STATUS}
               tickets={getTicketsByStatus(status as keyof typeof COLUMN_STATUS)}
               selectedTicketId={selectedTicketId}
-              onTicketSelect={onTicketSelect}
+              onTicketSelect={handleTicketClick}
             />
           </div>
         ))}
@@ -322,6 +297,21 @@ export const TicketsKanban = ({ filters, onTicketSelect, selectedTicketId }: Tic
           </Card>
         )}
       </DragOverlay>
+
+      {/* Detail Modal */}
+      <Dialog open={detailModalOpen} onOpenChange={setDetailModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Detalhes do Ticket</DialogTitle>
+          </DialogHeader>
+          {selectedTicketId && (
+            <TicketDetail 
+              ticketId={selectedTicketId}
+              onClose={closeDetailModal}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </DndContext>
   );
 };
