@@ -134,7 +134,7 @@ serve(async (req) => {
 
     const {
       message,
-      unidade_id,
+      codigo_unidade,
       user,
       attachments,
       category_hint,
@@ -146,6 +146,34 @@ serve(async (req) => {
     if (!message) {
       return new Response(JSON.stringify({ 
         error: 'Campo "message" é obrigatório',
+        success: false 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (!codigo_unidade) {
+      return new Response(JSON.stringify({ 
+        error: 'Campo "codigo_unidade" é obrigatório',
+        success: false 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Buscar o ID da unidade pelo código de 4 dígitos
+    const { data: unidade, error: unidadeError } = await supabase
+      .from('unidades')
+      .select('id')
+      .eq('codigo_grupo', codigo_unidade)
+      .single();
+
+    if (unidadeError || !unidade) {
+      console.error('Unidade não encontrada:', codigo_unidade);
+      return new Response(JSON.stringify({ 
+        error: 'Código da unidade não encontrado',
         success: false 
       }), {
         status: 400,
@@ -177,7 +205,7 @@ serve(async (req) => {
     const { data: ticket, error: ticketError } = await supabase
       .from('tickets')
       .insert({
-        unidade_id,
+        unidade_id: unidade.id,
         descricao_problema: message,
         categoria: null, // Deixar em branco para a IA definir
         prioridade: 'padrao_24h',
