@@ -113,6 +113,13 @@ export type Database = {
             referencedRelation: "unidades"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_colaboradores_unidade"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id"]
+          },
         ]
       }
       escalation_levels: {
@@ -149,7 +156,22 @@ export type Database = {
           unidade_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_escalation_levels_destino_user"
+            columns: ["destino_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_escalation_levels_unidade"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       escalation_logs: {
         Row: {
@@ -194,6 +216,20 @@ export type Database = {
             columns: ["ticket_id"]
             isOneToOne: false
             referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_escalation_logs_ticket"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_escalation_logs_to_user"
+            columns: ["to_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -402,6 +438,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_notifications_queue_ticket"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "notifications_queue_ticket_id_fkey"
             columns: ["ticket_id"]
             isOneToOne: false
@@ -473,6 +516,20 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_ticket_mensagens_ticket"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_ticket_mensagens_usuario"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "ticket_mensagens_ticket_id_fkey"
             columns: ["ticket_id"]
             isOneToOne: false
@@ -506,7 +563,15 @@ export type Database = {
           unidade_id?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_ticket_sequences_unidade"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tickets: {
         Row: {
@@ -596,7 +661,36 @@ export type Database = {
           unidade_id?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_tickets_colaborador"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_tickets_criado_por"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_tickets_escalonado_para"
+            columns: ["escalonado_para"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_tickets_unidade"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       unidades: {
         Row: {
@@ -776,7 +870,15 @@ export type Database = {
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_user_roles_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -790,7 +892,15 @@ export type Database = {
           total_tickets: number | null
           unidade_id: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_tickets_unidade"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       v_tickets_sla_overview: {
         Row: {
