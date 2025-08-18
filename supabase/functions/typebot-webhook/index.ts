@@ -179,7 +179,7 @@ serve(async (req) => {
       .insert({
         unidade_id,
         descricao_problema: message,
-        categoria: category_hint || 'geral',
+        categoria: category_hint || 'outro',
         prioridade: 'padrao_24h',
         canal_origem: 'typebot',
         status: 'aberto',
