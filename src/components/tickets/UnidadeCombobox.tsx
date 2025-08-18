@@ -1,15 +1,8 @@
-import { useState } from 'react';
-import { Check, ChevronsUpDown } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Check, ChevronsUpDown, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command';
+import { Input } from '@/components/ui/input';
 import {
   Popover,
   PopoverContent,
@@ -35,8 +28,22 @@ export const UnidadeCombobox = ({
   placeholder = "Selecione uma unidade..." 
 }: UnidadeComboboxProps) => {
   const [open, setOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState('');
 
   const selectedUnidade = unidades.find((unidade) => unidade.id === value);
+
+  const filteredUnidades = useMemo(() => {
+    if (!searchValue) return unidades;
+    return unidades.filter((unidade) =>
+      unidade.grupo.toLowerCase().includes(searchValue.toLowerCase())
+    );
+  }, [unidades, searchValue]);
+
+  const handleSelect = (unidadeId: string) => {
+    onValueChange(unidadeId === value ? "" : unidadeId);
+    setOpen(false);
+    setSearchValue('');
+  };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -51,20 +58,31 @@ export const UnidadeCombobox = ({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full p-0" align="start">
-        <Command>
-          <CommandInput placeholder="Digite para filtrar unidades..." />
-          <CommandList>
-            <CommandEmpty>Nenhuma unidade encontrada.</CommandEmpty>
-            <CommandGroup>
-              {unidades.map((unidade) => (
-                <CommandItem
+      <PopoverContent className="w-full p-0 bg-background border" align="start">
+        <div className="flex items-center border-b px-3">
+          <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+          <Input
+            placeholder="Digite para filtrar unidades..."
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
+            className="border-0 p-0 h-11 focus-visible:ring-0 focus-visible:ring-offset-0"
+          />
+        </div>
+        <div className="max-h-[300px] overflow-y-auto">
+          {filteredUnidades.length === 0 ? (
+            <div className="py-6 text-center text-sm text-muted-foreground">
+              Nenhuma unidade encontrada.
+            </div>
+          ) : (
+            <div className="p-1">
+              {filteredUnidades.map((unidade) => (
+                <div
                   key={unidade.id}
-                  value={unidade.grupo}
-                  onSelect={() => {
-                    onValueChange(unidade.id === value ? "" : unidade.id);
-                    setOpen(false);
-                  }}
+                  className={cn(
+                    "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                    value === unidade.id && "bg-accent text-accent-foreground"
+                  )}
+                  onClick={() => handleSelect(unidade.id)}
                 >
                   <Check
                     className={cn(
@@ -73,11 +91,11 @@ export const UnidadeCombobox = ({
                     )}
                   />
                   {unidade.grupo}
-                </CommandItem>
+                </div>
               ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
+            </div>
+          )}
+        </div>
       </PopoverContent>
     </Popover>
   );
