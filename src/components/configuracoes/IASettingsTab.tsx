@@ -362,6 +362,60 @@ export function IASettingsTab() {
         </CardContent>
       </Card>
 
+      {/* Resumo das Configurações Ativas */}
+      <Card className="bg-muted/30 border-primary/20">
+        <CardHeader>
+          <CardTitle className="text-lg">📋 Resumo das Configurações Ativas</CardTitle>
+          <CardDescription>
+            Configurações atualmente aplicadas na IA
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+            <div className="space-y-1">
+              <span className="font-medium text-muted-foreground">Modelo FAQ:</span>
+              <Badge variant="secondary" className="ml-2">{settings.modelo}</Badge>
+            </div>
+            <div className="space-y-1">
+              <span className="font-medium text-muted-foreground">Modelo Sugestões:</span>
+              <Badge variant="secondary" className="ml-2">{settings.modelo_sugestao}</Badge>
+            </div>
+            <div className="space-y-1">
+              <span className="font-medium text-muted-foreground">Modelo Chat:</span>
+              <Badge variant="secondary" className="ml-2">{settings.modelo_chat}</Badge>
+            </div>
+            <div className="space-y-1">
+              <span className="font-medium text-muted-foreground">Estilo:</span>
+              <Badge variant="outline" className="ml-2">{settings.estilo_resposta}</Badge>
+            </div>
+            <div className="space-y-1">
+              <span className="font-medium text-muted-foreground">Temperatura:</span>
+              <Badge variant="outline" className="ml-2">{settings.temperatura}</Badge>
+            </div>
+            <div className="space-y-1">
+              <span className="font-medium text-muted-foreground">Max Tokens:</span>
+              <Badge variant="outline" className="ml-2">{settings.max_tokens}</Badge>
+            </div>
+          </div>
+          
+          <div className="mt-4 p-3 bg-background/50 rounded border">
+            <span className="font-medium text-muted-foreground text-xs">Prompt Base:</span>
+            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+              {settings.base_conhecimento_prompt}
+            </p>
+          </div>
+          
+          {hasChanges() && (
+            <Alert className="mt-4 border-amber-200 bg-amber-50">
+              <Info className="h-4 w-4" />
+              <AlertDescription className="text-amber-800">
+                <strong>⚠️ Alterações Pendentes:</strong> Salve as configurações para aplicar as mudanças na IA.
+              </AlertDescription>
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Botões de Ação */}
       <div className="flex items-center justify-end gap-3 pt-6 border-t border-border">
         {hasChanges() && (

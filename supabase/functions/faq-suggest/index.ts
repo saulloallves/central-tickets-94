@@ -71,12 +71,20 @@ serve(async (req) => {
         .limit(3)
     );
 
-    // 2. Search in knowledge_articles table  
+    // 2. Search in knowledge_articles table with AI settings filtering
+    const kbQuery = supabase
+      .from('knowledge_articles')
+      .select('id, titulo, conteudo, categoria, tags')
+      .eq('ativo', true)
+      .eq('aprovado', settings.use_only_approved || true);
+
+    // Apply category filtering if configured
+    if (settings.allowed_categories && settings.allowed_categories.length > 0) {
+      kbQuery.in('categoria', settings.allowed_categories);
+    }
+
     const kbPromises = searchTerms.map(term =>
-      supabase
-        .from('knowledge_articles')
-        .select('titulo, conteudo, categoria, tags')
-        .eq('ativo', true)
+      kbQuery
         .or(`titulo.ilike.%${term}%,conteudo.ilike.%${term}%,categoria.ilike.%${term}%`)
         .limit(3)
     );
@@ -96,16 +104,37 @@ serve(async (req) => {
       ) // Deduplicate
       .slice(0, 5); // Limit results
 
-    // Process Knowledge Base articles
-    const kbArticles = kbResults
+    // Process Knowledge Base articles with blocked tags filtering
+    let kbArticles = kbResults
       .filter(result => !result.error && result.data)
       .flatMap(result => result.data)
       .filter((article, index, self) =>
         index === self.findIndex(a => a.titulo === article.titulo)
-      ) // Deduplicate
-      .slice(0, 5); // Limit results
+      ); // Deduplicate
 
-    console.log(`Found ${ragDocuments.length} RAG documents and ${kbArticles.length} KB articles`);
+    // Filter out articles with blocked tags
+    if (settings.blocked_tags && settings.blocked_tags.length > 0) {
+      kbArticles = kbArticles.filter(article => {
+        if (!article.tags) return true;
+        return !article.tags.some(tag => settings.blocked_tags.includes(tag));
+      });
+    }
+
+    kbArticles = kbArticles.slice(0, 5); // Limit results
+
+    // Add forced articles if configured
+    let forcedArticles = [];
+    if (settings.forced_article_ids && settings.forced_article_ids.length > 0) {
+      const { data: forced } = await supabase
+        .from('knowledge_articles')
+        .select('id, titulo, conteudo, categoria, tags')
+        .in('id', settings.forced_article_ids)
+        .eq('ativo', true);
+      
+      forcedArticles = forced || [];
+    }
+
+    console.log(`Found ${ragDocuments.length} RAG documents, ${kbArticles.length} KB articles, ${forcedArticles.length} forced articles`);
 
     // Build knowledge base context from relevant documents only
     let knowledgeBase = '';
@@ -117,6 +146,14 @@ serve(async (req) => {
         const title = doc.metadata?.title || `Documento ${index + 1}`;
         const category = doc.metadata?.category || 'Geral';
         knowledgeBase += `**${title}** (${category})\n${doc.content}\n\n`;
+      });
+    }
+
+    // Add forced articles first
+    if (forcedArticles.length > 0) {
+      knowledgeBase += '=== ARTIGOS SEMPRE INCLUÍDOS ===\n';
+      forcedArticles.forEach(article => {
+        knowledgeBase += `**${article.titulo}** (${article.categoria})\n${article.conteudo}\nTags: ${article.tags?.join(', ') || 'Nenhuma'}\n\n`;
       });
     }
 
@@ -133,8 +170,19 @@ serve(async (req) => {
       knowledgeBase = 'NENHUM DOCUMENTO RELEVANTE ENCONTRADO PARA ESTA PERGUNTA.\nSugira ao usuário abrir um ticket para atendimento especializado.';
     }
 
-    // Prepare OpenAI prompt
-    const systemPrompt = `${settings.base_conhecimento_prompt}
+    // Prepare OpenAI prompt with style
+    const basePrompt = settings.base_conhecimento_prompt || 
+      `Você é um assistente especializado em FAQ para franquias.`;
+    
+    const stylePrompt = settings.estilo_resposta === 'formal' ? 
+      'Use linguagem formal e técnica.' :
+      settings.estilo_resposta === 'amigavel' ?
+      'Use linguagem amigável e acessível.' :
+      'Use linguagem técnica mas compreensível.';
+
+    const systemPrompt = `${basePrompt}
+
+${stylePrompt}
 
 BASE DE CONHECIMENTO:
 ${knowledgeBase}
@@ -212,6 +260,7 @@ Responda de forma clara e objetiva. Se não houver informação suficiente na ba
       search_terms: searchTerms,
       rag_hits: ragDocuments.length,
       kb_hits: kbArticles.length,
+      forced_articles: forcedArticles.length,
       total_context_length: knowledgeBase.length,
       timestamp: new Date().toISOString()
     };
@@ -220,9 +269,10 @@ Responda de forma clara e objetiva. Se não houver informação suficiente na ba
       JSON.stringify({
         resposta_ia_sugerida: resposta,
         log_prompt_faq: logPromptFaq,
-        articles_found: ragDocuments.length + kbArticles.length,
+        articles_found: ragDocuments.length + kbArticles.length + forcedArticles.length,
         rag_hits: ragDocuments.length,
-        kb_hits: kbArticles.length
+        kb_hits: kbArticles.length,
+        forced_articles: forcedArticles.length
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

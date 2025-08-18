@@ -27,7 +27,32 @@ serve(async (req) => {
 
     console.log('Generating suggestion for ticket:', ticketId);
 
-    // 1. Fetch ticket details
+    // 1. Fetch AI settings FIRST
+    const { data: aiSettings, error: settingsError } = await supabase
+      .from('faq_ai_settings')
+      .select('*')
+      .eq('ativo', true)
+      .maybeSingle();
+
+    if (settingsError) {
+      console.error('Error fetching AI settings:', settingsError);
+      throw new Error(`AI settings error: ${settingsError.message}`);
+    }
+
+    if (!aiSettings) {
+      console.error('No active AI settings found');
+      throw new Error('AI settings not configured');
+    }
+
+    console.log('AI Settings loaded:', {
+      modelo_sugestao: aiSettings.modelo_sugestao,
+      use_only_approved: aiSettings.use_only_approved,
+      allowed_categories: aiSettings.allowed_categories,
+      blocked_tags: aiSettings.blocked_tags,
+      forced_article_ids: aiSettings.forced_article_ids
+    });
+
+    // 2. Fetch ticket details
     const { data: ticket, error: ticketError } = await supabase
       .from('tickets')
       .select(`
@@ -48,22 +73,6 @@ serve(async (req) => {
       throw new Error('Ticket not found');
     }
 
-    // 5. Fetch AI settings
-    const { data: aiSettings, error: settingsError } = await supabase
-      .from('faq_ai_settings')
-      .select('*')
-      .eq('ativo', true)
-      .maybeSingle();
-
-    if (settingsError) {
-      console.error('Error fetching AI settings:', settingsError);
-      throw new Error(`AI settings error: ${settingsError.message}`);
-    }
-
-    if (!aiSettings) {
-      console.error('No active AI settings found');
-      throw new Error('AI settings not configured');
-    }
 
     // Hybrid RAG Retrieval: Search relevant documents
     console.log('Searching for relevant documents for suggestion:', ticket.descricao_problema);
@@ -118,14 +127,23 @@ serve(async (req) => {
       ) // Deduplicate
       .slice(0, 3); // Limit results
 
-    // Process Knowledge Base articles
-    const kbArticles = kbResults
+    // Process Knowledge Base articles with blocked tags filtering
+    let kbArticles = kbResults
       .filter(result => !result.error && result.data)
       .flatMap(result => result.data)
       .filter((article, index, self) =>
         index === self.findIndex(a => a.titulo === article.titulo)
-      ) // Deduplicate
-      .slice(0, 3); // Limit results
+      ); // Deduplicate
+
+    // Filter out articles with blocked tags
+    if (aiSettings.blocked_tags && aiSettings.blocked_tags.length > 0) {
+      kbArticles = kbArticles.filter(article => {
+        if (!article.tags) return true;
+        return !article.tags.some(tag => aiSettings.blocked_tags.includes(tag));
+      });
+    }
+
+    kbArticles = kbArticles.slice(0, 3); // Limit results
 
     // Add forced articles if configured
     let forcedArticles = [];
@@ -218,8 +236,19 @@ ${allKBArticles.map(a => `**${a.titulo}** (${a.categoria})\n${a.conteudo.substri
       return { sanitized, removed_greeting, removed_signoff };
     };
 
-    // 7. Build AI prompt with strict brevity rules
-    const systemPrompt = `Você é um assistente especializado em suporte técnico para atendentes de uma franquia.
+    // 7. Build AI prompt with strict brevity rules and style
+    const basePrompt = aiSettings.base_conhecimento_prompt || 
+      `Você é um assistente especializado em suporte técnico para atendentes de uma franquia.`;
+    
+    const stylePrompt = aiSettings.estilo_resposta === 'formal' ? 
+      'Use linguagem formal e técnica.' :
+      aiSettings.estilo_resposta === 'amigavel' ?
+      'Use linguagem amigável e acessível.' :
+      'Use linguagem técnica mas compreensível.';
+
+    const systemPrompt = `${basePrompt}
+
+${stylePrompt}
 
 REGRAS OBRIGATÓRIAS:
 - NUNCA use saudações (olá, oi, bom dia, etc.)
@@ -230,7 +259,6 @@ REGRAS OBRIGATÓRIAS:
 - Use a base de conhecimento para fundamentar suas respostas
 - Considere o contexto do ticket
 - Forneça respostas acionáveis e específicas
-- Mantenha tom profissional mas acessível
 
 FORMATO: Resposta direta sem introdução ou conclusão.`;
 
@@ -241,7 +269,7 @@ SUGESTAO DE RESPOSTA:
 Gere uma resposta concisa e útil para o atendente.`;
 
     // 8. Call OpenAI
-    const model = aiSettings.modelo_suggestion || 'gpt-4o-mini';
+    const model = aiSettings.modelo_sugestao || 'gpt-4o-mini';
     const isNewerModel = model.includes('gpt-4.1') || model.includes('gpt-5') || model.includes('o3') || model.includes('o4');
     
     const requestBody: any = {
@@ -254,10 +282,14 @@ Gere uma resposta concisa e útil para o atendente.`;
 
     if (isNewerModel) {
       requestBody.max_completion_tokens = aiSettings.max_tokens || 800;
+      requestBody.frequency_penalty = aiSettings.frequency_penalty || 0;
+      requestBody.presence_penalty = aiSettings.presence_penalty || 0;
     } else {
       requestBody.max_tokens = aiSettings.max_tokens || 800;
       requestBody.temperature = aiSettings.temperatura || 0.3;
       requestBody.top_p = aiSettings.top_p || 1.0;
+      requestBody.frequency_penalty = aiSettings.frequency_penalty || 0;
+      requestBody.presence_penalty = aiSettings.presence_penalty || 0;
     }
 
     console.log('Calling OpenAI for suggestion with model:', model);

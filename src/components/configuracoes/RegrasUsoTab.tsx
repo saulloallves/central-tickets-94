@@ -388,49 +388,67 @@ export function RegrasUsoTab() {
       </Card>
 
       {/* Resumo das Regras */}
-      <Card className="border-primary/20">
+      <Card className="bg-muted/30 border-primary/20">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Info className="h-5 w-5 text-primary" />
-            Resumo das Regras Ativas
+            📋 Resumo das Regras Ativas
           </CardTitle>
+          <CardDescription>
+            Configurações atualmente aplicadas nos filtros da IA
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <span className="text-sm font-medium text-muted-foreground">Aprovação necessária:</span>
               <Badge variant={settings.use_only_approved ? "default" : "secondary"}>
-                {settings.use_only_approved ? "Apenas aprovados" : "Todos os artigos"}
+                {settings.use_only_approved ? "✅ Apenas aprovados" : "❌ Todos os artigos"}
               </Badge>
-              <span className="text-sm text-muted-foreground">
-                Aprovação necessária
-              </span>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Badge variant="outline">
-                {settings.allowed_categories.length || 'Todas'} categorias
-              </Badge>
-              <span className="text-sm text-muted-foreground">
-                Categorias permitidas
-              </span>
+            <div className="space-y-2">
+              <span className="text-sm font-medium text-muted-foreground">Categorias permitidas:</span>
+              <div className="flex flex-wrap gap-1">
+                {settings.allowed_categories.length > 0 ? (
+                  settings.allowed_categories.map(cat => (
+                    <Badge key={cat} variant="outline" className="text-xs">
+                      {cat}
+                    </Badge>
+                  ))
+                ) : (
+                  <Badge variant="secondary" className="text-xs">Todas permitidas</Badge>
+                )}
+              </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Badge variant="outline">
-                {settings.blocked_tags.length} tags bloqueadas
-              </Badge>
-              <span className="text-sm text-muted-foreground">
-                Tags impedidas
-              </span>
+            <div className="space-y-2">
+              <span className="text-sm font-medium text-muted-foreground">Tags bloqueadas:</span>
+              <div className="flex flex-wrap gap-1">
+                {settings.blocked_tags.length > 0 ? (
+                  settings.blocked_tags.map(tag => (
+                    <Badge key={tag} variant="destructive" className="text-xs">
+                      🚫 {tag}
+                    </Badge>
+                  ))
+                ) : (
+                  <Badge variant="secondary" className="text-xs">Nenhuma bloqueada</Badge>
+                )}
+              </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Badge variant="outline">
-                {settings.forced_article_ids.length} artigos forçados
-              </Badge>
-              <span className="text-sm text-muted-foreground">
-                Sempre incluídos
-              </span>
+            <div className="space-y-2">
+              <span className="text-sm font-medium text-muted-foreground">Artigos sempre incluídos:</span>
+              <div className="flex flex-wrap gap-1">
+                {settings.forced_article_ids.length > 0 ? (
+                  settings.forced_article_ids.map(id => (
+                    <Badge key={id} variant="default" className="text-xs">
+                      📌 {getArticleTitle(id)}
+                    </Badge>
+                  ))
+                ) : (
+                  <Badge variant="secondary" className="text-xs">Nenhum forçado</Badge>
+                )}
+              </div>
             </div>
           </div>
         </CardContent>
