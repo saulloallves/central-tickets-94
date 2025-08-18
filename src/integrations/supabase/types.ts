@@ -239,10 +239,13 @@ export type Database = {
           ativo: boolean
           base_conhecimento_prompt: string
           created_at: string
+          estilo_resposta: string | null
           frequency_penalty: number
           id: string
           max_tokens: number
           modelo: string
+          modelo_chat: string | null
+          modelo_sugestao: string | null
           presence_penalty: number
           temperatura: number
           top_p: number
@@ -252,10 +255,13 @@ export type Database = {
           ativo?: boolean
           base_conhecimento_prompt?: string
           created_at?: string
+          estilo_resposta?: string | null
           frequency_penalty?: number
           id?: string
           max_tokens?: number
           modelo?: string
+          modelo_chat?: string | null
+          modelo_sugestao?: string | null
           presence_penalty?: number
           temperatura?: number
           top_p?: number
@@ -265,10 +271,13 @@ export type Database = {
           ativo?: boolean
           base_conhecimento_prompt?: string
           created_at?: string
+          estilo_resposta?: string | null
           frequency_penalty?: number
           id?: string
           max_tokens?: number
           modelo?: string
+          modelo_chat?: string | null
+          modelo_sugestao?: string | null
           presence_penalty?: number
           temperatura?: number
           top_p?: number
@@ -588,6 +597,57 @@ export type Database = {
           nome_completo?: string | null
           telefone?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      ticket_ai_interactions: {
+        Row: {
+          created_at: string
+          foi_usada: boolean | null
+          id: string
+          kind: Database["public"]["Enums"]["ai_interaction_kind"]
+          log: Json
+          mensagem: string | null
+          model: string
+          params: Json
+          resposta: string
+          resposta_final: string | null
+          ticket_id: string
+          used_at: string | null
+          used_by: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          foi_usada?: boolean | null
+          id?: string
+          kind: Database["public"]["Enums"]["ai_interaction_kind"]
+          log?: Json
+          mensagem?: string | null
+          model: string
+          params?: Json
+          resposta: string
+          resposta_final?: string | null
+          ticket_id: string
+          used_at?: string | null
+          used_by?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          foi_usada?: boolean | null
+          id?: string
+          kind?: Database["public"]["Enums"]["ai_interaction_kind"]
+          log?: Json
+          mensagem?: string | null
+          model?: string
+          params?: Json
+          resposta?: string
+          resposta_final?: string | null
+          ticket_id?: string
+          used_at?: string | null
+          used_by?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -1055,6 +1115,7 @@ export type Database = {
       }
     }
     Enums: {
+      ai_interaction_kind: "suggestion" | "chat"
       app_role: "admin" | "gerente" | "diretor" | "colaborador"
       canal_origem: "typebot" | "whatsapp_zapi" | "web"
       canal_resposta: "web" | "whatsapp" | "typebot" | "interno"
@@ -1211,6 +1272,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      ai_interaction_kind: ["suggestion", "chat"],
       app_role: ["admin", "gerente", "diretor", "colaborador"],
       canal_origem: ["typebot", "whatsapp_zapi", "web"],
       canal_resposta: ["web", "whatsapp", "typebot", "interno"],

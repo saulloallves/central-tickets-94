@@ -1,12 +1,16 @@
 
 import { useState, useEffect } from 'react';
-import { X, Clock, User, Building, Tag, AlertTriangle, MessageSquare, Send, Paperclip, Zap } from 'lucide-react';
+import { X, Clock, User, Building, Tag, AlertTriangle, MessageSquare, Send, Paperclip, Zap, Sparkles, Copy, Bot } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
+import { Input } from '@/components/ui/input';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useTicketMessages } from '@/hooks/useTickets';
+import { useAISuggestion } from '@/hooks/useAISuggestion';
+import { useAIChat } from '@/hooks/useAIChat';
 import { CrisisButton } from './CrisisButton';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -21,7 +25,14 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
   const [ticket, setTicket] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [newMessage, setNewMessage] = useState('');
+  const [editedSuggestion, setEditedSuggestion] = useState('');
+  const [aiQuestion, setAiQuestion] = useState('');
+  const [showAISuggestion, setShowAISuggestion] = useState(false);
+  const [showAIChat, setShowAIChat] = useState(false);
+  
   const { messages, sendMessage, loading: messagesLoading } = useTicketMessages(ticketId);
+  const { suggestion, loading: suggestionLoading, generateSuggestion, markSuggestionUsed } = useAISuggestion(ticketId);
+  const { chatHistory, loading: chatLoading, askAI } = useAIChat(ticketId);
   const { toast } = useToast();
 
   const fetchTicketDetails = async () => {
@@ -84,6 +95,37 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
     if (success) {
       setNewMessage('');
     }
+  };
+
+  const handleCopySuggestion = () => {
+    if (suggestion?.resposta) {
+      navigator.clipboard.writeText(suggestion.resposta);
+      toast({
+        title: "Copiado",
+        description: "Sugestão copiada para a área de transferência",
+      });
+    }
+  };
+
+  const handleEditAndSend = () => {
+    setEditedSuggestion(suggestion?.resposta || '');
+    setNewMessage(suggestion?.resposta || '');
+  };
+
+  const handleSendSuggestion = async (text: string) => {
+    const success = await sendMessage(text);
+    if (success && suggestion) {
+      await markSuggestionUsed(suggestion.id, text);
+      setNewMessage('');
+      setEditedSuggestion('');
+    }
+  };
+
+  const handleAskAI = async () => {
+    if (!aiQuestion.trim()) return;
+    
+    await askAI(aiQuestion);
+    setAiQuestion('');
   };
 
   const getStatusColor = (status: string) => {
@@ -235,6 +277,133 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
             {ticket.descricao_problema}
           </p>
         </div>
+
+        <Separator />
+
+        {/* AI Suggestion */}
+        <Collapsible open={showAISuggestion} onOpenChange={setShowAISuggestion}>
+          <CollapsibleTrigger asChild>
+            <Button variant="outline" className="w-full justify-between">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4" />
+                IA Sugestão de Resposta
+              </div>
+              {suggestion && !suggestion.foi_usada && (
+                <Badge variant="secondary" className="ml-2">Nova</Badge>
+              )}
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-3 mt-3">
+            {suggestion ? (
+              <div className="space-y-3">
+                <div className="p-3 bg-muted rounded-md">
+                  <p className="text-sm">{suggestion.resposta}</p>
+                  <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
+                    <span>Gerada em {formatDateTimeBR(suggestion.created_at)}</span>
+                    {suggestion.foi_usada && (
+                      <Badge variant="secondary" className="text-xs">✓ Utilizada</Badge>
+                    )}
+                  </div>
+                </div>
+                {!suggestion.foi_usada && (
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={handleCopySuggestion}>
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copiar
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={handleEditAndSend}>
+                      Editar e Enviar
+                    </Button>
+                    <Button size="sm" onClick={() => handleSendSuggestion(suggestion.resposta)}>
+                      <Send className="h-4 w-4 mr-2" />
+                      Enviar
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-sm text-muted-foreground mb-3">
+                  Nenhuma sugestão gerada ainda
+                </p>
+                <Button 
+                  onClick={generateSuggestion} 
+                  disabled={suggestionLoading}
+                  size="sm"
+                >
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  {suggestionLoading ? 'Gerando...' : 'Gerar Sugestão'}
+                </Button>
+              </div>
+            )}
+            {suggestion && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={generateSuggestion} 
+                disabled={suggestionLoading}
+                className="w-full"
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                {suggestionLoading ? 'Gerando...' : 'Regenerar Sugestão'}
+              </Button>
+            )}
+          </CollapsibleContent>
+        </Collapsible>
+
+        {/* AI Chat */}
+        <Collapsible open={showAIChat} onOpenChange={setShowAIChat}>
+          <CollapsibleTrigger asChild>
+            <Button variant="outline" className="w-full justify-between">
+              <div className="flex items-center gap-2">
+                <Bot className="h-4 w-4" />
+                Chat com IA
+              </div>
+              {chatHistory.length > 0 && (
+                <Badge variant="secondary" className="ml-2">{chatHistory.length}</Badge>
+              )}
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-3 mt-3">
+            <div className="max-h-40 overflow-y-auto space-y-2">
+              {chatHistory.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-2">
+                  Nenhuma conversa ainda. Faça uma pergunta à IA!
+                </p>
+              ) : (
+                chatHistory.map((chat) => (
+                  <div key={chat.id} className="space-y-2">
+                    <div className="p-2 bg-blue-50 rounded-md">
+                      <p className="text-sm font-medium">Você:</p>
+                      <p className="text-sm">{chat.mensagem}</p>
+                    </div>
+                    <div className="p-2 bg-green-50 rounded-md">
+                      <p className="text-sm font-medium">IA:</p>
+                      <p className="text-sm">{chat.resposta}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="space-y-2">
+              <Input
+                placeholder="Pergunte algo à IA sobre este ticket..."
+                value={aiQuestion}
+                onChange={(e) => setAiQuestion(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleAskAI()}
+              />
+              <Button 
+                size="sm" 
+                onClick={handleAskAI}
+                disabled={!aiQuestion.trim() || chatLoading}
+                className="w-full"
+              >
+                <Bot className="h-4 w-4 mr-2" />
+                {chatLoading ? 'Pensando...' : 'Perguntar'}
+              </Button>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
 
         <Separator />
 
