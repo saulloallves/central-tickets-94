@@ -47,6 +47,43 @@ export const CreateTicketDialog = ({ open, onOpenChange }: CreateTicketDialogPro
     subcategoria: ''
   });
 
+  // Load saved form data from localStorage when dialog opens
+  useEffect(() => {
+    if (open) {
+      const savedData = localStorage.getItem('createTicket_formData');
+      if (savedData) {
+        try {
+          const parsed = JSON.parse(savedData);
+          setFormData(prev => ({ ...prev, ...parsed }));
+        } catch (error) {
+          console.error('Error loading saved form data:', error);
+        }
+      }
+    }
+  }, [open]);
+
+  // Save form data to localStorage whenever it changes
+  useEffect(() => {
+    if (open && (formData.descricao_problema || formData.categoria || formData.subcategoria)) {
+      localStorage.setItem('createTicket_formData', JSON.stringify(formData));
+    }
+  }, [formData, open]);
+
+  // Clear saved data when form is successfully submitted or dialog is closed
+  const clearSavedData = () => {
+    localStorage.removeItem('createTicket_formData');
+    setFormData({
+      unidade_id: unidades.length === 1 ? unidades[0].id : '',
+      descricao_problema: '',
+      categoria: '',
+      prioridade: 'padrao_24h',
+      subcategoria: ''
+    });
+    setFaqResponse(null);
+    setShowFAQStep(false);
+    setJustificativa('');
+  };
+
   // Fetch available units
   useEffect(() => {
     const fetchUnidades = async () => {
@@ -141,17 +178,8 @@ export const CreateTicketDialog = ({ open, onOpenChange }: CreateTicketDialogPro
         true
       );
       
-      // Reset form and close dialog
-      setFormData({
-        unidade_id: unidades.length === 1 ? unidades[0].id : '',
-        descricao_problema: '',
-        categoria: '',
-        prioridade: 'padrao_24h',
-        subcategoria: ''
-      });
-      setFaqResponse(null);
-      setShowFAQStep(false);
-      setJustificativa('');
+      // Clear saved data and reset form
+      clearSavedData();
       onOpenChange(false);
     }
   };
@@ -229,17 +257,8 @@ export const CreateTicketDialog = ({ open, onOpenChange }: CreateTicketDialogPro
           );
         }
         
-        // Reset form
-        setFormData({
-          unidade_id: unidades.length === 1 ? unidades[0].id : '',
-          descricao_problema: '',
-          categoria: '',
-          prioridade: 'padrao_24h',
-          subcategoria: ''
-        });
-        setFaqResponse(null);
-        setShowFAQStep(false);
-        setJustificativa('');
+        // Clear saved data and reset form
+        clearSavedData();
         onOpenChange(false);
       }
     } catch (error) {
