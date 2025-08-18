@@ -33,8 +33,7 @@ serve(async (req) => {
       .select(`
         *,
         unidades(id, grupo),
-        colaboradores(nome_completo, email),
-        franqueados(name, email)
+        colaboradores(nome_completo, email)
       `)
       .eq('id', ticketId)
       .maybeSingle();
