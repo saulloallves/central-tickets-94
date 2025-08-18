@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { UnidadeCombobox } from './UnidadeCombobox';
 import { useTickets } from '@/hooks/useTickets';
 import { useRole } from '@/hooks/useRole';
 import { useAuth } from '@/hooks/useAuth';
@@ -168,21 +169,12 @@ export const CreateTicketDialog = ({ open, onOpenChange }: CreateTicketDialogPro
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label htmlFor="unidade">Unidade *</Label>
-            <Select 
-              value={formData.unidade_id} 
+            <UnidadeCombobox
+              unidades={unidades}
+              value={formData.unidade_id}
               onValueChange={(value) => setFormData(prev => ({ ...prev, unidade_id: value }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione uma unidade" />
-              </SelectTrigger>
-              <SelectContent>
-                {unidades.map((unidade) => (
-                  <SelectItem key={unidade.id} value={unidade.id}>
-                    {unidade.grupo}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              placeholder="Selecione uma unidade..."
+            />
           </div>
 
           <div>
