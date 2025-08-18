@@ -45,7 +45,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-5-2025-08-07',
+        model: 'gpt-4.1-2025-04-14',
         messages: [
           {
             role: 'system',
@@ -84,7 +84,8 @@ serve(async (req) => {
             content: `Descrição do problema: ${descricao}\nCategoria atual: ${categoria || 'não definida'}`
           }
         ],
-        max_completion_tokens: 300,
+        max_tokens: 300,
+        temperature: 0.3,
       }),
     });
 
@@ -151,7 +152,7 @@ serve(async (req) => {
           analysis,
           equipe_responsavel_id: equipeResponsavelId,
           timestamp: now.toISOString(),
-          model: 'gpt-5-2025-08-07'
+          model: 'gpt-4.1-2025-04-14'
         }
       })
       .eq('id', ticketId);
