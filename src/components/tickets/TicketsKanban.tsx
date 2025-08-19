@@ -368,17 +368,37 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
     setActiveTicket(null);
     setDraggedOverColumn(null);
 
-    if (!over || over.data.current?.type !== 'column') {
-      console.log('❌ Invalid drop target');
+    console.log('🎯 Drag end event:', {
+      over: over?.id,
+      overData: over?.data?.current,
+      activeId: active.id,
+      activeData: active.data?.current
+    });
+
+    if (!over) {
+      console.log('❌ No drop target');
+      return;
+    }
+
+    // Check if dropping on a column (status)
+    const validStatuses = Object.keys(COLUMN_STATUS);
+    const newStatus = over.id as string;
+    
+    if (!validStatuses.includes(newStatus)) {
+      console.log('❌ Invalid drop target - not a valid status:', newStatus);
       return;
     }
 
     const ticketId = active.id as string;
     const ticket = active.data.current?.ticket as Ticket;
-    const newStatus = over.id as string;
+    
+    if (!ticket) {
+      console.log('❌ No ticket data found');
+      return;
+    }
 
-    if (!newStatus || !ticket || ticket.status === newStatus || !Object.keys(COLUMN_STATUS).includes(newStatus)) {
-      console.log('❌ Invalid status change or same status');
+    if (ticket.status === newStatus) {
+      console.log('❌ Same status - no change needed');
       return;
     }
 
