@@ -289,24 +289,26 @@ const KanbanColumn = ({ status, tickets, selectedTicketId, onTicketSelect, equip
   });
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between mb-4 px-4 pt-4">
+    <div 
+      ref={setNodeRef}
+      className={cn(
+        "flex flex-col h-full min-h-[600px] rounded-lg border-2 transition-all duration-200",
+        COLUMN_COLORS[status],
+        isOver ? "border-primary bg-primary/10 border-solid scale-[1.02] shadow-lg" : "border-dashed"
+      )}
+    >
+      {/* Header da coluna */}
+      <div className="flex items-center justify-between p-4 pb-2">
         <h3 className="font-semibold text-sm">{COLUMN_STATUS[status]}</h3>
         <Badge variant="secondary" className="text-xs">
           {tickets.length}
         </Badge>
       </div>
       
-      <div 
-        ref={setNodeRef}
-        className={cn(
-          "flex-1 rounded-lg border-2 p-4 min-h-[600px] transition-all duration-200 relative",
-          COLUMN_COLORS[status],
-          isOver ? "border-primary bg-primary/10 border-solid scale-[1.02] shadow-lg" : "border-dashed"
-        )}
-      >
+      {/* Área de conteúdo - também droppable */}
+      <div className="flex-1 p-4 pt-2">
         <SortableContext items={tickets.map(t => t.id)} strategy={verticalListSortingStrategy}>
-          <div className="space-y-3 relative z-10">
+          <div className="space-y-3">
             {tickets.map((ticket) => (
               <KanbanTicketCard
                 key={ticket.id}
@@ -323,9 +325,6 @@ const KanbanColumn = ({ status, tickets, selectedTicketId, onTicketSelect, equip
             )}
           </div>
         </SortableContext>
-        
-        {/* Área de drop invisível que cobre toda a coluna */}
-        <div className="absolute inset-0 z-0" />
       </div>
     </div>
   );
