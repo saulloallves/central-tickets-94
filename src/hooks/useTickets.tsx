@@ -83,21 +83,6 @@ export const useTickets = (filters: TicketFilters) => {
   const [ticketStats, setTicketStats] = useState<TicketStats | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Status transition validation
-  type TicketStatus = 'aberto' | 'em_atendimento' | 'escalonado' | 'concluido';
-  
-  const ALLOWED_TRANSITIONS: Record<TicketStatus, TicketStatus[]> = {
-    'aberto': ['em_atendimento', 'escalonado'],
-    'em_atendimento': ['escalonado', 'concluido'],
-    'escalonado': ['em_atendimento', 'concluido'],
-    'concluido': []
-  };
-
-  const isTransitionAllowed = (from: string, to: string): boolean => {
-    const transitions = ALLOWED_TRANSITIONS[from as TicketStatus];
-    return transitions ? transitions.includes(to as TicketStatus) : false;
-  };
-
   // Optimistic update functions
   const optimisticUpdateTicket = (ticketId: string, updates: Partial<Ticket>) => {
     setTickets(prev => prev.map(ticket => 
@@ -394,78 +379,6 @@ export const useTickets = (filters: TicketFilters) => {
     }
   };
 
-  // Optimistic drag-and-drop status update
-  const updateTicketStatus = async (ticketId: string, newStatus: string) => {
-    console.log('🎯 Drag-drop status update:', { ticketId, newStatus });
-    
-    const currentTicket = tickets.find(t => t.id === ticketId);
-    if (!currentTicket) {
-      console.error('❌ Ticket not found:', ticketId);
-      return false;
-    }
-
-    const fromStatus = currentTicket.status;
-    
-    // Validate transition
-    if (!isTransitionAllowed(fromStatus, newStatus)) {
-      toast({
-        title: "❌ Transição Não Permitida",
-        description: `Não é possível mover de "${fromStatus}" para "${newStatus}"`,
-        variant: "destructive",
-      });
-      return false;
-    }
-
-    // Optimistic update
-    optimisticUpdateTicket(ticketId, { 
-      status: newStatus as any,
-      updated_at: new Date().toISOString()
-    });
-
-    try {
-      // Database update
-      const { data, error } = await supabase
-        .from('tickets')
-        .update({ 
-          status: newStatus as 'aberto' | 'em_atendimento' | 'escalonado' | 'concluido',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', ticketId)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('❌ Database update failed:', error);
-        // Rollback optimistic update
-        optimisticRollback(ticketId, fromStatus);
-        toast({
-          title: "❌ Erro ao Atualizar",
-          description: "Falha ao atualizar status do ticket",
-          variant: "destructive",
-        });
-        return false;
-      }
-
-      console.log('✅ Status updated successfully:', data);
-      toast({
-        title: "✅ Status Atualizado",
-        description: `Ticket movido para ${newStatus}`,
-      });
-
-      return true;
-    } catch (error) {
-      console.error('❌ Unexpected error:', error);
-      // Rollback optimistic update
-      optimisticRollback(ticketId, fromStatus);
-      toast({
-        title: "❌ Erro Inesperado",
-        description: "Erro ao atualizar status do ticket",
-        variant: "destructive",
-      });
-      return false;
-    }
-  };
-
   const updateTicket = async (ticketId: string, updates: Partial<Ticket>) => {
     try {
       console.log('=== UPDATE TICKET DEBUG ===');
@@ -681,14 +594,15 @@ export const useTickets = (filters: TicketFilters) => {
     tickets,
     ticketStats,
     loading,
-    refetch: refetchData,
     createTicket,
     updateTicket,
-    updateTicketStatus,
     startAttendance,
     concludeTicket,
+    refetch: refetchData,
+    // Optimistic UI functions
     optimisticUpdateTicket,
     optimisticRollback,
+    // Realtime handlers
     handleTicketUpdate,
     handleTicketInsert,
     handleTicketDelete
