@@ -78,9 +78,10 @@ serve(async (req) => {
     const zapiBaseUrl = Deno.env.get('ZAPI_BASE_URL')
     const zapiInstanceId = Deno.env.get('ZAPI_INSTANCE_ID')
     const zapiInstanceToken = Deno.env.get('ZAPI_INSTANCE_TOKEN')
+    const zapiClientToken = Deno.env.get('ZAPI_CLIENT_TOKEN')
 
-    if (!zapiBaseUrl || !zapiInstanceId || !zapiInstanceToken) {
-      console.error('Missing Z-API configuration. Required: ZAPI_BASE_URL, ZAPI_INSTANCE_ID, ZAPI_INSTANCE_TOKEN')
+    if (!zapiBaseUrl || !zapiInstanceId || !zapiInstanceToken || !zapiClientToken) {
+      console.error('Missing Z-API configuration. Required: ZAPI_BASE_URL, ZAPI_INSTANCE_ID, ZAPI_INSTANCE_TOKEN, ZAPI_CLIENT_TOKEN')
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -90,16 +91,8 @@ serve(async (req) => {
       )
     }
 
-    // Buscar configurações de notificação para delays e retries
-    const { data: settingsData } = await supabase
-      .from('notification_settings')
-      .select('*')
-      .single()
-
-    const settings = settingsData || {
-      delay_mensagem: 2000,
-      limite_retentativas: 3
-    }
+    // Normalize base URL to prevent duplication
+    const normalizedBaseUrl = zapiBaseUrl.replace(/\/+$/, '')
 
     console.log('Using Z-API configuration from environment secrets')
 
@@ -135,26 +128,19 @@ serve(async (req) => {
       return phoneStr.length >= 10 ? phoneStr : null
     }
 
-    // Função para detectar se é ID de grupo
-    const isGroupId = (id: string): boolean => {
-      return id.includes('@g.us') || id.includes('-group') || id.length > 15
-    }
-
     // Função para enviar mensagem via ZAPI
     const sendZapiMessage = async (destination: string, message: string) => {
-      const isGroup = isGroupId(destination)
-      const endpoint = isGroup ? 'send-text-group' : 'send-text'
-      const webhookUrl = `${zapiBaseUrl}/instances/${zapiInstanceId}/token/${zapiInstanceToken}/${endpoint}`
+      // Always use /send-text endpoint with consistent payload structure
+      const webhookUrl = `${normalizedBaseUrl}/instances/${zapiInstanceId}/token/${zapiInstanceToken}/send-text`
       
-      console.log(`Sending ${isGroup ? 'group' : 'individual'} message to:`, destination)
-      console.log(`Using endpoint: ${zapiBaseUrl}/instances/${zapiInstanceId}/token/***/${endpoint}`)
+      console.log(`Sending message to: ${destination}`)
+      console.log(`Using endpoint: ${normalizedBaseUrl}/instances/${zapiInstanceId}/token/***$/send-text`)
       
-      const payload = isGroup 
-        ? { groupId: destination, message }
-        : { phone: destination, message }
+      // Always use {phone, message} payload - destination can be individual number or group ID
+      const payload = { phone: destination, message }
       
       console.log('Sending to ZAPI:', { 
-        [isGroup ? 'groupId' : 'phone']: destination, 
+        phone: destination, 
         message: message.substring(0, 100) + '...' 
       })
 
@@ -162,6 +148,7 @@ serve(async (req) => {
         const zapiResponse = await fetch(webhookUrl, {
           method: 'POST',
           headers: {
+            'Client-Token': zapiClientToken,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify(payload)
@@ -171,12 +158,24 @@ serve(async (req) => {
         console.log('ZAPI response status:', zapiResponse.status)
         console.log('ZAPI response:', result)
         
+        // Check for HTTP errors
         if (!zapiResponse.ok) {
           const errorMsg = result?.error || result?.message || `HTTP ${zapiResponse.status} ${zapiResponse.statusText}`
           console.error('ZAPI HTTP error:', errorMsg)
           return { 
             success: false, 
             error: `ZAPI API error: ${errorMsg}`,
+            status: zapiResponse.status,
+            data: result
+          }
+        }
+        
+        // Check for API-level errors in 200 responses
+        if (result && result.error) {
+          console.error('ZAPI API error in 200 response:', result.error)
+          return { 
+            success: false, 
+            error: `ZAPI error: ${result.error}`,
             status: zapiResponse.status,
             data: result
           }
@@ -256,12 +255,6 @@ serve(async (req) => {
         if (!textoResposta) {
           console.error('No text response provided')
           result = { success: false, message: 'Texto da resposta não fornecido' }
-          break
-        }
-
-        if (!settings?.webhook_saida) {
-          console.error('No webhook URL configured')
-          result = { success: false, message: 'URL do webhook ZAPI não configurada. Configure em Configurações > Notificações.' }
           break
         }
         
