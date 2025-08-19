@@ -1311,6 +1311,30 @@ export type Database = {
           },
         ]
       }
+      ticket_status_transitions: {
+        Row: {
+          allowed: boolean
+          created_at: string
+          from_status: string
+          reason: string | null
+          to_status: string
+        }
+        Insert: {
+          allowed?: boolean
+          created_at?: string
+          from_status: string
+          reason?: string | null
+          to_status: string
+        }
+        Update: {
+          allowed?: boolean
+          created_at?: string
+          from_status?: string
+          reason?: string | null
+          to_status?: string
+        }
+        Relationships: []
+      }
       tickets: {
         Row: {
           arquivos: Json | null
@@ -1332,6 +1356,7 @@ export type Database = {
           franqueado_id: number | null
           id: string
           log_ia: Json | null
+          position: number
           prioridade: Database["public"]["Enums"]["ticket_prioridade"]
           reaberto_count: number
           resolvido_em: string | null
@@ -1364,6 +1389,7 @@ export type Database = {
           franqueado_id?: number | null
           id?: string
           log_ia?: Json | null
+          position?: number
           prioridade?: Database["public"]["Enums"]["ticket_prioridade"]
           reaberto_count?: number
           resolvido_em?: string | null
@@ -1396,6 +1422,7 @@ export type Database = {
           franqueado_id?: number | null
           id?: string
           log_ia?: Json | null
+          position?: number
           prioridade?: Database["public"]["Enums"]["ticket_prioridade"]
           reaberto_count?: number
           resolvido_em?: string | null
@@ -1466,6 +1493,42 @@ export type Database = {
             referencedColumns: ["equipe_id"]
           },
         ]
+      }
+      tickets_audit: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          ip_address: unknown | null
+          new_data: Json | null
+          old_data: Json | null
+          ticket_id: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          new_data?: Json | null
+          old_data?: Json | null
+          ticket_id: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          new_data?: Json | null
+          old_data?: Json | null
+          ticket_id?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       unidades: {
         Row: {
