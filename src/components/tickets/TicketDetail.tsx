@@ -303,20 +303,22 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
 
   return (
     <Card className="h-full flex flex-col">
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-6">
         <div className="flex items-center justify-between">
           <div className="flex-1">
-            <CardTitle className="text-lg line-clamp-2">
+            <CardTitle className="text-xl line-clamp-2 mb-3">
               {getTicketDisplayTitle(ticket)}
             </CardTitle>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="font-mono text-xs text-muted-foreground">
+            <div className="flex items-center gap-3 mt-2">
+              <span className="font-mono text-sm text-muted-foreground px-2 py-1 bg-muted rounded">
                 {ticket.codigo_ticket}
               </span>
-              <div className={`w-2 h-2 rounded-full ${getStatusColor(ticket.status)}`} />
-              <span className="text-sm text-muted-foreground capitalize">{ticket.status}</span>
+              <div className="flex items-center gap-2">
+                <div className={`w-3 h-3 rounded-full ${getStatusColor(ticket.status)}`} />
+                <span className="text-sm text-muted-foreground capitalize font-medium">{ticket.status}</span>
+              </div>
               {slaStatus && (
-                <div className={`flex items-center gap-1 ${slaStatus.color}`}>
+                <div className={`flex items-center gap-2 px-2 py-1 rounded ${slaStatus.color} bg-muted`}>
                   {slaStatus.icon}
                   <span className="text-xs font-medium">{slaStatus.text}</span>
                 </div>
@@ -333,57 +335,74 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 flex flex-col space-y-4">
+      <CardContent className="flex-1 flex flex-col space-y-6">
         {/* Ticket Info */}
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Building className="h-4 w-4 text-muted-foreground" />
-              <span>{ticket.unidades?.grupo || ticket.unidade_id}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <User className="h-4 w-4 text-muted-foreground" />
-              <span>
-                {ticket.colaboradores?.nome_completo || 
-                 (ticket.franqueados?.name ? `${ticket.franqueados.name} (Franqueado)` : null) ||
-                 (ticket.profiles?.nome_completo ? `${ticket.profiles.nome_completo} (Criador)` : null) ||
-                 'N/A'}
-              </span>
-            </div>
-            {ticket.franqueados && (
-              <div className="text-xs text-muted-foreground">
-                Franqueado ID: {ticket.franqueado_id}
+        <div className="grid grid-cols-2 gap-6 text-sm">
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+              <Building className="h-5 w-5 text-primary" />
+              <div>
+                <div className="font-medium text-foreground">{ticket.unidades?.grupo || ticket.unidade_id}</div>
+                <div className="text-xs text-muted-foreground">Unidade</div>
               </div>
-            )}
+            </div>
+            <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+              <User className="h-5 w-5 text-primary" />
+              <div>
+                <div className="font-medium text-foreground">
+                  {ticket.colaboradores?.nome_completo || 
+                   (ticket.franqueados?.name ? `${ticket.franqueados.name} (Franqueado)` : null) ||
+                   (ticket.profiles?.nome_completo ? `${ticket.profiles.nome_completo} (Criador)` : null) ||
+                   'N/A'}
+                </div>
+                <div className="text-xs text-muted-foreground">Solicitante</div>
+                {ticket.franqueados && (
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Franqueado ID: {ticket.franqueado_id}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-          <div className="space-y-2">
-            <Badge variant={getPriorityVariant(ticket.prioridade)} className="w-fit">
-              {ticket.prioridade === 'crise' && <Zap className="h-3 w-3 mr-1" />}
-              {ticket.prioridade}
-            </Badge>
+          <div className="space-y-4">
+            <div className="p-3 bg-muted/50 rounded-lg">
+              <Badge variant={getPriorityVariant(ticket.prioridade)} className="w-fit mb-2">
+                {ticket.prioridade === 'crise' && <Zap className="h-3 w-3 mr-1" />}
+                {ticket.prioridade}
+              </Badge>
+              <div className="text-xs text-muted-foreground">Prioridade</div>
+            </div>
             {ticket.equipes?.nome ? (
-              <div className="flex items-center gap-2">
-                <Tag className="h-4 w-4 text-muted-foreground" />
-                <span>{ticket.equipes.nome}</span>
+              <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                <Tag className="h-5 w-5 text-primary" />
+                <div>
+                  <div className="font-medium text-foreground">{ticket.equipes.nome}</div>
+                  <div className="text-xs text-muted-foreground">Equipe Responsável</div>
+                </div>
               </div>
             ) : ticket.categoria && (
-              <div className="flex items-center gap-2">
-                <Tag className="h-4 w-4 text-muted-foreground" />
-                <span className="capitalize">{ticket.categoria}</span>
+              <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                <Tag className="h-5 w-5 text-primary" />
+                <div>
+                  <div className="font-medium text-foreground capitalize">{ticket.categoria}</div>
+                  <div className="text-xs text-muted-foreground">Categoria</div>
+                </div>
               </div>
             )}
           </div>
         </div>
 
         {/* Problem Description */}
-        <div>
-          <h4 className="font-medium mb-2">Descrição do Problema</h4>
-          <p className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
-            {ticket.descricao_problema}
-          </p>
+        <div className="space-y-3">
+          <h4 className="font-semibold text-lg">Descrição do Problema</h4>
+          <div className="p-4 bg-muted/50 rounded-lg border-l-4 border-primary">
+            <p className="text-sm leading-relaxed text-foreground">
+              {ticket.descricao_problema}
+            </p>
+          </div>
         </div>
 
-        <Separator />
+        <Separator className="my-6" />
 
         {/* AI Suggestion */}
         <Collapsible open={showAISuggestion} onOpenChange={setShowAISuggestion}>
