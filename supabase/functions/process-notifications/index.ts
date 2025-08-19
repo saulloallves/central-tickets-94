@@ -74,26 +74,34 @@ serve(async (req) => {
       console.log('Franqueado found:', { name: franqueado?.name, hasPhone: !!franqueado?.phone })
     }
 
-    // Buscar configurações de notificação
-    let settings = null;
-    const { data: settingsData, error: settingsError } = await supabase
+    // Get Z-API configuration from secrets
+    const zapiBaseUrl = Deno.env.get('ZAPI_BASE_URL')
+    const zapiInstanceId = Deno.env.get('ZAPI_INSTANCE_ID')
+    const zapiInstanceToken = Deno.env.get('ZAPI_INSTANCE_TOKEN')
+
+    if (!zapiBaseUrl || !zapiInstanceId || !zapiInstanceToken) {
+      console.error('Missing Z-API configuration. Required: ZAPI_BASE_URL, ZAPI_INSTANCE_ID, ZAPI_INSTANCE_TOKEN')
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Configuração Z-API incompleta. Verifique as variáveis de ambiente.' 
+        }),
+        { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      )
+    }
+
+    // Buscar configurações de notificação para delays e retries
+    const { data: settingsData } = await supabase
       .from('notification_settings')
       .select('*')
       .single()
 
-    if (settingsError || !settingsData) {
-      console.log('No notification settings found, using defaults')
-      // Usar configurações padrão se não existir na base
-      settings = {
-        webhook_saida: Deno.env.get('ZAPI_BASE_URL') || null,
-        delay_mensagem: 2000,
-        limite_retentativas: 3,
-        numero_remetente: null
-      }
-    } else {
-      settings = settingsData
-      console.log('Using notification settings from database')
+    const settings = settingsData || {
+      delay_mensagem: 2000,
+      limite_retentativas: 3
     }
+
+    console.log('Using Z-API configuration from environment secrets')
 
     // Função para formatar o título do ticket
     const formatTicketTitle = (ticket: any) => {
@@ -108,7 +116,7 @@ serve(async (req) => {
       
       let phoneStr = phone.toString().replace(/\D/g, '') // Remove tudo que não é dígito
       
-      // Se tem 11 dígitos e começa com 55, já tem código do país
+      // Se tem 13 dígitos e começa com 55, já tem código do país
       if (phoneStr.length === 13 && phoneStr.startsWith('55')) {
         return phoneStr
       }
@@ -127,31 +135,36 @@ serve(async (req) => {
       return phoneStr.length >= 10 ? phoneStr : null
     }
 
+    // Função para detectar se é ID de grupo
+    const isGroupId = (id: string): boolean => {
+      return id.includes('@g.us') || id.includes('-group') || id.length > 15
+    }
+
     // Função para enviar mensagem via ZAPI
-    const sendZapiMessage = async (groupId: string, message: string) => {
-      console.log('Attempting to send ZAPI message to:', groupId)
-      if (!groupId || !settings?.webhook_saida) {
-        console.log('Missing groupId or webhook URL:', { groupId: !!groupId, webhook: !!settings?.webhook_saida })
-        return { success: false, error: 'Missing configuration' }
-      }
-
-      const zapiPayload = {
-        phone: groupId,
-        message: message,
-        delayMessage: settings.delay_mensagem || 2000
-      }
-
-      console.log('Sending to ZAPI:', { groupId, message: message.substring(0, 100) + '...' })
+    const sendZapiMessage = async (destination: string, message: string) => {
+      const isGroup = isGroupId(destination)
+      const endpoint = isGroup ? 'send-text-group' : 'send-text'
+      const webhookUrl = `${zapiBaseUrl}/instances/${zapiInstanceId}/token/${zapiInstanceToken}/${endpoint}`
+      
+      console.log(`Sending ${isGroup ? 'group' : 'individual'} message to:`, destination)
+      console.log(`Using endpoint: ${zapiBaseUrl}/instances/${zapiInstanceId}/token/***/${endpoint}`)
+      
+      const payload = isGroup 
+        ? { groupId: destination, message }
+        : { phone: destination, message }
+      
+      console.log('Sending to ZAPI:', { 
+        [isGroup ? 'groupId' : 'phone']: destination, 
+        message: message.substring(0, 100) + '...' 
+      })
 
       try {
-        const zapiResponse = await fetch(settings.webhook_saida, {
+        const zapiResponse = await fetch(webhookUrl, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            'Client-Token': Deno.env.get('ZAPI_CLIENT_TOKEN') || '',
-            'Instance-Token': Deno.env.get('ZAPI_INSTANCE_TOKEN') || ''
+            'Content-Type': 'application/json'
           },
-          body: JSON.stringify(zapiPayload)
+          body: JSON.stringify(payload)
         })
 
         const result = await zapiResponse.json()
@@ -159,11 +172,11 @@ serve(async (req) => {
         console.log('ZAPI response:', result)
         
         if (!zapiResponse.ok) {
-          const errorMsg = result?.error || result?.message || `HTTP ${zapiResponse.status}`
+          const errorMsg = result?.error || result?.message || `HTTP ${zapiResponse.status} ${zapiResponse.statusText}`
           console.error('ZAPI HTTP error:', errorMsg)
           return { 
             success: false, 
-            error: `ZAPI API error: ${errorMsg}. Verifique configurações de webhook e credenciais.`,
+            error: `ZAPI API error: ${errorMsg}`,
             status: zapiResponse.status,
             data: result
           }
@@ -174,7 +187,7 @@ serve(async (req) => {
         console.error('ZAPI network error:', error)
         return { 
           success: false, 
-          error: `Erro de conexão com ZAPI: ${error.message}. Verifique a URL do webhook.` 
+          error: `Erro de conexão com ZAPI: ${error.message}` 
         }
       }
     }
