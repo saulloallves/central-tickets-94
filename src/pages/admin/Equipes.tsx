@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2, Users } from "lucide-react";
+import { EquipeMembersDialog } from "@/components/equipes/EquipeMembersDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,6 +28,8 @@ export default function Equipes() {
   const [loading, setLoading] = useState(true);
   const [editingEquipe, setEditingEquipe] = useState<Equipe | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [membersDialogOpen, setMembersDialogOpen] = useState(false);
+  const [selectedEquipeForMembers, setSelectedEquipeForMembers] = useState<Equipe | null>(null);
   const [formData, setFormData] = useState({
     nome: "",
     descricao: "",
@@ -132,6 +135,11 @@ export default function Equipes() {
     setIsDialogOpen(true);
   };
 
+  const openMembersDialog = (equipe: Equipe) => {
+    setSelectedEquipeForMembers(equipe);
+    setMembersDialogOpen(true);
+  };
+
   if (loading) {
     return <div className="p-6">Carregando equipes...</div>;
   }
@@ -229,6 +237,14 @@ export default function Equipes() {
                   <Button
                     variant="outline"
                     size="sm"
+                    onClick={() => openMembersDialog(equipe)}
+                    title="Gerenciar membros"
+                  >
+                    <Users className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => handleEdit(equipe)}
                   >
                     <Pencil className="h-4 w-4" />
@@ -252,6 +268,16 @@ export default function Equipes() {
           </Card>
         ))}
       </div>
+
+      {/* Members Dialog */}
+      {selectedEquipeForMembers && (
+        <EquipeMembersDialog
+          equipeId={selectedEquipeForMembers.id}
+          equipeNome={selectedEquipeForMembers.nome}
+          open={membersDialogOpen}
+          onOpenChange={setMembersDialogOpen}
+        />
+      )}
 
       {equipes.length === 0 && (
         <Card>
