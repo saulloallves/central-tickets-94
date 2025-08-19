@@ -289,39 +289,44 @@ const KanbanColumn = ({ status, tickets, selectedTicketId, onTicketSelect, equip
   });
 
   return (
-    <div 
-      ref={setNodeRef}
-      className={cn(
-        "rounded-lg border-2 p-4 min-h-[600px] transition-all duration-200",
-        COLUMN_COLORS[status],
-        isOver ? "border-primary bg-primary/10 border-solid scale-[1.02] shadow-lg" : "border-dashed"
-      )}
-    >
-      <div className="flex items-center justify-between mb-4">
+    <div className="flex flex-col h-full">
+      <div className="flex items-center justify-between mb-4 px-4 pt-4">
         <h3 className="font-semibold text-sm">{COLUMN_STATUS[status]}</h3>
         <Badge variant="secondary" className="text-xs">
           {tickets.length}
         </Badge>
       </div>
       
-      <SortableContext items={tickets.map(t => t.id)} strategy={verticalListSortingStrategy}>
-        <div className="space-y-3">
-          {tickets.map((ticket) => (
-            <KanbanTicketCard
-              key={ticket.id}
-              ticket={ticket}
-              isSelected={selectedTicketId === ticket.id}
-              onSelect={onTicketSelect}
-              equipes={equipes}
-            />
-          ))}
-          {tickets.length === 0 && (
-            <div className="text-center text-muted-foreground text-sm py-8">
-              Nenhum ticket nesta coluna
-            </div>
-          )}
-        </div>
-      </SortableContext>
+      <div 
+        ref={setNodeRef}
+        className={cn(
+          "flex-1 rounded-lg border-2 p-4 min-h-[600px] transition-all duration-200 relative",
+          COLUMN_COLORS[status],
+          isOver ? "border-primary bg-primary/10 border-solid scale-[1.02] shadow-lg" : "border-dashed"
+        )}
+      >
+        <SortableContext items={tickets.map(t => t.id)} strategy={verticalListSortingStrategy}>
+          <div className="space-y-3 relative z-10">
+            {tickets.map((ticket) => (
+              <KanbanTicketCard
+                key={ticket.id}
+                ticket={ticket}
+                isSelected={selectedTicketId === ticket.id}
+                onSelect={onTicketSelect}
+                equipes={equipes}
+              />
+            ))}
+            {tickets.length === 0 && (
+              <div className="text-center text-muted-foreground text-sm py-8">
+                Nenhum ticket nesta coluna
+              </div>
+            )}
+          </div>
+        </SortableContext>
+        
+        {/* Área de drop invisível que cobre toda a coluna */}
+        <div className="absolute inset-0 z-0" />
+      </div>
     </div>
   );
 };
