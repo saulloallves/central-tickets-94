@@ -14,7 +14,7 @@ serve(async (req) => {
   }
 
   try {
-    const { ticketId, type, priority = 'normal' } = await req.json();
+    const { ticketId, type, priority = 'normal', textoResposta } = await req.json();
     
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -67,6 +67,28 @@ serve(async (req) => {
                  `*Prioridade:* ${ticket.prioridade}\n` +
                  `*Problema:* ${ticket.descricao_problema.substring(0, 100)}...\n\n` +
                  `⏰ SLA: ${new Date(ticket.data_limite_sla).toLocaleString('pt-BR')}`;
+        
+        // Usar id_grupo_branco da unidade para envio
+        if (unidade?.id_grupo_branco) {
+          recipients = [unidade.id_grupo_branco];
+        }
+        break;
+
+      case 'resposta_ticket':
+        const dataHoraBR = new Date().toLocaleString('pt-BR', {
+          timeZone: 'America/Sao_Paulo',
+          day: '2-digit',
+          month: '2-digit', 
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+        
+        message = `💬 *Resposta ao Ticket*\n\n` +
+                 `🎫 *Ticket:* ${ticket.codigo_ticket}\n` +
+                 `🏢 *Unidade:* ${unidade?.grupo || ticket.unidade_id}\n` +
+                 `🕒 *Data:* ${dataHoraBR}\n\n` +
+                 `✍️ *Resposta:*\n${textoResposta}`;
         
         // Usar id_grupo_branco da unidade para envio
         if (unidade?.id_grupo_branco) {

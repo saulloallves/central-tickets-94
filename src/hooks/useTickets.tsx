@@ -436,6 +436,21 @@ export const useTicketMessages = (ticketId: string) => {
       }
 
       fetchMessages();
+      
+      // Enviar notificação WhatsApp para o grupo
+      try {
+        await supabase.functions.invoke('process-notifications', {
+          body: {
+            ticketId,
+            type: 'resposta_ticket',
+            textoResposta: mensagem
+          }
+        });
+      } catch (notifyError) {
+        console.error('Error sending WhatsApp notification:', notifyError);
+        // Não mostrar erro ao usuário pois a mensagem foi enviada com sucesso
+      }
+      
       return data;
     } catch (error) {
       console.error('Error sending message:', error);
