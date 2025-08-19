@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { X, Clock, User, Building, Tag, AlertTriangle, MessageSquare, Send, Paperclip, Zap, Sparkles, Copy, Bot } from 'lucide-react';
+import { X, Clock, User, Building, Tag, AlertTriangle, MessageSquare, Send, Paperclip, Zap, Sparkles, Copy, Bot, Phone } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,6 +29,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
   const [aiQuestion, setAiQuestion] = useState('');
   const [showAISuggestion, setShowAISuggestion] = useState(false);
   const [showAIChat, setShowAIChat] = useState(false);
+  const [isSendingToFranqueado, setIsSendingToFranqueado] = useState(false);
   
   const { messages, sendMessage, loading: messagesLoading } = useTicketMessages(ticketId);
   const { suggestion, loading: suggestionLoading, generateSuggestion, markSuggestionUsed } = useAISuggestion(ticketId);
@@ -128,6 +129,57 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
     
     await askAI(aiQuestion);
     setAiQuestion('');
+  };
+
+  const handleSendToFranqueado = async () => {
+    if (!newMessage.trim()) {
+      toast({
+        title: "Erro",
+        description: "Digite uma mensagem antes de enviar",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSendingToFranqueado(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('process-notifications', {
+        body: {
+          ticketId: ticket.id,
+          type: 'resposta_ticket_privado',
+          textoResposta: newMessage
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data && !data.success) {
+        toast({
+          title: "Aviso",
+          description: data.message,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      toast({
+        title: "Sucesso",
+        description: "Mensagem enviada por WhatsApp ao franqueado",
+      });
+
+    } catch (error) {
+      console.error('Error sending to franqueado:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao enviar mensagem ao franqueado",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSendingToFranqueado(false);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -496,14 +548,25 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                 <Paperclip className="h-4 w-4 mr-2" />
                 Anexar
               </Button>
-              <Button 
-                size="sm" 
-                onClick={handleSendMessage}
-                disabled={!newMessage.trim()}
-              >
-                <Send className="h-4 w-4 mr-2" />
-                Enviar
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  size="sm" 
+                  onClick={handleSendMessage}
+                  disabled={!newMessage.trim()}
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  Enviar
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={handleSendToFranqueado}
+                  disabled={!newMessage.trim() || isSendingToFranqueado}
+                >
+                  <Phone className="h-4 w-4 mr-2" />
+                  {isSendingToFranqueado ? 'Enviando...' : 'WhatsApp Franqueado'}
+                </Button>
+              </div>
             </div>
           </div>
         </div>

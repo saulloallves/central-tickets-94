@@ -96,6 +96,77 @@ serve(async (req) => {
         }
         break;
 
+      case 'resposta_ticket_privado':
+        console.log(`Processing private response for ticket: ${ticketId}`);
+        
+        if (!ticket.franqueado_id) {
+          return new Response(JSON.stringify({ 
+            success: false, 
+            code: 'NO_FRANQUEADO',
+            message: 'Este ticket não possui franqueado associado.' 
+          }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        // Buscar dados do franqueado
+        const { data: franqueado, error: franqueadoError } = await supabase
+          .from('franqueados')
+          .select('name, phone')
+          .eq('Id', ticket.franqueado_id)
+          .single();
+
+        if (franqueadoError || !franqueado) {
+          console.error('Error fetching franqueado:', franqueadoError);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            code: 'FRANQUEADO_NOT_FOUND',
+            message: 'Franqueado não encontrado.' 
+          }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        if (!franqueado.phone) {
+          console.log(`No phone number for franqueado: ${ticket.franqueado_id}`);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            code: 'MISSING_PHONE',
+            message: 'Não temos o número do franqueado para enviar essa resposta.' 
+          }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        // Normalizar número do telefone
+        let normalizedPhone = franqueado.phone.toString().replace(/\D/g, '');
+        if (normalizedPhone.length === 11 && !normalizedPhone.startsWith('55')) {
+          normalizedPhone = '55' + normalizedPhone;
+        }
+
+        console.log(`Sending private message to franqueado ${franqueado.name} at ${normalizedPhone}`);
+
+        const dataHoraPrivado = new Date().toLocaleString('pt-BR', {
+          timeZone: 'America/Sao_Paulo',
+          day: '2-digit',
+          month: '2-digit', 
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+        
+        message = `💬 *Resposta ao seu Ticket*\n\n` +
+                 `🎫 *Ticket:* ${ticket.codigo_ticket}\n` +
+                 `🕒 *Data:* ${dataHoraPrivado}\n\n` +
+                 `✍️ *Resposta:*\n${textoResposta}\n\n` +
+                 `Se precisar de mais ajuda, é só responder por aqui 👍`;
+        
+        recipients = [normalizedPhone];
+        break;
+
       case 'sla_half_time':
         message = `⚠️ *Alerta SLA - 50% do Prazo*\n\n` +
                  `*Ticket:* ${ticket.codigo_ticket}\n` +
