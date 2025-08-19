@@ -247,7 +247,9 @@ const Tickets = () => {
           onTicketSelect={handleTicketSelect}
           selectedTicketId={selectedTicketId}
           equipes={equipes}
-          onChangeStatus={changeTicketStatus}
+          onChangeStatus={(ticketId, fromStatus, toStatus, beforeId, afterId) => 
+            changeTicketStatus(ticketId, fromStatus, toStatus, beforeId, afterId)
+          }
         />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

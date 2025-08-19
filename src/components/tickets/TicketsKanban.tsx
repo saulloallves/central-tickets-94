@@ -48,7 +48,13 @@ interface TicketsKanbanProps {
   onTicketSelect: (ticketId: string) => void;
   selectedTicketId: string | null;
   equipes: Array<{ id: string; nome: string }>;
-  onChangeStatus: (ticketId: string, fromStatus: string, toStatus: string) => Promise<boolean>;
+  onChangeStatus: (
+    ticketId: string, 
+    fromStatus: string, 
+    toStatus: string,
+    beforeId?: string,
+    afterId?: string
+  ) => Promise<boolean>;
 }
 
 const COLUMN_STATUS = {
@@ -432,8 +438,15 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
       to: newStatus
     });
 
-    // Optimistic update via parent component
-    const success = await onChangeStatus(ticketId, ticket.status, newStatus);
+    // Enhanced move with position support
+    // For now, we'll pass undefined for before/after until we implement sortable ordering
+    const success = await onChangeStatus(
+      ticketId, 
+      ticket.status, 
+      newStatus,
+      undefined, // beforeId - to be implemented with sortable ordering
+      undefined  // afterId - to be implemented with sortable ordering
+    );
     
     if (success) {
       console.log('✅ Drag-drop completed successfully');

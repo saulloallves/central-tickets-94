@@ -124,7 +124,8 @@ export const useTickets = (filters: TicketFilters) => {
             nome_completo
           )
         `)
-        .order('created_at', { ascending: false });
+        .order('status', { ascending: true })
+        .order('position', { ascending: true });
 
       // Apply search filter - now includes titulo
       if (filters.search) {
@@ -379,20 +380,27 @@ export const useTickets = (filters: TicketFilters) => {
     }
   };
 
-  // Status transition validation
+  // Status transition validation (client-side check for better UX)
   const ALLOWED_TRANSITIONS: Record<string, string[]> = {
     'aberto': ['em_atendimento', 'escalonado', 'concluido'],
-    'em_atendimento': ['escalonado', 'concluido'],
-    'escalonado': ['em_atendimento', 'concluido'],
-    'concluido': []
+    'em_atendimento': ['escalonado', 'concluido', 'aberto'],
+    'escalonado': ['em_atendimento', 'concluido', 'aberto'],
+    'concluido': ['aberto']
   };
 
   const isTransitionAllowed = (from: string, to: string): boolean => {
     return ALLOWED_TRANSITIONS[from]?.includes(to) || false;
   };
 
-  // Optimistic drag-and-drop status update
-  const changeTicketStatus = async (ticketId: string, fromStatus: string, toStatus: string) => {
+  // Enhanced drag-and-drop with edge function and position support
+  const changeTicketStatus = async (
+    ticketId: string, 
+    fromStatus: string, 
+    toStatus: string,
+    beforeId?: string,
+    afterId?: string
+  ) => {
+    // Client-side validation for immediate feedback
     if (!isTransitionAllowed(fromStatus, toStatus)) {
       toast({
         title: "Transição não permitida",
@@ -402,15 +410,75 @@ export const useTickets = (filters: TicketFilters) => {
       return false;
     }
 
-    // Optimistic update
+    // Optimistic update for immediate UI response
     optimisticUpdateTicket(ticketId, { status: toStatus as any });
 
     try {
-      const result = await updateTicket(ticketId, { status: toStatus as 'aberto' | 'em_atendimento' | 'escalonado' | 'concluido' });
-      return result !== null;
+      console.log('🚀 Calling move-ticket edge function:', {
+        ticketId, 
+        fromStatus,
+        toStatus,
+        beforeId,
+        afterId
+      });
+
+      const { data, error } = await supabase.functions.invoke('move-ticket', {
+        body: {
+          ticketId,
+          toStatus,
+          beforeId: beforeId || null,
+          afterId: afterId || null
+        }
+      });
+
+      if (error) {
+        console.error('❌ Edge function error:', error);
+        // Rollback optimistic update
+        optimisticRollback(ticketId, fromStatus);
+        
+        toast({
+          title: "Erro ao mover ticket",
+          description: error.message || "Erro desconhecido",
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      if (!data?.success) {
+        console.error('❌ Move failed:', data);
+        // Rollback optimistic update
+        optimisticRollback(ticketId, fromStatus);
+        
+        toast({
+          title: "Erro ao mover ticket", 
+          description: data?.error || "Falha na operação",
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      console.log('✅ Ticket moved successfully:', data.ticket);
+      
+      // Refresh tickets to ensure consistency
+      fetchTickets();
+      fetchTicketStats();
+      
+      toast({
+        title: "Sucesso",
+        description: data.message || "Ticket movido com sucesso",
+      });
+      
+      return true;
     } catch (error) {
-      // Rollback on error
+      console.error('💥 Unexpected error moving ticket:', error);
+      // Rollback optimistic update
       optimisticRollback(ticketId, fromStatus);
+      
+      toast({
+        title: "Erro inesperado",
+        description: "Falha ao mover ticket",
+        variant: "destructive",
+      });
       return false;
     }
   };
@@ -641,7 +709,7 @@ export const useTickets = (filters: TicketFilters) => {
     // Optimistic UI functions
     optimisticUpdateTicket,
     optimisticRollback,
-    // Drag and Drop function
+    // Enhanced Drag and Drop function with position support
     changeTicketStatus,
     // Realtime handlers
     handleTicketUpdate,

@@ -1943,6 +1943,10 @@ export type Database = {
         Args: { ts: string }
         Returns: string
       }
+      calculate_new_position: {
+        Args: { p_after_id?: string; p_before_id?: string; p_status: string }
+        Returns: number
+      }
       can_create_ticket: {
         Args: { ticket_unidade_id: string }
         Returns: boolean
