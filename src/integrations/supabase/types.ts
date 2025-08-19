@@ -1014,6 +1014,27 @@ export type Database = {
         }
         Relationships: []
       }
+      role_permissions: {
+        Row: {
+          created_at: string
+          id: string
+          permission: Database["public"]["Enums"]["app_permission"]
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          permission: Database["public"]["Enums"]["app_permission"]
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          permission?: Database["public"]["Enums"]["app_permission"]
+          role?: Database["public"]["Enums"]["app_role"]
+        }
+        Relationships: []
+      }
       ticket_ai_interactions: {
         Row: {
           created_at: string
@@ -1480,6 +1501,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_permissions: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          granted_by: string | null
+          id: string
+          permission: Database["public"]["Enums"]["app_permission"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          granted_by?: string | null
+          id?: string
+          permission: Database["public"]["Enums"]["app_permission"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          granted_by?: string | null
+          id?: string
+          permission?: Database["public"]["Enums"]["app_permission"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1508,6 +1556,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      view_access_log: {
+        Row: {
+          accessed_at: string
+          id: string
+          ip_address: unknown | null
+          resource_id: string | null
+          resource_type: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          accessed_at?: string
+          id?: string
+          ip_address?: unknown | null
+          resource_id?: string | null
+          resource_type: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          accessed_at?: string
+          id?: string
+          ip_address?: unknown | null
+          resource_id?: string | null
+          resource_type?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {
@@ -1709,6 +1787,19 @@ export type Database = {
           total_tickets: number
         }[]
       }
+      get_user_permissions: {
+        Args: { _user_id: string }
+        Returns: {
+          permission: Database["public"]["Enums"]["app_permission"]
+        }[]
+      }
+      has_permission: {
+        Args: {
+          _permission: Database["public"]["Enums"]["app_permission"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1734,6 +1825,15 @@ export type Database = {
         }
         Returns: string
       }
+      log_view_access: {
+        Args: {
+          _ip_address?: unknown
+          _resource_id?: string
+          _resource_type: string
+          _user_agent?: string
+        }
+        Returns: undefined
+      }
       next_ticket_code: {
         Args: { p_unidade_id: string }
         Returns: string
@@ -1742,6 +1842,22 @@ export type Database = {
     Enums: {
       ai_interaction_kind: "suggestion" | "chat"
       ai_model_provider: "openai" | "lambda"
+      app_permission:
+        | "view_all_tickets"
+        | "view_own_unit_tickets"
+        | "view_team_tickets"
+        | "respond_tickets"
+        | "escalate_tickets"
+        | "access_dashboards"
+        | "manage_knowledge_base"
+        | "validate_ai_content"
+        | "configure_ai_models"
+        | "view_audit_logs"
+        | "export_reports"
+        | "view_all_history"
+        | "manage_crisis"
+        | "supervise_units"
+        | "validate_ai_responses"
       app_role:
         | "admin"
         | "gerente"
@@ -1915,6 +2031,23 @@ export const Constants = {
     Enums: {
       ai_interaction_kind: ["suggestion", "chat"],
       ai_model_provider: ["openai", "lambda"],
+      app_permission: [
+        "view_all_tickets",
+        "view_own_unit_tickets",
+        "view_team_tickets",
+        "respond_tickets",
+        "escalate_tickets",
+        "access_dashboards",
+        "manage_knowledge_base",
+        "validate_ai_content",
+        "configure_ai_models",
+        "view_audit_logs",
+        "export_reports",
+        "view_all_history",
+        "manage_crisis",
+        "supervise_units",
+        "validate_ai_responses",
+      ],
       app_role: [
         "admin",
         "gerente",
