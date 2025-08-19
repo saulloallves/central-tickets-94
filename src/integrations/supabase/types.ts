@@ -166,11 +166,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "colaboradores_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "v_unit_metrics"
+            referencedColumns: ["unidade_id"]
+          },
+          {
             foreignKeyName: "fk_colaboradores_unidade"
             columns: ["unidade_id"]
             isOneToOne: false
             referencedRelation: "unidades"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_colaboradores_unidade"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "v_unit_metrics"
+            referencedColumns: ["unidade_id"]
           },
         ]
       }
@@ -212,6 +226,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "equipes"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipe_members_equipe_id_fkey"
+            columns: ["equipe_id"]
+            isOneToOne: false
+            referencedRelation: "v_team_performance"
+            referencedColumns: ["equipe_id"]
           },
           {
             foreignKeyName: "equipe_members_user_id_fkey"
@@ -300,6 +321,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "unidades"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_escalation_levels_unidade"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "v_unit_metrics"
+            referencedColumns: ["unidade_id"]
           },
         ]
       }
@@ -1128,6 +1156,13 @@ export type Database = {
             referencedRelation: "unidades"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_ticket_sequences_unidade"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "v_unit_metrics"
+            referencedColumns: ["unidade_id"]
+          },
         ]
       }
       tickets: {
@@ -1264,11 +1299,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_tickets_unidade"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "v_unit_metrics"
+            referencedColumns: ["unidade_id"]
+          },
+          {
             foreignKeyName: "tickets_equipe_responsavel_id_fkey"
             columns: ["equipe_responsavel_id"]
             isOneToOne: false
             referencedRelation: "equipes"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_equipe_responsavel_id_fkey"
+            columns: ["equipe_responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "v_team_performance"
+            referencedColumns: ["equipe_id"]
           },
         ]
       }
@@ -1485,6 +1534,79 @@ export type Database = {
         }
         Relationships: []
       }
+      v_team_performance: {
+        Row: {
+          data_calculo: string | null
+          equipe_id: string | null
+          equipe_nome: string | null
+          tempo_medio_resolucao: number | null
+          tickets_crise: number | null
+          tickets_reabertos: number | null
+          tickets_resolvidos: number | null
+          tickets_sla_ok: number | null
+          total_tickets: number | null
+          unidades_atendidas: number | null
+        }
+        Relationships: []
+      }
+      v_tickets_metrics: {
+        Row: {
+          categoria: Database["public"]["Enums"]["ticket_categoria"] | null
+          criado_por: string | null
+          crise: number | null
+          data: string | null
+          equipe_responsavel_id: string | null
+          ia_usada: number | null
+          interacoes_ia: number | null
+          modelos_usados: string | null
+          prioridade: Database["public"]["Enums"]["ticket_prioridade"] | null
+          reaberto: number | null
+          resolvido: number | null
+          resolvido_com_ia: number | null
+          resolvido_no_sla: number | null
+          status: Database["public"]["Enums"]["ticket_status"] | null
+          status_sla: Database["public"]["Enums"]["ticket_sla_status"] | null
+          tempo_resolucao_horas: number | null
+          unidade_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_tickets_criado_por"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_tickets_unidade"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_tickets_unidade"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "v_unit_metrics"
+            referencedColumns: ["unidade_id"]
+          },
+          {
+            foreignKeyName: "tickets_equipe_responsavel_id_fkey"
+            columns: ["equipe_responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "equipes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_equipe_responsavel_id_fkey"
+            columns: ["equipe_responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "v_team_performance"
+            referencedColumns: ["equipe_id"]
+          },
+        ]
+      }
       v_tickets_por_unidade_mes: {
         Row: {
           mes: string | null
@@ -1503,6 +1625,13 @@ export type Database = {
             referencedRelation: "unidades"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_tickets_unidade"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "v_unit_metrics"
+            referencedColumns: ["unidade_id"]
+          },
         ]
       }
       v_tickets_sla_overview: {
@@ -1513,6 +1642,23 @@ export type Database = {
           em_atendimento: number | null
           status_sla: Database["public"]["Enums"]["ticket_sla_status"] | null
           total: number | null
+        }
+        Relationships: []
+      }
+      v_unit_metrics: {
+        Row: {
+          ia_bem_sucedida: number | null
+          interacoes_ia_total: number | null
+          mes_referencia: string | null
+          percentual_sla: number | null
+          tempo_medio_resolucao: number | null
+          tickets_abertos: number | null
+          tickets_crise: number | null
+          tickets_resolvidos: number | null
+          tickets_sla_ok: number | null
+          total_tickets_mes: number | null
+          unidade_id: string | null
+          unidade_nome: string | null
         }
         Relationships: []
       }
@@ -1543,6 +1689,25 @@ export type Database = {
           p_ticket_id: string
         }
         Returns: string
+      }
+      get_realtime_kpis: {
+        Args: {
+          p_equipe_filter?: string
+          p_periodo_dias?: number
+          p_unidade_filter?: string
+          p_user_id?: string
+        }
+        Returns: Json
+      }
+      get_ticket_trends: {
+        Args: { p_dias?: number; p_unidade_filter?: string; p_user_id?: string }
+        Returns: {
+          data: string
+          tempo_medio_resolucao: number
+          tickets_resolvidos: number
+          tickets_sla_ok: number
+          total_tickets: number
+        }[]
       }
       has_role: {
         Args: {
