@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTicketNotifications } from '@/hooks/useTicketNotifications';
 import { Plus, Filter, Calendar, Users, Clock, AlertTriangle, List, LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +28,9 @@ interface Equipe {
 const Tickets = () => {
   const { isAdmin, isGerente } = useRole();
   const { userEquipes } = useUserEquipes();
+  
+  // Inicializar notificações sonoras
+  useTicketNotifications();
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
