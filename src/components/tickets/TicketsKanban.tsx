@@ -36,14 +36,11 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTickets, type TicketFilters, type Ticket } from '@/hooks/useTickets';
-import { useOptimisticTicketActions } from '@/hooks/useOptimisticTicketActions';
-import { useEnhancedTicketRealtime } from '@/hooks/useEnhancedTicketRealtime';
-import { usePerformanceMetrics } from '@/hooks/usePerformanceMetrics';
+import { useSimpleTicketDragDrop } from '@/hooks/useSimpleTicketDragDrop';
 import { TicketDetail } from './TicketDetail';
 import { TicketActions } from './TicketActions';
 import { formatDistanceToNowInSaoPaulo } from '@/lib/date-utils';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
 
 interface TicketsKanbanProps {
   filters: TicketFilters;
@@ -320,20 +317,15 @@ const KanbanColumn = ({ status, tickets, selectedTicketId, onTicketSelect, equip
 };
 
 export const TicketsKanban = ({ filters, onTicketSelect, selectedTicketId, equipes }: TicketsKanbanProps) => {
-  const { tickets, loading, updateTicket, optimisticUpdateTicket, optimisticRollback } = useTickets(filters);
-  const { isTicketPending, getPendingAction } = useOptimisticTicketActions();
-  const { startMetric, endMetric } = usePerformanceMetrics();
-  const { toast } = useToast();
+  const { tickets, loading } = useTickets(filters);
+  const { updateTicketStatus, isUpdating } = useSimpleTicketDragDrop();
   const [activeTicket, setActiveTicket] = useState<Ticket | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [draggedOverColumn, setDraggedOverColumn] = useState<string | null>(null);
-  const [lastUpdateTime, setLastUpdateTime] = useState<Date>(new Date());
-
-  // Remove subscription to avoid duplicates (handled by parent)
 
   // Update timestamp when tickets change
   useEffect(() => {
-    setLastUpdateTime(new Date());
+    console.log('📊 Tickets updated, count:', tickets.length);
   }, [tickets.length]);
 
   const sensors = useSensors(
@@ -377,6 +369,7 @@ export const TicketsKanban = ({ filters, onTicketSelect, selectedTicketId, equip
     setDraggedOverColumn(null);
 
     if (!over || over.data.current?.type !== 'column') {
+      console.log('❌ Invalid drop target');
       return;
     }
 
@@ -385,60 +378,24 @@ export const TicketsKanban = ({ filters, onTicketSelect, selectedTicketId, equip
     const newStatus = over.id as string;
 
     if (!newStatus || !ticket || ticket.status === newStatus || !Object.keys(COLUMN_STATUS).includes(newStatus)) {
+      console.log('❌ Invalid status change or same status');
       return;
     }
 
-    // Start performance tracking
-    const metricId = startMetric('drag-drop-status-update', ticketId);
-    const originalStatus = ticket.status;
+    console.log('🎯 Starting drag-drop update:', {
+      ticketId,
+      ticketCode: ticket.codigo_ticket,
+      from: ticket.status,
+      to: newStatus
+    });
 
-    try {
-      console.log('🎯 Drag-drop status update:', {
-        ticketId,
-        from: originalStatus,
-        to: newStatus,
-        ticketCode: ticket.codigo_ticket
-      });
-
-      // Step 1: Optimistic UI update (immediate visual feedback)
-      optimisticUpdateTicket(ticketId, { 
-        status: newStatus as any,
-        updated_at: new Date().toISOString()
-      });
-
-      // Step 2: Backend update with detailed logging
-      console.log('📤 Sending update to backend...');
-      const result = await updateTicket(ticketId, { 
-        status: newStatus as keyof typeof COLUMN_STATUS
-      });
-      
-      console.log('📥 Backend update result:', result);
-      
-      if (result) {
-        // Step 3: Success feedback
-        endMetric(metricId, true);
-        console.log('✅ Drag-drop update successful');
-        toast({
-          title: "✅ Status Atualizado",
-          description: `Ticket movido para ${COLUMN_STATUS[newStatus as keyof typeof COLUMN_STATUS]}`,
-        });
-      } else {
-        console.log('❌ Backend update returned falsy result');
-        throw new Error('Update returned no result');
-      }
-    } catch (error) {
-      console.error('❌ Drag-drop update failed:', error);
-      
-      // Step 4: Rollback optimistic update on error
-      console.log('🔄 Rolling back optimistic update');
-      optimisticRollback(ticketId, originalStatus);
-      endMetric(metricId, false);
-      
-      toast({
-        title: "❌ Erro ao Atualizar",
-        description: "Não foi possível atualizar o status do ticket. Tente novamente.",
-        variant: "destructive",
-      });
+    // Simple direct update
+    const success = await updateTicketStatus(ticketId, newStatus);
+    
+    if (success) {
+      console.log('✅ Drag-drop completed successfully');
+    } else {
+      console.log('❌ Drag-drop failed');
     }
   };
 
