@@ -15,17 +15,20 @@ export const AlertsPanel = () => {
   const getAlertLevelBadge = (level: string) => {
     switch (level) {
       case 'critical':
-        return <Badge variant="destructive" className="gap-1">
+        return <Badge variant="critical" className="gap-1">
           <AlertTriangle className="h-3 w-3" />
           Crítico
         </Badge>;
       case 'warning':
-        return <Badge variant="default" className="bg-orange-100 text-orange-800 gap-1">
+        return <Badge variant="warning" className="gap-1">
           <Clock className="h-3 w-3" />
           Aviso
         </Badge>;
       default:
-        return <Badge variant="secondary">Normal</Badge>;
+        return <Badge variant="info" className="gap-1">
+          <CheckCircle className="h-3 w-3" />
+          Normal
+        </Badge>;
     }
   };
 
@@ -109,7 +112,7 @@ export const AlertsPanel = () => {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <AlertTriangle className="h-5 w-5" />
+          <AlertTriangle className="h-5 w-5 text-warning" />
           Alertas Internos ({alerts.length})
         </CardTitle>
         <CardDescription>
@@ -119,16 +122,25 @@ export const AlertsPanel = () => {
       <CardContent>
         {alerts.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
-            <CheckCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
+            <CheckCircle className="h-12 w-12 mx-auto mb-2 text-success" />
             <p>Nenhum alerta pendente</p>
             <p className="text-sm">Sistema funcionando normalmente</p>
           </div>
         ) : (
           <div className="space-y-4">
-            {alerts.map((alert) => (
+            {alerts.map((alert) => {
+              const getBorderColor = () => {
+                switch (alert.alert_level) {
+                  case 'critical': return 'border-l-4 border-l-critical bg-critical/5';
+                  case 'warning': return 'border-l-4 border-l-warning bg-warning/5';
+                  default: return 'border-l-4 border-l-info bg-info/5';
+                }
+              };
+              
+              return (
               <div 
                 key={alert.id} 
-                className="border rounded-lg p-4 space-y-3 hover:shadow-card transition-shadow"
+                className={`border rounded-lg p-4 space-y-3 hover:shadow-card transition-all ${getBorderColor()}`}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -163,6 +175,7 @@ export const AlertsPanel = () => {
                       asChild
                       variant="ghost"
                       size="sm"
+                      className="text-info hover:text-info"
                     >
                       <Link to={`/admin/tickets?ticket=${alert.ticket_id}`}>
                         <ExternalLink className="h-4 w-4" />
@@ -174,6 +187,7 @@ export const AlertsPanel = () => {
                       disabled={processingAlerts.has(alert.id)}
                       size="sm"
                       variant="outline"
+                      className="text-success border-success hover:bg-success hover:text-success-foreground"
                     >
                       {processingAlerts.has(alert.id) ? (
                         "Processando..."
@@ -184,7 +198,8 @@ export const AlertsPanel = () => {
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </CardContent>
