@@ -98,8 +98,14 @@ export function NotificacoesTab() {
       }
 
       const formattedTemplates = (data || []).map(template => ({
-        ...template,
-        variables: Array.isArray(template.variables) ? template.variables : []
+        id: template.id,
+        template_key: template.template_key,
+        template_content: template.template_content,
+        description: template.description || '',
+        variables: Array.isArray(template.variables) 
+          ? template.variables.map(v => String(v)) 
+          : [],
+        is_active: template.is_active
       }));
       setTemplates(formattedTemplates);
     } catch (error) {
