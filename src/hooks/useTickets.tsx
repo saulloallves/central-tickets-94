@@ -220,29 +220,96 @@ export const useTickets = (filters: TicketFilters) => {
     }
   }, [filters.search, filters.status, filters.categoria, filters.prioridade, filters.status_sla, filters.unidade_id, filters.equipe_id]);
 
-  // Realtime subscription for tickets
+  // Realtime subscription for tickets with immediate updates
   useEffect(() => {
+    if (!user || roleLoading) return;
+
     const channel = supabase
-      .channel('tickets-realtime')
+      .channel('tickets-realtime-channel')
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
           schema: 'public',
           table: 'tickets'
         },
         (payload) => {
-          console.log('Realtime ticket change:', payload);
-          fetchTickets();
-          fetchTicketStats();
+          console.log('New ticket created:', payload);
+          // Add new ticket immediately to avoid delay
+          if (payload.new) {
+            setTickets(prev => [payload.new as Ticket, ...prev]);
+          }
+          // Also refresh to ensure data consistency
+          setTimeout(() => {
+            fetchTickets();
+            fetchTicketStats();
+          }, 100);
         }
       )
-      .subscribe();
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'tickets'
+        },
+        (payload) => {
+          console.log('Ticket updated:', payload);
+          // Update ticket immediately
+          if (payload.new && payload.old) {
+            setTickets(prev => 
+              prev.map(ticket => 
+                ticket.id === payload.new.id 
+                  ? { ...ticket, ...payload.new } as Ticket
+                  : ticket
+              )
+            );
+          }
+          // Also refresh to ensure data consistency
+          setTimeout(() => {
+            fetchTickets();
+            fetchTicketStats();
+          }, 100);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'tickets'
+        },
+        (payload) => {
+          console.log('Ticket deleted:', payload);
+          if (payload.old) {
+            setTickets(prev => prev.filter(ticket => ticket.id !== payload.old.id));
+          }
+          setTimeout(() => {
+            fetchTicketStats();
+          }, 100);
+        }
+      )
+      .subscribe((status) => {
+        console.log('Realtime subscription status:', status);
+      });
 
     return () => {
+      console.log('Removing realtime subscription');
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [user?.id, roleLoading]);
+
+  // Backup polling for real-time consistency
+  useEffect(() => {
+    if (!user || roleLoading) return;
+    
+    const pollInterval = setInterval(() => {
+      console.log('Polling for ticket updates...');
+      fetchTickets();
+    }, 5000); // Poll every 5 seconds as backup
+    
+    return () => clearInterval(pollInterval);
+  }, [user?.id, roleLoading]);
 
   const createTicket = async (ticketData: Partial<Ticket>) => {
     if (!user?.id) {

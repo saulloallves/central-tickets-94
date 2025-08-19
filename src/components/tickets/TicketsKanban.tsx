@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   DndContext,
   DragEndEvent,
@@ -278,9 +278,15 @@ const KanbanColumn = ({ status, tickets, selectedTicketId, onTicketSelect, equip
     >
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-semibold text-sm">{COLUMN_STATUS[status]}</h3>
-        <Badge variant="secondary" className="text-xs">
-          {tickets.length}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="text-xs">
+            {tickets.length}
+          </Badge>
+          {tickets.length > 0 && (
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" 
+                 title="Atualizado em tempo real" />
+          )}
+        </div>
       </div>
       
       <SortableContext items={tickets.map(t => t.id)} strategy={verticalListSortingStrategy}>
@@ -311,6 +317,12 @@ export const TicketsKanban = ({ filters, onTicketSelect, selectedTicketId, equip
   const [activeTicket, setActiveTicket] = useState<Ticket | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [draggedOverColumn, setDraggedOverColumn] = useState<string | null>(null);
+  const [lastUpdateTime, setLastUpdateTime] = useState<Date>(new Date());
+
+  // Update timestamp when tickets change
+  useEffect(() => {
+    setLastUpdateTime(new Date());
+  }, [tickets.length]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
