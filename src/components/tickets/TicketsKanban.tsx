@@ -111,8 +111,8 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
   const getPriorityIcon = (prioridade: string) => {
     switch (prioridade) {
       case 'crise': return <AlertTriangle className="h-3 w-3 text-critical" />;
-      case 'urgente': return <Clock className="h-3 w-3 text-warning" />;
-      case 'alta': return <ArrowUp className="h-3 w-3 text-info" />;
+      case 'urgente': return <Clock className="h-3 w-3 text-critical" />;
+      case 'alta': return <ArrowUp className="h-3 w-3 text-warning" />;
       default: return null;
     }
   };
@@ -137,8 +137,8 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
   const getPriorityButtonVariant = (prioridade: string) => {
     switch (prioridade) {
       case 'crise': return 'critical';
-      case 'urgente': return 'warning';
-      case 'alta': return 'info';
+      case 'urgente': return 'critical';
+      case 'alta': return 'warning';
       case 'media': return 'secondary';
       case 'baixa': return 'success';
       default: return 'outline';
