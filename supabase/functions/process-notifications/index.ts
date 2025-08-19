@@ -21,11 +21,12 @@ serve(async (req) => {
     )
 
     // Buscar dados do ticket com título
+    console.log('Fetching ticket data for ID:', ticketId)
     const { data: ticket, error: ticketError } = await supabase
       .from('tickets')
       .select(`
         *,
-        unidades (grupo),
+        unidades (id, grupo, id_grupo_azul, id_grupo_vermelho),
         franqueados (name, phone),
         colaboradores (nome_completo)
       `)
@@ -33,8 +34,17 @@ serve(async (req) => {
       .single()
 
     if (ticketError || !ticket) {
+      console.error('Ticket error:', ticketError)
       throw new Error(`Ticket not found: ${ticketError?.message}`)
     }
+    
+    console.log('Ticket found:', {
+      id: ticket.id,
+      codigo: ticket.codigo_ticket,
+      franqueado_id: ticket.franqueado_id,
+      has_franqueado: !!ticket.franqueados,
+      franqueado_phone: ticket.franqueados?.phone
+    })
 
     // Buscar configurações de notificação
     const { data: settings } = await supabase
@@ -43,11 +53,27 @@ serve(async (req) => {
       .single()
 
     if (!settings) {
-      console.log('No notification settings found')
-      return new Response(
-        JSON.stringify({ success: false, message: 'Configurações de notificação não encontradas' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      console.error('No notification settings found - creating default entry')
+      // Criar configurações padrão se não existir
+      const { data: newSettings, error: insertError } = await supabase
+        .from('notification_settings')
+        .insert({
+          webhook_saida: Deno.env.get('ZAPI_BASE_URL') || 'https://api.z-api.io/instances/YOUR_INSTANCE/token/YOUR_TOKEN/send-text',
+          delay_mensagem: 2000,
+          limite_retentativas: 3
+        })
+        .select()
+        .single()
+        
+      if (insertError) {
+        console.error('Failed to create default settings:', insertError)
+        return new Response(
+          JSON.stringify({ success: false, message: 'Configurações de notificação não encontradas e não foi possível criar padrão' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+      
+      console.log('Created default notification settings')
     }
 
     // Função para formatar o título do ticket
@@ -59,8 +85,9 @@ serve(async (req) => {
 
     // Função para enviar mensagem via ZAPI
     const sendZapiMessage = async (groupId: string, message: string) => {
-      if (!groupId || !settings.webhook_saida) {
-        console.log('Missing groupId or webhook URL')
+      console.log('Attempting to send ZAPI message to:', groupId)
+      if (!groupId || !settings?.webhook_saida) {
+        console.log('Missing groupId or webhook URL:', { groupId: !!groupId, webhook: !!settings?.webhook_saida })
         return { success: false, error: 'Missing configuration' }
       }
 
@@ -121,18 +148,38 @@ serve(async (req) => {
 
       case 'resposta_ticket_privado':
         // Enviar resposta privada para o franqueado
+        console.log('Processing resposta_ticket_privado')
         const franqueado = ticket.franqueados
-        if (franqueado?.phone && textoResposta) {
-          const message = `💬 *RESPOSTA DO SEU TICKET*\n\n` +
-            `📋 *Ticket:* ${formatTicketTitle(ticket)}\n` +
-            `🏢 *Unidade:* ${ticket.unidades?.grupo || ticket.unidade_id}\n\n` +
-            `📝 *Resposta da nossa equipe:*\n${textoResposta}\n\n` +
-            `_Se precisar de mais ajuda, responda a esta mensagem._`
-
-          result = await sendZapiMessage(franqueado.phone.toString(), message)
-        } else {
-          result = { success: false, message: 'Franqueado não tem telefone cadastrado ou mensagem vazia' }
+        console.log('Franqueado data:', franqueado)
+        
+        if (!franqueado) {
+          console.error('No franqueado data found for ticket')
+          result = { success: false, message: 'Dados do franqueado não encontrados no ticket' }
+          break
         }
+        
+        if (!franqueado.phone) {
+          console.error('Franqueado phone not found:', franqueado)
+          result = { success: false, message: 'Franqueado não tem telefone cadastrado' }
+          break
+        }
+        
+        if (!textoResposta) {
+          console.error('No text response provided')
+          result = { success: false, message: 'Texto da resposta não fornecido' }
+          break
+        }
+        
+        const message = `💬 *RESPOSTA DO SEU TICKET*\n\n` +
+          `📋 *Ticket:* ${formatTicketTitle(ticket)}\n` +
+          `🏢 *Unidade:* ${ticket.unidades?.grupo || ticket.unidade_id}\n\n` +
+          `📝 *Resposta da nossa equipe:*\n${textoResposta}\n\n` +
+          `_Se precisar de mais ajuda, responda a esta mensagem._`
+
+        // Garantir que o telefone seja uma string
+        const phoneNumber = franqueado.phone.toString()
+        console.log('Sending message to phone:', phoneNumber)
+        result = await sendZapiMessage(phoneNumber, message)
         break
 
       case 'sla_half':
