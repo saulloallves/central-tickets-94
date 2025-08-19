@@ -41,7 +41,7 @@ export function AppSidebar() {
   };
 
   return (
-    <div className="w-64 h-screen bg-background border-r border-border flex flex-col">
+    <div className="w-64 min-h-screen bg-background border-r border-border flex flex-col">
       {/* Header */}
       <div className="p-6 border-b border-border">
         <h2 className="text-xl font-semibold text-foreground">Sistema de Tickets</h2>
@@ -49,7 +49,7 @@ export function AppSidebar() {
       </div>
 
       {/* Navigation */}
-      <div className="flex-1 p-4">
+      <div className="flex-1 p-4 overflow-y-auto max-h-[calc(100vh-140px)]">
         <div className="space-y-1">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider px-3 py-2">
             Navegação
