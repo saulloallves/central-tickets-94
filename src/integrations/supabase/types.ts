@@ -1486,7 +1486,13 @@ export type Database = {
     Enums: {
       ai_interaction_kind: "suggestion" | "chat"
       ai_model_provider: "openai" | "lambda"
-      app_role: "admin" | "gerente" | "diretor" | "colaborador"
+      app_role:
+        | "admin"
+        | "gerente"
+        | "diretor"
+        | "colaborador"
+        | "juridico"
+        | "diretoria"
       canal_origem: "typebot" | "whatsapp_zapi" | "web"
       canal_resposta: "web" | "whatsapp" | "typebot" | "interno"
       cargo:
@@ -1645,7 +1651,14 @@ export const Constants = {
     Enums: {
       ai_interaction_kind: ["suggestion", "chat"],
       ai_model_provider: ["openai", "lambda"],
-      app_role: ["admin", "gerente", "diretor", "colaborador"],
+      app_role: [
+        "admin",
+        "gerente",
+        "diretor",
+        "colaborador",
+        "juridico",
+        "diretoria",
+      ],
       canal_origem: ["typebot", "whatsapp_zapi", "web"],
       canal_resposta: ["web", "whatsapp", "typebot", "interno"],
       cargo: [
