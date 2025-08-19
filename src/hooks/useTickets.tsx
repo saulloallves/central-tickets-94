@@ -379,6 +379,42 @@ export const useTickets = (filters: TicketFilters) => {
     }
   };
 
+  // Status transition validation
+  const ALLOWED_TRANSITIONS: Record<string, string[]> = {
+    'aberto': ['em_atendimento', 'escalonado', 'concluido'],
+    'em_atendimento': ['escalonado', 'concluido'],
+    'escalonado': ['em_atendimento', 'concluido'],
+    'concluido': []
+  };
+
+  const isTransitionAllowed = (from: string, to: string): boolean => {
+    return ALLOWED_TRANSITIONS[from]?.includes(to) || false;
+  };
+
+  // Optimistic drag-and-drop status update
+  const changeTicketStatus = async (ticketId: string, fromStatus: string, toStatus: string) => {
+    if (!isTransitionAllowed(fromStatus, toStatus)) {
+      toast({
+        title: "Transição não permitida",
+        description: `Não é possível mover de ${fromStatus} para ${toStatus}`,
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    // Optimistic update
+    optimisticUpdateTicket(ticketId, { status: toStatus as any });
+
+    try {
+      const result = await updateTicket(ticketId, { status: toStatus as 'aberto' | 'em_atendimento' | 'escalonado' | 'concluido' });
+      return result !== null;
+    } catch (error) {
+      // Rollback on error
+      optimisticRollback(ticketId, fromStatus);
+      return false;
+    }
+  };
+
   const updateTicket = async (ticketId: string, updates: Partial<Ticket>) => {
     try {
       console.log('=== UPDATE TICKET DEBUG ===');
@@ -465,10 +501,13 @@ export const useTickets = (filters: TicketFilters) => {
         return null;
       }
 
-      toast({
-        title: "Sucesso",
-        description: "Ticket atualizado com sucesso",
-      });
+      // Don't show success toast for drag-and-drop status changes
+      if (!cleanUpdates.status) {
+        toast({
+          title: "Sucesso",
+          description: "Ticket atualizado com sucesso",
+        });
+      }
 
       fetchTickets();
       fetchTicketStats();
@@ -602,6 +641,8 @@ export const useTickets = (filters: TicketFilters) => {
     // Optimistic UI functions
     optimisticUpdateTicket,
     optimisticRollback,
+    // Drag and Drop function
+    changeTicketStatus,
     // Realtime handlers
     handleTicketUpdate,
     handleTicketInsert,

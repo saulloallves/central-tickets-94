@@ -47,11 +47,14 @@ const Tickets = () => {
   });
 
   const { 
+    tickets,
+    loading,
     ticketStats, 
     refetch, 
     handleTicketUpdate, 
     handleTicketInsert, 
-    handleTicketDelete 
+    handleTicketDelete,
+    changeTicketStatus
   } = useTickets(filters);
 
   // Fetch available teams
@@ -239,10 +242,12 @@ const Tickets = () => {
       {/* Main Content */}
       {viewMode === 'kanban' ? (
         <TicketsKanban 
-          filters={filters}
+          tickets={tickets}
+          loading={loading}
           onTicketSelect={handleTicketSelect}
           selectedTicketId={selectedTicketId}
           equipes={equipes}
+          onChangeStatus={changeTicketStatus}
         />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

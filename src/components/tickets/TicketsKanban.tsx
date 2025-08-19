@@ -43,10 +43,12 @@ import { formatDistanceToNowInSaoPaulo } from '@/lib/date-utils';
 import { cn } from '@/lib/utils';
 
 interface TicketsKanbanProps {
-  filters: TicketFilters;
+  tickets: Ticket[];
+  loading: boolean;
   onTicketSelect: (ticketId: string) => void;
   selectedTicketId: string | null;
   equipes: Array<{ id: string; nome: string }>;
+  onChangeStatus: (ticketId: string, fromStatus: string, toStatus: string) => Promise<boolean>;
 }
 
 const COLUMN_STATUS = {
@@ -316,9 +318,7 @@ const KanbanColumn = ({ status, tickets, selectedTicketId, onTicketSelect, equip
   );
 };
 
-export const TicketsKanban = ({ filters, onTicketSelect, selectedTicketId, equipes }: TicketsKanbanProps) => {
-  const { tickets, loading } = useTickets(filters);
-  const { updateTicketStatus, isUpdating } = useSimpleTicketDragDrop();
+export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicketId, equipes, onChangeStatus }: TicketsKanbanProps) => {
   const [activeTicket, setActiveTicket] = useState<Ticket | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [draggedOverColumn, setDraggedOverColumn] = useState<string | null>(null);
@@ -389,8 +389,8 @@ export const TicketsKanban = ({ filters, onTicketSelect, selectedTicketId, equip
       to: newStatus
     });
 
-    // Simple direct update
-    const success = await updateTicketStatus(ticketId, newStatus);
+    // Optimistic update via parent component
+    const success = await onChangeStatus(ticketId, ticket.status, newStatus);
     
     if (success) {
       console.log('✅ Drag-drop completed successfully');
