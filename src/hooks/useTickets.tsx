@@ -220,7 +220,7 @@ export const useTickets = (filters: TicketFilters) => {
     }
   }, [filters.search, filters.status, filters.categoria, filters.prioridade, filters.status_sla, filters.unidade_id, filters.equipe_id]);
 
-  // Realtime subscription for tickets with immediate updates
+  // Realtime subscription for tickets - optimized to only update when needed
   useEffect(() => {
     if (!user || roleLoading) return;
 
@@ -229,64 +229,35 @@ export const useTickets = (filters: TicketFilters) => {
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*',
           schema: 'public',
           table: 'tickets'
         },
         (payload) => {
-          console.log('New ticket created:', payload);
-          // Add new ticket immediately to avoid delay
-          if (payload.new) {
-            setTickets(prev => [payload.new as Ticket, ...prev]);
-          }
-          // Also refresh to ensure data consistency
-          setTimeout(() => {
-            fetchTickets();
+          console.log('Real-time change:', payload.eventType, (payload.new as any)?.id);
+          
+          // Only update state if there's an actual change
+          if (payload.eventType === 'INSERT' && payload.new) {
+            setTickets(prev => {
+              // Check if ticket already exists to avoid duplicates
+              const exists = prev.find(t => t.id === (payload.new as any)?.id);
+              if (exists) return prev;
+              return [payload.new as Ticket, ...prev];
+            });
             fetchTicketStats();
-          }, 100);
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'tickets'
-        },
-        (payload) => {
-          console.log('Ticket updated:', payload);
-          // Update ticket immediately
-          if (payload.new && payload.old) {
+          } else if (payload.eventType === 'UPDATE' && payload.new && payload.old) {
             setTickets(prev => 
               prev.map(ticket => 
-                ticket.id === payload.new.id 
+                ticket.id === (payload.new as any)?.id 
                   ? { ...ticket, ...payload.new } as Ticket
                   : ticket
               )
             );
-          }
-          // Also refresh to ensure data consistency
-          setTimeout(() => {
-            fetchTickets();
             fetchTicketStats();
-          }, 100);
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'DELETE',
-          schema: 'public',
-          table: 'tickets'
-        },
-        (payload) => {
-          console.log('Ticket deleted:', payload);
-          if (payload.old) {
-            setTickets(prev => prev.filter(ticket => ticket.id !== payload.old.id));
-          }
-          setTimeout(() => {
+          } else if (payload.eventType === 'DELETE' && payload.old) {
+            setTickets(prev => prev.filter(ticket => ticket.id !== (payload.old as any)?.id));
             fetchTicketStats();
-          }, 100);
+          }
         }
       )
       .subscribe((status) => {
@@ -297,18 +268,6 @@ export const useTickets = (filters: TicketFilters) => {
       console.log('Removing realtime subscription');
       supabase.removeChannel(channel);
     };
-  }, [user?.id, roleLoading]);
-
-  // Backup polling for real-time consistency
-  useEffect(() => {
-    if (!user || roleLoading) return;
-    
-    const pollInterval = setInterval(() => {
-      console.log('Polling for ticket updates...');
-      fetchTickets();
-    }, 5000); // Poll every 5 seconds as backup
-    
-    return () => clearInterval(pollInterval);
   }, [user?.id, roleLoading]);
 
   const createTicket = async (ticketData: Partial<Ticket>) => {
