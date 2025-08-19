@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Play, CheckCircle, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { ResolveCrisisButton } from './ResolveCrisisButton';
 import {
   Dialog,
   DialogContent,
@@ -92,6 +93,14 @@ export const TicketActions = ({ ticket, equipes, size = 'default' }: TicketActio
 
   return (
     <div className="flex gap-2">
+      {/* Botão Resolver Crise - só aparece para tickets com prioridade crise */}
+      {ticket.prioridade === 'crise' && (
+        <ResolveCrisisButton 
+          ticketId={ticket.id} 
+          size={size}
+        />
+      )}
+      
       {/* Botão Iniciar Atendimento - só aparece se não estiver em atendimento ou concluído */}
       {ticket.status === 'aberto' && (
         <>
