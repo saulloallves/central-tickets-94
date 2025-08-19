@@ -4,14 +4,12 @@ import {
   DragEndEvent,
   DragOverlay,
   DragStartEvent,
-  DragOverEvent,
   PointerSensor,
   useSensor,
   useSensors,
   closestCorners,
   useDroppable,
 } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { 
@@ -28,25 +26,27 @@ import {
   DollarSign,
   HelpCircle,
   Edit2,
-  Trash2
+  Trash2,
+  GripVertical
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useTickets, type TicketFilters, type Ticket } from '@/hooks/useTickets';
-import { useSimpleTicketDragDrop } from '@/hooks/useSimpleTicketDragDrop';
+import { Ticket } from '@/hooks/useTickets';
 import { TicketDetail } from './TicketDetail';
 import { TicketActions } from './TicketActions';
 import { formatDistanceToNowInSaoPaulo } from '@/lib/date-utils';
 import { cn } from '@/lib/utils';
 
 interface TicketsKanbanProps {
-  filters: TicketFilters;
+  tickets: Ticket[];
+  loading: boolean;
   onTicketSelect: (ticketId: string) => void;
+  onUpdateTicketStatus: (ticketId: string, newStatus: string) => Promise<boolean>;
   selectedTicketId: string | null;
-  equipes: Array<{ id: string; nome: string }>;
+  equipes: Array<{ id: string; nome: string; ativo: boolean }>;
 }
 
 const COLUMN_STATUS = {
@@ -58,275 +58,232 @@ const COLUMN_STATUS = {
 
 const COLUMN_COLORS = {
   aberto: 'border-blue-200 bg-blue-50',
-  em_atendimento: 'border-yellow-200 bg-yellow-50',
-  escalonado: 'border-orange-200 bg-orange-50',
+  em_atendimento: 'border-orange-200 bg-orange-50',
+  escalonado: 'border-red-200 bg-red-50',
   concluido: 'border-green-200 bg-green-50'
 };
 
+// Kanban Card Component
 interface KanbanTicketCardProps {
   ticket: Ticket;
-  isSelected: boolean;
   onSelect: (ticketId: string) => void;
-  equipes: Array<{ id: string; nome: string }>;
+  isDragging?: boolean;
 }
 
-const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicketCardProps) => {
+const KanbanTicketCard = ({ ticket, onSelect, isDragging = false }: KanbanTicketCardProps) => {
   const {
     attributes,
     listeners,
     setNodeRef,
     transform,
-    transition,
-    isDragging,
+    isDragging: isDraggingFromHook,
   } = useSortable({
     id: ticket.id,
     data: {
-      type: 'ticket',
-      ticket,
+      id: ticket.id,
+      status: ticket.status,
     },
   });
 
+  const isCurrentlyDragging = isDragging || isDraggingFromHook;
+
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
-  const formatTimeElapsed = (createdAt: string) => {
-    const now = new Date();
-    const created = new Date(createdAt);
-    const diffMs = now.getTime() - created.getTime();
-    
-    const hours = Math.floor(diffMs / (1000 * 60 * 60));
-    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
-    
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  };
-
-  const getTimeColor = (statusSla: string, prioridade: string) => {
-    if (prioridade === 'crise') return 'text-critical';
-    if (statusSla === 'vencido') return 'text-critical';
-    if (statusSla === 'alerta') return 'text-warning';
-    return 'text-success';
   };
 
   const getPriorityIcon = (prioridade: string) => {
     switch (prioridade) {
-      case 'crise': return <AlertTriangle className="h-3 w-3 text-critical" />;
-      case 'urgente': return <Clock className="h-3 w-3 text-critical" />;
-      case 'alta': return <ArrowUp className="h-3 w-3 text-warning" />;
-      default: return null;
+      case 'crise': return ArrowUp;
+      case 'urgente': return AlertTriangle;
+      case 'alta': return ArrowUp;
+      default: return Clock;
     }
   };
 
-  const getEquipeName = (equipeId: string | null) => {
-    if (!equipeId) return 'Sem equipe';
-    const equipe = equipes.find(e => e.id === equipeId);
-    return equipe?.nome || 'Equipe desconhecida';
-  };
-
-  const getPriorityLabel = (prioridade: string) => {
+  const getPriorityColor = (prioridade: string) => {
     switch (prioridade) {
-      case 'crise': return 'CRISE';
-      case 'urgente': return 'Urgente';
-      case 'alta': return 'Alta';
-      case 'media': return 'Média';
-      case 'baixa': return 'Baixa';
-      default: return 'Posso esperar';
+      case 'crise': return 'destructive';
+      case 'urgente': return 'destructive';
+      case 'alta': return 'orange';
+      default: return 'secondary';
     }
   };
 
-  const getPriorityButtonVariant = (prioridade: string) => {
-    switch (prioridade) {
-      case 'crise': return 'critical';
-      case 'urgente': return 'critical';
-      case 'alta': return 'warning';
-      case 'media': return 'outline';
-      case 'baixa': return 'outline';
-      default: return 'outline';
-    }
-  };
-
-  const getCategoryIcon = (categoria: string) => {
+  const getCategoryIcon = (categoria?: string) => {
     switch (categoria) {
-      case 'juridico': return <Scale className="h-3 w-3" />;
-      case 'sistema': return <Monitor className="h-3 w-3" />;
-      case 'midia': return <Image className="h-3 w-3" />;
-      case 'operacoes': return <Settings className="h-3 w-3" />;
-      case 'rh': return <Users className="h-3 w-3" />;
-      case 'financeiro': return <DollarSign className="h-3 w-3" />;
-      default: return <HelpCircle className="h-3 w-3" />;
+      case 'juridico': return Scale;
+      case 'sistema': return Monitor;
+      case 'midia': return Image;
+      case 'operacoes': return Settings;
+      case 'rh': return Users;
+      case 'financeiro': return DollarSign;
+      default: return HelpCircle;
     }
   };
 
-  if (isDragging) {
-    return (
-      <Card
-        ref={setNodeRef}
-        style={style}
-        className="opacity-30 rotate-6 border-dashed"
-      >
-        <CardContent className="p-3">
-          <div className="h-16"></div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const formatTimeElapsed = (dataAbertura: string) => {
+    try {
+      return formatDistanceToNowInSaoPaulo(new Date(dataAbertura));
+    } catch {
+      return 'Data inválida';
+    }
+  };
+
+  const PriorityIcon = getPriorityIcon(ticket.prioridade);
+  const CategoryIcon = getCategoryIcon(ticket.categoria);
 
   return (
     <Card
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
       className={cn(
-        "cursor-pointer transition-all hover:shadow-lg mb-3 bg-white border-l-4",
-        ticket.status === 'concluido' ? "border-l-success" : 
-        ticket.prioridade === 'crise' ? "border-l-critical" :
-        ticket.prioridade === 'urgente' ? "border-l-critical" :
-        ticket.prioridade === 'alta' ? "border-l-warning" : "border-l-muted",
-        isSelected && "ring-2 ring-primary/20 shadow-lg"
+        "cursor-pointer transition-all duration-200 hover:shadow-md",
+        isCurrentlyDragging && "opacity-50 rotate-3 scale-105 shadow-xl z-50"
       )}
-      onClick={() => onSelect(ticket.id)}
+      onClick={(e) => {
+        if (!isCurrentlyDragging) {
+          onSelect(ticket.id);
+        }
+      }}
     >
-      <CardContent className="p-4 space-y-3">
-        {/* Título */}
-        <h3 className="font-medium text-foreground line-clamp-2 leading-relaxed">
-          {ticket.titulo || ticket.descricao_problema || "Sem título"}
-        </h3>
-
-        {/* Metadados em linha */}
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <div className="flex items-center gap-3">
-            {/* Localização */}
-            <div className="flex items-center gap-1">
-              <MapPin className="h-3 w-3" />
-              <span className="truncate max-w-[120px]">
-                {(ticket as any).unidades?.grupo || ticket.unidade_id || 'Sem unidade'}
-              </span>
-            </div>
-            
-            {/* Categoria */}
-            <div className="flex items-center gap-1">
-              {getCategoryIcon(ticket.categoria || 'outro')}
-              <span className="capitalize">
-                {ticket.categoria === 'midia' ? 'Mídia' : 
-                 ticket.categoria === 'juridico' ? 'Jurídico' :
-                 ticket.categoria === 'financeiro' ? 'Financeiro' :
-                 ticket.categoria === 'operacoes' ? 'Operações' :
-                 ticket.categoria || 'Outro'}
-              </span>
-            </div>
+      <CardContent className="p-3 space-y-2">
+        {/* Drag Handle */}
+        <div
+          {...attributes}
+          {...listeners}
+          className="flex items-center justify-between p-1 rounded cursor-grab active:cursor-grabbing hover:bg-muted/50"
+        >
+          <div className="flex items-center gap-2">
+            <GripVertical className="w-3 h-3 text-muted-foreground" />
+            <Badge variant="outline" className="text-xs">
+              {ticket.codigo_ticket}
+            </Badge>
           </div>
+          <Badge variant={getPriorityColor(ticket.prioridade) as any} className="text-xs">
+            <PriorityIcon className="w-3 h-3 mr-1" />
+            {ticket.prioridade}
+          </Badge>
         </div>
 
-        {/* Footer com status */}
-        {ticket.status === 'concluido' ? (
-          <div className="flex items-center justify-between pt-2 border-t border-muted/50">
-            <div className="flex items-center gap-2">
-              <Badge 
-                variant={getPriorityButtonVariant(ticket.prioridade) as any}
-                className="text-xs"
-              >
-                {getPriorityLabel(ticket.prioridade)}
-              </Badge>
-              <Badge variant="success" className="text-xs">
-                Resolvido
-              </Badge>
-            </div>
-            <div className="flex items-center gap-1 text-xs text-success">
-              <CheckCircle className="h-3 w-3" />
-              <span>{formatDistanceToNowInSaoPaulo(new Date(ticket.updated_at || ticket.created_at))}</span>
-            </div>
+        {/* Title/Description */}
+        <div className="space-y-1">
+          {ticket.titulo && (
+            <h4 className="font-medium text-sm line-clamp-2">{ticket.titulo}</h4>
+          )}
+          <p className="text-xs text-muted-foreground line-clamp-2">
+            {ticket.descricao_problema}
+          </p>
+        </div>
+
+        {/* Unit and Category */}
+        <div className="flex items-center justify-between text-xs">
+          <div className="flex items-center gap-1 text-muted-foreground">
+            <MapPin className="w-3 h-3" />
+            <span>{ticket.unidade_id}</span>
           </div>
-        ) : (
-          <div className="flex items-center justify-between pt-2 border-t border-muted/50">
-            <Badge 
-              variant={getPriorityButtonVariant(ticket.prioridade) as any}
-              className="text-xs"
-            >
-              {getPriorityLabel(ticket.prioridade)}
-            </Badge>
-            
-            <div className="flex items-center gap-1">
-              <Clock className="h-3 w-3" />
-              <span className={cn("text-xs font-mono", getTimeColor(ticket.status_sla, ticket.prioridade))}>
-                {formatTimeElapsed(ticket.created_at)}
-              </span>
+          {ticket.categoria && (
+            <div className="flex items-center gap-1 text-muted-foreground">
+              <CategoryIcon className="w-3 h-3" />
+              <span className="capitalize">{ticket.categoria}</span>
             </div>
-          </div>
-        )}
+          )}
+        </div>
+
+        {/* Time elapsed and SLA status */}
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-muted-foreground">
+            {formatTimeElapsed(ticket.data_abertura)}
+          </span>
+          <Badge 
+            variant={ticket.status_sla === 'vencido' ? 'destructive' : 
+                    ticket.status_sla === 'alerta' ? 'outline' : 'secondary'} 
+            className="text-xs"
+          >
+            {ticket.status_sla === 'vencido' ? 'SLA Vencido' :
+             ticket.status_sla === 'alerta' ? 'SLA Alerta' : 'SLA OK'}
+          </Badge>
+        </div>
       </CardContent>
     </Card>
   );
 };
 
+// Kanban Column Component
 interface KanbanColumnProps {
-  status: keyof typeof COLUMN_STATUS;
+  status: string;
+  title: string;
   tickets: Ticket[];
-  selectedTicketId: string | null;
   onTicketSelect: (ticketId: string) => void;
-  equipes: Array<{ id: string; nome: string }>;
 }
 
-const KanbanColumn = ({ status, tickets, selectedTicketId, onTicketSelect, equipes }: KanbanColumnProps) => {
-  const { setNodeRef, isOver } = useDroppable({
+const KanbanColumn = ({ status, title, tickets, onTicketSelect }: KanbanColumnProps) => {
+  const { isOver, setNodeRef } = useDroppable({
     id: status,
-    data: {
-      type: 'column',
-      status: status
-    }
   });
 
   return (
-    <div 
+    <div
       ref={setNodeRef}
       className={cn(
-        "rounded-lg border-2 border-dashed p-4 min-h-[600px] transition-colors",
-        COLUMN_COLORS[status],
-        isOver && "bg-opacity-30 border-solid"
+        "rounded-xl p-4 transition-all duration-200",
+        COLUMN_COLORS[status as keyof typeof COLUMN_COLORS],
+        isOver && "ring-2 ring-primary ring-opacity-50 scale-[1.02]"
       )}
     >
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-sm">{COLUMN_STATUS[status]}</h3>
-        <Badge variant="secondary" className="text-xs">
+      {/* Column Header */}
+      <div className="sticky top-0 bg-background/80 backdrop-blur z-10 flex items-center justify-between p-2 mb-4 rounded-lg">
+        <h3 className="font-semibold text-sm">{title}</h3>
+        <Badge 
+          variant="secondary" 
+          className={cn(
+            "text-xs",
+            isOver && "bg-primary text-primary-foreground"
+          )}
+        >
           {tickets.length}
         </Badge>
       </div>
-      
-      <SortableContext items={tickets.map(t => t.id)} strategy={verticalListSortingStrategy}>
-        <div className="space-y-3">
-          {tickets.map((ticket) => (
-            <KanbanTicketCard
-              key={ticket.id}
-              ticket={ticket}
-              isSelected={selectedTicketId === ticket.id}
-              onSelect={onTicketSelect}
-              equipes={equipes}
-            />
-          ))}
-          {tickets.length === 0 && (
-            <div className="text-center text-muted-foreground text-sm py-8">
-              Nenhum ticket nesta coluna
-            </div>
-          )}
+
+      {/* Drop Zone Overlay */}
+      {isOver && (
+        <div className="absolute inset-0 bg-primary/5 border-2 border-dashed border-primary rounded-xl pointer-events-none z-10 flex items-center justify-center">
+          <div className="bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium">
+            Soltar aqui para {title.toLowerCase()}
+          </div>
         </div>
-      </SortableContext>
+      )}
+
+      {/* Tickets */}
+      <div className="space-y-3 max-h-[calc(100vh-220px)] overflow-y-auto pr-1">
+        {tickets.map((ticket) => (
+          <KanbanTicketCard
+            key={ticket.id}
+            ticket={ticket}
+            onSelect={onTicketSelect}
+          />
+        ))}
+        
+        {tickets.length === 0 && (
+          <div className="text-center py-8 text-muted-foreground text-sm">
+            Nenhum ticket
+          </div>
+        )}
+      </div>
     </div>
   );
 };
 
-export const TicketsKanban = ({ filters, onTicketSelect, selectedTicketId, equipes }: TicketsKanbanProps) => {
-  const { tickets, loading } = useTickets(filters);
-  const { updateTicketStatus, isUpdating } = useSimpleTicketDragDrop();
-  const [activeTicket, setActiveTicket] = useState<Ticket | null>(null);
-  const [detailModalOpen, setDetailModalOpen] = useState(false);
-  const [draggedOverColumn, setDraggedOverColumn] = useState<string | null>(null);
-
-  // Update timestamp when tickets change
-  useEffect(() => {
-    console.log('📊 Tickets updated, count:', tickets.length);
-  }, [tickets.length]);
+// Main Kanban Component
+export const TicketsKanban = ({ 
+  tickets,
+  loading,
+  onTicketSelect, 
+  onUpdateTicketStatus,
+  selectedTicketId, 
+  equipes 
+}: TicketsKanbanProps) => {
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [draggedItem, setDraggedItem] = useState<Ticket | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -336,159 +293,115 @@ export const TicketsKanban = ({ filters, onTicketSelect, selectedTicketId, equip
     })
   );
 
-  const handleTicketClick = (ticketId: string) => {
-    onTicketSelect(ticketId);
-    setDetailModalOpen(true);
-  };
-
-  const closeDetailModal = () => {
-    setDetailModalOpen(false);
-    onTicketSelect('');
+  const getTicketsByStatus = (status: string) => {
+    return tickets.filter(ticket => ticket.status === status);
   };
 
   const handleDragStart = (event: DragStartEvent) => {
-    const { active } = event;
-    const ticket = active.data.current?.ticket;
-    setActiveTicket(ticket);
-    setDraggedOverColumn(null);
-  };
-
-  const handleDragOver = (event: DragOverEvent) => {
-    const { over } = event;
-    
-    if (over && over.data.current?.type === 'column') {
-      setDraggedOverColumn(over.id as string);
-    } else {
-      setDraggedOverColumn(null);
-    }
+    console.log('🎯 Drag started:', event.active.id);
+    setActiveId(String(event.active.id));
+    const ticket = tickets.find(t => t.id === event.active.id);
+    setDraggedItem(ticket || null);
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
-    setActiveTicket(null);
-    setDraggedOverColumn(null);
-
-    if (!over || over.data.current?.type !== 'column') {
-      console.log('❌ Invalid drop target');
-      return;
-    }
-
-    const ticketId = active.id as string;
-    const ticket = active.data.current?.ticket as Ticket;
-    const newStatus = over.id as string;
-
-    if (!newStatus || !ticket || ticket.status === newStatus || !Object.keys(COLUMN_STATUS).includes(newStatus)) {
-      console.log('❌ Invalid status change or same status');
-      return;
-    }
-
-    console.log('🎯 Starting drag-drop update:', {
-      ticketId,
-      ticketCode: ticket.codigo_ticket,
-      from: ticket.status,
-      to: newStatus
-    });
-
-    // Simple direct update
-    const success = await updateTicketStatus(ticketId, newStatus);
     
-    if (success) {
-      console.log('✅ Drag-drop completed successfully');
-    } else {
-      console.log('❌ Drag-drop failed');
-    }
-  };
+    setActiveId(null);
+    setDraggedItem(null);
 
-  const getTicketsByStatus = (status: keyof typeof COLUMN_STATUS) => {
-    return tickets.filter(ticket => ticket.status === status);
+    if (!over) {
+      console.log('⚠️ No drop target');
+      return;
+    }
+
+    const activeId = String(active.id);
+    const overId = String(over.id);
+    const fromStatus = (active.data.current as any)?.status;
+    const toStatus = overId;
+
+    console.log('🎯 Drag ended:', { activeId, overId, fromStatus, toStatus });
+
+    if (fromStatus === toStatus) {
+      console.log('⚠️ Same status, ignoring');
+      return;
+    }
+
+    try {
+      const success = await onUpdateTicketStatus(activeId, toStatus);
+      console.log('📊 Status update result:', success);
+    } catch (error) {
+      console.error('❌ Error updating status:', error);
+    }
   };
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {Object.keys(COLUMN_STATUS).map((status) => (
-          <div key={status} className={cn("rounded-lg border-2 border-dashed p-4", COLUMN_COLORS[status as keyof typeof COLUMN_STATUS])}>
-            <Skeleton className="h-6 w-24 mb-4" />
-            <div className="space-y-3">
-              {[...Array(3)].map((_, i) => (
-                <Card key={i}>
-                  <CardContent className="p-3">
-                    <Skeleton className="h-4 w-full mb-2" />
-                    <Skeleton className="h-8 w-full mb-2" />
-                    <div className="flex gap-2">
-                      <Skeleton className="h-5 w-16" />
-                      <Skeleton className="h-5 w-20" />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 p-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="space-y-4">
+            <Skeleton className="h-10 w-full" />
+            {Array.from({ length: 3 }).map((_, j) => (
+              <Skeleton key={j} className="h-24 w-full" />
+            ))}
           </div>
         ))}
       </div>
     );
   }
 
+  const columns = [
+    { status: 'aberto', title: 'Aberto' },
+    { status: 'em_atendimento', title: 'Em Atendimento' },
+    { status: 'escalonado', title: 'Escalonado' },
+    { status: 'concluido', title: 'Concluído' },
+  ];
+
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCorners}
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      onDragEnd={handleDragEnd}
-    >
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {Object.keys(COLUMN_STATUS).map((status) => (
-          <KanbanColumn
-            key={status}
-            status={status as keyof typeof COLUMN_STATUS}
-            tickets={getTicketsByStatus(status as keyof typeof COLUMN_STATUS)}
-            selectedTicketId={selectedTicketId}
-            onTicketSelect={handleTicketClick}
-            equipes={equipes}
-          />
-        ))}
-      </div>
+    <>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCorners}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 p-4">
+          {columns.map((column) => (
+            <KanbanColumn
+              key={column.status}
+              status={column.status}
+              title={column.title}
+              tickets={getTicketsByStatus(column.status)}
+              onTicketSelect={onTicketSelect}
+            />
+          ))}
+        </div>
 
-      <DragOverlay>
-        {activeTicket && (
-          <Card className="rotate-3 shadow-2xl scale-105 transition-all duration-200 border-primary">
-            <CardContent className="p-3">
-              <div className="text-xs font-mono mb-1 text-muted-foreground">
-                {activeTicket.codigo_ticket}
-              </div>
-              <div className="text-sm font-medium line-clamp-2 mb-2">
-                {activeTicket.titulo || (activeTicket.descricao_problema?.length > 60 
-                  ? activeTicket.descricao_problema.substring(0, 60) + '...'
-                  : activeTicket.descricao_problema || 'Sem título')}
-              </div>
-              <Badge variant="outline" className="text-xs">
-                {COLUMN_STATUS[activeTicket.status]}
-              </Badge>
-              {draggedOverColumn && draggedOverColumn !== activeTicket.status && (
-                <div className="mt-2 text-xs text-primary font-medium">
-                  → {COLUMN_STATUS[draggedOverColumn as keyof typeof COLUMN_STATUS]}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-      </DragOverlay>
+        <DragOverlay>
+          {draggedItem ? (
+            <KanbanTicketCard
+              ticket={draggedItem}
+              onSelect={() => {}}
+              isDragging={true}
+            />
+          ) : null}
+        </DragOverlay>
+      </DndContext>
 
-      {/* Detail Modal */}
-      <Dialog open={detailModalOpen} onOpenChange={setDetailModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+      {/* Ticket Detail Dialog */}
+      <Dialog open={!!selectedTicketId} onOpenChange={() => onTicketSelect('')}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Detalhes do Ticket</DialogTitle>
           </DialogHeader>
           {selectedTicketId && (
             <TicketDetail 
               ticketId={selectedTicketId}
-              onClose={closeDetailModal}
+              onClose={() => onTicketSelect('')}
             />
           )}
         </DialogContent>
       </Dialog>
-    </DndContext>
+    </>
   );
 };

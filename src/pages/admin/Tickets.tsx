@@ -47,8 +47,11 @@ const Tickets = () => {
   });
 
   const { 
+    tickets,
     ticketStats, 
-    refetch, 
+    loading,
+    refetch,
+    updateTicketStatus,
     handleTicketUpdate, 
     handleTicketInsert, 
     handleTicketDelete 
@@ -239,8 +242,10 @@ const Tickets = () => {
       {/* Main Content */}
       {viewMode === 'kanban' ? (
         <TicketsKanban 
-          filters={filters}
+          tickets={tickets}
+          loading={loading}
           onTicketSelect={handleTicketSelect}
+          onUpdateTicketStatus={updateTicketStatus}
           selectedTicketId={selectedTicketId}
           equipes={equipes}
         />
