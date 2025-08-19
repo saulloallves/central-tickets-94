@@ -187,11 +187,8 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
       onClick={() => onSelect(ticket.id)}
     >
       <CardContent className="p-4 h-full flex flex-col">
-        {/* Header - ID do ticket e ícones */}
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-sm font-medium text-muted-foreground">
-            TK{ticket.id.slice(-6).toUpperCase()}
-          </span>
+        {/* Header - Somente ícones de ação */}
+        <div className="flex items-center justify-end mb-3">
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
               <Edit2 className="h-3 w-3" />
@@ -237,9 +234,14 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
           <div className="space-y-2">
             {/* Badges lado a lado */}
             <div className="flex items-center gap-2">
-              <Badge variant="warning" className="text-xs">
-                Ainda hoje
-              </Badge>
+              <Button 
+                variant={getPriorityButtonVariant(ticket.prioridade) as any}
+                size="sm" 
+                className="text-xs h-7 px-3 py-1"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {getPriorityLabel(ticket.prioridade)}
+              </Button>
               <Badge variant="success" className="text-xs">
                 <CheckCircle className="h-3 w-3 mr-1" />
                 Resolvido
