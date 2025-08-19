@@ -178,25 +178,27 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
       {...attributes}
       {...listeners}
       className={cn(
-        "cursor-pointer transition-all hover:shadow-md mb-3 bg-white min-h-[180px] flex flex-col",
+        "cursor-pointer transition-all hover:shadow-md mb-3 bg-white min-h-[160px]",
         ticket.status === 'concluido' ? "border-success/30" : "",
         isSelected && "ring-2 ring-primary border-primary"
       )}
       onClick={() => onSelect(ticket.id)}
     >
-      <CardContent className="p-4 space-y-3 flex-1 flex flex-col">
-        {/* Badge "Resolvido" para tickets concluídos */}
-        {ticket.status === 'concluido' && (
-          <div className="flex justify-center">
-            <Badge variant="default" className="bg-success text-success-foreground text-xs">
-              <CheckCircle className="h-3 w-3 mr-1" />
-              Resolvido
-            </Badge>
+      <CardContent className="p-4 h-full flex flex-col justify-between">
+        {/* Header Section - Código do ticket e badges */}
+        <div className="flex items-start justify-between mb-3">
+          <div className="text-xs font-mono text-muted-foreground font-medium">
+            {ticket.codigo_ticket}
           </div>
-        )}
-        {/* Header with priority only */}
-        <div className="flex items-end justify-end">
           <div className="flex items-center gap-1">
+            {/* Badge Resolvido para tickets concluídos */}
+            {ticket.status === 'concluido' && (
+              <Badge variant="default" className="bg-success text-success-foreground text-xs">
+                <CheckCircle className="h-3 w-3 mr-1" />
+                Resolvido
+              </Badge>
+            )}
+            {/* Ícones de prioridade */}
             {getPriorityIcon(ticket.prioridade)}
             {ticket.prioridade === 'crise' && (
               <Badge variant="critical" className="text-xs">CRISE</Badge>
@@ -204,50 +206,55 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
           </div>
         </div>
 
-        {/* Title - com flex-1 para ocupar espaço disponível */}
-        <div className="flex-1">
-          <h3 className="font-medium text-gray-900 line-clamp-2 leading-tight">
+        {/* Title Section - Altura fixa */}
+        <div className="h-12 mb-3">
+          <h3 className="font-medium text-gray-900 line-clamp-2 leading-tight text-sm">
             {ticket.titulo || ticket.descricao_problema || 'Sem título'}
           </h3>
         </div>
 
-        {/* Location and Unit */}
-        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-          <MapPin className="h-3 w-3 text-muted-foreground" />
-          <span className="truncate">
-            {(ticket as any).unidades?.grupo || ticket.unidade_id || 'Unidade não informada'}
-          </span>
-        </div>
-
-        {/* Category and Team */}
-        <div className="flex items-center justify-between text-xs">
-          <div className="flex items-center gap-1 text-muted-foreground">
-            <span className="text-muted-foreground">{getCategoryIcon(ticket.categoria || 'outro')}</span>
-            <span className="capitalize">
-              {ticket.categoria === 'midia' ? 'Mídia' : 
-               ticket.categoria === 'juridico' ? 'Jurídico' :
-               ticket.categoria === 'financeiro' ? 'Financeiro' :
-               ticket.categoria === 'operacoes' ? 'Operações' :
-               ticket.categoria || 'Outro'}
+        {/* Info Section - Localização e categoria */}
+        <div className="space-y-2 mb-3 flex-1">
+          {/* Localização */}
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <MapPin className="h-3 w-3 flex-shrink-0" />
+            <span className="truncate">
+              {(ticket as any).unidades?.grupo || ticket.unidade_id || 'Unidade não informada'}
             </span>
           </div>
           
-          {ticket.equipe_responsavel_id && (
-            <div className="flex items-center gap-1 text-muted-foreground">
-              <Users className="h-3 w-3 text-muted-foreground" />
-              <span className="truncate max-w-20">
-                {getEquipeName(ticket.equipe_responsavel_id)}
+          {/* Categoria e Equipe */}
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            {/* Categoria */}
+            <div className="flex items-center gap-1">
+              {getCategoryIcon(ticket.categoria || 'outro')}
+              <span className="capitalize">
+                {ticket.categoria === 'midia' ? 'Mídia' : 
+                 ticket.categoria === 'juridico' ? 'Jurídico' :
+                 ticket.categoria === 'financeiro' ? 'Financeiro' :
+                 ticket.categoria === 'operacoes' ? 'Operações' :
+                 ticket.categoria || 'Outro'}
               </span>
             </div>
-          )}
+            
+            {/* Equipe */}
+            {ticket.equipe_responsavel_id && (
+              <div className="flex items-center gap-1">
+                <Users className="h-3 w-3 flex-shrink-0" />
+                <span className="truncate">
+                  {getEquipeName(ticket.equipe_responsavel_id)}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Status button and time - fixado no bottom */}
-        <div className="flex items-center justify-between mt-auto">
+        {/* Footer Section - Status e tempo (sempre no final) */}
+        <div className="flex items-center justify-between">
           <Button 
             variant={getPriorityButtonVariant(ticket.prioridade) as any}
             size="sm" 
-            className="text-xs h-7 px-2 py-1"
+            className="text-xs h-7 px-3 py-1"
             onClick={(e) => e.stopPropagation()}
           >
             {getPriorityLabel(ticket.prioridade)}
