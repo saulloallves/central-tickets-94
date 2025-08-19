@@ -20,14 +20,13 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Buscar dados do ticket com título
+    // Buscar dados do ticket
     console.log('Fetching ticket data for ID:', ticketId)
     const { data: ticket, error: ticketError } = await supabase
       .from('tickets')
       .select(`
         *,
         unidades (id, grupo, id_grupo_azul, id_grupo_vermelho),
-        franqueados (name, phone),
         colaboradores (nome_completo)
       `)
       .eq('id', ticketId)
@@ -35,16 +34,45 @@ serve(async (req) => {
 
     if (ticketError || !ticket) {
       console.error('Ticket error:', ticketError)
-      throw new Error(`Ticket not found: ${ticketError?.message}`)
+      return new Response(
+        JSON.stringify({ success: false, message: 'Ticket não encontrado' }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400 
+        }
+      )
     }
     
     console.log('Ticket found:', {
       id: ticket.id,
       codigo: ticket.codigo_ticket,
-      franqueado_id: ticket.franqueado_id,
-      has_franqueado: !!ticket.franqueados,
-      franqueado_phone: ticket.franqueados?.phone
+      franqueado_id: ticket.franqueado_id
     })
+
+    // Buscar dados do franqueado separadamente se necessário
+    let franqueado = null
+    if (ticket.franqueado_id && type === 'resposta_ticket_privado') {
+      console.log('Fetching franqueado data for ID:', ticket.franqueado_id)
+      const { data: franqueadoData, error: franqueadoError } = await supabase
+        .from('franqueados')
+        .select('name, phone')
+        .eq('Id', ticket.franqueado_id)
+        .single()
+      
+      if (franqueadoError) {
+        console.error('Franqueado error:', franqueadoError)
+        return new Response(
+          JSON.stringify({ success: false, message: 'Franqueado não encontrado' }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 400 
+          }
+        )
+      }
+      
+      franqueado = franqueadoData
+      console.log('Franqueado found:', { name: franqueado?.name, hasPhone: !!franqueado?.phone })
+    }
 
     // Buscar configurações de notificação
     const { data: settings } = await supabase
@@ -81,6 +109,31 @@ serve(async (req) => {
       const titulo = ticket.titulo || 'Problema reportado'
       const codigo = ticket.codigo_ticket
       return `${titulo} (${codigo})`
+    }
+
+    // Função para normalizar número de telefone
+    const normalizePhoneNumber = (phone: any): string | null => {
+      if (!phone) return null
+      
+      let phoneStr = phone.toString().replace(/\D/g, '') // Remove tudo que não é dígito
+      
+      // Se tem 11 dígitos e começa com 55, já tem código do país
+      if (phoneStr.length === 13 && phoneStr.startsWith('55')) {
+        return phoneStr
+      }
+      
+      // Se tem 11 dígitos, adiciona código do país (55)
+      if (phoneStr.length === 11) {
+        return '55' + phoneStr
+      }
+      
+      // Se tem 10 dígitos, adiciona 9 e código do país
+      if (phoneStr.length === 10) {
+        return '55' + phoneStr.charAt(0) + phoneStr.charAt(1) + '9' + phoneStr.substring(2)
+      }
+      
+      console.warn('Phone number format not recognized:', phone)
+      return phoneStr.length >= 10 ? phoneStr : null
     }
 
     // Função para enviar mensagem via ZAPI
@@ -149,8 +202,6 @@ serve(async (req) => {
       case 'resposta_ticket_privado':
         // Enviar resposta privada para o franqueado
         console.log('Processing resposta_ticket_privado')
-        const franqueado = ticket.franqueados
-        console.log('Franqueado data:', franqueado)
         
         if (!franqueado) {
           console.error('No franqueado data found for ticket')
@@ -158,9 +209,10 @@ serve(async (req) => {
           break
         }
         
-        if (!franqueado.phone) {
-          console.error('Franqueado phone not found:', franqueado)
-          result = { success: false, message: 'Franqueado não tem telefone cadastrado' }
+        const normalizedPhone = normalizePhoneNumber(franqueado.phone)
+        if (!normalizedPhone) {
+          console.error('Franqueado phone not found or invalid:', franqueado.phone)
+          result = { success: false, message: 'Franqueado não tem telefone válido cadastrado' }
           break
         }
         
@@ -176,10 +228,8 @@ serve(async (req) => {
           `📝 *Resposta da nossa equipe:*\n${textoResposta}\n\n` +
           `_Se precisar de mais ajuda, responda a esta mensagem._`
 
-        // Garantir que o telefone seja uma string
-        const phoneNumber = franqueado.phone.toString()
-        console.log('Sending message to phone:', phoneNumber)
-        result = await sendZapiMessage(phoneNumber, message)
+        console.log('Sending message to normalized phone:', normalizedPhone)
+        result = await sendZapiMessage(normalizedPhone, message)
         break
 
       case 'sla_half':

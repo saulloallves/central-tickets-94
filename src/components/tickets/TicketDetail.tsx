@@ -623,7 +623,8 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                   size="sm" 
                   variant="outline"
                   onClick={handleSendToFranqueado}
-                  disabled={!newMessage.trim() || isSendingToFranqueado}
+                  disabled={!newMessage.trim() || isSendingToFranqueado || !ticket?.franqueado_id}
+                  title={!ticket?.franqueado_id ? 'Nenhum franqueado vinculado a este ticket' : ''}
                 >
                   <Phone className="h-4 w-4 mr-2" />
                   {isSendingToFranqueado ? 'Enviando...' : 'WhatsApp Franqueado'}
