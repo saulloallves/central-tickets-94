@@ -58,12 +58,22 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
 
       // Fetch related data separately to avoid RLS issues
       const [unidadeRes, colaboradorRes, franqueadoRes, profileRes, equipeRes] = await Promise.all([
-        supabase.from('unidades').select('grupo, id').eq('id', ticketData.unidade_id).single(),
-        ticketData.colaborador_id ? supabase.from('colaboradores').select('nome_completo').eq('id', ticketData.colaborador_id).single() : Promise.resolve({ data: null }),
-        ticketData.franqueado_id ? supabase.from('franqueados').select('name').eq('Id', Number(ticketData.franqueado_id)).single() : Promise.resolve({ data: null }),
-        ticketData.criado_por ? supabase.from('profiles').select('nome_completo').eq('id', ticketData.criado_por).single() : Promise.resolve({ data: null }),
-        ticketData.equipe_responsavel_id ? supabase.from('equipes').select('nome').eq('id', ticketData.equipe_responsavel_id).single() : Promise.resolve({ data: null })
+        supabase.from('unidades').select('grupo, id').eq('id', ticketData.unidade_id).maybeSingle(),
+        ticketData.colaborador_id ? supabase.from('colaboradores').select('nome_completo').eq('id', ticketData.colaborador_id).maybeSingle() : Promise.resolve({ data: null }),
+        ticketData.franqueado_id ? supabase.from('franqueados').select('name').eq('Id', Number(ticketData.franqueado_id)).maybeSingle() : Promise.resolve({ data: null }),
+        ticketData.criado_por ? supabase.from('profiles').select('nome_completo').eq('id', ticketData.criado_por).maybeSingle() : Promise.resolve({ data: null }),
+        ticketData.equipe_responsavel_id ? supabase.from('equipes').select('nome').eq('id', ticketData.equipe_responsavel_id).maybeSingle() : Promise.resolve({ data: null })
       ]);
+
+      console.log('Ticket data:', {
+        ticketId: ticketData.id,
+        colaborador_id: ticketData.colaborador_id,
+        franqueado_id: ticketData.franqueado_id,
+        criado_por: ticketData.criado_por,
+        colaborador: colaboradorRes.data,
+        franqueado: franqueadoRes.data,
+        profile: profileRes.data
+      });
 
       // Combine the data
       const combinedData = {
