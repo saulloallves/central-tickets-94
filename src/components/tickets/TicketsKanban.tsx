@@ -178,12 +178,22 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
       {...attributes}
       {...listeners}
       className={cn(
-        "cursor-pointer transition-all hover:shadow-md mb-3 bg-white",
+        "cursor-pointer transition-all hover:shadow-md mb-3",
+        ticket.status === 'concluido' ? "bg-success/5 border-success/20" : "bg-white",
         isSelected && "ring-2 ring-primary border-primary"
       )}
       onClick={() => onSelect(ticket.id)}
     >
       <CardContent className="p-4 space-y-3">
+        {/* Badge "Resolvido" para tickets concluídos */}
+        {ticket.status === 'concluido' && (
+          <div className="flex justify-center mb-2">
+            <Badge variant="default" className="bg-success text-success-foreground text-xs">
+              <CheckCircle className="h-3 w-3 mr-1" />
+              Resolvido
+            </Badge>
+          </div>
+        )}
         {/* Header with priority only */}
         <div className="flex items-end justify-end">
           <div className="flex items-center gap-1">

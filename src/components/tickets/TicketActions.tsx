@@ -170,8 +170,8 @@ export const TicketActions = ({ ticket, equipes, size = 'default' }: TicketActio
         </>
       )}
 
-      {/* Botão Concluir - só aparece se estiver em atendimento */}
-      {ticket.status === 'em_atendimento' && (
+      {/* Botão Concluir - aparece se estiver em atendimento ou escalonado */}
+      {(ticket.status === 'em_atendimento' || ticket.status === 'escalonado') && (
         <Dialog open={concludeDialogOpen} onOpenChange={setConcludeDialogOpen}>
           <DialogTrigger asChild>
             <Button variant="default" size={buttonSize}>
