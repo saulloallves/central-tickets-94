@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, Users } from "lucide-react";
+import { Plus, Trash2, Users, Info } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -229,8 +230,9 @@ export function EquipeMembersDialog({ equipeId, equipeNome, open, onOpenChange }
   );
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+    <TooltipProvider>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
@@ -275,13 +277,23 @@ export function EquipeMembersDialog({ equipeId, equipeNome, open, onOpenChange }
                 </div>
 
                 <div>
-                  <Label>Função</Label>
+                  <div className="flex items-center gap-2">
+                    <Label>Papel na equipe</Label>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Define o papel do membro dentro desta equipe específica, não o cargo de RH da empresa.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
                   <Select
                     value={newMember.role}
                     onValueChange={(value) => setNewMember({ ...newMember, role: value })}
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Selecione o papel" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="member">Membro</SelectItem>
@@ -323,7 +335,7 @@ export function EquipeMembersDialog({ equipeId, equipeNome, open, onOpenChange }
                   <TableRow>
                     <TableHead>Nome</TableHead>
                     <TableHead>Email</TableHead>
-                    <TableHead>Função</TableHead>
+                    <TableHead>Papel na Equipe</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Ações</TableHead>
                   </TableRow>
@@ -381,7 +393,8 @@ export function EquipeMembersDialog({ equipeId, equipeNome, open, onOpenChange }
             )}
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+    </TooltipProvider>
   );
 }

@@ -14,6 +14,7 @@ import { SLAAlerts } from '@/components/tickets/SLAAlerts';
 import { TestAIButton } from '@/components/tickets/TestAIButton';
 import { RefreshButton } from '@/components/ui/refresh-button';
 import { useTickets } from '@/hooks/useTickets';
+import { useUserEquipes } from '@/hooks/useUserEquipes';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Equipe {
@@ -24,6 +25,7 @@ interface Equipe {
 
 const Tickets = () => {
   const { isAdmin, isGerente } = useRole();
+  const { userEquipes } = useUserEquipes();
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
@@ -176,11 +178,14 @@ const Tickets = () => {
             </Select>
             
             <Select value={filters.equipe_id} onValueChange={(value) => setFilters(prev => ({ ...prev, equipe_id: value }))}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-48">
                 <SelectValue placeholder="Equipe" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas Equipes</SelectItem>
+                {userEquipes.length > 0 && (
+                  <SelectItem value="minhas_equipes">Minhas Equipes</SelectItem>
+                )}
                 {equipes.map((equipe) => (
                   <SelectItem key={equipe.id} value={equipe.id}>
                     {equipe.nome}
