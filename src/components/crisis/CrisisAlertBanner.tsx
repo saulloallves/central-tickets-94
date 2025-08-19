@@ -11,6 +11,14 @@ export const CrisisAlertBanner = () => {
   const [isMinimized, setIsMinimized] = useState(false);
   const [audioPlayed, setAudioPlayed] = useState(false);
 
+  // Reset audio played state when crises list changes
+  useEffect(() => {
+    if (activeCrises.length === 0) {
+      setAudioPlayed(false);
+      setIsMinimized(false);
+    }
+  }, [activeCrises.length]);
+
   // Play crisis alert sound
   useEffect(() => {
     if (activeCrises.length > 0 && !audioPlayed) {

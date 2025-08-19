@@ -105,7 +105,13 @@ export const useCrisisManagement = () => {
         description: "A crise foi marcada como resolvida com sucesso",
       });
 
-      fetchActiveCrises();
+      // Force update to ensure UI reflects the change
+      await fetchActiveCrises();
+      // Small delay to ensure database consistency
+      setTimeout(() => {
+        fetchActiveCrises();
+      }, 500);
+      
       return true;
     } catch (error) {
       console.error('Error resolving crisis:', error);
