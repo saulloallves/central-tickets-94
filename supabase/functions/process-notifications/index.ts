@@ -75,33 +75,24 @@ serve(async (req) => {
     }
 
     // Buscar configurações de notificação
-    const { data: settings } = await supabase
+    let settings = null;
+    const { data: settingsData, error: settingsError } = await supabase
       .from('notification_settings')
       .select('*')
       .single()
 
-    if (!settings) {
-      console.error('No notification settings found - creating default entry')
-      // Criar configurações padrão se não existir
-      const { data: newSettings, error: insertError } = await supabase
-        .from('notification_settings')
-        .insert({
-          webhook_saida: Deno.env.get('ZAPI_BASE_URL') || 'https://api.z-api.io/instances/YOUR_INSTANCE/token/YOUR_TOKEN/send-text',
-          delay_mensagem: 2000,
-          limite_retentativas: 3
-        })
-        .select()
-        .single()
-        
-      if (insertError) {
-        console.error('Failed to create default settings:', insertError)
-        return new Response(
-          JSON.stringify({ success: false, message: 'Configurações de notificação não encontradas e não foi possível criar padrão' }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
+    if (settingsError || !settingsData) {
+      console.log('No notification settings found, using defaults')
+      // Usar configurações padrão se não existir na base
+      settings = {
+        webhook_saida: Deno.env.get('ZAPI_BASE_URL') || null,
+        delay_mensagem: 2000,
+        limite_retentativas: 3,
+        numero_remetente: null
       }
-      
-      console.log('Created default notification settings')
+    } else {
+      settings = settingsData
+      console.log('Using notification settings from database')
     }
 
     // Função para formatar o título do ticket
