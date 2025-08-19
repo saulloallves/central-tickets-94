@@ -139,8 +139,8 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
       case 'crise': return 'critical';
       case 'urgente': return 'critical';
       case 'alta': return 'warning';
-      case 'media': return 'secondary';
-      case 'baixa': return 'success';
+      case 'media': return 'outline';
+      case 'baixa': return 'outline';
       default: return 'outline';
     }
   };
@@ -201,7 +201,7 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
 
         {/* Location and Unit */}
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
-          <MapPin className="h-3 w-3 text-info" />
+          <MapPin className="h-3 w-3 text-muted-foreground" />
           <span className="truncate">
             {(ticket as any).unidades?.grupo || ticket.unidade_id || 'Unidade não informada'}
           </span>
@@ -210,7 +210,7 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
         {/* Category and Team */}
         <div className="flex items-center justify-between text-xs">
           <div className="flex items-center gap-1 text-muted-foreground">
-            <span className="text-primary">{getCategoryIcon(ticket.categoria || 'outro')}</span>
+            <span className="text-muted-foreground">{getCategoryIcon(ticket.categoria || 'outro')}</span>
             <span className="capitalize">
               {ticket.categoria === 'midia' ? 'Mídia' : 
                ticket.categoria === 'juridico' ? 'Jurídico' :
@@ -222,7 +222,7 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
           
           {ticket.equipe_responsavel_id && (
             <div className="flex items-center gap-1 text-muted-foreground">
-              <Users className="h-3 w-3 text-success" />
+              <Users className="h-3 w-3 text-muted-foreground" />
               <span className="truncate max-w-20">
                 {getEquipeName(ticket.equipe_responsavel_id)}
               </span>
