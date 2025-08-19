@@ -188,6 +188,53 @@ export type Database = {
           },
         ]
       }
+      crises_ativas: {
+        Row: {
+          comunicado_emitido: boolean
+          criada_em: string
+          criada_por: string | null
+          id: string
+          impacto_regional: string[] | null
+          log_acoes: Json
+          motivo: string | null
+          resolvida_em: string | null
+          resolvida_por: string | null
+          ticket_id: string
+        }
+        Insert: {
+          comunicado_emitido?: boolean
+          criada_em?: string
+          criada_por?: string | null
+          id?: string
+          impacto_regional?: string[] | null
+          log_acoes?: Json
+          motivo?: string | null
+          resolvida_em?: string | null
+          resolvida_por?: string | null
+          ticket_id: string
+        }
+        Update: {
+          comunicado_emitido?: boolean
+          criada_em?: string
+          criada_por?: string | null
+          id?: string
+          impacto_regional?: string[] | null
+          log_acoes?: Json
+          motivo?: string | null
+          resolvida_em?: string | null
+          resolvida_por?: string | null
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crises_ativas_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       equipe_members: {
         Row: {
           ativo: boolean
@@ -1742,6 +1789,15 @@ export type Database = {
       }
     }
     Functions: {
+      activate_crisis: {
+        Args: {
+          p_criada_por?: string
+          p_impacto_regional?: string[]
+          p_motivo?: string
+          p_ticket_id: string
+        }
+        Returns: string
+      }
       add_24h_skip_weekend: {
         Args: { ts: string }
         Returns: string
@@ -1807,6 +1863,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      log_crisis_action: {
+        Args: {
+          p_acao: string
+          p_by?: string
+          p_crisis_id: string
+          p_meta?: Json
+        }
+        Returns: undefined
+      }
       log_system_action: {
         Args: {
           p_acao_realizada: string
@@ -1837,6 +1902,10 @@ export type Database = {
       next_ticket_code: {
         Args: { p_unidade_id: string }
         Returns: string
+      }
+      resolve_crisis: {
+        Args: { p_crisis_id: string; p_resolvida_por?: string }
+        Returns: undefined
       }
     }
     Enums: {

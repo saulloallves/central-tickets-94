@@ -60,31 +60,25 @@ export const useAIAnalysis = () => {
   };
 
   const markAsCrisis = async (ticketId: string, motivo: string) => {
+    setLoading(true);
     try {
-      // Atualizar ticket como crise
-      const { error: updateError } = await supabase
-        .from('tickets')
-        .update({
-          prioridade: 'crise',
-          status: 'escalonado',
-          escalonamento_nivel: 5
-        })
-        .eq('id', ticketId);
-
-      if (updateError) throw updateError;
-
-      // Disparar notificações de crise
-      await supabase.functions.invoke('process-notifications', {
-        body: {
-          ticketId,
-          type: 'crise_detectada',
-          priority: 'immediate'
-        }
+      const { data: user } = await supabase.auth.getUser();
+      
+      const { data, error } = await supabase.rpc('activate_crisis', {
+        p_ticket_id: ticketId,
+        p_motivo: motivo,
+        p_criada_por: user.user?.id,
+        p_impacto_regional: null
       });
 
+      if (error) {
+        console.error('Error activating crisis:', error);
+        throw error;
+      }
+
       toast({
-        title: "🚨 MARCADO COMO CRISE",
-        description: "Notificações enviadas para toda a hierarquia",
+        title: "🚨 CRISE ATIVADA",
+        description: "Protocolo de emergência iniciado. Notificações enviadas.",
         variant: "destructive",
       });
 
@@ -93,10 +87,12 @@ export const useAIAnalysis = () => {
       console.error('Error marking as crisis:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível marcar como crise",
+        description: "Não foi possível ativar a crise",
         variant: "destructive",
       });
       return false;
+    } finally {
+      setLoading(false);
     }
   };
 
