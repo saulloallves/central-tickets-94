@@ -219,18 +219,128 @@ serve(async (req) => {
     // Se não encontrou resposta na KB ou forçou criação, criar ticket
     console.log('Creating ticket - no suitable KB answer found');
 
+    // Buscar equipes ativas para análise
+    const { data: equipes, error: equipesError } = await supabase
+      .from('equipes')
+      .select('id, nome, introducao, descricao')
+      .eq('ativo', true);
+
+    if (equipesError) {
+      console.error('Error fetching teams:', equipesError);
+    }
+
+    let analysisResult = null;
+    let equipeResponsavelId = null;
+
+    // Análise por IA se temos OpenAI e equipes
+    if (openaiApiKey && equipes && equipes.length > 0) {
+      try {
+        console.log('Starting AI classification...');
+        
+        const equipesInfo = equipes.map(eq => 
+          `- ID: ${eq.id} | Nome: ${eq.nome} | Descrição: ${eq.introducao} - ${eq.descricao}`
+        ).join('\n');
+
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${openaiApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            messages: [
+              {
+                role: 'system',
+                content: `Você é um classificador especializado em tickets de suporte de franquia. Sua única função é analisar a mensagem e retornar APENAS um JSON válido seguindo EXATAMENTE este formato:
+
+{
+  "prioridade": "crise|urgente|alta|hoje_18h|padrao_24h",
+  "categoria": "juridico|sistema|midia|operacoes|rh|financeiro|outro",
+  "subcategoria": "string ou null",
+  "is_crise": boolean,
+  "motivo_crise": "string ou null",
+  "sla_sugerido_horas": number,
+  "equipe_responsavel": "nome_da_equipe"
+}
+
+REGRAS OBRIGATÓRIAS:
+- RETORNE APENAS O JSON, sem texto adicional
+- prioridade CRISE: problemas que afetam operação crítica (vendas paradas, sistema fora do ar, problemas legais graves)
+- prioridade URGENTE: problemas graves que precisam resolução no mesmo dia
+- prioridade ALTA: problemas importantes mas que podem aguardar algumas horas
+- prioridade HOJE_18H: problemas que devem ser resolvidos até 18h do dia
+- prioridade PADRAO_24H: problemas normais com prazo de 24h úteis
+- is_crise = true APENAS se prioridade = "crise"
+- motivo_crise APENAS se is_crise = true
+- equipe_responsavel deve ser o NOME EXATO de uma das equipes disponíveis:
+
+EQUIPES DISPONÍVEIS:
+${equipesInfo}
+
+Analise o conteúdo e classifique adequadamente:`
+              },
+              {
+                role: 'user',
+                content: `Mensagem: ${message}\nCategoria sugerida: ${category_hint || 'não informada'}`
+              }
+            ],
+            max_tokens: 300,
+            temperature: 0.1,
+          }),
+        });
+
+        const aiResponse = await response.json();
+        const analysis = aiResponse.choices?.[0]?.message?.content;
+        
+        if (analysis) {
+          try {
+            analysisResult = JSON.parse(analysis.trim());
+            console.log('AI analysis result:', analysisResult);
+            
+            // Encontrar equipe por nome
+            if (analysisResult.equipe_responsavel) {
+              const equipeEncontrada = equipes.find(eq => 
+                eq.nome.toLowerCase().trim() === analysisResult.equipe_responsavel.toLowerCase().trim()
+              );
+              if (equipeEncontrada) {
+                equipeResponsavelId = equipeEncontrada.id;
+                console.log('Team matched:', equipeEncontrada.nome, '-> ID:', equipeResponsavelId);
+              } else {
+                console.log('Team not found:', analysisResult.equipe_responsavel);
+              }
+            }
+          } catch (parseError) {
+            console.error('Error parsing AI response:', parseError);
+            console.log('Raw AI response:', analysis);
+          }
+        }
+      } catch (error) {
+        console.error('Error in AI classification:', error);
+      }
+    }
+
+    // Criar ticket com dados da análise ou defaults
     const { data: ticket, error: ticketError } = await supabase
       .from('tickets')
       .insert({
         unidade_id: unidade.id,
-        franqueado_id: franqueadoId, // Agora pode aceitar bigint
+        franqueado_id: franqueadoId,
         descricao_problema: message,
-        categoria: null, // Deixar em branco para a IA definir
-        prioridade: 'padrao_24h',
+        categoria: analysisResult?.categoria || null,
+        subcategoria: analysisResult?.subcategoria || null,
+        prioridade: analysisResult?.prioridade || 'padrao_24h',
+        equipe_responsavel_id: equipeResponsavelId,
         canal_origem: 'typebot',
-        status: 'aberto',
+        status: analysisResult?.is_crise ? 'escalonado' : 'aberto',
+        escalonamento_nivel: analysisResult?.is_crise ? 5 : 0,
         data_abertura: new Date().toISOString(),
         arquivos: attachments || [],
+        log_ia: analysisResult ? {
+          analysis: analysisResult,
+          model: 'gpt-4o-mini',
+          timestamp: new Date().toISOString()
+        } : {}
       })
       .select()
       .single();
@@ -261,24 +371,8 @@ serve(async (req) => {
     // Não adicionar informações do franqueado nas conversas
     // Os dados já estão vinculados no campo franqueado_id do ticket
 
-    // Invocar análise automática do ticket
-    try {
-      const { data: analysisResult, error: analysisError } = await supabase.functions.invoke('analyze-ticket', {
-        body: {
-          ticketId: ticket.id,
-          descricao: message,
-          categoria: category_hint
-        }
-      });
-
-      if (analysisError) {
-        console.error('Error analyzing ticket:', analysisError);
-      } else {
-        console.log('Ticket analysis completed:', analysisResult);
-      }
-    } catch (error) {
-      console.error('Error calling analyze-ticket function:', error);
-    }
+    // Análise já foi feita durante a criação, não precisamos chamar analyze-ticket
+    console.log('Ticket created with AI analysis during creation');
 
     // Buscar dados atualizados do ticket após análise
     const { data: updatedTicket } = await supabase

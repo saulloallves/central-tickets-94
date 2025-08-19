@@ -145,10 +145,10 @@ const Tickets = () => {
             
             <Select value={filters.categoria} onValueChange={(value) => setFilters(prev => ({ ...prev, categoria: value }))}>
               <SelectTrigger className="w-40">
-                <SelectValue placeholder="Categoria" />
+                <SelectValue placeholder="Equipe" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todas</SelectItem>
+                <SelectItem value="all">Todas Equipes</SelectItem>
                 <SelectItem value="juridico">Jurídico</SelectItem>
                 <SelectItem value="sistema">Sistema</SelectItem>
                 <SelectItem value="midia">Mídia</SelectItem>

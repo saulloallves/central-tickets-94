@@ -34,6 +34,7 @@ export interface Ticket {
   unidades?: { grupo: string };
   colaboradores?: { nome_completo: string };
   franqueados?: { name: string };
+  equipes?: { id: string; nome: string };
 }
 
 export interface TicketMessage {
@@ -83,7 +84,13 @@ export const useTickets = (filters: TicketFilters) => {
       // Simplified query without joins first to avoid permission issues
       let query = supabase
         .from('tickets')
-        .select('*')
+        .select(`
+          *,
+          equipes:equipe_responsavel_id (
+            id,
+            nome
+          )
+        `)
         .order('created_at', { ascending: false });
 
       // Apply search filter

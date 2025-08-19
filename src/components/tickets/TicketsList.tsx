@@ -144,9 +144,9 @@ export const TicketsList = ({ filters, onTicketSelect, selectedTicketId }: Ticke
 
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <div className="flex items-center gap-4">
-                {ticket.categoria && (
+                {ticket.equipes?.nome && (
                   <Badge variant="secondary" className="text-xs">
-                    {ticket.categoria}
+                    {ticket.equipes.nome}
                   </Badge>
                 )}
                 
