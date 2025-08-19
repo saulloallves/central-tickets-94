@@ -17,6 +17,7 @@ import { RefreshButton } from '@/components/ui/refresh-button';
 import { NotificationButton } from '@/components/notifications/NotificationButton';
 import { useTickets } from '@/hooks/useTickets';
 import { useUserEquipes } from '@/hooks/useUserEquipes';
+import { useTicketsRealtime } from '@/hooks/useTicketsRealtime';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Equipe {
@@ -45,7 +46,13 @@ const Tickets = () => {
     equipe_id: 'all'
   });
 
-  const { ticketStats, refetch } = useTickets(filters);
+  const { 
+    ticketStats, 
+    refetch, 
+    handleTicketUpdate, 
+    handleTicketInsert, 
+    handleTicketDelete 
+  } = useTickets(filters);
 
   // Fetch available teams
   useEffect(() => {
@@ -67,6 +74,18 @@ const Tickets = () => {
 
     fetchEquipes();
   }, []);
+
+  // Setup realtime subscription with optimized filtering
+  useTicketsRealtime({
+    onTicketUpdate: handleTicketUpdate,
+    onTicketInsert: handleTicketInsert,
+    onTicketDelete: handleTicketDelete,
+    filters: {
+      unidade_id: filters.unidade_id !== 'all' ? filters.unidade_id : undefined,
+      equipe_id: filters.equipe_id !== 'all' ? filters.equipe_id : undefined,
+      status: filters.status !== 'all' ? [filters.status] : undefined,
+    }
+  });
 
   const handleTicketSelect = (ticketId: string) => {
     setSelectedTicketId(ticketId);

@@ -244,55 +244,34 @@ export const useTickets = (filters: TicketFilters) => {
     }
   }, [filters.search, filters.status, filters.categoria, filters.prioridade, filters.status_sla, filters.unidade_id, filters.equipe_id]);
 
-  // Realtime subscription for tickets - optimized to only update when needed
-  useEffect(() => {
-    if (!user || roleLoading) return;
-
-    const channel = supabase
-      .channel('tickets-realtime-channel')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'tickets'
-        },
-        (payload) => {
-          console.log('Real-time change:', payload.eventType, (payload.new as any)?.id);
-          
-          // Only update state if there's an actual change
-          if (payload.eventType === 'INSERT' && payload.new) {
-            setTickets(prev => {
-              // Check if ticket already exists to avoid duplicates
-              const exists = prev.find(t => t.id === (payload.new as any)?.id);
-              if (exists) return prev;
-              return [payload.new as Ticket, ...prev];
-            });
-            fetchTicketStats();
-          } else if (payload.eventType === 'UPDATE' && payload.new && payload.old) {
-            setTickets(prev => 
-              prev.map(ticket => 
-                ticket.id === (payload.new as any)?.id 
-                  ? { ...ticket, ...payload.new } as Ticket
-                  : ticket
-              )
-            );
-            fetchTicketStats();
-          } else if (payload.eventType === 'DELETE' && payload.old) {
-            setTickets(prev => prev.filter(ticket => ticket.id !== (payload.old as any)?.id));
-            fetchTicketStats();
-          }
-        }
+  // Enhanced realtime subscription with handlers
+  const handleTicketUpdate = (ticket: Ticket) => {
+    console.log('🔄 Realtime ticket update received:', ticket.codigo_ticket);
+    setTickets(prev => 
+      prev.map(existingTicket => 
+        existingTicket.id === ticket.id 
+          ? { ...existingTicket, ...ticket } as Ticket
+          : existingTicket
       )
-      .subscribe((status) => {
-        console.log('Realtime subscription status:', status);
-      });
+    );
+    fetchTicketStats();
+  };
 
-    return () => {
-      console.log('Removing realtime subscription');
-      supabase.removeChannel(channel);
-    };
-  }, [user?.id, roleLoading]);
+  const handleTicketInsert = (ticket: Ticket) => {
+    console.log('➕ Realtime ticket insert received:', ticket.codigo_ticket);
+    setTickets(prev => {
+      const exists = prev.find(t => t.id === ticket.id);
+      if (exists) return prev;
+      return [ticket, ...prev];
+    });
+    fetchTicketStats();
+  };
+
+  const handleTicketDelete = (ticketId: string) => {
+    console.log('🗑️ Realtime ticket delete received:', ticketId);
+    setTickets(prev => prev.filter(ticket => ticket.id !== ticketId));
+    fetchTicketStats();
+  };
 
   const createTicket = async (ticketData: Partial<Ticket>) => {
     if (!user?.id) {
@@ -622,7 +601,11 @@ export const useTickets = (filters: TicketFilters) => {
     refetch: refetchData,
     // Optimistic UI functions
     optimisticUpdateTicket,
-    optimisticRollback
+    optimisticRollback,
+    // Realtime handlers
+    handleTicketUpdate,
+    handleTicketInsert,
+    handleTicketDelete
   };
 };
 
