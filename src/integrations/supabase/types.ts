@@ -555,7 +555,7 @@ export type Database = {
           franchisee_subtype: string | null
           franchisee_type: string | null
           have_extra_activities: string | null
-          Id: number
+          id: number
           instagram: string | null
           is_in_social_contract: string | null
           labor_value: string | null
@@ -566,7 +566,7 @@ export type Database = {
           name: string | null
           nationality: string | null
           neighborhood: string | null
-          phone: number | null
+          phone: string | null
           profile_picture: string | null
           receive_for_labor: string | null
           state: string | null
@@ -598,7 +598,7 @@ export type Database = {
           franchisee_subtype?: string | null
           franchisee_type?: string | null
           have_extra_activities?: string | null
-          Id: number
+          id: number
           instagram?: string | null
           is_in_social_contract?: string | null
           labor_value?: string | null
@@ -609,7 +609,7 @@ export type Database = {
           name?: string | null
           nationality?: string | null
           neighborhood?: string | null
-          phone?: number | null
+          phone?: string | null
           profile_picture?: string | null
           receive_for_labor?: string | null
           state?: string | null
@@ -641,7 +641,7 @@ export type Database = {
           franchisee_subtype?: string | null
           franchisee_type?: string | null
           have_extra_activities?: string | null
-          Id?: number
+          id?: number
           instagram?: string | null
           is_in_social_contract?: string | null
           labor_value?: string | null
@@ -652,7 +652,7 @@ export type Database = {
           name?: string | null
           nationality?: string | null
           neighborhood?: string | null
-          phone?: number | null
+          phone?: string | null
           profile_picture?: string | null
           receive_for_labor?: string | null
           state?: string | null
