@@ -1,47 +1,58 @@
 
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    const { ticketId, descricao, categoria } = await req.json();
-    
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openAIApiKey) {
-      throw new Error('OpenAI API key not configured');
-    }
+    const { ticketId, descricao, categoria } = await req.json()
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    )
 
-    console.log('Analyzing ticket:', ticketId, descricao.substring(0, 100));
+    const openaiApiKey = Deno.env.get('OPENAI_API_KEY')
+    if (!openaiApiKey) {
+      throw new Error('OpenAI API key not found')
+    }
 
-    // Buscar equipes ativas para orientar a IA
-    const { data: equipes } = await supabase
-      .from('equipes')
-      .select('id, nome, introducao')
-      .eq('ativo', true)
-      .order('nome');
+    // Prompt para análise completa incluindo título
+    const analysisPrompt = `
+Analise este ticket de suporte e forneça:
 
-    const equipesContext = equipes?.map(e => `${e.nome}: ${e.introducao}`).join('\n') || '';
+1. TÍTULO: Um título claro e descritivo de 5-10 palavras que resuma o problema
+2. CATEGORIA: Classifique em uma das opções: juridico, sistema, midia, operacoes, rh, financeiro, outro
+3. PRIORIDADE: Determine se é: crise, urgente, alta, hoje_18h, padrao_24h
+4. EQUIPE_SUGERIDA: Sugira qual equipe deve atender baseado no problema
 
-    // Análise de IA para determinar prioridade, categoria e se é crise
+Descrição do problema: "${descricao}"
+Categoria atual: ${categoria || 'não definida'}
+
+Responda APENAS em formato JSON válido:
+{
+  "titulo": "Título do problema",
+  "categoria": "categoria_sugerida", 
+  "prioridade": "prioridade_sugerida",
+  "equipe_sugerida": "nome_da_equipe_ou_null",
+  "justificativa": "Breve explicação da análise"
+}
+`
+
+    console.log('Calling OpenAI for ticket analysis...')
+    
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
+        'Authorization': `Bearer ${openaiApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -49,311 +60,108 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `Você é um assistente especializado em análise de tickets de suporte técnico para franquias. 
-            Analise o problema descrito e retorne APENAS um JSON válido com:
-            {
-              "prioridade": "urgente" | "alta" | "hoje_18h" | "padrao_24h" | "crise",
-              "categoria": "juridico" | "sistema" | "midia" | "operacoes" | "rh" | "financeiro" | "outro",
-              "subcategoria": "string descritiva",
-              "is_crise": boolean,
-              "motivo_crise": "string ou null",
-              "sla_sugerido_horas": number,
-              "equipe_responsavel": "string nome da equipe" | null
-            }
-
-            EQUIPES DISPONÍVEIS:
-            ${equipesContext}
-
-            Critérios para CRISE:
-            - Sistema completamente fora do ar
-            - Perda total de vendas
-            - Problemas que afetam múltiplas unidades
-            - Ameaças legais ou de clientes
-            - Vazamentos de dados
-
-            Critérios para URGENTE:
-            - Problemas críticos que impedem operação normal
-            - Falhas de sistema com impacto direto nas vendas
-            - Problemas de segurança
-
-            IMPORTANTE: 
-            1. Sempre tente definir uma equipe_responsavel baseada nas descrições acima
-            2. Se não encontrar correspondência exata, escolha a equipe mais próxima
-            3. Seja preciso e considere o contexto de uma franquia de varejo
-            4. SEMPRE retorne JSON válido`
+            content: 'Você é um especialista em classificação de tickets de suporte técnico. Analise sempre em português brasileiro e seja preciso nas classificações.'
           },
           {
             role: 'user',
-            content: `Descrição do problema: ${descricao}\nCategoria atual: ${categoria || 'não definida'}`
+            content: analysisPrompt
           }
         ],
-        max_tokens: 300,
         temperature: 0.3,
-        response_format: { type: "json_object" }
+        max_tokens: 500
       }),
-    });
+    })
 
-    const aiData = await response.json();
-    console.log('OpenAI response:', aiData);
-
-    if (!aiData.choices || !aiData.choices[0]) {
-      throw new Error('Invalid OpenAI response');
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.status}`)
     }
 
-    const aiContent = aiData.choices[0].message.content;
-    let analysis;
-    
+    const openaiData = await response.json()
+    const aiResponse = openaiData.choices[0]?.message?.content
+
+    console.log('OpenAI response:', aiResponse)
+
+    let analysis = null
     try {
-      analysis = JSON.parse(aiContent);
-      console.log('Raw AI analysis:', analysis);
-    } catch (e) {
-      console.error('Failed to parse AI response:', aiContent);
-      // Fallback para análise padrão
+      analysis = JSON.parse(aiResponse)
+    } catch (error) {
+      console.error('Error parsing AI response:', error)
+      // Fallback com título baseado na descrição
       analysis = {
-        prioridade: 'padrao_24h',
+        titulo: descricao.length > 50 ? descricao.substring(0, 50) + '...' : descricao,
         categoria: categoria || 'outro',
-        subcategoria: 'Análise automática indisponível',
-        is_crise: false,
-        motivo_crise: null,
-        sla_sugerido_horas: 24,
-        equipe_responsavel: null
-      };
-    }
-
-    // Validar e sanitizar TODOS os campos obrigatórios
-    const validPrioridades = ['urgente', 'alta', 'hoje_18h', 'padrao_24h', 'crise'];
-    const validCategorias = ['juridico', 'sistema', 'midia', 'operacoes', 'rh', 'financeiro', 'outro'];
-
-    if (!analysis.prioridade || !validPrioridades.includes(analysis.prioridade)) {
-      console.log('Invalid prioridade:', analysis.prioridade, 'using default');
-      analysis.prioridade = 'padrao_24h';
-    }
-    
-    if (!analysis.categoria || !validCategorias.includes(analysis.categoria)) {
-      console.log('Invalid categoria:', analysis.categoria, 'using default');
-      analysis.categoria = categoria || 'outro';
-    }
-
-    if (!analysis.subcategoria || typeof analysis.subcategoria !== 'string') {
-      analysis.subcategoria = 'Categoria não especificada';
-    }
-
-    if (typeof analysis.is_crise !== 'boolean') {
-      analysis.is_crise = false;
-    }
-
-    if (typeof analysis.sla_sugerido_horas !== 'number' || analysis.sla_sugerido_horas <= 0) {
-      analysis.sla_sugerido_horas = 24;
-    }
-
-    console.log('Validated analysis:', analysis);
-    // Calcular data limite do SLA (sem modificar timezone manualmente)
-    const now = new Date();
-    const slaHours = analysis.sla_sugerido_horas || 24;
-    const dataLimiteSla = new Date(now.getTime() + (slaHours * 60 * 60 * 1000));
-    const slaHalfTime = new Date(now.getTime() + ((slaHours / 2) * 60 * 60 * 1000));
-
-    // Buscar ID da equipe responsável com busca inteligente
-    let equipeResponsavelId = null;
-    let equipeMatchLog = null;
-    
-    if (analysis.equipe_responsavel && equipes) {
-      const nomeEquipeIA = analysis.equipe_responsavel.toLowerCase().trim();
-      console.log('Buscando equipe para:', nomeEquipeIA);
-      
-      // Busca exata primeiro
-      let equipeEncontrada = equipes.find(e => 
-        e.nome.toLowerCase().trim() === nomeEquipeIA
-      );
-      
-      // Busca parcial se não encontrou exata
-      if (!equipeEncontrada) {
-        equipeEncontrada = equipes.find(e => 
-          e.nome.toLowerCase().includes(nomeEquipeIA) || 
-          nomeEquipeIA.includes(e.nome.toLowerCase())
-        );
+        prioridade: 'padrao_24h',
+        equipe_sugerida: null,
+        justificativa: 'Análise automática com fallback'
       }
-      
-      // Busca por palavras-chave
-      if (!equipeEncontrada) {
-        const palavrasChave = {
-          'sistema': ['tech', 'ti', 'sistema', 'tecnologia'],
-          'juridico': ['legal', 'direito', 'juridico'],
-          'rh': ['recursos humanos', 'pessoas', 'rh'],
-          'financeiro': ['financas', 'contabil', 'financeiro'],
-          'operacoes': ['operacional', 'operacoes', 'vendas'],
-          'midia': ['marketing', 'social', 'midia']
-        };
-        
-        for (const [categoria, palavras] of Object.entries(palavrasChave)) {
-          if (palavras.some(p => nomeEquipeIA.includes(p) || analysis.categoria === categoria)) {
-            equipeEncontrada = equipes.find(e => 
-              palavras.some(palavra => e.nome.toLowerCase().includes(palavra))
-            );
-            if (equipeEncontrada) {
-              equipeMatchLog = `Matched by keyword: ${categoria}`;
-              break;
-            }
-          }
-        }
-      }
-      
-      // Fallback: primeira equipe ativa se nenhuma correspondência
-      if (!equipeEncontrada && equipes.length > 0) {
-        equipeEncontrada = equipes[0];
-        equipeMatchLog = 'Fallback to first active team';
-      }
-      
-      equipeResponsavelId = equipeEncontrada?.id || null;
-      console.log('Equipe encontrada:', equipeEncontrada?.nome, 'ID:', equipeResponsavelId, 'Match:', equipeMatchLog);
     }
 
-    // Preparar dados para atualização (sem prioridade por enquanto)
-    const updatePayload = {
-      categoria: analysis.categoria,
-      subcategoria: analysis.subcategoria,
-      equipe_responsavel_id: equipeResponsavelId,
-      data_limite_sla: dataLimiteSla.toISOString(),
-      sla_half_time: slaHalfTime.toISOString(),
+    // Buscar equipe por nome se foi sugerida
+    let equipeId = null
+    if (analysis.equipe_sugerida) {
+      const { data: equipe } = await supabase
+        .from('equipes')
+        .select('id')
+        .ilike('nome', `%${analysis.equipe_sugerida}%`)
+        .eq('ativo', true)
+        .single()
+      
+      if (equipe) {
+        equipeId = equipe.id
+      }
+    }
+
+    // Atualizar o ticket com os resultados da análise
+    const updateData: any = {
+      titulo: analysis.titulo,
       log_ia: {
-        analysis,
-        equipe_responsavel_id: equipeResponsavelId,
-        equipe_match_log: equipeMatchLog,
-        timestamp: now.toISOString(),
+        analysis_timestamp: new Date().toISOString(),
+        ai_response: aiResponse,
         model: 'gpt-4o-mini',
-        available_teams: equipes?.map(e => e.nome) || [],
-        update_attempt: 'basic_fields_only'
+        categoria_sugerida: analysis.categoria,
+        prioridade_sugerida: analysis.prioridade,
+        equipe_sugerida: analysis.equipe_sugerida,
+        justificativa: analysis.justificativa
       }
-    };
+    }
 
-    console.log('Update payload (basic):', JSON.stringify(updatePayload, null, 2));
+    // Adicionar equipe se foi encontrada
+    if (equipeId) {
+      updateData.equipe_responsavel_id = equipeId
+    }
 
-    // Atualizar campos básicos primeiro
     const { error: updateError } = await supabase
       .from('tickets')
-      .update(updatePayload)
-      .eq('id', ticketId);
+      .update(updateData)
+      .eq('id', ticketId)
 
     if (updateError) {
-      console.error('Error updating ticket basic fields:', updateError);
-      
-      // Tentar pelo menos salvar o log da IA
-      const { error: logError } = await supabase
-        .from('tickets')
-        .update({
-          log_ia: {
-            analysis,
-            error: updateError.message,
-            timestamp: now.toISOString(),
-            model: 'gpt-4o-mini',
-            status: 'failed_basic_update'
-          }
-        })
-        .eq('id', ticketId);
-      
-      if (logError) {
-        console.error('Error saving IA log:', logError);
+      console.error('Error updating ticket:', updateError)
+      throw updateError
+    }
+
+    console.log(`Ticket ${ticketId} analyzed and updated successfully`)
+
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        analysis: analysis,
+        equipe_id: equipeId 
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200 
       }
-      
-      throw updateError;
-    }
-
-    console.log('Basic update successful');
-
-    // Agora tentar atualizar a prioridade separadamente se for válida e diferente da atual
-    if (analysis.prioridade && validPrioridades.includes(analysis.prioridade) && analysis.prioridade !== 'padrao_24h') {
-      console.log('Attempting to update prioridade to:', analysis.prioridade);
-      
-      const { error: prioridadeError } = await supabase
-        .from('tickets')
-        .update({ prioridade: analysis.prioridade })
-        .eq('id', ticketId);
-      
-      if (prioridadeError) {
-        console.error('Error updating prioridade:', prioridadeError);
-        
-        // Salvar o erro no log mas não falhar a operação toda
-        await supabase
-          .from('tickets')
-          .update({
-            log_ia: {
-              ...updatePayload.log_ia,
-              prioridade_error: prioridadeError.message,
-              prioridade_attempted: analysis.prioridade
-            }
-          })
-          .eq('id', ticketId);
-      } else {
-        console.log('Prioridade updated successfully to:', analysis.prioridade);
-      }
-    }
-
-    // Se for crise, marcar status e escalar imediatamente
-    if (analysis.is_crise) {
-      console.log('CRISE DETECTADA:', analysis.motivo_crise);
-      
-      await supabase
-        .from('tickets')
-        .update({ 
-          status: 'escalonado',
-          escalonamento_nivel: 5 // Escalar direto para diretoria
-        })
-        .eq('id', ticketId);
-
-      // Disparar notificação de crise
-      await supabase.functions.invoke('process-notifications', {
-        body: { 
-          ticketId, 
-          type: 'crise_detectada',
-          priority: 'immediate'
-        }
-      });
-    }
-
-    // Agendar notificação de SLA 50%
-    await supabase
-      .from('notifications_queue')
-      .insert({
-        ticket_id: ticketId,
-        type: 'sla_half_time',
-        scheduled_at: slaHalfTime.toISOString(),
-        payload: {
-          ticket_id: ticketId,
-          sla_percentage: 50
-        }
-      });
-
-    // Agendar notificação de SLA vencido
-    await supabase
-      .from('notifications_queue')
-      .insert({
-        ticket_id: ticketId,
-        type: 'sla_vencido',
-        scheduled_at: dataLimiteSla.toISOString(),
-        payload: {
-          ticket_id: ticketId,
-          sla_percentage: 100
-        }
-      });
-
-    console.log('Ticket analysis completed:', analysis);
-
-    return new Response(JSON.stringify({ 
-      success: true, 
-      analysis,
-      sla_deadline: dataLimiteSla.toISOString()
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    )
 
   } catch (error) {
-    console.error('Error in analyze-ticket function:', error);
-    return new Response(JSON.stringify({ 
-      error: error.message,
-      success: false 
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error('Error in analyze-ticket:', error)
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500 
+      }
+    )
   }
-});
+})

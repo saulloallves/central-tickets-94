@@ -1022,6 +1022,8 @@ export type Database = {
       tickets: {
         Row: {
           arquivos: Json | null
+          atendimento_iniciado_em: string | null
+          atendimento_iniciado_por: string | null
           canal_origem: Database["public"]["Enums"]["canal_origem"]
           canal_resposta: Database["public"]["Enums"]["canal_resposta"] | null
           categoria: Database["public"]["Enums"]["ticket_categoria"] | null
@@ -1046,11 +1048,14 @@ export type Database = {
           status: Database["public"]["Enums"]["ticket_status"]
           status_sla: Database["public"]["Enums"]["ticket_sla_status"]
           subcategoria: string | null
+          titulo: string | null
           unidade_id: string
           updated_at: string
         }
         Insert: {
           arquivos?: Json | null
+          atendimento_iniciado_em?: string | null
+          atendimento_iniciado_por?: string | null
           canal_origem: Database["public"]["Enums"]["canal_origem"]
           canal_resposta?: Database["public"]["Enums"]["canal_resposta"] | null
           categoria?: Database["public"]["Enums"]["ticket_categoria"] | null
@@ -1075,11 +1080,14 @@ export type Database = {
           status?: Database["public"]["Enums"]["ticket_status"]
           status_sla?: Database["public"]["Enums"]["ticket_sla_status"]
           subcategoria?: string | null
+          titulo?: string | null
           unidade_id: string
           updated_at?: string
         }
         Update: {
           arquivos?: Json | null
+          atendimento_iniciado_em?: string | null
+          atendimento_iniciado_por?: string | null
           canal_origem?: Database["public"]["Enums"]["canal_origem"]
           canal_resposta?: Database["public"]["Enums"]["canal_resposta"] | null
           categoria?: Database["public"]["Enums"]["ticket_categoria"] | null
@@ -1104,10 +1112,18 @@ export type Database = {
           status?: Database["public"]["Enums"]["ticket_status"]
           status_sla?: Database["public"]["Enums"]["ticket_sla_status"]
           subcategoria?: string | null
+          titulo?: string | null
           unidade_id?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_tickets_atendimento_iniciado_por_profiles"
+            columns: ["atendimento_iniciado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "fk_tickets_colaborador"
             columns: ["colaborador_id"]

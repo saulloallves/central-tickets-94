@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Plus, Filter, Calendar, Users, Clock, AlertTriangle, List, LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/ui/button';

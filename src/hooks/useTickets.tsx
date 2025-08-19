@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 export interface Ticket {
   id: string;
   codigo_ticket: string;
+  titulo?: string;
   unidade_id: string;
   franqueado_id?: number;
   colaborador_id?: string;
@@ -28,6 +29,8 @@ export interface Ticket {
   criado_por?: string;
   log_ia: any;
   reaberto_count: number;
+  atendimento_iniciado_por?: string;
+  atendimento_iniciado_em?: string;
   created_at: string;
   updated_at: string;
   // Relations
@@ -35,6 +38,7 @@ export interface Ticket {
   colaboradores?: { nome_completo: string };
   franqueados?: { name: string };
   equipes?: { id: string; nome: string };
+  atendimento_iniciado_por_profile?: { nome_completo: string };
 }
 
 export interface TicketMessage {
@@ -83,7 +87,6 @@ export const useTickets = (filters: TicketFilters) => {
     try {
       setLoading(true);
       
-      // Updated query to use the new foreign key relationship
       let query = supabase
         .from('tickets')
         .select(`
@@ -91,13 +94,16 @@ export const useTickets = (filters: TicketFilters) => {
           equipes:equipe_responsavel_id (
             id,
             nome
+          ),
+          atendimento_iniciado_por_profile:atendimento_iniciado_por (
+            nome_completo
           )
         `)
         .order('created_at', { ascending: false });
 
-      // Apply search filter
+      // Apply search filter - now includes titulo
       if (filters.search) {
-        query = query.or(`codigo_ticket.ilike.%${filters.search}%,descricao_problema.ilike.%${filters.search}%`);
+        query = query.or(`codigo_ticket.ilike.%${filters.search}%,descricao_problema.ilike.%${filters.search}%,titulo.ilike.%${filters.search}%`);
       }
 
       // Apply status filters
@@ -300,7 +306,6 @@ export const useTickets = (filters: TicketFilters) => {
         });
       } catch (aiError) {
         console.error('Error in AI analysis or notifications:', aiError);
-        // Não falhar a criação do ticket por causa da IA
       }
       
       toast({
@@ -308,7 +313,6 @@ export const useTickets = (filters: TicketFilters) => {
         description: `Ticket ${data.codigo_ticket} criado com sucesso`,
       });
 
-      // Refresh tickets list
       fetchTickets();
       fetchTicketStats();
       return data;
@@ -361,12 +365,81 @@ export const useTickets = (filters: TicketFilters) => {
     }
   };
 
+  const startAttendance = async (ticketId: string, equipeId: string) => {
+    if (!user?.id) {
+      toast({
+        title: "Erro",
+        description: "Usuário não autenticado",
+        variant: "destructive",
+      });
+      return null;
+    }
+
+    try {
+      const updates = {
+        status: 'em_atendimento' as const,
+        equipe_responsavel_id: equipeId,
+        atendimento_iniciado_por: user.id,
+        atendimento_iniciado_em: new Date().toISOString()
+      };
+
+      const result = await updateTicket(ticketId, updates);
+      
+      if (result) {
+        toast({
+          title: "Sucesso",
+          description: "Atendimento iniciado com sucesso",
+        });
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Error starting attendance:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao iniciar atendimento",
+        variant: "destructive",
+      });
+      return null;
+    }
+  };
+
+  const concludeTicket = async (ticketId: string) => {
+    try {
+      const updates = {
+        status: 'concluido' as const,
+        resolvido_em: new Date().toISOString()
+      };
+
+      const result = await updateTicket(ticketId, updates);
+      
+      if (result) {
+        toast({
+          title: "Sucesso",
+          description: "Ticket concluído com sucesso",
+        });
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Error concluding ticket:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao concluir ticket",
+        variant: "destructive",
+      });
+      return null;
+    }
+  };
+
   return {
     tickets,
     ticketStats,
     loading,
     createTicket,
     updateTicket,
+    startAttendance,
+    concludeTicket,
     refetch: fetchTickets
   };
 };

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { X, Clock, User, Building, Tag, AlertTriangle, MessageSquare, Send, Paperclip, Zap, Sparkles, Copy, Bot, Phone } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -233,6 +232,16 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
     };
   };
 
+  const getTicketDisplayTitle = (ticket: any) => {
+    if (ticket?.titulo) {
+      return ticket.titulo;
+    }
+    // Fallback: primeiro 60 chars da descrição
+    return ticket?.descricao_problema?.length > 60 
+      ? ticket.descricao_problema.substring(0, 60) + '...'
+      : ticket?.descricao_problema || 'Sem título';
+  };
+
   if (loading) {
     return (
       <Card>
@@ -275,9 +284,14 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
     <Card className="h-full flex flex-col">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-lg">{ticket.codigo_ticket}</CardTitle>
+          <div className="flex-1">
+            <CardTitle className="text-lg line-clamp-2">
+              {getTicketDisplayTitle(ticket)}
+            </CardTitle>
             <div className="flex items-center gap-2 mt-1">
+              <span className="font-mono text-xs text-muted-foreground">
+                {ticket.codigo_ticket}
+              </span>
               <div className={`w-2 h-2 rounded-full ${getStatusColor(ticket.status)}`} />
               <span className="text-sm text-muted-foreground capitalize">{ticket.status}</span>
               {slaStatus && (

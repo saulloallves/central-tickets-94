@@ -1,11 +1,15 @@
+
 import { Clock, AlertTriangle, CheckCircle, User, Building } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTickets, type TicketFilters } from '@/hooks/useTickets';
+import { TicketActions } from './TicketActions';
 import { formatDistanceToNowInSaoPaulo } from '@/lib/date-utils';
 import { cn } from '@/lib/utils';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface TicketsListProps {
   filters: TicketFilters;
@@ -15,6 +19,28 @@ interface TicketsListProps {
 
 export const TicketsList = ({ filters, onTicketSelect, selectedTicketId }: TicketsListProps) => {
   const { tickets, loading } = useTickets(filters);
+  const [equipes, setEquipes] = useState<Array<{ id: string; nome: string }>>([]);
+
+  // Fetch equipes for the action buttons
+  useEffect(() => {
+    const fetchEquipes = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('equipes')
+          .select('id, nome')
+          .eq('ativo', true)
+          .order('nome');
+
+        if (!error && data) {
+          setEquipes(data);
+        }
+      } catch (error) {
+        console.error('Error fetching equipes:', error);
+      }
+    };
+
+    fetchEquipes();
+  }, []);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -67,6 +93,16 @@ export const TicketsList = ({ filters, onTicketSelect, selectedTicketId }: Ticke
     }
   };
 
+  const getTicketDisplayTitle = (ticket: any) => {
+    if (ticket.titulo) {
+      return ticket.titulo;
+    }
+    // Fallback: primeiro 50 chars da descrição
+    return ticket.descricao_problema.length > 50 
+      ? ticket.descricao_problema.substring(0, 50) + '...'
+      : ticket.descricao_problema;
+  };
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -106,13 +142,12 @@ export const TicketsList = ({ filters, onTicketSelect, selectedTicketId }: Ticke
             "cursor-pointer transition-all hover:shadow-md",
             selectedTicketId === ticket.id && "ring-2 ring-primary"
           )}
-          onClick={() => onTicketSelect(ticket.id)}
         >
           <CardContent className="p-4">
             <div className="flex items-start justify-between mb-3">
-              <div className="space-y-1">
+              <div className="space-y-1 flex-1" onClick={() => onTicketSelect(ticket.id)}>
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-sm font-medium">
+                  <span className="font-mono text-xs text-muted-foreground">
                     {ticket.codigo_ticket}
                   </span>
                   {getSLAIcon(ticket.status_sla)}
@@ -122,27 +157,30 @@ export const TicketsList = ({ filters, onTicketSelect, selectedTicketId }: Ticke
                     </Badge>
                   )}
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <h3 className="font-medium text-sm line-clamp-2">
+                  {getTicketDisplayTitle(ticket)}
+                </h3>
+                <p className="text-xs text-muted-foreground">
                   {formatDistanceToNowInSaoPaulo(ticket.created_at, { addSuffix: true })}
                 </p>
               </div>
               
-              <div className="flex gap-2">
-                <Badge variant={getPriorityColor(ticket.prioridade)}>
-                  {getPriorityLabel(ticket.prioridade)}
-                </Badge>
-                <div className="flex items-center gap-1">
-                  <div className={cn("w-2 h-2 rounded-full", getStatusColor(ticket.status))} />
-                  <span className="text-xs">{getStatusLabel(ticket.status)}</span>
+              <div className="flex flex-col items-end gap-2 ml-4">
+                <div className="flex gap-2">
+                  <Badge variant={getPriorityColor(ticket.prioridade)}>
+                    {getPriorityLabel(ticket.prioridade)}
+                  </Badge>
+                  <div className="flex items-center gap-1">
+                    <div className={cn("w-2 h-2 rounded-full", getStatusColor(ticket.status))} />
+                    <span className="text-xs">{getStatusLabel(ticket.status)}</span>
+                  </div>
                 </div>
+                
+                <TicketActions ticket={ticket} equipes={equipes} size="sm" />
               </div>
             </div>
 
-            <h3 className="font-medium mb-2 line-clamp-2">
-              {ticket.descricao_problema}
-            </h3>
-
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <div className="flex items-center justify-between text-xs text-muted-foreground" onClick={() => onTicketSelect(ticket.id)}>
               <div className="flex items-center gap-4">
                 {ticket.equipes?.nome && (
                   <Badge variant="secondary" className="text-xs">
