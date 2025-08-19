@@ -380,20 +380,43 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
       return;
     }
 
-    // Check if dropping on a column (status)
-    const validStatuses = Object.keys(COLUMN_STATUS);
-    const newStatus = over.id as string;
-    
-    if (!validStatuses.includes(newStatus)) {
-      console.log('❌ Invalid drop target - not a valid status:', newStatus);
-      return;
-    }
-
     const ticketId = active.id as string;
     const ticket = active.data.current?.ticket as Ticket;
     
     if (!ticket) {
       console.log('❌ No ticket data found');
+      return;
+    }
+
+    // Get the target status - could be from column directly or from a ticket in that column
+    let newStatus: string;
+    
+    // Check if we dropped on a column (direct status)
+    const validStatuses = Object.keys(COLUMN_STATUS);
+    if (validStatuses.includes(over.id as string)) {
+      newStatus = over.id as string;
+      console.log('✅ Dropped on column:', newStatus);
+    }
+    // Check if we dropped on another ticket - find which column that ticket is in
+    else if (over.data?.current?.type === 'ticket') {
+      const targetTicket = over.data.current.ticket as Ticket;
+      newStatus = targetTicket.status;
+      console.log('✅ Dropped on ticket, using its status:', newStatus);
+    }
+    // Check if over.data has sortable info (from SortableContext)
+    else if (over.data?.current?.sortable) {
+      // Find which column this sortable belongs to by checking the ticket
+      const overTicket = tickets.find(t => t.id === over.id);
+      if (overTicket) {
+        newStatus = overTicket.status;
+        console.log('✅ Dropped in sortable area, using status:', newStatus);
+      } else {
+        console.log('❌ Could not determine target status from sortable');
+        return;
+      }
+    }
+    else {
+      console.log('❌ Invalid drop target - could not determine status');
       return;
     }
 
