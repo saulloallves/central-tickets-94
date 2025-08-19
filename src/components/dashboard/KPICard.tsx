@@ -26,19 +26,8 @@ export const KPICard = ({
   loading = false
 }: KPICardProps) => {
   const getColorClasses = () => {
-    switch (color) {
-      case 'success':
-        return 'border-success/20 bg-success/5 text-success-foreground';
-      case 'warning':
-        return 'border-warning/20 bg-warning/5 text-warning-foreground';
-      case 'danger':
-      case 'critical':
-        return 'border-critical/20 bg-critical/5 text-critical-foreground';
-      case 'info':
-        return 'border-info/20 bg-info/5 text-info-foreground';
-      default:
-        return 'border-border bg-card text-card-foreground';
-    }
+    // Usando sempre o fundo neutro para melhor legibilidade
+    return 'border-border bg-card text-card-foreground hover:shadow-card';
   };
 
   const getTrendIcon = () => {
@@ -70,7 +59,7 @@ export const KPICard = ({
   }
 
   return (
-    <Card className={`transition-all hover:shadow-md ${getColorClasses()}`}>
+    <Card className={`transition-all ${getColorClasses()}`}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
         {icon && (
