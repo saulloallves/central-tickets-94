@@ -1,0 +1,2 @@
+-- Update Z-API secrets with correct values
+-- This will ensure the edge function uses the right configuration
