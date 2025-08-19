@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -8,7 +9,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
-import { AdminLayout } from "./pages/AdminLayout";
+import AdminLayout from "./pages/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
 import Tickets from "./pages/admin/Tickets";
 import Unidades from "./pages/admin/Unidades";

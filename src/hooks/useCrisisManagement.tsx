@@ -64,7 +64,13 @@ export const useCrisisManagement = () => {
         return;
       }
 
-      setActiveCrises(data || []);
+      // Transform the data to ensure log_acoes is always an array
+      const transformedData = (data || []).map(crisis => ({
+        ...crisis,
+        log_acoes: Array.isArray(crisis.log_acoes) ? crisis.log_acoes : []
+      }));
+
+      setActiveCrises(transformedData);
     } catch (error) {
       console.error('Error fetching active crises:', error);
       toast({

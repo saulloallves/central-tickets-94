@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 const Dashboard = () => {
-  const { metrics, loading } = useDashboardMetrics();
+  const { kpis, loading } = useDashboardMetrics();
 
   if (loading) {
     return (
@@ -60,25 +60,25 @@ const Dashboard = () => {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <KPICard
           title="Total de Tickets"
-          value={metrics?.total_tickets?.toString() || "0"}
+          value={kpis?.total_tickets?.toString() || "0"}
           description="Todos os tickets no sistema"
           icon={TicketIcon}
         />
         <KPICard
           title="Tickets Resolvidos"
-          value={metrics?.tickets_resolvidos?.toString() || "0"}
-          description={`${metrics?.percentual_resolucao || 0}% de resolução`}
+          value={kpis?.tickets_resolvidos?.toString() || "0"}
+          description={`${kpis?.percentual_resolucao || 0}% de resolução`}
           icon={CheckCircleIcon}
         />
         <KPICard
           title="SLA Vencido"
-          value={metrics?.tickets_sla_vencido?.toString() || "0"}
+          value={kpis?.tickets_sla_vencido?.toString() || "0"}
           description="Tickets fora do prazo"
           icon={AlertTriangleIcon}
         />
         <KPICard
           title="Tempo Médio"
-          value={`${metrics?.tempo_medio_resolucao?.toFixed(1) || "0"}h`}
+          value={`${kpis?.tempo_medio_resolucao?.toFixed(1) || "0"}h`}
           description="Resolução média"
           icon={ClockIcon}
         />
@@ -88,25 +88,25 @@ const Dashboard = () => {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <KPICard
           title="Tickets em Aberto"
-          value={metrics?.tickets_abertos?.toString() || "0"}
+          value={kpis?.tickets_abertos?.toString() || "0"}
           description="Aguardando atendimento"
           icon={TrendingUpIcon}
         />
         <KPICard
           title="Tickets de Crise"
-          value={metrics?.tickets_crise?.toString() || "0"}
+          value={kpis?.tickets_crise?.toString() || "0"}
           description="Prioridade máxima"
           icon={AlertTriangleIcon}
         />
         <KPICard
           title="Equipes Ativas"
-          value={metrics?.equipes_ativas?.toString() || "0"}
+          value={kpis?.equipes_ativas?.toString() || "0"}
           description="Equipes em operação"
           icon={UsersIcon}
         />
         <KPICard
           title="IA Bem-Sucedida"
-          value={`${metrics?.percentual_ia_sucesso || 0}%`}
+          value={`${kpis?.percentual_ia_sucesso || 0}%`}
           description="Taxa de sucesso da IA"
           icon={CheckCircleIcon}
         />
