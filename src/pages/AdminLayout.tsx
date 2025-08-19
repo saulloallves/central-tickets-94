@@ -25,10 +25,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   // Show loading spinner while checking authentication
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-subtle">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Carregando...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-2 border-primary border-t-transparent mx-auto"></div>
+          <p className="mt-4 text-muted-foreground font-medium">Carregando sistema...</p>
         </div>
       </div>
     );
@@ -41,15 +41,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
+      <div className="min-h-screen flex w-full bg-gradient-subtle">
         <AppSidebar />
         <div className="flex-1 flex flex-col">
           {/* Crisis Alert Banner - Always visible when there are active crises */}
           <CrisisAlertBanner />
           
-          {/* Main content area with proper top padding when crisis banner is shown */}
-          <main className="flex-1 p-6">
-            <div className="mx-auto max-w-7xl">
+          {/* Main content area with modern spacing */}
+          <main className="flex-1 p-8">
+            <div className="mx-auto max-w-7xl animate-fade-in">
               {children}
             </div>
           </main>
