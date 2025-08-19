@@ -58,6 +58,7 @@ export interface TicketFilters {
   prioridade: string;
   unidade_id: string;
   status_sla: string;
+  equipe_id: string;
 }
 
 export interface TicketStats {
@@ -81,7 +82,8 @@ export const useTickets = (filters: TicketFilters) => {
     
     try {
       setLoading(true);
-      // Simplified query without joins first to avoid permission issues
+      
+      // Updated query to use the new foreign key relationship
       let query = supabase
         .from('tickets')
         .select(`
@@ -104,12 +106,16 @@ export const useTickets = (filters: TicketFilters) => {
       if (filters.prioridade && filters.prioridade !== 'all') query = query.eq('prioridade', filters.prioridade as any);
       if (filters.status_sla && filters.status_sla !== 'all') query = query.eq('status_sla', filters.status_sla as any);
       if (filters.unidade_id && filters.unidade_id !== 'all') query = query.eq('unidade_id', filters.unidade_id);
+      
+      // New filter for equipe_id
+      if (filters.equipe_id && filters.equipe_id !== 'all') {
+        query = query.eq('equipe_responsavel_id', filters.equipe_id);
+      }
 
       const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching tickets:', error);
-        // Only show toast if component is still mounted and we haven't shown it recently
         if (!loading) {
           toast({
             title: "Erro",
@@ -124,7 +130,6 @@ export const useTickets = (filters: TicketFilters) => {
       setTickets((data as any) || []);
     } catch (error) {
       console.error('Error fetching tickets:', error);
-      // Only show toast for unexpected errors if component is still mounted
       if (!loading) {
         toast({
           title: "Erro",
@@ -186,7 +191,7 @@ export const useTickets = (filters: TicketFilters) => {
     return () => clearTimeout(timeoutId);
   }, [user?.id, roleLoading]);
 
-  // Separate effect for filters to avoid infinite loop
+  // Separate effect for filters to avoid infinite loop - now including equipe_id
   useEffect(() => {
     if (user && !roleLoading) {
       const timeoutId = setTimeout(() => {
@@ -195,7 +200,7 @@ export const useTickets = (filters: TicketFilters) => {
       
       return () => clearTimeout(timeoutId);
     }
-  }, [filters.search, filters.status, filters.categoria, filters.prioridade, filters.status_sla, filters.unidade_id]);
+  }, [filters.search, filters.status, filters.categoria, filters.prioridade, filters.status_sla, filters.unidade_id, filters.equipe_id]);
 
   const createTicket = async (ticketData: Partial<Ticket>) => {
     if (!user?.id) {

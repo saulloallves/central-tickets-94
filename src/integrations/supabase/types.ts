@@ -1136,6 +1136,13 @@ export type Database = {
             referencedRelation: "unidades"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "tickets_equipe_responsavel_id_fkey"
+            columns: ["equipe_responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "equipes"
+            referencedColumns: ["id"]
+          },
         ]
       }
       unidades: {

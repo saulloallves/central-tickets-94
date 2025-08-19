@@ -1,4 +1,5 @@
-import { useState } from 'react';
+
+import { useState, useEffect } from 'react';
 import { Plus, Filter, Calendar, Users, Clock, AlertTriangle, List, LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,22 +14,52 @@ import { CreateTicketDialog } from '@/components/tickets/CreateTicketDialog';
 import { SLAAlerts } from '@/components/tickets/SLAAlerts';
 import { TestAIButton } from '@/components/tickets/TestAIButton';
 import { useTickets } from '@/hooks/useTickets';
+import { supabase } from '@/integrations/supabase/client';
+
+interface Equipe {
+  id: string;
+  nome: string;
+  ativo: boolean;
+}
 
 const Tickets = () => {
   const { isAdmin, isGerente } = useRole();
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
+  const [equipes, setEquipes] = useState<Equipe[]>([]);
   const [filters, setFilters] = useState({
     search: '',
     status: 'all',
     categoria: 'all',
     prioridade: 'all',
     unidade_id: 'all',
-    status_sla: 'all'
+    status_sla: 'all',
+    equipe_id: 'all'
   });
 
   const { ticketStats } = useTickets(filters);
+
+  // Fetch available teams
+  useEffect(() => {
+    const fetchEquipes = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('equipes')
+          .select('id, nome, ativo')
+          .eq('ativo', true)
+          .order('nome');
+
+        if (!error && data) {
+          setEquipes(data);
+        }
+      } catch (error) {
+        console.error('Error fetching equipes:', error);
+      }
+    };
+
+    fetchEquipes();
+  }, []);
 
   const handleTicketSelect = (ticketId: string) => {
     setSelectedTicketId(ticketId);
@@ -118,7 +149,7 @@ const Tickets = () => {
         </Card>
       </div>
 
-      {/* Simplified Filters */}
+      {/* Updated Filters - replaced categoria with equipe */}
       <Card>
         <CardContent className="p-4">
           <div className="flex gap-4 items-center">
@@ -143,19 +174,17 @@ const Tickets = () => {
               </SelectContent>
             </Select>
             
-            <Select value={filters.categoria} onValueChange={(value) => setFilters(prev => ({ ...prev, categoria: value }))}>
+            <Select value={filters.equipe_id} onValueChange={(value) => setFilters(prev => ({ ...prev, equipe_id: value }))}>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="Equipe" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas Equipes</SelectItem>
-                <SelectItem value="juridico">Jurídico</SelectItem>
-                <SelectItem value="sistema">Sistema</SelectItem>
-                <SelectItem value="midia">Mídia</SelectItem>
-                <SelectItem value="operacoes">Operações</SelectItem>
-                <SelectItem value="rh">RH</SelectItem>
-                <SelectItem value="financeiro">Financeiro</SelectItem>
-                <SelectItem value="outro">Outro</SelectItem>
+                {equipes.map((equipe) => (
+                  <SelectItem key={equipe.id} value={equipe.id}>
+                    {equipe.nome}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
