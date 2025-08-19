@@ -7,7 +7,8 @@ import {
   LogOut,
   Home,
   Users2,
-  BarChart3
+  BarChart3,
+  Activity
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -23,7 +24,7 @@ const adminItems = [
   { title: "Tickets", url: "/admin/tickets", icon: ClipboardList },
   { title: "Equipes", url: "/admin/equipes", icon: Users2 },
   { title: "Configurações", url: "/admin/configuracoes", icon: Settings },
-  { title: "Auditoria", url: "/admin/audit", icon: BarChart3 },
+  { title: "Logs & Auditoria", url: "/admin/logs", icon: Activity },
 ];
 
 const colaboradorItems = [

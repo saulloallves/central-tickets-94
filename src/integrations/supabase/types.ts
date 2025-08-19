@@ -883,6 +883,8 @@ export type Database = {
       }
       notifications_queue: {
         Row: {
+          alert_category: string | null
+          alert_level: string | null
           attempts: number
           created_at: string
           id: string
@@ -894,6 +896,8 @@ export type Database = {
           type: string
         }
         Insert: {
+          alert_category?: string | null
+          alert_level?: string | null
           attempts?: number
           created_at?: string
           id?: string
@@ -905,6 +909,8 @@ export type Database = {
           type: string
         }
         Update: {
+          alert_category?: string | null
+          alert_level?: string | null
           attempts?: number
           created_at?: string
           id?: string
@@ -1528,12 +1534,40 @@ export type Database = {
         Args: { ticket_unidade_id: string }
         Returns: boolean
       }
+      create_internal_alert: {
+        Args: {
+          p_alert_category?: string
+          p_alert_level?: string
+          p_alert_type: string
+          p_payload?: Json
+          p_ticket_id: string
+        }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      log_system_action: {
+        Args: {
+          p_acao_realizada: string
+          p_canal?: Database["public"]["Enums"]["log_canal"]
+          p_dados_anteriores?: Json
+          p_dados_novos?: Json
+          p_entidade_afetada: string
+          p_entidade_id: string
+          p_ia_modelo?: string
+          p_navegador_agente?: string
+          p_origem_ip?: string
+          p_prompt_entrada?: string
+          p_resposta_gerada?: string
+          p_tipo_log: Database["public"]["Enums"]["log_tipo"]
+          p_usuario_responsavel?: string
+        }
+        Returns: string
       }
       next_ticket_code: {
         Args: { p_unidade_id: string }

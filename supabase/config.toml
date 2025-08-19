@@ -25,6 +25,9 @@ verify_jwt = false
 [functions.notification-scheduler]
 verify_jwt = false
 
+[functions.system-log]
+verify_jwt = false
+
 [functions.typebot-webhook]
 verify_jwt = false
 
