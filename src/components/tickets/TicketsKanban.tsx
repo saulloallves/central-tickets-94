@@ -180,94 +180,79 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
       {...attributes}
       {...listeners}
       className={cn(
-        "cursor-pointer transition-all hover:shadow-md mb-3 bg-white min-h-[160px]",
-        ticket.status === 'concluido' ? "border-success/30" : "",
-        isSelected && "ring-2 ring-primary border-primary"
+        "cursor-pointer transition-all hover:shadow-lg mb-3 bg-white border-l-4",
+        ticket.status === 'concluido' ? "border-l-success" : 
+        ticket.prioridade === 'crise' ? "border-l-critical" :
+        ticket.prioridade === 'urgente' ? "border-l-critical" :
+        ticket.prioridade === 'alta' ? "border-l-warning" : "border-l-muted",
+        isSelected && "ring-2 ring-primary/20 shadow-lg"
       )}
       onClick={() => onSelect(ticket.id)}
     >
-      <CardContent className="p-4 h-full flex flex-col">
-        {/* Header - Somente ícones de ação */}
-        <div className="flex items-center justify-end mb-3">
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-              <Edit2 className="h-3 w-3" />
-            </Button>
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-              <Trash2 className="h-3 w-3" />
-            </Button>
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-              <Clock className="h-3 w-3" />
-            </Button>
+      <CardContent className="p-4 space-y-3">
+        {/* Título */}
+        <h3 className="font-medium text-foreground line-clamp-2 leading-relaxed">
+          {ticket.titulo || ticket.descricao_problema || "Sem título"}
+        </h3>
+
+        {/* Metadados em linha */}
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <div className="flex items-center gap-3">
+            {/* Localização */}
+            <div className="flex items-center gap-1">
+              <MapPin className="h-3 w-3" />
+              <span className="truncate max-w-[120px]">
+                {(ticket as any).unidades?.grupo || ticket.unidade_id || 'Sem unidade'}
+              </span>
+            </div>
+            
+            {/* Categoria */}
+            <div className="flex items-center gap-1">
+              {getCategoryIcon(ticket.categoria || 'outro')}
+              <span className="capitalize">
+                {ticket.categoria === 'midia' ? 'Mídia' : 
+                 ticket.categoria === 'juridico' ? 'Jurídico' :
+                 ticket.categoria === 'financeiro' ? 'Financeiro' :
+                 ticket.categoria === 'operacoes' ? 'Operações' :
+                 ticket.categoria || 'Outro'}
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Título */}
-        <div className="mb-3">
-          <h3 className="font-medium text-gray-900 line-clamp-2 leading-tight text-sm">
-            {ticket.titulo || ticket.descricao_problema || "Sem título"}
-          </h3>
-        </div>
-
-        {/* Localização */}
-        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
-          <MapPin className="h-3 w-3 flex-shrink-0" />
-          <span className="truncate">
-            {(ticket as any).unidades?.grupo || ticket.unidade_id || 'Unidade não informada'}
-          </span>
-        </div>
-
-        {/* Categoria */}
-        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
-          {getCategoryIcon(ticket.categoria || 'outro')}
-          <span className="capitalize">
-            {ticket.categoria === 'midia' ? 'Mídia' : 
-             ticket.categoria === 'juridico' ? 'Jurídico' :
-             ticket.categoria === 'financeiro' ? 'Financeiro' :
-             ticket.categoria === 'operacoes' ? 'Operações' :
-             ticket.categoria || 'Outro'}
-          </span>
-        </div>
-
-        {/* Badges - Layout específico para concluído */}
+        {/* Footer com status */}
         {ticket.status === 'concluido' ? (
-          <div className="space-y-2">
-            {/* Badges lado a lado */}
+          <div className="flex items-center justify-between pt-2 border-t border-muted/50">
             <div className="flex items-center gap-2">
-              <Button 
+              <Badge 
                 variant={getPriorityButtonVariant(ticket.prioridade) as any}
-                size="sm" 
-                className="text-xs h-7 px-3 py-1"
-                onClick={(e) => e.stopPropagation()}
+                className="text-xs"
               >
                 {getPriorityLabel(ticket.prioridade)}
-              </Button>
+              </Badge>
               <Badge variant="success" className="text-xs">
-                <CheckCircle className="h-3 w-3 mr-1" />
                 Resolvido
               </Badge>
             </div>
-            
-            {/* Status de resolução */}
             <div className="flex items-center gap-1 text-xs text-success">
               <CheckCircle className="h-3 w-3" />
-              <span>Resolvido em {formatDistanceToNowInSaoPaulo(new Date(ticket.updated_at || ticket.created_at))}</span>
+              <span>{formatDistanceToNowInSaoPaulo(new Date(ticket.updated_at || ticket.created_at))}</span>
             </div>
           </div>
         ) : (
-          /* Layout normal para outros status */
-          <div className="flex items-center justify-between mt-auto">
-            <Button 
+          <div className="flex items-center justify-between pt-2 border-t border-muted/50">
+            <Badge 
               variant={getPriorityButtonVariant(ticket.prioridade) as any}
-              size="sm" 
-              className="text-xs h-7 px-3 py-1"
-              onClick={(e) => e.stopPropagation()}
+              className="text-xs"
             >
               {getPriorityLabel(ticket.prioridade)}
-            </Button>
+            </Badge>
             
-            <div className={cn("text-xs font-mono font-semibold", getTimeColor(ticket.status_sla, ticket.prioridade))}>
-              {formatTimeElapsed(ticket.created_at)}
+            <div className="flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              <span className={cn("text-xs font-mono", getTimeColor(ticket.status_sla, ticket.prioridade))}>
+                {formatTimeElapsed(ticket.created_at)}
+              </span>
             </div>
           </div>
         )}
