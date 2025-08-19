@@ -63,24 +63,32 @@ const Dashboard = () => {
           value={kpis?.total_tickets?.toString() || "0"}
           description="Todos os tickets no sistema"
           icon={<TicketIcon className="h-4 w-4" />}
+          iconColor="text-info"
+          color="info"
         />
         <KPICard
           title="Tickets Resolvidos"
           value={kpis?.tickets_resolvidos?.toString() || "0"}
           description={`${kpis?.percentual_resolucao || 0}% de resolução`}
           icon={<CheckCircleIcon className="h-4 w-4" />}
+          iconColor="text-success"
+          color="success"
         />
         <KPICard
           title="SLA Vencido"
           value={kpis?.tickets_sla_vencido?.toString() || "0"}
           description="Tickets fora do prazo"
           icon={<AlertTriangleIcon className="h-4 w-4" />}
+          iconColor="text-critical"
+          color="critical"
         />
         <KPICard
           title="Tempo Médio"
           value={`${kpis?.tempo_medio_resolucao?.toFixed(1) || "0"}h`}
           description="Resolução média"
           icon={<ClockIcon className="h-4 w-4" />}
+          iconColor="text-warning"
+          color="warning"
         />
       </div>
 
@@ -91,24 +99,32 @@ const Dashboard = () => {
           value={kpis?.tickets_abertos?.toString() || "0"}
           description="Aguardando atendimento"
           icon={<TrendingUpIcon className="h-4 w-4" />}
+          iconColor="text-warning"
+          color="warning"
         />
         <KPICard
           title="Tickets de Crise"
           value={kpis?.tickets_crise?.toString() || "0"}
           description="Prioridade máxima"
           icon={<AlertTriangleIcon className="h-4 w-4" />}
+          iconColor="text-critical"
+          color="critical"
         />
         <KPICard
           title="Equipes Ativas"
           value={kpis?.equipes_ativas?.toString() || "0"}
           description="Equipes em operação"
           icon={<UsersIcon className="h-4 w-4" />}
+          iconColor="text-info"
+          color="info"
         />
         <KPICard
           title="IA Bem-Sucedida"
           value={`${kpis?.percentual_ia_sucesso || 0}%`}
           description="Taxa de sucesso da IA"
           icon={<CheckCircleIcon className="h-4 w-4" />}
+          iconColor="text-success"
+          color="success"
         />
       </div>
 

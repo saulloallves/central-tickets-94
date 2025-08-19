@@ -8,8 +8,9 @@ interface KPICardProps {
   description?: string;
   trend?: 'up' | 'down' | 'neutral';
   trendValue?: string;
-  color?: 'default' | 'success' | 'warning' | 'danger';
+  color?: 'default' | 'success' | 'warning' | 'danger' | 'info' | 'critical';
   icon?: React.ReactNode;
+  iconColor?: string;
   loading?: boolean;
 }
 
@@ -21,18 +22,22 @@ export const KPICard = ({
   trendValue,
   color = 'default',
   icon,
+  iconColor,
   loading = false
 }: KPICardProps) => {
   const getColorClasses = () => {
     switch (color) {
       case 'success':
-        return 'border-green-200 bg-green-50 text-green-900';
+        return 'border-success/20 bg-success/5 text-success-foreground';
       case 'warning':
-        return 'border-orange-200 bg-orange-50 text-orange-900';
+        return 'border-warning/20 bg-warning/5 text-warning-foreground';
       case 'danger':
-        return 'border-red-200 bg-red-50 text-red-900';
+      case 'critical':
+        return 'border-critical/20 bg-critical/5 text-critical-foreground';
+      case 'info':
+        return 'border-info/20 bg-info/5 text-info-foreground';
       default:
-        return 'border-border bg-background text-foreground';
+        return 'border-border bg-card text-card-foreground';
     }
   };
 
@@ -68,7 +73,11 @@ export const KPICard = ({
     <Card className={`transition-all hover:shadow-md ${getColorClasses()}`}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        {icon && <div className="opacity-60">{icon}</div>}
+        {icon && (
+          <div className={iconColor || "text-muted-foreground"}>
+            {icon}
+          </div>
+        )}
       </CardHeader>
       <CardContent>
         <div className="flex items-center space-x-2">
