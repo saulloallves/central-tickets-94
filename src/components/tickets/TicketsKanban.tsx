@@ -278,15 +278,9 @@ const KanbanColumn = ({ status, tickets, selectedTicketId, onTicketSelect, equip
     >
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-semibold text-sm">{COLUMN_STATUS[status]}</h3>
-        <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="text-xs">
-            {tickets.length}
-          </Badge>
-          {tickets.length > 0 && (
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" 
-                 title="Atualizado em tempo real" />
-          )}
-        </div>
+        <Badge variant="secondary" className="text-xs">
+          {tickets.length}
+        </Badge>
       </div>
       
       <SortableContext items={tickets.map(t => t.id)} strategy={verticalListSortingStrategy}>
