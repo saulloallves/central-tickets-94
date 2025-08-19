@@ -14,9 +14,23 @@ import {
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Clock, AlertTriangle, CheckCircle } from 'lucide-react';
+import { 
+  Clock, 
+  AlertTriangle, 
+  CheckCircle, 
+  MapPin, 
+  Users, 
+  ArrowUp,
+  Scale,
+  Monitor,
+  Image,
+  Settings,
+  DollarSign,
+  HelpCircle
+} from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTickets, type TicketFilters, type Ticket } from '@/hooks/useTickets';
@@ -75,21 +89,49 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
     transition,
   };
 
-  const getPriorityColor = (prioridade: string) => {
+  const formatTimeElapsed = (createdAt: string) => {
+    const now = new Date();
+    const created = new Date(createdAt);
+    const diffMs = now.getTime() - created.getTime();
+    
+    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+    
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  const getTimeColor = (statusSla: string, prioridade: string) => {
+    if (prioridade === 'crise') return 'text-red-600';
+    if (statusSla === 'vencido') return 'text-red-600';
+    if (statusSla === 'alerta') return 'text-orange-500';
+    return 'text-green-600';
+  };
+
+  const getPriorityIcon = (prioridade: string) => {
     switch (prioridade) {
-      case 'crise': return 'destructive';
-      case 'urgente': return 'destructive';
-      case 'alta': return 'outline';
-      default: return 'secondary';
+      case 'crise': return <AlertTriangle className="h-3 w-3 text-red-600" />;
+      case 'urgente': return <Clock className="h-3 w-3 text-orange-500" />;
+      case 'alta': return <ArrowUp className="h-3 w-3 text-yellow-500" />;
+      default: return null;
     }
   };
 
-  const getSLAIcon = (status_sla: string) => {
-    switch (status_sla) {
-      case 'vencido': return <AlertTriangle className="h-3 w-3 text-destructive" />;
-      case 'alerta': return <Clock className="h-3 w-3 text-yellow-500" />;
-      case 'dentro_prazo': return <CheckCircle className="h-3 w-3 text-green-500" />;
-      default: return null;
+  const getEquipeName = (equipeId: string | null) => {
+    if (!equipeId) return 'Sem equipe';
+    const equipe = equipes.find(e => e.id === equipeId);
+    return equipe?.nome || 'Equipe desconhecida';
+  };
+
+  const getCategoryIcon = (categoria: string) => {
+    switch (categoria) {
+      case 'juridico': return <Scale className="h-3 w-3" />;
+      case 'sistema': return <Monitor className="h-3 w-3" />;
+      case 'midia': return <Image className="h-3 w-3" />;
+      case 'operacoes': return <Settings className="h-3 w-3" />;
+      case 'rh': return <Users className="h-3 w-3" />;
+      case 'financeiro': return <DollarSign className="h-3 w-3" />;
+      default: return <HelpCircle className="h-3 w-3" />;
     }
   };
 
@@ -114,39 +156,75 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
       {...attributes}
       {...listeners}
       className={cn(
-        "cursor-pointer transition-all hover:shadow-md mb-3",
-        isSelected && "ring-2 ring-primary"
+        "cursor-pointer transition-all hover:shadow-md mb-3 bg-white",
+        isSelected && "ring-2 ring-primary border-primary"
       )}
       onClick={() => onSelect(ticket.id)}
     >
-      <CardContent className="p-3">
-        <div className="flex items-start justify-between mb-2">
-          <div className="flex items-center gap-1 text-xs">
-            {getSLAIcon(ticket.status_sla)}
-          </div>
-          <Badge variant={getPriorityColor(ticket.prioridade)} className="text-xs">
-            {ticket.prioridade === 'padrao_24h' ? 'Padrão' : ticket.prioridade}
-          </Badge>
-        </div>
-
-        <h4 className="text-sm font-medium mb-2 line-clamp-2">
-          {ticket.titulo || (ticket.descricao_problema?.length > 60 
-            ? ticket.descricao_problema.substring(0, 60) + '...'
-            : ticket.descricao_problema || 'Sem título')}
-        </h4>
-        
-        {ticket.titulo && (
-          <div className="text-xs font-mono text-muted-foreground mb-2">
+      <CardContent className="p-4 space-y-3">
+        {/* Header with code and priority */}
+        <div className="flex items-center justify-between">
+          <span className="font-semibold text-sm text-gray-900">
             {ticket.codigo_ticket}
+          </span>
+          <div className="flex items-center gap-1">
+            {getPriorityIcon(ticket.prioridade)}
+            {ticket.prioridade === 'crise' && (
+              <Badge variant="destructive" className="text-xs">CRISE</Badge>
+            )}
           </div>
-        )}
-
-        <div className="text-xs text-muted-foreground mb-3">
-          {formatDistanceToNowInSaoPaulo(ticket.created_at, { addSuffix: true })}
         </div>
 
-        <div onClick={(e) => e.stopPropagation()}>
-          <TicketActions ticket={ticket} equipes={equipes} size="sm" />
+        {/* Title */}
+        <h3 className="font-medium text-gray-900 line-clamp-2 leading-tight">
+          {ticket.titulo || ticket.descricao_problema || 'Sem título'}
+        </h3>
+
+        {/* Location and Unit */}
+        <div className="flex items-center gap-1 text-xs text-gray-600">
+          <MapPin className="h-3 w-3" />
+          <span className="truncate">
+            {ticket.unidade_id || 'Unidade não informada'}
+          </span>
+        </div>
+
+        {/* Category and Team */}
+        <div className="flex items-center justify-between text-xs">
+          <div className="flex items-center gap-1 text-gray-600">
+            {getCategoryIcon(ticket.categoria || 'outro')}
+            <span className="capitalize">
+              {ticket.categoria === 'midia' ? 'Mídia' : 
+               ticket.categoria === 'juridico' ? 'Jurídico' :
+               ticket.categoria === 'financeiro' ? 'Financeiro' :
+               ticket.categoria === 'operacoes' ? 'Operações' :
+               ticket.categoria || 'Outro'}
+            </span>
+          </div>
+          
+          {ticket.equipe_responsavel_id && (
+            <div className="flex items-center gap-1 text-gray-600">
+              <Users className="h-3 w-3" />
+              <span className="truncate max-w-20">
+                {getEquipeName(ticket.equipe_responsavel_id)}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Status button and time */}
+        <div className="flex items-center justify-between">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="text-xs h-7 px-2 py-1 bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+            onClick={(e) => e.stopPropagation()}
+          >
+            Posso esperar
+          </Button>
+          
+          <div className={cn("text-xs font-mono font-semibold", getTimeColor(ticket.status_sla, ticket.prioridade))}>
+            {formatTimeElapsed(ticket.created_at)}
+          </div>
         </div>
       </CardContent>
     </Card>
