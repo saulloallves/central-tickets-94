@@ -177,7 +177,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
       const { data, error } = await supabase.functions.invoke('process-notifications', {
         body: {
           ticketId: ticket.id,
-          type: 'resposta_ticket_privado',
+          type: 'resposta_ticket_franqueado',
           textoResposta: newMessage
         }
       });

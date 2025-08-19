@@ -26,7 +26,7 @@ serve(async (req) => {
       .from('tickets')
       .select(`
         *,
-        unidades (id, grupo, id_grupo_azul, id_grupo_branco, id_grupo_vermelho),
+        unidades (id, grupo, id_grupo_azul, id_grupo_branco, id_grupo_vermelho, telefone, phone),
         colaboradores (nome_completo)
       `)
       .eq('id', ticketId)
@@ -267,6 +267,36 @@ serve(async (req) => {
         console.log('Sending private message to normalized phone:', normalizedPhone)
         console.log('Message preview:', privateMessage.substring(0, 100) + '...')
         result = await sendZapiMessage(normalizedPhone, privateMessage)
+        break
+
+      case 'resposta_ticket_franqueado':
+        // Enviar mensagem para o telefone da unidade (botão "WhatsApp Franqueado")
+        console.log('Processing resposta_ticket_franqueado - sending to unit phone')
+        
+        // Usar telefone ou phone da unidade
+        const unitPhone = ticket.unidades?.telefone || ticket.unidades?.phone
+        const normalizedUnitPhone = normalizePhoneNumber(unitPhone)
+        
+        if (!normalizedUnitPhone) {
+          console.error('Unit phone not found or invalid:', unitPhone)
+          result = { success: false, message: 'Unidade não tem telefone válido cadastrado' }
+          break
+        }
+        
+        if (!textoResposta) {
+          console.error('No text response provided')
+          result = { success: false, message: 'Texto da resposta não fornecido' }
+          break
+        }
+        
+        const franqueadoMessage = `💬 *RESPOSTA DO TICKET*\n\n` +
+          `📋 *Ticket:* ${formatTicketTitle(ticket)}\n` +
+          `🏢 *Unidade:* ${ticket.unidades?.grupo || ticket.unidade_id}\n\n` +
+          `📝 *Resposta:*\n${textoResposta}`
+
+        console.log('Sending message to unit phone:', normalizedUnitPhone)
+        console.log('Message preview:', franqueadoMessage.substring(0, 100) + '...')
+        result = await sendZapiMessage(normalizedUnitPhone, franqueadoMessage)
         break
 
       case 'sla_half':
