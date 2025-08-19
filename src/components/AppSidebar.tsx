@@ -6,25 +6,14 @@ import {
   Settings, 
   LogOut,
   Home,
-  Users2
+  Users2,
+  BarChart3
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useRole } from "@/hooks/useRole";
-
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarHeader,
-  SidebarFooter,
-} from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const adminItems = [
   { title: "Dashboard", url: "/admin", icon: Home },
@@ -34,7 +23,7 @@ const adminItems = [
   { title: "Tickets", url: "/admin/tickets", icon: ClipboardList },
   { title: "Equipes", url: "/admin/equipes", icon: Users2 },
   { title: "Configurações", url: "/admin/configuracoes", icon: Settings },
-  { title: "Auditoria", url: "/admin/audit", icon: Settings },
+  { title: "Auditoria", url: "/admin/audit", icon: BarChart3 },
 ];
 
 const colaboradorItems = [
@@ -49,53 +38,56 @@ export function AppSidebar() {
   const currentPath = location.pathname;
 
   const items = isAdmin() ? adminItems : colaboradorItems;
-  const isActive = (path: string) => currentPath === path;
-  const getNavCls = ({ isActive }: { isActive: boolean }) =>
-    isActive ? "bg-primary text-primary-foreground font-medium" : "hover:bg-sidebar-accent/50";
 
   const handleSignOut = async () => {
     await signOut();
   };
 
   return (
-    <Sidebar collapsible="icon">
-      <SidebarHeader className="border-b border-sidebar-border p-4">
-        <div className="text-sidebar-foreground">
-          <h2 className="text-lg font-semibold">Sistema de Tickets</h2>
-          <p className="text-sm text-sidebar-foreground/70">Gestão Administrativa</p>
+    <div className="w-64 h-screen bg-background border-r border-border flex flex-col">
+      {/* Header */}
+      <div className="p-6 border-b border-border">
+        <h2 className="text-xl font-semibold text-foreground">Sistema de Tickets</h2>
+        <p className="text-sm text-muted-foreground">Gestão Administrativa</p>
+      </div>
+
+      {/* Navigation */}
+      <div className="flex-1 p-4">
+        <div className="space-y-1">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider px-3 py-2">
+            Navegação
+          </p>
+          {items.map((item) => {
+            const isActive = currentPath === item.url;
+            return (
+              <NavLink
+                key={item.title}
+                to={item.url}
+                end
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all hover:bg-accent hover:text-accent-foreground",
+                  isActive && "bg-primary text-primary-foreground hover:bg-primary/90"
+                )}
+              >
+                <item.icon className="h-4 w-4" />
+                {item.title}
+              </NavLink>
+            );
+          })}
         </div>
-      </SidebarHeader>
+      </div>
 
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Navegação</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink to={item.url} end className={getNavCls}>
-                      <item.icon className="mr-2 h-4 w-4" />
-                      <span>{item.title}</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-
-      <SidebarFooter className="border-t border-sidebar-border p-4">
+      {/* Footer */}
+      <div className="p-4 border-t border-border">
         <Button 
           variant="ghost" 
           onClick={handleSignOut}
-          className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent"
+          className="w-full justify-start gap-3 text-foreground hover:bg-accent hover:text-accent-foreground"
         >
-          <LogOut className="mr-2 h-4 w-4" />
-          <span>Sair</span>
+          <LogOut className="h-4 w-4" />
+          Sair
         </Button>
-      </SidebarFooter>
-    </Sidebar>
+      </div>
+    </div>
   );
 }
