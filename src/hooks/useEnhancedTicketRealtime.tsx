@@ -22,8 +22,10 @@ export const useEnhancedTicketRealtime = (options: EnhancedRealtimeOptions) => {
   useEffect(() => {
     if (!user) return;
 
+    console.log('🔄 Setting up enhanced realtime subscription...');
+
     // Enhanced realtime subscription with focused filtering
-    const channelName = `tickets-enhanced-${user.id}`;
+    const channelName = `tickets-enhanced-${user.id}-${Date.now()}`;
     
     const channel = supabase
       .channel(channelName)
@@ -81,6 +83,8 @@ export const useEnhancedTicketRealtime = (options: EnhancedRealtimeOptions) => {
         console.log('📡 Enhanced realtime status:', status);
         if (status === 'SUBSCRIBED') {
           console.log('✅ Enhanced realtime subscription active');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('❌ Enhanced realtime subscription error');
         }
       });
 
