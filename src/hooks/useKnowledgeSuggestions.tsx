@@ -15,6 +15,13 @@ interface KnowledgeSuggestion {
   publicado_em?: string;
   created_at: string;
   updated_at: string;
+  tickets?: {
+    id: string;
+    codigo_ticket: string;
+    descricao_problema: string;
+    categoria: string;
+    created_at: string;
+  };
 }
 
 interface CreateSuggestionData {
@@ -34,7 +41,16 @@ export const useKnowledgeSuggestions = () => {
     try {
       let query = supabase
         .from('knowledge_suggestions')
-        .select('*')
+        .select(`
+          *,
+          tickets!knowledge_suggestions_ticket_id_fkey (
+            id,
+            codigo_ticket,
+            descricao_problema,
+            categoria,
+            created_at
+          )
+        `)
         .order('created_at', { ascending: false });
 
       if (status) {

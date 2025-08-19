@@ -363,9 +363,38 @@ export function SugestoesIATab() {
             </DialogHeader>
             
             <div className="space-y-6">
-              {/* Conteúdo Original */}
+              {/* Problema Original do Franqueado */}
+              {selectedSuggestion.tickets && (
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    Problema Original (Ticket {selectedSuggestion.tickets.codigo_ticket})
+                  </Label>
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge variant="outline" className="text-xs">
+                        {selectedSuggestion.tickets.categoria}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {formatDistanceToNow(new Date(selectedSuggestion.tickets.created_at), { 
+                          addSuffix: true, 
+                          locale: ptBR 
+                        })}
+                      </span>
+                    </div>
+                    <p className="text-sm">
+                      {selectedSuggestion.tickets.descricao_problema}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Conteúdo Sugerido pela IA */}
               <div className="space-y-2">
-                <Label>Conteúdo Sugerido pela IA</Label>
+                <Label className="flex items-center gap-2">
+                  <Brain className="h-4 w-4" />
+                  Resposta Sugerida pela IA
+                </Label>
                 <div className="p-4 bg-muted rounded-lg">
                   <pre className="whitespace-pre-wrap text-sm">
                     {selectedSuggestion.texto_sugerido}
