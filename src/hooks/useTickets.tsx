@@ -127,7 +127,18 @@ export const useTickets = (filters: TicketFilters) => {
       
       // New filter for equipe_id
       if (filters.equipe_id && filters.equipe_id !== 'all') {
-        query = query.eq('equipe_responsavel_id', filters.equipe_id);
+        if (filters.equipe_id === 'minhas_equipes') {
+          // Filter for user's teams
+          const userEquipeIds = userEquipes.map(ue => ue.equipe_id);
+          if (userEquipeIds.length > 0) {
+            query = query.in('equipe_responsavel_id', userEquipeIds);
+          } else {
+            // If user has no teams, return no results
+            query = query.eq('equipe_responsavel_id', 'none');
+          }
+        } else {
+          query = query.eq('equipe_responsavel_id', filters.equipe_id);
+        }
       }
 
       const { data, error } = await query;
