@@ -185,27 +185,27 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
       onClick={() => onSelect(ticket.id)}
     >
       <CardContent className="p-4 h-full flex flex-col justify-between">
-        {/* Header Section - Título e badges */}
-        <div className="flex items-start justify-between mb-3 gap-2">
-          <div className="flex-1">
-            <h3 className="font-medium text-gray-900 line-clamp-2 leading-tight text-sm">
-              {ticket.titulo || ticket.descricao_problema || "Sem título"}
-            </h3>
-          </div>
-          <div className="flex items-center gap-1 flex-shrink-0">
-            {/* Badge Resolvido para tickets concluídos */}
-            {ticket.status === 'concluido' && (
-              <Badge variant="default" className="bg-success text-success-foreground text-xs">
-                <CheckCircle className="h-3 w-3 mr-1" />
-                Resolvido
-              </Badge>
-            )}
-            {/* Ícones de prioridade */}
-            {getPriorityIcon(ticket.prioridade)}
-            {ticket.prioridade === 'crise' && (
-              <Badge variant="critical" className="text-xs">CRISE</Badge>
-            )}
-          </div>
+        {/* Header Section - Badges no topo */}
+        <div className="flex items-center justify-end mb-2">
+          {/* Badge Resolvido para tickets concluídos */}
+          {ticket.status === 'concluido' && (
+            <Badge variant="default" className="bg-success text-success-foreground text-xs">
+              <CheckCircle className="h-3 w-3 mr-1" />
+              Resolvido
+            </Badge>
+          )}
+          {/* Ícones de prioridade */}
+          {getPriorityIcon(ticket.prioridade)}
+          {ticket.prioridade === 'crise' && (
+            <Badge variant="critical" className="text-xs ml-1">CRISE</Badge>
+          )}
+        </div>
+
+        {/* Title Section */}
+        <div className="mb-3">
+          <h3 className="font-medium text-gray-900 line-clamp-2 leading-tight text-sm">
+            {ticket.titulo || ticket.descricao_problema || "Sem título"}
+          </h3>
         </div>
 
 
