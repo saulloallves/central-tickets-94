@@ -1885,11 +1885,15 @@ export type Database = {
         Returns: boolean
       }
       can_update_ticket: {
-        Args: { ticket_unidade_id: string }
+        Args:
+          | { ticket_equipe_id?: string; ticket_unidade_id: string }
+          | { ticket_unidade_id: string }
         Returns: boolean
       }
       can_view_ticket: {
-        Args: { ticket_unidade_id: string }
+        Args:
+          | { ticket_equipe_id?: string; ticket_unidade_id: string }
+          | { ticket_unidade_id: string }
         Returns: boolean
       }
       create_internal_alert: {
@@ -1939,6 +1943,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_active_member_of_equipe: {
+        Args: { _equipe_id: string; _user_id: string }
         Returns: boolean
       }
       log_crisis_action: {
