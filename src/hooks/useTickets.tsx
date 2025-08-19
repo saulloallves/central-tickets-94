@@ -331,49 +331,72 @@ export const useTickets = (filters: TicketFilters) => {
 
   const updateTicket = async (ticketId: string, updates: Partial<Ticket>) => {
     try {
+      console.log('=== UPDATE TICKET DEBUG ===');
+      console.log('Original updates object:', updates);
+      console.log('Ticket ID:', ticketId);
+      
       // Filter out undefined, null, and empty string values
       // Also ensure enum fields are not included if they're empty
       const cleanUpdates = Object.fromEntries(
         Object.entries(updates).filter(([key, value]) => {
+          console.log(`Checking field ${key}:`, value, typeof value);
+          
           // Filter out undefined, null, and empty string values
           if (value === undefined || value === null || value === '') {
+            console.log(`Filtering out ${key} because value is empty`);
             return false;
           }
           
           // Special handling for enum fields - only include if they have valid values
           if (key === 'prioridade') {
             const validPrioridades = ['urgente', 'alta', 'hoje_18h', 'padrao_24h', 'crise'];
-            return validPrioridades.includes(value as string);
+            const isValid = validPrioridades.includes(value as string);
+            console.log(`Prioridade validation for "${value}":`, isValid);
+            return isValid;
           }
           
           if (key === 'status') {
             const validStatus = ['aberto', 'em_atendimento', 'escalonado', 'concluido'];
-            return validStatus.includes(value as string);
+            const isValid = validStatus.includes(value as string);
+            console.log(`Status validation for "${value}":`, isValid);
+            return isValid;
           }
           
           if (key === 'categoria') {
             const validCategorias = ['juridico', 'sistema', 'midia', 'operacoes', 'rh', 'financeiro', 'outro'];
-            return validCategorias.includes(value as string);
+            const isValid = validCategorias.includes(value as string);
+            console.log(`Categoria validation for "${value}":`, isValid);
+            return isValid;
           }
           
           if (key === 'status_sla') {
             const validStatusSla = ['dentro_prazo', 'alerta', 'vencido'];
-            return validStatusSla.includes(value as string);
+            const isValid = validStatusSla.includes(value as string);
+            console.log(`Status SLA validation for "${value}":`, isValid);
+            return isValid;
           }
           
           if (key === 'canal_origem') {
             const validCanais = ['typebot', 'whatsapp_zapi', 'web'];
-            return validCanais.includes(value as string);
+            const isValid = validCanais.includes(value as string);
+            console.log(`Canal origem validation for "${value}":`, isValid);
+            return isValid;
           }
           
           if (key === 'canal_resposta') {
             const validCanaisResposta = ['web', 'whatsapp', 'typebot', 'interno'];
-            return validCanaisResposta.includes(value as string);
+            const isValid = validCanaisResposta.includes(value as string);
+            console.log(`Canal resposta validation for "${value}":`, isValid);
+            return isValid;
           }
           
+          console.log(`Including field ${key} with value:`, value);
           return true;
         })
       );
+
+      console.log('Clean updates object:', cleanUpdates);
+      console.log('===========================');
 
       const { data, error } = await supabase
         .from('tickets')
@@ -383,7 +406,7 @@ export const useTickets = (filters: TicketFilters) => {
         .single();
 
       if (error) {
-        console.error('Error updating ticket:', error);
+        console.error('Supabase error details:', error);
         toast({
           title: "Erro",
           description: "Não foi possível atualizar o ticket",
