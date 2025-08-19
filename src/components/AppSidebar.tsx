@@ -8,37 +8,33 @@ import {
   Home,
   Users2,
   BarChart3,
-  Activity
+  Activity,
+  Shield
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useRole } from "@/hooks/useRole";
+import { usePermissions } from "@/hooks/usePermissions";
+import { PermissionGuard } from "@/components/PermissionGuard";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const adminItems = [
-  { title: "Dashboard", url: "/admin", icon: Home },
-  { title: "Unidades", url: "/admin/unidades", icon: Building2 },
-  { title: "Franqueados", url: "/admin/franqueados", icon: Users },
-  { title: "Colaboradores", url: "/admin/colaboradores", icon: UserCheck },
-  { title: "Tickets", url: "/admin/tickets", icon: ClipboardList },
-  { title: "Equipes", url: "/admin/equipes", icon: Users2 },
-  { title: "Configurações", url: "/admin/configuracoes", icon: Settings },
-  { title: "Logs & Auditoria", url: "/admin/logs", icon: Activity },
-];
-
-const colaboradorItems = [
-  { title: "Dashboard", url: "/admin", icon: Home },
-  { title: "Meus Tickets", url: "/admin/tickets", icon: ClipboardList },
+const navigationItems = [
+  { title: "Dashboard", url: "/admin", icon: Home, permission: 'access_dashboards' as const },
+  { title: "Unidades", url: "/admin/unidades", icon: Building2, permission: 'view_all_tickets' as const },
+  { title: "Franqueados", url: "/admin/franqueados", icon: Users, permission: 'view_all_tickets' as const },
+  { title: "Colaboradores", url: "/admin/colaboradores", icon: UserCheck, permission: 'view_all_tickets' as const },
+  { title: "Tickets", url: "/admin/tickets", icon: ClipboardList, permission: 'view_own_unit_tickets' as const },
+  { title: "Equipes", url: "/admin/equipes", icon: Users2, permission: 'view_all_tickets' as const },
+  { title: "Permissões", url: "/admin/permissions", icon: Shield, permission: 'configure_ai_models' as const },
+  { title: "Configurações", url: "/admin/configuracoes", icon: Settings, permission: 'configure_ai_models' as const },
+  { title: "Logs & Auditoria", url: "/admin/logs", icon: Activity, permission: 'view_audit_logs' as const },
 ];
 
 export function AppSidebar() {
   const { signOut } = useAuth();
-  const { isAdmin } = useRole();
   const location = useLocation();
   const currentPath = location.pathname;
-
-  const items = isAdmin() ? adminItems : colaboradorItems;
 
   const handleSignOut = async () => {
     await signOut();
@@ -58,14 +54,12 @@ export function AppSidebar() {
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider px-3 py-2">
             Navegação
           </p>
-          {items.map((item) => {
-            const isActive = currentPath === item.url;
-            return (
+          {navigationItems.map((item) => (
+            <PermissionGuard key={item.title} requiredPermission={item.permission}>
               <NavLink
-                key={item.title}
                 to={item.url}
                 end
-                className={cn(
+                className={({ isActive }) => cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all hover:bg-accent hover:text-accent-foreground",
                   isActive && "bg-primary text-primary-foreground hover:bg-primary/90"
                 )}
@@ -73,8 +67,8 @@ export function AppSidebar() {
                 <item.icon className="h-4 w-4" />
                 {item.title}
               </NavLink>
-            );
-          })}
+            </PermissionGuard>
+          ))}
         </div>
       </div>
 
