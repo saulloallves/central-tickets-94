@@ -162,11 +162,8 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
       onClick={() => onSelect(ticket.id)}
     >
       <CardContent className="p-4 space-y-3">
-        {/* Header with code and priority */}
-        <div className="flex items-center justify-between">
-          <span className="font-semibold text-sm text-gray-900">
-            {ticket.codigo_ticket}
-          </span>
+        {/* Header with priority only */}
+        <div className="flex items-end justify-end">
           <div className="flex items-center gap-1">
             {getPriorityIcon(ticket.prioridade)}
             {ticket.prioridade === 'crise' && (
@@ -184,7 +181,7 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
         <div className="flex items-center gap-1 text-xs text-gray-600">
           <MapPin className="h-3 w-3" />
           <span className="truncate">
-            {ticket.unidade_id || 'Unidade não informada'}
+            {(ticket as any).unidades?.grupo || ticket.unidade_id || 'Unidade não informada'}
           </span>
         </div>
 

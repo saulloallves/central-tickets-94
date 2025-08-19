@@ -93,6 +93,10 @@ export const useTickets = (filters: TicketFilters) => {
         .from('tickets')
         .select(`
           *,
+          unidades:unidade_id (
+            id,
+            grupo
+          ),
           equipes:equipe_responsavel_id (
             id,
             nome
