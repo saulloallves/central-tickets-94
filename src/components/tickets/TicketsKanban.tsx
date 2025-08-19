@@ -172,10 +172,12 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
       <Card
         ref={setNodeRef}
         style={style}
-        className="opacity-30 rotate-6 border-dashed"
+        className="opacity-50 border-2 border-primary border-dashed bg-primary/5 transform rotate-2 shadow-xl scale-105"
       >
         <CardContent className="p-3">
-          <div className="h-16"></div>
+          <div className="h-16 flex items-center justify-center">
+            <span className="text-xs text-primary font-medium">Arrastando...</span>
+          </div>
         </CardContent>
       </Card>
     );
@@ -290,9 +292,9 @@ const KanbanColumn = ({ status, tickets, selectedTicketId, onTicketSelect, equip
     <div 
       ref={setNodeRef}
       className={cn(
-        "rounded-lg border-2 border-dashed p-4 min-h-[600px] transition-colors",
+        "rounded-lg border-2 p-4 min-h-[600px] transition-all duration-200",
         COLUMN_COLORS[status],
-        isOver && "bg-opacity-30 border-solid"
+        isOver ? "border-primary bg-primary/10 border-solid scale-[1.02] shadow-lg" : "border-dashed"
       )}
     >
       <div className="flex items-center justify-between mb-4">
@@ -394,36 +396,32 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
       return;
     }
 
-    // Get the target status - could be from column directly or from a ticket in that column
+    // Get the target status - check column first, then ticket
     let newStatus: string;
     
-    // Check if we dropped on a column (direct status)
+    // Priority 1: Direct column drop
     const validStatuses = Object.keys(COLUMN_STATUS);
     if (validStatuses.includes(over.id as string)) {
       newStatus = over.id as string;
       console.log('✅ Dropped on column:', newStatus);
     }
-    // Check if we dropped on another ticket - find which column that ticket is in
-    else if (over.data?.current?.type === 'ticket') {
+    // Priority 2: Dropped on a ticket in a column
+    else if (over.data?.current?.ticket) {
       const targetTicket = over.data.current.ticket as Ticket;
       newStatus = targetTicket.status;
       console.log('✅ Dropped on ticket, using its status:', newStatus);
     }
-    // Check if over.data has sortable info (from SortableContext)
-    else if (over.data?.current?.sortable) {
-      // Find which column this sortable belongs to by checking the ticket
+    // Priority 3: Try to find which column contains this item
+    else {
+      console.log('🔍 Attempting to determine column from ticket list...');
       const overTicket = tickets.find(t => t.id === over.id);
       if (overTicket) {
         newStatus = overTicket.status;
-        console.log('✅ Dropped in sortable area, using status:', newStatus);
+        console.log('✅ Found ticket in column:', newStatus);
       } else {
-        console.log('❌ Could not determine target status from sortable');
+        console.log('❌ Could not determine target status');
         return;
       }
-    }
-    else {
-      console.log('❌ Invalid drop target - could not determine status');
-      return;
     }
 
     if (ticket.status === newStatus) {
@@ -439,7 +437,6 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
     });
 
     // Enhanced move with position support
-    // For now, we'll pass undefined for before/after until we implement sortable ordering
     const success = await onChangeStatus(
       ticketId, 
       ticket.status, 
