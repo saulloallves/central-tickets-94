@@ -210,6 +210,30 @@ export const useTickets = (filters: TicketFilters) => {
     }
   }, [filters.search, filters.status, filters.categoria, filters.prioridade, filters.status_sla, filters.unidade_id, filters.equipe_id]);
 
+  // Realtime subscription for tickets
+  useEffect(() => {
+    const channel = supabase
+      .channel('tickets-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tickets'
+        },
+        (payload) => {
+          console.log('Realtime ticket change:', payload);
+          fetchTickets();
+          fetchTicketStats();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   const createTicket = async (ticketData: Partial<Ticket>) => {
     if (!user?.id) {
       toast({
@@ -535,6 +559,11 @@ export const useTickets = (filters: TicketFilters) => {
     }
   };
 
+  const refetchData = () => {
+    fetchTickets();
+    fetchTicketStats();
+  };
+
   return {
     tickets,
     ticketStats,
@@ -543,7 +572,7 @@ export const useTickets = (filters: TicketFilters) => {
     updateTicket,
     startAttendance,
     concludeTicket,
-    refetch: fetchTickets
+    refetch: refetchData
   };
 };
 
@@ -640,6 +669,32 @@ export const useTicketMessages = (ticketId: string) => {
 
   useEffect(() => {
     fetchMessages();
+  }, [ticketId]);
+
+  // Realtime subscription for ticket messages
+  useEffect(() => {
+    if (!ticketId) return;
+
+    const channel = supabase
+      .channel(`ticket-messages-${ticketId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'ticket_mensagens',
+          filter: `ticket_id=eq.${ticketId}`
+        },
+        (payload) => {
+          console.log('Realtime message change:', payload);
+          fetchMessages();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [ticketId]);
 
   return {

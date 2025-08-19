@@ -12,6 +12,7 @@ import { TicketDetail } from '@/components/tickets/TicketDetail';
 import { CreateTicketDialog } from '@/components/tickets/CreateTicketDialog';
 import { SLAAlerts } from '@/components/tickets/SLAAlerts';
 import { TestAIButton } from '@/components/tickets/TestAIButton';
+import { RefreshButton } from '@/components/ui/refresh-button';
 import { useTickets } from '@/hooks/useTickets';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -37,7 +38,7 @@ const Tickets = () => {
     equipe_id: 'all'
   });
 
-  const { ticketStats } = useTickets(filters);
+  const { ticketStats, refetch } = useTickets(filters);
 
   // Fetch available teams
   useEffect(() => {
@@ -105,6 +106,7 @@ const Tickets = () => {
               Lista
             </Button>
           </div>
+          <RefreshButton onRefresh={refetch} />
           <TestAIButton />
           <Button onClick={() => setCreateDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />

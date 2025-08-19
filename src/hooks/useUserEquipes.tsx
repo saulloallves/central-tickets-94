@@ -74,6 +74,32 @@ export const useUserEquipes = () => {
     fetchUserEquipes();
   }, [user?.id]);
 
+  // Realtime subscription for equipe members
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel(`user-equipes-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'equipe_members',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Realtime equipe change:', payload);
+          fetchUserEquipes();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
+
   // Retorna a equipe primária ou a primeira se não houver primária
   const getPrimaryEquipe = (): UserEquipe | null => {
     if (userEquipes.length === 0) return null;
