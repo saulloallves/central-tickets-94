@@ -13,6 +13,7 @@ import { CreateTicketDialog } from '@/components/tickets/CreateTicketDialog';
 import { SLAAlerts } from '@/components/tickets/SLAAlerts';
 import { TestAIButton } from '@/components/tickets/TestAIButton';
 import { RefreshButton } from '@/components/ui/refresh-button';
+import { NotificationButton } from '@/components/notifications/NotificationButton';
 import { useTickets } from '@/hooks/useTickets';
 import { useUserEquipes } from '@/hooks/useUserEquipes';
 import { supabase } from '@/integrations/supabase/client';
@@ -108,6 +109,7 @@ const Tickets = () => {
               Lista
             </Button>
           </div>
+          <NotificationButton />
           <RefreshButton onRefresh={refetch} />
           <TestAIButton />
           <Button onClick={() => setCreateDialogOpen(true)}>

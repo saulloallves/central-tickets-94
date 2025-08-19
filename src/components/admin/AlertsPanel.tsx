@@ -31,13 +31,52 @@ export const AlertsPanel = () => {
 
   const getAlertTypeLabel = (type: string) => {
     switch (type) {
+      case 'sla_breach': return 'SLA Vencido';
+      case 'sla_half': return 'SLA 50% do Prazo';
       case 'ia_escalation_crisis': return 'IA Escalou Ticket de Crise';
       case 'delete_resolved_ticket': return 'Tentativa de Apagar Ticket Resolvido';
       case 'unauthorized_unit_access': return 'Acesso Não Autorizado à Unidade';
       case 'critical_ai_response': return 'IA Respondeu Conteúdo Crítico';
       case 'sla_critical_breach': return 'SLA Crítico Vencido';
-      default: return type;
+      default: return type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
     }
+  };
+
+  const formatTicketCode = (ticketId: string) => {
+    return ticketId.slice(0, 8).toUpperCase();
+  };
+
+  const formatAlertPayload = (payload: any) => {
+    if (!payload || Object.keys(payload).length === 0) return null;
+    
+    return (
+      <div className="mt-3 space-y-2">
+        {payload.codigo_ticket && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium">Código:</span>
+            <Badge variant="outline" className="font-mono text-xs">
+              {payload.codigo_ticket}
+            </Badge>
+          </div>
+        )}
+        {payload.unidade_id && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium">Unidade:</span>
+            <span className="text-xs text-muted-foreground font-mono">
+              {payload.unidade_id.slice(0, 8)}...
+            </span>
+          </div>
+        )}
+        {payload.user_id && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium">Usuário:</span>
+            <span className="text-xs text-muted-foreground font-mono">
+              {payload.user_id.slice(0, 8)}...
+            </span>
+          </div>
+        )}
+      </div>
+    );
   };
 
   const handleMarkAsProcessed = async (alertId: string) => {
@@ -89,7 +128,7 @@ export const AlertsPanel = () => {
             {alerts.map((alert) => (
               <div 
                 key={alert.id} 
-                className="border rounded-lg p-4 space-y-3"
+                className="border rounded-lg p-4 space-y-3 hover:shadow-card transition-shadow"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -99,24 +138,24 @@ export const AlertsPanel = () => {
                         <Badge variant="outline">{alert.alert_category}</Badge>
                       )}
                     </div>
-                    <h4 className="font-medium">{getAlertTypeLabel(alert.type)}</h4>
-                    <div className="text-sm text-muted-foreground mt-1">
-                      <p>Ticket: {alert.ticket_id.slice(0, 8)}...</p>
-                      <p>
+                    <h4 className="font-medium text-base">{getAlertTypeLabel(alert.type)}</h4>
+                    
+                    <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">Ticket:</span>
+                        <Badge variant="outline" className="font-mono">
+                          #{formatTicketCode(alert.ticket_id)}
+                        </Badge>
+                      </div>
+                      <span>
                         {formatDistanceToNow(new Date(alert.created_at), {
                           addSuffix: true,
                           locale: ptBR
                         })}
-                      </p>
+                      </span>
                     </div>
                     
-                    {alert.payload && Object.keys(alert.payload).length > 0 && (
-                      <div className="mt-2 p-2 bg-muted rounded text-xs">
-                        <pre className="overflow-x-auto">
-                          {JSON.stringify(alert.payload, null, 2)}
-                        </pre>
-                      </div>
-                    )}
+                    {formatAlertPayload(alert.payload)}
                   </div>
                   
                   <div className="flex items-center gap-2">
