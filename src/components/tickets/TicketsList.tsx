@@ -194,12 +194,14 @@ export const TicketsList = ({ filters, onTicketSelect, selectedTicketId }: Ticke
                 </div>
 
                 {/* Mostrar solicitante */}
-                {(ticket.colaboradores?.nome_completo || ticket.franqueados?.name) && (
-                  <div className="flex items-center gap-1">
-                    <User className="h-3 w-3" />
-                    <span>{ticket.colaboradores?.nome_completo || ticket.franqueados?.name}</span>
-                  </div>
-                )}
+                <div className="flex items-center gap-1">
+                  <User className="h-3 w-3" />
+                  <span>
+                    {ticket.colaboradores?.nome_completo || 
+                     ticket.created_by_profile?.nome_completo || 
+                     (ticket.franqueado_id ? "Franqueado" : "Sistema")}
+                  </span>
+                </div>
               </div>
 
               <div className="flex items-center gap-1">

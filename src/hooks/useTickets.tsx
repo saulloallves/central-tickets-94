@@ -37,9 +37,9 @@ export interface Ticket {
   // Relations
   unidades?: { grupo: string };
   colaboradores?: { nome_completo: string };
-  franqueados?: { name: string };
   equipes?: { id: string; nome: string };
   atendimento_iniciado_por_profile?: { nome_completo: string };
+  created_by_profile?: { nome_completo: string };
 }
 
 export interface TicketMessage {
@@ -107,8 +107,8 @@ export const useTickets = (filters: TicketFilters) => {
           colaboradores (
             nome_completo
           ),
-          franqueados:franqueado_id (
-            name
+          created_by_profile:criado_por (
+            nome_completo
           )
         `)
         .order('created_at', { ascending: false });
@@ -265,7 +265,6 @@ export const useTickets = (filters: TicketFilters) => {
         .single();
 
       let colaborador_id = null;
-      let franqueado_id = null;
 
       if (profile?.email) {
         // Check if user is a colaborador
@@ -277,17 +276,6 @@ export const useTickets = (filters: TicketFilters) => {
         
         if (colaborador) {
           colaborador_id = colaborador.id;
-        } else {
-          // Check if user is a franqueado
-          const { data: franqueado } = await supabase
-            .from('franqueados')
-            .select('Id')
-            .eq('email', profile.email)
-            .single();
-          
-          if (franqueado) {
-            franqueado_id = franqueado.Id;
-          }
         }
       }
 
@@ -298,7 +286,6 @@ export const useTickets = (filters: TicketFilters) => {
         prioridade: ticketData.prioridade || 'padrao_24h',
         subcategoria: ticketData.subcategoria || null,
         colaborador_id,
-        franqueado_id,
         criado_por: user.id,
         canal_origem: 'web' as const
       };

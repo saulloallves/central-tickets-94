@@ -56,7 +56,7 @@ serve(async (req) => {
       const { data: franqueadoData, error: franqueadoError } = await supabase
         .from('franqueados')
         .select('name, phone')
-        .eq('Id', ticket.franqueado_id)
+        .eq('id', ticket.franqueado_id)
         .single()
       
       if (franqueadoError) {

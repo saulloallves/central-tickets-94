@@ -9,10 +9,10 @@ import { Search, Eye } from 'lucide-react';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 interface Franqueado {
-  Id: number;
+  id: number;
   name: string;
   email: string;
-  phone: number;
+  phone: string;
   city: string;
   state: string;
   franchisee_type: string;
@@ -128,12 +128,12 @@ const Franqueados = () => {
                 </TableHeader>
                 <TableBody>
                   {filteredFranqueados.map((franqueado) => (
-                    <TableRow key={franqueado.Id}>
+                    <TableRow key={franqueado.id}>
                       <TableCell className="font-medium">
                         <div>
                           <div className="font-semibold">{franqueado.name || 'N/A'}</div>
                           <div className="text-sm text-muted-foreground">
-                            ID: {franqueado.Id}
+                            ID: {franqueado.id}
                           </div>
                         </div>
                       </TableCell>
@@ -159,7 +159,7 @@ const Franqueados = () => {
                         <div>
                           <div className="text-sm">{franqueado.email || 'N/A'}</div>
                           <div className="text-sm text-muted-foreground">
-                            {franqueado.phone ? franqueado.phone.toString() : 'N/A'}
+                            {franqueado.phone || 'N/A'}
                           </div>
                         </div>
                       </TableCell>

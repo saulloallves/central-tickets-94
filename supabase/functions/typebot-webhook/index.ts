@@ -186,13 +186,13 @@ serve(async (req) => {
     if (web_password) {
       const { data: franqueado } = await supabase
         .from('franqueados')
-        .select('"Id"')
+        .select('id')
         .eq('web_password', parseInt(web_password))
         .maybeSingle();
       
       if (franqueado) {
-        franqueadoId = franqueado.Id;
-        console.log('Franqueado encontrado:', franqueado.Id);
+        franqueadoId = franqueado.id;
+        console.log('Franqueado encontrado:', franqueado.id);
       } else {
         console.log('Franqueado não encontrado para senha web:', web_password);
       }

@@ -60,7 +60,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
       const [unidadeRes, colaboradorRes, franqueadoRes, profileRes, equipeRes] = await Promise.all([
         supabase.from('unidades').select('grupo, id').eq('id', ticketData.unidade_id).maybeSingle(),
         ticketData.colaborador_id ? supabase.from('colaboradores').select('nome_completo').eq('id', ticketData.colaborador_id).maybeSingle() : Promise.resolve({ data: null }),
-        ticketData.franqueado_id ? supabase.from('franqueados').select('name').eq('Id', Number(ticketData.franqueado_id)).maybeSingle() : Promise.resolve({ data: null }),
+        ticketData.franqueado_id ? supabase.from('franqueados').select('name').eq('id', Number(ticketData.franqueado_id)).maybeSingle() : Promise.resolve({ data: null }),
         ticketData.criado_por ? supabase.from('profiles').select('nome_completo').eq('id', ticketData.criado_por).maybeSingle() : Promise.resolve({ data: null }),
         ticketData.equipe_responsavel_id ? supabase.from('equipes').select('nome').eq('id', ticketData.equipe_responsavel_id).maybeSingle() : Promise.resolve({ data: null })
       ]);
@@ -368,9 +368,8 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
               <div>
                 <div className="font-medium text-foreground">
                   {ticket.colaboradores?.nome_completo || 
-                   (ticket.franqueados?.name ? `${ticket.franqueados.name} (Franqueado)` : null) ||
-                   (ticket.profiles?.nome_completo ? `${ticket.profiles.nome_completo} (Criador)` : null) ||
-                   'N/A'}
+                   ticket.profiles?.nome_completo || 
+                   (ticket.franqueado_id ? (ticket.franqueados?.name || "Franqueado") : "Sistema")}
                 </div>
                 <div className="text-xs text-muted-foreground">Solicitante</div>
                 {ticket.franqueados && (
