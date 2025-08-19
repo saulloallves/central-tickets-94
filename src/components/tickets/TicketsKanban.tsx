@@ -208,10 +208,6 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
           </div>
         </div>
 
-        {/* Código do ticket pequeno */}
-        <div className="text-xs font-mono text-muted-foreground font-medium mb-3">
-          {ticket.codigo_ticket}
-        </div>
 
         {/* Info Section - Localização e categoria */}
         <div className="space-y-2 mb-3 flex-1">
