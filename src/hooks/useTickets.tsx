@@ -103,6 +103,12 @@ export const useTickets = (filters: TicketFilters) => {
           ),
           atendimento_iniciado_por_profile:atendimento_iniciado_por (
             nome_completo
+          ),
+          colaboradores (
+            nome_completo
+          ),
+          franqueados:franqueado_id (
+            name
           )
         `)
         .order('created_at', { ascending: false });

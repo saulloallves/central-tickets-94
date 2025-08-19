@@ -190,8 +190,16 @@ export const TicketsList = ({ filters, onTicketSelect, selectedTicketId }: Ticke
                 
                 <div className="flex items-center gap-1">
                   <Building className="h-3 w-3" />
-                  <span>{ticket.unidade_id}</span>
+                  <span>{ticket.unidades?.grupo || ticket.unidade_id}</span>
                 </div>
+
+                {/* Mostrar solicitante */}
+                {(ticket.colaboradores?.nome_completo || ticket.franqueados?.name) && (
+                  <div className="flex items-center gap-1">
+                    <User className="h-3 w-3" />
+                    <span>{ticket.colaboradores?.nome_completo || ticket.franqueados?.name}</span>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center gap-1">
