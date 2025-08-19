@@ -75,13 +75,12 @@ serve(async (req) => {
     }
 
     // Get Z-API configuration from secrets
-    const zapiBaseUrl = Deno.env.get('ZAPI_BASE_URL')
     const zapiInstanceId = Deno.env.get('ZAPI_INSTANCE_ID')
     const zapiInstanceToken = Deno.env.get('ZAPI_INSTANCE_TOKEN')
     const zapiClientToken = Deno.env.get('ZAPI_CLIENT_TOKEN')
 
-    if (!zapiBaseUrl || !zapiInstanceId || !zapiInstanceToken || !zapiClientToken) {
-      console.error('Missing Z-API configuration. Required: ZAPI_BASE_URL, ZAPI_INSTANCE_ID, ZAPI_INSTANCE_TOKEN, ZAPI_CLIENT_TOKEN')
+    if (!zapiInstanceId || !zapiInstanceToken || !zapiClientToken) {
+      console.error('Missing Z-API configuration. Required: ZAPI_INSTANCE_ID, ZAPI_INSTANCE_TOKEN, ZAPI_CLIENT_TOKEN')
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -90,9 +89,6 @@ serve(async (req) => {
         { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
       )
     }
-
-    // Normalize base URL to prevent duplication
-    const normalizedBaseUrl = zapiBaseUrl.replace(/\/+$/, '')
 
     console.log('Using Z-API configuration from environment secrets')
 
@@ -130,11 +126,11 @@ serve(async (req) => {
 
     // Função para enviar mensagem via ZAPI
     const sendZapiMessage = async (destination: string, message: string) => {
-      // Always use /send-text endpoint with consistent payload structure
-      const webhookUrl = `${normalizedBaseUrl}/instances/${zapiInstanceId}/token/${zapiInstanceToken}/send-text`
+      // Fixed Z-API endpoint with exact format: https://api.z-api.io/instances/INSTANCE_ID/token/TOKEN/send-text
+      const webhookUrl = `https://api.z-api.io/instances/${zapiInstanceId}/token/${zapiInstanceToken}/send-text`
       
       console.log(`Sending message to: ${destination}`)
-      console.log(`Using endpoint: ${normalizedBaseUrl}/instances/${zapiInstanceId}/token/***$/send-text`)
+      console.log(`Using endpoint: https://api.z-api.io/instances/${zapiInstanceId}/token/****/send-text`)
       
       // Always use {phone, message} payload - destination can be individual number or group ID
       const payload = { phone: destination, message }
