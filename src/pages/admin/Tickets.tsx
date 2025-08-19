@@ -30,7 +30,7 @@ const Tickets = () => {
   const { userEquipes } = useUserEquipes();
   
   // Inicializar notificações sonoras
-  useTicketNotifications();
+  const { testNotificationSound } = useTicketNotifications();
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
@@ -115,6 +115,9 @@ const Tickets = () => {
           </div>
           <NotificationButton />
           <RefreshButton onRefresh={refetch} />
+          <Button variant="outline" onClick={testNotificationSound}>
+            🔊 Testar Som
+          </Button>
           <TestAIButton />
           <Button onClick={() => setCreateDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
