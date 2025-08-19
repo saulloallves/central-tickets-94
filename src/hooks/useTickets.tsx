@@ -331,9 +331,16 @@ export const useTickets = (filters: TicketFilters) => {
 
   const updateTicket = async (ticketId: string, updates: Partial<Ticket>) => {
     try {
+      // Filter out undefined, null, and empty string values
+      const cleanUpdates = Object.fromEntries(
+        Object.entries(updates).filter(([_, value]) => 
+          value !== undefined && value !== null && value !== ''
+        )
+      );
+
       const { data, error } = await supabase
         .from('tickets')
-        .update(updates)
+        .update(cleanUpdates)
         .eq('id', ticketId)
         .select()
         .single();
