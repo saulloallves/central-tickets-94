@@ -26,7 +26,7 @@ serve(async (req) => {
       .from('tickets')
       .select(`
         *,
-        unidades (id, grupo, id_grupo_azul, id_grupo_vermelho),
+        unidades (id, grupo, id_grupo_azul, id_grupo_branco, id_grupo_vermelho),
         colaboradores (nome_completo)
       `)
       .eq('id', ticketId)
@@ -155,11 +155,27 @@ serve(async (req) => {
         })
 
         const result = await zapiResponse.json()
+        console.log('ZAPI response status:', zapiResponse.status)
         console.log('ZAPI response:', result)
-        return { success: zapiResponse.ok, data: result }
+        
+        if (!zapiResponse.ok) {
+          const errorMsg = result?.error || result?.message || `HTTP ${zapiResponse.status}`
+          console.error('ZAPI HTTP error:', errorMsg)
+          return { 
+            success: false, 
+            error: `ZAPI API error: ${errorMsg}. Verifique configurações de webhook e credenciais.`,
+            status: zapiResponse.status,
+            data: result
+          }
+        }
+        
+        return { success: true, data: result, status: zapiResponse.status }
       } catch (error) {
-        console.error('ZAPI error:', error)
-        return { success: false, error: error.message }
+        console.error('ZAPI network error:', error)
+        return { 
+          success: false, 
+          error: `Erro de conexão com ZAPI: ${error.message}. Verifique a URL do webhook.` 
+        }
       }
     }
 
@@ -167,7 +183,11 @@ serve(async (req) => {
 
     switch (type) {
       case 'ticket_criado':
-        if (ticket.unidades?.id_grupo_azul) {
+        // Usar grupo branco como principal, com fallback para azul
+        const groupForNewTicket = ticket.unidades?.id_grupo_branco || ticket.unidades?.id_grupo_azul
+        console.log('Using group for new ticket:', { branco: ticket.unidades?.id_grupo_branco, azul: ticket.unidades?.id_grupo_azul, selected: groupForNewTicket })
+        
+        if (groupForNewTicket) {
           const message = `🎫 *NOVO TICKET*\n\n` +
             `📋 *Ticket:* ${formatTicketTitle(ticket)}\n` +
             `🏢 *Unidade:* ${ticket.unidades?.grupo || ticket.unidade_id}\n` +
@@ -175,18 +195,31 @@ serve(async (req) => {
             `🔥 *Prioridade:* ${ticket.prioridade.toUpperCase()}\n\n` +
             `📝 *Problema:*\n${ticket.descricao_problema}`
 
-          result = await sendZapiMessage(ticket.unidades.id_grupo_azul, message)
+          result = await sendZapiMessage(groupForNewTicket, message)
+        } else {
+          console.error('No group ID found for ticket creation notification')
+          result = { success: false, message: 'Grupo WhatsApp não configurado para esta unidade' }
         }
         break
 
       case 'resposta_ticket':
-        if (ticket.unidades?.id_grupo_azul && textoResposta) {
+        // Usar grupo branco como principal, com fallback para azul
+        const groupForResponse = ticket.unidades?.id_grupo_branco || ticket.unidades?.id_grupo_azul
+        console.log('Using group for response:', { branco: ticket.unidades?.id_grupo_branco, azul: ticket.unidades?.id_grupo_azul, selected: groupForResponse })
+        
+        if (groupForResponse && textoResposta) {
           const message = `💬 *RESPOSTA DO TICKET*\n\n` +
             `📋 *Ticket:* ${formatTicketTitle(ticket)}\n` +
             `🏢 *Unidade:* ${ticket.unidades?.grupo || ticket.unidade_id}\n\n` +
             `📝 *Resposta:*\n${textoResposta}`
 
-          result = await sendZapiMessage(ticket.unidades.id_grupo_azul, message)
+          result = await sendZapiMessage(groupForResponse, message)
+        } else if (!groupForResponse) {
+          console.error('No group ID found for ticket response notification')
+          result = { success: false, message: 'Grupo WhatsApp não configurado para esta unidade' }
+        } else {
+          console.error('No response text provided')
+          result = { success: false, message: 'Texto da resposta não fornecido' }
         }
         break
 
