@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Play, CheckCircle, Users } from 'lucide-react';
+import { Play, CheckCircle, Users, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ResolveCrisisButton } from './ResolveCrisisButton';
@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/select';
 import { useTickets, type Ticket } from '@/hooks/useTickets';
 import { useUserEquipes } from '@/hooks/useUserEquipes';
+import { useOptimisticTicketActions } from '@/hooks/useOptimisticTicketActions';
 
 interface TicketActionsProps {
   ticket: Ticket;

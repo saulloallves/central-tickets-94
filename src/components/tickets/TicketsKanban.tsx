@@ -36,6 +36,9 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTickets, type TicketFilters, type Ticket } from '@/hooks/useTickets';
+import { useOptimisticTicketActions } from '@/hooks/useOptimisticTicketActions';
+import { useEnhancedTicketRealtime } from '@/hooks/useEnhancedTicketRealtime';
+import { usePerformanceMetrics } from '@/hooks/usePerformanceMetrics';
 import { TicketDetail } from './TicketDetail';
 import { TicketActions } from './TicketActions';
 import { formatDistanceToNowInSaoPaulo } from '@/lib/date-utils';
@@ -317,12 +320,35 @@ const KanbanColumn = ({ status, tickets, selectedTicketId, onTicketSelect, equip
 };
 
 export const TicketsKanban = ({ filters, onTicketSelect, selectedTicketId, equipes }: TicketsKanbanProps) => {
-  const { tickets, loading, updateTicket } = useTickets(filters);
+  const { tickets, loading, updateTicket, optimisticUpdateTicket, optimisticRollback } = useTickets(filters);
+  const { isTicketPending, getPendingAction } = useOptimisticTicketActions();
+  const { startMetric, endMetric } = usePerformanceMetrics();
   const { toast } = useToast();
   const [activeTicket, setActiveTicket] = useState<Ticket | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [draggedOverColumn, setDraggedOverColumn] = useState<string | null>(null);
   const [lastUpdateTime, setLastUpdateTime] = useState<Date>(new Date());
+
+  // Enhanced realtime subscription
+  useEnhancedTicketRealtime({
+    onTicketUpdate: (ticket) => {
+      console.log('🔄 Realtime ticket update received:', ticket.codigo_ticket);
+      optimisticUpdateTicket(ticket.id, ticket);
+    },
+    onTicketInsert: (ticket) => {
+      console.log('➕ Realtime new ticket received:', ticket.codigo_ticket);
+      // Ticket will be included in next fetch
+    },
+    onTicketDelete: (ticketId) => {
+      console.log('🗑️ Realtime ticket deleted:', ticketId);
+      // Handle ticket deletion if needed
+    },
+    filters: {
+      unidade_id: filters.unidade_id !== 'all' ? filters.unidade_id : undefined,
+      equipe_id: filters.equipe_id !== 'all' ? filters.equipe_id : undefined,
+      status: filters.status !== 'all' ? [filters.status] : undefined,
+    }
+  });
 
   // Update timestamp when tickets change
   useEffect(() => {
@@ -381,23 +407,42 @@ export const TicketsKanban = ({ filters, onTicketSelect, selectedTicketId, equip
       return;
     }
 
+    // Start performance tracking
+    const metricId = startMetric('drag-drop-status-update', ticketId);
+    const originalStatus = ticket.status;
+
     try {
-      // Ensure we only update the status field
+      // Step 1: Optimistic UI update (immediate visual feedback)
+      optimisticUpdateTicket(ticketId, { 
+        status: newStatus as any,
+        updated_at: new Date().toISOString()
+      });
+
+      // Step 2: Backend update
       const result = await updateTicket(ticketId, { 
         status: newStatus as keyof typeof COLUMN_STATUS
       });
       
       if (result) {
+        // Step 3: Success feedback
+        endMetric(metricId, true);
         toast({
-          title: "Status atualizado",
+          title: "✅ Status Atualizado",
           description: `Ticket movido para ${COLUMN_STATUS[newStatus as keyof typeof COLUMN_STATUS]}`,
         });
+      } else {
+        throw new Error('Update failed');
       }
     } catch (error) {
       console.error('Error updating ticket:', error);
+      
+      // Step 4: Rollback optimistic update on error
+      optimisticRollback(ticketId, originalStatus);
+      endMetric(metricId, false);
+      
       toast({
-        title: "Erro ao atualizar",
-        description: "Não foi possível atualizar o status do ticket",
+        title: "❌ Erro ao Atualizar",
+        description: "Não foi possível atualizar o status do ticket. Tente novamente.",
         variant: "destructive",
       });
     }

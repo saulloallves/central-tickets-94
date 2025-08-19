@@ -83,6 +83,19 @@ export const useTickets = (filters: TicketFilters) => {
   const [ticketStats, setTicketStats] = useState<TicketStats | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Optimistic update functions
+  const optimisticUpdateTicket = (ticketId: string, updates: Partial<Ticket>) => {
+    setTickets(prev => prev.map(ticket => 
+      ticket.id === ticketId ? { ...ticket, ...updates } : ticket
+    ));
+  };
+
+  const optimisticRollback = (ticketId: string, originalStatus: string) => {
+    setTickets(prev => prev.map(ticket => 
+      ticket.id === ticketId ? { ...ticket, status: originalStatus as any } : ticket
+    ));
+  };
+
   const fetchTickets = async () => {
     if (!user || roleLoading) return;
     
@@ -606,7 +619,10 @@ export const useTickets = (filters: TicketFilters) => {
     updateTicket,
     startAttendance,
     concludeTicket,
-    refetch: refetchData
+    refetch: refetchData,
+    // Optimistic UI functions
+    optimisticUpdateTicket,
+    optimisticRollback
   };
 };
 
