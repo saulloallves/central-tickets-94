@@ -179,7 +179,7 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
       {...listeners}
       className={cn(
         "cursor-pointer transition-all hover:shadow-md mb-3",
-        ticket.status === 'concluido' ? "bg-success/5 border-success/20" : "bg-white",
+        ticket.status === 'concluido' ? "bg-muted/30 border-muted" : "bg-white",
         isSelected && "ring-2 ring-primary border-primary"
       )}
       onClick={() => onSelect(ticket.id)}
