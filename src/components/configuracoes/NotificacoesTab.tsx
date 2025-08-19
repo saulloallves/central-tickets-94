@@ -193,30 +193,37 @@ export function NotificacoesTab() {
     }
   };
 
+  const [testPhone, setTestPhone] = useState('');
+
   const testConnection = async () => {
     setLoading(true);
     try {
       const response = await supabase.functions.invoke('process-notifications', {
         body: {
-          ticketId: 'test',
           type: 'test_connection',
-          textoResposta: 'Teste de conexão Z-API'
+          textoResposta: 'Teste de conexão Z-API realizado com sucesso!',
+          testPhone: testPhone || undefined
         }
       });
 
       if (response.error) {
-        throw new Error(response.error.message);
+        throw new Error(response.error.message || 'Erro na função');
       }
 
+      const result = response.data;
+      
       toast({
-        title: "Teste realizado",
-        description: "Conexão Z-API testada. Verifique os logs para detalhes.",
+        title: result.success ? "Teste realizado com sucesso" : "Erro no teste",
+        description: result.message || (testPhone ? 
+          `Mensagem ${result.success ? 'enviada para' : 'não enviada para'} ${testPhone}` : 
+          'Status da conexão verificado'),
+        variant: result.success ? "default" : "destructive"
       });
     } catch (error) {
       console.error('Error testing connection:', error);
       toast({
         title: "Erro no teste",
-        description: "Não foi possível testar a conexão Z-API.",
+        description: error instanceof Error ? error.message : "Não foi possível testar a conexão Z-API.",
         variant: "destructive"
       });
     } finally {
@@ -323,24 +330,39 @@ export function NotificacoesTab() {
 
               <Separator />
 
-              <div className="flex gap-2">
-                <Button 
-                  onClick={saveZApiConfig} 
-                  disabled={loading}
-                  className="flex items-center gap-2"
-                >
-                  <Save className="h-4 w-4" />
-                  Salvar Configuração
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={testConnection} 
-                  disabled={loading}
-                  className="flex items-center gap-2"
-                >
-                  <TestTube className="h-4 w-4" />
-                  Testar Conexão
-                </Button>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="test_phone">Número para teste (opcional)</Label>
+                  <Input
+                    id="test_phone"
+                    value={testPhone}
+                    onChange={(e) => setTestPhone(e.target.value)}
+                    placeholder="5511999999999 (com código do país)"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Se informado, enviará uma mensagem de teste. Caso contrário, apenas verificará as credenciais.
+                  </p>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={saveZApiConfig} 
+                    disabled={loading}
+                    className="flex items-center gap-2"
+                  >
+                    <Save className="h-4 w-4" />
+                    Salvar Configuração
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={testConnection} 
+                    disabled={loading}
+                    className="flex items-center gap-2"
+                  >
+                    <TestTube className="h-4 w-4" />
+                    Testar Conexão
+                  </Button>
+                </div>
               </div>
 
               <Alert>

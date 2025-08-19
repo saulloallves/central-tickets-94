@@ -159,14 +159,90 @@ serve(async (req) => {
   }
 
   try {
-    const { ticketId, type, textoResposta } = await req.json()
+    const { ticketId, type, textoResposta, testPhone } = await req.json()
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Buscar dados do ticket
+    // Handle test connection separately (no ticket needed)
+    if (type === 'test_connection') {
+      console.log('Testing Z-API connection');
+      
+      // Get Z-API configuration
+      const zapiConfig = await getZApiConfig(supabase);
+      if (!zapiConfig) {
+        throw new Error('Missing required Z-API configuration');
+      }
+
+      // Test connection with a simple endpoint check or send test message
+      if (testPhone) {
+        console.log('Sending test message to:', testPhone);
+        const normalizePhoneNumber = (phone: any): string | null => {
+          if (!phone) return null;
+          let phoneStr = phone.toString().replace(/\D/g, '');
+          if (phoneStr.length === 13 && phoneStr.startsWith('55')) return phoneStr;
+          if (phoneStr.length === 11) return '55' + phoneStr;
+          if (phoneStr.length === 10) return '55' + phoneStr.charAt(0) + phoneStr.charAt(1) + '9' + phoneStr.substring(2);
+          return phoneStr.length >= 10 ? phoneStr : null;
+        };
+
+        const endpoint = `${zapiConfig.baseUrl}/instances/${zapiConfig.instanceId}/token/${zapiConfig.instanceToken}/send-text`;
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Client-Token': zapiConfig.clientToken,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            phone: normalizePhoneNumber(testPhone),
+            message: textoResposta || '✅ Teste de conexão Z-API realizado com sucesso!'
+          }),
+        });
+
+        const responseData = await response.json();
+        console.log('Test response:', responseData);
+
+        return new Response(
+          JSON.stringify({
+            success: response.ok,
+            message: response.ok ? 'Teste realizado com sucesso!' : 'Erro no teste de conexão',
+            data: responseData
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: response.ok ? 200 : 400
+          }
+        );
+      } else {
+        // Just test credentials validity without sending message
+        const endpoint = `${zapiConfig.baseUrl}/instances/${zapiConfig.instanceId}/token/${zapiConfig.instanceToken}/status`;
+        const response = await fetch(endpoint, {
+          method: 'GET',
+          headers: {
+            'Client-Token': zapiConfig.clientToken,
+          },
+        });
+
+        const responseData = await response.json();
+        console.log('Status check response:', responseData);
+
+        return new Response(
+          JSON.stringify({
+            success: response.ok,
+            message: response.ok ? 'Credenciais Z-API válidas!' : 'Erro nas credenciais Z-API',
+            data: responseData
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: response.ok ? 200 : 400
+          }
+        );
+      }
+    }
+
+    // For other notification types, fetch ticket data
     console.log('Fetching ticket data for ID:', ticketId)
     const { data: ticket, error: ticketError } = await supabase
       .from('tickets')
