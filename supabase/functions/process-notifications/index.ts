@@ -1,6 +1,152 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+interface ZApiConfig {
+  instanceId: string;
+  instanceToken: string; 
+  clientToken: string;
+  baseUrl: string;
+}
+
+interface MessageTemplate {
+  template_content: string;
+  variables: string[];
+}
+
+// Get Z-API configuration from database or fallback to secrets
+async function getZApiConfig(supabase: any): Promise<ZApiConfig | null> {
+  try {
+    const { data, error } = await supabase
+      .from('messaging_providers')
+      .select('instance_id, instance_token, client_token, base_url')
+      .eq('provider_name', 'zapi')
+      .eq('is_active', true)
+      .single();
+
+    if (!error && data) {
+      console.log('Using Z-API configuration from database');
+      return {
+        instanceId: data.instance_id,
+        instanceToken: data.instance_token,
+        clientToken: data.client_token,
+        baseUrl: data.base_url
+      };
+    }
+  } catch (dbError) {
+    console.log('Database config not found, using environment secrets');
+  }
+
+  // Fallback to environment secrets
+  const instanceId = Deno.env.get('ZAPI_INSTANCE_ID');
+  const instanceToken = Deno.env.get('ZAPI_INSTANCE_TOKEN') || Deno.env.get('ZAPI_TOKEN');
+  const clientToken = Deno.env.get('ZAPI_CLIENT_TOKEN');
+  const baseUrl = Deno.env.get('ZAPI_BASE_URL') || 'https://api.z-api.io';
+
+  if (!instanceId || !instanceToken || !clientToken) {
+    console.error('Missing required Z-API configuration');
+    return null;
+  }
+
+  console.log('Using Z-API configuration from environment secrets');
+  return {
+    instanceId,
+    instanceToken,
+    clientToken,
+    baseUrl
+  };
+}
+
+// Get message template from database or use default
+async function getMessageTemplate(supabase: any, templateKey: string): Promise<string> {
+  try {
+    const { data, error } = await supabase
+      .from('message_templates')
+      .select('template_content, variables')
+      .eq('template_key', templateKey)
+      .eq('is_active', true)
+      .single();
+
+    if (!error && data) {
+      console.log(`Using template from database for: ${templateKey}`);
+      return data.template_content;
+    }
+  } catch (dbError) {
+    console.log(`Template not found in database for ${templateKey}, using default`);
+  }
+
+  // Default templates as fallback
+  const defaultTemplates: Record<string, string> = {
+    'ticket_created': `🎫 *NOVO TICKET CRIADO*
+
+📋 *Ticket:* {{codigo_ticket}}
+🏢 *Unidade:* {{unidade_id}}
+📂 *Categoria:* {{categoria}}
+⚡ *Prioridade:* {{prioridade}}
+
+💬 *Problema:*
+{{descricao_problema}}
+
+🕐 *Aberto em:* {{data_abertura}}`,
+
+    'resposta_ticket': `💬 *RESPOSTA DO TICKET*
+
+📋 *Ticket:* {{codigo_ticket}}
+🏢 *Unidade:* {{unidade_id}}
+
+📝 *Resposta:*
+{{texto_resposta}}
+
+🕐 *Respondido em:* {{timestamp}}`,
+
+    'resposta_ticket_franqueado': `💬 *RESPOSTA DO SEU TICKET*
+
+📋 *Ticket:* {{codigo_ticket}}
+📝 *Resposta:*
+{{texto_resposta}}
+
+🕐 *Respondido em:* {{timestamp}}
+
+Para mais detalhes, acesse o sistema.`,
+
+    'sla_half': `⚠️ *ALERTA SLA - 50%*
+
+📋 *Ticket:* {{codigo_ticket}}
+🏢 *Unidade:* {{unidade_id}}
+⏰ *Prazo limite:* {{data_limite_sla}}
+
+⚡ Atenção necessária!`,
+
+    'sla_breach': `🚨 *SLA VENCIDO*
+
+📋 *Ticket:* {{codigo_ticket}}
+🏢 *Unidade:* {{unidade_id}}
+⏰ *Venceu em:* {{data_limite_sla}}
+
+🔥 AÇÃO IMEDIATA NECESSÁRIA!`,
+
+    'crisis': `🆘 *CRISE ATIVADA*
+
+📋 *Ticket:* {{codigo_ticket}}
+🏢 *Unidade:* {{unidade_id}}
+💥 *Motivo:* {{motivo}}
+
+🚨 TODOS OS RECURSOS MOBILIZADOS!`
+  };
+
+  return defaultTemplates[templateKey] || 'Template não configurado';
+}
+
+// Replace template variables with actual values
+function processTemplate(template: string, variables: Record<string, any>): string {
+  let processed = template;
+  
+  for (const [key, value] of Object.entries(variables)) {
+    const placeholder = `{{${key}}}`;
+    processed = processed.replace(new RegExp(placeholder, 'g'), String(value || ''));
+  }
+  
+  return processed;
+}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -98,23 +244,11 @@ serve(async (req) => {
       return null
     }
 
-    // Get Z-API configuration from secrets
-    const zapiInstanceId = Deno.env.get('ZAPI_INSTANCE_ID')
-    const zapiInstanceToken = Deno.env.get('ZAPI_INSTANCE_TOKEN')
-    const zapiClientToken = Deno.env.get('ZAPI_CLIENT_TOKEN')
-
-    if (!zapiInstanceId || !zapiInstanceToken || !zapiClientToken) {
-      console.error('Missing Z-API configuration. Required: ZAPI_INSTANCE_ID, ZAPI_INSTANCE_TOKEN, ZAPI_CLIENT_TOKEN')
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Configuração Z-API incompleta. Verifique as variáveis de ambiente.' 
-        }),
-        { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-      )
+    // Get Z-API configuration from database or environment
+    const zapiConfig = await getZApiConfig(supabase);
+    if (!zapiConfig) {
+      throw new Error('Missing required Z-API configuration');
     }
-
-    console.log('Using Z-API configuration from environment secrets')
 
     // Função para formatar o título do ticket
     const formatTicketTitle = (ticket: any) => {
@@ -149,219 +283,190 @@ serve(async (req) => {
     }
 
     // Função para enviar mensagem via ZAPI
-    const sendZapiMessage = async (destination: string, message: string) => {
-      // Fixed Z-API endpoint with exact format: https://api.z-api.io/instances/INSTANCE_ID/token/TOKEN/send-text
-      const webhookUrl = `https://api.z-api.io/instances/${zapiInstanceId}/token/${zapiInstanceToken}/send-text`
+    const sendZapiMessage = async (destino: string, texto: string) => {
+      const endpoint = `${zapiConfig.baseUrl}/instances/${zapiConfig.instanceId}/token/${zapiConfig.instanceToken}/send-text`;
+      console.log(`Using endpoint: ${endpoint.replace(zapiConfig.instanceToken, '****')}`);
       
-      console.log(`Sending message to: ${destination}`)
-      console.log(`Using endpoint: https://api.z-api.io/instances/${zapiInstanceId}/token/****/send-text`)
+      const zapiPayload = {
+        phone: destino,
+        message: texto
+      };
       
-      // Always use {phone, message} payload - destination can be individual number or group ID
-      const payload = { phone: destination, message }
-      
-      console.log('Sending to ZAPI:', { 
-        phone: destination, 
-        message: message.substring(0, 100) + '...' 
-      })
+      console.log('Sending to ZAPI:', zapiPayload);
 
-      try {
-        const zapiResponse = await fetch(webhookUrl, {
-          method: 'POST',
-          headers: {
-            'Client-Token': zapiClientToken,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(payload)
-        })
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Client-Token': zapiConfig.clientToken,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(zapiPayload),
+      });
 
-        const result = await zapiResponse.json()
-        console.log('ZAPI response status:', zapiResponse.status)
-        console.log('ZAPI response:', result)
-        
-        // Check for HTTP errors
-        if (!zapiResponse.ok) {
-          const errorMsg = result?.error || result?.message || `HTTP ${zapiResponse.status} ${zapiResponse.statusText}`
-          console.error('ZAPI HTTP error:', errorMsg)
-          return { 
-            success: false, 
-            error: `ZAPI API error: ${errorMsg}`,
-            status: zapiResponse.status,
-            data: result
-          }
-        }
-        
-        // Check for API-level errors in 200 responses
-        if (result && result.error) {
-          console.error('ZAPI API error in 200 response:', result.error)
-          return { 
-            success: false, 
-            error: `ZAPI error: ${result.error}`,
-            status: zapiResponse.status,
-            data: result
-          }
-        }
-        
-        return { success: true, data: result, status: zapiResponse.status }
-      } catch (error) {
-        console.error('ZAPI network error:', error)
-        return { 
-          success: false, 
-          error: `Erro de conexão com ZAPI: ${error.message}` 
-        }
-      }
-    }
+      console.log(`ZAPI response status: ${response.status}`);
+      const responseData = await response.json();
+      console.log('ZAPI response:', responseData);
 
-    let result = { success: false, message: 'Tipo de notificação não implementado' }
+      return { success: response.ok, data: responseData };
+    };
+
+    let resultadoEnvio: any = { success: false };
+    let destinoFinal: string = '';
 
     switch (type) {
       case 'ticket_criado':
-        // Usar grupo branco como principal, com fallback para azul
-        const groupForNewTicket = ticket.unidades?.id_grupo_branco || ticket.unidades?.id_grupo_azul
-        console.log('Using group for new ticket:', { branco: ticket.unidades?.id_grupo_branco, azul: ticket.unidades?.id_grupo_azul, selected: groupForNewTicket })
+        console.log('Processing ticket_criado - sending to group');
         
-        if (groupForNewTicket) {
-          const message = `🎫 *NOVO TICKET*\n\n` +
-            `📋 *Ticket:* ${formatTicketTitle(ticket)}\n` +
-            `🏢 *Unidade:* ${ticket.unidades?.grupo || ticket.unidade_id}\n` +
-            `⏰ *Criado:* ${new Date(ticket.created_at).toLocaleString('pt-BR')}\n` +
-            `🔥 *Prioridade:* ${ticket.prioridade.toUpperCase()}\n\n` +
-            `📝 *Problema:*\n${ticket.descricao_problema}`
-
-          result = await sendZapiMessage(groupForNewTicket, message)
-        } else {
-          console.error('No group ID found for ticket creation notification')
-          result = { success: false, message: 'Grupo WhatsApp não configurado para esta unidade' }
+        if (!ticket.unidades?.id_grupo_branco) {
+          throw new Error(`Grupo branco não configurado para unidade ${ticket.unidade_id}`);
         }
-        break
+
+        const templateTicket = await getMessageTemplate(supabase, 'ticket_created');
+        const mensagemTicket = processTemplate(templateTicket, {
+          codigo_ticket: formatTicketTitle(ticket),
+          unidade_id: ticket.unidade_id,
+          categoria: ticket.categoria || 'Não informada',
+          prioridade: ticket.prioridade,
+          descricao_problema: ticket.descricao_problema,
+          data_abertura: new Date(ticket.data_abertura).toLocaleString('pt-BR')
+        });
+
+        resultadoEnvio = await sendZapiMessage(normalizePhoneNumber(ticket.unidades.id_grupo_branco), mensagemTicket);
+        destinoFinal = ticket.unidades.id_grupo_branco;
+        break;
 
       case 'resposta_ticket':
-        // Usar grupo branco como principal, com fallback para azul
-        const groupForResponse = ticket.unidades?.id_grupo_branco || ticket.unidades?.id_grupo_azul
-        console.log('Using group for response:', { branco: ticket.unidades?.id_grupo_branco, azul: ticket.unidades?.id_grupo_azul, selected: groupForResponse })
+        console.log('Processing resposta_ticket - sending to group');
         
-        if (groupForResponse && textoResposta) {
-          const message = `💬 *RESPOSTA DO TICKET*\n\n` +
-            `📋 *Ticket:* ${formatTicketTitle(ticket)}\n` +
-            `🏢 *Unidade:* ${ticket.unidades?.grupo || ticket.unidade_id}\n\n` +
-            `📝 *Resposta:*\n${textoResposta}`
+        if (!ticket.unidades?.id_grupo_branco) {
+          throw new Error(`Grupo branco não configurado para unidade ${ticket.unidade_id}`);
+        }
 
-          result = await sendZapiMessage(groupForResponse, message)
-        } else if (!groupForResponse) {
-          console.error('No group ID found for ticket response notification')
-          result = { success: false, message: 'Grupo WhatsApp não configurado para esta unidade' }
-        } else {
-          console.error('No response text provided')
-          result = { success: false, message: 'Texto da resposta não fornecido' }
-        }
-        break
+        const grupoBranco = ticket.unidades.id_grupo_branco;
+        console.log(`Using group for response: { branco: "${grupoBranco}", azul: "${ticket.unidades.id_grupo_azul || '-'}", selected: "${grupoBranco}" }`);
 
-      case 'resposta_ticket_privado':
-        // Enviar resposta privada para o franqueado (solicitante) via telefone individual
-        console.log('Processing resposta_ticket_privado - sending to franqueado (solicitante) phone')
-        
-        const franqueadoPrivado = await getFranqueadoSolicitante(ticket)
-        if (!franqueadoPrivado) {
-          console.error('No franqueado (solicitante) data found for ticket')
-          result = { success: false, message: 'Franqueado (solicitante) não encontrado para este ticket' }
-          break
-        }
-        
-        const normalizedPhone = normalizePhoneNumber(franqueadoPrivado.phone)
-        if (!normalizedPhone) {
-          console.error('Franqueado (solicitante) phone not found or invalid:', franqueadoPrivado.phone)
-          result = { success: false, message: 'Telefone do franqueado (solicitante) não configurado ou inválido' }
-          break
-        }
-        
-        if (!textoResposta) {
-          console.error('No text response provided')
-          result = { success: false, message: 'Texto da resposta não fornecido' }
-          break
-        }
-        
-        const privateMessage = `💬 *RESPOSTA DO SEU TICKET*\n\n` +
-          `📋 *Ticket:* ${formatTicketTitle(ticket)}\n` +
-          `🏢 *Unidade:* ${ticket.unidades?.grupo || ticket.unidade_id}\n\n` +
-          `📝 *Resposta da nossa equipe:*\n${textoResposta}\n\n` +
-          `_Se precisar de mais ajuda, responda a esta mensagem._`
+        const templateResposta = await getMessageTemplate(supabase, 'resposta_ticket');
+        const mensagemResposta = processTemplate(templateResposta, {
+          codigo_ticket: formatTicketTitle(ticket),
+          unidade_id: ticket.unidade_id,
+          texto_resposta: textoResposta,
+          timestamp: new Date().toLocaleString('pt-BR')
+        });
 
-        console.log('Sending private message to franqueado (solicitante) phone:', normalizedPhone)
-        console.log('Message preview:', privateMessage.substring(0, 100) + '...')
-        result = await sendZapiMessage(normalizedPhone, privateMessage)
-        break
+        resultadoEnvio = await sendZapiMessage(normalizePhoneNumber(grupoBranco), mensagemResposta);
+        destinoFinal = grupoBranco;
+        break;
 
       case 'resposta_ticket_franqueado':
-        // Enviar mensagem para o franqueado (solicitante) via telefone individual (botão "WhatsApp Franqueado")
-        console.log('Processing resposta_ticket_franqueado - sending to franqueado (solicitante) phone')
+        console.log('Processing resposta_ticket_franqueado - sending to franqueado (solicitante) phone');
         
-        const franqueadoSolicitante = await getFranqueadoSolicitante(ticket)
-        if (!franqueadoSolicitante) {
-          console.error('No franqueado (solicitante) data found for ticket')
-          result = { success: false, message: 'Franqueado (solicitante) não encontrado para este ticket' }
-          break
+        const franqueadoSolicitante = await getFranqueadoSolicitante(ticket);
+        if (!franqueadoSolicitante || !franqueadoSolicitante.phone) {
+          throw new Error('Telefone do franqueado (solicitante) não configurado');
         }
-        
-        const normalizedFranqueadoPhone = normalizePhoneNumber(franqueadoSolicitante.phone)
-        if (!normalizedFranqueadoPhone) {
-          console.error('Franqueado (solicitante) phone not found or invalid:', franqueadoSolicitante.phone)
-          result = { success: false, message: 'Telefone do franqueado (solicitante) não configurado ou inválido' }
-          break
-        }
-        
-        if (!textoResposta) {
-          console.error('No text response provided')
-          result = { success: false, message: 'Texto da resposta não fornecido' }
-          break
-        }
-        
-        const franqueadoMessage = `💬 *RESPOSTA DO SEU TICKET*\n\n` +
-          `📋 *Ticket:* ${formatTicketTitle(ticket)}\n` +
-          `🏢 *Unidade:* ${ticket.unidades?.grupo || ticket.unidade_id}\n\n` +
-          `📝 *Resposta da nossa equipe:*\n${textoResposta}\n\n` +
-          `_Se precisar de mais ajuda, responda a esta mensagem._`
 
-        console.log('Sending message to franqueado (solicitante) phone:', normalizedFranqueadoPhone)
-        console.log('Message preview:', franqueadoMessage.substring(0, 100) + '...')
-        result = await sendZapiMessage(normalizedFranqueadoPhone, franqueadoMessage)
-        break
+        console.log(`Sending message to franqueado (solicitante) phone: ${franqueadoSolicitante.phone}`);
+
+        const templateFranqueado = await getMessageTemplate(supabase, 'resposta_ticket_franqueado');
+        const mensagemFranqueado = processTemplate(templateFranqueado, {
+          codigo_ticket: formatTicketTitle(ticket),
+          texto_resposta: textoResposta,
+          timestamp: new Date().toLocaleString('pt-BR')
+        });
+        
+        console.log(`Message preview: ${mensagemFranqueado.substring(0, 100)}...`);
+        console.log(`Sending message to: ${franqueadoSolicitante.phone}`);
+
+        resultadoEnvio = await sendZapiMessage(franqueadoSolicitante.phone, mensagemFranqueado);
+        destinoFinal = franqueadoSolicitante.phone;
+        break;
+
+      case 'resposta_ticket_privado':
+        console.log('Processing resposta_ticket_privado - sending to franqueado (solicitante) phone');
+        
+        const franqueadoPrivado = await getFranqueadoSolicitante(ticket);
+        if (!franqueadoPrivado || !franqueadoPrivado.phone) {
+          throw new Error('Telefone do franqueado (solicitante) não configurado');
+        }
+
+        console.log(`Sending private message to franqueado (solicitante) phone: ${franqueadoPrivado.phone}`);
+
+        const templatePrivado = await getMessageTemplate(supabase, 'resposta_ticket_franqueado');
+        const mensagemPrivada = processTemplate(templatePrivado, {
+          codigo_ticket: formatTicketTitle(ticket),
+          texto_resposta: textoResposta,
+          timestamp: new Date().toLocaleString('pt-BR')
+        });
+        
+        console.log(`Message preview: ${mensagemPrivada.substring(0, 100)}...`);
+        console.log(`Sending message to: ${franqueadoPrivado.phone}`);
+
+        resultadoEnvio = await sendZapiMessage(franqueadoPrivado.phone, mensagemPrivada);
+        destinoFinal = franqueadoPrivado.phone;
+        break;
 
       case 'sla_half':
-        if (ticket.unidades?.id_grupo_vermelho) {
-          const message = `⚠️ *ALERTA SLA - 50%*\n\n` +
-            `📋 *Ticket:* ${formatTicketTitle(ticket)}\n` +
-            `🏢 *Unidade:* ${ticket.unidades?.grupo || ticket.unidade_id}\n` +
-            `⏰ *Limite SLA:* ${new Date(ticket.data_limite_sla).toLocaleString('pt-BR')}\n\n` +
-            `⚠️ *Este ticket atingiu 50% do prazo de SLA*`
-
-          result = await sendZapiMessage(ticket.unidades.id_grupo_vermelho, message)
+        console.log('Processing sla_half - sending to group');
+        
+        if (!ticket.unidades?.id_grupo_branco) {
+          throw new Error(`Grupo branco não configurado para unidade ${ticket.unidade_id}`);
         }
-        break
+
+        const templateSLAHalf = await getMessageTemplate(supabase, 'sla_half');
+        const mensagemSLAHalf = processTemplate(templateSLAHalf, {
+          codigo_ticket: formatTicketTitle(ticket),
+          unidade_id: ticket.unidade_id,
+          data_limite_sla: new Date(ticket.data_limite_sla).toLocaleString('pt-BR')
+        });
+
+        resultadoEnvio = await sendZapiMessage(normalizePhoneNumber(ticket.unidades.id_grupo_branco), mensagemSLAHalf);
+        destinoFinal = ticket.unidades.id_grupo_branco;
+        break;
 
       case 'sla_breach':
-        if (ticket.unidades?.id_grupo_vermelho) {
-          const message = `🚨 *SLA VENCIDO*\n\n` +
-            `📋 *Ticket:* ${formatTicketTitle(ticket)}\n` +
-            `🏢 *Unidade:* ${ticket.unidades?.grupo || ticket.unidade_id}\n` +
-            `⏰ *Venceu em:* ${new Date(ticket.data_limite_sla).toLocaleString('pt-BR')}\n\n` +
-            `🚨 *AÇÃO URGENTE NECESSÁRIA*`
-
-          result = await sendZapiMessage(ticket.unidades.id_grupo_vermelho, message)
+        console.log('Processing sla_breach - sending to group');
+        
+        if (!ticket.unidades?.id_grupo_branco) {
+          throw new Error(`Grupo branco não configurado para unidade ${ticket.unidade_id}`);
         }
-        break
+
+        const templateSLABreach = await getMessageTemplate(supabase, 'sla_breach');
+        const mensagemSLABreach = processTemplate(templateSLABreach, {
+          codigo_ticket: formatTicketTitle(ticket),
+          unidade_id: ticket.unidade_id,
+          data_limite_sla: new Date(ticket.data_limite_sla).toLocaleString('pt-BR')
+        });
+
+        resultadoEnvio = await sendZapiMessage(normalizePhoneNumber(ticket.unidades.id_grupo_branco), mensagemSLABreach);
+        destinoFinal = ticket.unidades.id_grupo_branco;
+        break;
 
       case 'crisis':
-        if (ticket.unidades?.id_grupo_vermelho) {
-          const message = `🔴 *TICKET DE CRISE*\n\n` +
-            `📋 *Ticket:* ${formatTicketTitle(ticket)}\n` +
-            `🏢 *Unidade:* ${ticket.unidades?.grupo || ticket.unidade_id}\n` +
-            `⏰ *Criado:* ${new Date(ticket.created_at).toLocaleString('pt-BR')}\n\n` +
-            `🔴 *PRIORIDADE MÁXIMA - ATENDER IMEDIATAMENTE*\n\n` +
-            `📝 *Problema:*\n${ticket.descricao_problema}`
-
-          result = await sendZapiMessage(ticket.unidades.id_grupo_vermelho, message)
+        console.log('Processing crisis - sending to group');
+        
+        if (!ticket.unidades?.id_grupo_branco) {
+          throw new Error(`Grupo branco não configurado para unidade ${ticket.unidade_id}`);
         }
-        break
+
+        const motivo = textoResposta || 'Não informado';
+        const templateCrise = await getMessageTemplate(supabase, 'crisis');
+        const mensagemCrise = processTemplate(templateCrise, {
+          codigo_ticket: formatTicketTitle(ticket),
+          unidade_id: ticket.unidade_id,
+          motivo: motivo
+        });
+
+        resultadoEnvio = await sendZapiMessage(normalizePhoneNumber(ticket.unidades.id_grupo_branco), mensagemCrise);
+        destinoFinal = ticket.unidades.id_grupo_branco;
+        break;
+
+      default:
+        throw new Error(`Tipo de notificação não implementado: ${type}`);
     }
+
+    // Log the result
+    console.log(`Notification sent to: ${destinoFinal.replace(/(\d{4})\d+(\d{4})/, '$1***$2')}`);
+    console.log('Send result:', { success: resultadoEnvio.success, status: resultadoEnvio.status });
 
     // Registrar log do envio
     await supabase
@@ -369,27 +474,38 @@ serve(async (req) => {
       .insert({
         ticket_id: ticketId,
         event_type: type,
-        message: 'WhatsApp notification sent',
-        response: result,
+        message: `WhatsApp notification sent to ${destinoFinal}`,
+        response: resultadoEnvio,
         canal: 'zapi'
-      })
+      });
 
     return new Response(
-      JSON.stringify(result),
+      JSON.stringify({
+        success: resultadoEnvio.success,
+        message: resultadoEnvio.success 
+          ? `Mensagem enviada com sucesso para ${destinoFinal.replace(/(\d{4})\d+(\d{4})/, '$1***$2')}` 
+          : resultadoEnvio.error || 'Erro ao enviar mensagem',
+        data: resultadoEnvio.data,
+        destination: destinoFinal.replace(/(\d{4})\d+(\d{4})/, '$1***$2')
+      }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: result.success ? 200 : 400
+        status: resultadoEnvio.success ? 200 : 400
       }
-    )
+    );
 
   } catch (error) {
-    console.error('Error in process-notifications:', error)
+    console.error('Error in process-notifications:', error);
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
+      JSON.stringify({ 
+        success: false, 
+        error: error.message,
+        message: `Erro no processamento: ${error.message}`
+      }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500 
       }
-    )
+    );
   }
-})
+});

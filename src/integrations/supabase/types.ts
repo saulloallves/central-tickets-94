@@ -920,6 +920,84 @@ export type Database = {
         }
         Relationships: []
       }
+      message_templates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          scope: string
+          template_content: string
+          template_key: string
+          updated_at: string
+          variables: Json | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          scope?: string
+          template_content: string
+          template_key: string
+          updated_at?: string
+          variables?: Json | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          scope?: string
+          template_content?: string
+          template_key?: string
+          updated_at?: string
+          variables?: Json | null
+        }
+        Relationships: []
+      }
+      messaging_providers: {
+        Row: {
+          base_url: string
+          client_token: string
+          created_at: string
+          created_by: string | null
+          id: string
+          instance_id: string
+          instance_token: string
+          is_active: boolean
+          provider_name: string
+          updated_at: string
+        }
+        Insert: {
+          base_url?: string
+          client_token: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          instance_id: string
+          instance_token: string
+          is_active?: boolean
+          provider_name?: string
+          updated_at?: string
+        }
+        Update: {
+          base_url?: string
+          client_token?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          instance_id?: string
+          instance_token?: string
+          is_active?: boolean
+          provider_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notification_settings: {
         Row: {
           created_at: string

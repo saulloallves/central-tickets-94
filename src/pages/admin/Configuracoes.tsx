@@ -7,6 +7,7 @@ import { BaseConhecimentoTab } from "@/components/configuracoes/BaseConhecimento
 import { SugestoesIATab } from "@/components/configuracoes/SugestoesIATab";
 import { RegrasUsoTab } from "@/components/configuracoes/RegrasUsoTab";
 import { RelatoriosTab } from "@/components/configuracoes/RelatoriosTab";
+import { NotificacoesTab } from "@/components/configuracoes/NotificacoesTab";
 
 export default function Configuracoes() {
   return (
@@ -27,7 +28,7 @@ export default function Configuracoes() {
         <Card className="shadow-elegant border-0 bg-gradient-card">
           <CardContent className="p-6">
             <Tabs defaultValue="ia" className="w-full">
-              <TabsList className="grid w-full grid-cols-5 mb-6">
+              <TabsList className="grid w-full grid-cols-6 mb-6">
                 <TabsTrigger value="ia" className="flex items-center gap-2">
                   <Brain className="h-4 w-4" />
                   IA
@@ -39,6 +40,10 @@ export default function Configuracoes() {
                 <TabsTrigger value="sugestoes" className="flex items-center gap-2">
                   <Database className="h-4 w-4" />
                   Sugestões da IA
+                </TabsTrigger>
+                <TabsTrigger value="notificacoes" className="flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  Notificações
                 </TabsTrigger>
                 <TabsTrigger value="regras" className="flex items-center gap-2">
                   <Shield className="h-4 w-4" />
@@ -60,6 +65,10 @@ export default function Configuracoes() {
 
               <TabsContent value="sugestoes" className="space-y-6">
                 <SugestoesIATab />
+              </TabsContent>
+
+              <TabsContent value="notificacoes" className="space-y-6">
+                <NotificacoesTab />
               </TabsContent>
 
               <TabsContent value="regras" className="space-y-6">
