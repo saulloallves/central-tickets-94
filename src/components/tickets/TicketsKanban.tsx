@@ -123,6 +123,28 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
     return equipe?.nome || 'Equipe desconhecida';
   };
 
+  const getPriorityLabel = (prioridade: string) => {
+    switch (prioridade) {
+      case 'crise': return 'CRISE';
+      case 'urgente': return 'Urgente';
+      case 'alta': return 'Alta';
+      case 'media': return 'Média';
+      case 'baixa': return 'Baixa';
+      default: return 'Posso esperar';
+    }
+  };
+
+  const getPriorityButtonVariant = (prioridade: string) => {
+    switch (prioridade) {
+      case 'crise': return 'critical';
+      case 'urgente': return 'warning';
+      case 'alta': return 'info';
+      case 'media': return 'secondary';
+      case 'baixa': return 'success';
+      default: return 'outline';
+    }
+  };
+
   const getCategoryIcon = (categoria: string) => {
     switch (categoria) {
       case 'juridico': return <Scale className="h-3 w-3" />;
@@ -211,12 +233,12 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
         {/* Status button and time */}
         <div className="flex items-center justify-between">
           <Button 
-            variant="outline" 
+            variant={getPriorityButtonVariant(ticket.prioridade) as any}
             size="sm" 
-            className="text-xs h-7 px-2 py-1 bg-info/10 border-info/20 text-info hover:bg-info/20"
+            className="text-xs h-7 px-2 py-1"
             onClick={(e) => e.stopPropagation()}
           >
-            Posso esperar
+            {getPriorityLabel(ticket.prioridade)}
           </Button>
           
           <div className={cn("text-xs font-mono font-semibold", getTimeColor(ticket.status_sla, ticket.prioridade))}>
