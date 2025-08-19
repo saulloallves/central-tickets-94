@@ -788,6 +788,63 @@ export type Database = {
           },
         ]
       }
+      logs_de_sistema: {
+        Row: {
+          acao_realizada: string
+          canal: Database["public"]["Enums"]["log_canal"] | null
+          created_at: string
+          dados_anteriores: Json | null
+          dados_novos: Json | null
+          entidade_afetada: string
+          entidade_id: string
+          ia_modelo: string | null
+          id: string
+          navegador_agente: string | null
+          origem_ip: string | null
+          prompt_entrada: string | null
+          resposta_gerada: string | null
+          timestamp: string
+          tipo_log: Database["public"]["Enums"]["log_tipo"]
+          usuario_responsavel: string | null
+        }
+        Insert: {
+          acao_realizada: string
+          canal?: Database["public"]["Enums"]["log_canal"] | null
+          created_at?: string
+          dados_anteriores?: Json | null
+          dados_novos?: Json | null
+          entidade_afetada: string
+          entidade_id: string
+          ia_modelo?: string | null
+          id?: string
+          navegador_agente?: string | null
+          origem_ip?: string | null
+          prompt_entrada?: string | null
+          resposta_gerada?: string | null
+          timestamp?: string
+          tipo_log: Database["public"]["Enums"]["log_tipo"]
+          usuario_responsavel?: string | null
+        }
+        Update: {
+          acao_realizada?: string
+          canal?: Database["public"]["Enums"]["log_canal"] | null
+          created_at?: string
+          dados_anteriores?: Json | null
+          dados_novos?: Json | null
+          entidade_afetada?: string
+          entidade_id?: string
+          ia_modelo?: string | null
+          id?: string
+          navegador_agente?: string | null
+          origem_ip?: string | null
+          prompt_entrada?: string | null
+          resposta_gerada?: string | null
+          timestamp?: string
+          tipo_log?: Database["public"]["Enums"]["log_tipo"]
+          usuario_responsavel?: string | null
+        }
+        Relationships: []
+      }
       notification_settings: {
         Row: {
           created_at: string
@@ -1505,6 +1562,14 @@ export type Database = {
         | "admin"
       colaborador_status: "ativo" | "inativo"
       knowledge_media_type: "texto" | "video" | "pdf" | "link"
+      log_canal: "web" | "whatsapp" | "typebot" | "painel_interno"
+      log_tipo:
+        | "acao_humana"
+        | "acao_ia"
+        | "sistema"
+        | "erro"
+        | "escalonamento"
+        | "seguranca"
       mensagem_direcao: "entrada" | "saida" | "interna"
       ticket_categoria:
         | "juridico"
@@ -1672,6 +1737,15 @@ export const Constants = {
       ],
       colaborador_status: ["ativo", "inativo"],
       knowledge_media_type: ["texto", "video", "pdf", "link"],
+      log_canal: ["web", "whatsapp", "typebot", "painel_interno"],
+      log_tipo: [
+        "acao_humana",
+        "acao_ia",
+        "sistema",
+        "erro",
+        "escalonamento",
+        "seguranca",
+      ],
       mensagem_direcao: ["entrada", "saida", "interna"],
       ticket_categoria: [
         "juridico",
