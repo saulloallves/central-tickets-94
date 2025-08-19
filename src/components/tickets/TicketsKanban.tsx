@@ -399,10 +399,12 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
     // Get the target status - check column first, then ticket
     let newStatus: string;
     
-    // Priority 1: Direct column drop
-    const validStatuses = Object.keys(COLUMN_STATUS);
-    if (validStatuses.includes(over.id as string)) {
-      newStatus = over.id as string;
+    // Priority 1: Direct column drop (improved detection)
+    const validStatuses = ['aberto', 'em_atendimento', 'escalonado', 'concluido'];
+    const overId = over.id as string;
+    
+    if (validStatuses.includes(overId)) {
+      newStatus = overId;
       console.log('✅ Dropped on column:', newStatus);
     }
     // Priority 2: Dropped on a ticket in a column
@@ -420,6 +422,8 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
         console.log('✅ Found ticket in column:', newStatus);
       } else {
         console.log('❌ Could not determine target status');
+        console.log('📋 Available statuses:', validStatuses);
+        console.log('📋 Drop target ID:', overId);
         return;
       }
     }
