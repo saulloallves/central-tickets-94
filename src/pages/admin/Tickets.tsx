@@ -207,6 +207,7 @@ const Tickets = () => {
           filters={filters}
           onTicketSelect={handleTicketSelect}
           selectedTicketId={selectedTicketId}
+          equipes={equipes}
         />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -11,6 +11,7 @@ import { useTicketMessages } from '@/hooks/useTickets';
 import { useAISuggestion } from '@/hooks/useAISuggestion';
 import { useAIChat } from '@/hooks/useAIChat';
 import { CrisisButton } from './CrisisButton';
+import { TicketActions } from './TicketActions';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNowInSaoPaulo, formatDateTimeBR } from '@/lib/date-utils';
@@ -23,6 +24,7 @@ interface TicketDetailProps {
 export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
   const [ticket, setTicket] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [equipes, setEquipes] = useState<Array<{ id: string; nome: string }>>([]);
   const [newMessage, setNewMessage] = useState('');
   const [editedSuggestion, setEditedSuggestion] = useState('');
   const [aiQuestion, setAiQuestion] = useState('');
@@ -88,7 +90,26 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
 
   useEffect(() => {
     fetchTicketDetails();
+    fetchEquipes();
   }, [ticketId]);
+
+  const fetchEquipes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('equipes')
+        .select('id, nome')
+        .eq('ativo', true);
+
+      if (error) {
+        console.error('Error fetching equipes:', error);
+        return;
+      }
+
+      setEquipes(data || []);
+    } catch (error) {
+      console.error('Error fetching equipes:', error);
+    }
+  };
 
   const handleSendMessage = async () => {
     if (!newMessage.trim()) return;
@@ -303,6 +324,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <TicketActions ticket={ticket} equipes={equipes} />
             <CrisisButton ticketId={ticket.id} currentPriority={ticket.prioridade} />
             <Button variant="ghost" size="sm" onClick={onClose}>
               <X className="h-4 w-4" />

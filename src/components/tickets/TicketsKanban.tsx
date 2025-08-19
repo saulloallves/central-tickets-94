@@ -21,6 +21,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTickets, type TicketFilters, type Ticket } from '@/hooks/useTickets';
 import { TicketDetail } from './TicketDetail';
+import { TicketActions } from './TicketActions';
 import { formatDistanceToNowInSaoPaulo } from '@/lib/date-utils';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -29,6 +30,7 @@ interface TicketsKanbanProps {
   filters: TicketFilters;
   onTicketSelect: (ticketId: string) => void;
   selectedTicketId: string | null;
+  equipes: Array<{ id: string; nome: string }>;
 }
 
 const COLUMN_STATUS = {
@@ -49,9 +51,10 @@ interface KanbanTicketCardProps {
   ticket: Ticket;
   isSelected: boolean;
   onSelect: (ticketId: string) => void;
+  equipes: Array<{ id: string; nome: string }>;
 }
 
-const KanbanTicketCard = ({ ticket, isSelected, onSelect }: KanbanTicketCardProps) => {
+const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicketCardProps) => {
   const {
     attributes,
     listeners,
@@ -127,11 +130,23 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect }: KanbanTicketCardProp
         </div>
 
         <h4 className="text-sm font-medium mb-2 line-clamp-2">
-          {ticket.descricao_problema}
+          {ticket.titulo || (ticket.descricao_problema?.length > 60 
+            ? ticket.descricao_problema.substring(0, 60) + '...'
+            : ticket.descricao_problema || 'Sem título')}
         </h4>
+        
+        {ticket.titulo && (
+          <div className="text-xs font-mono text-muted-foreground mb-2">
+            {ticket.codigo_ticket}
+          </div>
+        )}
 
-        <div className="text-xs text-muted-foreground">
+        <div className="text-xs text-muted-foreground mb-3">
           {formatDistanceToNowInSaoPaulo(ticket.created_at, { addSuffix: true })}
+        </div>
+
+        <div onClick={(e) => e.stopPropagation()}>
+          <TicketActions ticket={ticket} equipes={equipes} size="sm" />
         </div>
       </CardContent>
     </Card>
@@ -143,9 +158,10 @@ interface KanbanColumnProps {
   tickets: Ticket[];
   selectedTicketId: string | null;
   onTicketSelect: (ticketId: string) => void;
+  equipes: Array<{ id: string; nome: string }>;
 }
 
-const KanbanColumn = ({ status, tickets, selectedTicketId, onTicketSelect }: KanbanColumnProps) => {
+const KanbanColumn = ({ status, tickets, selectedTicketId, onTicketSelect, equipes }: KanbanColumnProps) => {
   const { setNodeRef, isOver } = useDroppable({
     id: status,
     data: {
@@ -178,6 +194,7 @@ const KanbanColumn = ({ status, tickets, selectedTicketId, onTicketSelect }: Kan
               ticket={ticket}
               isSelected={selectedTicketId === ticket.id}
               onSelect={onTicketSelect}
+              equipes={equipes}
             />
           ))}
           {tickets.length === 0 && (
@@ -191,7 +208,7 @@ const KanbanColumn = ({ status, tickets, selectedTicketId, onTicketSelect }: Kan
   );
 };
 
-export const TicketsKanban = ({ filters, onTicketSelect, selectedTicketId }: TicketsKanbanProps) => {
+export const TicketsKanban = ({ filters, onTicketSelect, selectedTicketId, equipes }: TicketsKanbanProps) => {
   const { tickets, loading, updateTicket } = useTickets(filters);
   const { toast } = useToast();
   const [activeTicket, setActiveTicket] = useState<Ticket | null>(null);
@@ -318,6 +335,7 @@ export const TicketsKanban = ({ filters, onTicketSelect, selectedTicketId }: Tic
             tickets={getTicketsByStatus(status as keyof typeof COLUMN_STATUS)}
             selectedTicketId={selectedTicketId}
             onTicketSelect={handleTicketClick}
+            equipes={equipes}
           />
         ))}
       </div>
@@ -330,7 +348,9 @@ export const TicketsKanban = ({ filters, onTicketSelect, selectedTicketId }: Tic
                 {activeTicket.codigo_ticket}
               </div>
               <div className="text-sm font-medium line-clamp-2 mb-2">
-                {activeTicket.descricao_problema}
+                {activeTicket.titulo || (activeTicket.descricao_problema?.length > 60 
+                  ? activeTicket.descricao_problema.substring(0, 60) + '...'
+                  : activeTicket.descricao_problema || 'Sem título')}
               </div>
               <Badge variant="outline" className="text-xs">
                 {COLUMN_STATUS[activeTicket.status]}
