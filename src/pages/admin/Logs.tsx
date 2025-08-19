@@ -22,7 +22,9 @@ const LogsPage = () => {
   }, []);
 
   const handleFilterChange = (key: keyof LogFilters, value: string) => {
-    const newFilters = { ...filters, [key]: value || undefined };
+    // Convert "all" back to undefined for the API call
+    const filterValue = value === "all" ? undefined : value;
+    const newFilters = { ...filters, [key]: filterValue };
     setFilters(newFilters);
     fetchLogs(newFilters);
   };
@@ -90,7 +92,7 @@ const LogsPage = () => {
                 <SelectValue placeholder="Todos os tipos" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos</SelectItem>
+                <SelectItem value="all">Todos</SelectItem>
                 <SelectItem value="acao_humana">Ação Humana</SelectItem>
                 <SelectItem value="acao_ia">Ação IA</SelectItem>
                 <SelectItem value="sistema">Sistema</SelectItem>
@@ -108,7 +110,7 @@ const LogsPage = () => {
                 <SelectValue placeholder="Todas as entidades" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todas</SelectItem>
+                <SelectItem value="all">Todas</SelectItem>
                 <SelectItem value="tickets">Tickets</SelectItem>
                 <SelectItem value="ticket_mensagens">Mensagens</SelectItem>
                 <SelectItem value="colaboradores">Colaboradores</SelectItem>
