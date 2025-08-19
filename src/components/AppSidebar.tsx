@@ -51,7 +51,7 @@ export function AppSidebar() {
   const items = isAdmin() ? adminItems : colaboradorItems;
   const isActive = (path: string) => currentPath === path;
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
-    isActive ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : "hover:bg-sidebar-accent/50";
+    isActive ? "bg-primary text-primary-foreground font-medium" : "hover:bg-sidebar-accent/50";
 
   const handleSignOut = async () => {
     await signOut();
