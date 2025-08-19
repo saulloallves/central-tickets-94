@@ -332,10 +332,47 @@ export const useTickets = (filters: TicketFilters) => {
   const updateTicket = async (ticketId: string, updates: Partial<Ticket>) => {
     try {
       // Filter out undefined, null, and empty string values
+      // Also ensure enum fields are not included if they're empty
       const cleanUpdates = Object.fromEntries(
-        Object.entries(updates).filter(([_, value]) => 
-          value !== undefined && value !== null && value !== ''
-        )
+        Object.entries(updates).filter(([key, value]) => {
+          // Filter out undefined, null, and empty string values
+          if (value === undefined || value === null || value === '') {
+            return false;
+          }
+          
+          // Special handling for enum fields - only include if they have valid values
+          if (key === 'prioridade') {
+            const validPrioridades = ['urgente', 'alta', 'hoje_18h', 'padrao_24h', 'crise'];
+            return validPrioridades.includes(value as string);
+          }
+          
+          if (key === 'status') {
+            const validStatus = ['aberto', 'em_atendimento', 'escalonado', 'concluido'];
+            return validStatus.includes(value as string);
+          }
+          
+          if (key === 'categoria') {
+            const validCategorias = ['juridico', 'sistema', 'midia', 'operacoes', 'rh', 'financeiro', 'outro'];
+            return validCategorias.includes(value as string);
+          }
+          
+          if (key === 'status_sla') {
+            const validStatusSla = ['dentro_prazo', 'alerta', 'vencido'];
+            return validStatusSla.includes(value as string);
+          }
+          
+          if (key === 'canal_origem') {
+            const validCanais = ['typebot', 'whatsapp_zapi', 'web'];
+            return validCanais.includes(value as string);
+          }
+          
+          if (key === 'canal_resposta') {
+            const validCanaisResposta = ['web', 'whatsapp', 'typebot', 'interno'];
+            return validCanaisResposta.includes(value as string);
+          }
+          
+          return true;
+        })
       );
 
       const { data, error } = await supabase
