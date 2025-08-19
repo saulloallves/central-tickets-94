@@ -26,7 +26,7 @@ serve(async (req) => {
       .from('tickets')
       .select(`
         *,
-        unidades (id, grupo, id_grupo_azul, id_grupo_branco, id_grupo_vermelho, telefone, phone),
+        unidades (id, grupo, id_grupo_azul, id_grupo_branco, id_grupo_vermelho, telefone),
         colaboradores (nome_completo)
       `)
       .eq('id', ticketId)
@@ -273,8 +273,8 @@ serve(async (req) => {
         // Enviar mensagem para o telefone da unidade (botão "WhatsApp Franqueado")
         console.log('Processing resposta_ticket_franqueado - sending to unit phone')
         
-        // Usar telefone ou phone da unidade
-        const unitPhone = ticket.unidades?.telefone || ticket.unidades?.phone
+        // Usar telefone da unidade
+        const unitPhone = ticket.unidades?.telefone
         const normalizedUnitPhone = normalizePhoneNumber(unitPhone)
         
         if (!normalizedUnitPhone) {
