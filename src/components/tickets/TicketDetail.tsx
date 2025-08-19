@@ -55,11 +55,12 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
       }
 
       // Fetch related data separately to avoid RLS issues
-      const [unidadeRes, colaboradorRes, franqueadoRes, profileRes] = await Promise.all([
+      const [unidadeRes, colaboradorRes, franqueadoRes, profileRes, equipeRes] = await Promise.all([
         supabase.from('unidades').select('grupo, id').eq('id', ticketData.unidade_id).single(),
         ticketData.colaborador_id ? supabase.from('colaboradores').select('nome_completo').eq('id', ticketData.colaborador_id).single() : Promise.resolve({ data: null }),
         ticketData.franqueado_id ? supabase.from('franqueados').select('name').eq('Id', Number(ticketData.franqueado_id)).single() : Promise.resolve({ data: null }),
-        ticketData.criado_por ? supabase.from('profiles').select('nome_completo').eq('id', ticketData.criado_por).single() : Promise.resolve({ data: null })
+        ticketData.criado_por ? supabase.from('profiles').select('nome_completo').eq('id', ticketData.criado_por).single() : Promise.resolve({ data: null }),
+        ticketData.equipe_responsavel_id ? supabase.from('equipes').select('nome').eq('id', ticketData.equipe_responsavel_id).single() : Promise.resolve({ data: null })
       ]);
 
       // Combine the data
@@ -68,7 +69,8 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
         unidades: unidadeRes.data,
         colaboradores: colaboradorRes.data,
         franqueados: franqueadoRes.data,
-        profiles: profileRes.data
+        profiles: profileRes.data,
+        equipes: equipeRes.data
       };
 
       setTicket(combinedData);
@@ -271,7 +273,12 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
               {ticket.prioridade === 'crise' && <Zap className="h-3 w-3 mr-1" />}
               {ticket.prioridade}
             </Badge>
-            {ticket.categoria && (
+            {ticket.equipes?.nome ? (
+              <div className="flex items-center gap-2">
+                <Tag className="h-4 w-4 text-muted-foreground" />
+                <span>{ticket.equipes.nome}</span>
+              </div>
+            ) : ticket.categoria && (
               <div className="flex items-center gap-2">
                 <Tag className="h-4 w-4 text-muted-foreground" />
                 <span className="capitalize">{ticket.categoria}</span>

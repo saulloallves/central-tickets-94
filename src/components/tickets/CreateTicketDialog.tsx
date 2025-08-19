@@ -26,7 +26,7 @@ interface Unidade {
 
 export const CreateTicketDialog = ({ open, onOpenChange }: CreateTicketDialogProps) => {
   const { createTicket } = useTickets({
-    search: '', status: '', categoria: '', prioridade: '', unidade_id: '', status_sla: ''
+    search: '', status: '', categoria: '', prioridade: '', unidade_id: '', status_sla: '', equipe_id: ''
   });
   const { user } = useAuth();
   const { isAdmin, isGerente } = useRole();
