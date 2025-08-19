@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Play, CheckCircle, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -20,6 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useTickets, type Ticket } from '@/hooks/useTickets';
+import { useUserEquipes } from '@/hooks/useUserEquipes';
 
 interface TicketActionsProps {
   ticket: Ticket;
@@ -38,21 +38,40 @@ export const TicketActions = ({ ticket, equipes, size = 'default' }: TicketActio
     equipe_id: 'all'
   });
   
+  const { userEquipes, getPrimaryEquipe } = useUserEquipes();
   const [selectedEquipe, setSelectedEquipe] = useState('');
   const [startDialogOpen, setStartDialogOpen] = useState(false);
   const [concludeDialogOpen, setConcludeDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleStartAttendance = async () => {
-    if (!selectedEquipe) return;
-    
     setLoading(true);
     try {
-      await startAttendance(ticket.id, selectedEquipe);
+      // Se o usuário tem múltiplas equipes e não selecionou uma, exigir seleção
+      if (userEquipes.length > 1 && !selectedEquipe && !getPrimaryEquipe()) {
+        return; // Dialog permanece aberto para seleção
+      }
+      
+      await startAttendance(ticket.id, selectedEquipe || undefined);
       setStartDialogOpen(false);
       setSelectedEquipe('');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleQuickStart = async () => {
+    // Início rápido: tentar iniciar sem dialog se possível
+    if (userEquipes.length <= 1 || getPrimaryEquipe()) {
+      setLoading(true);
+      try {
+        await startAttendance(ticket.id);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      // Múltiplas equipes sem primária: abrir dialog
+      setStartDialogOpen(true);
     }
   };
 
@@ -69,59 +88,77 @@ export const TicketActions = ({ ticket, equipes, size = 'default' }: TicketActio
   const buttonSize = size === 'sm' ? 'sm' : 'default';
   const iconSize = size === 'sm' ? 'h-3 w-3' : 'h-4 w-4';
 
+  const needsEquipeSelection = userEquipes.length > 1 && !getPrimaryEquipe();
+
   return (
     <div className="flex gap-2">
       {/* Botão Iniciar Atendimento - só aparece se não estiver em atendimento ou concluído */}
       {ticket.status === 'aberto' && (
-        <Dialog open={startDialogOpen} onOpenChange={setStartDialogOpen}>
-          <DialogTrigger asChild>
-            <Button variant="outline" size={buttonSize}>
+        <>
+          {/* Botão direto quando não precisa de seleção */}
+          {!needsEquipeSelection && (
+            <Button variant="outline" size={buttonSize} onClick={handleQuickStart} disabled={loading}>
               <Play className={`${iconSize} mr-2`} />
               {size === 'sm' ? 'Iniciar' : 'Iniciar Atendimento'}
             </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Iniciar Atendimento</DialogTitle>
-              <DialogDescription>
-                Selecione a equipe responsável para iniciar o atendimento deste ticket.
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium">Equipe Responsável</label>
-                <Select value={selectedEquipe} onValueChange={setSelectedEquipe}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione uma equipe" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {equipes.map((equipe) => (
-                      <SelectItem key={equipe.id} value={equipe.id}>
-                        <div className="flex items-center gap-2">
-                          <Users className="h-4 w-4" />
-                          {equipe.nome}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+          )}
 
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setStartDialogOpen(false)}>
-                Cancelar
-              </Button>
-              <Button 
-                onClick={handleStartAttendance}
-                disabled={!selectedEquipe || loading}
-              >
-                {loading ? 'Iniciando...' : 'Iniciar Atendimento'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          {/* Dialog para seleção de equipe quando necessário */}
+          {needsEquipeSelection && (
+            <Dialog open={startDialogOpen} onOpenChange={setStartDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size={buttonSize}>
+                  <Play className={`${iconSize} mr-2`} />
+                  {size === 'sm' ? 'Iniciar' : 'Iniciar Atendimento'}
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Selecionar Equipe</DialogTitle>
+                  <DialogDescription>
+                    Você pertence a múltiplas equipes. Selecione qual equipe será responsável por este atendimento.
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium">Suas Equipes</label>
+                    <Select value={selectedEquipe} onValueChange={setSelectedEquipe}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione uma equipe" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {userEquipes.map((userEquipe) => (
+                          <SelectItem key={userEquipe.equipes.id} value={userEquipe.equipes.id}>
+                            <div className="flex items-center gap-2">
+                              <Users className="h-4 w-4" />
+                              {userEquipe.equipes.nome}
+                              {userEquipe.is_primary && (
+                                <Badge variant="secondary" className="text-xs">Primária</Badge>
+                              )}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setStartDialogOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button 
+                    onClick={handleStartAttendance}
+                    disabled={!selectedEquipe || loading}
+                  >
+                    {loading ? 'Iniciando...' : 'Iniciar Atendimento'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
+        </>
       )}
 
       {/* Botão Concluir - só aparece se estiver em atendimento */}

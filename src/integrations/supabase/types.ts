@@ -174,6 +174,54 @@ export type Database = {
           },
         ]
       }
+      equipe_members: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          equipe_id: string
+          id: string
+          is_primary: boolean
+          role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          equipe_id: string
+          id?: string
+          is_primary?: boolean
+          role?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          equipe_id?: string
+          id?: string
+          is_primary?: boolean
+          role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipe_members_equipe_id_fkey"
+            columns: ["equipe_id"]
+            isOneToOne: false
+            referencedRelation: "equipes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipe_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       equipes: {
         Row: {
           ativo: boolean

@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useRole } from './useRole';
 import { useToast } from '@/hooks/use-toast';
+import { useUserEquipes } from './useUserEquipes';
 
 export interface Ticket {
   id: string;
@@ -76,6 +77,7 @@ export interface TicketStats {
 export const useTickets = (filters: TicketFilters) => {
   const { user } = useAuth();
   const { isAdmin, isGerente, loading: roleLoading } = useRole();
+  const { userEquipes, getPrimaryEquipe } = useUserEquipes();
   const { toast } = useToast();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [ticketStats, setTicketStats] = useState<TicketStats | null>(null);
@@ -365,7 +367,7 @@ export const useTickets = (filters: TicketFilters) => {
     }
   };
 
-  const startAttendance = async (ticketId: string, equipeId: string) => {
+  const startAttendance = async (ticketId: string, selectedEquipeId?: string) => {
     if (!user?.id) {
       toast({
         title: "Erro",
@@ -376,6 +378,39 @@ export const useTickets = (filters: TicketFilters) => {
     }
 
     try {
+      // Determinar qual equipe usar
+      let equipeId = selectedEquipeId;
+      
+      if (!equipeId) {
+        // Se não foi especificada, usar a equipe do usuário
+        if (userEquipes.length === 0) {
+          toast({
+            title: "Configuração Pendente",
+            description: "Você não está vinculado a nenhuma equipe. Entre em contato com o administrador.",
+            variant: "destructive",
+          });
+          return null;
+        }
+        
+        if (userEquipes.length === 1) {
+          // Uma equipe: usar diretamente
+          equipeId = userEquipes[0].equipes.id;
+        } else {
+          // Múltiplas equipes: usar a primária ou retornar erro para seleção manual
+          const primaryEquipe = getPrimaryEquipe();
+          if (primaryEquipe) {
+            equipeId = primaryEquipe.equipes.id;
+          } else {
+            toast({
+              title: "Seleção Necessária",
+              description: "Você pertence a múltiplas equipes. Selecione uma equipe para iniciar o atendimento.",
+              variant: "destructive",
+            });
+            return null;
+          }
+        }
+      }
+
       const updates = {
         status: 'em_atendimento' as const,
         equipe_responsavel_id: equipeId,
@@ -386,9 +421,10 @@ export const useTickets = (filters: TicketFilters) => {
       const result = await updateTicket(ticketId, updates);
       
       if (result) {
+        const equipeNome = userEquipes.find(eq => eq.equipes.id === equipeId)?.equipes.nome || 'Equipe';
         toast({
           title: "Sucesso",
-          description: "Atendimento iniciado com sucesso",
+          description: `Atendimento iniciado pela equipe ${equipeNome}`,
         });
       }
       
