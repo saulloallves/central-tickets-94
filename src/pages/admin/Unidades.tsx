@@ -54,10 +54,10 @@ const Unidades = () => {
 
   const getFaseColor = (fase: string) => {
     switch (fase?.toLowerCase()) {
-      case 'ativa': return 'bg-green-500';
-      case 'em_construcao': return 'bg-yellow-500';
-      case 'planejamento': return 'bg-blue-500';
-      default: return 'bg-gray-500';
+      case 'ativa': return 'bg-success';
+      case 'em_construcao': return 'bg-warning';
+      case 'planejamento': return 'bg-info';
+      default: return 'bg-muted-foreground';
     }
   };
 
