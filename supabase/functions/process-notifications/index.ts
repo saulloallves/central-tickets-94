@@ -191,8 +191,8 @@ serve(async (req) => {
         break
 
       case 'resposta_ticket_privado':
-        // Enviar resposta privada para o franqueado
-        console.log('Processing resposta_ticket_privado')
+        // Enviar resposta privada para o franqueado via telefone individual
+        console.log('Processing resposta_ticket_privado - sending to individual phone')
         
         if (!franqueado) {
           console.error('No franqueado data found for ticket')
@@ -212,15 +212,22 @@ serve(async (req) => {
           result = { success: false, message: 'Texto da resposta não fornecido' }
           break
         }
+
+        if (!settings?.webhook_saida) {
+          console.error('No webhook URL configured')
+          result = { success: false, message: 'URL do webhook ZAPI não configurada. Configure em Configurações > Notificações.' }
+          break
+        }
         
-        const message = `💬 *RESPOSTA DO SEU TICKET*\n\n` +
+        const privateMessage = `💬 *RESPOSTA DO SEU TICKET*\n\n` +
           `📋 *Ticket:* ${formatTicketTitle(ticket)}\n` +
           `🏢 *Unidade:* ${ticket.unidades?.grupo || ticket.unidade_id}\n\n` +
           `📝 *Resposta da nossa equipe:*\n${textoResposta}\n\n` +
           `_Se precisar de mais ajuda, responda a esta mensagem._`
 
-        console.log('Sending message to normalized phone:', normalizedPhone)
-        result = await sendZapiMessage(normalizedPhone, message)
+        console.log('Sending private message to normalized phone:', normalizedPhone)
+        console.log('Message preview:', privateMessage.substring(0, 100) + '...')
+        result = await sendZapiMessage(normalizedPhone, privateMessage)
         break
 
       case 'sla_half':
