@@ -178,16 +178,16 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
       {...attributes}
       {...listeners}
       className={cn(
-        "cursor-pointer transition-all hover:shadow-md mb-3 bg-white",
+        "cursor-pointer transition-all hover:shadow-md mb-3 bg-white min-h-[180px] flex flex-col",
         ticket.status === 'concluido' ? "border-success/30" : "",
         isSelected && "ring-2 ring-primary border-primary"
       )}
       onClick={() => onSelect(ticket.id)}
     >
-      <CardContent className="p-4 space-y-3">
+      <CardContent className="p-4 space-y-3 flex-1 flex flex-col">
         {/* Badge "Resolvido" para tickets concluídos */}
         {ticket.status === 'concluido' && (
-          <div className="flex justify-center mb-2">
+          <div className="flex justify-center">
             <Badge variant="default" className="bg-success text-success-foreground text-xs">
               <CheckCircle className="h-3 w-3 mr-1" />
               Resolvido
@@ -204,10 +204,12 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
           </div>
         </div>
 
-        {/* Title */}
-        <h3 className="font-medium text-gray-900 line-clamp-2 leading-tight">
-          {ticket.titulo || ticket.descricao_problema || 'Sem título'}
-        </h3>
+        {/* Title - com flex-1 para ocupar espaço disponível */}
+        <div className="flex-1">
+          <h3 className="font-medium text-gray-900 line-clamp-2 leading-tight">
+            {ticket.titulo || ticket.descricao_problema || 'Sem título'}
+          </h3>
+        </div>
 
         {/* Location and Unit */}
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -240,8 +242,8 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
           )}
         </div>
 
-        {/* Status button and time */}
-        <div className="flex items-center justify-between">
+        {/* Status button and time - fixado no bottom */}
+        <div className="flex items-center justify-between mt-auto">
           <Button 
             variant={getPriorityButtonVariant(ticket.prioridade) as any}
             size="sm" 
