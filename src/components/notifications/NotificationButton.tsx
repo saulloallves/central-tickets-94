@@ -113,15 +113,13 @@ export const NotificationButton = () => {
                           </span>
                         </div>
                         
-                        {alert.payload && (
-                          <div className="text-xs">
-                            {alert.payload.codigo_ticket && (
-                              <span className="text-primary">
-                                Ticket: {alert.payload.codigo_ticket}
-                              </span>
-                            )}
-                          </div>
-                        )}
+                        {/* Mostrar título do ticket em vez do ID */}
+                        <div className="text-xs">
+                          <span className="text-primary font-medium">
+                            {alert.tickets?.titulo || alert.tickets?.descricao_problema || 
+                             alert.payload?.codigo_ticket || 'Ticket sem título'}
+                          </span>
+                        </div>
                       </div>
                       
                       <div className="flex items-center gap-2 mt-2">

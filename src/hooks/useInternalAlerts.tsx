@@ -11,6 +11,12 @@ export interface InternalAlert {
   payload: any;
   status: string;
   created_at: string;
+  tickets?: {
+    id: string;
+    titulo: string;
+    descricao_problema: string;
+    codigo_ticket: string;
+  };
 }
 
 export const useInternalAlerts = () => {
@@ -21,7 +27,8 @@ export const useInternalAlerts = () => {
   const fetchAlerts = async (status = 'pending') => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // Buscar alertas
+      const { data: alertsData, error: alertsError } = await supabase
         .from('notifications_queue')
         .select('*')
         .eq('status', status)
@@ -29,10 +36,25 @@ export const useInternalAlerts = () => {
         .order('created_at', { ascending: false })
         .limit(50);
 
-      if (error) throw error;
+      if (alertsError) throw alertsError;
 
-      setAlerts(data || []);
-      console.log('Internal alerts fetched:', data?.length);
+      // Buscar tickets relacionados
+      const ticketIds = alertsData?.map(alert => alert.ticket_id) || [];
+      const { data: ticketsData, error: ticketsError } = await supabase
+        .from('tickets')
+        .select('id, titulo, descricao_problema, codigo_ticket')
+        .in('id', ticketIds);
+
+      if (ticketsError) throw ticketsError;
+
+      // Combinar dados
+      const alertsWithTickets = alertsData?.map(alert => ({
+        ...alert,
+        tickets: ticketsData?.find(ticket => ticket.id === alert.ticket_id)
+      })) || [];
+
+      setAlerts(alertsWithTickets as InternalAlert[]);
+      console.log('Internal alerts fetched:', alertsData?.length);
     } catch (error) {
       console.error('Error fetching alerts:', error);
       toast({
@@ -126,11 +148,20 @@ export const useInternalAlerts = () => {
           
           // Show toast notification for critical alerts
           if (newAlert.alert_level === 'critical') {
-            toast({
-              title: "🚨 Alerta Crítico",
-              description: `${newAlert.type} - Ticket ${newAlert.ticket_id}`,
-              variant: "destructive",
-            });
+            // Buscar dados do ticket para a notificação
+            supabase
+              .from('tickets')
+              .select('titulo, descricao_problema')
+              .eq('id', newAlert.ticket_id)
+              .single()
+              .then(({ data: ticket }) => {
+                const ticketTitle = ticket?.titulo || ticket?.descricao_problema || 'Ticket sem título';
+                toast({
+                  title: "🚨 Alerta Crítico",
+                  description: `${newAlert.type} - ${ticketTitle}`,
+                  variant: "destructive",
+                });
+              });
           }
           
           // Refresh alerts list
