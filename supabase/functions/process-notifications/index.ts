@@ -49,29 +49,53 @@ serve(async (req) => {
       franqueado_id: ticket.franqueado_id
     })
 
-    // Buscar dados do franqueado separadamente se necessário
-    let franqueado = null
-    if (ticket.franqueado_id && type === 'resposta_ticket_privado') {
-      console.log('Fetching franqueado data for ID:', ticket.franqueado_id)
-      const { data: franqueadoData, error: franqueadoError } = await supabase
-        .from('franqueados')
-        .select('name, phone')
-        .eq('id', ticket.franqueado_id)
-        .single()
+    // Função para buscar franqueado (solicitante) baseado no ticket
+    const getFranqueadoSolicitante = async (ticket: any) => {
+      let franqueado = null
       
-      if (franqueadoError) {
-        console.error('Franqueado error:', franqueadoError)
-        return new Response(
-          JSON.stringify({ success: false, message: 'Franqueado não encontrado' }),
-          { 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 400 
-          }
-        )
+      // Tentativa 1: Se tem franqueado_id, buscar por ID
+      if (ticket.franqueado_id) {
+        console.log('Fetching franqueado by ID:', ticket.franqueado_id)
+        const { data: franqueadoData, error: franqueadoError } = await supabase
+          .from('franqueados')
+          .select('name, phone, email')
+          .eq('id', ticket.franqueado_id)
+          .single()
+        
+        if (!franqueadoError && franqueadoData) {
+          franqueado = franqueadoData
+          console.log('Franqueado found by ID:', { name: franqueado?.name, hasPhone: !!franqueado?.phone })
+          return franqueado
+        }
       }
       
-      franqueado = franqueadoData
-      console.log('Franqueado found:', { name: franqueado?.name, hasPhone: !!franqueado?.phone })
+      // Tentativa 2: Se não tem franqueado_id ou não encontrou, buscar por email do criador
+      if (ticket.criado_por) {
+        console.log('Fetching profile email for user:', ticket.criado_por)
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('id', ticket.criado_por)
+          .single()
+        
+        if (!profileError && profileData?.email) {
+          console.log('Profile email found:', profileData.email)
+          const { data: franqueadoData, error: franqueadoError } = await supabase
+            .from('franqueados')
+            .select('name, phone, email')
+            .eq('email', profileData.email)
+            .single()
+          
+          if (!franqueadoError && franqueadoData) {
+            franqueado = franqueadoData
+            console.log('Franqueado found by email:', { name: franqueado?.name, hasPhone: !!franqueado?.phone })
+            return franqueado
+          }
+        }
+      }
+      
+      console.log('No franqueado found for ticket')
+      return null
     }
 
     // Get Z-API configuration from secrets
@@ -232,19 +256,20 @@ serve(async (req) => {
         break
 
       case 'resposta_ticket_privado':
-        // Enviar resposta privada para o franqueado via telefone individual
-        console.log('Processing resposta_ticket_privado - sending to individual phone')
+        // Enviar resposta privada para o franqueado (solicitante) via telefone individual
+        console.log('Processing resposta_ticket_privado - sending to franqueado (solicitante) phone')
         
-        if (!franqueado) {
-          console.error('No franqueado data found for ticket')
-          result = { success: false, message: 'Dados do franqueado não encontrados no ticket' }
+        const franqueadoPrivado = await getFranqueadoSolicitante(ticket)
+        if (!franqueadoPrivado) {
+          console.error('No franqueado (solicitante) data found for ticket')
+          result = { success: false, message: 'Franqueado (solicitante) não encontrado para este ticket' }
           break
         }
         
-        const normalizedPhone = normalizePhoneNumber(franqueado.phone)
+        const normalizedPhone = normalizePhoneNumber(franqueadoPrivado.phone)
         if (!normalizedPhone) {
-          console.error('Franqueado phone not found or invalid:', franqueado.phone)
-          result = { success: false, message: 'Franqueado não tem telefone válido cadastrado' }
+          console.error('Franqueado (solicitante) phone not found or invalid:', franqueadoPrivado.phone)
+          result = { success: false, message: 'Telefone do franqueado (solicitante) não configurado ou inválido' }
           break
         }
         
@@ -260,22 +285,26 @@ serve(async (req) => {
           `📝 *Resposta da nossa equipe:*\n${textoResposta}\n\n` +
           `_Se precisar de mais ajuda, responda a esta mensagem._`
 
-        console.log('Sending private message to normalized phone:', normalizedPhone)
+        console.log('Sending private message to franqueado (solicitante) phone:', normalizedPhone)
         console.log('Message preview:', privateMessage.substring(0, 100) + '...')
         result = await sendZapiMessage(normalizedPhone, privateMessage)
         break
 
       case 'resposta_ticket_franqueado':
-        // Enviar mensagem para o telefone da unidade (botão "WhatsApp Franqueado")
-        console.log('Processing resposta_ticket_franqueado - sending to unit phone')
+        // Enviar mensagem para o franqueado (solicitante) via telefone individual (botão "WhatsApp Franqueado")
+        console.log('Processing resposta_ticket_franqueado - sending to franqueado (solicitante) phone')
         
-        // Usar telefone da unidade
-        const unitPhone = ticket.unidades?.telefone
-        const normalizedUnitPhone = normalizePhoneNumber(unitPhone)
+        const franqueadoSolicitante = await getFranqueadoSolicitante(ticket)
+        if (!franqueadoSolicitante) {
+          console.error('No franqueado (solicitante) data found for ticket')
+          result = { success: false, message: 'Franqueado (solicitante) não encontrado para este ticket' }
+          break
+        }
         
-        if (!normalizedUnitPhone) {
-          console.error('Unit phone not found or invalid:', unitPhone)
-          result = { success: false, message: 'Unidade não tem telefone válido cadastrado' }
+        const normalizedFranqueadoPhone = normalizePhoneNumber(franqueadoSolicitante.phone)
+        if (!normalizedFranqueadoPhone) {
+          console.error('Franqueado (solicitante) phone not found or invalid:', franqueadoSolicitante.phone)
+          result = { success: false, message: 'Telefone do franqueado (solicitante) não configurado ou inválido' }
           break
         }
         
@@ -285,14 +314,15 @@ serve(async (req) => {
           break
         }
         
-        const franqueadoMessage = `💬 *RESPOSTA DO TICKET*\n\n` +
+        const franqueadoMessage = `💬 *RESPOSTA DO SEU TICKET*\n\n` +
           `📋 *Ticket:* ${formatTicketTitle(ticket)}\n` +
           `🏢 *Unidade:* ${ticket.unidades?.grupo || ticket.unidade_id}\n\n` +
-          `📝 *Resposta:*\n${textoResposta}`
+          `📝 *Resposta da nossa equipe:*\n${textoResposta}\n\n` +
+          `_Se precisar de mais ajuda, responda a esta mensagem._`
 
-        console.log('Sending message to unit phone:', normalizedUnitPhone)
+        console.log('Sending message to franqueado (solicitante) phone:', normalizedFranqueadoPhone)
         console.log('Message preview:', franqueadoMessage.substring(0, 100) + '...')
-        result = await sendZapiMessage(normalizedUnitPhone, franqueadoMessage)
+        result = await sendZapiMessage(normalizedFranqueadoPhone, franqueadoMessage)
         break
 
       case 'sla_half':
