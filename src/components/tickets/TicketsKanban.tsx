@@ -185,12 +185,14 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
       onClick={() => onSelect(ticket.id)}
     >
       <CardContent className="p-4 h-full flex flex-col justify-between">
-        {/* Header Section - Código do ticket e badges */}
-        <div className="flex items-start justify-between mb-3">
-          <div className="text-xs font-mono text-muted-foreground font-medium">
-            {ticket.codigo_ticket}
+        {/* Header Section - Título e badges */}
+        <div className="flex items-start justify-between mb-3 gap-2">
+          <div className="flex-1">
+            <h3 className="font-medium text-gray-900 line-clamp-2 leading-tight text-sm">
+              {ticket.titulo || ticket.descricao_problema || "Sem título"}
+            </h3>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 flex-shrink-0">
             {/* Badge Resolvido para tickets concluídos */}
             {ticket.status === 'concluido' && (
               <Badge variant="default" className="bg-success text-success-foreground text-xs">
@@ -206,11 +208,9 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
           </div>
         </div>
 
-        {/* Title Section - Altura fixa */}
-        <div className="h-12 mb-3">
-          <h3 className="font-medium text-gray-900 line-clamp-2 leading-tight text-sm">
-            {ticket.titulo || ticket.descricao_problema || 'Sem título'}
-          </h3>
+        {/* Código do ticket pequeno */}
+        <div className="text-xs font-mono text-muted-foreground font-medium mb-3">
+          {ticket.codigo_ticket}
         </div>
 
         {/* Info Section - Localização e categoria */}
