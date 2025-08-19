@@ -102,17 +102,17 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
   };
 
   const getTimeColor = (statusSla: string, prioridade: string) => {
-    if (prioridade === 'crise') return 'text-red-600';
-    if (statusSla === 'vencido') return 'text-red-600';
-    if (statusSla === 'alerta') return 'text-orange-500';
-    return 'text-green-600';
+    if (prioridade === 'crise') return 'text-critical';
+    if (statusSla === 'vencido') return 'text-critical';
+    if (statusSla === 'alerta') return 'text-warning';
+    return 'text-success';
   };
 
   const getPriorityIcon = (prioridade: string) => {
     switch (prioridade) {
-      case 'crise': return <AlertTriangle className="h-3 w-3 text-red-600" />;
-      case 'urgente': return <Clock className="h-3 w-3 text-orange-500" />;
-      case 'alta': return <ArrowUp className="h-3 w-3 text-yellow-500" />;
+      case 'crise': return <AlertTriangle className="h-3 w-3 text-critical" />;
+      case 'urgente': return <Clock className="h-3 w-3 text-warning" />;
+      case 'alta': return <ArrowUp className="h-3 w-3 text-info" />;
       default: return null;
     }
   };
@@ -167,7 +167,7 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
           <div className="flex items-center gap-1">
             {getPriorityIcon(ticket.prioridade)}
             {ticket.prioridade === 'crise' && (
-              <Badge variant="destructive" className="text-xs">CRISE</Badge>
+              <Badge variant="critical" className="text-xs">CRISE</Badge>
             )}
           </div>
         </div>
@@ -178,8 +178,8 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
         </h3>
 
         {/* Location and Unit */}
-        <div className="flex items-center gap-1 text-xs text-gray-600">
-          <MapPin className="h-3 w-3" />
+        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <MapPin className="h-3 w-3 text-info" />
           <span className="truncate">
             {(ticket as any).unidades?.grupo || ticket.unidade_id || 'Unidade não informada'}
           </span>
@@ -187,8 +187,8 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
 
         {/* Category and Team */}
         <div className="flex items-center justify-between text-xs">
-          <div className="flex items-center gap-1 text-gray-600">
-            {getCategoryIcon(ticket.categoria || 'outro')}
+          <div className="flex items-center gap-1 text-muted-foreground">
+            <span className="text-primary">{getCategoryIcon(ticket.categoria || 'outro')}</span>
             <span className="capitalize">
               {ticket.categoria === 'midia' ? 'Mídia' : 
                ticket.categoria === 'juridico' ? 'Jurídico' :
@@ -199,8 +199,8 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
           </div>
           
           {ticket.equipe_responsavel_id && (
-            <div className="flex items-center gap-1 text-gray-600">
-              <Users className="h-3 w-3" />
+            <div className="flex items-center gap-1 text-muted-foreground">
+              <Users className="h-3 w-3 text-success" />
               <span className="truncate max-w-20">
                 {getEquipeName(ticket.equipe_responsavel_id)}
               </span>
@@ -213,7 +213,7 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
           <Button 
             variant="outline" 
             size="sm" 
-            className="text-xs h-7 px-2 py-1 bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+            className="text-xs h-7 px-2 py-1 bg-info/10 border-info/20 text-info hover:bg-info/20"
             onClick={(e) => e.stopPropagation()}
           >
             Posso esperar
