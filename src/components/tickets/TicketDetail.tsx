@@ -304,12 +304,12 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
   return (
     <Card className="h-full flex flex-col">
       <CardHeader className="pb-6">
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
             <CardTitle className="text-xl line-clamp-2 mb-3">
               {getTicketDisplayTitle(ticket)}
             </CardTitle>
-            <div className="flex items-center gap-3 mt-2">
+            <div className="flex items-center gap-3 flex-wrap">
               <span className="font-mono text-sm text-muted-foreground px-2 py-1 bg-muted rounded">
                 {ticket.codigo_ticket}
               </span>
@@ -325,7 +325,14 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
               )}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {ticket.prioridade === 'crise' && (
+              <Badge variant="destructive" className="whitespace-nowrap animate-pulse">
+                <AlertTriangle className="h-3 w-3 mr-1" />
+                EM CRISE
+              </Badge>
+            )}
             <TicketActions ticket={ticket} equipes={equipes} />
             <CrisisButton ticketId={ticket.id} currentPriority={ticket.prioridade} />
             <Button variant="ghost" size="sm" onClick={onClose}>
