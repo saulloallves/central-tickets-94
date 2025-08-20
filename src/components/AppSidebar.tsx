@@ -45,7 +45,7 @@ export function AppSidebar() {
     // Ajustar margin do conteúdo principal
     const mainContent = document.querySelector('[data-main-content]') as HTMLElement;
     if (mainContent) {
-      mainContent.style.marginLeft = '224px'; // 56 (sidebar width) + 168 (expanded width)
+      mainContent.style.marginLeft = '192px'; // 16px (left) + 176px (expanded width)
     }
   };
 
@@ -54,7 +54,7 @@ export function AppSidebar() {
     // Restaurar margin original
     const mainContent = document.querySelector('[data-main-content]') as HTMLElement;
     if (mainContent) {
-      mainContent.style.marginLeft = '80px'; // 80px original
+      mainContent.style.marginLeft = '72px'; // 72px original (mais estreito)
     }
   };
 
@@ -63,7 +63,7 @@ export function AppSidebar() {
       <div 
         className={cn(
           "h-[calc(100vh-4rem)] fixed left-2 top-1/2 -translate-y-1/2 z-40 transition-all duration-500",
-          isExpanded ? "w-56" : "w-20"
+          isExpanded ? "w-48" : "w-16"
         )}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
@@ -88,14 +88,14 @@ export function AppSidebar() {
           {/* Content wrapper with padding for curves */}
           <div className="relative z-10 h-full flex flex-col py-6 px-2">
             {/* Main logo/brand icon */}
-            <div className="flex justify-center mb-8">
-              <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-neumorphic border border-white/30">
-                <ClipboardList className="h-6 w-6 text-white" strokeWidth={1.5} />
+            <div className="flex justify-center mb-6">
+              <div className="w-8 h-8 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-neumorphic border border-white/30">
+                <ClipboardList className="h-4 w-4 text-white" strokeWidth={1.5} />
               </div>
             </div>
 
             {/* Navigation Icons */}
-            <div className="flex-1 flex flex-col space-y-4">
+            <div className="flex-1 flex flex-col space-y-3">
               {navigationItems.map((item) => (
                 <PermissionGuard key={item.title} requiredPermission={item.permission}>
                   {isExpanded ? (
@@ -145,7 +145,7 @@ export function AppSidebar() {
                           to={item.url}
                           end
                           className={({ isActive }) => cn(
-                            "group relative flex items-center justify-center w-12 h-12 transition-all duration-300 mx-auto",
+                            "group relative flex items-center justify-center w-10 h-10 transition-all duration-300 mx-auto",
                             "hover:scale-105",
                             isActive 
                               ? "bg-white/25 backdrop-blur-md border border-white/20 shadow-neumorphic scale-105 rounded-xl" 
@@ -156,7 +156,7 @@ export function AppSidebar() {
                             <>
                               <item.icon 
                                 className={cn(
-                                  "h-5 w-5 text-white transition-all duration-300",
+                                  "h-4 w-4 text-white transition-all duration-300",
                                   isActive ? "drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]" : "opacity-80"
                                 )} 
                                 strokeWidth={1.5}
@@ -164,7 +164,7 @@ export function AppSidebar() {
                               
                               {/* Active indicator - green dot */}
                               {isActive && (
-                                <div className="absolute -right-1 -top-1 w-3 h-3 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse"></div>
+                                <div className="absolute -right-1 -top-1 w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse"></div>
                               )}
                             </>
                           )}
@@ -199,9 +199,9 @@ export function AppSidebar() {
                     <Button 
                       variant="ghost" 
                       onClick={handleSignOut}
-                      className="group relative w-12 h-12 p-0 text-white hover:bg-red-500/10 hover:scale-105 transition-all duration-300"
+                      className="group relative w-10 h-10 p-0 text-white hover:bg-red-500/10 hover:scale-105 transition-all duration-300"
                     >
-                      <LogOut className="h-5 w-5 opacity-80 group-hover:opacity-100 transition-all duration-300" strokeWidth={1.5} />
+                      <LogOut className="h-4 w-4 opacity-80 group-hover:opacity-100 transition-all duration-300" strokeWidth={1.5} />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent 
