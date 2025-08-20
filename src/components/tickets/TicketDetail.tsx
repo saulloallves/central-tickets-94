@@ -157,8 +157,9 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
   const handleAskAI = async () => {
     if (!aiQuestion.trim()) return;
     
-    await askAI(aiQuestion);
-    setAiQuestion('');
+    const question = aiQuestion.trim();
+    setAiQuestion(''); // Clear input immediately for better UX
+    await askAI(question);
   };
 
   const handleSendToFranqueado = async () => {
@@ -576,51 +577,85 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
           )}
 
           {activeTab === 'chat' && (
-            <div className="space-y-4">
-              <div className="max-h-60 overflow-y-auto space-y-3">
+            <div className="flex flex-col h-[400px]">
+              {/* Chat Messages Area */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-muted/20">
                 {chatHistory.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    Nenhuma conversa ainda. Faça uma pergunta à IA!
-                  </p>
+                  <div className="text-center py-8">
+                    <Bot className="h-12 w-12 mx-auto text-muted-foreground/50 mb-2" />
+                    <p className="text-sm text-muted-foreground">
+                      Nenhuma conversa ainda. Faça uma pergunta à IA!
+                    </p>
+                  </div>
                 ) : (
-                  chatHistory.map((chat) => (
-                    <div key={chat.id} className="space-y-2">
-                      <div className="p-3 bg-blue-50 rounded-lg">
-                        <p className="text-sm font-medium text-blue-900">Você:</p>
-                        <p className="text-sm text-blue-800">{chat.mensagem}</p>
-                      </div>
-                      <div className="p-3 bg-green-50 rounded-lg">
-                        <div className="flex items-center justify-between mb-1">
-                          <p className="text-sm font-medium text-green-900">IA:</p>
-                          {chat.log?.rag_hits !== undefined && chat.log?.kb_hits !== undefined && (
-                            <span className="text-xs text-primary">
-                              {(chat.log.rag_hits + chat.log.kb_hits)} docs
-                            </span>
-                          )}
+                  <>
+                    {chatHistory.map((chat) => (
+                      <div key={chat.id} className="space-y-3">
+                        {/* User Message */}
+                        <div className="flex justify-end">
+                          <div className="max-w-[80%] bg-primary text-primary-foreground rounded-2xl rounded-br-md px-4 py-3">
+                            <p className="text-sm leading-relaxed">{chat.mensagem}</p>
+                          </div>
                         </div>
-                        <p className="text-sm text-green-800">{chat.resposta}</p>
+                        
+                        {/* AI Response */}
+                        <div className="flex justify-start">
+                          <div className="max-w-[80%] bg-card border rounded-2xl rounded-bl-md px-4 py-3 shadow-sm">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Bot className="h-4 w-4 text-primary" />
+                              <span className="text-xs text-muted-foreground font-medium">Assistente IA</span>
+                              {chat.log?.rag_hits !== undefined && chat.log?.kb_hits !== undefined && (
+                                <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+                                  {(chat.log.rag_hits + chat.log.kb_hits)} docs
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm leading-relaxed text-foreground">{chat.resposta}</p>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))
+                    ))}
+                    
+                    {/* Loading Indicator */}
+                    {chatLoading && (
+                      <div className="flex justify-start">
+                        <div className="max-w-[80%] bg-card border rounded-2xl rounded-bl-md px-4 py-3 shadow-sm">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Bot className="h-4 w-4 text-primary" />
+                            <span className="text-xs text-muted-foreground font-medium">Assistente IA</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <div className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                            <div className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                            <div className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce"></div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
-              <div className="space-y-4">
-                <Input
-                  placeholder="Pergunte algo à IA sobre este ticket..."
-                  value={aiQuestion}
-                  onChange={(e) => setAiQuestion(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleAskAI()}
-                  className="h-12 text-base"
-                />
-                <Button 
-                  size="lg" 
-                  onClick={handleAskAI}
-                  disabled={!aiQuestion.trim() || chatLoading}
-                  className="w-full h-12"
-                >
-                  <Bot className="h-5 w-5 mr-2" />
-                  {chatLoading ? 'Pensando...' : 'Perguntar'}
-                </Button>
+              
+              {/* Input Area */}
+              <div className="border-t bg-background p-4">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Digite sua mensagem..."
+                    value={aiQuestion}
+                    onChange={(e) => setAiQuestion(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleAskAI())}
+                    className="flex-1"
+                    disabled={chatLoading}
+                  />
+                  <Button 
+                    onClick={handleAskAI}
+                    disabled={!aiQuestion.trim() || chatLoading}
+                    size="icon"
+                    className="shrink-0"
+                  >
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
           )}

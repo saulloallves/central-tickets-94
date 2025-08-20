@@ -42,7 +42,18 @@ export const useAIChat = (ticketId: string) => {
   const askAI = async (mensagem: string) => {
     if (!mensagem.trim()) return null;
 
+    // Add user message to chat immediately for better UX
+    const userMessage: AIChatMessage = {
+      id: `temp-${Date.now()}`,
+      mensagem: mensagem.trim(),
+      resposta: '',
+      created_at: new Date().toISOString(),
+      user_id: undefined
+    };
+    
+    setChatHistory(prev => [...prev, userMessage]);
     setLoading(true);
+    
     try {
       console.log('Asking AI:', mensagem);
       
@@ -51,13 +62,15 @@ export const useAIChat = (ticketId: string) => {
       const { data, error } = await supabase.functions.invoke('ticket-ai-chat', {
         body: { 
           ticketId, 
-          mensagem,
+          mensagem: mensagem.trim(),
           userId: userData.user?.id
         }
       });
 
       if (error) {
         console.error('AI chat error:', error);
+        // Remove the temporary message on error
+        setChatHistory(prev => prev.filter(msg => msg.id !== userMessage.id));
         toast({
           title: "Erro no Chat IA",
           description: "Não foi possível processar sua pergunta",
@@ -68,12 +81,15 @@ export const useAIChat = (ticketId: string) => {
 
       console.log('AI chat response:', data);
       
-      // Refresh chat history after new message
+      // Remove temporary message and refresh with real data
+      setChatHistory(prev => prev.filter(msg => msg.id !== userMessage.id));
       await fetchChatHistory();
       
       return data;
     } catch (error) {
       console.error('Error in AI chat:', error);
+      // Remove the temporary message on error
+      setChatHistory(prev => prev.filter(msg => msg.id !== userMessage.id));
       toast({
         title: "Erro",
         description: "Erro inesperado no chat com IA",
