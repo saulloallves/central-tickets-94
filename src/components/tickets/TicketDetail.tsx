@@ -358,9 +358,9 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
         {/* Ticket Info Cards */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 place-items-center w-full">
           {/* Unidade Card */}
-          <Card className="border-l-4 border-l-blue-500 w-full max-w-xs">
-            <CardContent className="p-3">
-              <div className="flex items-center gap-3">
+          <Card className="border-l-4 border-l-blue-500 w-full max-w-xs h-20">
+            <CardContent className="p-3 h-full flex items-center">
+              <div className="flex items-center gap-3 w-full">
                 <div className="p-1.5 bg-blue-50 rounded">
                   <Building className="h-3.5 w-3.5 text-blue-600" />
                 </div>
@@ -375,9 +375,9 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
           </Card>
 
           {/* Solicitante Card */}
-          <Card className="border-l-4 border-l-green-500 w-full max-w-xs">
-            <CardContent className="p-3">
-              <div className="flex items-center gap-3">
+          <Card className="border-l-4 border-l-green-500 w-full max-w-xs h-20">
+            <CardContent className="p-3 h-full flex items-center">
+              <div className="flex items-center gap-3 w-full">
                 <div className="p-1.5 bg-green-50 rounded">
                   <User className="h-3.5 w-3.5 text-green-600" />
                 </div>
@@ -394,28 +394,23 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
           </Card>
 
           {/* Sistema/Equipe Card */}
-          <Card className="border-l-4 border-l-purple-500 w-full max-w-xs">
-            <CardContent className="p-3">
-              <div className="flex items-center gap-3">
+          <Card className="border-l-4 border-l-purple-500 w-full max-w-xs h-20">
+            <CardContent className="p-3 h-full flex items-center">
+              <div className="flex items-center gap-3 w-full">
                 <div className="p-1.5 bg-purple-50 rounded">
                   <Tag className="h-3.5 w-3.5 text-purple-600" />
                 </div>
-                <div className="flex-1 min-w-0 space-y-2">
-                  {/* Prioridade */}
-                  <div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
                     <Badge variant={getPriorityVariant(ticket.prioridade)} className="text-xs px-2 py-0 h-4">
                       {ticket.prioridade === 'crise' && <Zap className="h-2 w-2 mr-1" />}
                       {ticket.prioridade?.toUpperCase()}
                     </Badge>
                   </div>
-
-                  {/* Equipe Responsável */}
-                  <div>
-                    <div className="text-sm font-semibold text-foreground truncate">
-                      {ticket.equipes?.nome || 'Aguardando'}
-                    </div>
-                    <div className="text-xs text-muted-foreground">Equipe</div>
+                  <div className="text-sm font-semibold text-foreground truncate mt-1">
+                    {ticket.equipes?.nome || 'Aguardando'}
                   </div>
+                  <div className="text-xs text-muted-foreground">Equipe</div>
                 </div>
               </div>
             </CardContent>
