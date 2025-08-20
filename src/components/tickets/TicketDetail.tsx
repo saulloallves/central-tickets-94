@@ -352,18 +352,18 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 flex flex-col space-y-8 p-6">
+      <CardContent className="flex-1 flex flex-col space-y-4 p-4">
         {/* Ticket Info Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 place-items-center w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 place-items-center w-full">
           {/* Unidade Card */}
-          <Card className="border-l-4 border-l-blue-500 w-full max-w-xs h-20">
-            <CardContent className="p-3 h-full flex items-center">
-              <div className="flex items-center gap-3 w-full">
-                <div className="p-1.5 bg-blue-50 rounded">
-                  <Building className="h-3.5 w-3.5 text-blue-600" />
+          <Card className="border-l-4 border-l-blue-500 w-full max-w-xs h-16">
+            <CardContent className="p-2 h-full flex items-center">
+              <div className="flex items-center gap-2 w-full">
+                <div className="p-1 bg-blue-50 rounded">
+                  <Building className="h-3 w-3 text-blue-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold text-foreground truncate">
+                  <div className="text-xs font-semibold text-foreground truncate">
                     {ticket.unidades?.grupo || ticket.unidade_id}
                   </div>
                   <div className="text-xs text-muted-foreground">Unidade</div>
@@ -373,14 +373,14 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
           </Card>
 
           {/* Solicitante Card */}
-          <Card className="border-l-4 border-l-green-500 w-full max-w-xs h-20">
-            <CardContent className="p-3 h-full flex items-center">
-              <div className="flex items-center gap-3 w-full">
-                <div className="p-1.5 bg-green-50 rounded">
-                  <User className="h-3.5 w-3.5 text-green-600" />
+          <Card className="border-l-4 border-l-green-500 w-full max-w-xs h-16">
+            <CardContent className="p-2 h-full flex items-center">
+              <div className="flex items-center gap-2 w-full">
+                <div className="p-1 bg-green-50 rounded">
+                  <User className="h-3 w-3 text-green-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold text-foreground truncate">
+                  <div className="text-xs font-semibold text-foreground truncate">
                     {ticket.colaboradores?.nome_completo || 
                      ticket.profiles?.nome_completo || 
                      (ticket.franqueado_id ? (ticket.franqueados?.name || "Franqueado") : "Sistema")}
@@ -392,20 +392,20 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
           </Card>
 
           {/* Sistema/Equipe Card */}
-          <Card className="border-l-4 border-l-purple-500 w-full max-w-xs h-20">
-            <CardContent className="p-3 h-full flex items-center">
-              <div className="flex items-center gap-3 w-full">
-                <div className="p-1.5 bg-purple-50 rounded">
-                  <Tag className="h-3.5 w-3.5 text-purple-600" />
+          <Card className="border-l-4 border-l-purple-500 w-full max-w-xs h-16">
+            <CardContent className="p-2 h-full flex items-center">
+              <div className="flex items-center gap-2 w-full">
+                <div className="p-1 bg-purple-50 rounded">
+                  <Tag className="h-3 w-3 text-purple-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <Badge variant={getPriorityVariant(ticket.prioridade)} className="text-xs px-2 py-0 h-4">
-                      {ticket.prioridade === 'crise' && <Zap className="h-2 w-2 mr-1" />}
+                  <div className="flex items-center gap-1">
+                    <Badge variant={getPriorityVariant(ticket.prioridade)} className="text-xs px-1 py-0 h-3">
+                      {ticket.prioridade === 'crise' && <Zap className="h-2 w-2 mr-0.5" />}
                       {ticket.prioridade?.toUpperCase()}
                     </Badge>
                   </div>
-                  <div className="text-sm font-semibold text-foreground truncate mt-1">
+                  <div className="text-xs font-semibold text-foreground truncate">
                     {ticket.equipes?.nome || 'Aguardando'}
                   </div>
                   <div className="text-xs text-muted-foreground">Equipe</div>
@@ -447,16 +447,16 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
         )}
 
         {/* Problem Description */}
-        <div className="space-y-4">
-          <h4 className="font-semibold text-lg">Descrição do Problema</h4>
-          <div className="p-6 bg-muted/50 rounded-lg border-l-4 border-primary">
+        <div className="space-y-2">
+          <h4 className="font-semibold text-base">Descrição do Problema</h4>
+          <div className="p-3 bg-muted/50 rounded-lg border-l-4 border-primary">
             <p className="text-sm leading-relaxed text-foreground">
               {ticket.descricao_problema}
             </p>
           </div>
         </div>
 
-        <Separator className="my-8" />
+        <Separator className="my-4" />
 
         {/* Tab Navigation */}
         <div className="space-y-6">
