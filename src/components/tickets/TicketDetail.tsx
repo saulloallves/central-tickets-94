@@ -356,7 +356,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
 
       <CardContent className="flex-1 flex flex-col space-y-8 p-6">
         {/* Ticket Info Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 place-items-center">
           {/* Unidade Card */}
           <Card className="border-l-4 border-l-blue-500">
             <CardContent className="p-3">
