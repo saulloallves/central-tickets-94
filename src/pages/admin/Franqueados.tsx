@@ -124,30 +124,40 @@ const Franqueados = () => {
               {filteredFranqueados.map((franqueado) => (
                 <Dialog key={franqueado.id}>
                   <DialogTrigger asChild>
-                    <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-0 bg-card hover:bg-accent/50">
-                      <CardHeader className="pb-4">
-                        <div className="flex items-start justify-between">
-                          <div className="space-y-1">
-                            <CardTitle className="text-base font-medium">{franqueado.name || 'Franqueado'}</CardTitle>
-                            <Badge variant="secondary" className="text-xs font-normal w-fit">
-                              {franqueado.franchisee_type || 'N/A'}
-                            </Badge>
+                    <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border bg-white dark:bg-card relative overflow-hidden">
+                      <CardHeader className="pb-2 pt-3 px-4">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="p-1 bg-purple-50 dark:bg-purple-900/20 rounded-md">
+                            <User className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                          </div>
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                            <Search className="w-3 h-3 text-muted-foreground" />
+                          </Button>
+                        </div>
+                        
+                        <div className="space-y-1">
+                          <div>
+                            <CardTitle className="text-sm font-semibold leading-tight">
+                              {franqueado.name || 'Franqueado'}
+                            </CardTitle>
+                            <p className="text-xs text-muted-foreground">
+                              {franqueado.city || 'N/A'}, {franqueado.state || 'N/A'}
+                            </p>
+                          </div>
+                          
+                          <div className="text-xs text-muted-foreground">
+                            <div>#{franqueado.id} • {getUnitDisplay(franqueado.unit_name, franqueado.unit_code)}</div>
                           </div>
                         </div>
                       </CardHeader>
-                      <CardContent className="space-y-3">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Building className="w-4 h-4 text-blue-500" />
-                          <span className="truncate">{getUnitDisplay(franqueado.unit_name, franqueado.unit_code)}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <MapPin className="w-4 h-4 text-green-500" />
-                          <span>{franqueado.city || 'N/A'}, {franqueado.state || 'N/A'}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Mail className="w-4 h-4 text-orange-500" />
-                          <span className="truncate">{franqueado.email || 'N/A'}</span>
-                        </div>
+                      
+                      <CardContent className="pt-0 pb-3 px-4">
+                        <Badge 
+                          variant="secondary" 
+                          className="border-0 font-medium uppercase text-xs tracking-wide py-1 px-2 bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
+                        >
+                          {franqueado.franchisee_type || 'N/A'}
+                        </Badge>
                       </CardContent>
                     </Card>
                   </DialogTrigger>
