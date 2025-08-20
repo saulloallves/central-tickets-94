@@ -89,7 +89,7 @@ export function AppSidebar() {
           <div className="relative z-10 h-full flex flex-col py-6 px-2">
             {/* Main logo/brand icon */}
             <div className="flex justify-center mb-6">
-              <div className="w-8 h-8 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-neumorphic border border-white/30">
+              <div className="w-8 h-8 flex items-center justify-center">
                 <ClipboardList className="h-4 w-4 text-white" strokeWidth={1.5} />
               </div>
             </div>
