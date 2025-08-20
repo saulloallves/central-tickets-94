@@ -189,26 +189,24 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
       ref={setNodeRef}
       style={style}
       {...attributes}
+      {...listeners}
       className={cn(
-        "cursor-pointer transition-all hover:shadow-lg mb-3 bg-white border-l-4 relative",
+        "cursor-grab active:cursor-grabbing transition-all hover:shadow-lg mb-3 bg-white border-l-4 relative select-none",
         ticket.status === 'concluido' ? "border-l-success" : 
         ticket.prioridade === 'crise' ? "border-l-critical" :
         ticket.prioridade === 'urgente' ? "border-l-critical" :
         ticket.prioridade === 'alta' ? "border-l-warning" : "border-l-muted",
         isSelected && "ring-2 ring-primary/20 shadow-lg",
-        isDragging && "opacity-50 rotate-2 scale-105"
+        isDragging && "opacity-60 scale-105 z-50 shadow-2xl rotate-1"
       )}
-      onClick={() => onSelect(ticket.id)}
+      onClick={(e) => {
+        // Só permite click se não estiver arrastando
+        if (!isDragging) {
+          onSelect(ticket.id);
+        }
+      }}
     >
-      {/* Drag Handle */}
-      <div 
-        {...listeners}
-        className="absolute top-2 right-2 p-1 opacity-30 hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing z-10"
-      >
-        <GripVertical className="h-3 w-3 text-muted-foreground" />
-      </div>
-
-      <CardContent className="p-3 space-y-2 pr-8">
+      <CardContent className="p-3 space-y-2 pointer-events-none">
         {/* Título */}
         <h3 className="font-medium text-sm text-foreground line-clamp-1 leading-tight">
           {(() => {
@@ -308,21 +306,27 @@ const KanbanColumn = ({ status, tickets, selectedTicketId, onTicketSelect, equip
     <div 
       ref={setNodeRef}
       className={cn(
-        "flex flex-col h-full min-h-[600px] rounded-lg border-2 transition-all duration-200",
+        "flex flex-col h-full min-h-[700px] rounded-lg border-2 transition-all duration-200 relative",
         COLUMN_COLORS[status],
-        isOver ? "border-primary bg-primary/10 border-solid scale-[1.02] shadow-lg" : "border-dashed"
+        isOver ? "border-primary bg-primary/10 border-solid scale-[1.01] shadow-lg" : "border-dashed"
       )}
     >
       {/* Header da coluna */}
-      <div className="flex items-center justify-between p-4 pb-2">
+      <div className="flex items-center justify-between p-4 pb-2 sticky top-0 bg-background/95 backdrop-blur-sm z-10">
         <h3 className="font-semibold text-sm">{COLUMN_STATUS[status]}</h3>
         <Badge variant="secondary" className="text-xs">
           {tickets.length}
         </Badge>
       </div>
       
-      {/* Área de conteúdo - também droppable */}
-      <div className="flex-1 p-4 pt-2">
+      {/* Área de conteúdo - expandida para melhor drop */}
+      <div className="flex-1 p-4 pt-2 min-h-[600px] relative">
+        {/* Overlay para drop quando não há tickets */}
+        {tickets.length === 0 && isOver && (
+          <div className="absolute inset-4 border-2 border-dashed border-primary/50 rounded-lg bg-primary/5 flex items-center justify-center">
+            <span className="text-primary font-medium">Solte o ticket aqui</span>
+          </div>
+        )}
         <SortableContext items={tickets.map(t => t.id)} strategy={verticalListSortingStrategy}>
           <div className="space-y-3">
             {tickets.map((ticket) => (
