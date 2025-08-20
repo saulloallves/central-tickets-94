@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, Eye } from 'lucide-react';
+import { Search, MapPin, Phone, Mail, Building, Calendar } from 'lucide-react';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 interface Unidade {
@@ -25,6 +25,7 @@ const Unidades = () => {
   const [unidades, setUnidades] = useState<Unidade[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedUnidade, setSelectedUnidade] = useState<Unidade | null>(null);
 
   useEffect(() => {
     fetchUnidades();
@@ -97,97 +98,148 @@ const Unidades = () => {
           </p>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Lista de Unidades</CardTitle>
-            <CardDescription>
-              {filteredUnidades.length} unidades encontradas
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center space-x-2 mb-4">
-              <Search className="w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por nome, cidade ou estado..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="max-w-sm"
-              />
-            </div>
+        <div className="space-y-4">
+          <div className="flex items-center space-x-2">
+            <Search className="w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nome, cidade ou estado..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="max-w-sm"
+            />
+          </div>
 
-            <div className="border rounded-md">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Unidade</TableHead>
-                    <TableHead>Localização</TableHead>
-                    <TableHead>Modelo</TableHead>
-                    <TableHead>Fase</TableHead>
-                    <TableHead>Contato</TableHead>
-                    <TableHead>Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredUnidades.map((unidade) => (
-                    <TableRow key={unidade.id}>
-                      <TableCell className="font-medium">
-                        <div>
-                          <div className="font-semibold">{unidade.grupo || 'N/A'}</div>
-                          <div className="text-sm text-muted-foreground">
-                            ID: {unidade.id}
+          <div className="text-sm text-muted-foreground mb-4">
+            {filteredUnidades.length} unidades encontradas
+          </div>
+
+          {filteredUnidades.length === 0 ? (
+            <Card>
+              <CardContent className="text-center py-8">
+                <div className="text-muted-foreground">
+                  {searchTerm ? 'Nenhuma unidade encontrada com os filtros aplicados.' : 'Nenhuma unidade cadastrada.'}
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredUnidades.map((unidade) => (
+                <Dialog key={unidade.id}>
+                  <DialogTrigger asChild>
+                    <Card className="cursor-pointer hover:shadow-md transition-shadow">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-lg">{unidade.grupo || 'Unidade'}</CardTitle>
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className={`w-2 h-2 rounded-full ${getFaseColor(unidade.fase_loja)}`}
+                            ></div>
+                            <Badge variant="outline" className="text-xs">
+                              {unidade.fase_loja || 'N/A'}
+                            </Badge>
                           </div>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div>{unidade.cidade || 'N/A'}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {unidade.estado || 'N/A'}
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <MapPin className="w-3 h-3" />
+                          <span>{unidade.cidade || 'N/A'}, {unidade.estado || 'N/A'}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Building className="w-3 h-3" />
+                          <span>{unidade.modelo_loja || 'N/A'}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Mail className="w-3 h-3" />
+                          <span>{unidade.email || 'N/A'}</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-3">
+                        <Building className="w-5 h-5" />
+                        {unidade.grupo || 'Unidade'}
+                      </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-4">
+                          <div>
+                            <h4 className="font-semibold mb-2">Informações Básicas</h4>
+                            <div className="space-y-2 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">ID:</span>
+                                <span>{unidade.id}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Grupo:</span>
+                                <span>{unidade.grupo || 'N/A'}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Modelo:</span>
+                                <Badge variant="outline">{unidade.modelo_loja || 'N/A'}</Badge>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-muted-foreground">Fase:</span>
+                                <div className="flex items-center gap-2">
+                                  <div className={`w-2 h-2 rounded-full ${getFaseColor(unidade.fase_loja)}`}></div>
+                                  <span>{unidade.fase_loja || 'N/A'}</span>
+                                </div>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">
-                          {unidade.modelo_loja || 'N/A'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div 
-                            className={`w-2 h-2 rounded-full ${getFaseColor(unidade.fase_loja)}`}
-                          ></div>
-                          {unidade.fase_loja || 'N/A'}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="text-sm">{unidade.email || 'N/A'}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {unidade.telefone ? unidade.telefone.toString() : 'N/A'}
+
+                        <div className="space-y-4">
+                          <div>
+                            <h4 className="font-semibold mb-2">Localização</h4>
+                            <div className="space-y-2 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Cidade:</span>
+                                <span>{unidade.cidade || 'N/A'}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Estado:</span>
+                                <span>{unidade.estado || 'N/A'}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Endereço:</span>
+                                <span className="text-right">{unidade.endereco || 'N/A'}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div>
+                            <h4 className="font-semibold mb-2">Contato</h4>
+                            <div className="space-y-2 text-sm">
+                              <div className="flex items-center gap-2">
+                                <Mail className="w-3 h-3 text-muted-foreground" />
+                                <span>{unidade.email || 'N/A'}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Phone className="w-3 h-3 text-muted-foreground" />
+                                <span>{unidade.telefone ? unidade.telefone.toString() : 'N/A'}</span>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="sm">
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {filteredUnidades.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8">
-                        <div className="text-muted-foreground">
-                          {searchTerm ? 'Nenhuma unidade encontrada com os filtros aplicados.' : 'Nenhuma unidade cadastrada.'}
+                      </div>
+
+                      <div className="pt-4 border-t">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Calendar className="w-3 h-3" />
+                          <span>Criado em: {new Date(unidade.created_at).toLocaleDateString('pt-BR')}</span>
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              ))}
             </div>
-          </CardContent>
-        </Card>
+          )}
+        </div>
       </div>
     </ProtectedRoute>
   );

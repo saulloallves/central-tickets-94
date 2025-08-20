@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, Eye } from 'lucide-react';
+import { Search, MapPin, Phone, Mail, User, Building, Calendar } from 'lucide-react';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 interface Franqueado {
@@ -96,94 +96,142 @@ const Franqueados = () => {
           </p>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Lista de Franqueados</CardTitle>
-            <CardDescription>
-              {filteredFranqueados.length} franqueados encontrados
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center space-x-2 mb-4">
-              <Search className="w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por nome, email ou cidade..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="max-w-sm"
-              />
-            </div>
+        <div className="space-y-4">
+          <div className="flex items-center space-x-2">
+            <Search className="w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nome, email ou cidade..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="max-w-sm"
+            />
+          </div>
 
-            <div className="border rounded-md">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Franqueado</TableHead>
-                    <TableHead>Unidade</TableHead>
-                    <TableHead>Localização</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Contato</TableHead>
-                    <TableHead>Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredFranqueados.map((franqueado) => (
-                    <TableRow key={franqueado.id}>
-                      <TableCell className="font-medium">
-                        <div>
-                          <div className="font-semibold">{franqueado.name || 'N/A'}</div>
-                          <div className="text-sm text-muted-foreground">
-                            ID: {franqueado.id}
+          <div className="text-sm text-muted-foreground mb-4">
+            {filteredFranqueados.length} franqueados encontrados
+          </div>
+
+          {filteredFranqueados.length === 0 ? (
+            <Card>
+              <CardContent className="text-center py-8">
+                <div className="text-muted-foreground">
+                  {searchTerm ? 'Nenhum franqueado encontrado com os filtros aplicados.' : 'Nenhum franqueado cadastrado.'}
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredFranqueados.map((franqueado) => (
+                <Dialog key={franqueado.id}>
+                  <DialogTrigger asChild>
+                    <Card className="cursor-pointer hover:shadow-md transition-shadow">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-lg">{franqueado.name || 'Franqueado'}</CardTitle>
+                          <Badge variant="secondary" className="text-xs">
+                            {franqueado.franchisee_type || 'N/A'}
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Building className="w-3 h-3" />
+                          <span>{getUnitDisplay(franqueado.unit_name, franqueado.unit_code)}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <MapPin className="w-3 h-3" />
+                          <span>{franqueado.city || 'N/A'}, {franqueado.state || 'N/A'}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Mail className="w-3 h-3" />
+                          <span>{franqueado.email || 'N/A'}</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-3">
+                        <User className="w-5 h-5" />
+                        {franqueado.name || 'Franqueado'}
+                      </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-4">
+                          <div>
+                            <h4 className="font-semibold mb-2">Informações Pessoais</h4>
+                            <div className="space-y-2 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">ID:</span>
+                                <span>{franqueado.id}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Nome:</span>
+                                <span>{franqueado.name || 'N/A'}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Tipo:</span>
+                                <Badge variant="secondary">{franqueado.franchisee_type || 'N/A'}</Badge>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div>
+                            <h4 className="font-semibold mb-2">Unidade</h4>
+                            <div className="space-y-2 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Nome:</span>
+                                <span>{getUnitDisplay(franqueado.unit_name, franqueado.unit_code)}</span>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">
-                          {getUnitDisplay(franqueado.unit_name, franqueado.unit_code)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div>{franqueado.city || 'N/A'}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {franqueado.state || 'N/A'}
+
+                        <div className="space-y-4">
+                          <div>
+                            <h4 className="font-semibold mb-2">Localização</h4>
+                            <div className="space-y-2 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Cidade:</span>
+                                <span>{franqueado.city || 'N/A'}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Estado:</span>
+                                <span>{franqueado.state || 'N/A'}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div>
+                            <h4 className="font-semibold mb-2">Contato</h4>
+                            <div className="space-y-2 text-sm">
+                              <div className="flex items-center gap-2">
+                                <Mail className="w-3 h-3 text-muted-foreground" />
+                                <span>{franqueado.email || 'N/A'}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Phone className="w-3 h-3 text-muted-foreground" />
+                                <span>{franqueado.phone || 'N/A'}</span>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">
-                          {franqueado.franchisee_type || 'N/A'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="text-sm">{franqueado.email || 'N/A'}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {franqueado.phone || 'N/A'}
-                          </div>
+                      </div>
+
+                      <div className="pt-4 border-t">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Calendar className="w-3 h-3" />
+                          <span>Criado em: {new Date(franqueado.CreatedAt).toLocaleDateString('pt-BR')}</span>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="sm">
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {filteredFranqueados.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8">
-                        <div className="text-muted-foreground">
-                          {searchTerm ? 'Nenhum franqueado encontrado com os filtros aplicados.' : 'Nenhum franqueado cadastrado.'}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              ))}
             </div>
-          </CardContent>
-        </Card>
+          )}
+        </div>
       </div>
     </ProtectedRoute>
   );
