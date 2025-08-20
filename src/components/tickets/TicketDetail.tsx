@@ -21,8 +21,6 @@ interface TicketDetailProps {
 }
 
 export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
-  console.log('TicketDetail component rendering'); // Debug log
-  
   const [ticket, setTicket] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [equipes, setEquipes] = useState<Array<{ id: string; nome: string }>>([]);

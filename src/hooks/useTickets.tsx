@@ -784,7 +784,22 @@ export const useTicketMessages = (ticketId: string) => {
         return;
       }
 
-      fetchMessages();
+      // Adicionar mensagem otimisticamente na interface
+      const { data: user } = await supabase.auth.getUser();
+      const newMessage: TicketMessage = {
+        id: data.id,
+        ticket_id: data.ticket_id,
+        usuario_id: data.usuario_id,
+        mensagem: data.mensagem,
+        direcao: data.direcao,
+        anexos: data.anexos ? (Array.isArray(data.anexos) ? data.anexos : []) : [],
+        canal: data.canal,
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        profiles: user.user ? { nome_completo: user.user.user_metadata?.nome_completo || 'Você' } : undefined
+      };
+      
+      setMessages(prev => [...prev, newMessage]);
       
       // Enviar notificação WhatsApp para o grupo
       try {
@@ -800,7 +815,7 @@ export const useTicketMessages = (ticketId: string) => {
         // Não mostrar erro ao usuário pois a mensagem foi enviada com sucesso
       }
       
-      return data;
+      return true;
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
