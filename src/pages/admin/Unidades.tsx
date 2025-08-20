@@ -138,49 +138,46 @@ const Unidades = () => {
                 <Dialog key={unidade.id}>
                   <DialogTrigger asChild>
                     <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border bg-white dark:bg-card relative overflow-hidden">
-                      <CardHeader className="pb-3 pt-4">
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="p-1.5 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                            <Building className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                      <CardHeader className="pb-2 pt-3 px-4">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="p-1 bg-blue-50 dark:bg-blue-900/20 rounded-md">
+                            <Building className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                           </div>
-                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
-                            <Search className="w-3.5 h-3.5 text-muted-foreground" />
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                            <Search className="w-3 h-3 text-muted-foreground" />
                           </Button>
                         </div>
                         
-                        <div className="space-y-2">
+                        <div className="space-y-1">
                           <div>
-                            <CardTitle className="text-base font-semibold leading-tight">
+                            <CardTitle className="text-sm font-semibold leading-tight">
                               {unidade.grupo || 'Unidade'}
                             </CardTitle>
-                            <p className="text-sm text-muted-foreground mt-0.5">
+                            <p className="text-xs text-muted-foreground">
                               {unidade.cidade || 'N/A'}, {unidade.estado || 'N/A'}
                             </p>
                           </div>
                           
-                          <div className="space-y-0.5 text-xs text-muted-foreground">
-                            <div>Código: #{unidade.id.substring(0, 8)}</div>
-                            <div>Modelo: {unidade.modelo_loja || 'N/A'}</div>
+                          <div className="text-xs text-muted-foreground">
+                            <div>#{unidade.id.substring(0, 6)} • {unidade.modelo_loja || 'N/A'}</div>
                           </div>
                         </div>
                       </CardHeader>
                       
-                      <CardContent className="pt-0 pb-4">
-                        <div className="flex items-center justify-between">
-                          <Badge 
-                            className={`${
-                              unidade.fase_loja?.toLowerCase() === 'ativa' || unidade.fase_loja?.toLowerCase() === 'operação' || unidade.fase_loja?.toLowerCase() === 'operacao'
-                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400'
-                                : unidade.fase_loja?.toLowerCase() === 'em_construcao' || unidade.fase_loja?.toLowerCase() === 'implantação' || unidade.fase_loja?.toLowerCase() === 'implantacao'
-                                ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400'
-                                : unidade.fase_loja?.toLowerCase() === 'planejamento'
-                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400'
-                                : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
-                            } border-0 font-medium uppercase text-xs tracking-wide`}
-                          >
-                            {unidade.fase_loja || 'N/A'}
-                          </Badge>
-                        </div>
+                      <CardContent className="pt-0 pb-3 px-4">
+                        <Badge 
+                          className={`${
+                            unidade.fase_loja?.toLowerCase() === 'ativa' || unidade.fase_loja?.toLowerCase() === 'operação' || unidade.fase_loja?.toLowerCase() === 'operacao'
+                              ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400'
+                              : unidade.fase_loja?.toLowerCase() === 'em_construcao' || unidade.fase_loja?.toLowerCase() === 'implantação' || unidade.fase_loja?.toLowerCase() === 'implantacao'
+                              ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400'
+                              : unidade.fase_loja?.toLowerCase() === 'planejamento'
+                              ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400'
+                              : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
+                          } border-0 font-medium uppercase text-xs tracking-wide py-1 px-2`}
+                        >
+                          {unidade.fase_loja || 'N/A'}
+                        </Badge>
                       </CardContent>
                     </Card>
                   </DialogTrigger>
