@@ -43,7 +43,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gradient-subtle">
         <AppSidebar />
-        <div className="flex-1 flex flex-col ml-20">
+        <div className="flex-1 flex flex-col ml-24">
           {/* Crisis Alert Banner - Always visible when there are active crises */}
           <CrisisAlertBanner />
           

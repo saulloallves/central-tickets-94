@@ -7,17 +7,14 @@ import {
   LogOut,
   Home,
   Users2,
-  BarChart3,
   Activity,
-  Shield,
-  ChevronRight
+  Shield
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useRole } from "@/hooks/useRole";
-import { usePermissions } from "@/hooks/usePermissions";
 import { PermissionGuard } from "@/components/PermissionGuard";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 const navigationItems = [
@@ -35,72 +32,109 @@ const navigationItems = [
 export function AppSidebar() {
   const { signOut } = useAuth();
   const location = useLocation();
-  const currentPath = location.pathname;
 
   const handleSignOut = async () => {
     await signOut();
   };
 
   return (
-    <div className="w-16 h-[calc(100vh-8rem)] fixed left-2 top-1/2 -translate-y-1/2 z-40 flex flex-col">
-      {/* Futuristic curved sidebar - centralized */}
-      <div className="flex-1 bg-gradient-primary rounded-[3rem] shadow-glow backdrop-blur-xl border border-white/20 relative overflow-hidden min-h-[600px]">
-        {/* Organic curve decorations */}
-        <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent rounded-[3rem]" />
-        <div className="absolute -right-6 top-1/4 w-12 h-24 bg-gradient-to-l from-white/5 to-transparent rounded-l-full" />
-        <div className="absolute -right-4 bottom-1/3 w-8 h-16 bg-gradient-to-l from-white/3 to-transparent rounded-l-full" />
-        <div className="absolute -right-8 top-1/2 w-16 h-32 bg-gradient-to-l from-white/5 to-transparent rounded-l-full" />
-        
-        {/* Header Icon */}
-        <div className="p-4 flex justify-center">
-          <div className="w-10 h-10 rounded-2xl bg-white/25 backdrop-blur-md flex items-center justify-center shadow-neumorphic">
-            <ClipboardList className="h-5 w-5 text-white" />
+    <TooltipProvider delayDuration={0}>
+      <div className="w-20 h-[calc(100vh-4rem)] fixed left-2 top-1/2 -translate-y-1/2 z-40">
+        {/* Modern curved sidebar container */}
+        <div className="
+          relative h-full bg-gradient-sidebar shadow-glow backdrop-blur-xl
+          rounded-t-[24px] rounded-b-[24px] overflow-hidden
+          border border-white/20
+          before:absolute before:top-0 before:right-0 before:w-8 before:h-1/3
+          before:bg-gradient-to-l before:from-white/10 before:to-transparent
+          before:rounded-bl-[40px]
+          after:absolute after:bottom-0 after:right-0 after:w-8 after:h-1/3
+          after:bg-gradient-to-l after:from-white/10 after:to-transparent
+          after:rounded-tl-[40px]
+        ">
+          {/* Curved right edge effect */}
+          <div className="absolute right-0 top-1/2 -translate-y-1/2 w-6 h-3/4">
+            <div className="w-full h-full bg-gradient-to-r from-transparent via-white/5 to-transparent rounded-l-full"></div>
+          </div>
+          
+          {/* Content wrapper with padding for curves */}
+          <div className="relative z-10 h-full flex flex-col py-6 px-2">
+            {/* Main logo/brand icon */}
+            <div className="flex justify-center mb-8">
+              <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-neumorphic border border-white/30">
+                <ClipboardList className="h-6 w-6 text-white" strokeWidth={1.5} />
+              </div>
+            </div>
+
+            {/* Navigation Icons */}
+            <div className="flex-1 flex flex-col items-center space-y-4">
+              {navigationItems.map((item) => (
+                <PermissionGuard key={item.title} requiredPermission={item.permission}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <NavLink
+                        to={item.url}
+                        end
+                        className={({ isActive }) => cn(
+                          "group relative flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-300",
+                          "hover:scale-105 hover:bg-white/15",
+                          isActive 
+                            ? "bg-white/25 backdrop-blur-md shadow-neumorphic scale-105" 
+                            : "hover:bg-white/10"
+                        )}
+                      >
+                        {({ isActive }) => (
+                          <>
+                            <item.icon 
+                              className={cn(
+                                "h-5 w-5 text-white transition-all duration-300",
+                                isActive ? "drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]" : "opacity-80"
+                              )} 
+                              strokeWidth={1.5}
+                            />
+                            
+                            {/* Active indicator - green dot */}
+                            {isActive && (
+                              <div className="absolute -right-1 -top-1 w-3 h-3 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse"></div>
+                            )}
+                          </>
+                        )}
+                      </NavLink>
+                    </TooltipTrigger>
+                    <TooltipContent 
+                      side="right" 
+                      className="bg-white/95 backdrop-blur-md text-gray-800 shadow-elegant rounded-xl border border-white/20 ml-2"
+                    >
+                      {item.title}
+                    </TooltipContent>
+                  </Tooltip>
+                </PermissionGuard>
+              ))}
+            </div>
+
+            {/* Logout button at bottom */}
+            <div className="flex justify-center mt-6">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    onClick={handleSignOut}
+                    className="group relative w-12 h-12 rounded-xl p-0 text-white hover:bg-red-500/20 hover:scale-105 transition-all duration-300"
+                  >
+                    <LogOut className="h-5 w-5 opacity-80 group-hover:opacity-100 transition-all duration-300" strokeWidth={1.5} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent 
+                  side="right" 
+                  className="bg-white/95 backdrop-blur-md text-gray-800 shadow-elegant rounded-xl border border-white/20 ml-2"
+                >
+                  Sair do Sistema
+                </TooltipContent>
+              </Tooltip>
+            </div>
           </div>
         </div>
-
-        {/* Navigation Icons */}
-        <div className="flex-1 px-2 py-6 space-y-3 flex flex-col justify-center">
-          {navigationItems.map((item) => (
-            <PermissionGuard key={item.title} requiredPermission={item.permission}>
-              <NavLink
-                to={item.url}
-                end
-                className={({ isActive }) => cn(
-                  "group relative flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-500 hover:scale-110",
-                  isActive 
-                    ? "bg-white/30 backdrop-blur-md shadow-neumorphic scale-105" 
-                    : "hover:bg-white/15 hover:backdrop-blur-md"
-                )}
-              >
-                <item.icon className="h-4 w-4 text-white transition-all duration-300 group-hover:scale-110" />
-                
-                {/* Tooltip melhorado */}
-                <div className="absolute left-14 top-1/2 -translate-y-1/2 bg-white/95 backdrop-blur-md text-gray-800 px-3 py-2 rounded-xl text-sm font-medium opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap shadow-elegant z-50 border border-white/20">
-                  {item.title}
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-2 h-2 bg-white/95 rotate-45 border-l border-b border-white/20" />
-                </div>
-              </NavLink>
-            </PermissionGuard>
-          ))}
-        </div>
-
-        {/* Footer Logout */}
-        <div className="p-4 flex justify-center">
-          <Button 
-            variant="ghost" 
-            onClick={handleSignOut}
-            className="group relative w-10 h-10 rounded-xl p-0 text-white hover:bg-red-500/20 hover:backdrop-blur-md transition-all duration-500 hover:scale-110"
-          >
-            <LogOut className="h-4 w-4 transition-all duration-300 group-hover:scale-110" />
-            
-            {/* Tooltip de logout */}
-            <div className="absolute left-14 top-1/2 -translate-y-1/2 bg-white/95 backdrop-blur-md text-gray-800 px-3 py-2 rounded-xl text-sm font-medium opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap shadow-elegant z-50 border border-white/20">
-              Sair do Sistema
-              <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-2 h-2 bg-white/95 rotate-45 border-l border-b border-white/20" />
-            </div>
-          </Button>
-        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 }
