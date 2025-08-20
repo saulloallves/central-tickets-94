@@ -28,7 +28,8 @@ import {
   DollarSign,
   HelpCircle,
   Edit2,
-  Trash2
+  Trash2,
+  GripVertical
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -188,18 +189,26 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
       ref={setNodeRef}
       style={style}
       {...attributes}
-      {...listeners}
       className={cn(
-        "cursor-pointer transition-all hover:shadow-lg mb-3 bg-white border-l-4",
+        "cursor-pointer transition-all hover:shadow-lg mb-3 bg-white border-l-4 relative",
         ticket.status === 'concluido' ? "border-l-success" : 
         ticket.prioridade === 'crise' ? "border-l-critical" :
         ticket.prioridade === 'urgente' ? "border-l-critical" :
         ticket.prioridade === 'alta' ? "border-l-warning" : "border-l-muted",
-        isSelected && "ring-2 ring-primary/20 shadow-lg"
+        isSelected && "ring-2 ring-primary/20 shadow-lg",
+        isDragging && "opacity-50 rotate-2 scale-105"
       )}
       onClick={() => onSelect(ticket.id)}
     >
-      <CardContent className="p-3 space-y-2">
+      {/* Drag Handle */}
+      <div 
+        {...listeners}
+        className="absolute top-2 right-2 p-1 opacity-30 hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing z-10"
+      >
+        <GripVertical className="h-3 w-3 text-muted-foreground" />
+      </div>
+
+      <CardContent className="p-3 space-y-2 pr-8">
         {/* Título */}
         <h3 className="font-medium text-sm text-foreground line-clamp-1 leading-tight">
           {(() => {
