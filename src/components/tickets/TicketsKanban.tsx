@@ -235,6 +235,16 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
           </div>
         </div>
 
+        {/* Equipe Responsável */}
+        {ticket.equipes?.nome && (
+          <div className="flex items-center gap-2 bg-primary/10 px-2 py-1.5 rounded border border-primary/20">
+            <Users className="h-3 w-3 text-primary flex-shrink-0" />
+            <span className="text-xs font-medium text-primary truncate">
+              {ticket.equipes.nome}
+            </span>
+          </div>
+        )}
+
         {/* Footer com status */}
         {ticket.status === 'concluido' ? (
           <div className="flex items-center justify-between pt-2 border-t border-muted/50">
