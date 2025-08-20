@@ -42,9 +42,9 @@ export function AppSidebar() {
   };
 
   return (
-    <div className="w-72 min-h-screen bg-sidebar border-r border-sidebar-border flex flex-col backdrop-blur-lg">
+    <div className="w-72 h-screen bg-sidebar border-r border-sidebar-border flex flex-col backdrop-blur-lg fixed left-0 top-0 z-40 overflow-hidden">
       {/* Header */}
-      <div className="p-6 border-b border-sidebar-border bg-gradient-subtle">
+      <div className="p-6 border-b border-sidebar-border bg-gradient-subtle flex-shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center shadow-glow">
             <ClipboardList className="h-4 w-4 text-white" />
@@ -84,7 +84,7 @@ export function AppSidebar() {
       </div>
 
       {/* Footer */}
-      <div className="p-4 border-t border-sidebar-border bg-gradient-subtle">
+      <div className="p-4 border-t border-sidebar-border bg-gradient-subtle flex-shrink-0">
         <Button 
           variant="ghost" 
           onClick={handleSignOut}
