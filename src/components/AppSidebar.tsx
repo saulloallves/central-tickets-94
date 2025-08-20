@@ -42,7 +42,7 @@ export function AppSidebar() {
   };
 
   return (
-    <div className="w-16 h-[calc(100vh-8rem)] fixed left-4 top-1/2 -translate-y-1/2 z-40 flex flex-col">
+    <div className="w-16 h-[calc(100vh-8rem)] fixed left-2 top-1/2 -translate-y-1/2 z-40 flex flex-col">
       {/* Futuristic curved sidebar - centralized */}
       <div className="flex-1 bg-gradient-primary rounded-[3rem] shadow-glow backdrop-blur-xl border border-white/20 relative overflow-hidden min-h-[600px]">
         {/* Organic curve decorations */}
