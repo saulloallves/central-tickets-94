@@ -316,7 +316,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
       <CardHeader className="pb-6">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <CardTitle className="text-xl line-clamp-2 mb-3">
+            <CardTitle className="text-2xl line-clamp-2 mb-3 font-bold">
               {getTicketDisplayTitle(ticket)}
             </CardTitle>
             <div className="flex items-center gap-3 flex-wrap">
@@ -400,12 +400,12 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1">
-                    <Badge variant={getPriorityVariant(ticket.prioridade)} className="text-xs px-1 py-0 h-3">
+                    <Badge variant={getPriorityVariant(ticket.prioridade)} className="text-xs px-1 py-0 h-2.5">
                       {ticket.prioridade === 'crise' && <Zap className="h-1.5 w-1.5 mr-0.5" />}
                       {ticket.prioridade?.toUpperCase()}
                     </Badge>
                   </div>
-                  <div className="text-sm font-bold text-foreground truncate">
+                  <div className="text-xs font-semibold text-foreground truncate">
                     {ticket.equipes?.nome || 'Aguardando'}
                   </div>
                   <div className="text-xs text-muted-foreground">Equipe</div>
