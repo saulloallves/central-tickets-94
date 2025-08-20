@@ -443,61 +443,136 @@ export type Database = {
         Row: {
           allowed_categories: string[] | null
           ativo: boolean
+          auto_classificacao: boolean | null
+          auto_equipe: boolean | null
+          auto_prioridade: boolean | null
           base_conhecimento_prompt: string
           blocked_tags: string[] | null
+          categorias_preferidas: string[] | null
           created_at: string
           estilo_resposta: string | null
+          filtrar_por_categoria: boolean | null
           forced_article_ids: string[] | null
           frequency_penalty: number
           id: string
+          limite_tokens_contexto: number | null
+          log_detalhado: boolean | null
           max_tokens: number
+          max_tokens_chat: number | null
+          max_tokens_classificacao: number | null
+          max_tokens_sugestao: number | null
           modelo: string
+          modelo_analise: string | null
           modelo_chat: string | null
+          modelo_classificacao: string | null
+          modelo_resumo: string | null
           modelo_sugestao: string | null
+          modo_debug: boolean | null
           presence_penalty: number
+          profundidade_historico: number | null
+          prompt_chat: string | null
+          prompt_classificacao: string | null
+          prompt_sugestao: string | null
           temperatura: number
+          temperatura_chat: number | null
+          temperatura_classificacao: number | null
+          temperatura_sugestao: number | null
+          timeout_requests: number | null
           top_p: number
           updated_at: string
+          usar_busca_semantica: boolean | null
+          usar_feedback_loop: boolean | null
+          usar_historico_conversa: boolean | null
           use_only_approved: boolean
         }
         Insert: {
           allowed_categories?: string[] | null
           ativo?: boolean
+          auto_classificacao?: boolean | null
+          auto_equipe?: boolean | null
+          auto_prioridade?: boolean | null
           base_conhecimento_prompt?: string
           blocked_tags?: string[] | null
+          categorias_preferidas?: string[] | null
           created_at?: string
           estilo_resposta?: string | null
+          filtrar_por_categoria?: boolean | null
           forced_article_ids?: string[] | null
           frequency_penalty?: number
           id?: string
+          limite_tokens_contexto?: number | null
+          log_detalhado?: boolean | null
           max_tokens?: number
+          max_tokens_chat?: number | null
+          max_tokens_classificacao?: number | null
+          max_tokens_sugestao?: number | null
           modelo?: string
+          modelo_analise?: string | null
           modelo_chat?: string | null
+          modelo_classificacao?: string | null
+          modelo_resumo?: string | null
           modelo_sugestao?: string | null
+          modo_debug?: boolean | null
           presence_penalty?: number
+          profundidade_historico?: number | null
+          prompt_chat?: string | null
+          prompt_classificacao?: string | null
+          prompt_sugestao?: string | null
           temperatura?: number
+          temperatura_chat?: number | null
+          temperatura_classificacao?: number | null
+          temperatura_sugestao?: number | null
+          timeout_requests?: number | null
           top_p?: number
           updated_at?: string
+          usar_busca_semantica?: boolean | null
+          usar_feedback_loop?: boolean | null
+          usar_historico_conversa?: boolean | null
           use_only_approved?: boolean
         }
         Update: {
           allowed_categories?: string[] | null
           ativo?: boolean
+          auto_classificacao?: boolean | null
+          auto_equipe?: boolean | null
+          auto_prioridade?: boolean | null
           base_conhecimento_prompt?: string
           blocked_tags?: string[] | null
+          categorias_preferidas?: string[] | null
           created_at?: string
           estilo_resposta?: string | null
+          filtrar_por_categoria?: boolean | null
           forced_article_ids?: string[] | null
           frequency_penalty?: number
           id?: string
+          limite_tokens_contexto?: number | null
+          log_detalhado?: boolean | null
           max_tokens?: number
+          max_tokens_chat?: number | null
+          max_tokens_classificacao?: number | null
+          max_tokens_sugestao?: number | null
           modelo?: string
+          modelo_analise?: string | null
           modelo_chat?: string | null
+          modelo_classificacao?: string | null
+          modelo_resumo?: string | null
           modelo_sugestao?: string | null
+          modo_debug?: boolean | null
           presence_penalty?: number
+          profundidade_historico?: number | null
+          prompt_chat?: string | null
+          prompt_classificacao?: string | null
+          prompt_sugestao?: string | null
           temperatura?: number
+          temperatura_chat?: number | null
+          temperatura_classificacao?: number | null
+          temperatura_sugestao?: number | null
+          timeout_requests?: number | null
           top_p?: number
           updated_at?: string
+          usar_busca_semantica?: boolean | null
+          usar_feedback_loop?: boolean | null
+          usar_historico_conversa?: boolean | null
           use_only_approved?: boolean
         }
         Relationships: []
