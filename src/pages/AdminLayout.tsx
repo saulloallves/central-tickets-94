@@ -42,7 +42,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gradient-subtle">
-        <div className="w-72 flex-shrink-0"></div> {/* Spacer para a sidebar fixa */}
+        <div className="w-28 flex-shrink-0"></div> {/* Spacer para a sidebar futurista */}
         <AppSidebar />
         <div className="flex-1 flex flex-col">
           {/* Crisis Alert Banner - Always visible when there are active crises */}

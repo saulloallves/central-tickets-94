@@ -42,57 +42,65 @@ export function AppSidebar() {
   };
 
   return (
-    <div className="w-72 h-screen bg-gradient-sidebar border-r border-sidebar-border flex flex-col backdrop-blur-lg fixed left-0 top-0 z-40 overflow-hidden rounded-r-3xl shadow-elegant">
-      {/* Header */}
-      <div className="p-8 border-b border-sidebar-border/30 flex-shrink-0">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-glow">
+    <div className="w-20 h-screen fixed left-4 top-4 bottom-4 z-40 flex flex-col">
+      {/* Futuristic curved sidebar */}
+      <div className="flex-1 bg-gradient-primary rounded-[2rem] shadow-glow backdrop-blur-xl border border-white/20 relative overflow-hidden">
+        {/* Organic curve decoration */}
+        <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent rounded-[2rem]" />
+        <div className="absolute -right-8 top-1/4 w-16 h-32 bg-gradient-to-l from-white/5 to-transparent rounded-l-full" />
+        <div className="absolute -right-6 bottom-1/4 w-12 h-24 bg-gradient-to-l from-white/3 to-transparent rounded-l-full" />
+        
+        {/* Header Icon */}
+        <div className="p-6 flex justify-center">
+          <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-neumorphic">
             <ClipboardList className="h-6 w-6 text-white" />
           </div>
-          <div>
-            <h2 className="text-xl font-bold text-sidebar-foreground">HelpDesk AI</h2>
-            <p className="text-sm text-sidebar-foreground/80">Gestão Inteligente</p>
-          </div>
         </div>
-      </div>
 
-      {/* Navigation */}
-      <div className="flex-1 p-6 overflow-y-auto">
-        <div className="space-y-3">
-          <p className="text-xs font-semibold text-sidebar-foreground/80 uppercase tracking-wider px-4 py-3 mb-6">
-            Menu Principal
-          </p>
+        {/* Navigation Icons */}
+        <div className="flex-1 px-4 py-8 space-y-4">
           {navigationItems.map((item) => (
             <PermissionGuard key={item.title} requiredPermission={item.permission}>
               <NavLink
                 to={item.url}
                 end
                 className={({ isActive }) => cn(
-                  "group flex items-center justify-between rounded-2xl px-4 py-4 text-sm font-medium transition-all duration-300 hover:bg-white/10 hover:backdrop-blur-md",
-                  isActive && "bg-white/20 text-white shadow-neumorphic backdrop-blur-md"
+                  "group relative flex items-center justify-center w-12 h-12 rounded-2xl transition-all duration-500 hover:scale-110",
+                  isActive 
+                    ? "bg-white/30 backdrop-blur-md shadow-neumorphic" 
+                    : "hover:bg-white/10 hover:backdrop-blur-md"
                 )}
+                title={item.title}
               >
-                <div className="flex items-center gap-4">
-                  <item.icon className="h-5 w-5 flex-shrink-0" />
-                  <span className="truncate font-medium">{item.title}</span>
+                <item.icon className="h-5 w-5 text-white transition-all duration-300 group-hover:scale-110" />
+                
+                {/* Tooltip */}
+                <div className="absolute left-16 top-1/2 -translate-y-1/2 bg-white/95 backdrop-blur-md text-foreground px-3 py-2 rounded-xl text-sm font-medium opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap shadow-elegant z-50">
+                  {item.title}
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-2 h-2 bg-white/95 rotate-45" />
                 </div>
-                <ChevronRight className="h-4 w-4 opacity-0 group-hover:opacity-80 transition-all duration-300" />
               </NavLink>
             </PermissionGuard>
           ))}
         </div>
-      </div>
 
-      {/* Footer */}
-      <div className="p-6 border-t border-sidebar-border/30 flex-shrink-0">
-        <Button 
-          variant="ghost" 
-          onClick={handleSignOut}
-          className="w-full justify-start gap-4 text-sidebar-foreground hover:bg-white/10 hover:backdrop-blur-md hover:text-red-300 transition-all duration-300 rounded-2xl py-4 font-medium"
-        >
-          <LogOut className="h-5 w-5" />
-          Sair do Sistema
-        </Button>
+        {/* Footer Logout */}
+        <div className="p-4 flex justify-center">
+          <Button 
+            variant="ghost" 
+            onClick={handleSignOut}
+            className="group relative w-12 h-12 rounded-2xl p-0 text-white hover:bg-white/10 hover:backdrop-blur-md transition-all duration-500 hover:scale-110"
+            title="Sair do Sistema"
+          >
+            <LogOut className="h-5 w-5 transition-all duration-300 group-hover:scale-110" />
+            
+            {/* Tooltip */}
+            <div className="absolute left-16 top-1/2 -translate-y-1/2 bg-white/95 backdrop-blur-md text-foreground px-3 py-2 rounded-xl text-sm font-medium opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap shadow-elegant z-50">
+              Sair do Sistema
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-2 h-2 bg-white/95 rotate-45" />
+            </div>
+          </Button>
+        </div>
       </div>
     </div>
   );
