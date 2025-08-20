@@ -22,14 +22,14 @@ interface Equipe {
 
 export const KnowledgeHubTab = () => {
   const [equipes, setEquipes] = useState<Equipe[]>([]);
-  const [selectedEquipe, setSelectedEquipe] = useState<string>('');
+  const [selectedEquipe, setSelectedEquipe] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSuggestion, setSelectedSuggestion] = useState<any>(null);
   const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
   const [approvalData, setApprovalData] = useState({
     titulo: '',
     conteudo: '',
-    equipe_id: '',
+    equipe_id: 'none',
     tags: [] as string[],
     tipo_midia: 'texto' as const
   });
@@ -43,7 +43,7 @@ export const KnowledgeHubTab = () => {
   }, []);
 
   useEffect(() => {
-    if (selectedEquipe) {
+    if (selectedEquipe && selectedEquipe !== 'all') {
       fetchSuggestions();
       fetchArticles({ equipe_id: selectedEquipe, ativo: true });
     } else {
@@ -84,7 +84,7 @@ export const KnowledgeHubTab = () => {
     setApprovalData({
       titulo: `Artigo baseado em sugestão #${suggestion.id.slice(0, 8)}`,
       conteudo: suggestion.texto_sugerido,
-      equipe_id: selectedEquipe || '',
+      equipe_id: selectedEquipe !== 'all' ? selectedEquipe : 'none',
       tags: [],
       tipo_midia: 'texto'
     });
@@ -98,7 +98,11 @@ export const KnowledgeHubTab = () => {
 
   const handlePublishArticle = async () => {
     try {
-      const articleData = await createArticle(approvalData);
+      const finalApprovalData = {
+        ...approvalData,
+        equipe_id: approvalData.equipe_id === 'none' ? undefined : approvalData.equipe_id
+      };
+      const articleData = await createArticle(finalApprovalData);
       
       if (articleData && selectedSuggestion) {
         // Link the suggestion to the created article
@@ -165,7 +169,7 @@ export const KnowledgeHubTab = () => {
               <SelectValue placeholder="Filtrar por equipe" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todas as equipes</SelectItem>
+              <SelectItem value="all">Todas as equipes</SelectItem>
               {equipes.map((equipe) => (
                 <SelectItem key={equipe.id} value={equipe.id}>
                   {equipe.nome}
@@ -362,6 +366,7 @@ export const KnowledgeHubTab = () => {
                   <SelectValue placeholder="Selecione uma equipe" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="none">Selecione uma equipe</SelectItem>
                   {equipes.map((equipe) => (
                     <SelectItem key={equipe.id} value={equipe.id}>
                       {equipe.nome}
