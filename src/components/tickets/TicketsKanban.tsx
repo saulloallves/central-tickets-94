@@ -120,9 +120,9 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
 
   const getPriorityIcon = (prioridade: string) => {
     switch (prioridade) {
-      case 'crise': return <AlertTriangle className="h-3 w-3 text-critical" />;
-      case 'urgente': return <Clock className="h-3 w-3 text-critical" />;
-      case 'alta': return <ArrowUp className="h-3 w-3 text-warning" />;
+      case 'crise': return <AlertTriangle className="h-2 w-2 text-critical" />;
+      case 'urgente': return <Clock className="h-2 w-2 text-critical" />;
+      case 'alta': return <ArrowUp className="h-2 w-2 text-warning" />;
       default: return null;
     }
   };
@@ -157,13 +157,13 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
 
   const getCategoryIcon = (categoria: string) => {
     switch (categoria) {
-      case 'juridico': return <Scale className="h-3 w-3" />;
-      case 'sistema': return <Monitor className="h-3 w-3" />;
-      case 'midia': return <Image className="h-3 w-3" />;
-      case 'operacoes': return <Settings className="h-3 w-3" />;
-      case 'rh': return <Users className="h-3 w-3" />;
-      case 'financeiro': return <DollarSign className="h-3 w-3" />;
-      default: return <HelpCircle className="h-3 w-3" />;
+      case 'juridico': return <Scale className="h-2 w-2" />;
+      case 'sistema': return <Monitor className="h-2 w-2" />;
+      case 'midia': return <Image className="h-2 w-2" />;
+      case 'operacoes': return <Settings className="h-2 w-2" />;
+      case 'rh': return <Users className="h-2 w-2" />;
+      case 'financeiro': return <DollarSign className="h-2 w-2" />;
+      default: return <HelpCircle className="h-2 w-2" />;
     }
   };
 
@@ -209,7 +209,7 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           {/* Localização */}
           <div className="flex items-center gap-1 min-w-0 flex-1">
-            <MapPin className="h-3 w-3 flex-shrink-0" />
+            <MapPin className="h-2 w-2 flex-shrink-0" />
             <span className="truncate text-xs">
               {(ticket as any).unidades?.grupo || ticket.unidade_id || 'Sem unidade'}
             </span>
@@ -224,19 +224,11 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
         {/* Footer com status */}
         {ticket.status === 'concluido' ? (
           <div className="flex items-center justify-between pt-2 border-t border-muted/50">
-            <div className="flex items-center gap-2">
-              <Badge 
-                variant={getPriorityButtonVariant(ticket.prioridade) as any}
-                className="text-xs"
-              >
-                {getPriorityLabel(ticket.prioridade)}
-              </Badge>
-              <Badge variant="success" className="text-xs">
-                Resolvido
-              </Badge>
-            </div>
+            <Badge variant="success" className="text-xs">
+              Resolvido
+            </Badge>
             <div className="flex items-center gap-1 text-xs text-success">
-              <CheckCircle className="h-3 w-3" />
+              <CheckCircle className="h-2 w-2" />
               <span>{formatDistanceToNowInSaoPaulo(new Date(ticket.updated_at || ticket.created_at))}</span>
             </div>
           </div>
