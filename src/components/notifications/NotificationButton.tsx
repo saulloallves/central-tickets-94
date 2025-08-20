@@ -129,10 +129,24 @@ export const NotificationButton = () => {
                           className="h-6 text-xs"
                           onClick={() => {
                             setOpen(false);
-                            // Dispatch event to open ticket modal
-                            window.dispatchEvent(new CustomEvent('openTicketModal', { 
-                              detail: { ticketId: alert.ticket_id }
-                            }));
+                            
+                            // Check if we're on the tickets page
+                            const currentPath = window.location.pathname;
+                            
+                            if (currentPath === '/admin/tickets') {
+                              // Dispatch event to open ticket modal on tickets page
+                              window.dispatchEvent(new CustomEvent('openTicketModal', { 
+                                detail: { ticketId: alert.ticket_id }
+                              }));
+                            } else if (currentPath === '/admin') {
+                              // Dispatch event to open ticket modal on dashboard
+                              window.dispatchEvent(new CustomEvent('openTicketModal', { 
+                                detail: { ticketId: alert.ticket_id }
+                              }));
+                            } else {
+                              // Navigate to tickets page with ticket parameter
+                              window.location.href = `/admin/tickets?ticket=${alert.ticket_id}`;
+                            }
                           }}
                         >
                           Ver Ticket
