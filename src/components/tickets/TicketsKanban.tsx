@@ -205,7 +205,7 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
         }
       }}
     >
-      <CardContent className="p-3 space-y-2 pointer-events-none">
+      <CardContent className="p-2 space-y-1.5 pointer-events-none">
         {/* Título */}
         <h3 className="font-semibold text-gray-900 text-sm line-clamp-1 leading-tight group-hover:text-gray-700 transition-colors">
           {(() => {
