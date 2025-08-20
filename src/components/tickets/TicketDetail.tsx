@@ -355,86 +355,116 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
       </CardHeader>
 
       <CardContent className="flex-1 flex flex-col space-y-8 p-6">
-        {/* Ticket Info */}
-        <div className="grid grid-cols-2 gap-8 text-sm">
-          <div className="space-y-6">
-            <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
-              <Building className="h-5 w-5 text-primary" />
-              <div>
-                <div className="font-medium text-foreground text-base mb-1">{ticket.unidades?.grupo || ticket.unidade_id}</div>
-                <div className="text-xs text-muted-foreground">Unidade</div>
-              </div>
-            </div>
-            <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
-              <User className="h-5 w-5 text-primary" />
-              <div>
-                <div className="font-medium text-foreground text-base mb-1">
-                  {ticket.colaboradores?.nome_completo || 
-                   ticket.profiles?.nome_completo || 
-                   (ticket.franqueado_id ? (ticket.franqueados?.name || "Franqueado") : "Sistema")}
-                </div>
-                <div className="text-xs text-muted-foreground">Solicitante</div>
-                {ticket.franqueados && (
-                  <div className="text-xs text-muted-foreground mt-2">
-                    Franqueado ID: {ticket.franqueado_id}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-          <div className="space-y-6">
-            <div className="p-4 bg-muted/50 rounded-lg">
-              <Badge variant={getPriorityVariant(ticket.prioridade)} className="w-fit mb-3">
-                {ticket.prioridade === 'crise' && <Zap className="h-3 w-3 mr-1" />}
-                {ticket.prioridade}
-              </Badge>
-              <div className="text-xs text-muted-foreground">Prioridade</div>
-            </div>
-            <div className="p-4 bg-muted/30 rounded-lg border">
+        {/* Ticket Info Cards */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Unidade Card */}
+          <Card className="border-l-4 border-l-blue-500">
+            <CardContent className="p-6">
               <div className="flex items-start gap-4">
-                <Tag className="h-5 w-5 text-primary mt-0.5" />
-                <div className="flex-1 space-y-4">
-                  {/* Equipe Responsável */}
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="font-semibold text-base text-foreground mb-1">
-                        {ticket.equipes?.nome || 'Sem equipe'}
-                      </div>
-                      <div className="text-xs text-muted-foreground font-medium">Equipe Responsável</div>
-                    </div>
-                    <Badge variant="secondary" className="text-xs">
-                      {ticket.equipes?.nome || 'Sem equipe'}
-                    </Badge>
+                <div className="p-3 bg-blue-50 rounded-lg">
+                  <Building className="h-6 w-6 text-blue-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-lg font-semibold text-foreground mb-1 truncate">
+                    {ticket.unidades?.grupo || ticket.unidade_id}
                   </div>
-                  
-                  {/* Atendimento Iniciado */}
-                  {ticket.atendimento_iniciado_por && ticket.atendimento_iniciado_profile?.nome_completo && (
-                    <div className="bg-background/50 rounded-md p-4 border-l-2 border-primary/50">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <div className="text-sm font-medium text-foreground">
-                          {ticket.atendimento_iniciado_profile.nome_completo}
-                        </div>
-                      </div>
-                      <div className="text-xs text-muted-foreground pl-4">
-                        Atendimento iniciado em {ticket.atendimento_iniciado_em 
-                          ? new Date(ticket.atendimento_iniciado_em).toLocaleString('pt-BR', {
-                              day: '2-digit',
-                              month: '2-digit', 
-                              year: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })
-                          : 'Data não disponível'
-                        }
-                      </div>
+                  <div className="text-sm text-muted-foreground font-medium">Unidade</div>
+                  <div className="text-xs text-muted-foreground mt-2 opacity-75">
+                    ID: {ticket.unidade_id}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Solicitante Card */}
+          <Card className="border-l-4 border-l-green-500">
+            <CardContent className="p-6">
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-green-50 rounded-lg">
+                  <User className="h-6 w-6 text-green-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-lg font-semibold text-foreground mb-1 truncate">
+                    {ticket.colaboradores?.nome_completo || 
+                     ticket.profiles?.nome_completo || 
+                     (ticket.franqueado_id ? (ticket.franqueados?.name || "Franqueado") : "Sistema")}
+                  </div>
+                  <div className="text-sm text-muted-foreground font-medium">Solicitante</div>
+                  {ticket.franqueados && (
+                    <div className="flex items-center gap-2 mt-3">
+                      <Badge variant="outline" className="text-xs">
+                        Franqueado #{ticket.franqueado_id}
+                      </Badge>
                     </div>
                   )}
                 </div>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
+
+          {/* Sistema/Equipe Card */}
+          <Card className="border-l-4 border-l-purple-500">
+            <CardContent className="p-6">
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-purple-50 rounded-lg">
+                  <Tag className="h-6 w-6 text-purple-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="space-y-4">
+                    {/* Prioridade */}
+                    <div>
+                      <Badge variant={getPriorityVariant(ticket.prioridade)} className="text-sm px-3 py-1">
+                        {ticket.prioridade === 'crise' && <Zap className="h-3 w-3 mr-1" />}
+                        {ticket.prioridade?.toUpperCase()}
+                      </Badge>
+                      <div className="text-xs text-muted-foreground mt-1">Prioridade</div>
+                    </div>
+
+                    {/* Equipe Responsável */}
+                    <div>
+                      <div className="text-base font-semibold text-foreground mb-1">
+                        {ticket.equipes?.nome || 'Aguardando atribuição'}
+                      </div>
+                      <div className="text-xs text-muted-foreground">Equipe Responsável</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
+
+        {/* Atendimento Status */}
+        {ticket.atendimento_iniciado_por && ticket.atendimento_iniciado_profile?.nome_completo && (
+          <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-green-100 rounded-full">
+                  <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                </div>
+                <div className="flex-1">
+                  <div className="text-lg font-semibold text-green-800 mb-1">
+                    Atendimento em andamento
+                  </div>
+                  <div className="text-sm text-green-700">
+                    <span className="font-medium">{ticket.atendimento_iniciado_profile.nome_completo}</span>
+                    {' • '}iniciado em {ticket.atendimento_iniciado_em 
+                      ? new Date(ticket.atendimento_iniciado_em).toLocaleString('pt-BR', {
+                          day: '2-digit',
+                          month: '2-digit', 
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })
+                      : 'Data não disponível'
+                    }
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Problem Description */}
         <div className="space-y-4">
