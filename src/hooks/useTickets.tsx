@@ -35,7 +35,7 @@ export interface Ticket {
   created_at: string;
   updated_at: string;
   // Relations
-  unidades?: { grupo: string };
+  unidades?: { id: string; grupo: string; cidade?: string; uf?: string };
   colaboradores?: { nome_completo: string };
   equipes?: { id: string; nome: string };
   atendimento_iniciado_por_profile?: { nome_completo: string };
@@ -108,7 +108,9 @@ export const useTickets = (filters: TicketFilters) => {
           *,
           unidades:unidade_id (
             id,
-            grupo
+            grupo,
+            cidade,
+            uf
           ),
           equipes:equipe_responsavel_id (
             id,

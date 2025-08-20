@@ -202,7 +202,11 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
       <CardContent className="p-3 space-y-2">
         {/* Título */}
         <h3 className="font-medium text-sm text-foreground line-clamp-1 leading-tight">
-          {ticket.titulo || ticket.descricao_problema || "Sem título"}
+          {(() => {
+            const title = ticket.titulo || ticket.descricao_problema || "Sem título";
+            const words = title.trim().split(/\s+/);
+            return words.length > 3 ? words.slice(0, 3).join(' ') : title;
+          })()}
         </h3>
 
         {/* Metadados em linha */}
@@ -211,7 +215,13 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
           <div className="flex items-center gap-1 min-w-0 flex-1">
             <MapPin className="h-2 w-2 flex-shrink-0" />
             <span className="truncate text-xs">
-              {(ticket as any).unidades?.grupo || ticket.unidade_id || 'Sem unidade'}
+              {(() => {
+                const unidade = (ticket as any).unidades;
+                if (unidade?.cidade && unidade?.uf) {
+                  return `${unidade.cidade} - ${unidade.uf}`;
+                }
+                return unidade?.grupo || ticket.unidade_id || 'Sem unidade';
+              })()}
             </span>
           </div>
           

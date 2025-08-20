@@ -29,7 +29,7 @@ serve(async (req) => {
     const analysisPrompt = `
 Analise este ticket de suporte e forneça:
 
-1. TÍTULO: Um título claro e descritivo de 5-10 palavras que resuma o problema
+1. TÍTULO: Exatamente 3 palavras que resumam o problema principal
 2. CATEGORIA: Classifique em uma das opções: juridico, sistema, midia, operacoes, rh, financeiro, outro
 3. PRIORIDADE: Determine se é: crise, urgente, alta, hoje_18h, padrao_24h
 4. EQUIPE_SUGERIDA: Sugira qual equipe deve atender baseado no problema
@@ -39,7 +39,7 @@ Categoria atual: ${categoria || 'não definida'}
 
 Responda APENAS em formato JSON válido:
 {
-  "titulo": "Título do problema",
+  "titulo": "Máximo 3 palavras",
   "categoria": "categoria_sugerida", 
   "prioridade": "prioridade_sugerida",
   "equipe_sugerida": "nome_da_equipe_ou_null",
@@ -81,14 +81,26 @@ Responda APENAS em formato JSON válido:
 
     console.log('OpenAI response:', aiResponse)
 
+    // Função para garantir máximo 3 palavras no título
+    const limitTitleToThreeWords = (title: string): string => {
+      if (!title) return 'Problema Técnico';
+      const words = title.trim().split(/\s+/).filter(word => word.length > 0);
+      return words.slice(0, 3).join(' ');
+    };
+
     let analysis = null
     try {
       analysis = JSON.parse(aiResponse)
+      // Garantir que o título tenha no máximo 3 palavras
+      if (analysis.titulo) {
+        analysis.titulo = limitTitleToThreeWords(analysis.titulo);
+      }
     } catch (error) {
       console.error('Error parsing AI response:', error)
-      // Fallback com título baseado na descrição
+      // Fallback com título baseado na descrição (limitado a 3 palavras)
+      const fallbackTitle = limitTitleToThreeWords(descricao);
       analysis = {
-        titulo: descricao.length > 50 ? descricao.substring(0, 50) + '...' : descricao,
+        titulo: fallbackTitle,
         categoria: categoria || 'outro',
         prioridade: 'padrao_24h',
         equipe_sugerida: null,

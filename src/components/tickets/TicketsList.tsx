@@ -158,7 +158,11 @@ export const TicketsList = ({ filters, onTicketSelect, selectedTicketId }: Ticke
                   )}
                 </div>
                 <h3 className="font-medium text-sm line-clamp-2">
-                  {getTicketDisplayTitle(ticket)}
+                  {(() => {
+                    const title = getTicketDisplayTitle(ticket);
+                    const words = title.trim().split(/\s+/);
+                    return words.length > 3 ? words.slice(0, 3).join(' ') : title;
+                  })()}
                 </h3>
                 <p className="text-xs text-muted-foreground">
                   {formatDistanceToNowInSaoPaulo(ticket.created_at, { addSuffix: true })}
@@ -190,7 +194,15 @@ export const TicketsList = ({ filters, onTicketSelect, selectedTicketId }: Ticke
                 
                 <div className="flex items-center gap-1">
                   <Building className="h-3 w-3" />
-                  <span>{ticket.unidades?.grupo || ticket.unidade_id}</span>
+                  <span>
+                    {(() => {
+                      const unidade = ticket.unidades;
+                      if (unidade?.cidade && unidade?.uf) {
+                        return `${unidade.cidade} - ${unidade.uf}`;
+                      }
+                      return unidade?.grupo || ticket.unidade_id || 'Sem unidade';
+                    })()}
+                  </span>
                 </div>
 
                 {/* Mostrar solicitante */}
