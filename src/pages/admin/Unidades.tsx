@@ -137,31 +137,49 @@ const Unidades = () => {
               {filteredUnidades.map((unidade) => (
                 <Dialog key={unidade.id}>
                   <DialogTrigger asChild>
-                    <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-0 bg-card hover:bg-accent/50">
-                      <CardHeader className="pb-4">
-                        <div className="flex items-start justify-between">
-                          <div className="space-y-1">
-                            <CardTitle className="text-base font-medium">{unidade.grupo || 'Unidade'}</CardTitle>
-                            <div className="flex items-center gap-2">
-                              <div className={`w-2 h-2 rounded-full ${getFaseColor(unidade.fase_loja)}`}></div>
-                              <span className="text-xs text-muted-foreground uppercase tracking-wide">
-                                {unidade.fase_loja || 'N/A'}
-                              </span>
-                            </div>
+                    <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border bg-white dark:bg-card relative overflow-hidden">
+                      <CardHeader className="pb-6">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                            <Building className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                           </div>
-                          <Badge variant="outline" className="text-xs font-normal">
-                            {unidade.modelo_loja || 'N/A'}
-                          </Badge>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <Search className="w-4 h-4 text-muted-foreground" />
+                          </Button>
+                        </div>
+                        
+                        <div className="space-y-3">
+                          <div>
+                            <CardTitle className="text-lg font-semibold leading-tight">
+                              {unidade.grupo || 'Unidade'}
+                            </CardTitle>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {unidade.cidade || 'N/A'}, {unidade.estado || 'N/A'}
+                            </p>
+                          </div>
+                          
+                          <div className="space-y-1 text-xs text-muted-foreground">
+                            <div>Código: #{unidade.id.substring(0, 8)}</div>
+                            <div>Modelo: {unidade.modelo_loja || 'N/A'}</div>
+                          </div>
                         </div>
                       </CardHeader>
-                      <CardContent className="space-y-3">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <MapPin className="w-4 h-4 text-green-500" />
-                          <span>{unidade.cidade || 'N/A'}, {unidade.estado || 'N/A'}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Mail className="w-4 h-4 text-orange-500" />
-                          <span className="truncate">{unidade.email || 'N/A'}</span>
+                      
+                      <CardContent className="pt-0">
+                        <div className="flex items-center justify-between">
+                          <Badge 
+                            className={`${
+                              unidade.fase_loja?.toLowerCase() === 'ativa' || unidade.fase_loja?.toLowerCase() === 'operação' || unidade.fase_loja?.toLowerCase() === 'operacao'
+                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400'
+                                : unidade.fase_loja?.toLowerCase() === 'em_construcao' || unidade.fase_loja?.toLowerCase() === 'implantação' || unidade.fase_loja?.toLowerCase() === 'implantacao'
+                                ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400'
+                                : unidade.fase_loja?.toLowerCase() === 'planejamento'
+                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400'
+                                : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
+                            } border-0 font-medium uppercase text-xs tracking-wide`}
+                          >
+                            {unidade.fase_loja || 'N/A'}
+                          </Badge>
                         </div>
                       </CardContent>
                     </Card>
