@@ -104,11 +104,9 @@ export function AppSidebar() {
                       to={item.url}
                       end
                       className={({ isActive }) => cn(
-                        "group flex items-center px-3 py-2 rounded-lg transition-all duration-300",
+                        "group flex items-center px-3 py-2 transition-all duration-300",
                         "hover:scale-105",
-                        isActive 
-                          ? "bg-white/25 backdrop-blur-md shadow-neumorphic" 
-                          : "hover:bg-white/5"
+                        isActive ? "" : ""
                       )}
                     >
                       {({ isActive }) => (
@@ -145,11 +143,9 @@ export function AppSidebar() {
                           to={item.url}
                           end
                           className={({ isActive }) => cn(
-                            "group relative flex items-center justify-center w-12 h-12 rounded-lg transition-all duration-300 mx-auto",
+                            "group relative flex items-center justify-center w-12 h-12 transition-all duration-300 mx-auto",
                             "hover:scale-105",
-                            isActive 
-                              ? "bg-white/25 backdrop-blur-md shadow-neumorphic scale-105" 
-                              : "hover:bg-white/5"
+                            isActive ? "" : ""
                           )}
                         >
                           {({ isActive }) => (
@@ -188,7 +184,7 @@ export function AppSidebar() {
                 <Button 
                   variant="ghost" 
                   onClick={handleSignOut}
-                  className="group w-full flex items-center justify-start px-3 py-2 text-white hover:bg-red-500/20 hover:scale-105 transition-all duration-300 rounded-lg"
+                  className="group w-full flex items-center justify-start px-3 py-2 text-white hover:bg-red-500/10 hover:scale-105 transition-all duration-300"
                 >
                   <LogOut className="h-4 w-4 opacity-80 group-hover:opacity-100 transition-all duration-300 mr-2" strokeWidth={1.5} />
                   <span className="text-sm font-medium">Sair do Sistema</span>
@@ -199,7 +195,7 @@ export function AppSidebar() {
                     <Button 
                       variant="ghost" 
                       onClick={handleSignOut}
-                      className="group relative w-12 h-12 rounded-lg p-0 text-white hover:bg-red-500/20 hover:scale-105 transition-all duration-300"
+                      className="group relative w-12 h-12 p-0 text-white hover:bg-red-500/10 hover:scale-105 transition-all duration-300"
                     >
                       <LogOut className="h-5 w-5 opacity-80 group-hover:opacity-100 transition-all duration-300" strokeWidth={1.5} />
                     </Button>
