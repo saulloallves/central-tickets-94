@@ -27,6 +27,7 @@ import {
   Filter
 } from "lucide-react";
 import { useKnowledgeArticles } from "@/hooks/useKnowledgeArticles";
+import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -51,9 +52,10 @@ const tiposMidia = [
 
 export function BaseConhecimentoTab() {
   const { articles, loading, createArticle, updateArticle, approveArticle, toggleAIUsage, fetchArticles } = useKnowledgeArticles();
+  const [equipes, setEquipes] = useState<{id: string; nome: string}[]>([]);
   
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterCategoria, setFilterCategoria] = useState<string>('all');
+  const [filterEquipe, setFilterEquipe] = useState<string>('all');
   const [filterAprovado, setFilterAprovado] = useState<string>('all');
   const [filterUsadoPelaIA, setFilterUsadoPelaIA] = useState<string>('all');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -69,14 +71,38 @@ export function BaseConhecimentoTab() {
     usado_pela_ia: true
   });
 
+  // Fetch equipes when component mounts
+  React.useEffect(() => {
+    const fetchEquipes = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('equipes')
+          .select('id, nome')
+          .eq('ativo', true)
+          .order('nome');
+
+        if (error) {
+          console.error('Error fetching equipes:', error);
+          return;
+        }
+
+        setEquipes(data || []);
+      } catch (error) {
+        console.error('Error fetching equipes:', error);
+      }
+    };
+
+    fetchEquipes();
+  }, []);
+
   const filteredArticles = articles.filter(article => {
     const matchesSearch = article.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          article.conteudo.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategoria = !filterCategoria || filterCategoria === 'all' || article.categoria === filterCategoria;
+    const matchesEquipe = !filterEquipe || filterEquipe === 'all' || article.categoria === filterEquipe;
     const matchesAprovado = !filterAprovado || filterAprovado === 'all' || article.aprovado.toString() === filterAprovado;
     const matchesUsadoPelaIA = !filterUsadoPelaIA || filterUsadoPelaIA === 'all' || article.usado_pela_ia.toString() === filterUsadoPelaIA;
     
-    return matchesSearch && matchesCategoria && matchesAprovado && matchesUsadoPelaIA;
+    return matchesSearch && matchesEquipe && matchesAprovado && matchesUsadoPelaIA;
   });
 
   const handleCreateArticle = async () => {
@@ -170,14 +196,14 @@ export function BaseConhecimentoTab() {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="categoria">Categoria</Label>
+                      <Label htmlFor="categoria">Equipe Responsável</Label>
                       <Select value={newArticle.categoria} onValueChange={(value) => setNewArticle(prev => ({...prev, categoria: value}))}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecione uma categoria" />
+                          <SelectValue placeholder="Selecione uma equipe" />
                         </SelectTrigger>
                         <SelectContent>
-                          {categorias.map(cat => (
-                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                          {equipes.map(equipe => (
+                            <SelectItem key={equipe.id} value={equipe.nome}>{equipe.nome}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -274,15 +300,15 @@ export function BaseConhecimentoTab() {
             </div>
 
             <div className="space-y-2">
-              <Label>Categoria</Label>
-              <Select value={filterCategoria} onValueChange={setFilterCategoria}>
+              <Label>Equipe</Label>
+              <Select value={filterEquipe} onValueChange={setFilterEquipe}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Todas as categorias" />
+                  <SelectValue placeholder="Todas as equipes" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todas as categorias</SelectItem>
-                  {categorias.map(cat => (
-                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                  <SelectItem value="all">Todas as equipes</SelectItem>
+                  {equipes.map(equipe => (
+                    <SelectItem key={equipe.id} value={equipe.nome}>{equipe.nome}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -334,7 +360,7 @@ export function BaseConhecimentoTab() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Título</TableHead>
-                  <TableHead>Categoria</TableHead>
+                  <TableHead>Equipe</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Feedback</TableHead>
@@ -448,14 +474,14 @@ export function BaseConhecimentoTab() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="edit-categoria">Categoria</Label>
+                  <Label htmlFor="edit-categoria">Equipe Responsável</Label>
                   <Select value={editingArticle.categoria} onValueChange={(value) => setEditingArticle(prev => ({...prev, categoria: value}))}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {categorias.map(cat => (
-                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                      {equipes.map(equipe => (
+                        <SelectItem key={equipe.id} value={equipe.nome}>{equipe.nome}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
