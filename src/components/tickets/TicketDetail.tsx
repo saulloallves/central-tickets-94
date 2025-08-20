@@ -655,38 +655,38 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
               </div>
 
               {/* Send Message */}
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <Textarea
                   placeholder="Digite sua mensagem..."
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   rows={4}
-                  className="text-base resize-none"
+                  className="text-sm resize-none"
                 />
                 <div className="flex justify-between items-center">
-                  <Button variant="outline" size="lg" className="h-12">
-                    <Paperclip className="h-5 w-5 mr-2" />
+                  <Button variant="outline" size="sm" className="h-9">
+                    <Paperclip className="h-4 w-4 mr-2" />
                     Anexar
                   </Button>
-                  <div className="flex gap-3">
+                  <div className="flex gap-2">
                     <Button 
-                      size="lg" 
+                      size="sm" 
                       onClick={handleSendMessage}
                       disabled={!newMessage.trim()}
-                      className="h-12 px-6"
+                      className="h-9 px-4"
                     >
-                      <Send className="h-5 w-5 mr-2" />
+                      <Send className="h-4 w-4 mr-2" />
                       Enviar
                     </Button>
                     <Button 
-                      size="lg" 
+                      size="sm" 
                       variant="outline"
                       onClick={handleSendToFranqueado}
                       disabled={!newMessage.trim() || isSendingToFranqueado || !ticket?.franqueado_id}
                       title={!ticket?.franqueado_id ? 'Nenhum franqueado vinculado a este ticket' : ''}
-                      className="h-12 px-4"
+                      className="h-9 px-3"
                     >
-                      <Phone className="h-5 w-5 mr-2" />
+                      <Phone className="h-4 w-4 mr-2" />
                       {isSendingToFranqueado ? 'Enviando...' : 'WhatsApp Franqueado'}
                     </Button>
                   </div>
