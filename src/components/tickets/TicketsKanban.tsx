@@ -217,7 +217,7 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
 
         {/* Equipe Responsável */}
         {ticket.equipes?.nome && (
-          <div className="flex items-center gap-1.5 bg-primary/10 px-2 py-1 rounded border border-primary/20">
+          <div className="flex items-center gap-1.5 bg-primary/10 px-2 py-1 rounded">
             <Users className="h-3 w-3 text-primary flex-shrink-0" />
             <span className="text-xs font-medium text-primary truncate">
               {ticket.equipes.nome}
