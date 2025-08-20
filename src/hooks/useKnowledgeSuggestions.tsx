@@ -13,6 +13,7 @@ interface KnowledgeSuggestion {
   sugerido_por?: string;
   avaliado_por?: string;
   publicado_em?: string;
+  article_id?: string;
   created_at: string;
   updated_at: string;
   tickets?: {

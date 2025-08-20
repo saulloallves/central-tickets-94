@@ -741,6 +741,7 @@ export type Database = {
           conteudo: string
           created_at: string
           criado_por: string | null
+          equipe_id: string | null
           feedback_negativo: number
           feedback_positivo: number
           id: string
@@ -758,6 +759,7 @@ export type Database = {
           conteudo: string
           created_at?: string
           criado_por?: string | null
+          equipe_id?: string | null
           feedback_negativo?: number
           feedback_positivo?: number
           id?: string
@@ -777,6 +779,7 @@ export type Database = {
           conteudo?: string
           created_at?: string
           criado_por?: string | null
+          equipe_id?: string | null
           feedback_negativo?: number
           feedback_positivo?: number
           id?: string
@@ -797,10 +800,25 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "knowledge_articles_equipe_id_fkey"
+            columns: ["equipe_id"]
+            isOneToOne: false
+            referencedRelation: "equipes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "knowledge_articles_equipe_id_fkey"
+            columns: ["equipe_id"]
+            isOneToOne: false
+            referencedRelation: "v_team_performance"
+            referencedColumns: ["equipe_id"]
+          },
         ]
       }
       knowledge_suggestions: {
         Row: {
+          article_id: string | null
           avaliado_por: string | null
           created_at: string
           id: string
@@ -814,6 +832,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          article_id?: string | null
           avaliado_por?: string | null
           created_at?: string
           id?: string
@@ -827,6 +846,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          article_id?: string | null
           avaliado_por?: string | null
           created_at?: string
           id?: string
@@ -840,6 +860,27 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "knowledge_suggestions_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_articles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "knowledge_suggestions_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "v_kb_articles_usage"
+            referencedColumns: ["article_id"]
+          },
+          {
+            foreignKeyName: "knowledge_suggestions_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "v_kb_resolution_rate"
+            referencedColumns: ["article_id"]
+          },
           {
             foreignKeyName: "knowledge_suggestions_avaliado_por_fkey"
             columns: ["avaliado_por"]

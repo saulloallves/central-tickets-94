@@ -3,8 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Settings, Brain, BookOpen, TrendingUp, Shield, Database } from "lucide-react";
 import { IASettingsTab } from "@/components/configuracoes/IASettingsTab";
-import { BaseConhecimentoTab } from "@/components/configuracoes/BaseConhecimentoTab";
-import { SugestoesIATab } from "@/components/configuracoes/SugestoesIATab";
+import { KnowledgeHubTab } from "@/components/configuracoes/KnowledgeHubTab";
 import { RegrasUsoTab } from "@/components/configuracoes/RegrasUsoTab";
 import { RelatoriosTab } from "@/components/configuracoes/RelatoriosTab";
 import { NotificacoesTab } from "@/components/configuracoes/NotificacoesTab";
@@ -28,18 +27,14 @@ export default function Configuracoes() {
         <Card className="shadow-elegant border-0 bg-gradient-card">
           <CardContent className="p-6">
             <Tabs defaultValue="ia" className="w-full">
-              <TabsList className="grid w-full grid-cols-6 mb-6">
+              <TabsList className="grid w-full grid-cols-5 mb-6">
                 <TabsTrigger value="ia" className="flex items-center gap-2">
                   <Brain className="h-4 w-4" />
                   IA
                 </TabsTrigger>
                 <TabsTrigger value="conhecimento" className="flex items-center gap-2">
                   <BookOpen className="h-4 w-4" />
-                  Base de Conhecimento
-                </TabsTrigger>
-                <TabsTrigger value="sugestoes" className="flex items-center gap-2">
-                  <Database className="h-4 w-4" />
-                  Sugestões da IA
+                  Hub de Conhecimento
                 </TabsTrigger>
                 <TabsTrigger value="notificacoes" className="flex items-center gap-2">
                   <Settings className="h-4 w-4" />
@@ -60,11 +55,7 @@ export default function Configuracoes() {
               </TabsContent>
 
               <TabsContent value="conhecimento" className="space-y-6">
-                <BaseConhecimentoTab />
-              </TabsContent>
-
-              <TabsContent value="sugestoes" className="space-y-6">
-                <SugestoesIATab />
+                <KnowledgeHubTab />
               </TabsContent>
 
               <TabsContent value="notificacoes" className="space-y-6">

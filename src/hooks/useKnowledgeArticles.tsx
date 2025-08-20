@@ -8,6 +8,7 @@ interface KnowledgeArticle {
   titulo: string;
   conteudo: string;
   categoria?: string;
+  equipe_id?: string;
   tags?: string[];
   tipo_midia: 'texto' | 'video' | 'pdf' | 'link';
   link_arquivo?: string;
@@ -24,6 +25,7 @@ interface CreateArticleData {
   titulo: string;
   conteudo: string;
   categoria?: string;
+  equipe_id?: string;
   tags?: string[];
   tipo_midia?: 'texto' | 'video' | 'pdf' | 'link';
   link_arquivo?: string;
@@ -37,6 +39,7 @@ export const useKnowledgeArticles = () => {
 
   const fetchArticles = async (filters?: {
     categoria?: string;
+    equipe_id?: string;
     aprovado?: boolean;
     usado_pela_ia?: boolean;
     ativo?: boolean;
@@ -50,6 +53,7 @@ export const useKnowledgeArticles = () => {
 
       if (filters) {
         if (filters.categoria) query = query.eq('categoria', filters.categoria);
+        if (filters.equipe_id) query = query.eq('equipe_id', filters.equipe_id);
         if (filters.aprovado !== undefined) query = query.eq('aprovado', filters.aprovado);
         if (filters.usado_pela_ia !== undefined) query = query.eq('usado_pela_ia', filters.usado_pela_ia);
         if (filters.ativo !== undefined) query = query.eq('ativo', filters.ativo);
