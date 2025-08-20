@@ -191,13 +191,13 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
       {...attributes}
       {...listeners}
       className={cn(
-        "cursor-grab active:cursor-grabbing transition-all hover:shadow-lg mb-2 bg-white border-l-4 relative select-none",
+        "cursor-grab active:cursor-grabbing transition-all hover:shadow-md mb-2 bg-white border-l-4 select-none",
         ticket.status === 'concluido' ? "border-l-success" : 
         ticket.prioridade === 'crise' ? "border-l-critical" :
         ticket.prioridade === 'urgente' ? "border-l-critical" :
         ticket.prioridade === 'alta' ? "border-l-warning" : "border-l-muted",
-        isSelected && "ring-2 ring-primary/20 shadow-lg",
-        isDragging && "opacity-60 scale-95 z-50 shadow-2xl"
+        isSelected && "ring-2 ring-primary/20",
+        isDragging && "opacity-50 scale-90 z-50 shadow-xl"
       )}
       onClick={(e) => {
         if (!isDragging) {
@@ -205,9 +205,9 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
         }
       }}
     >
-      <CardContent className="p-2.5 space-y-1.5 pointer-events-none">
+      <CardContent className="p-2 space-y-1 pointer-events-none">
         {/* Título */}
-        <h3 className="font-medium text-sm text-foreground line-clamp-1 leading-tight">
+        <h3 className="font-medium text-sm line-clamp-1 leading-tight">
           {(() => {
             const title = ticket.titulo || ticket.descricao_problema || "Sem título";
             const words = title.trim().split(/\s+/);
@@ -215,67 +215,46 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
           })()}
         </h3>
 
-        {/* Unidade e Categoria - Linha compacta */}
-        <div className="flex items-center gap-1.5 text-xs">
-          <div className="flex items-center gap-1 flex-1 bg-muted/50 px-1.5 py-0.5 rounded text-xs">
-            <MapPin className="h-2.5 w-2.5 text-primary flex-shrink-0" />
-            <span className="truncate font-medium">
+        {/* Unidade e Equipe em linha */}
+        <div className="flex items-center gap-1 text-xs">
+          {/* Unidade */}
+          <div className="flex items-center gap-1 flex-1 bg-muted/50 px-1 py-0.5 rounded">
+            <MapPin className="h-2 w-2 text-primary" />
+            <span className="truncate text-xs">
               {(() => {
                 const unidade = (ticket as any).unidades;
-                if (unidade?.cidade && unidade?.uf && unidade.cidade !== '-' && unidade.uf !== '-') {
-                  return `${unidade.cidade} - ${unidade.uf}`;
-                }
-                if (unidade?.grupo) {
-                  return unidade.grupo;
-                }
+                if (unidade?.grupo) return unidade.grupo;
                 return ticket.unidade_id || 'Sem unidade';
               })()}
             </span>
           </div>
-          <div className="flex-shrink-0">
-            {getCategoryIcon(ticket.categoria || 'outro')}
-          </div>
+          
+          {/* Equipe */}
+          {ticket.equipes?.nome && (
+            <div className="flex items-center gap-1 bg-primary/10 px-1 py-0.5 rounded flex-shrink-0">
+              <Users className="h-2 w-2 text-primary" />
+              <span className="text-xs text-primary font-medium">
+                {ticket.equipes.nome}
+              </span>
+            </div>
+          )}
         </div>
 
-        {/* Equipe - Compacta */}
-        {ticket.equipes?.nome && (
-          <div className="flex items-center gap-1.5 bg-primary/10 px-1.5 py-1 rounded border border-primary/20">
-            <Users className="h-2.5 w-2.5 text-primary flex-shrink-0" />
-            <span className="text-xs font-medium text-primary truncate">
-              {ticket.equipes.nome}
+        {/* Status e Tempo */}
+        <div className="flex items-center justify-between">
+          <Badge 
+            variant={ticket.status === 'concluido' ? 'success' : getPriorityButtonVariant(ticket.prioridade) as any}
+            className="text-xs h-4 px-1"
+          >
+            {ticket.status === 'concluido' ? 'Resolvido' : getPriorityLabel(ticket.prioridade)}
+          </Badge>
+          
+          <div className="flex items-center gap-1">
+            <Clock className="h-2 w-2" />
+            <span className={cn("text-xs", getTimeColor(ticket.status_sla, ticket.prioridade))}>
+              {formatTimeElapsed(ticket.created_at)}
             </span>
           </div>
-        )}
-
-        {/* Footer compacto */}
-        <div className="flex items-center justify-between pt-1 border-t border-muted/30">
-          {ticket.status === 'concluido' ? (
-            <>
-              <Badge variant="success" className="text-xs h-5">
-                Resolvido
-              </Badge>
-              <div className="flex items-center gap-1 text-xs text-success">
-                <CheckCircle className="h-3 w-3" />
-                <span className="text-xs">{formatDistanceToNowInSaoPaulo(new Date(ticket.updated_at || ticket.created_at))}</span>
-              </div>
-            </>
-          ) : (
-            <>
-              <Badge 
-                variant={getPriorityButtonVariant(ticket.prioridade) as any}
-                className="text-xs h-5"
-              >
-                {getPriorityLabel(ticket.prioridade)}
-              </Badge>
-              
-              <div className="flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                <span className={cn("text-xs font-mono", getTimeColor(ticket.status_sla, ticket.prioridade))}>
-                  {formatTimeElapsed(ticket.created_at)}
-                </span>
-              </div>
-            </>
-          )}
         </div>
       </CardContent>
     </Card>
@@ -303,31 +282,29 @@ const KanbanColumn = ({ status, tickets, selectedTicketId, onTicketSelect, equip
     <div 
       ref={setNodeRef}
       className={cn(
-        "flex flex-col h-full min-h-[800px] rounded-lg border-2 transition-all duration-200 relative",
+        "flex flex-col h-full min-h-[600px] w-full rounded-lg border-2 transition-all duration-200",
         COLUMN_COLORS[status],
-        isOver ? "border-primary bg-primary/10 border-solid scale-[1.005] shadow-lg" : "border-dashed"
+        isOver ? "border-primary bg-primary/5 border-solid shadow-md" : "border-dashed border-muted/50"
       )}
     >
       {/* Header da coluna */}
-      <div className="flex items-center justify-between p-3 pb-2 sticky top-0 bg-background/95 backdrop-blur-sm z-10 border-b border-muted/20">
+      <div className="flex items-center justify-between p-3 bg-background border-b border-muted/20">
         <h3 className="font-semibold text-sm">{COLUMN_STATUS[status]}</h3>
         <Badge variant="secondary" className="text-xs">
           {tickets.length}
         </Badge>
       </div>
       
-      {/* Área de conteúdo - muito expandida */}
-      <div className="flex-1 p-3 pt-2 min-h-[750px] relative">
-        {/* Overlay para drop quando não há tickets */}
-        {tickets.length === 0 && isOver && (
-          <div className="absolute inset-2 border-2 border-dashed border-primary/50 rounded-lg bg-primary/5 flex items-center justify-center">
-            <span className="text-primary font-medium text-sm">Solte o ticket aqui</span>
+      {/* Área de drop massiva */}
+      <div className="flex-1 p-2 relative">
+        {/* Drop zone visual */}
+        {isOver && (
+          <div className="absolute inset-2 border-2 border-dashed border-primary rounded-lg bg-primary/10 flex items-center justify-center z-10">
+            <div className="text-center">
+              <div className="text-primary font-medium">Solte aqui</div>
+              <div className="text-xs text-primary/70">{COLUMN_STATUS[status]}</div>
+            </div>
           </div>
-        )}
-        
-        {/* Drop zone adicional no final da lista */}
-        {tickets.length > 0 && (
-          <div className="min-h-[200px] w-full" />
         )}
         <SortableContext items={tickets.map(t => t.id)} strategy={verticalListSortingStrategy}>
           <div className="space-y-3">
