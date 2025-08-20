@@ -197,10 +197,13 @@ export const TicketsList = ({ filters, onTicketSelect, selectedTicketId }: Ticke
                   <span>
                     {(() => {
                       const unidade = ticket.unidades;
-                      if (unidade?.cidade && unidade?.uf) {
+                      if (unidade?.cidade && unidade?.uf && unidade.cidade !== '-' && unidade.uf !== '-') {
                         return `${unidade.cidade} - ${unidade.uf}`;
                       }
-                      return unidade?.grupo || ticket.unidade_id || 'Sem unidade';
+                      if (unidade?.grupo) {
+                        return unidade.grupo;
+                      }
+                      return ticket.unidade_id || 'Sem unidade';
                     })()}
                   </span>
                 </div>
