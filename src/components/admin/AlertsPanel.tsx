@@ -172,14 +172,17 @@ export const AlertsPanel = () => {
                   
                   <div className="flex items-center gap-2">
                     <Button
-                      asChild
                       variant="ghost"
                       size="sm"
                       className="text-info hover:text-info"
+                      onClick={() => {
+                        // Dispatch event to open ticket modal
+                        window.dispatchEvent(new CustomEvent('openTicketModal', { 
+                          detail: { ticketId: alert.ticket_id }
+                        }));
+                      }}
                     >
-                      <Link to={`/admin/tickets?ticket=${alert.ticket_id}`}>
-                        <ExternalLink className="h-4 w-4" />
-                      </Link>
+                      <ExternalLink className="h-4 w-4" />
                     </Button>
                     
                     <Button
