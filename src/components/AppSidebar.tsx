@@ -42,42 +42,42 @@ export function AppSidebar() {
   };
 
   return (
-    <div className="w-20 h-screen fixed left-4 top-4 bottom-4 z-40 flex flex-col">
-      {/* Futuristic curved sidebar */}
-      <div className="flex-1 bg-gradient-primary rounded-[2rem] shadow-glow backdrop-blur-xl border border-white/20 relative overflow-hidden">
-        {/* Organic curve decoration */}
-        <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent rounded-[2rem]" />
-        <div className="absolute -right-8 top-1/4 w-16 h-32 bg-gradient-to-l from-white/5 to-transparent rounded-l-full" />
-        <div className="absolute -right-6 bottom-1/4 w-12 h-24 bg-gradient-to-l from-white/3 to-transparent rounded-l-full" />
+    <div className="w-16 h-[calc(100vh-8rem)] fixed left-4 top-1/2 -translate-y-1/2 z-40 flex flex-col">
+      {/* Futuristic curved sidebar - centralized */}
+      <div className="flex-1 bg-gradient-primary rounded-[3rem] shadow-glow backdrop-blur-xl border border-white/20 relative overflow-hidden min-h-[600px]">
+        {/* Organic curve decorations */}
+        <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent rounded-[3rem]" />
+        <div className="absolute -right-6 top-1/4 w-12 h-24 bg-gradient-to-l from-white/5 to-transparent rounded-l-full" />
+        <div className="absolute -right-4 bottom-1/3 w-8 h-16 bg-gradient-to-l from-white/3 to-transparent rounded-l-full" />
+        <div className="absolute -right-8 top-1/2 w-16 h-32 bg-gradient-to-l from-white/5 to-transparent rounded-l-full" />
         
         {/* Header Icon */}
-        <div className="p-6 flex justify-center">
-          <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-neumorphic">
-            <ClipboardList className="h-6 w-6 text-white" />
+        <div className="p-4 flex justify-center">
+          <div className="w-10 h-10 rounded-2xl bg-white/25 backdrop-blur-md flex items-center justify-center shadow-neumorphic">
+            <ClipboardList className="h-5 w-5 text-white" />
           </div>
         </div>
 
         {/* Navigation Icons */}
-        <div className="flex-1 px-4 py-8 space-y-4">
+        <div className="flex-1 px-2 py-6 space-y-3 flex flex-col justify-center">
           {navigationItems.map((item) => (
             <PermissionGuard key={item.title} requiredPermission={item.permission}>
               <NavLink
                 to={item.url}
                 end
                 className={({ isActive }) => cn(
-                  "group relative flex items-center justify-center w-12 h-12 rounded-2xl transition-all duration-500 hover:scale-110",
+                  "group relative flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-500 hover:scale-110",
                   isActive 
-                    ? "bg-white/30 backdrop-blur-md shadow-neumorphic" 
-                    : "hover:bg-white/10 hover:backdrop-blur-md"
+                    ? "bg-white/30 backdrop-blur-md shadow-neumorphic scale-105" 
+                    : "hover:bg-white/15 hover:backdrop-blur-md"
                 )}
-                title={item.title}
               >
-                <item.icon className="h-5 w-5 text-white transition-all duration-300 group-hover:scale-110" />
+                <item.icon className="h-4 w-4 text-white transition-all duration-300 group-hover:scale-110" />
                 
-                {/* Tooltip */}
-                <div className="absolute left-16 top-1/2 -translate-y-1/2 bg-white/95 backdrop-blur-md text-foreground px-3 py-2 rounded-xl text-sm font-medium opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap shadow-elegant z-50">
+                {/* Tooltip melhorado */}
+                <div className="absolute left-14 top-1/2 -translate-y-1/2 bg-white/95 backdrop-blur-md text-gray-800 px-3 py-2 rounded-xl text-sm font-medium opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap shadow-elegant z-50 border border-white/20">
                   {item.title}
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-2 h-2 bg-white/95 rotate-45" />
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-2 h-2 bg-white/95 rotate-45 border-l border-b border-white/20" />
                 </div>
               </NavLink>
             </PermissionGuard>
@@ -89,15 +89,14 @@ export function AppSidebar() {
           <Button 
             variant="ghost" 
             onClick={handleSignOut}
-            className="group relative w-12 h-12 rounded-2xl p-0 text-white hover:bg-white/10 hover:backdrop-blur-md transition-all duration-500 hover:scale-110"
-            title="Sair do Sistema"
+            className="group relative w-10 h-10 rounded-xl p-0 text-white hover:bg-red-500/20 hover:backdrop-blur-md transition-all duration-500 hover:scale-110"
           >
-            <LogOut className="h-5 w-5 transition-all duration-300 group-hover:scale-110" />
+            <LogOut className="h-4 w-4 transition-all duration-300 group-hover:scale-110" />
             
-            {/* Tooltip */}
-            <div className="absolute left-16 top-1/2 -translate-y-1/2 bg-white/95 backdrop-blur-md text-foreground px-3 py-2 rounded-xl text-sm font-medium opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap shadow-elegant z-50">
+            {/* Tooltip de logout */}
+            <div className="absolute left-14 top-1/2 -translate-y-1/2 bg-white/95 backdrop-blur-md text-gray-800 px-3 py-2 rounded-xl text-sm font-medium opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap shadow-elegant z-50 border border-white/20">
               Sair do Sistema
-              <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-2 h-2 bg-white/95 rotate-45" />
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-2 h-2 bg-white/95 rotate-45 border-l border-b border-white/20" />
             </div>
           </Button>
         </div>
