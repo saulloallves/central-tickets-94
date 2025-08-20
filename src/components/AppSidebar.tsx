@@ -40,8 +40,22 @@ export function AppSidebar() {
     await signOut();
   };
 
-  const toggleExpanded = () => {
-    setIsExpanded(!isExpanded);
+  const handleMouseEnter = () => {
+    setIsExpanded(true);
+    // Ajustar margin do conteúdo principal
+    const mainContent = document.querySelector('[data-main-content]') as HTMLElement;
+    if (mainContent) {
+      mainContent.style.marginLeft = '224px'; // 56 (sidebar width) + 168 (expanded width)
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setIsExpanded(false);
+    // Restaurar margin original
+    const mainContent = document.querySelector('[data-main-content]') as HTMLElement;
+    if (mainContent) {
+      mainContent.style.marginLeft = '80px'; // 80px original
+    }
   };
 
   return (
@@ -51,8 +65,8 @@ export function AppSidebar() {
           "h-[calc(100vh-4rem)] fixed left-2 top-1/2 -translate-y-1/2 z-40 transition-all duration-500",
           isExpanded ? "w-56" : "w-20"
         )}
-        onMouseEnter={() => setIsExpanded(true)}
-        onMouseLeave={() => setIsExpanded(false)}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
       >
         {/* Modern curved sidebar container */}
         <div className="
@@ -94,7 +108,7 @@ export function AppSidebar() {
                         "hover:scale-105",
                         isActive 
                           ? "bg-white/25 backdrop-blur-md shadow-neumorphic" 
-                          : "hover:bg-white/10"
+                          : "hover:bg-white/5"
                       )}
                     >
                       {({ isActive }) => (
@@ -131,7 +145,7 @@ export function AppSidebar() {
                           to={item.url}
                           end
                           className={({ isActive }) => cn(
-                            "group relative flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-300 mx-auto",
+                            "group relative flex items-center justify-center w-12 h-12 rounded-lg transition-all duration-300 mx-auto",
                             "hover:scale-105",
                             isActive 
                               ? "bg-white/25 backdrop-blur-md shadow-neumorphic scale-105" 
@@ -185,7 +199,7 @@ export function AppSidebar() {
                     <Button 
                       variant="ghost" 
                       onClick={handleSignOut}
-                      className="group relative w-12 h-12 rounded-xl p-0 text-white hover:bg-red-500/20 hover:scale-105 transition-all duration-300"
+                      className="group relative w-12 h-12 rounded-lg p-0 text-white hover:bg-red-500/20 hover:scale-105 transition-all duration-300"
                     >
                       <LogOut className="h-5 w-5 opacity-80 group-hover:opacity-100 transition-all duration-300" strokeWidth={1.5} />
                     </Button>
