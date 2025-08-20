@@ -354,50 +354,50 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 flex flex-col space-y-6">
+      <CardContent className="flex-1 flex flex-col space-y-8 p-6">
         {/* Ticket Info */}
-        <div className="grid grid-cols-2 gap-6 text-sm">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+        <div className="grid grid-cols-2 gap-8 text-sm">
+          <div className="space-y-6">
+            <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
               <Building className="h-5 w-5 text-primary" />
               <div>
-                <div className="font-medium text-foreground">{ticket.unidades?.grupo || ticket.unidade_id}</div>
+                <div className="font-medium text-foreground text-base mb-1">{ticket.unidades?.grupo || ticket.unidade_id}</div>
                 <div className="text-xs text-muted-foreground">Unidade</div>
               </div>
             </div>
-            <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+            <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
               <User className="h-5 w-5 text-primary" />
               <div>
-                <div className="font-medium text-foreground">
+                <div className="font-medium text-foreground text-base mb-1">
                   {ticket.colaboradores?.nome_completo || 
                    ticket.profiles?.nome_completo || 
                    (ticket.franqueado_id ? (ticket.franqueados?.name || "Franqueado") : "Sistema")}
                 </div>
                 <div className="text-xs text-muted-foreground">Solicitante</div>
                 {ticket.franqueados && (
-                  <div className="text-xs text-muted-foreground mt-1">
+                  <div className="text-xs text-muted-foreground mt-2">
                     Franqueado ID: {ticket.franqueado_id}
                   </div>
                 )}
               </div>
             </div>
           </div>
-          <div className="space-y-4">
-            <div className="p-3 bg-muted/50 rounded-lg">
-              <Badge variant={getPriorityVariant(ticket.prioridade)} className="w-fit mb-2">
+          <div className="space-y-6">
+            <div className="p-4 bg-muted/50 rounded-lg">
+              <Badge variant={getPriorityVariant(ticket.prioridade)} className="w-fit mb-3">
                 {ticket.prioridade === 'crise' && <Zap className="h-3 w-3 mr-1" />}
                 {ticket.prioridade}
               </Badge>
               <div className="text-xs text-muted-foreground">Prioridade</div>
             </div>
             <div className="p-4 bg-muted/30 rounded-lg border">
-              <div className="flex items-start gap-3">
+              <div className="flex items-start gap-4">
                 <Tag className="h-5 w-5 text-primary mt-0.5" />
-                <div className="flex-1 space-y-3">
+                <div className="flex-1 space-y-4">
                   {/* Equipe Responsável */}
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="font-semibold text-base text-foreground">
+                      <div className="font-semibold text-base text-foreground mb-1">
                         {ticket.equipes?.nome || 'Sem equipe'}
                       </div>
                       <div className="text-xs text-muted-foreground font-medium">Equipe Responsável</div>
@@ -409,8 +409,8 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                   
                   {/* Atendimento Iniciado */}
                   {ticket.atendimento_iniciado_por && ticket.atendimento_iniciado_profile?.nome_completo && (
-                    <div className="bg-background/50 rounded-md p-3 border-l-2 border-primary/50">
-                      <div className="flex items-center gap-2 mb-1">
+                    <div className="bg-background/50 rounded-md p-4 border-l-2 border-primary/50">
+                      <div className="flex items-center gap-2 mb-2">
                         <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                         <div className="text-sm font-medium text-foreground">
                           {ticket.atendimento_iniciado_profile.nome_completo}
@@ -437,16 +437,16 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
         </div>
 
         {/* Problem Description */}
-        <div className="space-y-3">
+        <div className="space-y-4">
           <h4 className="font-semibold text-lg">Descrição do Problema</h4>
-          <div className="p-4 bg-muted/50 rounded-lg border-l-4 border-primary">
+          <div className="p-6 bg-muted/50 rounded-lg border-l-4 border-primary">
             <p className="text-sm leading-relaxed text-foreground">
               {ticket.descricao_problema}
             </p>
           </div>
         </div>
 
-        <Separator className="my-6" />
+        <Separator className="my-8" />
 
         {/* AI Suggestion */}
         <Collapsible open={showAISuggestion} onOpenChange={setShowAISuggestion}>
