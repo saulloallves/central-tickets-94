@@ -237,10 +237,10 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
           const colors = getEquipeColor(ticket.equipes.nome);
           return (
             <div className={cn(
-              "inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full transition-all",
+              "inline-flex items-center gap-1 px-2 py-1 rounded-full transition-all",
               colors.bg, colors.border, "border"
             )}>
-              <div className={cn("w-2 h-2 rounded-full", colors.dot)}></div>
+              <div className={cn("w-1.5 h-1.5 rounded-full", colors.dot)}></div>
               <span className={cn("text-xs font-medium truncate", colors.text)}>
                 {ticket.equipes.nome}
               </span>
