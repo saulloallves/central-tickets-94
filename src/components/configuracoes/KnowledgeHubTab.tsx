@@ -390,7 +390,7 @@ export const KnowledgeHubTab = () => {
       </div>
 
       {/* Statistics */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Sugestões Pendentes</CardTitle>
@@ -420,60 +420,7 @@ export const KnowledgeHubTab = () => {
             <div className="text-2xl font-bold">{approvedSuggestions.length}</div>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Documentos RAG</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{ragDocuments.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">Disponíveis para importação</p>
-          </CardContent>
-        </Card>
       </div>
-
-      {/* Import RAG Documents Section */}
-      {ragDocuments.length > 0 && (
-        <Card className="border-2 border-dashed border-blue-200 bg-blue-50/50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Download className="h-5 w-5 text-blue-600" />
-              Importar Documentos RAG
-            </CardTitle>
-            <CardDescription>
-              Encontramos {ragDocuments.length} documentos na tabela RAG DOCUMENTOS que podem ser convertidos em artigos da base de conhecimento.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex gap-2">
-              <Button 
-                onClick={handleImportAllRAGDocuments}
-                disabled={importProgress.importing}
-                className="gap-2"
-              >
-                <Download className="h-4 w-4" />
-                {importProgress.importing ? 
-                  `Importando... (${importProgress.current}/${importProgress.total})` : 
-                  'Importar Todos'
-                }
-              </Button>
-              <Button variant="outline" onClick={() => setIsImportModalOpen(true)}>
-                Importar Individualmente
-              </Button>
-            </div>
-            
-            {importProgress.importing && (
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
-                  style={{ width: `${(importProgress.current / importProgress.total) * 100}%` }}
-                />
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
 
       {/* Content tabs */}
       <Tabs defaultValue="suggestions" className="space-y-4">
@@ -484,11 +431,6 @@ export const KnowledgeHubTab = () => {
           <TabsTrigger value="articles">
             Artigos Publicados ({filteredArticles.length})
           </TabsTrigger>
-          {ragDocuments.length > 0 && (
-            <TabsTrigger value="rag-docs">
-              Documentos RAG ({ragDocuments.length})
-            </TabsTrigger>
-          )}
         </TabsList>
 
         <TabsContent value="suggestions" className="space-y-4">
@@ -633,50 +575,6 @@ export const KnowledgeHubTab = () => {
           )}
         </TabsContent>
 
-        <TabsContent value="rag-docs" className="space-y-4">
-          {ragDocuments.length === 0 ? (
-            <Card>
-              <CardContent className="py-8 text-center">
-                <p className="text-muted-foreground">Nenhum documento RAG encontrado</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-4">
-              {ragDocuments.map((ragDoc) => (
-                <Card key={ragDoc.id}>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">
-                        {ragDoc.metadata?.title || ragDoc.metadata?.source || `Documento ${ragDoc.id}`}
-                      </CardTitle>
-                      <Button
-                        size="sm"
-                        onClick={() => handleImportRAGDocument(ragDoc)}
-                        className="gap-1"
-                      >
-                        <Download className="h-3 w-3" />
-                        Importar
-                      </Button>
-                    </div>
-                    <CardDescription>
-                      ID: {ragDoc.id} • Conteúdo: {ragDoc.content?.length || 0} caracteres
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm leading-relaxed line-clamp-3">
-                      {ragDoc.content}
-                    </p>
-                    {ragDoc.metadata && Object.keys(ragDoc.metadata).length > 0 && (
-                      <div className="mt-2 text-xs text-muted-foreground">
-                        Metadados: {JSON.stringify(ragDoc.metadata, null, 2).slice(0, 100)}...
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
       </Tabs>
 
       {/* Approval Modal */}
