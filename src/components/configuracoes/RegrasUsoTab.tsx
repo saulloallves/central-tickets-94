@@ -22,17 +22,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useKnowledgeArticles } from "@/hooks/useKnowledgeArticles";
 
-const categorias = [
-  'Jurídico',
-  'RH',
-  'Sistema', 
-  'Operações',
-  'Financeiro',
-  'Marketing',
-  'Técnico',
-  'Atendimento',
-  'Geral'
-];
+interface Equipe {
+  id: string;
+  nome: string;
+  ativo: boolean;
+}
 
 interface AISettings {
   id?: string;
@@ -53,15 +47,17 @@ export function RegrasUsoTab() {
     use_only_approved: true
   });
   
+  const [equipes, setEquipes] = useState<Equipe[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [newCategory, setNewCategory] = useState('');
+  const [newEquipe, setNewEquipe] = useState('');
   const [newTag, setNewTag] = useState('');
   const [newForcedArticle, setNewForcedArticle] = useState('');
 
   const fetchSettings = async () => {
     setLoading(true);
     try {
+      // Buscar configurações
       const { data, error } = await supabase
         .from('faq_ai_settings')
         .select('*')
@@ -79,6 +75,16 @@ export function RegrasUsoTab() {
           use_only_approved: data.use_only_approved ?? true
         });
       }
+
+      // Buscar equipes
+      const { data: equipesData, error: equipesError } = await supabase
+        .from('equipes')
+        .select('id, nome, ativo')
+        .eq('ativo', true)
+        .order('nome');
+
+      if (equipesError) throw equipesError;
+      setEquipes(equipesData || []);
     } catch (error) {
       console.error('Erro ao buscar configurações:', error);
     } finally {
@@ -118,20 +124,20 @@ export function RegrasUsoTab() {
     }
   };
 
-  const addAllowedCategory = () => {
-    if (newCategory && !settings.allowed_categories.includes(newCategory)) {
+  const addAllowedEquipe = () => {
+    if (newEquipe && !settings.allowed_categories.includes(newEquipe)) {
       setSettings(prev => ({
         ...prev,
-        allowed_categories: [...prev.allowed_categories, newCategory]
+        allowed_categories: [...prev.allowed_categories, newEquipe]
       }));
-      setNewCategory('');
+      setNewEquipe('');
     }
   };
 
-  const removeAllowedCategory = (category: string) => {
+  const removeAllowedEquipe = (equipeId: string) => {
     setSettings(prev => ({
       ...prev,
-      allowed_categories: prev.allowed_categories.filter(c => c !== category)
+      allowed_categories: prev.allowed_categories.filter(c => c !== equipeId)
     }));
   };
 
@@ -232,51 +238,54 @@ export function RegrasUsoTab() {
         </CardContent>
       </Card>
 
-      {/* Categorias Permitidas */}
+      {/* Equipes Permitidas */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Filter className="h-5 w-5 text-green-600" />
-            Categorias Permitidas
+            Equipes Permitidas
           </CardTitle>
           <CardDescription>
-            Limite quais categorias de artigos a IA pode usar (deixe vazio para permitir todas)
+            Limite quais equipes de artigos a IA pode usar (deixe vazio para permitir todas)
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex gap-2">
-            <Select value={newCategory} onValueChange={setNewCategory}>
+            <Select value={newEquipe} onValueChange={setNewEquipe}>
               <SelectTrigger className="flex-1">
-                <SelectValue placeholder="Selecione uma categoria para permitir" />
+                <SelectValue placeholder="Selecione uma equipe para permitir" />
               </SelectTrigger>
               <SelectContent>
-                {categorias
-                  .filter(cat => !settings.allowed_categories.includes(cat))
-                  .map(cat => (
-                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                {equipes
+                  .filter(equipe => !settings.allowed_categories.includes(equipe.id))
+                  .map(equipe => (
+                    <SelectItem key={equipe.id} value={equipe.id}>{equipe.nome}</SelectItem>
                   ))}
               </SelectContent>
             </Select>
-            <Button onClick={addAllowedCategory} disabled={!newCategory}>
+            <Button onClick={addAllowedEquipe} disabled={!newEquipe}>
               <Plus className="h-4 w-4" />
             </Button>
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {settings.allowed_categories.map(category => (
-              <Badge key={category} variant="secondary" className="flex items-center gap-2">
-                {category}
-                <button
-                  onClick={() => removeAllowedCategory(category)}
-                  className="hover:text-destructive"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </Badge>
-            ))}
+            {settings.allowed_categories.map(equipeId => {
+              const equipe = equipes.find(e => e.id === equipeId);
+              return (
+                <Badge key={equipeId} variant="secondary" className="flex items-center gap-2">
+                  {equipe?.nome || equipeId}
+                  <button
+                    onClick={() => removeAllowedEquipe(equipeId)}
+                    className="hover:text-destructive"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              );
+            })}
             {settings.allowed_categories.length === 0 && (
               <p className="text-sm text-muted-foreground italic">
-                Todas as categorias são permitidas
+                Todas as equipes são permitidas
               </p>
             )}
           </div>
@@ -407,14 +416,17 @@ export function RegrasUsoTab() {
             </div>
 
             <div className="space-y-2">
-              <span className="text-sm font-medium text-muted-foreground">Categorias permitidas:</span>
+              <span className="text-sm font-medium text-muted-foreground">Equipes permitidas:</span>
               <div className="flex flex-wrap gap-1">
                 {settings.allowed_categories.length > 0 ? (
-                  settings.allowed_categories.map(cat => (
-                    <Badge key={cat} variant="outline" className="text-xs">
-                      {cat}
-                    </Badge>
-                  ))
+                  settings.allowed_categories.map(equipeId => {
+                    const equipe = equipes.find(e => e.id === equipeId);
+                    return (
+                      <Badge key={equipeId} variant="outline" className="text-xs">
+                        {equipe?.nome || equipeId}
+                      </Badge>
+                    );
+                  })
                 ) : (
                   <Badge variant="secondary" className="text-xs">Todas permitidas</Badge>
                 )}
