@@ -288,6 +288,31 @@ export const KnowledgeHubTab = () => {
     }
   };
 
+  const handleApproveAll = async () => {
+    if (filteredArticles.length === 0) return;
+    
+    try {
+      const updatePromises = filteredArticles.map(article => 
+        updateArticle(article.id, { aprovado: true })
+      );
+      
+      await Promise.all(updatePromises);
+      
+      toast({
+        title: "✅ Todos Aprovados",
+        description: `${filteredArticles.length} artigos foram aprovados`,
+      });
+      
+    } catch (error) {
+      console.error('Error approving all articles:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível aprovar todos os artigos",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleConfirmImport = async () => {
     try {
       const finalApprovalData = {
@@ -542,14 +567,24 @@ export const KnowledgeHubTab = () => {
                 <p className="text-sm text-muted-foreground">
                   {filteredArticles.length} artigos encontrados
                 </p>
-                <Button 
-                  onClick={handleActivateAllForAI}
-                  variant="outline"
-                  className="gap-2"
-                >
-                  <Check className="h-4 w-4" />
-                  Ativar Todos para IA
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={handleApproveAll}
+                    variant="outline"
+                    className="gap-2"
+                  >
+                    <Check className="h-4 w-4" />
+                    Aprovar Todos
+                  </Button>
+                  <Button 
+                    onClick={handleActivateAllForAI}
+                    variant="outline"
+                    className="gap-2"
+                  >
+                    <Check className="h-4 w-4" />
+                    Ativar Todos para IA
+                  </Button>
+                </div>
               </div>
                 {filteredArticles.map((article) => (
                 <Card key={article.id}>
