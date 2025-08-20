@@ -312,7 +312,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
   const slaStatus = getSLAStatus();
 
   return (
-    <Card className="h-full flex flex-col">
+    <Card className="h-full flex flex-col max-w-6xl w-full mx-auto">
       <CardHeader className="pb-6">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
@@ -459,16 +459,16 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
         <Separator className="my-8" />
 
         {/* Tab Navigation */}
-        <div className="space-y-4">
+        <div className="space-y-6">
           {/* Tab Buttons */}
-          <div className="flex gap-2 p-1 bg-muted rounded-lg">
+          <div className="flex gap-3 p-2 bg-muted rounded-lg">
             <Button
               variant={activeTab === 'suggestion' ? 'default' : 'ghost'}
-              size="sm"
+              size="lg"
               onClick={() => setActiveTab('suggestion')}
-              className="flex-1 relative"
+              className="flex-1 relative h-14 text-base"
             >
-              <Sparkles className="h-4 w-4 mr-2" />
+              <Sparkles className="h-5 w-5 mr-3" />
               IA Sugestão
               {suggestion && !suggestion.foi_usada && (
                 <Badge variant="secondary" className="ml-2 text-xs">Nova</Badge>
@@ -476,11 +476,11 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
             </Button>
             <Button
               variant={activeTab === 'chat' ? 'default' : 'ghost'}
-              size="sm"
+              size="lg"
               onClick={() => setActiveTab('chat')}
-              className="flex-1 relative"
+              className="flex-1 relative h-14 text-base"
             >
-              <Bot className="h-4 w-4 mr-2" />
+              <Bot className="h-5 w-5 mr-3" />
               Chat com IA
               {chatHistory.length > 0 && (
                 <Badge variant="secondary" className="ml-2 text-xs">{chatHistory.length}</Badge>
@@ -488,11 +488,11 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
             </Button>
             <Button
               variant={activeTab === 'messages' ? 'default' : 'ghost'}
-              size="sm"
+              size="lg"
               onClick={() => setActiveTab('messages')}
-              className="flex-1 relative"
+              className="flex-1 relative h-14 text-base"
             >
-              <MessageSquare className="h-4 w-4 mr-2" />
+              <MessageSquare className="h-5 w-5 mr-3" />
               Conversas
               <Badge variant="secondary" className="ml-2 text-xs">{messages.length}</Badge>
             </Button>
@@ -604,20 +604,21 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                   ))
                 )}
               </div>
-              <div className="space-y-2">
+              <div className="space-y-4">
                 <Input
                   placeholder="Pergunte algo à IA sobre este ticket..."
                   value={aiQuestion}
                   onChange={(e) => setAiQuestion(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleAskAI()}
+                  className="h-12 text-base"
                 />
                 <Button 
-                  size="sm" 
+                  size="lg" 
                   onClick={handleAskAI}
                   disabled={!aiQuestion.trim() || chatLoading}
-                  className="w-full"
+                  className="w-full h-12"
                 >
-                  <Bot className="h-4 w-4 mr-2" />
+                  <Bot className="h-5 w-5 mr-2" />
                   {chatLoading ? 'Pensando...' : 'Perguntar'}
                 </Button>
               </div>
@@ -654,35 +655,38 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
               </div>
 
               {/* Send Message */}
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <Textarea
                   placeholder="Digite sua mensagem..."
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  rows={3}
+                  rows={4}
+                  className="text-base resize-none"
                 />
-                <div className="flex justify-between">
-                  <Button variant="outline" size="sm">
-                    <Paperclip className="h-4 w-4 mr-2" />
+                <div className="flex justify-between items-center">
+                  <Button variant="outline" size="lg" className="h-12">
+                    <Paperclip className="h-5 w-5 mr-2" />
                     Anexar
                   </Button>
-                  <div className="flex gap-2">
+                  <div className="flex gap-3">
                     <Button 
-                      size="sm" 
+                      size="lg" 
                       onClick={handleSendMessage}
                       disabled={!newMessage.trim()}
+                      className="h-12 px-6"
                     >
-                      <Send className="h-4 w-4 mr-2" />
+                      <Send className="h-5 w-5 mr-2" />
                       Enviar
                     </Button>
                     <Button 
-                      size="sm" 
+                      size="lg" 
                       variant="outline"
                       onClick={handleSendToFranqueado}
                       disabled={!newMessage.trim() || isSendingToFranqueado || !ticket?.franqueado_id}
                       title={!ticket?.franqueado_id ? 'Nenhum franqueado vinculado a este ticket' : ''}
+                      className="h-12 px-4"
                     >
-                      <Phone className="h-4 w-4 mr-2" />
+                      <Phone className="h-5 w-5 mr-2" />
                       {isSendingToFranqueado ? 'Enviando...' : 'WhatsApp Franqueado'}
                     </Button>
                   </div>
