@@ -110,16 +110,16 @@ serve(async (req) => {
 
     console.log('Search terms:', searchTerms);
 
-    // Search in RAG_DOCUMENTOS table
+    // Search in RAG_DOCUMENTOS table - focus on content
     const ragPromises = searchTerms.map(term => 
       supabase
         .from('RAG DOCUMENTOS')
         .select('content, metadata')
-        .or(`content.ilike.%${term}%,metadata->>title.ilike.%${term}%,metadata->>category.ilike.%${term}%`)
-        .limit(3) // Increased limit
+        .ilike('content', `%${term}%`) // Focus primarily on content
+        .limit(3)
     );
 
-    // Search in knowledge_articles table with broader strategy
+    // Search in knowledge_articles table - focus heavily on content
     const kbQuery = supabase
       .from('knowledge_articles')
       .select('id, titulo, conteudo, categoria, tags')
@@ -131,11 +131,11 @@ serve(async (req) => {
       kbQuery.in('categoria', aiSettings.allowed_categories);
     }
 
-    // More inclusive search strategy
+    // Search primarily in content where the manuals are
     const kbPromises = searchTerms.map(term =>
       kbQuery
-        .or(`titulo.ilike.%${term}%,conteudo.ilike.%${term}%,categoria.ilike.%${term}%`)
-        .limit(3) // Increased limit
+        .ilike('conteudo', `%${term}%`) // Focus on content search
+        .limit(3)
     );
 
     // Also get some general articles to ensure we always have context
@@ -144,7 +144,7 @@ serve(async (req) => {
       .select('id, titulo, conteudo, categoria, tags')
       .eq('ativo', true)
       .eq('aprovado', aiSettings.use_only_approved || true)
-      .limit(5); // Get some general articles
+      .limit(8); // Get more general articles for broader context
 
     if (aiSettings.allowed_categories && aiSettings.allowed_categories.length > 0) {
       generalKbQuery.in('categoria', aiSettings.allowed_categories);
