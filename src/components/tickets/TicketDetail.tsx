@@ -356,22 +356,19 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
 
       <CardContent className="flex-1 flex flex-col space-y-8 p-6">
         {/* Ticket Info Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
           {/* Unidade Card */}
           <Card className="border-l-4 border-l-blue-500">
-            <CardContent className="p-4">
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-blue-50 rounded-md">
-                  <Building className="h-4 w-4 text-blue-600" />
+            <CardContent className="p-3">
+              <div className="flex items-center gap-3">
+                <div className="p-1.5 bg-blue-50 rounded">
+                  <Building className="h-3.5 w-3.5 text-blue-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold text-foreground mb-0.5 truncate">
+                  <div className="text-sm font-semibold text-foreground truncate">
                     {ticket.unidades?.grupo || ticket.unidade_id}
                   </div>
                   <div className="text-xs text-muted-foreground">Unidade</div>
-                  <div className="text-xs text-muted-foreground mt-1 opacity-60">
-                    ID: {ticket.unidade_id}
-                  </div>
                 </div>
               </div>
             </CardContent>
@@ -379,25 +376,18 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
 
           {/* Solicitante Card */}
           <Card className="border-l-4 border-l-green-500">
-            <CardContent className="p-4">
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-green-50 rounded-md">
-                  <User className="h-4 w-4 text-green-600" />
+            <CardContent className="p-3">
+              <div className="flex items-center gap-3">
+                <div className="p-1.5 bg-green-50 rounded">
+                  <User className="h-3.5 w-3.5 text-green-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold text-foreground mb-0.5 truncate">
+                  <div className="text-sm font-semibold text-foreground truncate">
                     {ticket.colaboradores?.nome_completo || 
                      ticket.profiles?.nome_completo || 
                      (ticket.franqueado_id ? (ticket.franqueados?.name || "Franqueado") : "Sistema")}
                   </div>
                   <div className="text-xs text-muted-foreground">Solicitante</div>
-                  {ticket.franqueados && (
-                    <div className="mt-2">
-                      <Badge variant="outline" className="text-xs py-0 px-2 h-5">
-                        Franqueado #{ticket.franqueado_id}
-                      </Badge>
-                    </div>
-                  )}
                 </div>
               </div>
             </CardContent>
@@ -405,29 +395,26 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
 
           {/* Sistema/Equipe Card */}
           <Card className="border-l-4 border-l-purple-500">
-            <CardContent className="p-4">
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-purple-50 rounded-md">
-                  <Tag className="h-4 w-4 text-purple-600" />
+            <CardContent className="p-3">
+              <div className="flex items-center gap-3">
+                <div className="p-1.5 bg-purple-50 rounded">
+                  <Tag className="h-3.5 w-3.5 text-purple-600" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="space-y-3">
-                    {/* Prioridade */}
-                    <div>
-                      <Badge variant={getPriorityVariant(ticket.prioridade)} className="text-xs px-2 py-0.5 h-5">
-                        {ticket.prioridade === 'crise' && <Zap className="h-2.5 w-2.5 mr-1" />}
-                        {ticket.prioridade?.toUpperCase()}
-                      </Badge>
-                      <div className="text-xs text-muted-foreground mt-0.5">Prioridade</div>
-                    </div>
+                <div className="flex-1 min-w-0 space-y-2">
+                  {/* Prioridade */}
+                  <div>
+                    <Badge variant={getPriorityVariant(ticket.prioridade)} className="text-xs px-2 py-0 h-4">
+                      {ticket.prioridade === 'crise' && <Zap className="h-2 w-2 mr-1" />}
+                      {ticket.prioridade?.toUpperCase()}
+                    </Badge>
+                  </div>
 
-                    {/* Equipe Responsável */}
-                    <div>
-                      <div className="text-sm font-semibold text-foreground mb-0.5">
-                        {ticket.equipes?.nome || 'Aguardando atribuição'}
-                      </div>
-                      <div className="text-xs text-muted-foreground">Equipe Responsável</div>
+                  {/* Equipe Responsável */}
+                  <div>
+                    <div className="text-sm font-semibold text-foreground truncate">
+                      {ticket.equipes?.nome || 'Aguardando'}
                     </div>
+                    <div className="text-xs text-muted-foreground">Equipe</div>
                   </div>
                 </div>
               </div>
@@ -438,13 +425,13 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
         {/* Atendimento Status */}
         {ticket.atendimento_iniciado_por && ticket.atendimento_iniciado_profile?.nome_completo && (
           <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 rounded-full">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <div className="p-1.5 bg-green-100 rounded-full">
+                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
                 </div>
                 <div className="flex-1">
-                  <div className="text-sm font-semibold text-green-800 mb-0.5">
+                  <div className="text-sm font-semibold text-green-800">
                     Atendimento em andamento
                   </div>
                   <div className="text-xs text-green-700">
