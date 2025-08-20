@@ -120,7 +120,7 @@ export const TestAIButton = () => {
                                 <strong>Código:</strong> {result.ticket_data.codigo_ticket}
                               </div>
                               <div>
-                                <strong>Categoria:</strong> {result.ticket_data.categoria || 'Não definida'}
+                                <strong>Equipe:</strong> {result.ticket_data.equipe_responsavel_id || 'Não atribuída'}
                               </div>
                               <div>
                                 <strong>Subcategoria:</strong> {result.ticket_data.subcategoria || 'Não definida'}

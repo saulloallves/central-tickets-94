@@ -314,7 +314,7 @@ export const useTickets = (filters: TicketFilters) => {
       const ticketInsertData = {
         unidade_id: ticketData.unidade_id!,
         descricao_problema: ticketData.descricao_problema!,
-        categoria: ticketData.categoria || null,
+        equipe_responsavel_id: ticketData.equipe_responsavel_id || null,
         prioridade: ticketData.prioridade || 'padrao_24h',
         subcategoria: ticketData.subcategoria || null,
         colaborador_id,

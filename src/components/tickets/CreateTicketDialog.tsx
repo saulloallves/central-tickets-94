@@ -33,6 +33,7 @@ export const CreateTicketDialog = ({ open, onOpenChange }: CreateTicketDialogPro
   const { getSuggestion, logFAQInteraction, loading: faqLoading } = useFAQSuggestion();
   const [submitting, setSubmitting] = useState(false);
   const [unidades, setUnidades] = useState<Unidade[]>([]);
+  const [equipes, setEquipes] = useState<{id: string; nome: string}[]>([]);
   const [faqResponse, setFaqResponse] = useState<{
     resposta_ia_sugerida: string;
     log_prompt_faq: any;
@@ -44,7 +45,7 @@ export const CreateTicketDialog = ({ open, onOpenChange }: CreateTicketDialogPro
   const [formData, setFormData] = useState({
     unidade_id: '',
     descricao_problema: '',
-    categoria: '',
+    equipe_responsavel_id: '',
     prioridade: 'padrao_24h' as const,
     subcategoria: ''
   });
@@ -66,7 +67,7 @@ export const CreateTicketDialog = ({ open, onOpenChange }: CreateTicketDialogPro
 
   // Save form data to localStorage whenever it changes
   useEffect(() => {
-    if (open && (formData.descricao_problema || formData.categoria || formData.subcategoria)) {
+    if (open && (formData.descricao_problema || formData.equipe_responsavel_id || formData.subcategoria)) {
       localStorage.setItem('createTicket_formData', JSON.stringify(formData));
     }
   }, [formData, open]);
@@ -77,7 +78,7 @@ export const CreateTicketDialog = ({ open, onOpenChange }: CreateTicketDialogPro
     setFormData({
       unidade_id: unidades.length === 1 ? unidades[0].id : '',
       descricao_problema: '',
-      categoria: '',
+      equipe_responsavel_id: '',
       prioridade: 'padrao_24h',
       subcategoria: ''
     });
@@ -155,8 +156,29 @@ export const CreateTicketDialog = ({ open, onOpenChange }: CreateTicketDialogPro
 
     if (open) {
       fetchUnidades();
+      fetchEquipes();
     }
   }, [open, isAdmin, isGerente, user?.id]);
+
+  // Fetch available teams
+  const fetchEquipes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('equipes')
+        .select('id, nome')
+        .eq('ativo', true)
+        .order('nome');
+
+      if (error) {
+        console.error('Error fetching equipes:', error);
+        return;
+      }
+
+      setEquipes(data || []);
+    } catch (error) {
+      console.error('Error fetching equipes:', error);
+    }
+  };
 
   const handleGetSuggestion = async () => {
     if (formData.descricao_problema.trim().length < 10) {
@@ -239,7 +261,7 @@ export const CreateTicketDialog = ({ open, onOpenChange }: CreateTicketDialogPro
       const ticket = await createTicket({
         unidade_id: formData.unidade_id,
         descricao_problema: formData.descricao_problema.trim(),
-        categoria: (formData.categoria as any) || undefined,
+        equipe_responsavel_id: formData.equipe_responsavel_id || undefined,
         prioridade: formData.prioridade,
         subcategoria: formData.subcategoria?.trim() || undefined
       });
@@ -396,22 +418,21 @@ export const CreateTicketDialog = ({ open, onOpenChange }: CreateTicketDialogPro
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="categoria">Categoria</Label>
+                <Label htmlFor="equipe">Equipe Responsável</Label>
                 <Select 
-                  value={formData.categoria} 
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, categoria: value }))}
+                  value={formData.equipe_responsavel_id} 
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, equipe_responsavel_id: value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione..." />
+                    <SelectValue placeholder="Selecione uma equipe..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="juridico">Jurídico</SelectItem>
-                    <SelectItem value="sistema">Sistema</SelectItem>
-                    <SelectItem value="midia">Mídia</SelectItem>
-                    <SelectItem value="operacoes">Operações</SelectItem>
-                    <SelectItem value="rh">RH</SelectItem>
-                    <SelectItem value="financeiro">Financeiro</SelectItem>
-                    <SelectItem value="outro">Outro</SelectItem>
+                    <SelectItem value="">Nenhuma equipe específica</SelectItem>
+                    {equipes.map((equipe) => (
+                      <SelectItem key={equipe.id} value={equipe.id}>
+                        {equipe.nome}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

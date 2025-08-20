@@ -91,7 +91,7 @@ export const useTicketNotifications = () => {
           // Mostrar toast de notificação
           toast({
             title: "Novo Ticket Recebido",
-            description: newTicket.titulo || newTicket.descricao_problema || `${newTicket.categoria || 'Categoria não definida'}`,
+            description: newTicket.titulo || newTicket.descricao_problema || `Equipe: ${newTicket.equipe_responsavel_id || 'Não atribuída'}`,
             duration: 5000,
           });
         }

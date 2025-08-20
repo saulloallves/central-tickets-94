@@ -394,22 +394,16 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
               <div className="flex items-start gap-3">
                 <Tag className="h-5 w-5 text-primary mt-0.5" />
                 <div className="flex-1 space-y-3">
-                  {/* Categoria/Equipe */}
+                  {/* Equipe Responsável */}
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="font-semibold text-base text-foreground">
-                        {ticket.categoria === 'midia' ? 'Mídia' : 
-                         ticket.categoria === 'juridico' ? 'Jurídico' :
-                         ticket.categoria === 'sistema' ? 'Sistema' :
-                         ticket.categoria === 'operacoes' ? 'Operações' :
-                         ticket.categoria === 'rh' ? 'RH' :
-                         ticket.categoria === 'financeiro' ? 'Financeiro' :
-                         ticket.categoria || 'Não definida'}
+                        {ticket.equipes?.nome || 'Sem equipe'}
                       </div>
                       <div className="text-xs text-muted-foreground font-medium">Equipe Responsável</div>
                     </div>
                     <Badge variant="secondary" className="text-xs">
-                      {ticket.categoria || 'Não definida'}
+                      {ticket.equipes?.nome || 'Sem equipe'}
                     </Badge>
                   </div>
                   
