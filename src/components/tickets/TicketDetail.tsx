@@ -356,20 +356,20 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
 
       <CardContent className="flex-1 flex flex-col space-y-8 p-6">
         {/* Ticket Info Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Unidade Card */}
           <Card className="border-l-4 border-l-blue-500">
-            <CardContent className="p-6">
-              <div className="flex items-start gap-4">
-                <div className="p-3 bg-blue-50 rounded-lg">
-                  <Building className="h-6 w-6 text-blue-600" />
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-blue-50 rounded-md">
+                  <Building className="h-4 w-4 text-blue-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-lg font-semibold text-foreground mb-1 truncate">
+                  <div className="text-sm font-semibold text-foreground mb-0.5 truncate">
                     {ticket.unidades?.grupo || ticket.unidade_id}
                   </div>
-                  <div className="text-sm text-muted-foreground font-medium">Unidade</div>
-                  <div className="text-xs text-muted-foreground mt-2 opacity-75">
+                  <div className="text-xs text-muted-foreground">Unidade</div>
+                  <div className="text-xs text-muted-foreground mt-1 opacity-60">
                     ID: {ticket.unidade_id}
                   </div>
                 </div>
@@ -379,21 +379,21 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
 
           {/* Solicitante Card */}
           <Card className="border-l-4 border-l-green-500">
-            <CardContent className="p-6">
-              <div className="flex items-start gap-4">
-                <div className="p-3 bg-green-50 rounded-lg">
-                  <User className="h-6 w-6 text-green-600" />
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-green-50 rounded-md">
+                  <User className="h-4 w-4 text-green-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-lg font-semibold text-foreground mb-1 truncate">
+                  <div className="text-sm font-semibold text-foreground mb-0.5 truncate">
                     {ticket.colaboradores?.nome_completo || 
                      ticket.profiles?.nome_completo || 
                      (ticket.franqueado_id ? (ticket.franqueados?.name || "Franqueado") : "Sistema")}
                   </div>
-                  <div className="text-sm text-muted-foreground font-medium">Solicitante</div>
+                  <div className="text-xs text-muted-foreground">Solicitante</div>
                   {ticket.franqueados && (
-                    <div className="flex items-center gap-2 mt-3">
-                      <Badge variant="outline" className="text-xs">
+                    <div className="mt-2">
+                      <Badge variant="outline" className="text-xs py-0 px-2 h-5">
                         Franqueado #{ticket.franqueado_id}
                       </Badge>
                     </div>
@@ -405,25 +405,25 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
 
           {/* Sistema/Equipe Card */}
           <Card className="border-l-4 border-l-purple-500">
-            <CardContent className="p-6">
-              <div className="flex items-start gap-4">
-                <div className="p-3 bg-purple-50 rounded-lg">
-                  <Tag className="h-6 w-6 text-purple-600" />
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-purple-50 rounded-md">
+                  <Tag className="h-4 w-4 text-purple-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {/* Prioridade */}
                     <div>
-                      <Badge variant={getPriorityVariant(ticket.prioridade)} className="text-sm px-3 py-1">
-                        {ticket.prioridade === 'crise' && <Zap className="h-3 w-3 mr-1" />}
+                      <Badge variant={getPriorityVariant(ticket.prioridade)} className="text-xs px-2 py-0.5 h-5">
+                        {ticket.prioridade === 'crise' && <Zap className="h-2.5 w-2.5 mr-1" />}
                         {ticket.prioridade?.toUpperCase()}
                       </Badge>
-                      <div className="text-xs text-muted-foreground mt-1">Prioridade</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">Prioridade</div>
                     </div>
 
                     {/* Equipe Responsável */}
                     <div>
-                      <div className="text-base font-semibold text-foreground mb-1">
+                      <div className="text-sm font-semibold text-foreground mb-0.5">
                         {ticket.equipes?.nome || 'Aguardando atribuição'}
                       </div>
                       <div className="text-xs text-muted-foreground">Equipe Responsável</div>
@@ -438,16 +438,16 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
         {/* Atendimento Status */}
         {ticket.atendimento_iniciado_por && ticket.atendimento_iniciado_profile?.nome_completo && (
           <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-green-100 rounded-full">
-                  <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-100 rounded-full">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                 </div>
                 <div className="flex-1">
-                  <div className="text-lg font-semibold text-green-800 mb-1">
+                  <div className="text-sm font-semibold text-green-800 mb-0.5">
                     Atendimento em andamento
                   </div>
-                  <div className="text-sm text-green-700">
+                  <div className="text-xs text-green-700">
                     <span className="font-medium">{ticket.atendimento_iniciado_profile.nome_completo}</span>
                     {' • '}iniciado em {ticket.atendimento_iniciado_em 
                       ? new Date(ticket.atendimento_iniciado_em).toLocaleString('pt-BR', {
