@@ -359,8 +359,8 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
           <Card className="border-l-4 border-l-blue-500 w-full max-w-xs h-16">
             <CardContent className="p-2 h-full flex items-center">
               <div className="flex items-center gap-2 w-full">
-                <div className="p-1 bg-blue-50 rounded">
-                  <Building className="h-3 w-3 text-blue-600" />
+                <div className="p-0.5 bg-blue-50 rounded">
+                  <Building className="h-2 w-2 text-blue-600" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-xs font-semibold text-foreground truncate">
@@ -376,8 +376,8 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
           <Card className="border-l-4 border-l-green-500 w-full max-w-xs h-16">
             <CardContent className="p-2 h-full flex items-center">
               <div className="flex items-center gap-2 w-full">
-                <div className="p-1 bg-green-50 rounded">
-                  <User className="h-3 w-3 text-green-600" />
+                <div className="p-0.5 bg-green-50 rounded">
+                  <User className="h-2 w-2 text-green-600" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-xs font-semibold text-foreground truncate">
@@ -395,8 +395,8 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
           <Card className="border-l-4 border-l-purple-500 w-full max-w-xs h-16">
             <CardContent className="p-2 h-full flex items-center">
               <div className="flex items-center gap-2 w-full">
-                <div className="p-1 bg-purple-50 rounded">
-                  <Tag className="h-2.5 w-2.5 text-purple-600" />
+                <div className="p-0.5 bg-purple-50 rounded">
+                  <Tag className="h-2 w-2 text-purple-600" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1">
