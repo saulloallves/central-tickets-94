@@ -356,9 +356,9 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
 
       <CardContent className="flex-1 flex flex-col space-y-8 p-6">
         {/* Ticket Info Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 place-items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 place-items-center w-full">
           {/* Unidade Card */}
-          <Card className="border-l-4 border-l-blue-500">
+          <Card className="border-l-4 border-l-blue-500 w-full max-w-xs">
             <CardContent className="p-3">
               <div className="flex items-center gap-3">
                 <div className="p-1.5 bg-blue-50 rounded">
@@ -375,7 +375,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
           </Card>
 
           {/* Solicitante Card */}
-          <Card className="border-l-4 border-l-green-500">
+          <Card className="border-l-4 border-l-green-500 w-full max-w-xs">
             <CardContent className="p-3">
               <div className="flex items-center gap-3">
                 <div className="p-1.5 bg-green-50 rounded">
@@ -394,7 +394,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
           </Card>
 
           {/* Sistema/Equipe Card */}
-          <Card className="border-l-4 border-l-purple-500">
+          <Card className="border-l-4 border-l-purple-500 w-full max-w-xs">
             <CardContent className="p-3">
               <div className="flex items-center gap-3">
                 <div className="p-1.5 bg-purple-50 rounded">
