@@ -138,34 +138,34 @@ const Unidades = () => {
                 <Dialog key={unidade.id}>
                   <DialogTrigger asChild>
                     <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border bg-white dark:bg-card relative overflow-hidden">
-                      <CardHeader className="pb-6">
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                            <Building className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                      <CardHeader className="pb-3 pt-4">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="p-1.5 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                            <Building className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                           </div>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                            <Search className="w-4 h-4 text-muted-foreground" />
+                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                            <Search className="w-3.5 h-3.5 text-muted-foreground" />
                           </Button>
                         </div>
                         
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                           <div>
-                            <CardTitle className="text-lg font-semibold leading-tight">
+                            <CardTitle className="text-base font-semibold leading-tight">
                               {unidade.grupo || 'Unidade'}
                             </CardTitle>
-                            <p className="text-sm text-muted-foreground mt-1">
+                            <p className="text-sm text-muted-foreground mt-0.5">
                               {unidade.cidade || 'N/A'}, {unidade.estado || 'N/A'}
                             </p>
                           </div>
                           
-                          <div className="space-y-1 text-xs text-muted-foreground">
+                          <div className="space-y-0.5 text-xs text-muted-foreground">
                             <div>Código: #{unidade.id.substring(0, 8)}</div>
                             <div>Modelo: {unidade.modelo_loja || 'N/A'}</div>
                           </div>
                         </div>
                       </CardHeader>
                       
-                      <CardContent className="pt-0">
+                      <CardContent className="pt-0 pb-4">
                         <div className="flex items-center justify-between">
                           <Badge 
                             className={`${
