@@ -37,6 +37,7 @@ const Tickets = () => {
   // Listen for notification ticket modal events
   useEffect(() => {
     const handleOpenTicketModal = (event: CustomEvent) => {
+      console.log('Received openTicketModal event:', event.detail);
       setSelectedTicketId(event.detail.ticketId);
     };
     

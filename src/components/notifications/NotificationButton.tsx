@@ -8,7 +8,6 @@ import { Separator } from '@/components/ui/separator';
 import { useInternalAlerts } from '@/hooks/useInternalAlerts';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Link } from 'react-router-dom';
 
 export const NotificationButton = () => {
   const { alerts, loading, markAlertAsProcessed } = useInternalAlerts();
@@ -128,23 +127,33 @@ export const NotificationButton = () => {
                           size="sm" 
                           className="h-6 text-xs"
                           onClick={() => {
+                            console.log('Ver Ticket clicked! Alert:', alert);
+                            console.log('Ticket ID:', alert.ticket_id);
                             setOpen(false);
                             
                             // Check if we're on the tickets page
                             const currentPath = window.location.pathname;
+                            console.log('Current path:', currentPath);
                             
                             if (currentPath === '/admin/tickets') {
                               // Dispatch event to open ticket modal on tickets page
-                              window.dispatchEvent(new CustomEvent('openTicketModal', { 
+                              console.log('Dispatching openTicketModal event with ticketId:', alert.ticket_id);
+                              const event = new CustomEvent('openTicketModal', { 
                                 detail: { ticketId: alert.ticket_id }
-                              }));
+                              });
+                              window.dispatchEvent(event);
+                              console.log('Event dispatched!');
                             } else if (currentPath === '/admin') {
                               // Dispatch event to open ticket modal on dashboard
-                              window.dispatchEvent(new CustomEvent('openTicketModal', { 
+                              console.log('Dispatching openTicketModal event on dashboard with ticketId:', alert.ticket_id);
+                              const event = new CustomEvent('openTicketModal', { 
                                 detail: { ticketId: alert.ticket_id }
-                              }));
+                              });
+                              window.dispatchEvent(event);
+                              console.log('Event dispatched!');
                             } else {
                               // Navigate to tickets page with ticket parameter
+                              console.log('Navigating to tickets page with ticket:', alert.ticket_id);
                               window.location.href = `/admin/tickets?ticket=${alert.ticket_id}`;
                             }
                           }}
@@ -172,11 +181,9 @@ export const NotificationButton = () => {
           <>
             <Separator className="my-2" />
             <div className="p-3">
-              <Link to="/admin" onClick={() => setOpen(false)}>
-                <Button variant="outline" size="sm" className="w-full">
-                  Ver Todos os Alertas
-                </Button>
-              </Link>
+              <Button variant="outline" size="sm" className="w-full" onClick={() => setOpen(false)}>
+                Ver Todos os Alertas
+              </Button>
             </div>
           </>
         )}
