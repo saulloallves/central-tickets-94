@@ -45,7 +45,7 @@ export function AppSidebar() {
     // Ajustar margin do conteúdo principal
     const mainContent = document.querySelector('[data-main-content]') as HTMLElement;
     if (mainContent) {
-      mainContent.style.marginLeft = '192px'; // 16px (left) + 176px (expanded width)
+      mainContent.style.marginLeft = '208px'; // 16px (left) + 192px (expanded width)
     }
   };
 
@@ -54,7 +54,7 @@ export function AppSidebar() {
     // Restaurar margin original
     const mainContent = document.querySelector('[data-main-content]') as HTMLElement;
     if (mainContent) {
-      mainContent.style.marginLeft = '72px'; // 72px original (mais estreito)
+      mainContent.style.marginLeft = '80px'; // 80px original (mais próximo)
     }
   };
 
@@ -62,7 +62,7 @@ export function AppSidebar() {
     <TooltipProvider delayDuration={0}>
       <div 
         className={cn(
-          "h-[calc(100vh-4rem)] fixed left-2 top-1/2 -translate-y-1/2 z-40 transition-all duration-500",
+          "h-[calc(100vh-12rem)] fixed left-4 top-1/2 -translate-y-1/2 z-40 transition-all duration-500",
           isExpanded ? "w-48" : "w-16"
         )}
         onMouseEnter={handleMouseEnter}
@@ -86,16 +86,16 @@ export function AppSidebar() {
           </div>
           
           {/* Content wrapper with padding for curves */}
-          <div className="relative z-10 h-full flex flex-col py-6 px-2">
+          <div className="relative z-10 h-full flex flex-col py-4 px-2">
             {/* Main logo/brand icon */}
-            <div className="flex justify-center mb-6">
+            <div className="flex justify-center mb-4">
               <div className="w-8 h-8 flex items-center justify-center">
                 <ClipboardList className="h-4 w-4 text-white" strokeWidth={1.5} />
               </div>
             </div>
 
             {/* Navigation Icons */}
-            <div className="flex-1 flex flex-col space-y-3">
+            <div className="flex-1 flex flex-col space-y-2">
               {navigationItems.map((item) => (
                 <PermissionGuard key={item.title} requiredPermission={item.permission}>
                   {isExpanded ? (
@@ -183,7 +183,7 @@ export function AppSidebar() {
             </div>
 
             {/* Logout button at bottom */}
-            <div className="flex justify-center mt-6">
+            <div className="flex justify-center mt-4">
               {isExpanded ? (
                 <Button 
                   variant="ghost" 
