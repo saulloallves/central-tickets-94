@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useTicketMessages } from '@/hooks/useTickets';
 import { useAISuggestion } from '@/hooks/useAISuggestion';
 import { useAIChat } from '@/hooks/useAIChat';
@@ -28,8 +27,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
   const [newMessage, setNewMessage] = useState('');
   const [editedSuggestion, setEditedSuggestion] = useState('');
   const [aiQuestion, setAiQuestion] = useState('');
-  const [showAISuggestion, setShowAISuggestion] = useState(false);
-  const [showAIChat, setShowAIChat] = useState(false);
+  const [activeTab, setActiveTab] = useState<'chat' | 'suggestion' | 'messages'>('messages');
   const [isSendingToFranqueado, setIsSendingToFranqueado] = useState(false);
   
   const { messages, sendMessage, loading: messagesLoading } = useTicketMessages(ticketId);
@@ -460,227 +458,238 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
 
         <Separator className="my-8" />
 
-        {/* AI Suggestion */}
-        <Collapsible open={showAISuggestion} onOpenChange={setShowAISuggestion}>
-          <CollapsibleTrigger asChild>
-            <Button variant="outline" className="w-full justify-between">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4" />
-                IA Sugestão de Resposta
-              </div>
+        {/* Tab Navigation */}
+        <div className="space-y-4">
+          {/* Tab Buttons */}
+          <div className="flex gap-2 p-1 bg-muted rounded-lg">
+            <Button
+              variant={activeTab === 'suggestion' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setActiveTab('suggestion')}
+              className="flex-1 relative"
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              IA Sugestão
               {suggestion && !suggestion.foi_usada && (
-                <Badge variant="secondary" className="ml-2">Nova</Badge>
+                <Badge variant="secondary" className="ml-2 text-xs">Nova</Badge>
               )}
             </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="space-y-3 mt-3">
-            {suggestion ? (
-              <div className="space-y-3">
-                <div className="p-3 bg-muted rounded-md">
-                  <p className="text-sm">{suggestion.resposta}</p>
-                  <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      <span>Gerada em {formatDateTimeBR(suggestion.created_at)}</span>
-                      {suggestion.log?.rag_hits !== undefined && suggestion.log?.kb_hits !== undefined && (
-                        <span className="text-primary">
-                          ({(suggestion.log.rag_hits + suggestion.log.kb_hits)} docs)
-                        </span>
-                      )}
-                    </div>
-                    {suggestion.foi_usada && (
-                      <Badge variant="secondary" className="text-xs">✓ Utilizada</Badge>
-                    )}
-                  </div>
-                </div>
-                {!suggestion.foi_usada && (
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={handleCopySuggestion}>
-                      <Copy className="h-4 w-4 mr-2" />
-                      Copiar
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={handleEditAndSend}>
-                      Editar e Enviar
-                    </Button>
-                    <Button size="sm" onClick={() => handleSendSuggestion(suggestion.resposta)}>
-                      <Send className="h-4 w-4 mr-2" />
-                      Enviar
-                    </Button>
-                  </div>
-                )}
-              </div>
-            ) : suggestionLoading ? (
-              <div className="text-center py-4">
-                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mb-3">
-                  <Bot className="h-4 w-4 animate-spin" />
-                  Gerando sugestão da IA...
-                </div>
-                <div className="w-full bg-muted rounded-full h-2">
-                  <div className="bg-primary h-2 rounded-full w-1/2 animate-pulse"></div>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-4">
-                <p className="text-sm text-muted-foreground mb-3">
-                  Nenhuma sugestão gerada ainda
-                </p>
-                <Button 
-                  onClick={generateSuggestion} 
-                  disabled={suggestionLoading}
-                  size="sm"
-                >
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  Gerar Sugestão
-                </Button>
-              </div>
-            )}
-            {suggestion && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={generateSuggestion} 
-                disabled={suggestionLoading}
-                className="w-full"
-              >
-                <Sparkles className="h-4 w-4 mr-2" />
-                {suggestionLoading ? 'Gerando...' : 'Regenerar Sugestão'}
-              </Button>
-            )}
-          </CollapsibleContent>
-        </Collapsible>
-
-        {/* AI Chat */}
-        <Collapsible open={showAIChat} onOpenChange={setShowAIChat}>
-          <CollapsibleTrigger asChild>
-            <Button variant="outline" className="w-full justify-between">
-              <div className="flex items-center gap-2">
-                <Bot className="h-4 w-4" />
-                Chat com IA
-              </div>
+            <Button
+              variant={activeTab === 'chat' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setActiveTab('chat')}
+              className="flex-1 relative"
+            >
+              <Bot className="h-4 w-4 mr-2" />
+              Chat com IA
               {chatHistory.length > 0 && (
-                <Badge variant="secondary" className="ml-2">{chatHistory.length}</Badge>
+                <Badge variant="secondary" className="ml-2 text-xs">{chatHistory.length}</Badge>
               )}
             </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="space-y-3 mt-3">
-            <div className="max-h-40 overflow-y-auto space-y-2">
-              {chatHistory.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-2">
-                  Nenhuma conversa ainda. Faça uma pergunta à IA!
-                </p>
-              ) : (
-                chatHistory.map((chat) => (
-                  <div key={chat.id} className="space-y-2">
-                    <div className="p-2 bg-blue-50 rounded-md">
-                      <p className="text-sm font-medium">Você:</p>
-                      <p className="text-sm">{chat.mensagem}</p>
-                    </div>
-                    <div className="p-2 bg-green-50 rounded-md">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="text-sm font-medium">IA:</p>
-                        {chat.log?.rag_hits !== undefined && chat.log?.kb_hits !== undefined && (
-                          <span className="text-xs text-primary">
-                            {(chat.log.rag_hits + chat.log.kb_hits)} docs
+            <Button
+              variant={activeTab === 'messages' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setActiveTab('messages')}
+              className="flex-1 relative"
+            >
+              <MessageSquare className="h-4 w-4 mr-2" />
+              Conversas
+              <Badge variant="secondary" className="ml-2 text-xs">{messages.length}</Badge>
+            </Button>
+          </div>
+
+          {/* Tab Content */}
+          {activeTab === 'suggestion' && (
+            <div className="space-y-4">
+              {suggestion ? (
+                <div className="space-y-3">
+                  <div className="p-4 bg-muted/50 rounded-lg border-l-4 border-primary">
+                    <p className="text-sm leading-relaxed">{suggestion.resposta}</p>
+                    <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <span>Gerada em {formatDateTimeBR(suggestion.created_at)}</span>
+                        {suggestion.log?.rag_hits !== undefined && suggestion.log?.kb_hits !== undefined && (
+                          <span className="text-primary">
+                            ({(suggestion.log.rag_hits + suggestion.log.kb_hits)} docs)
                           </span>
                         )}
                       </div>
-                      <p className="text-sm">{chat.resposta}</p>
+                      {suggestion.foi_usada && (
+                        <Badge variant="secondary" className="text-xs">✓ Utilizada</Badge>
+                      )}
                     </div>
                   </div>
-                ))
-              )}
-            </div>
-            <div className="space-y-2">
-              <Input
-                placeholder="Pergunte algo à IA sobre este ticket..."
-                value={aiQuestion}
-                onChange={(e) => setAiQuestion(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleAskAI()}
-              />
-              <Button 
-                size="sm" 
-                onClick={handleAskAI}
-                disabled={!aiQuestion.trim() || chatLoading}
-                className="w-full"
-              >
-                <Bot className="h-4 w-4 mr-2" />
-                {chatLoading ? 'Pensando...' : 'Perguntar'}
-              </Button>
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
-
-        <Separator />
-
-        {/* Messages */}
-        <div className="flex-1 flex flex-col">
-          <div className="flex items-center gap-2 mb-3">
-            <MessageSquare className="h-4 w-4" />
-            <h4 className="font-medium">Conversas</h4>
-            <Badge variant="secondary">{messages.length}</Badge>
-          </div>
-
-          <div className="flex-1 space-y-3 max-h-60 overflow-y-auto">
-            {messagesLoading ? (
-              <p className="text-sm text-muted-foreground">Carregando mensagens...</p>
-            ) : messages.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nenhuma mensagem ainda</p>
-            ) : (
-              messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`p-3 rounded-md text-sm ${
-                    message.direcao === 'saida' 
-                      ? 'bg-primary text-primary-foreground ml-8' 
-                      : 'bg-muted mr-8'
-                  }`}
-                >
-                  <p>{message.mensagem}</p>
-                  <div className="flex items-center justify-between mt-2 text-xs opacity-70">
-                    <span>{message.profiles?.nome_completo || 'Sistema'}</span>
-                    <span title={formatDateTimeBR(message.created_at)}>
-                      {formatDistanceToNowInSaoPaulo(message.created_at, { addSuffix: true })}
-                    </span>
+                  {!suggestion.foi_usada && (
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={handleCopySuggestion}>
+                        <Copy className="h-4 w-4 mr-2" />
+                        Copiar
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={handleEditAndSend}>
+                        Editar e Enviar
+                      </Button>
+                      <Button size="sm" onClick={() => handleSendSuggestion(suggestion.resposta)}>
+                        <Send className="h-4 w-4 mr-2" />
+                        Enviar
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ) : suggestionLoading ? (
+                <div className="text-center py-6">
+                  <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mb-3">
+                    <Bot className="h-4 w-4 animate-spin" />
+                    Gerando sugestão da IA...
+                  </div>
+                  <div className="w-full bg-muted rounded-full h-2">
+                    <div className="bg-primary h-2 rounded-full w-1/2 animate-pulse"></div>
                   </div>
                 </div>
-              ))
-            )}
-          </div>
-
-          {/* Send Message */}
-          <div className="mt-4 space-y-2">
-            <Textarea
-              placeholder="Digite sua mensagem..."
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              rows={3}
-            />
-            <div className="flex justify-between">
-              <Button variant="outline" size="sm">
-                <Paperclip className="h-4 w-4 mr-2" />
-                Anexar
-              </Button>
-              <div className="flex gap-2">
+              ) : (
+                <div className="text-center py-6">
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Nenhuma sugestão gerada ainda
+                  </p>
+                  <Button 
+                    onClick={generateSuggestion} 
+                    disabled={suggestionLoading}
+                    size="sm"
+                  >
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Gerar Sugestão
+                  </Button>
+                </div>
+              )}
+              {suggestion && (
                 <Button 
+                  variant="ghost" 
                   size="sm" 
-                  onClick={handleSendMessage}
-                  disabled={!newMessage.trim()}
+                  onClick={generateSuggestion} 
+                  disabled={suggestionLoading}
+                  className="w-full"
                 >
-                  <Send className="h-4 w-4 mr-2" />
-                  Enviar
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  {suggestionLoading ? 'Gerando...' : 'Regenerar Sugestão'}
                 </Button>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'chat' && (
+            <div className="space-y-4">
+              <div className="max-h-60 overflow-y-auto space-y-3">
+                {chatHistory.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Nenhuma conversa ainda. Faça uma pergunta à IA!
+                  </p>
+                ) : (
+                  chatHistory.map((chat) => (
+                    <div key={chat.id} className="space-y-2">
+                      <div className="p-3 bg-blue-50 rounded-lg">
+                        <p className="text-sm font-medium text-blue-900">Você:</p>
+                        <p className="text-sm text-blue-800">{chat.mensagem}</p>
+                      </div>
+                      <div className="p-3 bg-green-50 rounded-lg">
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="text-sm font-medium text-green-900">IA:</p>
+                          {chat.log?.rag_hits !== undefined && chat.log?.kb_hits !== undefined && (
+                            <span className="text-xs text-primary">
+                              {(chat.log.rag_hits + chat.log.kb_hits)} docs
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-green-800">{chat.resposta}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+              <div className="space-y-2">
+                <Input
+                  placeholder="Pergunte algo à IA sobre este ticket..."
+                  value={aiQuestion}
+                  onChange={(e) => setAiQuestion(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleAskAI()}
+                />
                 <Button 
                   size="sm" 
-                  variant="outline"
-                  onClick={handleSendToFranqueado}
-                  disabled={!newMessage.trim() || isSendingToFranqueado || !ticket?.franqueado_id}
-                  title={!ticket?.franqueado_id ? 'Nenhum franqueado vinculado a este ticket' : ''}
+                  onClick={handleAskAI}
+                  disabled={!aiQuestion.trim() || chatLoading}
+                  className="w-full"
                 >
-                  <Phone className="h-4 w-4 mr-2" />
-                  {isSendingToFranqueado ? 'Enviando...' : 'WhatsApp Franqueado'}
+                  <Bot className="h-4 w-4 mr-2" />
+                  {chatLoading ? 'Pensando...' : 'Perguntar'}
                 </Button>
               </div>
             </div>
-          </div>
+          )}
+
+          {activeTab === 'messages' && (
+            <div className="space-y-4">
+              <div className="max-h-60 overflow-y-auto space-y-3">
+                {messagesLoading ? (
+                  <p className="text-sm text-muted-foreground">Carregando mensagens...</p>
+                ) : messages.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Nenhuma mensagem ainda</p>
+                ) : (
+                  messages.map((message) => (
+                    <div
+                      key={message.id}
+                      className={`p-3 rounded-lg text-sm ${
+                        message.direcao === 'saida' 
+                          ? 'bg-primary text-primary-foreground ml-8' 
+                          : 'bg-muted mr-8'
+                      }`}
+                    >
+                      <p>{message.mensagem}</p>
+                      <div className="flex items-center justify-between mt-2 text-xs opacity-70">
+                        <span>{message.profiles?.nome_completo || 'Sistema'}</span>
+                        <span title={formatDateTimeBR(message.created_at)}>
+                          {formatDistanceToNowInSaoPaulo(message.created_at, { addSuffix: true })}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Send Message */}
+              <div className="space-y-3">
+                <Textarea
+                  placeholder="Digite sua mensagem..."
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  rows={3}
+                />
+                <div className="flex justify-between">
+                  <Button variant="outline" size="sm">
+                    <Paperclip className="h-4 w-4 mr-2" />
+                    Anexar
+                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      size="sm" 
+                      onClick={handleSendMessage}
+                      disabled={!newMessage.trim()}
+                    >
+                      <Send className="h-4 w-4 mr-2" />
+                      Enviar
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={handleSendToFranqueado}
+                      disabled={!newMessage.trim() || isSendingToFranqueado || !ticket?.franqueado_id}
+                      title={!ticket?.franqueado_id ? 'Nenhum franqueado vinculado a este ticket' : ''}
+                    >
+                      <Phone className="h-4 w-4 mr-2" />
+                      {isSendingToFranqueado ? 'Enviando...' : 'WhatsApp Franqueado'}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
