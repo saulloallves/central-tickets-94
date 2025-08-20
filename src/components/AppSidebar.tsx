@@ -8,7 +8,8 @@ import {
   Home,
   Users2,
   Activity,
-  Shield
+  Shield,
+  ChevronRight
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,6 +17,7 @@ import { PermissionGuard } from "@/components/PermissionGuard";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 const navigationItems = [
   { title: "Dashboard", url: "/admin", icon: Home, permission: 'access_dashboards' as const },
@@ -32,14 +34,26 @@ const navigationItems = [
 export function AppSidebar() {
   const { signOut } = useAuth();
   const location = useLocation();
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
   };
 
+  const toggleExpanded = () => {
+    setIsExpanded(!isExpanded);
+  };
+
   return (
     <TooltipProvider delayDuration={0}>
-      <div className="w-20 h-[calc(100vh-4rem)] fixed left-2 top-1/2 -translate-y-1/2 z-40">
+      <div 
+        className={cn(
+          "h-[calc(100vh-4rem)] fixed left-2 top-1/2 -translate-y-1/2 z-40 transition-all duration-500",
+          isExpanded ? "w-56" : "w-20"
+        )}
+        onMouseEnter={() => setIsExpanded(true)}
+        onMouseLeave={() => setIsExpanded(false)}
+      >
         {/* Modern curved sidebar container */}
         <div className="
           relative h-full bg-gradient-sidebar shadow-glow backdrop-blur-xl
@@ -48,7 +62,7 @@ export function AppSidebar() {
           before:absolute before:top-0 before:right-0 before:w-8 before:h-1/3
           before:bg-gradient-to-l before:from-white/10 before:to-transparent
           before:rounded-bl-[40px]
-          after:absolute after:bottom-0 after:right-0 after:w-8 after:h-1/3
+          after:absolute after:bottom-0 after:right-0 after:w-8 before:h-1/3
           after:bg-gradient-to-l after:from-white/10 after:to-transparent
           after:rounded-tl-[40px]
         ">
@@ -67,24 +81,25 @@ export function AppSidebar() {
             </div>
 
             {/* Navigation Icons */}
-            <div className="flex-1 flex flex-col items-center space-y-4">
+            <div className="flex-1 flex flex-col space-y-4">
               {navigationItems.map((item) => (
                 <PermissionGuard key={item.title} requiredPermission={item.permission}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <NavLink
-                        to={item.url}
-                        end
-                        className={({ isActive }) => cn(
-                          "group relative flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-300",
-                          "hover:scale-105 hover:bg-white/15",
-                          isActive 
-                            ? "bg-white/25 backdrop-blur-md shadow-neumorphic scale-105" 
-                            : "hover:bg-white/10"
-                        )}
-                      >
-                        {({ isActive }) => (
-                          <>
+                  {isExpanded ? (
+                    // Expanded view with labels
+                    <NavLink
+                      to={item.url}
+                      end
+                      className={({ isActive }) => cn(
+                        "group flex items-center px-3 py-3 rounded-xl transition-all duration-300",
+                        "hover:scale-105",
+                        isActive 
+                          ? "bg-white/25 backdrop-blur-md shadow-neumorphic" 
+                          : "hover:bg-white/10"
+                      )}
+                    >
+                      {({ isActive }) => (
+                        <>
+                          <div className="relative flex items-center justify-center w-8 h-8 mr-3">
                             <item.icon 
                               className={cn(
                                 "h-5 w-5 text-white transition-all duration-300",
@@ -97,40 +112,92 @@ export function AppSidebar() {
                             {isActive && (
                               <div className="absolute -right-1 -top-1 w-3 h-3 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse"></div>
                             )}
-                          </>
-                        )}
-                      </NavLink>
-                    </TooltipTrigger>
-                    <TooltipContent 
-                      side="right" 
-                      className="bg-white/95 backdrop-blur-md text-gray-800 shadow-elegant rounded-xl border border-white/20 ml-2"
-                    >
-                      {item.title}
-                    </TooltipContent>
-                  </Tooltip>
+                          </div>
+                          
+                          <span className={cn(
+                            "text-white font-medium transition-all duration-300",
+                            isActive ? "opacity-100" : "opacity-80"
+                          )}>
+                            {item.title}
+                          </span>
+                        </>
+                      )}
+                    </NavLink>
+                  ) : (
+                    // Collapsed view with tooltips
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <NavLink
+                          to={item.url}
+                          end
+                          className={({ isActive }) => cn(
+                            "group relative flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-300 mx-auto",
+                            "hover:scale-105",
+                            isActive 
+                              ? "bg-white/25 backdrop-blur-md shadow-neumorphic scale-105" 
+                              : "hover:bg-white/10"
+                          )}
+                        >
+                          {({ isActive }) => (
+                            <>
+                              <item.icon 
+                                className={cn(
+                                  "h-5 w-5 text-white transition-all duration-300",
+                                  isActive ? "drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]" : "opacity-80"
+                                )} 
+                                strokeWidth={1.5}
+                              />
+                              
+                              {/* Active indicator - green dot */}
+                              {isActive && (
+                                <div className="absolute -right-1 -top-1 w-3 h-3 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse"></div>
+                              )}
+                            </>
+                          )}
+                        </NavLink>
+                      </TooltipTrigger>
+                      <TooltipContent 
+                        side="right" 
+                        className="bg-white/95 backdrop-blur-md text-gray-800 shadow-elegant rounded-xl border border-white/20 ml-2"
+                      >
+                        {item.title}
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
                 </PermissionGuard>
               ))}
             </div>
 
             {/* Logout button at bottom */}
             <div className="flex justify-center mt-6">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    onClick={handleSignOut}
-                    className="group relative w-12 h-12 rounded-xl p-0 text-white hover:bg-red-500/20 hover:scale-105 transition-all duration-300"
-                  >
-                    <LogOut className="h-5 w-5 opacity-80 group-hover:opacity-100 transition-all duration-300" strokeWidth={1.5} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent 
-                  side="right" 
-                  className="bg-white/95 backdrop-blur-md text-gray-800 shadow-elegant rounded-xl border border-white/20 ml-2"
+              {isExpanded ? (
+                <Button 
+                  variant="ghost" 
+                  onClick={handleSignOut}
+                  className="group w-full flex items-center justify-start px-3 py-3 text-white hover:bg-red-500/20 hover:scale-105 transition-all duration-300 rounded-xl"
                 >
-                  Sair do Sistema
-                </TooltipContent>
-              </Tooltip>
+                  <LogOut className="h-5 w-5 opacity-80 group-hover:opacity-100 transition-all duration-300 mr-3" strokeWidth={1.5} />
+                  <span className="font-medium">Sair do Sistema</span>
+                </Button>
+              ) : (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      onClick={handleSignOut}
+                      className="group relative w-12 h-12 rounded-xl p-0 text-white hover:bg-red-500/20 hover:scale-105 transition-all duration-300"
+                    >
+                      <LogOut className="h-5 w-5 opacity-80 group-hover:opacity-100 transition-all duration-300" strokeWidth={1.5} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent 
+                    side="right" 
+                    className="bg-white/95 backdrop-blur-md text-gray-800 shadow-elegant rounded-xl border border-white/20 ml-2"
+                  >
+                    Sair do Sistema
+                  </TooltipContent>
+                </Tooltip>
+              )}
             </div>
           </div>
         </div>
