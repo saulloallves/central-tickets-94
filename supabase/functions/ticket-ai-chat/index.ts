@@ -96,7 +96,7 @@ serve(async (req) => {
       .order('created_at', { ascending: false })
       .limit(3);
 
-    // 5. Hybrid RAG Retrieval: Search relevant documents with improved strategy
+    // 5. Enhanced RAG Retrieval: Get comprehensive knowledge base access
     console.log('Searching for relevant documents for chat question:', mensagem);
     
     // Generate search terms from current message and ticket description
@@ -106,7 +106,7 @@ serve(async (req) => {
       ...(ticket.categoria ? [ticket.categoria.toLowerCase()] : []),
       // Add generic terms to help find relevant manuals
       'manual', 'procedimento', 'processo', 'cresci', 'perdi', 'atendimento', 'suporte'
-    ].filter((term, index, self) => self.indexOf(term) === index).slice(0, 12); // Increased limit
+    ].filter((term, index, self) => self.indexOf(term) === index).slice(0, 12);
 
     console.log('Search terms:', searchTerms);
 
@@ -115,46 +115,39 @@ serve(async (req) => {
       supabase
         .from('RAG DOCUMENTOS')
         .select('content, metadata')
-        .ilike('content', `%${term}%`) // Focus primarily on content
-        .limit(3)
+        .ilike('content', `%${term}%`)
+        .limit(5)
     );
 
-    // Search in knowledge_articles table - focus heavily on content
-    const kbQuery = supabase
-      .from('knowledge_articles')
-      .select('id, titulo, conteudo, categoria, tags')
-      .eq('ativo', true)
-      .eq('aprovado', aiSettings.use_only_approved || true);
-
-    // Apply category filtering if configured
-    if (aiSettings.allowed_categories && aiSettings.allowed_categories.length > 0) {
-      kbQuery.in('categoria', aiSettings.allowed_categories);
-    }
-
-    // Search primarily in content where the manuals are
-    const kbPromises = searchTerms.map(term =>
-      kbQuery
-        .ilike('conteudo', `%${term}%`) // Focus on content search
-        .limit(3)
-    );
-
-    // Also get some general articles to ensure we always have context
-    const generalKbQuery = supabase
+    // Get ALL active knowledge articles to ensure comprehensive access
+    const allKnowledgeQuery = supabase
       .from('knowledge_articles')
       .select('id, titulo, conteudo, categoria, tags')
       .eq('ativo', true)
       .eq('aprovado', aiSettings.use_only_approved || true)
-      .limit(8); // Get more general articles for broader context
+      .limit(50); // Get up to 50 articles for comprehensive coverage
 
+    // Apply category filtering if configured
     if (aiSettings.allowed_categories && aiSettings.allowed_categories.length > 0) {
-      generalKbQuery.in('categoria', aiSettings.allowed_categories);
+      allKnowledgeQuery.in('categoria', aiSettings.allowed_categories);
     }
 
+    // Search specifically in content for relevant matches
+    const specificKbPromises = searchTerms.map(term =>
+      supabase
+        .from('knowledge_articles')
+        .select('id, titulo, conteudo, categoria, tags')
+        .eq('ativo', true)
+        .eq('aprovado', aiSettings.use_only_approved || true)
+        .ilike('conteudo', `%${term}%`)
+        .limit(5)
+    );
+
     // Execute all searches in parallel
-    const [ragResults, kbResults, generalKbResult] = await Promise.all([
+    const [ragResults, allKnowledgeResult, specificKbResults] = await Promise.all([
       Promise.all(ragPromises),
-      Promise.all(kbPromises),
-      generalKbQuery
+      allKnowledgeQuery,
+      Promise.all(specificKbPromises)
     ]);
 
     // Process RAG documents
@@ -164,22 +157,27 @@ serve(async (req) => {
       .filter((doc, index, self) => 
         index === self.findIndex(d => d.content === doc.content)
       ) // Deduplicate
-      .slice(0, 3); // Limit results
+      .slice(0, 5); // More RAG documents
 
-    // Process Knowledge Base articles with blocked tags filtering
-    let kbArticles = kbResults
+    // Process Knowledge Base articles - prioritize comprehensive coverage
+    let kbArticles = [];
+
+    // First, add specifically matched articles
+    const specificMatches = specificKbResults
       .filter(result => !result.error && result.data)
       .flatMap(result => result.data)
       .filter((article, index, self) =>
-        index === self.findIndex(a => a.titulo === article.titulo)
-      ); // Deduplicate
+        index === self.findIndex(a => a.id === article.id)
+      ); // Deduplicate by ID
 
-    // Add general articles if we don't have enough specific results
-    if (generalKbResult.data && !generalKbResult.error) {
-      const generalArticles = generalKbResult.data.filter(article => 
+    kbArticles = [...specificMatches];
+
+    // Then add ALL available articles for comprehensive context
+    if (allKnowledgeResult.data && !allKnowledgeResult.error) {
+      const allArticles = allKnowledgeResult.data.filter(article => 
         !kbArticles.some(existing => existing.id === article.id)
       );
-      kbArticles = [...kbArticles, ...generalArticles];
+      kbArticles = [...kbArticles, ...allArticles];
     }
 
     // Filter out articles with blocked tags
@@ -190,7 +188,8 @@ serve(async (req) => {
       });
     }
 
-    kbArticles = kbArticles.slice(0, 6); // Increased limit to ensure more context
+    // Limit to most relevant articles but ensure comprehensive coverage
+    kbArticles = kbArticles.slice(0, 20); // Significantly increased for full knowledge access
 
     // Add forced articles if configured
     let forcedArticles = [];
