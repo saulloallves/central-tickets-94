@@ -124,27 +124,29 @@ const Franqueados = () => {
               {filteredFranqueados.map((franqueado) => (
                 <Dialog key={franqueado.id}>
                   <DialogTrigger asChild>
-                    <Card className="cursor-pointer hover:shadow-md transition-shadow">
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-lg">{franqueado.name || 'Franqueado'}</CardTitle>
-                          <Badge variant="secondary" className="text-xs">
-                            {franqueado.franchisee_type || 'N/A'}
-                          </Badge>
+                    <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-0 bg-card hover:bg-accent/50">
+                      <CardHeader className="pb-4">
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-1">
+                            <CardTitle className="text-base font-medium">{franqueado.name || 'Franqueado'}</CardTitle>
+                            <Badge variant="secondary" className="text-xs font-normal w-fit">
+                              {franqueado.franchisee_type || 'N/A'}
+                            </Badge>
+                          </div>
                         </div>
                       </CardHeader>
-                      <CardContent className="space-y-2">
+                      <CardContent className="space-y-3">
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Building className="w-3 h-3" />
-                          <span>{getUnitDisplay(franqueado.unit_name, franqueado.unit_code)}</span>
+                          <Building className="w-4 h-4 text-muted-foreground/60" />
+                          <span className="truncate">{getUnitDisplay(franqueado.unit_name, franqueado.unit_code)}</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <MapPin className="w-3 h-3" />
+                          <MapPin className="w-4 h-4 text-muted-foreground/60" />
                           <span>{franqueado.city || 'N/A'}, {franqueado.state || 'N/A'}</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Mail className="w-3 h-3" />
-                          <span>{franqueado.email || 'N/A'}</span>
+                          <Mail className="w-4 h-4 text-muted-foreground/60" />
+                          <span className="truncate">{franqueado.email || 'N/A'}</span>
                         </div>
                       </CardContent>
                     </Card>

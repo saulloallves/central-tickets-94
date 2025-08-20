@@ -55,10 +55,21 @@ const Unidades = () => {
 
   const getFaseColor = (fase: string) => {
     switch (fase?.toLowerCase()) {
-      case 'ativa': return 'bg-success';
-      case 'em_construcao': return 'bg-warning';
-      case 'planejamento': return 'bg-info';
-      default: return 'bg-muted-foreground';
+      case 'ativa': 
+      case 'operação':
+      case 'operacao':
+        return 'bg-emerald-500';
+      case 'em_construcao': 
+      case 'implantação':
+      case 'implantacao':
+        return 'bg-amber-500';
+      case 'planejamento': 
+        return 'bg-blue-500';
+      case 'parada':
+      case 'inativa':
+        return 'bg-gray-400';
+      default: 
+        return 'bg-slate-300';
     }
   };
 
@@ -126,32 +137,31 @@ const Unidades = () => {
               {filteredUnidades.map((unidade) => (
                 <Dialog key={unidade.id}>
                   <DialogTrigger asChild>
-                    <Card className="cursor-pointer hover:shadow-md transition-shadow">
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-lg">{unidade.grupo || 'Unidade'}</CardTitle>
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className={`w-2 h-2 rounded-full ${getFaseColor(unidade.fase_loja)}`}
-                            ></div>
-                            <Badge variant="outline" className="text-xs">
-                              {unidade.fase_loja || 'N/A'}
-                            </Badge>
+                    <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-0 bg-card hover:bg-accent/50">
+                      <CardHeader className="pb-4">
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-1">
+                            <CardTitle className="text-base font-medium">{unidade.grupo || 'Unidade'}</CardTitle>
+                            <div className="flex items-center gap-2">
+                              <div className={`w-2 h-2 rounded-full ${getFaseColor(unidade.fase_loja)}`}></div>
+                              <span className="text-xs text-muted-foreground uppercase tracking-wide">
+                                {unidade.fase_loja || 'N/A'}
+                              </span>
+                            </div>
                           </div>
+                          <Badge variant="outline" className="text-xs font-normal">
+                            {unidade.modelo_loja || 'N/A'}
+                          </Badge>
                         </div>
                       </CardHeader>
-                      <CardContent className="space-y-2">
+                      <CardContent className="space-y-3">
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <MapPin className="w-3 h-3" />
+                          <MapPin className="w-4 h-4 text-muted-foreground/60" />
                           <span>{unidade.cidade || 'N/A'}, {unidade.estado || 'N/A'}</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Building className="w-3 h-3" />
-                          <span>{unidade.modelo_loja || 'N/A'}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Mail className="w-3 h-3" />
-                          <span>{unidade.email || 'N/A'}</span>
+                          <Mail className="w-4 h-4 text-muted-foreground/60" />
+                          <span className="truncate">{unidade.email || 'N/A'}</span>
                         </div>
                       </CardContent>
                     </Card>
