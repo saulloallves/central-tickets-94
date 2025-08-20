@@ -210,11 +210,11 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
         </h3>
 
         {/* Metadados em linha */}
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
           {/* Localização */}
-          <div className="flex items-center gap-1 min-w-0 flex-1">
-            <MapPin className="h-2 w-2 flex-shrink-0" />
-            <span className="truncate text-xs">
+          <div className="flex items-center gap-1 min-w-0 flex-1 bg-muted/50 px-2 py-1 rounded">
+            <MapPin className="h-3 w-3 flex-shrink-0 text-primary" />
+            <span className="truncate text-xs font-medium">
               {(() => {
                 const unidade = (ticket as any).unidades;
                 if (unidade?.cidade && unidade?.uf) {

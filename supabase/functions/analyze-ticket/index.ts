@@ -38,7 +38,12 @@ serve(async (req) => {
     const analysisPrompt = `
 Analise este ticket de suporte e forneça:
 
-1. TÍTULO: Exatamente 3 palavras que resumam o problema principal
+1. TÍTULO: Crie um título DESCRITIVO de exatamente 3 palavras que resuma o OBJETIVO/PROBLEMA principal. NÃO copie as primeiras palavras da descrição. Seja criativo e descritivo.
+   Exemplos: 
+   - "Problema áudio Zoom" (não "Preciso do áudio")
+   - "Solicitar materiais gráficos" (não "Olá Gostaria de") 
+   - "Criação mídia planfetos" (não "mídias para planfetos")
+
 2. CATEGORIA: Classifique em uma das opções: juridico, sistema, midia, operacoes, rh, financeiro, outro
 3. PRIORIDADE: Determine se é: crise, urgente, alta, hoje_18h, padrao_24h
 4. EQUIPE_SUGERIDA: Sugira qual equipe deve atender baseado no problema e nas equipes disponíveis
@@ -51,7 +56,7 @@ ${equipesDisponiveis}
 
 Responda APENAS em formato JSON válido:
 {
-  "titulo": "Máximo 3 palavras",
+  "titulo": "Título Descritivo Criativo",
   "categoria": "categoria_sugerida", 
   "prioridade": "prioridade_sugerida",
   "equipe_sugerida": "nome_exato_da_equipe_ou_null",
@@ -93,24 +98,43 @@ Responda APENAS em formato JSON válido:
 
     console.log('OpenAI response:', aiResponse)
 
-    // Função para garantir máximo 3 palavras no título
+    // Função para garantir máximo 3 palavras no título e melhorar qualidade
     const limitTitleToThreeWords = (title: string): string => {
       if (!title) return 'Problema Técnico';
-      const words = title.trim().split(/\s+/).filter(word => word.length > 0);
+      // Remove pontuação desnecessária e limita a 3 palavras
+      const cleanTitle = title.trim().replace(/[.,!?;:"']+/g, '');
+      const words = cleanTitle.split(/\s+/).filter(word => word.length > 0);
       return words.slice(0, 3).join(' ');
+    };
+
+    const generateFallbackTitle = (description: string): string => {
+      // Criar título mais inteligente baseado na descrição
+      const desc = description.toLowerCase();
+      if (desc.includes('áudio') || desc.includes('audio') || desc.includes('som')) return 'Problema Áudio';
+      if (desc.includes('planfeto') || desc.includes('panfleto') || desc.includes('mídia')) return 'Criação Mídia';
+      if (desc.includes('solicitar') || desc.includes('preciso') || desc.includes('gostaria')) return 'Solicitação Material';
+      if (desc.includes('sistema') || desc.includes('erro') || desc.includes('bug')) return 'Erro Sistema';
+      if (desc.includes('jurídico') || desc.includes('juridico') || desc.includes('contrato')) return 'Questão Jurídica';
+      
+      // Fallback: pegar palavras importantes
+      const words = description.trim().split(/\s+/).filter(word => 
+        word.length > 3 && 
+        !['preciso', 'gostaria', 'solicitar', 'favor', 'olá', 'ola'].includes(word.toLowerCase())
+      );
+      return words.slice(0, 3).join(' ') || 'Novo Ticket';
     };
 
     let analysis = null
     try {
       analysis = JSON.parse(aiResponse)
-      // Garantir que o título tenha no máximo 3 palavras
+      // Garantir que o título tenha no máximo 3 palavras e qualidade
       if (analysis.titulo) {
         analysis.titulo = limitTitleToThreeWords(analysis.titulo);
       }
     } catch (error) {
       console.error('Error parsing AI response:', error)
-      // Fallback com título baseado na descrição (limitado a 3 palavras)
-      const fallbackTitle = limitTitleToThreeWords(descricao);
+      // Fallback com título inteligente baseado na descrição
+      const fallbackTitle = generateFallbackTitle(descricao);
       analysis = {
         titulo: fallbackTitle,
         categoria: categoria || 'outro',
