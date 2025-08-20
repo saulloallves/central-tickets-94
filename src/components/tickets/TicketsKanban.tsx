@@ -134,6 +134,23 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
     return equipe?.nome || 'Equipe desconhecida';
   };
 
+  const getEquipeColor = (equipeName: string) => {
+    const colors = [
+      { bg: 'bg-blue-50', text: 'text-blue-700', dot: 'bg-blue-500', border: 'border-blue-200' },
+      { bg: 'bg-green-50', text: 'text-green-700', dot: 'bg-green-500', border: 'border-green-200' },
+      { bg: 'bg-purple-50', text: 'text-purple-700', dot: 'bg-purple-500', border: 'border-purple-200' },
+      { bg: 'bg-orange-50', text: 'text-orange-700', dot: 'bg-orange-500', border: 'border-orange-200' },
+      { bg: 'bg-pink-50', text: 'text-pink-700', dot: 'bg-pink-500', border: 'border-pink-200' },
+      { bg: 'bg-indigo-50', text: 'text-indigo-700', dot: 'bg-indigo-500', border: 'border-indigo-200' },
+      { bg: 'bg-teal-50', text: 'text-teal-700', dot: 'bg-teal-500', border: 'border-teal-200' },
+      { bg: 'bg-cyan-50', text: 'text-cyan-700', dot: 'bg-cyan-500', border: 'border-cyan-200' },
+    ];
+    
+    // Generate a consistent color based on team name
+    const hash = equipeName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return colors[hash % colors.length];
+  };
+
   const getPriorityLabel = (prioridade: string) => {
     switch (prioridade) {
       case 'crise': return 'CRISE';
@@ -216,14 +233,20 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
         </h3>
 
         {/* Equipe Responsável - Design Moderno */}
-        {ticket.equipes?.nome && (
-          <div className="inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-full border border-slate-200/80 transition-all group-hover:border-slate-300">
-            <div className="w-2 h-2 bg-slate-500 rounded-full"></div>
-            <span className="text-xs font-medium text-slate-700 truncate">
-              {ticket.equipes.nome}
-            </span>
-          </div>
-        )}
+        {ticket.equipes?.nome && (() => {
+          const colors = getEquipeColor(ticket.equipes.nome);
+          return (
+            <div className={cn(
+              "inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full transition-all",
+              colors.bg, colors.border, "border"
+            )}>
+              <div className={cn("w-2 h-2 rounded-full", colors.dot)}></div>
+              <span className={cn("text-xs font-medium truncate", colors.text)}>
+                {ticket.equipes.nome}
+              </span>
+            </div>
+          );
+        })()}
 
         {/* Status e Tempo - Layout Moderno */}
         <div className="flex items-center justify-between pt-1">
