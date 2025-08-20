@@ -390,32 +390,53 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
               </Badge>
               <div className="text-xs text-muted-foreground">Prioridade</div>
             </div>
-            <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-              <Tag className="h-5 w-5 text-primary" />
-              <div className="flex-1">
-                <div>
-                  <div className="font-medium text-foreground capitalize">
-                    {ticket.categoria === 'midia' ? 'Mídia' : 
-                     ticket.categoria === 'juridico' ? 'Jurídico' :
-                     ticket.categoria === 'sistema' ? 'Sistema' :
-                     ticket.categoria === 'operacoes' ? 'Operações' :
-                     ticket.categoria === 'rh' ? 'RH' :
-                     ticket.categoria === 'financeiro' ? 'Financeiro' :
-                     ticket.categoria || 'Não definida'}
-                  </div>
-                  <div className="text-xs text-muted-foreground">Categoria</div>
-                </div>
-                {ticket.atendimento_iniciado_por && ticket.atendimento_iniciado_profile?.nome_completo && (
-                  <div className="mt-2 pt-2 border-t border-muted">
-                    <div className="text-sm font-medium text-foreground">{ticket.atendimento_iniciado_profile.nome_completo}</div>
-                    <div className="text-xs text-muted-foreground">
-                      Atendimento iniciado em {ticket.atendimento_iniciado_em 
-                        ? new Date(ticket.atendimento_iniciado_em).toLocaleString('pt-BR')
-                        : 'Data não disponível'
-                      }
+            <div className="p-4 bg-muted/30 rounded-lg border">
+              <div className="flex items-start gap-3">
+                <Tag className="h-5 w-5 text-primary mt-0.5" />
+                <div className="flex-1 space-y-3">
+                  {/* Categoria/Equipe */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-semibold text-base text-foreground">
+                        {ticket.categoria === 'midia' ? 'Mídia' : 
+                         ticket.categoria === 'juridico' ? 'Jurídico' :
+                         ticket.categoria === 'sistema' ? 'Sistema' :
+                         ticket.categoria === 'operacoes' ? 'Operações' :
+                         ticket.categoria === 'rh' ? 'RH' :
+                         ticket.categoria === 'financeiro' ? 'Financeiro' :
+                         ticket.categoria || 'Não definida'}
+                      </div>
+                      <div className="text-xs text-muted-foreground font-medium">Equipe Responsável</div>
                     </div>
+                    <Badge variant="secondary" className="text-xs">
+                      {ticket.categoria || 'Não definida'}
+                    </Badge>
                   </div>
-                )}
+                  
+                  {/* Atendimento Iniciado */}
+                  {ticket.atendimento_iniciado_por && ticket.atendimento_iniciado_profile?.nome_completo && (
+                    <div className="bg-background/50 rounded-md p-3 border-l-2 border-primary/50">
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <div className="text-sm font-medium text-foreground">
+                          {ticket.atendimento_iniciado_profile.nome_completo}
+                        </div>
+                      </div>
+                      <div className="text-xs text-muted-foreground pl-4">
+                        Atendimento iniciado em {ticket.atendimento_iniciado_em 
+                          ? new Date(ticket.atendimento_iniciado_em).toLocaleString('pt-BR', {
+                              day: '2-digit',
+                              month: '2-digit', 
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })
+                          : 'Data não disponível'
+                        }
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
