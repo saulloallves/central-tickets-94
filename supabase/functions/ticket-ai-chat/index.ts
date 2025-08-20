@@ -96,15 +96,17 @@ serve(async (req) => {
       .order('created_at', { ascending: false })
       .limit(3);
 
-    // 5. Hybrid RAG Retrieval: Search relevant documents with advanced filtering
+    // 5. Hybrid RAG Retrieval: Search relevant documents with improved strategy
     console.log('Searching for relevant documents for chat question:', mensagem);
     
     // Generate search terms from current message and ticket description
     const searchTerms = [
-      ...mensagem.toLowerCase().split(/\s+/).filter(term => term.length > 3).slice(0, 5),
-      ...ticket.descricao_problema.toLowerCase().split(/\s+/).filter(term => term.length > 3).slice(0, 3),
-      ...(ticket.categoria ? [ticket.categoria.toLowerCase()] : [])
-    ].filter((term, index, self) => self.indexOf(term) === index).slice(0, 6); // Deduplicate and limit
+      ...mensagem.toLowerCase().split(/\s+/).filter(term => term.length > 2).slice(0, 8),
+      ...ticket.descricao_problema.toLowerCase().split(/\s+/).filter(term => term.length > 2).slice(0, 5),
+      ...(ticket.categoria ? [ticket.categoria.toLowerCase()] : []),
+      // Add generic terms to help find relevant manuals
+      'manual', 'procedimento', 'processo', 'cresci', 'perdi', 'atendimento', 'suporte'
+    ].filter((term, index, self) => self.indexOf(term) === index).slice(0, 12); // Increased limit
 
     console.log('Search terms:', searchTerms);
 
@@ -114,10 +116,10 @@ serve(async (req) => {
         .from('RAG DOCUMENTOS')
         .select('content, metadata')
         .or(`content.ilike.%${term}%,metadata->>title.ilike.%${term}%,metadata->>category.ilike.%${term}%`)
-        .limit(2)
+        .limit(3) // Increased limit
     );
 
-    // Search in knowledge_articles table with advanced filtering
+    // Search in knowledge_articles table with broader strategy
     const kbQuery = supabase
       .from('knowledge_articles')
       .select('id, titulo, conteudo, categoria, tags')
@@ -129,16 +131,30 @@ serve(async (req) => {
       kbQuery.in('categoria', aiSettings.allowed_categories);
     }
 
+    // More inclusive search strategy
     const kbPromises = searchTerms.map(term =>
       kbQuery
         .or(`titulo.ilike.%${term}%,conteudo.ilike.%${term}%,categoria.ilike.%${term}%`)
-        .limit(2)
+        .limit(3) // Increased limit
     );
 
+    // Also get some general articles to ensure we always have context
+    const generalKbQuery = supabase
+      .from('knowledge_articles')
+      .select('id, titulo, conteudo, categoria, tags')
+      .eq('ativo', true)
+      .eq('aprovado', aiSettings.use_only_approved || true)
+      .limit(5); // Get some general articles
+
+    if (aiSettings.allowed_categories && aiSettings.allowed_categories.length > 0) {
+      generalKbQuery.in('categoria', aiSettings.allowed_categories);
+    }
+
     // Execute all searches in parallel
-    const [ragResults, kbResults] = await Promise.all([
+    const [ragResults, kbResults, generalKbResult] = await Promise.all([
       Promise.all(ragPromises),
-      Promise.all(kbPromises)
+      Promise.all(kbPromises),
+      generalKbQuery
     ]);
 
     // Process RAG documents
@@ -158,6 +174,14 @@ serve(async (req) => {
         index === self.findIndex(a => a.titulo === article.titulo)
       ); // Deduplicate
 
+    // Add general articles if we don't have enough specific results
+    if (generalKbResult.data && !generalKbResult.error) {
+      const generalArticles = generalKbResult.data.filter(article => 
+        !kbArticles.some(existing => existing.id === article.id)
+      );
+      kbArticles = [...kbArticles, ...generalArticles];
+    }
+
     // Filter out articles with blocked tags
     if (aiSettings.blocked_tags && aiSettings.blocked_tags.length > 0) {
       kbArticles = kbArticles.filter(article => {
@@ -166,7 +190,7 @@ serve(async (req) => {
       });
     }
 
-    kbArticles = kbArticles.slice(0, 3); // Limit results
+    kbArticles = kbArticles.slice(0, 6); // Increased limit to ensure more context
 
     // Add forced articles if configured
     let forcedArticles = [];
