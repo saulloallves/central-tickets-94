@@ -393,17 +393,18 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
             <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
               <Tag className="h-5 w-5 text-primary" />
               <div className="flex-1">
-                {ticket.equipes?.nome ? (
-                  <div>
-                    <div className="font-medium text-foreground">{ticket.equipes.nome}</div>
-                    <div className="text-xs text-muted-foreground">Equipe Responsável</div>
+                <div>
+                  <div className="font-medium text-foreground capitalize">
+                    {ticket.categoria === 'midia' ? 'Mídia' : 
+                     ticket.categoria === 'juridico' ? 'Jurídico' :
+                     ticket.categoria === 'sistema' ? 'Sistema' :
+                     ticket.categoria === 'operacoes' ? 'Operações' :
+                     ticket.categoria === 'rh' ? 'RH' :
+                     ticket.categoria === 'financeiro' ? 'Financeiro' :
+                     ticket.categoria || 'Não definida'}
                   </div>
-                ) : (
-                  <div>
-                    <div className="font-medium text-foreground capitalize">{ticket.categoria || 'Não definida'}</div>
-                    <div className="text-xs text-muted-foreground">Categoria</div>
-                  </div>
-                )}
+                  <div className="text-xs text-muted-foreground">Categoria</div>
+                </div>
                 {ticket.atendimento_iniciado_por && ticket.atendimento_iniciado_profile?.nome_completo && (
                   <div className="mt-2 pt-2 border-t border-muted">
                     <div className="text-sm font-medium text-foreground">{ticket.atendimento_iniciado_profile.nome_completo}</div>
