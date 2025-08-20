@@ -191,13 +191,13 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
       {...attributes}
       {...listeners}
       className={cn(
-        "cursor-grab active:cursor-grabbing transition-all hover:shadow-md mb-2 bg-white border-l-4 select-none",
-        ticket.status === 'concluido' ? "border-l-success" : 
-        ticket.prioridade === 'crise' ? "border-l-critical" :
-        ticket.prioridade === 'urgente' ? "border-l-critical" :
-        ticket.prioridade === 'alta' ? "border-l-warning" : "border-l-muted",
-        isSelected && "ring-2 ring-primary/20",
-        isDragging && "opacity-50 scale-90 z-50 shadow-xl"
+        "cursor-grab active:cursor-grabbing transition-all duration-200 mb-2 bg-gradient-to-br from-white to-gray-50/50 border border-gray-200/60 shadow-sm hover:shadow-md select-none overflow-hidden group",
+        ticket.status === 'concluido' ? "border-l-4 border-l-emerald-400" : 
+        ticket.prioridade === 'crise' ? "border-l-4 border-l-red-500" :
+        ticket.prioridade === 'urgente' ? "border-l-4 border-l-orange-500" :
+        ticket.prioridade === 'alta' ? "border-l-4 border-l-amber-500" : "border-l-4 border-l-slate-300",
+        isSelected && "ring-2 ring-blue-500/20 shadow-lg",
+        isDragging && "opacity-70 scale-95 z-50 shadow-xl rotate-1"
       )}
       onClick={(e) => {
         if (!isDragging) {
@@ -205,9 +205,9 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
         }
       }}
     >
-      <CardContent className="p-2 space-y-1 pointer-events-none">
+      <CardContent className="p-3 space-y-2 pointer-events-none">
         {/* Título */}
-        <h3 className="font-medium text-sm line-clamp-1 leading-tight">
+        <h3 className="font-semibold text-gray-900 text-sm line-clamp-1 leading-tight group-hover:text-gray-700 transition-colors">
           {(() => {
             const title = ticket.titulo || ticket.descricao_problema || "Sem título";
             const words = title.trim().split(/\s+/);
@@ -215,28 +215,40 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
           })()}
         </h3>
 
-        {/* Equipe Responsável */}
+        {/* Equipe Responsável - Design Moderno */}
         {ticket.equipes?.nome && (
-          <div className="flex items-center gap-1.5 bg-primary/10 px-2 py-1 rounded">
-            <Users className="h-3 w-3 text-primary flex-shrink-0" />
-            <span className="text-xs font-medium text-primary truncate">
+          <div className="inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-full border border-slate-200/80 transition-all group-hover:border-slate-300">
+            <div className="w-2 h-2 bg-slate-500 rounded-full"></div>
+            <span className="text-xs font-medium text-slate-700 truncate">
               {ticket.equipes.nome}
             </span>
           </div>
         )}
 
-        {/* Status e Tempo */}
-        <div className="flex items-center justify-between">
-          <Badge 
-            variant={ticket.status === 'concluido' ? 'success' : getPriorityButtonVariant(ticket.prioridade) as any}
-            className="text-xs h-4 px-1"
-          >
-            {ticket.status === 'concluido' ? 'Resolvido' : getPriorityLabel(ticket.prioridade)}
-          </Badge>
+        {/* Status e Tempo - Layout Moderno */}
+        <div className="flex items-center justify-between pt-1">
+          <div className="flex items-center gap-1.5">
+            <div className={cn(
+              "px-2 py-1 rounded-full text-xs font-medium transition-colors",
+              ticket.status === 'concluido' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+              ticket.prioridade === 'crise' ? 'bg-red-50 text-red-700 border border-red-200' :
+              ticket.prioridade === 'urgente' ? 'bg-orange-50 text-orange-700 border border-orange-200' :
+              ticket.prioridade === 'alta' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+              'bg-slate-50 text-slate-700 border border-slate-200'
+            )}>
+              {ticket.status === 'concluido' ? 'Resolvido' : getPriorityLabel(ticket.prioridade)}
+            </div>
+          </div>
           
-          <div className="flex items-center gap-1">
-            <Clock className="h-2 w-2" />
-            <span className={cn("text-xs", getTimeColor(ticket.status_sla, ticket.prioridade))}>
+          <div className="flex items-center gap-1.5 text-slate-500">
+            <div className="w-1 h-1 bg-slate-400 rounded-full animate-pulse"></div>
+            <span className={cn(
+              "text-xs font-mono transition-colors",
+              ticket.status === 'concluido' ? 'text-emerald-600' :
+              ticket.status_sla === 'vencido' ? 'text-red-600' :
+              ticket.status_sla === 'alerta' ? 'text-amber-600' :
+              'text-slate-600'
+            )}>
               {formatTimeElapsed(ticket.created_at)}
             </span>
           </div>
