@@ -90,7 +90,7 @@ export function AppSidebar() {
                       to={item.url}
                       end
                       className={({ isActive }) => cn(
-                        "group flex items-center px-3 py-3 rounded-xl transition-all duration-300",
+                        "group flex items-center px-3 py-2 rounded-lg transition-all duration-300",
                         "hover:scale-105",
                         isActive 
                           ? "bg-white/25 backdrop-blur-md shadow-neumorphic" 
@@ -99,10 +99,10 @@ export function AppSidebar() {
                     >
                       {({ isActive }) => (
                         <>
-                          <div className="relative flex items-center justify-center w-8 h-8 mr-3">
+                          <div className="relative flex items-center justify-center w-6 h-6 mr-2">
                             <item.icon 
                               className={cn(
-                                "h-5 w-5 text-white transition-all duration-300",
+                                "h-4 w-4 text-white transition-all duration-300",
                                 isActive ? "drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]" : "opacity-80"
                               )} 
                               strokeWidth={1.5}
@@ -110,12 +110,12 @@ export function AppSidebar() {
                             
                             {/* Active indicator - green dot */}
                             {isActive && (
-                              <div className="absolute -right-1 -top-1 w-3 h-3 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse"></div>
+                              <div className="absolute -right-1 -top-1 w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse"></div>
                             )}
                           </div>
                           
                           <span className={cn(
-                            "text-white font-medium transition-all duration-300",
+                            "text-white text-sm font-medium transition-all duration-300",
                             isActive ? "opacity-100" : "opacity-80"
                           )}>
                             {item.title}
@@ -135,7 +135,7 @@ export function AppSidebar() {
                             "hover:scale-105",
                             isActive 
                               ? "bg-white/25 backdrop-blur-md shadow-neumorphic scale-105" 
-                              : "hover:bg-white/10"
+                              : "hover:bg-white/5"
                           )}
                         >
                           {({ isActive }) => (
@@ -174,10 +174,10 @@ export function AppSidebar() {
                 <Button 
                   variant="ghost" 
                   onClick={handleSignOut}
-                  className="group w-full flex items-center justify-start px-3 py-3 text-white hover:bg-red-500/20 hover:scale-105 transition-all duration-300 rounded-xl"
+                  className="group w-full flex items-center justify-start px-3 py-2 text-white hover:bg-red-500/20 hover:scale-105 transition-all duration-300 rounded-lg"
                 >
-                  <LogOut className="h-5 w-5 opacity-80 group-hover:opacity-100 transition-all duration-300 mr-3" strokeWidth={1.5} />
-                  <span className="font-medium">Sair do Sistema</span>
+                  <LogOut className="h-4 w-4 opacity-80 group-hover:opacity-100 transition-all duration-300 mr-2" strokeWidth={1.5} />
+                  <span className="text-sm font-medium">Sair do Sistema</span>
                 </Button>
               ) : (
                 <Tooltip>
