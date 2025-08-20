@@ -1,8 +1,11 @@
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { AlertsPanel } from "@/components/admin/AlertsPanel";
 import { CrisisPanel } from "@/components/crisis/CrisisPanel";
+import { TicketDetail } from "@/components/tickets/TicketDetail";
 import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
 import { 
   TicketIcon, 
@@ -15,6 +18,20 @@ import {
 
 const Dashboard = () => {
   const { kpis, loading } = useDashboardMetrics();
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
+  
+  // Listen for notification ticket modal events
+  useEffect(() => {
+    const handleOpenTicketModal = (event: CustomEvent) => {
+      setSelectedTicketId(event.detail.ticketId);
+    };
+    
+    window.addEventListener('openTicketModal', handleOpenTicketModal as EventListener);
+    
+    return () => {
+      window.removeEventListener('openTicketModal', handleOpenTicketModal as EventListener);
+    };
+  }, []);
 
   if (loading) {
     return (
@@ -114,6 +131,21 @@ const Dashboard = () => {
 
       {/* Alerts Panel */}
       <AlertsPanel />
+      
+      {/* Ticket Detail Modal */}
+      <Dialog open={!!selectedTicketId} onOpenChange={() => setSelectedTicketId(null)}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Detalhes do Ticket</DialogTitle>
+          </DialogHeader>
+          {selectedTicketId && (
+            <TicketDetail 
+              ticketId={selectedTicketId}
+              onClose={() => setSelectedTicketId(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
