@@ -215,30 +215,15 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
           })()}
         </h3>
 
-        {/* Unidade e Equipe em linha */}
-        <div className="flex items-center gap-1 text-xs">
-          {/* Unidade */}
-          <div className="flex items-center gap-1 flex-1 bg-muted/50 px-1 py-0.5 rounded">
-            <MapPin className="h-2 w-2 text-primary" />
-            <span className="truncate text-xs">
-              {(() => {
-                const unidade = (ticket as any).unidades;
-                if (unidade?.grupo) return unidade.grupo;
-                return ticket.unidade_id || 'Sem unidade';
-              })()}
+        {/* Equipe Responsável */}
+        {ticket.equipes?.nome && (
+          <div className="flex items-center gap-1.5 bg-primary/10 px-2 py-1 rounded border border-primary/20">
+            <Users className="h-3 w-3 text-primary flex-shrink-0" />
+            <span className="text-xs font-medium text-primary truncate">
+              {ticket.equipes.nome}
             </span>
           </div>
-          
-          {/* Equipe */}
-          {ticket.equipes?.nome && (
-            <div className="flex items-center gap-1 bg-primary/10 px-1 py-0.5 rounded flex-shrink-0">
-              <Users className="h-2 w-2 text-primary" />
-              <span className="text-xs text-primary font-medium">
-                {ticket.equipes.nome}
-              </span>
-            </div>
-          )}
-        </div>
+        )}
 
         {/* Status e Tempo */}
         <div className="flex items-center justify-between">
@@ -282,27 +267,29 @@ const KanbanColumn = ({ status, tickets, selectedTicketId, onTicketSelect, equip
     <div 
       ref={setNodeRef}
       className={cn(
-        "flex flex-col h-full min-h-[600px] w-full rounded-lg border-2 transition-all duration-200",
+        "flex flex-col h-full min-h-[600px] w-full rounded-xl border-2 transition-all duration-300 ease-in-out overflow-hidden",
         COLUMN_COLORS[status],
-        isOver ? "border-primary bg-primary/5 border-solid shadow-md" : "border-dashed border-muted/50"
+        isOver ? 
+          "border-primary bg-gradient-to-b from-primary/5 to-primary/10 shadow-xl scale-[1.02] border-solid" : 
+          "border-dashed border-muted/40 hover:border-muted/60"
       )}
     >
       {/* Header da coluna */}
-      <div className="flex items-center justify-between p-3 bg-background border-b border-muted/20">
+      <div className="flex items-center justify-between p-3 bg-background/80 backdrop-blur-sm border-b border-muted/20">
         <h3 className="font-semibold text-sm">{COLUMN_STATUS[status]}</h3>
         <Badge variant="secondary" className="text-xs">
           {tickets.length}
         </Badge>
       </div>
       
-      {/* Área de drop massiva */}
+      {/* Área de drop elegante */}
       <div className="flex-1 p-2 relative">
-        {/* Drop zone visual */}
+        {/* Drop zone visual elegante */}
         {isOver && (
-          <div className="absolute inset-2 border-2 border-dashed border-primary rounded-lg bg-primary/10 flex items-center justify-center z-10">
-            <div className="text-center">
-              <div className="text-primary font-medium">Solte aqui</div>
-              <div className="text-xs text-primary/70">{COLUMN_STATUS[status]}</div>
+          <div className="absolute inset-3 border-2 border-dashed border-primary/40 rounded-xl bg-gradient-to-br from-primary/5 via-transparent to-primary/10 flex items-center justify-center z-10 animate-fade-in backdrop-blur-sm">
+            <div className="text-center p-6 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30">
+              <div className="text-primary font-semibold text-lg mb-1">✓ Solte aqui</div>
+              <div className="text-sm text-primary/80 font-medium">{COLUMN_STATUS[status]}</div>
             </div>
           </div>
         )}
