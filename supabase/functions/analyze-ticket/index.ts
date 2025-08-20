@@ -25,6 +25,15 @@ serve(async (req) => {
       throw new Error('OpenAI API key not found')
     }
 
+    // Buscar todas as equipes ativas
+    const { data: equipesAtivas } = await supabase
+      .from('equipes')
+      .select('id, nome, descricao')
+      .eq('ativo', true)
+      .order('nome');
+
+    const equipesDisponiveis = equipesAtivas?.map(e => `- ${e.nome}: ${e.descricao}`).join('\n') || 'Nenhuma equipe disponível';
+
     // Prompt para análise completa incluindo título
     const analysisPrompt = `
 Analise este ticket de suporte e forneça:
@@ -32,17 +41,20 @@ Analise este ticket de suporte e forneça:
 1. TÍTULO: Exatamente 3 palavras que resumam o problema principal
 2. CATEGORIA: Classifique em uma das opções: juridico, sistema, midia, operacoes, rh, financeiro, outro
 3. PRIORIDADE: Determine se é: crise, urgente, alta, hoje_18h, padrao_24h
-4. EQUIPE_SUGERIDA: Sugira qual equipe deve atender baseado no problema
+4. EQUIPE_SUGERIDA: Sugira qual equipe deve atender baseado no problema e nas equipes disponíveis
 
 Descrição do problema: "${descricao}"
 Categoria atual: ${categoria || 'não definida'}
+
+EQUIPES DISPONÍVEIS:
+${equipesDisponiveis}
 
 Responda APENAS em formato JSON válido:
 {
   "titulo": "Máximo 3 palavras",
   "categoria": "categoria_sugerida", 
   "prioridade": "prioridade_sugerida",
-  "equipe_sugerida": "nome_da_equipe_ou_null",
+  "equipe_sugerida": "nome_exato_da_equipe_ou_null",
   "justificativa": "Breve explicação da análise"
 }
 `
@@ -108,18 +120,36 @@ Responda APENAS em formato JSON válido:
       }
     }
 
-    // Buscar equipe por nome se foi sugerida
+    // Buscar equipe por nome exato se foi sugerida
     let equipeId = null
     if (analysis.equipe_sugerida) {
-      const { data: equipe } = await supabase
+      console.log('Procurando equipe:', analysis.equipe_sugerida);
+      
+      // Primeiro, tentar match exato
+      let { data: equipe } = await supabase
         .from('equipes')
-        .select('id')
-        .ilike('nome', `%${analysis.equipe_sugerida}%`)
+        .select('id, nome')
+        .eq('nome', analysis.equipe_sugerida)
         .eq('ativo', true)
         .single()
       
+      // Se não encontrar match exato, tentar busca similar
+      if (!equipe) {
+        const { data: equipeSimilar } = await supabase
+          .from('equipes')
+          .select('id, nome')
+          .ilike('nome', `%${analysis.equipe_sugerida}%`)
+          .eq('ativo', true)
+          .single()
+        
+        equipe = equipeSimilar;
+      }
+      
       if (equipe) {
-        equipeId = equipe.id
+        equipeId = equipe.id;
+        console.log(`Equipe encontrada: ${equipe.nome} (ID: ${equipe.id})`);
+      } else {
+        console.log('Nenhuma equipe encontrada para:', analysis.equipe_sugerida);
       }
     }
 
