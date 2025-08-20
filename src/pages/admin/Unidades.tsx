@@ -156,11 +156,11 @@ const Unidades = () => {
                       </CardHeader>
                       <CardContent className="space-y-3">
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <MapPin className="w-4 h-4 text-muted-foreground/60" />
+                          <MapPin className="w-4 h-4 text-green-500" />
                           <span>{unidade.cidade || 'N/A'}, {unidade.estado || 'N/A'}</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Mail className="w-4 h-4 text-muted-foreground/60" />
+                          <Mail className="w-4 h-4 text-orange-500" />
                           <span className="truncate">{unidade.email || 'N/A'}</span>
                         </div>
                       </CardContent>

@@ -137,15 +137,15 @@ const Franqueados = () => {
                       </CardHeader>
                       <CardContent className="space-y-3">
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Building className="w-4 h-4 text-muted-foreground/60" />
+                          <Building className="w-4 h-4 text-blue-500" />
                           <span className="truncate">{getUnitDisplay(franqueado.unit_name, franqueado.unit_code)}</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <MapPin className="w-4 h-4 text-muted-foreground/60" />
+                          <MapPin className="w-4 h-4 text-green-500" />
                           <span>{franqueado.city || 'N/A'}, {franqueado.state || 'N/A'}</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Mail className="w-4 h-4 text-muted-foreground/60" />
+                          <Mail className="w-4 h-4 text-orange-500" />
                           <span className="truncate">{franqueado.email || 'N/A'}</span>
                         </div>
                       </CardContent>
