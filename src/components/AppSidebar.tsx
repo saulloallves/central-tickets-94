@@ -42,24 +42,24 @@ export function AppSidebar() {
   };
 
   return (
-    <div className="w-72 h-screen bg-sidebar border-r border-sidebar-border flex flex-col backdrop-blur-lg fixed left-0 top-0 z-40 overflow-hidden">
+    <div className="w-72 h-screen bg-gradient-sidebar border-r border-sidebar-border flex flex-col backdrop-blur-lg fixed left-0 top-0 z-40 overflow-hidden rounded-r-3xl shadow-elegant">
       {/* Header */}
-      <div className="p-6 border-b border-sidebar-border bg-gradient-subtle flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center shadow-glow">
-            <ClipboardList className="h-4 w-4 text-white" />
+      <div className="p-8 border-b border-sidebar-border/30 flex-shrink-0">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-glow">
+            <ClipboardList className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-sidebar-foreground">HelpDesk AI</h2>
-            <p className="text-xs text-sidebar-foreground/60">Gestão Inteligente</p>
+            <h2 className="text-xl font-bold text-sidebar-foreground">HelpDesk AI</h2>
+            <p className="text-sm text-sidebar-foreground/80">Gestão Inteligente</p>
           </div>
         </div>
       </div>
 
       {/* Navigation */}
-      <div className="flex-1 p-4 overflow-y-auto">
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-sidebar-foreground/60 uppercase tracking-wider px-3 py-2 mb-4">
+      <div className="flex-1 p-6 overflow-y-auto">
+        <div className="space-y-3">
+          <p className="text-xs font-semibold text-sidebar-foreground/80 uppercase tracking-wider px-4 py-3 mb-6">
             Menu Principal
           </p>
           {navigationItems.map((item) => (
@@ -68,15 +68,15 @@ export function AppSidebar() {
                 to={item.url}
                 end
                 className={({ isActive }) => cn(
-                  "group flex items-center justify-between rounded-xl px-3 py-3 text-sm font-medium transition-all duration-200 hover:bg-sidebar-accent/50 hover:shadow-card",
-                  isActive && "bg-gradient-primary text-white shadow-glow hover:bg-gradient-primary"
+                  "group flex items-center justify-between rounded-2xl px-4 py-4 text-sm font-medium transition-all duration-300 hover:bg-white/10 hover:backdrop-blur-md",
+                  isActive && "bg-white/20 text-white shadow-neumorphic backdrop-blur-md"
                 )}
               >
-                <div className="flex items-center gap-3">
-                  <item.icon className="h-4 w-4 flex-shrink-0" />
-                  <span className="truncate">{item.title}</span>
+                <div className="flex items-center gap-4">
+                  <item.icon className="h-5 w-5 flex-shrink-0" />
+                  <span className="truncate font-medium">{item.title}</span>
                 </div>
-                <ChevronRight className="h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity" />
+                <ChevronRight className="h-4 w-4 opacity-0 group-hover:opacity-80 transition-all duration-300" />
               </NavLink>
             </PermissionGuard>
           ))}
@@ -84,13 +84,13 @@ export function AppSidebar() {
       </div>
 
       {/* Footer */}
-      <div className="p-4 border-t border-sidebar-border bg-gradient-subtle flex-shrink-0">
+      <div className="p-6 border-t border-sidebar-border/30 flex-shrink-0">
         <Button 
           variant="ghost" 
           onClick={handleSignOut}
-          className="w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-destructive transition-all duration-200 rounded-xl"
+          className="w-full justify-start gap-4 text-sidebar-foreground hover:bg-white/10 hover:backdrop-blur-md hover:text-red-300 transition-all duration-300 rounded-2xl py-4 font-medium"
         >
-          <LogOut className="h-4 w-4" />
+          <LogOut className="h-5 w-5" />
           Sair do Sistema
         </Button>
       </div>
