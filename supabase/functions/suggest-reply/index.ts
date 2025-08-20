@@ -128,26 +128,33 @@ serve(async (req) => {
       kbBaseQuery = kbBaseQuery.in('categoria', aiSettings.allowed_categories);
     }
 
-    // Create more comprehensive search for KB articles
+    // Create more comprehensive search for KB articles - prioritize content search
     const kbPromises = [
-      // Search by exact description match
+      // Search by exact description match prioritizing content
       supabase
         .from('knowledge_articles')
         .select('id, titulo, conteudo, categoria, tags')
         .eq('ativo', true)
         .eq('aprovado', aiSettings.use_only_approved || true)
-        .or(`titulo.ilike.%${ticket.descricao_problema.toLowerCase()}%,conteudo.ilike.%${ticket.descricao_problema.toLowerCase()}%`)
-        .limit(3),
-      // Search by individual terms
+        .or(`conteudo.ilike.%${ticket.descricao_problema.toLowerCase()}%,titulo.ilike.%${ticket.descricao_problema.toLowerCase()}%`)
+        .limit(5),
+      // Search by individual terms prioritizing content over title
       ...searchTerms.map(term =>
         supabase
           .from('knowledge_articles')
           .select('id, titulo, conteudo, categoria, tags')
           .eq('ativo', true)
           .eq('aprovado', aiSettings.use_only_approved || true)
-          .or(`titulo.ilike.%${term}%,conteudo.ilike.%${term}%,categoria.ilike.%${term}%`)
-          .limit(2)
-      )
+          .or(`conteudo.ilike.%${term}%,titulo.ilike.%${term}%,categoria.ilike.%${term}%`)
+          .limit(3)
+      ),
+      // Get more general articles to ensure comprehensive coverage
+      supabase
+        .from('knowledge_articles')
+        .select('id, titulo, conteudo, categoria, tags')
+        .eq('ativo', true)
+        .eq('aprovado', aiSettings.use_only_approved || true)
+        .limit(10)
     ];
 
     // Execute all searches in parallel
@@ -181,7 +188,7 @@ serve(async (req) => {
       });
     }
 
-    kbArticles = kbArticles.slice(0, 3); // Limit results
+    kbArticles = kbArticles.slice(0, 8); // Increased limit for more comprehensive responses
 
     // Add forced articles if configured
     let forcedArticles = [];
@@ -218,11 +225,11 @@ ${ragDocuments.map(doc => {
       }).join('\n\n')}`);
     }
 
-    // Add Knowledge Base articles if found
+    // Add Knowledge Base articles if found - send full content for better context
     if (kbArticles.length > 0 || forcedArticles.length > 0) {
       const allKBArticles = [...forcedArticles, ...kbArticles];
-      contextSections.push(`=== BASE DE CONHECIMENTO ===
-${allKBArticles.map(a => `**${a.titulo}** (${a.categoria})\n${a.conteudo.substring(0, 200)}...\nTags: ${a.tags?.join(', ') || 'Nenhuma'}`).join('\n\n')}`);
+      contextSections.push(`=== BASE DE CONHECIMENTO COMPLETA ===
+${allKBArticles.map(a => `**${a.titulo}** (${a.categoria})\n${a.conteudo}\nTags: ${a.tags?.join(', ') || 'Nenhuma'}`).join('\n\n---\n\n')}`);
     }
 
     const context = contextSections.join('\n\n');
