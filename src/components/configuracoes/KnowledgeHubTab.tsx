@@ -263,6 +263,31 @@ export const KnowledgeHubTab = () => {
     }
   };
 
+  const handleActivateAllForAI = async () => {
+    if (filteredArticles.length === 0) return;
+    
+    try {
+      const updatePromises = filteredArticles.map(article => 
+        updateArticle(article.id, { usado_pela_ia: true })
+      );
+      
+      await Promise.all(updatePromises);
+      
+      toast({
+        title: "✅ Todos Ativados para IA",
+        description: `${filteredArticles.length} artigos foram ativados para uso pela IA`,
+      });
+      
+    } catch (error) {
+      console.error('Error activating all articles for AI:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível ativar todos os artigos",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleConfirmImport = async () => {
     try {
       const finalApprovalData = {
@@ -512,8 +537,21 @@ export const KnowledgeHubTab = () => {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-4">
-              {filteredArticles.map((article) => (
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <p className="text-sm text-muted-foreground">
+                  {filteredArticles.length} artigos encontrados
+                </p>
+                <Button 
+                  onClick={handleActivateAllForAI}
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <Check className="h-4 w-4" />
+                  Ativar Todos para IA
+                </Button>
+              </div>
+                {filteredArticles.map((article) => (
                 <Card key={article.id}>
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
