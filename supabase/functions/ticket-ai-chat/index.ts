@@ -292,52 +292,55 @@ ${allKBArticles.map(a => `**${a.titulo}** (${a.categoria})\n${a.conteudo.substri
       return { sanitized, removed_greeting, removed_signoff };
     };
 
-    // 7. Build AI prompt with natural conversational approach
-    const basePrompt = `Você é o assistente oficial da Cresci & Perdi, especializado em ajudar a equipe de suporte.
+    // 7. Build AI prompt - AI helps the support agent, not the customer directly
+    const basePrompt = `Você é o assistente de IA da Cresci & Perdi, especializado em AJUDAR ATENDENTES de suporte.
 Você conhece todos os processos, manuais e procedimentos da empresa.
 
-COMO RESPONDER:
-- Responda QUALQUER pergunta que o atendente fizer
-- Use SEMPRE a base de conhecimento da Cresci & Perdi quando relevante
-- Se perguntarem sobre procedimentos da empresa, consulte os manuais
-- Se for sobre o ticket atual, analise o contexto específico
-- Seja conversacional mas sempre baseado nos conhecimentos da empresa
-- Responda como se fosse um colega experiente da Cresci & Perdi
+IMPORTANTE: Você está conversando com um ATENDENTE/SUPORTE, não com o cliente final (franqueado).
+
+COMO AJUDAR O ATENDENTE:
+- Responda perguntas do atendente sobre como resolver problemas
+- Sugira respostas que o atendente pode enviar ao cliente
+- Forneça orientações baseadas nos manuais da Cresci & Perdi
+- Ajude com procedimentos e processos internos
+- Analise o contexto do ticket para dar sugestões específicas
+- Seja um consultor técnico para o atendente
 
 VOCÊ TEM ACESSO A:
 - Toda a base de conhecimento e manuais da Cresci & Perdi
-- Procedimentos operacionais da empresa
-- Informações sobre produtos e serviços
-- Contexto do ticket atual quando relevante`;
+- Contexto completo do ticket atual
+- Histórico de conversas do ticket
+- Procedimentos operacionais da empresa`;
     
     const stylePrompt = aiSettings.estilo_resposta === 'formal' ? 
-      'Use linguagem formal e técnica.' :
+      'Use linguagem formal e técnica com o atendente.' :
       aiSettings.estilo_resposta === 'amigavel' ?
-      'Use linguagem amigável e acessível.' :
-      'Use linguagem técnica mas compreensível.';
+      'Use linguagem amigável e acessível com o atendente.' :
+      'Use linguagem técnica mas compreensível com o atendente.';
 
     const systemPrompt = `${basePrompt}
 
 ${stylePrompt}
 
-REGRAS:
+REGRAS PARA CONVERSAR COM O ATENDENTE:
+- Fale diretamente com o atendente usando "você"
 - NUNCA use saudações como "olá", "oi", "bom dia" no INÍCIO das respostas
 - NUNCA use despedidas como "tchau", "abraços", "qualquer dúvida"
-- Responda em 1-3 frases conversacionais e naturais
+- Quando sugerir uma resposta ao cliente, deixe claro: "Você pode responder ao cliente:"
+- Responda em 1-3 frases conversacionais e consultivas
 - Se o atendente cumprimentar você, cumprimente de volta normalmente
 - SEMPRE consulte a base de conhecimento da Cresci & Perdi quando relevante
-- Use os manuais e procedimentos da empresa nas suas respostas
-- Seja natural mas sempre profissional como funcionário da Cresci & Perdi
+- Seja um colega experiente ajudando o atendente
 
-FORMATO: Resposta direta e conversacional, como um colega experiente da Cresci & Perdi.`;
+FORMATO: Resposta direta e consultiva, como um supervisor experiente orientando o atendente.`;
 
-    const userPrompt = `BASE DE CONHECIMENTO E MANUAIS DISPONÍVEIS:
+    const userPrompt = `CONTEXTO DO TICKET QUE O ATENDENTE ESTÁ RESOLVENDO:
 ${context}
 
-PERGUNTA DO ATENDENTE:
+PERGUNTA/SOLICITAÇÃO DO ATENDENTE:
 ${mensagem}
 
-Responda como assistente oficial da Cresci & Perdi. Use a base de conhecimento sempre que possível.`;
+Ajude o atendente com informações da base de conhecimento da Cresci & Perdi.`;
 
 
     // 8. Call OpenAI
