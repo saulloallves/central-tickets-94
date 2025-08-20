@@ -57,12 +57,13 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
       }
 
       // Fetch related data separately to avoid RLS issues
-      const [unidadeRes, colaboradorRes, franqueadoRes, profileRes, equipeRes] = await Promise.all([
+      const [unidadeRes, colaboradorRes, franqueadoRes, profileRes, equipeRes, atendimentoIniciadoRes] = await Promise.all([
         supabase.from('unidades').select('grupo, id').eq('id', ticketData.unidade_id).maybeSingle(),
         ticketData.colaborador_id ? supabase.from('colaboradores').select('nome_completo').eq('id', ticketData.colaborador_id).maybeSingle() : Promise.resolve({ data: null }),
         ticketData.franqueado_id ? supabase.from('franqueados').select('name').eq('id', Number(ticketData.franqueado_id)).maybeSingle() : Promise.resolve({ data: null }),
         ticketData.criado_por ? supabase.from('profiles').select('nome_completo').eq('id', ticketData.criado_por).maybeSingle() : Promise.resolve({ data: null }),
-        ticketData.equipe_responsavel_id ? supabase.from('equipes').select('nome').eq('id', ticketData.equipe_responsavel_id).maybeSingle() : Promise.resolve({ data: null })
+        ticketData.equipe_responsavel_id ? supabase.from('equipes').select('nome').eq('id', ticketData.equipe_responsavel_id).maybeSingle() : Promise.resolve({ data: null }),
+        ticketData.atendimento_iniciado_por ? supabase.from('profiles').select('nome_completo').eq('id', ticketData.atendimento_iniciado_por).maybeSingle() : Promise.resolve({ data: null })
       ]);
 
       console.log('Ticket data:', {
@@ -82,7 +83,8 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
         colaboradores: colaboradorRes.data,
         franqueados: franqueadoRes.data,
         profiles: profileRes.data,
-        equipes: equipeRes.data
+        equipes: equipeRes.data,
+        atendimento_iniciado_profile: atendimentoIniciadoRes.data
       };
 
       setTicket(combinedData);
@@ -388,23 +390,33 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
               </Badge>
               <div className="text-xs text-muted-foreground">Prioridade</div>
             </div>
-            {ticket.equipes?.nome ? (
-              <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                <Tag className="h-5 w-5 text-primary" />
-                <div>
-                  <div className="font-medium text-foreground">{ticket.equipes.nome}</div>
-                  <div className="text-xs text-muted-foreground">Equipe Responsável</div>
-                </div>
+            <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+              <Tag className="h-5 w-5 text-primary" />
+              <div className="flex-1">
+                {ticket.equipes?.nome ? (
+                  <div>
+                    <div className="font-medium text-foreground">{ticket.equipes.nome}</div>
+                    <div className="text-xs text-muted-foreground">Equipe Responsável</div>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="font-medium text-foreground capitalize">{ticket.categoria || 'Não definida'}</div>
+                    <div className="text-xs text-muted-foreground">Categoria</div>
+                  </div>
+                )}
+                {ticket.atendimento_iniciado_por && ticket.atendimento_iniciado_profile?.nome_completo && (
+                  <div className="mt-2 pt-2 border-t border-muted">
+                    <div className="text-sm font-medium text-foreground">{ticket.atendimento_iniciado_profile.nome_completo}</div>
+                    <div className="text-xs text-muted-foreground">
+                      Atendimento iniciado em {ticket.atendimento_iniciado_em 
+                        ? new Date(ticket.atendimento_iniciado_em).toLocaleString('pt-BR')
+                        : 'Data não disponível'
+                      }
+                    </div>
+                  </div>
+                )}
               </div>
-            ) : ticket.categoria && (
-              <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                <Tag className="h-5 w-5 text-primary" />
-                <div>
-                  <div className="font-medium text-foreground capitalize">{ticket.categoria}</div>
-                  <div className="text-xs text-muted-foreground">Categoria</div>
-                </div>
-              </div>
-            )}
+            </div>
           </div>
         </div>
 
