@@ -33,6 +33,19 @@ const Tickets = () => {
   // Inicializar notificações sonoras
   const { testNotificationSound } = useTicketNotifications();
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
+  
+  // Listen for notification ticket modal events
+  useEffect(() => {
+    const handleOpenTicketModal = (event: CustomEvent) => {
+      setSelectedTicketId(event.detail.ticketId);
+    };
+    
+    window.addEventListener('openTicketModal', handleOpenTicketModal as EventListener);
+    
+    return () => {
+      window.removeEventListener('openTicketModal', handleOpenTicketModal as EventListener);
+    };
+  }, []);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
   const [equipes, setEquipes] = useState<Equipe[]>([]);

@@ -123,14 +123,20 @@ export const NotificationButton = () => {
                       </div>
                       
                       <div className="flex items-center gap-2 mt-2">
-                        <Link 
-                          to={`/admin/tickets?ticket=${alert.ticket_id}`}
-                          onClick={() => setOpen(false)}
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-6 text-xs"
+                          onClick={() => {
+                            setOpen(false);
+                            // Dispatch event to open ticket modal
+                            window.dispatchEvent(new CustomEvent('openTicketModal', { 
+                              detail: { ticketId: alert.ticket_id }
+                            }));
+                          }}
                         >
-                          <Button variant="ghost" size="sm" className="h-6 text-xs">
-                            Ver Ticket
-                          </Button>
-                        </Link>
+                          Ver Ticket
+                        </Button>
                         <Button 
                           variant="ghost" 
                           size="sm" 
