@@ -53,7 +53,7 @@ const Tickets = () => {
   const [filters, setFilters] = useState({
     search: '',
     status: 'all',
-    categoria: 'all',
+    categoria: 'all',  // Mantendo para compatibilidade com hook useTickets
     prioridade: 'all',
     unidade_id: 'all',
     status_sla: 'all',
