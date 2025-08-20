@@ -104,9 +104,11 @@ export function AppSidebar() {
                       to={item.url}
                       end
                       className={({ isActive }) => cn(
-                        "group flex items-center px-3 py-2 transition-all duration-300",
+                        "group flex items-center px-3 py-2 rounded-xl transition-all duration-300",
                         "hover:scale-105",
-                        isActive ? "" : ""
+                        isActive 
+                          ? "bg-white/25 backdrop-blur-md border border-white/20 shadow-neumorphic" 
+                          : ""
                       )}
                     >
                       {({ isActive }) => (
@@ -143,9 +145,11 @@ export function AppSidebar() {
                           to={item.url}
                           end
                           className={({ isActive }) => cn(
-                            "group relative flex items-center justify-center w-12 h-12 transition-all duration-300 mx-auto",
+                            "group relative flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-300 mx-auto",
                             "hover:scale-105",
-                            isActive ? "" : ""
+                            isActive 
+                              ? "bg-white/25 backdrop-blur-md border border-white/20 shadow-neumorphic scale-105" 
+                              : ""
                           )}
                         >
                           {({ isActive }) => (
