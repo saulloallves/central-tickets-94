@@ -143,6 +143,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
   const handleEditAndSend = () => {
     setEditedSuggestion(suggestion?.resposta || '');
     setNewMessage(suggestion?.resposta || '');
+    setActiveTab('messages'); // Muda para a aba Conversas para enviar
   };
 
   const handleSendSuggestion = async (text: string) => {
@@ -528,10 +529,6 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                       </Button>
                       <Button size="sm" variant="outline" onClick={handleEditAndSend}>
                         Editar e Enviar
-                      </Button>
-                      <Button size="sm" onClick={() => handleSendSuggestion(suggestion.resposta)}>
-                        <Send className="h-4 w-4 mr-2" />
-                        Enviar
                       </Button>
                     </div>
                   )}
