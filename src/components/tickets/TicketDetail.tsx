@@ -459,16 +459,16 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
         <Separator className="my-4" />
 
         {/* Tab Navigation */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Tab Buttons */}
-          <div className="flex gap-3 p-2 bg-muted rounded-lg">
+          <div className="flex gap-2 p-1 bg-muted rounded-lg">
             <Button
               variant={activeTab === 'suggestion' ? 'default' : 'ghost'}
-              size="lg"
+              size="sm"
               onClick={() => setActiveTab('suggestion')}
-              className="flex-1 relative h-14 text-base"
+              className="flex-1 relative h-9"
             >
-              <Sparkles className="h-5 w-5 mr-3" />
+              <Sparkles className="h-4 w-4 mr-2" />
               IA Sugestão
               {suggestion && !suggestion.foi_usada && (
                 <Badge variant="secondary" className="ml-2 text-xs">Nova</Badge>
@@ -476,11 +476,11 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
             </Button>
             <Button
               variant={activeTab === 'chat' ? 'default' : 'ghost'}
-              size="lg"
+              size="sm"
               onClick={() => setActiveTab('chat')}
-              className="flex-1 relative h-14 text-base"
+              className="flex-1 relative h-9"
             >
-              <Bot className="h-5 w-5 mr-3" />
+              <Bot className="h-4 w-4 mr-2" />
               Chat com IA
               {chatHistory.length > 0 && (
                 <Badge variant="secondary" className="ml-2 text-xs">{chatHistory.length}</Badge>
@@ -488,11 +488,11 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
             </Button>
             <Button
               variant={activeTab === 'messages' ? 'default' : 'ghost'}
-              size="lg"
+              size="sm"
               onClick={() => setActiveTab('messages')}
-              className="flex-1 relative h-14 text-base"
+              className="flex-1 relative h-9"
             >
-              <MessageSquare className="h-5 w-5 mr-3" />
+              <MessageSquare className="h-4 w-4 mr-2" />
               Conversas
               <Badge variant="secondary" className="ml-2 text-xs">{messages.length}</Badge>
             </Button>
