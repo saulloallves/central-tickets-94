@@ -25,7 +25,9 @@ export const KnowledgeHubTab = () => {
   const [selectedEquipe, setSelectedEquipe] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSuggestion, setSelectedSuggestion] = useState<any>(null);
+  const [selectedArticle, setSelectedArticle] = useState<any>(null);
   const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [approvalData, setApprovalData] = useState({
     titulo: '',
     conteudo: '',
@@ -34,8 +36,19 @@ export const KnowledgeHubTab = () => {
     tipo_midia: 'texto' as const
   });
 
+  const [editData, setEditData] = useState({
+    id: '',
+    titulo: '',
+    conteudo: '',
+    equipe_id: 'none',
+    tags: [] as string[],
+    tipo_midia: 'texto' as const,
+    aprovado: false,
+    usado_pela_ia: false
+  });
+
   const { suggestions, loading: loadingSuggestions, fetchSuggestions, updateSuggestionStatus } = useKnowledgeSuggestions();
-  const { articles, loading: loadingArticles, fetchArticles, createArticle } = useKnowledgeArticles();
+  const { articles, loading: loadingArticles, fetchArticles, createArticle, updateArticle } = useKnowledgeArticles();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -126,6 +139,46 @@ export const KnowledgeHubTab = () => {
       toast({
         title: "Erro",
         description: "Não foi possível publicar o artigo",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditArticle = (article: any) => {
+    setSelectedArticle(article);
+    setEditData({
+      id: article.id,
+      titulo: article.titulo,
+      conteudo: article.conteudo,
+      equipe_id: article.equipe_id || 'none',
+      tags: article.tags || [],
+      tipo_midia: article.tipo_midia,
+      aprovado: article.aprovado,
+      usado_pela_ia: article.usado_pela_ia
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateArticle = async () => {
+    try {
+      const finalEditData = {
+        ...editData,
+        equipe_id: editData.equipe_id === 'none' ? undefined : editData.equipe_id
+      };
+      
+      await updateArticle(editData.id, finalEditData);
+      
+      setIsEditModalOpen(false);
+      setSelectedArticle(null);
+      toast({
+        title: "✅ Artigo Atualizado",
+        description: "Alterações salvas com sucesso",
+      });
+    } catch (error) {
+      console.error('Error updating article:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar o artigo",
         variant: "destructive",
       });
     }
@@ -302,6 +355,15 @@ export const KnowledgeHubTab = () => {
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-lg">{article.titulo}</CardTitle>
                       <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleEditArticle(article)}
+                          className="gap-1"
+                        >
+                          <Edit className="h-3 w-3" />
+                          Editar
+                        </Button>
                         {article.aprovado && (
                           <Badge variant="outline" className="text-green-600 border-green-300">
                             Aprovado
@@ -394,6 +456,94 @@ export const KnowledgeHubTab = () => {
             </Button>
             <Button onClick={handlePublishArticle}>
               Publicar Artigo
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Article Modal */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Editar Artigo</DialogTitle>
+            <DialogDescription>
+              Faça as alterações necessárias no artigo
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="edit-titulo">Título do Artigo</Label>
+              <Input
+                id="edit-titulo"
+                value={editData.titulo}
+                onChange={(e) => setEditData({ ...editData, titulo: e.target.value })}
+                placeholder="Digite o título do artigo"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="edit-equipe">Equipe Responsável</Label>
+              <Select 
+                value={editData.equipe_id} 
+                onValueChange={(value) => setEditData({ ...editData, equipe_id: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma equipe" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sem equipe específica</SelectItem>
+                  {equipes.map((equipe) => (
+                    <SelectItem key={equipe.id} value={equipe.id}>
+                      {equipe.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="edit-conteudo">Conteúdo</Label>
+              <Textarea
+                id="edit-conteudo"
+                value={editData.conteudo}
+                onChange={(e) => setEditData({ ...editData, conteudo: e.target.value })}
+                rows={8}
+                placeholder="Digite o conteúdo do artigo"
+              />
+            </div>
+
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="edit-aprovado"
+                  checked={editData.aprovado}
+                  onChange={(e) => setEditData({ ...editData, aprovado: e.target.checked })}
+                  className="rounded"
+                />
+                <Label htmlFor="edit-aprovado">Artigo aprovado</Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="edit-usado-ia"
+                  checked={editData.usado_pela_ia}
+                  onChange={(e) => setEditData({ ...editData, usado_pela_ia: e.target.checked })}
+                  className="rounded"
+                />
+                <Label htmlFor="edit-usado-ia">Usado pela IA</Label>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleUpdateArticle}>
+              Salvar Alterações
             </Button>
           </DialogFooter>
         </DialogContent>
