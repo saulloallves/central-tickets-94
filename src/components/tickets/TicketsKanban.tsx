@@ -199,34 +199,25 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
       )}
       onClick={() => onSelect(ticket.id)}
     >
-      <CardContent className="p-4 space-y-3">
+      <CardContent className="p-3 space-y-2">
         {/* Título */}
-        <h3 className="font-medium text-foreground line-clamp-2 leading-relaxed">
+        <h3 className="font-medium text-sm text-foreground line-clamp-1 leading-tight">
           {ticket.titulo || ticket.descricao_problema || "Sem título"}
         </h3>
 
         {/* Metadados em linha */}
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <div className="flex items-center gap-3">
-            {/* Localização */}
-            <div className="flex items-center gap-1">
-              <MapPin className="h-3 w-3" />
-              <span className="truncate max-w-[120px]">
-                {(ticket as any).unidades?.grupo || ticket.unidade_id || 'Sem unidade'}
-              </span>
-            </div>
-            
-            {/* Categoria */}
-            <div className="flex items-center gap-1">
-              {getCategoryIcon(ticket.categoria || 'outro')}
-              <span className="capitalize">
-                {ticket.categoria === 'midia' ? 'Mídia' : 
-                 ticket.categoria === 'juridico' ? 'Jurídico' :
-                 ticket.categoria === 'financeiro' ? 'Financeiro' :
-                 ticket.categoria === 'operacoes' ? 'Operações' :
-                 ticket.categoria || 'Outro'}
-              </span>
-            </div>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          {/* Localização */}
+          <div className="flex items-center gap-1 min-w-0 flex-1">
+            <MapPin className="h-3 w-3 flex-shrink-0" />
+            <span className="truncate text-xs">
+              {(ticket as any).unidades?.grupo || ticket.unidade_id || 'Sem unidade'}
+            </span>
+          </div>
+          
+          {/* Categoria */}
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {getCategoryIcon(ticket.categoria || 'outro')}
           </div>
         </div>
 
