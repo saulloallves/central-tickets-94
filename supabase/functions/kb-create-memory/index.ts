@@ -66,32 +66,19 @@ Abertura ou fechamento sem autorização, uso indevido de sistema, móveis não 
 📄 Conteúdo recebido:
 [texto original completo]`;
 
-const MANUAL_PROMPT = `Você é um classificador de documentos especializado. 
+const MANUAL_PROMPT = `Você é um classificador de documentos da Cresci e Perdi.
 
-Analise o documento fornecido e retorne APENAS um objeto JSON (sem comentários ou texto adicional) com esta estrutura:
-
+Analise o documento e retorne um JSON com:
 {
-  "titulo_padrao": "Título extraído ou gerado do documento",
-  "classe_abrev": "Abreviação da classe (ex: COM, OPE, PRO, MKT, etc.)",
-  "classe_codigo": "Código da classe (ex: 04)",
-  "classe_nome": "Nome da classe (ex: Compras & Fornecedores)",
-  "subclasse_codigo": "Código da subclasse (ex: 04.02)",
-  "subclasse_nome": "Nome da subclasse ou null",
-  "justificativa": "Breve explicação da classificação",
+  "titulo_padrao": "Título do documento",
+  "classe_nome": "Categoria principal (ex: Compras & Fornecedores)",
+  "classe_abrev": "COM",
+  "subclasse_nome": "Subcategoria se houver",
+  "justificativa": "Motivo da classificação",
   "content_full": "Conteúdo completo do documento"
 }
 
-CLASSES DISPONÍVEIS:
-- GOV (00): Governança & Estratégia
-- OPE (01): Operações de Loja  
-- PRO (02): Produtos & Categorias
-- MKT (03): Marketing & Vendas
-- COM (04): Compras & Fornecedores
-- SUP (05): Suporte & Reclamações
-- TRE (06): Treinamento & Desenvolvimento
-- JUR (07): Jurídico & Risco
-
-Sempre inclua o content_full com o texto completo do documento.`;
+Sempre inclua o content_full com todo o texto recebido.`;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -114,17 +101,7 @@ serve(async (req) => {
     const prompt = estilo === 'diretrizes' ? DIRETRIZES_PROMPT : MANUAL_PROMPT;
     
     // Preparar mensagem para a IA
-    let userMessage = '';
-    if (estilo === 'diretrizes') {
-      userMessage = content;
-    } else {
-      // Para manual, estruturar os dados
-      userMessage = JSON.stringify({
-        title: titulo || 'Documento sem título',
-        description: '',
-        content: content
-      });
-    }
+    let userMessage = content; // Enviar apenas o conteúdo para ambos os tipos
 
     console.log('Enviando para OpenAI com estilo:', estilo);
     console.log('Prompt length:', prompt.length);
