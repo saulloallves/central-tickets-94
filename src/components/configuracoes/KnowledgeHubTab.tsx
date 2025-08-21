@@ -873,7 +873,7 @@ export const KnowledgeHubTab = () => {
             </div>
 
             <div>
-              <Label htmlFor="edit-conteudo">Conteúdo</Label>
+              <Label htmlFor="edit-conteudo">Conteúdo (da Classificação - usado pela IA)</Label>
               <Textarea
                 id="edit-conteudo"
                 value={editData.conteudo}
@@ -882,72 +882,6 @@ export const KnowledgeHubTab = () => {
                 placeholder="Digite o conteúdo do artigo"
               />
             </div>
-
-            {/* Informações de Classificação */}
-            {selectedArticle?.classificacao && (
-              <div className="border rounded-lg p-4 bg-muted/50">
-                <Label className="text-sm font-medium mb-2 block">Informações de Classificação</Label>
-                <div className="space-y-2 text-sm">
-                  {typeof selectedArticle.classificacao === 'object' ? (
-                    <>
-                      {selectedArticle.classificacao.tipo && (
-                        <div className="flex justify-between">
-                          <span className="font-medium">Tipo:</span>
-                          <span>{selectedArticle.classificacao.tipo}</span>
-                        </div>
-                      )}
-                      {selectedArticle.classificacao.classe_nome && (
-                        <div className="flex justify-between">
-                          <span className="font-medium">Classe:</span>
-                          <span>{selectedArticle.classificacao.classe_nome}</span>
-                        </div>
-                      )}
-                      {selectedArticle.classificacao.subclasse_nome && (
-                        <div className="flex justify-between">
-                          <span className="font-medium">Subclasse:</span>
-                          <span>{selectedArticle.classificacao.subclasse_nome}</span>
-                        </div>
-                      )}
-                      {selectedArticle.classificacao.justificativa && (
-                        <div className="flex flex-col gap-1">
-                          <span className="font-medium">Justificativa:</span>
-                          <span className="text-muted-foreground">{selectedArticle.classificacao.justificativa}</span>
-                        </div>
-                      )}
-                      {selectedArticle.classificacao.classe_abrev && (
-                        <div className="flex justify-between">
-                          <span className="font-medium">Classe Abrev:</span>
-                          <span>{selectedArticle.classificacao.classe_abrev}</span>
-                        </div>
-                      )}
-                      {selectedArticle.classificacao.subclasse_codigo && (
-                        <div className="flex justify-between">
-                          <span className="font-medium">Subclasse Código:</span>
-                          <span>{selectedArticle.classificacao.subclasse_codigo}</span>
-                        </div>
-                      )}
-                      {selectedArticle.classificacao.processado_em && (
-                        <div className="flex justify-between">
-                          <span className="font-medium">Processado em:</span>
-                          <span>{new Date(selectedArticle.classificacao.processado_em).toLocaleString('pt-BR')}</span>
-                        </div>
-                      )}
-                      {/* Debug: Mostrar estrutura completa */}
-                      <details className="mt-2">
-                        <summary className="cursor-pointer text-xs text-muted-foreground">Ver dados completos</summary>
-                        <pre className="mt-2 p-2 bg-muted text-xs overflow-auto max-h-32">
-                          {JSON.stringify(selectedArticle.classificacao, null, 2)}
-                        </pre>
-                      </details>
-                    </>
-                  ) : (
-                    <div className="text-muted-foreground">
-                      Classificação não é um objeto válido: {typeof selectedArticle.classificacao}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
 
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
