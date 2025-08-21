@@ -304,9 +304,9 @@ const KanbanColumn = ({ status, tickets, selectedTicketId, onTicketSelect, equip
       )}
     >
       {/* Header da coluna com efeito glass */}
-      <div className="flex items-center justify-between p-3 bg-white/20 backdrop-blur-md border border-white/30 rounded-t-xl shadow-sm">
+      <div className="flex items-center justify-between p-3 bg-white/25 backdrop-blur-md border border-white/40 rounded-lg shadow-lg m-2 mb-0">
         <h3 className="font-semibold text-sm text-blue-900">{COLUMN_STATUS[status]}</h3>
-        <Badge variant="secondary" className="text-xs bg-white/40 backdrop-blur-sm border border-white/30">
+        <Badge variant="secondary" className="text-xs bg-white/50 backdrop-blur-sm border border-white/40 rounded-full">
           {tickets.length}
         </Badge>
       </div>
