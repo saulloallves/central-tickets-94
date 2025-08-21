@@ -9,8 +9,9 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Edit, Trash2, Send, AlertTriangle, Settings } from "lucide-react";
+import { Plus, Edit, Trash2, Send, AlertTriangle, Settings, Database, Download } from "lucide-react";
 import { useNotificationRoutes, NotificationRoute } from "@/hooks/useNotificationRoutes";
+import { useLegacyNotificationDefaults } from "@/hooks/useLegacyNotificationDefaults";
 
 const NOTIFICATION_TYPES = [
   { value: 'crisis', label: 'Ativação de Crise', description: 'Quando uma crise é ativada' },
@@ -25,6 +26,7 @@ const NOTIFICATION_TYPES = [
 
 export function RotasEnvioTab() {
   const { routes, loading, saveRoute, updateRoute, deleteRoute } = useNotificationRoutes();
+  const { defaults, loading: defaultsLoading } = useLegacyNotificationDefaults();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingRoute, setEditingRoute] = useState<NotificationRoute | null>(null);
   
@@ -112,6 +114,20 @@ export function RotasEnvioTab() {
     return phone;
   };
 
+  const handleImportLegacyRoute = async (unitId: string, type: 'grupo' | 'franqueado', value: string, label: string) => {
+    const routeData = {
+      type: type === 'grupo' ? 'resposta_ticket' : 'resposta_ticket_franqueado',
+      destination_value: value,
+      destination_label: label,
+      description: `Importado da configuração atual do sistema (${type === 'grupo' ? 'id_grupo_branco' : 'telefone do franqueado'})`,
+      unit_id: unitId,
+      priority: 0,
+      is_active: true
+    };
+
+    await saveRoute(routeData);
+  };
+
   const groupedRoutes = routes.reduce((acc, route) => {
     const key = route.unit_id || 'global';
     if (!acc[key]) acc[key] = [];
@@ -140,6 +156,107 @@ export function RotasEnvioTab() {
           Nova Rota
         </Button>
       </div>
+
+      {/* Configuração Atual do Sistema */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Database className="h-5 w-5" />
+            Configuração Atual (Padrão do Sistema)
+          </CardTitle>
+          <CardDescription>
+            Configurações atualmente ativas no sistema para grupos e franqueados. Você pode importar essas configurações como rotas editáveis.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {defaultsLoading ? (
+            <div className="text-center py-4 text-muted-foreground">
+              Carregando configurações atuais...
+            </div>
+          ) : defaults.length === 0 ? (
+            <div className="text-center py-4 text-muted-foreground">
+              Nenhuma configuração padrão encontrada
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {defaults.map((defaultConfig) => (
+                <div
+                  key={defaultConfig.id}
+                  className="p-3 rounded-lg border bg-muted/30 space-y-2"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">Unidade: {defaultConfig.unidade_id}</span>
+                  </div>
+                  
+                  {defaultConfig.grupo_branco && (
+                    <div className="flex items-center justify-between p-2 rounded border-l-4 border-l-blue-500 bg-background/50">
+                      <div className="flex items-center gap-2 flex-1">
+                        <Send className="h-3 w-3 text-blue-600" />
+                        <div>
+                          <span className="text-sm font-medium">Grupo (Respostas)</span>
+                          <p className="text-xs text-muted-foreground">
+                            ID: {formatPhoneForDisplay(defaultConfig.grupo_branco)}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleImportLegacyRoute(
+                          defaultConfig.unidade_id,
+                          'grupo',
+                          defaultConfig.grupo_branco,
+                          `Grupo Respostas - ${defaultConfig.unidade_id}`
+                        )}
+                        className="flex items-center gap-1"
+                      >
+                        <Download className="h-3 w-3" />
+                        Importar
+                      </Button>
+                    </div>
+                  )}
+                  
+                  {defaultConfig.franqueado_phone && (
+                    <div className="flex items-center justify-between p-2 rounded border-l-4 border-l-green-500 bg-background/50">
+                      <div className="flex items-center gap-2 flex-1">
+                        <Send className="h-3 w-3 text-green-600" />
+                        <div>
+                          <span className="text-sm font-medium">
+                            Franqueado: {defaultConfig.franqueado_name || 'Sem nome'}
+                          </span>
+                          <p className="text-xs text-muted-foreground">
+                            Tel: {formatPhoneForDisplay(defaultConfig.franqueado_phone)}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleImportLegacyRoute(
+                          defaultConfig.unidade_id,
+                          'franqueado',
+                          defaultConfig.franqueado_phone,
+                          `${defaultConfig.franqueado_name || 'Franqueado'} - ${defaultConfig.unidade_id}`
+                        )}
+                        className="flex items-center gap-1"
+                      >
+                        <Download className="h-3 w-3" />
+                        Importar
+                      </Button>
+                    </div>
+                  )}
+                  
+                  {!defaultConfig.grupo_branco && !defaultConfig.franqueado_phone && (
+                    <div className="text-center py-2 text-muted-foreground text-sm">
+                      Nenhuma configuração padrão encontrada para esta unidade
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="space-y-4">
         {Object.entries(groupedRoutes).map(([unitKey, unitRoutes]) => (
