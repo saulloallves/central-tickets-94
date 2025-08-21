@@ -69,10 +69,10 @@ const COLUMN_STATUS = {
 };
 
 const COLUMN_COLORS = {
-  aberto: 'border-blue-200 bg-blue-50',
-  em_atendimento: 'border-yellow-200 bg-yellow-50',
-  escalonado: 'border-orange-200 bg-orange-50',
-  concluido: 'border-green-200 bg-green-50'
+  aberto: 'border-primary/20 bg-primary/5',
+  em_atendimento: 'border-primary/20 bg-primary/5',
+  escalonado: 'border-primary/20 bg-primary/5',
+  concluido: 'border-primary/20 bg-primary/5'
 };
 
 interface KanbanTicketCardProps {
@@ -303,8 +303,8 @@ const KanbanColumn = ({ status, tickets, selectedTicketId, onTicketSelect, equip
           "border-dashed border-muted/40 hover:border-muted/60"
       )}
     >
-      {/* Header da coluna */}
-      <div className="flex items-center justify-between p-3 bg-background/80 backdrop-blur-sm border-b border-muted/20">
+      {/* Header da coluna com efeito glass */}
+      <div className="flex items-center justify-between p-3 bg-white/25 backdrop-blur-md border-b border-white/20 shadow-elegant">
         <h3 className="font-semibold text-sm">{COLUMN_STATUS[status]}</h3>
         <Badge variant="secondary" className="text-xs">
           {tickets.length}
