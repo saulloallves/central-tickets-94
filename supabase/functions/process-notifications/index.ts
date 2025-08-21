@@ -23,47 +23,132 @@ interface NotificationRoute {
   is_active: boolean;
 }
 
-// Get notification route for a specific type and unit
-async function getNotificationRoute(supabase: any, type: string, unitId?: string): Promise<string | null> {
+// Get destination number based on notification source configuration
+async function getDestinationNumber(supabase: any, type: string, ticket: any): Promise<string | null> {
   try {
-    // First try to find unit-specific route
-    if (unitId) {
-      const { data: unitRoute, error: unitError } = await supabase
-        .from('notification_routes')
-        .select('destination_value')
-        .eq('type', type)
-        .eq('unit_id', unitId)
-        .eq('is_active', true)
-        .order('priority', { ascending: false })
-        .limit(1)
-        .single();
+    // Get source configuration for this notification type
+    const { data: sourceConfig, error: configError } = await supabase
+      .from('notification_source_config')
+      .select('*')
+      .eq('notification_type', type)
+      .eq('is_active', true)
+      .maybeSingle();
 
-      if (!unitError && unitRoute) {
-        console.log(`Using unit-specific route for ${type} in ${unitId}: ${unitRoute.destination_value}`);
-        return unitRoute.destination_value;
-      }
+    if (configError) {
+      console.error('Error fetching source config:', configError);
+      return null;
     }
 
-    // Fallback to global route
-    const { data: globalRoute, error: globalError } = await supabase
-      .from('notification_routes')
-      .select('destination_value')
-      .eq('type', type)
-      .is('unit_id', null)
-      .eq('is_active', true)
-      .order('priority', { ascending: false })
-      .limit(1)
-      .single();
+    if (!sourceConfig) {
+      console.log(`No source configuration found for ${type}, using legacy fallback`);
+      return getLegacyDestination(type, ticket);
+    }
 
-    if (!globalError && globalRoute) {
-      console.log(`Using global route for ${type}: ${globalRoute.destination_value}`);
-      return globalRoute.destination_value;
+    console.log(`Using source config for ${type}:`, sourceConfig);
+
+    switch (sourceConfig.source_type) {
+      case 'fixed':
+        if (sourceConfig.fixed_value) {
+          console.log(`Using fixed value for ${type}: ${sourceConfig.fixed_value}`);
+          return sourceConfig.fixed_value;
+        }
+        break;
+
+      case 'column':
+        if (sourceConfig.source_table && sourceConfig.source_column) {
+          const number = await getNumberFromColumn(
+            supabase,
+            sourceConfig.source_table,
+            sourceConfig.source_column,
+            ticket
+          );
+          if (number) {
+            console.log(`Got number from ${sourceConfig.source_table}.${sourceConfig.source_column}: ${number}`);
+            return number;
+          }
+        }
+        break;
+
+      case 'dynamic':
+        console.log('Dynamic source type not implemented yet');
+        break;
+    }
+
+    console.log(`No number found from source config for ${type}, using legacy fallback`);
+    return getLegacyDestination(type, ticket);
+  } catch (error) {
+    console.error('Error in getDestinationNumber:', error);
+    return getLegacyDestination(type, ticket);
+  }
+}
+
+async function getNumberFromColumn(supabase: any, table: string, column: string, ticket: any): Promise<string | null> {
+  try {
+    switch (table) {
+      case 'unidades':
+        if (ticket.unidade_id) {
+          const { data, error } = await supabase
+            .from('unidades')
+            .select(column)
+            .eq('id', ticket.unidade_id)
+            .maybeSingle();
+
+          if (!error && data && data[column]) {
+            return data[column];
+          }
+        }
+        break;
+
+      case 'franqueados':
+        if (ticket.unidade_id && column === 'phone') {
+          const { data, error } = await supabase
+            .from('franqueados')
+            .select('phone')
+            .contains('unit_code', { [ticket.unidade_id]: true })
+            .maybeSingle();
+
+          if (!error && data && data.phone) {
+            return data.phone;
+          }
+        }
+        break;
+
+      case 'colaboradores':
+        if (ticket.unidade_id && column === 'telefone') {
+          const { data, error } = await supabase
+            .from('colaboradores')
+            .select('telefone')
+            .eq('unidade_id', ticket.unidade_id)
+            .maybeSingle();
+
+          if (!error && data && data.telefone) {
+            return data.telefone;
+          }
+        }
+        break;
     }
   } catch (error) {
-    console.log(`No custom route found for ${type}, falling back to default logic`);
+    console.error(`Error fetching from ${table}.${column}:`, error);
   }
 
   return null;
+}
+
+// Legacy fallback for when no source configuration is found
+function getLegacyDestination(type: string, ticket: any): string | null {
+  switch (type) {
+    case 'resposta_ticket':
+    case 'ticket_created':
+    case 'sla_half':
+    case 'sla_breach':
+    case 'crisis':
+    case 'crisis_resolved':
+    case 'crisis_update':
+      return ticket.unidades?.id_grupo_branco || null;
+    
+    default:
+      return null;
+  }
 }
 
 // Get Z-API configuration from database or fallback to secrets
@@ -442,21 +527,18 @@ serve(async (req) => {
     let resultadoEnvio: any = { success: false };
     let destinoFinal: string = '';
 
-    // Get custom route for this notification type
-    const customRoute = await getNotificationRoute(supabase, type, ticket.unidade_id);
+    // Get destination number based on new source configuration system
+    const customDestination = await getDestinationNumber(supabase, type, ticket);
 
     switch (type) {
       case 'ticket_criado':
-        console.log('Processing ticket_criado - checking for custom route');
+        console.log('Processing ticket_criado');
         
-        if (customRoute) {
-          destinoFinal = customRoute;
-          console.log(`Using custom route for ticket_criado: ${destinoFinal}`);
-        } else if (ticket.unidades?.id_grupo_branco) {
-          destinoFinal = ticket.unidades.id_grupo_branco;
-          console.log(`Using default group for ticket_criado: ${destinoFinal}`);
+        if (customDestination) {
+          destinoFinal = customDestination;
+          console.log(`Using configured destination for ticket_criado: ${destinoFinal}`);
         } else {
-          throw new Error(`Nenhuma rota configurada para ticket_criado na unidade ${ticket.unidade_id}`);
+          throw new Error(`Nenhuma configuração de origem encontrada para ticket_criado na unidade ${ticket.unidade_id}`);
         }
 
         const templateTicket = await getMessageTemplate(supabase, 'ticket_created');
@@ -473,16 +555,13 @@ serve(async (req) => {
         break;
 
       case 'resposta_ticket':
-        console.log('Processing resposta_ticket - checking for custom route');
+        console.log('Processing resposta_ticket');
         
-        if (customRoute) {
-          destinoFinal = customRoute;
-          console.log(`Using custom route for resposta_ticket: ${destinoFinal}`);
-        } else if (ticket.unidades?.id_grupo_branco) {
-          destinoFinal = ticket.unidades.id_grupo_branco;
-          console.log(`Using default group for resposta_ticket: ${destinoFinal}`);
+        if (customDestination) {
+          destinoFinal = customDestination;
+          console.log(`Using configured destination for resposta_ticket: ${destinoFinal}`);
         } else {
-          throw new Error(`Nenhuma rota configurada para resposta_ticket na unidade ${ticket.unidade_id}`);
+          throw new Error(`Nenhuma configuração de origem encontrada para resposta_ticket na unidade ${ticket.unidade_id}`);
         }
 
         const templateResposta = await getMessageTemplate(supabase, 'resposta_ticket');
@@ -500,6 +579,8 @@ serve(async (req) => {
       case 'resposta_ticket_privado':
         console.log(`Processing ${type} - sending to franqueado (solicitante) phone`);
         
+        // For franqueado responses, we always send to the original requester
+        // regardless of source configuration
         const franqueadoSolicitante = await getFranqueadoSolicitante(ticket);
         if (!franqueadoSolicitante || !franqueadoSolicitante.phone) {
           throw new Error('Telefone do franqueado (solicitante) não configurado');
@@ -519,16 +600,13 @@ serve(async (req) => {
         break;
 
       case 'sla_half':
-        console.log('Processing sla_half - checking for custom route');
+        console.log('Processing sla_half');
         
-        if (customRoute) {
-          destinoFinal = customRoute;
-          console.log(`Using custom route for sla_half: ${destinoFinal}`);
-        } else if (ticket.unidades?.id_grupo_branco) {
-          destinoFinal = ticket.unidades.id_grupo_branco;
-          console.log(`Using default group for sla_half: ${destinoFinal}`);
+        if (customDestination) {
+          destinoFinal = customDestination;
+          console.log(`Using configured destination for sla_half: ${destinoFinal}`);
         } else {
-          throw new Error(`Nenhuma rota configurada para sla_half na unidade ${ticket.unidade_id}`);
+          throw new Error(`Nenhuma configuração de origem encontrada para sla_half na unidade ${ticket.unidade_id}`);
         }
 
         const templateSLAHalf = await getMessageTemplate(supabase, 'sla_half');
@@ -542,16 +620,13 @@ serve(async (req) => {
         break;
 
       case 'sla_breach':
-        console.log('Processing sla_breach - checking for custom route');
+        console.log('Processing sla_breach');
         
-        if (customRoute) {
-          destinoFinal = customRoute;
-          console.log(`Using custom route for sla_breach: ${destinoFinal}`);
-        } else if (ticket.unidades?.id_grupo_branco) {
-          destinoFinal = ticket.unidades.id_grupo_branco;
-          console.log(`Using default group for sla_breach: ${destinoFinal}`);
+        if (customDestination) {
+          destinoFinal = customDestination;
+          console.log(`Using configured destination for sla_breach: ${destinoFinal}`);
         } else {
-          throw new Error(`Nenhuma rota configurada para sla_breach na unidade ${ticket.unidade_id}`);
+          throw new Error(`Nenhuma configuração de origem encontrada para sla_breach na unidade ${ticket.unidade_id}`);
         }
 
         const templateSLABreach = await getMessageTemplate(supabase, 'sla_breach');
@@ -565,16 +640,13 @@ serve(async (req) => {
         break;
 
       case 'crisis':
-        console.log('Processing crisis - checking for custom route');
+        console.log('Processing crisis');
         
-        if (customRoute) {
-          destinoFinal = customRoute;
-          console.log(`Using custom route for crisis: ${destinoFinal}`);
-        } else if (ticket.unidades?.id_grupo_branco) {
-          destinoFinal = ticket.unidades.id_grupo_branco;
-          console.log(`Using default group for crisis: ${destinoFinal}`);
+        if (customDestination) {
+          destinoFinal = customDestination;
+          console.log(`Using configured destination for crisis: ${destinoFinal}`);
         } else {
-          throw new Error(`Nenhuma rota configurada para crisis na unidade ${ticket.unidade_id}`);
+          throw new Error(`Nenhuma configuração de origem encontrada para crisis na unidade ${ticket.unidade_id}`);
         }
 
         const motivo = textoResposta || 'Não informado';
@@ -589,16 +661,13 @@ serve(async (req) => {
         break;
 
       case 'crisis_resolved':
-        console.log('Processing crisis_resolved - checking for custom route');
+        console.log('Processing crisis_resolved');
         
-        if (customRoute) {
-          destinoFinal = customRoute;
-          console.log(`Using custom route for crisis_resolved: ${destinoFinal}`);
-        } else if (ticket.unidades?.id_grupo_branco) {
-          destinoFinal = ticket.unidades.id_grupo_branco;
-          console.log(`Using default group for crisis_resolved: ${destinoFinal}`);
+        if (customDestination) {
+          destinoFinal = customDestination;
+          console.log(`Using configured destination for crisis_resolved: ${destinoFinal}`);
         } else {
-          throw new Error(`Nenhuma rota configurada para crisis_resolved na unidade ${ticket.unidade_id}`);
+          throw new Error(`Nenhuma configuração de origem encontrada para crisis_resolved na unidade ${ticket.unidade_id}`);
         }
 
         const templateCriseResolvida = `✅ *CRISE RESOLVIDA*
@@ -617,16 +686,13 @@ serve(async (req) => {
         break;
 
       case 'crisis_update':
-        console.log('Processing crisis_update - checking for custom route');
+        console.log('Processing crisis_update');
         
-        if (customRoute) {
-          destinoFinal = customRoute;
-          console.log(`Using custom route for crisis_update: ${destinoFinal}`);
-        } else if (ticket.unidades?.id_grupo_branco) {
-          destinoFinal = ticket.unidades.id_grupo_branco;
-          console.log(`Using default group for crisis_update: ${destinoFinal}`);
+        if (customDestination) {
+          destinoFinal = customDestination;
+          console.log(`Using configured destination for crisis_update: ${destinoFinal}`);
         } else {
-          throw new Error(`Nenhuma rota configurada para crisis_update na unidade ${ticket.unidade_id}`);
+          throw new Error(`Nenhuma configuração de origem encontrada para crisis_update na unidade ${ticket.unidade_id}`);
         }
 
         const templateCriseUpdate = `🔄 *ATUALIZAÇÃO DE CRISE*

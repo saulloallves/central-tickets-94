@@ -12,7 +12,7 @@ import { AlertTriangle, Save, TestTube, Settings, MessageSquare, Eye, EyeOff, Se
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { RotasEnvioTab } from "./RotasEnvioTab";
+import { ConfiguracaoOrigemTab } from "./ConfiguracaoOrigemTab";
 
 interface ZApiConfig {
   id?: string;
@@ -246,21 +246,25 @@ export function NotificacoesTab() {
         </p>
       </div>
 
-      <Tabs defaultValue="zapi" className="w-full">
+      <Tabs defaultValue="origem" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="zapi" className="flex items-center gap-2">
+          <TabsTrigger value="origem" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
+            Origem dos Números
+          </TabsTrigger>
+          <TabsTrigger value="zapi" className="flex items-center gap-2">
+            <MessageSquare className="h-4 w-4" />
             Configurações Z-API
           </TabsTrigger>
           <TabsTrigger value="templates" className="flex items-center gap-2">
-            <MessageSquare className="h-4 w-4" />
+            <Send className="h-4 w-4" />
             Templates de Mensagens
           </TabsTrigger>
-          <TabsTrigger value="rotas" className="flex items-center gap-2">
-            <Send className="h-4 w-4" />
-            Rotas de Envio
-          </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="origem" className="space-y-6">
+          <ConfiguracaoOrigemTab />
+        </TabsContent>
 
         <TabsContent value="zapi" className="space-y-6">
           <Card>
@@ -479,10 +483,6 @@ export function NotificacoesTab() {
               </Card>
             )}
           </div>
-        </TabsContent>
-
-        <TabsContent value="rotas" className="space-y-6">
-          <RotasEnvioTab />
         </TabsContent>
       </Tabs>
     </div>

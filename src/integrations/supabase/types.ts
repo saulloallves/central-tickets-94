@@ -1189,6 +1189,45 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_source_config: {
+        Row: {
+          created_at: string
+          description: string | null
+          fixed_value: string | null
+          id: string
+          is_active: boolean
+          notification_type: string
+          source_column: string | null
+          source_table: string | null
+          source_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          fixed_value?: string | null
+          id?: string
+          is_active?: boolean
+          notification_type: string
+          source_column?: string | null
+          source_table?: string | null
+          source_type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          fixed_value?: string | null
+          id?: string
+          is_active?: boolean
+          notification_type?: string
+          source_column?: string | null
+          source_table?: string | null
+          source_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notifications_queue: {
         Row: {
           alert_category: string | null
