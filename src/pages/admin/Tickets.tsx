@@ -7,9 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRole } from '@/hooks/useRole';
-import { TicketsList } from '@/components/tickets/TicketsList';
 import { TicketsKanban } from '@/components/tickets/TicketsKanban';
-import { TicketDetail } from '@/components/tickets/TicketDetail';
 import { CreateTicketDialog } from '@/components/tickets/CreateTicketDialog';
 import { SLAAlerts } from '@/components/tickets/SLAAlerts';
 import { TestAIButton } from '@/components/tickets/TestAIButton';
@@ -47,8 +45,8 @@ const Tickets = () => {
       window.removeEventListener('openTicketModal', handleOpenTicketModal as EventListener);
     };
   }, []);
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [equipes, setEquipes] = useState<Equipe[]>([]);
   const [filters, setFilters] = useState({
@@ -179,7 +177,6 @@ const Tickets = () => {
           </CardContent>
         </Card>
       </div>
-
 
       {/* Collapsible Filters */}
       {showFilters && (
