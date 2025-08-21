@@ -1114,6 +1114,45 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_routes: {
+        Row: {
+          created_at: string
+          description: string | null
+          destination_label: string | null
+          destination_value: string
+          id: string
+          is_active: boolean
+          priority: number
+          type: string
+          unit_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          destination_label?: string | null
+          destination_value: string
+          id?: string
+          is_active?: boolean
+          priority?: number
+          type: string
+          unit_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          destination_label?: string | null
+          destination_value?: string
+          id?: string
+          is_active?: boolean
+          priority?: number
+          type?: string
+          unit_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notification_settings: {
         Row: {
           created_at: string

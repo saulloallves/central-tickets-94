@@ -13,6 +13,59 @@ interface MessageTemplate {
   variables: string[];
 }
 
+interface NotificationRoute {
+  id: string;
+  type: string;
+  destination_value: string;
+  destination_label?: string;
+  unit_id?: string;
+  priority: number;
+  is_active: boolean;
+}
+
+// Get notification route for a specific type and unit
+async function getNotificationRoute(supabase: any, type: string, unitId?: string): Promise<string | null> {
+  try {
+    // First try to find unit-specific route
+    if (unitId) {
+      const { data: unitRoute, error: unitError } = await supabase
+        .from('notification_routes')
+        .select('destination_value')
+        .eq('type', type)
+        .eq('unit_id', unitId)
+        .eq('is_active', true)
+        .order('priority', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (!unitError && unitRoute) {
+        console.log(`Using unit-specific route for ${type} in ${unitId}: ${unitRoute.destination_value}`);
+        return unitRoute.destination_value;
+      }
+    }
+
+    // Fallback to global route
+    const { data: globalRoute, error: globalError } = await supabase
+      .from('notification_routes')
+      .select('destination_value')
+      .eq('type', type)
+      .is('unit_id', null)
+      .eq('is_active', true)
+      .order('priority', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (!globalError && globalRoute) {
+      console.log(`Using global route for ${type}: ${globalRoute.destination_value}`);
+      return globalRoute.destination_value;
+    }
+  } catch (error) {
+    console.log(`No custom route found for ${type}, falling back to default logic`);
+  }
+
+  return null;
+}
+
 // Get Z-API configuration from database or fallback to secrets
 async function getZApiConfig(supabase: any): Promise<ZApiConfig | null> {
   try {
@@ -389,12 +442,21 @@ serve(async (req) => {
     let resultadoEnvio: any = { success: false };
     let destinoFinal: string = '';
 
+    // Get custom route for this notification type
+    const customRoute = await getNotificationRoute(supabase, type, ticket.unidade_id);
+
     switch (type) {
       case 'ticket_criado':
-        console.log('Processing ticket_criado - sending to group');
+        console.log('Processing ticket_criado - checking for custom route');
         
-        if (!ticket.unidades?.id_grupo_branco) {
-          throw new Error(`Grupo branco não configurado para unidade ${ticket.unidade_id}`);
+        if (customRoute) {
+          destinoFinal = customRoute;
+          console.log(`Using custom route for ticket_criado: ${destinoFinal}`);
+        } else if (ticket.unidades?.id_grupo_branco) {
+          destinoFinal = ticket.unidades.id_grupo_branco;
+          console.log(`Using default group for ticket_criado: ${destinoFinal}`);
+        } else {
+          throw new Error(`Nenhuma rota configurada para ticket_criado na unidade ${ticket.unidade_id}`);
         }
 
         const templateTicket = await getMessageTemplate(supabase, 'ticket_created');
@@ -407,19 +469,21 @@ serve(async (req) => {
           data_abertura: new Date(ticket.data_abertura).toLocaleString('pt-BR')
         });
 
-        resultadoEnvio = await sendZapiMessage(normalizePhoneNumber(ticket.unidades.id_grupo_branco), mensagemTicket);
-        destinoFinal = ticket.unidades.id_grupo_branco;
+        resultadoEnvio = await sendZapiMessage(normalizePhoneNumber(destinoFinal), mensagemTicket);
         break;
 
       case 'resposta_ticket':
-        console.log('Processing resposta_ticket - sending to group');
+        console.log('Processing resposta_ticket - checking for custom route');
         
-        if (!ticket.unidades?.id_grupo_branco) {
-          throw new Error(`Grupo branco não configurado para unidade ${ticket.unidade_id}`);
+        if (customRoute) {
+          destinoFinal = customRoute;
+          console.log(`Using custom route for resposta_ticket: ${destinoFinal}`);
+        } else if (ticket.unidades?.id_grupo_branco) {
+          destinoFinal = ticket.unidades.id_grupo_branco;
+          console.log(`Using default group for resposta_ticket: ${destinoFinal}`);
+        } else {
+          throw new Error(`Nenhuma rota configurada para resposta_ticket na unidade ${ticket.unidade_id}`);
         }
-
-        const grupoBranco = ticket.unidades.id_grupo_branco;
-        console.log(`Using group for response: { branco: "${grupoBranco}", azul: "${ticket.unidades.id_grupo_azul || '-'}", selected: "${grupoBranco}" }`);
 
         const templateResposta = await getMessageTemplate(supabase, 'resposta_ticket');
         const mensagemResposta = processTemplate(templateResposta, {
@@ -429,12 +493,12 @@ serve(async (req) => {
           timestamp: new Date().toLocaleString('pt-BR')
         });
 
-        resultadoEnvio = await sendZapiMessage(normalizePhoneNumber(grupoBranco), mensagemResposta);
-        destinoFinal = grupoBranco;
+        resultadoEnvio = await sendZapiMessage(normalizePhoneNumber(destinoFinal), mensagemResposta);
         break;
 
       case 'resposta_ticket_franqueado':
-        console.log('Processing resposta_ticket_franqueado - sending to franqueado (solicitante) phone');
+      case 'resposta_ticket_privado':
+        console.log(`Processing ${type} - sending to franqueado (solicitante) phone`);
         
         const franqueadoSolicitante = await getFranqueadoSolicitante(ticket);
         if (!franqueadoSolicitante || !franqueadoSolicitante.phone) {
@@ -449,43 +513,22 @@ serve(async (req) => {
           texto_resposta: textoResposta,
           timestamp: new Date().toLocaleString('pt-BR')
         });
-        
-        console.log(`Message preview: ${mensagemFranqueado.substring(0, 100)}...`);
-        console.log(`Sending message to: ${franqueadoSolicitante.phone}`);
 
         resultadoEnvio = await sendZapiMessage(franqueadoSolicitante.phone, mensagemFranqueado);
         destinoFinal = franqueadoSolicitante.phone;
         break;
 
-      case 'resposta_ticket_privado':
-        console.log('Processing resposta_ticket_privado - sending to franqueado (solicitante) phone');
-        
-        const franqueadoPrivado = await getFranqueadoSolicitante(ticket);
-        if (!franqueadoPrivado || !franqueadoPrivado.phone) {
-          throw new Error('Telefone do franqueado (solicitante) não configurado');
-        }
-
-        console.log(`Sending private message to franqueado (solicitante) phone: ${franqueadoPrivado.phone}`);
-
-        const templatePrivado = await getMessageTemplate(supabase, 'resposta_ticket_franqueado');
-        const mensagemPrivada = processTemplate(templatePrivado, {
-          codigo_ticket: formatTicketTitle(ticket),
-          texto_resposta: textoResposta,
-          timestamp: new Date().toLocaleString('pt-BR')
-        });
-        
-        console.log(`Message preview: ${mensagemPrivada.substring(0, 100)}...`);
-        console.log(`Sending message to: ${franqueadoPrivado.phone}`);
-
-        resultadoEnvio = await sendZapiMessage(franqueadoPrivado.phone, mensagemPrivada);
-        destinoFinal = franqueadoPrivado.phone;
-        break;
-
       case 'sla_half':
-        console.log('Processing sla_half - sending to group');
+        console.log('Processing sla_half - checking for custom route');
         
-        if (!ticket.unidades?.id_grupo_branco) {
-          throw new Error(`Grupo branco não configurado para unidade ${ticket.unidade_id}`);
+        if (customRoute) {
+          destinoFinal = customRoute;
+          console.log(`Using custom route for sla_half: ${destinoFinal}`);
+        } else if (ticket.unidades?.id_grupo_branco) {
+          destinoFinal = ticket.unidades.id_grupo_branco;
+          console.log(`Using default group for sla_half: ${destinoFinal}`);
+        } else {
+          throw new Error(`Nenhuma rota configurada para sla_half na unidade ${ticket.unidade_id}`);
         }
 
         const templateSLAHalf = await getMessageTemplate(supabase, 'sla_half');
@@ -495,15 +538,20 @@ serve(async (req) => {
           data_limite_sla: new Date(ticket.data_limite_sla).toLocaleString('pt-BR')
         });
 
-        resultadoEnvio = await sendZapiMessage(normalizePhoneNumber(ticket.unidades.id_grupo_branco), mensagemSLAHalf);
-        destinoFinal = ticket.unidades.id_grupo_branco;
+        resultadoEnvio = await sendZapiMessage(normalizePhoneNumber(destinoFinal), mensagemSLAHalf);
         break;
 
       case 'sla_breach':
-        console.log('Processing sla_breach - sending to group');
+        console.log('Processing sla_breach - checking for custom route');
         
-        if (!ticket.unidades?.id_grupo_branco) {
-          throw new Error(`Grupo branco não configurado para unidade ${ticket.unidade_id}`);
+        if (customRoute) {
+          destinoFinal = customRoute;
+          console.log(`Using custom route for sla_breach: ${destinoFinal}`);
+        } else if (ticket.unidades?.id_grupo_branco) {
+          destinoFinal = ticket.unidades.id_grupo_branco;
+          console.log(`Using default group for sla_breach: ${destinoFinal}`);
+        } else {
+          throw new Error(`Nenhuma rota configurada para sla_breach na unidade ${ticket.unidade_id}`);
         }
 
         const templateSLABreach = await getMessageTemplate(supabase, 'sla_breach');
@@ -513,15 +561,20 @@ serve(async (req) => {
           data_limite_sla: new Date(ticket.data_limite_sla).toLocaleString('pt-BR')
         });
 
-        resultadoEnvio = await sendZapiMessage(normalizePhoneNumber(ticket.unidades.id_grupo_branco), mensagemSLABreach);
-        destinoFinal = ticket.unidades.id_grupo_branco;
+        resultadoEnvio = await sendZapiMessage(normalizePhoneNumber(destinoFinal), mensagemSLABreach);
         break;
 
       case 'crisis':
-        console.log('Processing crisis - sending to group');
+        console.log('Processing crisis - checking for custom route');
         
-        if (!ticket.unidades?.id_grupo_branco) {
-          throw new Error(`Grupo branco não configurado para unidade ${ticket.unidade_id}`);
+        if (customRoute) {
+          destinoFinal = customRoute;
+          console.log(`Using custom route for crisis: ${destinoFinal}`);
+        } else if (ticket.unidades?.id_grupo_branco) {
+          destinoFinal = ticket.unidades.id_grupo_branco;
+          console.log(`Using default group for crisis: ${destinoFinal}`);
+        } else {
+          throw new Error(`Nenhuma rota configurada para crisis na unidade ${ticket.unidade_id}`);
         }
 
         const motivo = textoResposta || 'Não informado';
@@ -532,8 +585,65 @@ serve(async (req) => {
           motivo: motivo
         });
 
-        resultadoEnvio = await sendZapiMessage(normalizePhoneNumber(ticket.unidades.id_grupo_branco), mensagemCrise);
-        destinoFinal = ticket.unidades.id_grupo_branco;
+        resultadoEnvio = await sendZapiMessage(normalizePhoneNumber(destinoFinal), mensagemCrise);
+        break;
+
+      case 'crisis_resolved':
+        console.log('Processing crisis_resolved - checking for custom route');
+        
+        if (customRoute) {
+          destinoFinal = customRoute;
+          console.log(`Using custom route for crisis_resolved: ${destinoFinal}`);
+        } else if (ticket.unidades?.id_grupo_branco) {
+          destinoFinal = ticket.unidades.id_grupo_branco;
+          console.log(`Using default group for crisis_resolved: ${destinoFinal}`);
+        } else {
+          throw new Error(`Nenhuma rota configurada para crisis_resolved na unidade ${ticket.unidade_id}`);
+        }
+
+        const templateCriseResolvida = `✅ *CRISE RESOLVIDA*
+
+📋 *Ticket:* {{codigo_ticket}}
+🏢 *Unidade:* {{unidade_id}}
+
+🎯 A crise foi oficialmente resolvida!`;
+
+        const mensagemCriseResolvida = processTemplate(templateCriseResolvida, {
+          codigo_ticket: formatTicketTitle(ticket),
+          unidade_id: ticket.unidade_id
+        });
+
+        resultadoEnvio = await sendZapiMessage(normalizePhoneNumber(destinoFinal), mensagemCriseResolvida);
+        break;
+
+      case 'crisis_update':
+        console.log('Processing crisis_update - checking for custom route');
+        
+        if (customRoute) {
+          destinoFinal = customRoute;
+          console.log(`Using custom route for crisis_update: ${destinoFinal}`);
+        } else if (ticket.unidades?.id_grupo_branco) {
+          destinoFinal = ticket.unidades.id_grupo_branco;
+          console.log(`Using default group for crisis_update: ${destinoFinal}`);
+        } else {
+          throw new Error(`Nenhuma rota configurada para crisis_update na unidade ${ticket.unidade_id}`);
+        }
+
+        const templateCriseUpdate = `🔄 *ATUALIZAÇÃO DE CRISE*
+
+📋 *Ticket:* {{codigo_ticket}}
+🏢 *Unidade:* {{unidade_id}}
+🔄 *Ação:* {{acao}}
+
+ℹ️ Nova ação registrada na crise.`;
+
+        const mensagemCriseUpdate = processTemplate(templateCriseUpdate, {
+          codigo_ticket: formatTicketTitle(ticket),
+          unidade_id: ticket.unidade_id,
+          acao: textoResposta || 'Não informado'
+        });
+
+        resultadoEnvio = await sendZapiMessage(normalizePhoneNumber(destinoFinal), mensagemCriseUpdate);
         break;
 
       default:

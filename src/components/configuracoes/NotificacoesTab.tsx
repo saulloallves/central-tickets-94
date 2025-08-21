@@ -8,10 +8,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { AlertTriangle, Save, TestTube, Settings, MessageSquare, Eye, EyeOff } from "lucide-react";
+import { AlertTriangle, Save, TestTube, Settings, MessageSquare, Eye, EyeOff, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { RotasEnvioTab } from "./RotasEnvioTab";
 
 interface ZApiConfig {
   id?: string;
@@ -241,12 +242,12 @@ export function NotificacoesTab() {
       <div className="text-center space-y-2">
         <h2 className="text-2xl font-bold text-foreground">Configurações de Notificações</h2>
         <p className="text-muted-foreground">
-          Gerencie as configurações do Z-API e templates de mensagens
+          Gerencie as configurações do Z-API, templates de mensagens e rotas de envio
         </p>
       </div>
 
       <Tabs defaultValue="zapi" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="zapi" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
             Configurações Z-API
@@ -254,6 +255,10 @@ export function NotificacoesTab() {
           <TabsTrigger value="templates" className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4" />
             Templates de Mensagens
+          </TabsTrigger>
+          <TabsTrigger value="rotas" className="flex items-center gap-2">
+            <Send className="h-4 w-4" />
+            Rotas de Envio
           </TabsTrigger>
         </TabsList>
 
@@ -474,6 +479,10 @@ export function NotificacoesTab() {
               </Card>
             )}
           </div>
+        </TabsContent>
+
+        <TabsContent value="rotas" className="space-y-6">
+          <RotasEnvioTab />
         </TabsContent>
       </Tabs>
     </div>
