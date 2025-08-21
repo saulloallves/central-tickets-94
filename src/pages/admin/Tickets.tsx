@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTicketNotifications } from '@/hooks/useTicketNotifications';
-import { Plus, Filter, Calendar, Users, Clock, AlertTriangle, List, LayoutGrid } from 'lucide-react';
+import { Plus, Filter, Calendar, Users, Clock, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -48,7 +48,7 @@ const Tickets = () => {
     };
   }, []);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
+  
   const [showFilters, setShowFilters] = useState(false);
   const [equipes, setEquipes] = useState<Equipe[]>([]);
   const [filters, setFilters] = useState({
@@ -132,24 +132,6 @@ const Tickets = () => {
         </div>
         
         <div className="flex gap-2">
-          <div className="flex border rounded-lg p-1">
-            <Button
-              variant={viewMode === 'kanban' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('kanban')}
-            >
-              <LayoutGrid className="h-4 w-4 mr-2" />
-              Kanban
-            </Button>
-            <Button
-              variant={viewMode === 'list' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('list')}
-            >
-              <List className="h-4 w-4 mr-2" />
-              Lista
-            </Button>
-          </div>
           <NotificationButton />
           <RefreshButton onRefresh={refetch} />
           <Button variant="outline" onClick={testNotificationSound}>
@@ -258,45 +240,18 @@ const Tickets = () => {
       )}
 
       {/* Main Content */}
-      {viewMode === 'kanban' ? (
-        <TicketsKanban 
-          tickets={tickets}
-          loading={loading}
-          onTicketSelect={handleTicketSelect}
-          selectedTicketId={selectedTicketId}
-          equipes={equipes}
-          showFilters={showFilters}
-          onToggleFilters={() => setShowFilters(!showFilters)}
-          onChangeStatus={(ticketId, fromStatus, toStatus, beforeId, afterId) => 
-            changeTicketStatus(ticketId, fromStatus, toStatus, beforeId, afterId)
-          }
-        />
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <TicketsList 
-              filters={filters}
-              onTicketSelect={handleTicketSelect}
-              selectedTicketId={selectedTicketId}
-            />
-          </div>
-          
-          <div>
-            {selectedTicketId ? (
-              <TicketDetail 
-                ticketId={selectedTicketId}
-                onClose={handleCloseDetail}
-              />
-            ) : (
-              <Card>
-                <CardContent className="p-6 text-center text-muted-foreground">
-                  <p>Selecione um ticket para ver os detalhes</p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        </div>
-      )}
+      <TicketsKanban 
+        tickets={tickets}
+        loading={loading}
+        onTicketSelect={handleTicketSelect}
+        selectedTicketId={selectedTicketId}
+        equipes={equipes}
+        showFilters={showFilters}
+        onToggleFilters={() => setShowFilters(!showFilters)}
+        onChangeStatus={(ticketId, fromStatus, toStatus, beforeId, afterId) => 
+          changeTicketStatus(ticketId, fromStatus, toStatus, beforeId, afterId)
+        }
+      />
 
       <CreateTicketDialog 
         open={createDialogOpen}
