@@ -66,7 +66,83 @@ Abertura ou fechamento sem autorização, uso indevido de sistema, móveis não 
 📄 Conteúdo recebido:
 [texto original completo]`;
 
-const MANUAL_PROMPT = `Você é um **Classificador Documental Sênior** responsável por atribuir códigos de classificação
+const DOCUMENT_ORGANIZER_PROMPT = `### 🎯 MISSÃO
+Você atua como **Organizador de Documentos Brutos**, preparando conteúdos para uso posterior em:
+- IA vetorizada • JSON estruturado • fluxos de chatbot • textos institucionais  
+
+Seu objetivo é **estruturar, limpar e organizar** o material **sem reescrever nem interpretar** o conteúdo — com as exceções explícitas de anonimização e remoção de datas/situações pontuais descritas abaixo.
+
+---
+
+### 1 | TIPOS DE FONTE DE CONTEÚDO  
+O texto original pode vir de:  
+• Transcrições (vídeo/áudio) • Prints de conversa • Manuais, listas, anotações • Conversas informais ou resumos orais  
+**Nenhuma parte pode ser omitida**, a menos que a regra de remoção abaixo se aplique.
+
+---
+
+### 2 | TAREFAS OBRIGATÓRIAS
+
+| Nº | O que fazer | Como fazer |
+|----|-------------|------------|
+| **2.1** | **Organizar** o material em sequência lógica | Insira **títulos descritivos em negrito** que indiquem o assunto de cada bloco. |
+| **2.2** | **Preservar** a linguagem original | Não reformule frases; mantenha gírias, oralidade, repetições, etc. |
+| **2.3** | **Destacar** partes relevantes | Use **negrito**, *itálico*, emojis (⚠️ ✅ 💡 📌) e listas quando ajudar a leitura. |
+| **2.4** | **Não resumir** | Transcreva tudo integralmente (salvo remoções obrigatórias). |
+| **2.5** | **Corrigir divergências internas** | Se o texto repetir a mesma informação de formas distintas, mantenha apenas a versão **mais coerente ou mais frequente**, sem alterar o sentido. |
+| **2.6** | **Anonimizar** | Substitua nomes próprios por **[nome removido]** ou apague se irrelevantes. |
+| **2.7** | **Remover/Anonimizar DATAS e SITUAÇÕES ÚNICAS** | Siga as regras da seção 3. |
+| **2.8** | **Aplicar substituições de termos** | Use a tabela da seção 4. |
+| **2.9** | **Entregar conteúdo pronto** | Siga o formato da seção 5. |
+
+---
+
+### 3 | REGRAS DE REMOÇÃO DE DATAS & CONTEXTOS NÃO RECORRENTES  
+
+1. **Remova** qualquer menção explícita de datas absolutas ou relativas:  
+   - Formatos como "12/05/2024", "12-05-24", "12 de maio de 2024", "ontem", "na próxima terça-feira", "em dois dias", etc.  
+   - Substitua por **[data removida]**.  
+2. **Mantenha** a data **apenas** quando fizer parte **integral** do **nome oficial** de um evento, produto ou documento (ex.: "Evento **1º de Abril**").  
+3. **Generalize** ou **remova** referências a situações que não se repetirão (ex.: "evento relâmpago da Copa de 2018").  
+   - Se a informação for imprescindível ao contexto, troque por **[situação pontual removida]**.  
+4. A remoção de datas e situações **tem prioridade** sobre a regra "não omitir nada".
+
+---
+
+### 4 | SUBSTITUIÇÕES OBRIGATÓRIAS DE TERMOS  
+
+| Termo original | Substituir por |
+|----------------|----------------|
+| promoção / promoções | evento / eventos |
+| desconto / descontos | benefício / benefícios |
+| oferta / ofertas | oportunidade / oportunidades |
+| Envie uma mensagem no grupo do Concierge / Envie mensagem no GiraBot | *(remover a frase exata; manter o restante da sentença)* |
+
+---
+
+### 5 | FORMATO DE ENTREGA DO CONTEÚDO FINAL  
+
+- Blocos organizados com **títulos em negrito**.  
+- Trechos importantes destacados (negrito, itálico, emojis, listas).  
+- **Nenhuma parte omitida**, exceto datas e situações cobertas pela seção 3.  
+- Texto anonimizado e já com substituições da seção 4 aplicadas.  
+
+---
+
+### 6 | FLUXO DE TRABALHO  
+
+1. Aguarde o(s) texto(s) bruto(s).  
+2. Siga integralmente as seções 2 – 5.  
+3. Entregue o conteúdo reestruturado.  
+4. Não execute nenhuma outra ação nem adicione comentários fora do texto final organizado.  
+
+---
+
+💡 **Dica rápida:** se ficar em dúvida se algo é "data" ou "nome de evento", preserve se estiver em maiúsculas ou claramente como nome próprio; caso contrário, remova como data.
+
+**Aguardando conteúdo para iniciar a organização.**`;
+
+const MANUAL_CLASSIFIER_PROMPT = `Você é um **Classificador Documental Sênior** responsável por atribuir códigos de classificação
 a documentos da rede de franquias *Cresci e Perdi*, usando o plano de classes abaixo
 (baseado em ISO 15489 e NBR 13142).
 
@@ -182,57 +258,125 @@ serve(async (req) => {
       );
     }
 
-    // Escolher o prompt baseado no estilo
-    const prompt = estilo === 'diretrizes' ? DIRETRIZES_PROMPT : MANUAL_PROMPT;
-    
-    // Preparar mensagem para a IA
-    let userMessage = '';
-    if (estilo === 'diretrizes') {
-      userMessage = content;
-    } else {
-      // Para manual, estruturar os dados como esperado pelo prompt
-      userMessage = JSON.stringify({
+    let aiResponse = '';
+    let organizedContent = content;
+
+    if (estilo === 'manual') {
+      // ETAPA 1: Organizar documento com o Document Organizer
+      console.log('ETAPA 1: Organizando documento...');
+      console.log('Document Organizer prompt length:', DOCUMENT_ORGANIZER_PROMPT.length);
+      console.log('Content length:', content.length);
+
+      const organizerResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            { role: 'system', content: DOCUMENT_ORGANIZER_PROMPT },
+            { role: 'user', content: content }
+          ],
+          max_tokens: 2000,
+          temperature: 0.3
+        }),
+      });
+
+      console.log('Document Organizer response status:', organizerResponse.status);
+
+      if (!organizerResponse.ok) {
+        const errorText = await organizerResponse.text();
+        console.error('Document Organizer API error details:', errorText);
+        throw new Error(`Document Organizer API error: ${organizerResponse.status} - ${errorText}`);
+      }
+
+      const organizerResult = await organizerResponse.json();
+      organizedContent = organizerResult.choices[0].message.content;
+
+      console.log('Conteúdo organizado (length):', organizedContent?.length || 0);
+      console.log('Conteúdo organizado (first 200 chars):', organizedContent?.substring(0, 200) || 'EMPTY');
+
+      // ETAPA 2: Classificar documento organizado
+      console.log('ETAPA 2: Classificando documento...');
+      const classifierUserMessage = JSON.stringify({
         title: titulo || 'Documento sem título',
         description: '',
-        content: content
+        content: organizedContent
       });
+
+      console.log('Classifier prompt length:', MANUAL_CLASSIFIER_PROMPT.length);
+      console.log('Classifier user message length:', classifierUserMessage.length);
+
+      const classifierResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            { role: 'system', content: MANUAL_CLASSIFIER_PROMPT },
+            { role: 'user', content: classifierUserMessage }
+          ],
+          max_tokens: 2000,
+          temperature: 0.3
+        }),
+      });
+
+      console.log('Classifier response status:', classifierResponse.status);
+
+      if (!classifierResponse.ok) {
+        const errorText = await classifierResponse.text();
+        console.error('Classifier API error details:', errorText);
+        throw new Error(`Classifier API error: ${classifierResponse.status} - ${errorText}`);
+      }
+
+      const classifierResult = await classifierResponse.json();
+      aiResponse = classifierResult.choices[0].message.content;
+
+      console.log('Resposta do classificador (length):', aiResponse?.length || 0);
+      console.log('Resposta do classificador (first 200 chars):', aiResponse?.substring(0, 200) || 'EMPTY');
+
+    } else {
+      // DIRETRIZES: Processar com uma única IA
+      console.log('Processando diretrizes com uma única IA...');
+      console.log('Diretrizes prompt length:', DIRETRIZES_PROMPT.length);
+      console.log('Content length:', content.length);
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            { role: 'system', content: DIRETRIZES_PROMPT },
+            { role: 'user', content: content }
+          ],
+          max_tokens: 2000,
+          temperature: 0.3
+        }),
+      });
+
+      console.log('Diretrizes response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Diretrizes API error details:', errorText);
+        throw new Error(`Diretrizes API error: ${response.status} - ${errorText}`);
+      }
+
+      const result = await response.json();
+      aiResponse = result.choices[0].message.content;
+
+      console.log('Resposta diretrizes (length):', aiResponse?.length || 0);
+      console.log('Resposta diretrizes (first 200 chars):', aiResponse?.substring(0, 200) || 'EMPTY');
     }
-
-    console.log('Enviando para OpenAI com estilo:', estilo);
-    console.log('Prompt length:', prompt.length);
-    console.log('User message length:', userMessage.length);
-
-    // Chamar OpenAI
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: prompt },
-          { role: 'user', content: userMessage }
-        ],
-        max_tokens: 2000,
-        temperature: 0.3
-      }),
-    });
-
-    console.log('OpenAI response status:', response.status);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('OpenAI API error details:', errorText);
-      throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
-    }
-
-    const aiResult = await response.json();
-    const aiResponse = aiResult.choices[0].message.content;
-
-    console.log('Resposta da IA (length):', aiResponse?.length || 0);
-    console.log('Resposta da IA (first 200 chars):', aiResponse?.substring(0, 200) || 'EMPTY');
 
     // Processar resposta baseada no estilo
     let processedData: any = {};
@@ -258,7 +402,7 @@ serve(async (req) => {
       try {
         const jsonResponse = JSON.parse(aiResponse);
         processedData = {
-          conteudo_formatado: jsonResponse.content_full || content || aiResponse,
+          conteudo_formatado: organizedContent || jsonResponse.content_full || content || aiResponse,
           titulo: jsonResponse.titulo_padrao || titulo || 'Manual sem título',
           categoria: jsonResponse.classe_nome ? `${jsonResponse.classe_abrev} - ${jsonResponse.classe_nome}` : (categoria || 'Manual'),
           subcategoria: jsonResponse.subclasse_nome || null,
@@ -270,6 +414,8 @@ serve(async (req) => {
             subclasse_codigo: jsonResponse.subclasse_codigo,
             subclasse_nome: jsonResponse.subclasse_nome,
             justificativa: jsonResponse.justificativa,
+            conteudo_original: content,
+            conteudo_organizado: organizedContent,
             processado_em: new Date().toISOString()
           }
         };
