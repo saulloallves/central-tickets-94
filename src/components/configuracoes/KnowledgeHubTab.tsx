@@ -224,6 +224,8 @@ export const KnowledgeHubTab = () => {
   };
 
   const handleEditArticle = (article: any) => {
+    console.log('Artigo selecionado para edição:', article);
+    console.log('Classificação do artigo:', article.classificacao);
     setSelectedArticle(article);
     
     // Extract content from classificacao if available, otherwise use conteudo
@@ -866,7 +868,7 @@ export const KnowledgeHubTab = () => {
               <div className="border rounded-lg p-4 bg-muted/50">
                 <Label className="text-sm font-medium mb-2 block">Informações de Classificação</Label>
                 <div className="space-y-2 text-sm">
-                  {typeof selectedArticle.classificacao === 'object' && (
+                  {typeof selectedArticle.classificacao === 'object' ? (
                     <>
                       {selectedArticle.classificacao.tipo && (
                         <div className="flex justify-between">
@@ -892,13 +894,36 @@ export const KnowledgeHubTab = () => {
                           <span className="text-muted-foreground">{selectedArticle.classificacao.justificativa}</span>
                         </div>
                       )}
+                      {selectedArticle.classificacao.classe_abrev && (
+                        <div className="flex justify-between">
+                          <span className="font-medium">Classe Abrev:</span>
+                          <span>{selectedArticle.classificacao.classe_abrev}</span>
+                        </div>
+                      )}
+                      {selectedArticle.classificacao.subclasse_codigo && (
+                        <div className="flex justify-between">
+                          <span className="font-medium">Subclasse Código:</span>
+                          <span>{selectedArticle.classificacao.subclasse_codigo}</span>
+                        </div>
+                      )}
                       {selectedArticle.classificacao.processado_em && (
                         <div className="flex justify-between">
                           <span className="font-medium">Processado em:</span>
                           <span>{new Date(selectedArticle.classificacao.processado_em).toLocaleString('pt-BR')}</span>
                         </div>
                       )}
+                      {/* Debug: Mostrar estrutura completa */}
+                      <details className="mt-2">
+                        <summary className="cursor-pointer text-xs text-muted-foreground">Ver dados completos</summary>
+                        <pre className="mt-2 p-2 bg-muted text-xs overflow-auto max-h-32">
+                          {JSON.stringify(selectedArticle.classificacao, null, 2)}
+                        </pre>
+                      </details>
                     </>
+                  ) : (
+                    <div className="text-muted-foreground">
+                      Classificação não é um objeto válido: {typeof selectedArticle.classificacao}
+                    </div>
                   )}
                 </div>
               </div>
