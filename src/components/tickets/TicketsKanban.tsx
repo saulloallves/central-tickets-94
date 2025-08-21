@@ -256,20 +256,9 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
           </div>
         </div>
 
-        {/* Countdowns */}
+        {/* SLA countdown - apenas Resolver */}
         {ticket.status !== 'concluido' && ticket.data_limite_sla && (
           <div className="space-y-1 text-xs">
-            {/* Escalation countdown */}
-            {(() => {
-              const escalationTime = getEscalationTime(ticket);
-              return escalationTime && (
-                <div className={cn("flex items-center gap-1", escalationTime.color)}>
-                  <AlertTriangle className="h-3 w-3" />
-                  <span className="font-mono">{escalationTime.text}</span>
-                </div>
-              );
-            })()}
-            
             {/* SLA countdown */}
             {(() => {
               const slaTime = getSLATime(ticket);
