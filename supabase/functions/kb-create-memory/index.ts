@@ -397,14 +397,13 @@ serve(async (req) => {
         classificacao: { tipo: 'diretrizes', processado_em: new Date().toISOString() }
       };
     } else {
-      // Para manual, processar igual diretrizes mas extraindo do prompt de manual
-      // Tentar parsear JSON primeiro, se falhar usar como texto simples
+      // Para manual, extrair do JSON do classificador
       try {
         const jsonResponse = JSON.parse(aiResponse);
         processedData = {
           conteudo_formatado: organizedContent || jsonResponse.content_full || content || aiResponse,
           titulo: jsonResponse.titulo_padrao || titulo || 'Manual sem título',
-          categoria: jsonResponse.classe_nome ? `${jsonResponse.classe_abrev} - ${jsonResponse.classe_nome}` : (categoria || 'Manual'),
+          categoria: jsonResponse.classe_nome || categoria || 'Manual',
           subcategoria: jsonResponse.subclasse_nome || null,
           classificacao: {
             tipo: 'manual',
