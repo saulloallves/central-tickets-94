@@ -322,19 +322,37 @@ const KanbanColumn = ({ status, tickets, selectedTicketId, onTicketSelect, equip
       )}
     >
       {/* Header da coluna com efeito glass iOS 26 */}
-      <div className="flex items-center justify-between p-4 bg-white/20 backdrop-blur-3xl border border-white/60 rounded-2xl shadow-sm m-2 mb-0 relative overflow-hidden backdrop-saturate-150">
-        {/* Glassmorphism overlay effect */}
-        <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-white/5 to-transparent rounded-2xl"></div>
-        <div className="absolute inset-0 bg-gradient-to-t from-gray-200/10 to-transparent rounded-2xl"></div>
+      <div 
+        className="flex items-center justify-between p-4 m-2 mb-0 relative overflow-hidden backdrop-blur-xl backdrop-saturate-150"
+        style={{
+          background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.05) 100%)',
+          border: '1px solid rgba(255, 255, 255, 0.4)',
+          borderRadius: '20px',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3)'
+        }}
+      >
         <div className="relative flex items-center gap-3 z-10">
           {(() => {
             const IconComponent = COLUMN_ICONS[status];
             const iconColor = COLUMN_ICON_COLORS[status];
             return <IconComponent className={`h-5 w-5 ${iconColor}`} />;
           })()}
-          <h3 className="font-bold text-base text-gray-900 tracking-tight">{COLUMN_STATUS[status]}</h3>
+          <h3 
+            className="font-bold text-base tracking-tight"
+            style={{ color: 'rgba(0, 0, 0, 0.7)' }}
+          >
+            {COLUMN_STATUS[status]}
+          </h3>
         </div>
-        <Badge variant="secondary" className="relative z-10 text-xs bg-white/50 backdrop-blur-sm border border-white/60 rounded-full text-gray-800 shadow-sm font-semibold">
+        <Badge 
+          variant="secondary" 
+          className="relative z-10 text-xs backdrop-blur-sm rounded-full font-semibold"
+          style={{
+            background: 'rgba(255, 255, 255, 0.3)',
+            border: '1px solid rgba(255, 255, 255, 0.4)',
+            color: 'rgba(0, 0, 0, 0.7)'
+          }}
+        >
           {tickets.length}
         </Badge>
       </div>
