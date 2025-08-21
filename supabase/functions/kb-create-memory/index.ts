@@ -180,13 +180,14 @@ serve(async (req) => {
         classificacao: { tipo: 'diretrizes', processado_em: new Date().toISOString() }
       };
     } else {
-      // Para manual, tentar parsear o JSON
+      // Para manual, processar igual diretrizes mas extraindo do prompt de manual
+      // Tentar parsear JSON primeiro, se falhar usar como texto simples
       try {
         const jsonResponse = JSON.parse(aiResponse);
         processedData = {
           conteudo_formatado: jsonResponse.content_full || content || aiResponse,
           titulo: jsonResponse.titulo_padrao || titulo || 'Manual sem título',
-          categoria: jsonResponse.classe_nome ? `${jsonResponse.classe_abrev} - ${jsonResponse.classe_nome}` : 'Manual',
+          categoria: jsonResponse.classe_nome ? `${jsonResponse.classe_abrev} - ${jsonResponse.classe_nome}` : (categoria || 'Manual'),
           subcategoria: jsonResponse.subclasse_nome || null,
           classificacao: {
             tipo: 'manual',
@@ -200,18 +201,17 @@ serve(async (req) => {
           }
         };
       } catch (e) {
-        console.error('Erro ao parsear JSON do manual:', e);
-        // Fallback se não conseguir parsear
+        console.error('Erro ao parsear JSON do manual, processando como texto:', e);
+        // Se não conseguir parsear como JSON, processar como texto simples (igual diretrizes)
         processedData = {
-          conteudo_formatado: aiResponse,
+          conteudo_formatado: aiResponse || content,
           titulo: titulo || 'Manual sem título',
-          categoria: 'Manual',
+          categoria: categoria || 'Manual',
           subcategoria: null,
           classificacao: { 
             tipo: 'manual', 
-            erro: 'Falha no parsing do JSON',
-            resposta_bruta: aiResponse,
-            processado_em: new Date().toISOString()
+            processado_em: new Date().toISOString(),
+            resposta_bruta: aiResponse
           }
         };
       }
