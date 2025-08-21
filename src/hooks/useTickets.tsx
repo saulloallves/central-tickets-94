@@ -236,6 +236,37 @@ export const useTickets = (filters: TicketFilters) => {
     return () => clearTimeout(timeoutId);
   }, [user?.id, roleLoading]);
 
+  // Daily metrics refresh - updates stats every 30 minutes and on day change
+  useEffect(() => {
+    if (!user || roleLoading) return;
+
+    // Update stats immediately
+    fetchTicketStats();
+
+    // Set up interval to refresh stats every 30 minutes
+    const statsInterval = setInterval(() => {
+      console.log('🕐 Refreshing ticket stats automatically');
+      fetchTicketStats();
+    }, 30 * 60 * 1000); // 30 minutes
+
+    // Check for day change every minute
+    let lastDate = new Date().toDateString();
+    const dayChangeInterval = setInterval(() => {
+      const currentDate = new Date().toDateString();
+      if (currentDate !== lastDate) {
+        console.log('📅 Day changed, refreshing tickets and stats');
+        lastDate = currentDate;
+        fetchTickets();
+        fetchTicketStats();
+      }
+    }, 60 * 1000); // Check every minute
+
+    return () => {
+      clearInterval(statsInterval);
+      clearInterval(dayChangeInterval);
+    };
+  }, [user?.id, roleLoading]);
+
   // Separate effect for filters to avoid infinite loop - now including equipe_id
   useEffect(() => {
     if (user && !roleLoading) {
