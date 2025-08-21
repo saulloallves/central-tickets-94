@@ -49,6 +49,7 @@ const Tickets = () => {
   }, []);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
+  const [showFilters, setShowFilters] = useState(false);
   const [equipes, setEquipes] = useState<Equipe[]>([]);
   const [filters, setFilters] = useState({
     search: '',
@@ -197,61 +198,75 @@ const Tickets = () => {
         </Card>
       </div>
 
-      {/* Updated Filters - replaced categoria with equipe */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex gap-4 items-center">
-            <Input
-              placeholder="Buscar tickets..."
-              value={filters.search}
-              onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-              className="max-w-xs"
-            />
-            
-            <Select value={filters.prioridade} onValueChange={(value) => setFilters(prev => ({ ...prev, prioridade: value }))}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Prioridade" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas</SelectItem>
-                <SelectItem value="crise">Crise</SelectItem>
-                <SelectItem value="urgente">Urgente</SelectItem>
-                <SelectItem value="alta">Alta</SelectItem>
-                <SelectItem value="hoje_18h">Hoje até 18h</SelectItem>
-                <SelectItem value="padrao_24h">Padrão (24h)</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Select value={filters.equipe_id} onValueChange={(value) => setFilters(prev => ({ ...prev, equipe_id: value }))}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Equipe" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas Equipes</SelectItem>
-                {userEquipes.length > 0 && (
-                  <SelectItem value="minhas_equipes">Minhas Equipes</SelectItem>
-                )}
-                {equipes.map((equipe) => (
-                  <SelectItem key={equipe.id} value={equipe.id}>
-                    {equipe.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+      {/* Toggle Filters Button */}
+      <div className="flex justify-between items-center">
+        <Button
+          variant="outline"
+          onClick={() => setShowFilters(!showFilters)}
+          className="z-20"
+        >
+          <Filter className="h-4 w-4 mr-2" />
+          {showFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}
+        </Button>
+      </div>
 
-            {(isAdmin || isGerente) && (
-              <Select value={filters.unidade_id} onValueChange={(value) => setFilters(prev => ({ ...prev, unidade_id: value }))}>
+      {/* Collapsible Filters */}
+      {showFilters && (
+        <Card className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border border-border/40">
+          <CardContent className="p-4">
+            <div className="flex gap-4 items-center flex-wrap">
+              <Input
+                placeholder="Buscar tickets..."
+                value={filters.search}
+                onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                className="max-w-xs"
+              />
+              
+              <Select value={filters.prioridade} onValueChange={(value) => setFilters(prev => ({ ...prev, prioridade: value }))}>
                 <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Unidade" />
+                  <SelectValue placeholder="Prioridade" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-background border-border z-50 shadow-lg">
                   <SelectItem value="all">Todas</SelectItem>
+                  <SelectItem value="crise">Crise</SelectItem>
+                  <SelectItem value="urgente">Urgente</SelectItem>
+                  <SelectItem value="alta">Alta</SelectItem>
+                  <SelectItem value="hoje_18h">Hoje até 18h</SelectItem>
+                  <SelectItem value="padrao_24h">Padrão (24h)</SelectItem>
                 </SelectContent>
               </Select>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+              
+              <Select value={filters.equipe_id} onValueChange={(value) => setFilters(prev => ({ ...prev, equipe_id: value }))}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Equipe" />
+                </SelectTrigger>
+                <SelectContent className="bg-background border-border z-50 shadow-lg">
+                  <SelectItem value="all">Todas Equipes</SelectItem>
+                  {userEquipes.length > 0 && (
+                    <SelectItem value="minhas_equipes">Minhas Equipes</SelectItem>
+                  )}
+                  {equipes.map((equipe) => (
+                    <SelectItem key={equipe.id} value={equipe.id}>
+                      {equipe.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {(isAdmin || isGerente) && (
+                <Select value={filters.unidade_id} onValueChange={(value) => setFilters(prev => ({ ...prev, unidade_id: value }))}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Unidade" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border-border z-50 shadow-lg">
+                    <SelectItem value="all">Todas</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Main Content */}
       {viewMode === 'kanban' ? (
