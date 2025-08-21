@@ -261,7 +261,7 @@ export const CreateTicketDialog = ({ open, onOpenChange }: CreateTicketDialogPro
       const ticket = await createTicket({
         unidade_id: formData.unidade_id,
         descricao_problema: formData.descricao_problema.trim(),
-        equipe_responsavel_id: formData.equipe_responsavel_id || undefined,
+        equipe_responsavel_id: formData.equipe_responsavel_id === 'none' ? undefined : formData.equipe_responsavel_id || undefined,
         prioridade: formData.prioridade,
         subcategoria: formData.subcategoria?.trim() || undefined
       });
@@ -427,7 +427,7 @@ export const CreateTicketDialog = ({ open, onOpenChange }: CreateTicketDialogPro
                     <SelectValue placeholder="Selecione uma equipe..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Nenhuma equipe específica</SelectItem>
+                    <SelectItem value="none">Nenhuma equipe específica</SelectItem>
                     {equipes.map((equipe) => (
                       <SelectItem key={equipe.id} value={equipe.id}>
                         {equipe.nome}
