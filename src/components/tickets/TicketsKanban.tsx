@@ -29,7 +29,8 @@ import {
   HelpCircle,
   Edit2,
   Trash2,
-  GripVertical
+  GripVertical,
+  Filter
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -49,6 +50,8 @@ interface TicketsKanbanProps {
   onTicketSelect: (ticketId: string) => void;
   selectedTicketId: string | null;
   equipes: Array<{ id: string; nome: string }>;
+  showFilters?: boolean;
+  onToggleFilters?: () => void;
   onChangeStatus: (
     ticketId: string, 
     fromStatus: string, 
@@ -384,7 +387,7 @@ const getSLATime = (ticket: Ticket) => {
   return formatTimeRemaining(ticket.data_limite_sla, 'Resolver');
 };
 
-export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicketId, equipes, onChangeStatus }: TicketsKanbanProps) => {
+export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicketId, equipes, showFilters, onToggleFilters, onChangeStatus }: TicketsKanbanProps) => {
   const [activeTicket, setActiveTicket] = useState<Ticket | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [draggedOverColumn, setDraggedOverColumn] = useState<string | null>(null);
@@ -585,9 +588,19 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
       onDragEnd={handleDragEnd}
     >
       <div className="space-y-4">
-        {/* Archive toggle for completed tickets */}
-        <div className="flex justify-between items-center">
-          <h2 className="text-lg font-semibold">Kanban Board</h2>
+        {/* Controls */}
+        <div className="flex justify-end items-center gap-2">
+          {onToggleFilters && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onToggleFilters}
+              className="text-xs"
+            >
+              <Filter className="h-3 w-3 mr-1" />
+              {showFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}
+            </Button>
+          )}
           <Button
             variant="outline"
             size="sm"

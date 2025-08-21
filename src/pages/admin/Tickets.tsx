@@ -198,17 +198,6 @@ const Tickets = () => {
         </Card>
       </div>
 
-      {/* Toggle Filters Button */}
-      <div className="flex justify-between items-center">
-        <Button
-          variant="outline"
-          onClick={() => setShowFilters(!showFilters)}
-          className="z-20"
-        >
-          <Filter className="h-4 w-4 mr-2" />
-          {showFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}
-        </Button>
-      </div>
 
       {/* Collapsible Filters */}
       {showFilters && (
@@ -276,6 +265,8 @@ const Tickets = () => {
           onTicketSelect={handleTicketSelect}
           selectedTicketId={selectedTicketId}
           equipes={equipes}
+          showFilters={showFilters}
+          onToggleFilters={() => setShowFilters(!showFilters)}
           onChangeStatus={(ticketId, fromStatus, toStatus, beforeId, afterId) => 
             changeTicketStatus(ticketId, fromStatus, toStatus, beforeId, afterId)
           }
