@@ -65,7 +65,7 @@ export const KnowledgeHubTab = () => {
   const [approvalData, setApprovalData] = useState({
     titulo: '',
     conteudo: '',
-    equipe_id: 'none',
+    categoria: '',
     tags: [] as string[],
     tipo_midia: 'texto' as const
   });
@@ -74,7 +74,7 @@ export const KnowledgeHubTab = () => {
     id: '',
     titulo: '',
     conteudo: '',
-    equipe_id: 'none',
+    categoria: '',
     tags: [] as string[],
     tipo_midia: 'texto' as const,
     aprovado: false,
@@ -181,7 +181,7 @@ export const KnowledgeHubTab = () => {
     setApprovalData({
       titulo: `Artigo baseado em sugestão #${suggestion.id.slice(0, 8)}`,
       conteudo: suggestion.texto_sugerido,
-      equipe_id: selectedEquipe !== 'all' ? selectedEquipe : 'none',
+      categoria: '',
       tags: [],
       tipo_midia: 'texto'
     });
@@ -195,11 +195,7 @@ export const KnowledgeHubTab = () => {
 
   const handlePublishArticle = async () => {
     try {
-      const finalApprovalData = {
-        ...approvalData,
-        equipe_id: approvalData.equipe_id === 'none' ? undefined : approvalData.equipe_id
-      };
-      const articleData = await createArticle(finalApprovalData);
+      const articleData = await createArticle(approvalData);
       
       if (articleData && selectedSuggestion) {
         const { data: userData } = await supabase.auth.getUser();
@@ -233,7 +229,7 @@ export const KnowledgeHubTab = () => {
       id: article.id,
       titulo: article.titulo,
       conteudo: article.conteudo,
-      equipe_id: article.equipe_id || 'none',
+      categoria: article.categoria || '',
       tags: article.tags || [],
       tipo_midia: article.tipo_midia,
       aprovado: article.aprovado,
@@ -244,12 +240,7 @@ export const KnowledgeHubTab = () => {
 
   const handleUpdateArticle = async () => {
     try {
-      const finalEditData = {
-        ...editData,
-        equipe_id: editData.equipe_id === 'none' ? undefined : editData.equipe_id
-      };
-      
-      await updateArticle(editData.id, finalEditData);
+      await updateArticle(editData.id, editData);
       
       setIsEditModalOpen(false);
       setSelectedArticle(null);
@@ -273,7 +264,7 @@ export const KnowledgeHubTab = () => {
     setApprovalData({
       titulo: title,
       conteudo: ragDoc.content,
-      equipe_id: selectedEquipe !== 'all' ? selectedEquipe : 'none',
+      categoria: '',
       tags: ragDoc.metadata?.tags || [],
       tipo_midia: 'texto'
     });
@@ -374,7 +365,6 @@ export const KnowledgeHubTab = () => {
     try {
       const finalApprovalData = {
         ...approvalData,
-        equipe_id: approvalData.equipe_id === 'none' ? undefined : approvalData.equipe_id,
         usado_pela_ia: true
       };
       
@@ -784,23 +774,13 @@ export const KnowledgeHubTab = () => {
             </div>
 
             <div>
-              <Label htmlFor="equipe">Equipe Responsável</Label>
-              <Select 
-                value={approvalData.equipe_id} 
-                onValueChange={(value) => setApprovalData({ ...approvalData, equipe_id: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione uma equipe" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Selecione uma equipe</SelectItem>
-                  {equipes.map((equipe) => (
-                    <SelectItem key={equipe.id} value={equipe.id}>
-                      {equipe.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="categoria">Categoria</Label>
+              <Input
+                id="categoria"
+                value={approvalData.categoria}
+                onChange={(e) => setApprovalData({ ...approvalData, categoria: e.target.value })}
+                placeholder="Digite a categoria do artigo"
+              />
             </div>
 
             <div>
@@ -848,23 +828,13 @@ export const KnowledgeHubTab = () => {
             </div>
 
             <div>
-              <Label htmlFor="edit-equipe">Equipe Responsável</Label>
-              <Select 
-                value={editData.equipe_id} 
-                onValueChange={(value) => setEditData({ ...editData, equipe_id: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione uma equipe" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Sem equipe específica</SelectItem>
-                  {equipes.map((equipe) => (
-                    <SelectItem key={equipe.id} value={equipe.id}>
-                      {equipe.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="edit-categoria">Categoria</Label>
+              <Input
+                id="edit-categoria"
+                value={editData.categoria}
+                onChange={(e) => setEditData({ ...editData, categoria: e.target.value })}
+                placeholder="Digite a categoria do artigo"
+              />
             </div>
 
             <div>
@@ -937,23 +907,13 @@ export const KnowledgeHubTab = () => {
               </div>
 
               <div>
-                <Label htmlFor="import-equipe">Equipe Responsável</Label>
-                <Select 
-                  value={approvalData.equipe_id} 
-                  onValueChange={(value) => setApprovalData({ ...approvalData, equipe_id: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione uma equipe" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Sem equipe específica</SelectItem>
-                    {equipes.map((equipe) => (
-                      <SelectItem key={equipe.id} value={equipe.id}>
-                        {equipe.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="import-categoria">Categoria</Label>
+                <Input
+                  id="import-categoria"
+                  value={approvalData.categoria}
+                  onChange={(e) => setApprovalData({ ...approvalData, categoria: e.target.value })}
+                  placeholder="Digite a categoria do artigo"
+                />
               </div>
 
               <div>
