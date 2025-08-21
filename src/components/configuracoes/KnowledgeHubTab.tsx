@@ -15,6 +15,26 @@ import { supabase } from '@/integrations/supabase/client';
 import { CreateMemoryModal } from './CreateMemoryModal';
 import { Search, Eye, Check, X, Edit, Users, Download, FileText, Plus, BookOpen, Brain } from 'lucide-react';
 
+// Extended type for KnowledgeArticle with new fields
+interface ExtendedKnowledgeArticle {
+  id: string;
+  titulo: string;
+  conteudo: string;
+  categoria: string | null;
+  subcategoria?: string | null;
+  equipe_id: string | null;
+  tags: string[] | null;
+  tipo_midia: string;
+  aprovado: boolean;
+  usado_pela_ia: boolean;
+  feedback_positivo: number;
+  feedback_negativo: number;
+  created_at: string;
+  estilo?: string | null;
+  arquivo_path?: string | null;
+  classificacao?: any;
+}
+
 interface Equipe {
   id: string;
   nome: string;
@@ -112,9 +132,10 @@ export const KnowledgeHubTab = () => {
   const pendingSuggestions = suggestions.filter(s => s.status === 'pending');
   const approvedSuggestions = suggestions.filter(s => s.status === 'approved');
 
-  // Separar artigos por estilo
-  const memoryArticles = articles.filter(a => a.estilo);
-  const regularArticles = articles.filter(a => !a.estilo);
+  // Separar artigos por estilo (cast to extended type)
+  const extendedArticles = articles as ExtendedKnowledgeArticle[];
+  const memoryArticles = extendedArticles.filter(a => a.estilo);
+  const regularArticles = extendedArticles.filter(a => !a.estilo);
 
   const filteredSuggestions = pendingSuggestions.filter(suggestion =>
     suggestion.texto_sugerido.toLowerCase().includes(searchTerm.toLowerCase())
@@ -364,7 +385,9 @@ export const KnowledgeHubTab = () => {
     }
   };
 
-  const getEstiloBadge = (estilo: string) => {
+  const getEstiloBadge = (estilo?: string | null) => {
+    if (!estilo) return null;
+    
     switch (estilo) {
       case 'diretrizes':
         return <Badge className="bg-purple-100 text-purple-700 border-purple-300">📋 Diretrizes</Badge>;
