@@ -35,23 +35,31 @@ export const useTicketNotifications = () => {
             const AudioContextClass = window.AudioContext || window.webkitAudioContext;
             const audioContext = new AudioContextClass();
             
-            // Criar um beep simples
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
+            // Criar uma sequência de notas mais musical
+            const playNote = (frequency: number, duration: number, delay: number = 0, volume: number = 0.15) => {
+              setTimeout(() => {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+                
+                oscillator.start();
+                oscillator.stop(audioContext.currentTime + duration);
+              }, delay);
+            };
             
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
+            // Tocar uma sequência melódica ascendente (C-E-G - acorde de Dó maior)
+            playNote(523.25, 0.15, 0, 0.12);     // C5
+            playNote(659.25, 0.15, 150, 0.12);   // E5
+            playNote(783.99, 0.2, 300, 0.15);    // G5
             
-            // Configurar o som (frequência de 800Hz por 200ms)
-            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-            oscillator.type = 'sine';
-            
-            // Volume baixo para não ser muito intrusivo
-            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-            
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.2);
           } catch (error) {
             console.warn('Erro ao reproduzir som de notificação:', error);
           }
