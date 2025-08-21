@@ -94,97 +94,20 @@ export const TicketActions = ({ ticket, equipes, size = 'default' }: TicketActio
 
   return (
     <div className="flex gap-2">
-      {/* Botão Resolver Crise - só aparece para tickets com prioridade crise */}
-      {ticket.prioridade === 'crise' && (
-        <ResolveCrisisButton 
-          ticketId={ticket.id} 
-          size={size}
-        />
-      )}
-      
-      {/* Botão Iniciar Atendimento - só aparece se não estiver em atendimento ou concluído */}
-      {ticket.status === 'aberto' && (
-        <>
-          {/* Botão direto quando não precisa de seleção */}
-          {!needsEquipeSelection && (
-            <Button variant="outline" size={buttonSize} onClick={handleQuickStart} disabled={loading}>
-              <Play className={`${iconSize} mr-2`} />
-              {size === 'sm' ? 'Iniciar' : 'Iniciar Atendimento'}
-            </Button>
-          )}
-
-          {/* Dialog para seleção de equipe quando necessário */}
-          {needsEquipeSelection && (
-            <Dialog open={startDialogOpen} onOpenChange={setStartDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size={buttonSize}>
-                  <Play className={`${iconSize} mr-2`} />
-                  {size === 'sm' ? 'Iniciar' : 'Iniciar Atendimento'}
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Selecionar Equipe</DialogTitle>
-                  <DialogDescription>
-                    Você pertence a múltiplas equipes. Selecione qual equipe será responsável por este atendimento.
-                  </DialogDescription>
-                </DialogHeader>
-                
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium">Suas Equipes</label>
-                    <Select value={selectedEquipe} onValueChange={setSelectedEquipe}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione uma equipe" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {userEquipes.map((userEquipe) => (
-                          <SelectItem key={userEquipe.equipes.id} value={userEquipe.equipes.id}>
-                            <div className="flex items-center gap-2">
-                              <Users className="h-4 w-4" />
-                              {userEquipe.equipes.nome}
-                              {userEquipe.is_primary && (
-                                <Badge variant="secondary" className="text-xs">Primária</Badge>
-                              )}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setStartDialogOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button 
-                    onClick={handleStartAttendance}
-                    disabled={!selectedEquipe || loading}
-                  >
-                    {loading ? 'Iniciando...' : 'Iniciar Atendimento'}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          )}
-        </>
-      )}
-
-      {/* Botão Concluir - aparece se estiver em atendimento ou escalonado */}
-      {(ticket.status === 'em_atendimento' || ticket.status === 'escalonado') && (
+      {/* Botão Concluir/Resolver - aparece para tickets não concluídos */}
+      {ticket.status !== 'concluido' && (
         <Dialog open={concludeDialogOpen} onOpenChange={setConcludeDialogOpen}>
           <DialogTrigger asChild>
             <Button variant="default" size={buttonSize}>
               <CheckCircle className={`${iconSize} mr-2`} />
-              {size === 'sm' ? 'Concluir' : 'Concluído'}
+              {size === 'sm' ? 'Resolver' : 'Resolver'}
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Concluir Ticket</DialogTitle>
+              <DialogTitle>Resolver Ticket</DialogTitle>
               <DialogDescription>
-                Tem certeza que deseja marcar este ticket como concluído?
+                Tem certeza que deseja marcar este ticket como resolvido?
               </DialogDescription>
             </DialogHeader>
 
@@ -196,25 +119,25 @@ export const TicketActions = ({ ticket, equipes, size = 'default' }: TicketActio
                 onClick={handleConclude}
                 disabled={loading}
               >
-                {loading ? 'Concluindo...' : 'Concluir Ticket'}
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Resolvendo...
+                  </>
+                ) : (
+                  'Resolver Ticket'
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       )}
 
-      {/* Mostrar info de quem iniciou o atendimento */}
-      {ticket.status === 'em_atendimento' && ticket.atendimento_iniciado_por_profile && (
-        <Badge variant="secondary" className="text-xs">
-          Por: {ticket.atendimento_iniciado_por_profile.nome_completo}
-        </Badge>
-      )}
-
-      {/* Mostrar se já foi concluído */}
+      {/* Mostrar se já foi resolvido */}
       {ticket.status === 'concluido' && (
         <Badge variant="default" className="text-xs">
           <CheckCircle className="h-3 w-3 mr-1" />
-          Concluído
+          Resolvido
         </Badge>
       )}
     </div>
