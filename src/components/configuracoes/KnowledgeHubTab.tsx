@@ -225,10 +225,23 @@ export const KnowledgeHubTab = () => {
 
   const handleEditArticle = (article: any) => {
     setSelectedArticle(article);
+    
+    // Extract content from classificacao if available, otherwise use conteudo
+    let contentToEdit = article.conteudo;
+    if (article.classificacao) {
+      // Try to get content from classificacao field
+      if (typeof article.classificacao === 'object') {
+        contentToEdit = article.classificacao.content_full || 
+                      article.classificacao.conteudo_organizado || 
+                      article.classificacao.conteudo_original || 
+                      article.conteudo;
+      }
+    }
+    
     setEditData({
       id: article.id,
       titulo: article.titulo,
-      conteudo: article.conteudo,
+      conteudo: contentToEdit,
       categoria: article.categoria || '',
       tags: article.tags || [],
       tipo_midia: article.tipo_midia,
