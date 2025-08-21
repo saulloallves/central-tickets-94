@@ -390,12 +390,13 @@ serve(async (req) => {
       const extractedCategory = categoryMatch ? (categoryMatch[1] || categoryMatch[2] || categoryMatch[3] || categoryMatch[4] || categoryMatch[5] || categoryMatch[6] || '').trim() : (categoria || 'Diretrizes Institucionais');
       
       processedData = {
-        conteudo_formatado: content, // Para diretrizes, mantém o conteúdo original
+        conteudo_formatado: aiResponse, // Para diretrizes: resultado da IA
         titulo: extractedTitle,
         categoria: extractedCategory,
         subcategoria: 'Regras e Normas',
         classificacao: { 
           tipo: 'diretrizes', 
+          conteudo_original: content,
           resultado_diretrizes: aiResponse,
           processado_em: new Date().toISOString() 
         }
