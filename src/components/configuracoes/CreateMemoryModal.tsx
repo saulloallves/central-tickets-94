@@ -86,13 +86,23 @@ export const CreateMemoryModal = ({ open, onOpenChange, onSuccess }: CreateMemor
         return;
       }
 
-      await createMemory({
+      const result = await createMemory({
         estilo,
         titulo: titulo.trim() || undefined,
         categoria: categoria.trim() || undefined,
         content: inputMethod === 'file' ? '' : content,
         file: inputMethod === 'file' ? file : undefined
       });
+
+      // Para manuais, preencher automaticamente título e categoria da resposta da IA
+      if (result && estilo === 'manual') {
+        if (result.titulo && !titulo.trim()) {
+          setTitulo(result.titulo);
+        }
+        if (result.categoria && !categoria.trim()) {
+          setCategoria(result.categoria);
+        }
+      }
 
       // Limpar formulário
       setTitulo('');
