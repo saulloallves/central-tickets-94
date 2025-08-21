@@ -199,6 +199,8 @@ serve(async (req) => {
     }
 
     console.log('Enviando para OpenAI com estilo:', estilo);
+    console.log('Prompt length:', prompt.length);
+    console.log('User message length:', userMessage.length);
 
     // Chamar OpenAI
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -217,14 +219,19 @@ serve(async (req) => {
       }),
     });
 
+    console.log('OpenAI response status:', response.status);
+
     if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status}`);
+      const errorText = await response.text();
+      console.error('OpenAI API error details:', errorText);
+      throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
     }
 
     const aiResult = await response.json();
     const aiResponse = aiResult.choices[0].message.content;
 
-    console.log('Resposta da IA:', aiResponse);
+    console.log('Resposta da IA (length):', aiResponse?.length || 0);
+    console.log('Resposta da IA (first 200 chars):', aiResponse?.substring(0, 200) || 'EMPTY');
 
     // Processar resposta baseada no estilo
     let processedData: any = {};
