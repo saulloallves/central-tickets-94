@@ -49,7 +49,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           
           {/* Main content area with futuristic spacing */}
           <main className="flex-1 p-12">
-            <div className="mx-auto max-w-7xl animate-fade-in space-y-8">
+            <div className="mx-auto max-w-auto animate-fade-in space-y-8">
               {children}
             </div>
           </main>
