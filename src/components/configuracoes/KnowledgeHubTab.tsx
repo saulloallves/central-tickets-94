@@ -228,27 +228,46 @@ export const KnowledgeHubTab = () => {
     console.log('Classificação do artigo:', article.classificacao);
     setSelectedArticle(article);
     
-    // Extract content from classificacao - this is where the real content is
+    // Extract content from classificacao - this is where the AI-generated content is
     let contentToEdit = '';
+    console.log('Tipo de classificacao:', typeof article.classificacao);
+    console.log('Classificacao completa:', article.classificacao);
+    
     if (article.classificacao && typeof article.classificacao === 'object') {
-      // Para manual: usar content_full ou conteudo_organizado
+      console.log('Tipo da classificacao:', article.classificacao.tipo);
+      
       if (article.classificacao.tipo === 'manual') {
+        // Para manual: buscar content_full primeiro
         contentToEdit = article.classificacao.content_full || 
                        article.classificacao.conteudo_organizado || 
                        article.classificacao.conteudo_original || 
                        article.conteudo;
+        console.log('Manual - Conteúdo escolhido:', {
+          content_full: !!article.classificacao.content_full,
+          conteudo_organizado: !!article.classificacao.conteudo_organizado,
+          conteudo_original: !!article.classificacao.conteudo_original,
+          final: contentToEdit?.substring(0, 100) + '...'
+        });
       } 
-      // Para diretrizes: usar resultado_diretrizes
       else if (article.classificacao.tipo === 'diretrizes') {
+        // Para diretrizes: buscar resultado_diretrizes
         contentToEdit = article.classificacao.resultado_diretrizes || article.conteudo;
+        console.log('Diretrizes - Conteúdo escolhido:', {
+          resultado_diretrizes: !!article.classificacao.resultado_diretrizes,
+          final: contentToEdit?.substring(0, 100) + '...'
+        });
       }
-      // Fallback
       else {
+        // Fallback genérico
         contentToEdit = article.conteudo;
+        console.log('Fallback - usando conteudo da coluna principal');
       }
     } else {
       contentToEdit = article.conteudo;
+      console.log('Sem classificacao válida - usando conteudo da coluna principal');
     }
+    
+    console.log('Conteúdo final extraído:', contentToEdit?.substring(0, 200));
     
     setEditData({
       id: article.id,
