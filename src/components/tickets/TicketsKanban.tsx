@@ -30,7 +30,11 @@ import {
   Edit2,
   Trash2,
   GripVertical,
-  Filter
+  Filter,
+  Circle,
+  PlayCircle,
+  AlertCircle,
+  CheckCircle2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -66,6 +70,20 @@ const COLUMN_STATUS = {
   em_atendimento: 'Em Atendimento', 
   escalonado: 'Escalonado',
   concluido: 'Concluído'
+};
+
+const COLUMN_ICONS = {
+  aberto: Circle,
+  em_atendimento: PlayCircle,
+  escalonado: AlertCircle,
+  concluido: CheckCircle2
+};
+
+const COLUMN_ICON_COLORS = {
+  aberto: 'text-blue-500',
+  em_atendimento: 'text-orange-500',
+  escalonado: 'text-red-500',
+  concluido: 'text-green-500'
 };
 
 const COLUMN_COLORS = {
@@ -305,7 +323,14 @@ const KanbanColumn = ({ status, tickets, selectedTicketId, onTicketSelect, equip
     >
       {/* Header da coluna com efeito glass */}
       <div className="flex items-center justify-between p-3 bg-white/25 backdrop-blur-md border border-white/40 rounded-lg shadow-lg m-2 mb-0">
-        <h3 className="font-semibold text-sm text-blue-900">{COLUMN_STATUS[status]}</h3>
+        <div className="flex items-center gap-2">
+          {(() => {
+            const IconComponent = COLUMN_ICONS[status];
+            const iconColor = COLUMN_ICON_COLORS[status];
+            return <IconComponent className={`h-4 w-4 ${iconColor}`} />;
+          })()}
+          <h3 className="font-semibold text-sm text-black">{COLUMN_STATUS[status]}</h3>
+        </div>
         <Badge variant="secondary" className="text-xs bg-white/50 backdrop-blur-sm border border-white/40 rounded-full">
           {tickets.length}
         </Badge>
