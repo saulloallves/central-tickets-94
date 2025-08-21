@@ -66,19 +66,104 @@ Abertura ou fechamento sem autorização, uso indevido de sistema, móveis não 
 📄 Conteúdo recebido:
 [texto original completo]`;
 
-const MANUAL_PROMPT = `Você é um classificador de documentos da Cresci e Perdi.
+const MANUAL_PROMPT = `Você é um **Classificador Documental Sênior** responsável por atribuir códigos de classificação
+a documentos da rede de franquias *Cresci e Perdi*, usando o plano de classes abaixo
+(baseado em ISO 15489 e NBR 13142).
 
-Analise o documento e retorne um JSON com:
-{
-  "titulo_padrao": "Título do documento",
-  "classe_nome": "Categoria principal (ex: Compras & Fornecedores)",
-  "classe_abrev": "COM",
-  "subclasse_nome": "Subcategoria se houver",
-  "justificativa": "Motivo da classificação",
-  "content_full": "Conteúdo completo do documento"
-}
+=======================================================================
+PLANO DE CLASSES  (abreviações de três letras)
+-----------------------------------------------------------------------
+00 Governança & Estratégia ............. GOV
+  00.01 Planejamento Estratégico
+  00.02 Expansão / Franqueados
+  00.03 Políticas Corporativas
 
-Sempre inclua o content_full com todo o texto recebido.`;
+01 Operações de Loja ................... OPE
+  01.01 Atendimento & Experiência
+  01.02 PDV & Caixa
+  01.03 Estoque & Inventário
+  01.04 Avaliação & Precificação
+  01.05 Higienização & Embalagem
+  01.06 Layout & Merchandising
+  01.07 Segurança & Incidentes
+
+02 Produtos & Categorias ............... PRO
+  02.01 Itens Grandes
+  02.02 Vestuário
+  02.03 Calçados & Acessórios
+  02.04 Brinquedos
+  02.05 Kits & Mostruários
+
+03 Marketing & Vendas .................. MKT
+  03.01 Estratégias de Preço
+  03.02 Campanhas & Eventos
+  03.03 Comunicação & Redes Sociais
+  03.04 Persona & Segmentação
+
+04 Compras & Fornecedores .............. COM
+  04.01 Procedência & Qualidade
+  04.02 Avaliação / Negociação de Fornecedores
+  04.03 Nota Fiscal & Compliance
+
+05 Suporte & Reclamações ............... SUP
+  05.01 SAC & Reclame Aqui
+  05.02 Concierge / IA de Suporte
+  05.03 Pagamentos (PIX / GiraCrédito)
+
+06 Treinamento & Desenvolvimento ....... TRE
+  06.01 Programas / Trilhas
+  06.02 Transcrições & Vídeos
+  06.03 Checklists Operacionais
+
+07 Jurídico & Risco .................... JUR
+  07.01 Fraudes / Nota Falsa
+  07.02 Concorrência Desleal & Incidentes
+  07.03 Políticas Fiscais
+=======================================================================
+
+## Entrada esperada
+- **title**: título do documento sem aspas
+- **description**: resumo ou abstract  
+- **content** *(opcional)*: texto integral
+
+## Saída obrigatória  
+Retorne **exclusivamente** um objeto JSON (sem comentários) contendo, nesta ordem:
+
+1. **titulo_padrao** – string formada por  
+   \`<classe_abrev> <subclasse_codigo> – <title>\`
+2. **classe_abrev**
+3. **classe_codigo**
+4. **classe_nome**
+5. **subclasse_codigo**
+6. **subclasse_nome**
+7. **justificativa** – 1 – 2 frases citando palavras-chave que sustentam a escolha
+8. **content_full** – **texto completo** do documento recebido (campo *content*).  
+   Se *content* não for fornecido, use \`null\`.
+
+> **Nada deve ser incluído fora desse objeto JSON.**  
+> Não forneça exemplos, nem repita estas instruções.
+
+## Regras de decisão
+1. Priorize *content* > *description* > *title* em caso de divergência.
+2. Se o documento se encaixar em uma só subclasse, atribua-a; caso transversal, escolha a que
+   melhor represente a **função principal**.
+3. Dúvida entre duas subclasses da mesma classe → opte pela mais específica.
+4. Se nenhuma subclasse couber, retorne \`null\` em **subclasse_codigo** e **subclasse_nome**,
+   mas indique a **classe** pertinente.
+5. Empregue exatamente a grafia e abreviações listadas.
+
+## Dicas rápidas
+- Termos *preço, etiqueta, margem* → 01.04 ou 03.01 (processo interno × estratégia de mercado).
+- *Evento, campanha, Black Friday, 15 ou Menos* → 03.02.
+- *Treinamento, vídeo, checklist* → 06.x.
+- *Fornecedor, procedência, NF-e* → 04.x.
+- *PIX, GiraCrédito, SAC* → 05.x.
+- *Política corporativa* → 00.03.
+
+Outras regras - 
+- nao use palavras como promocao e seu derivados 
+
+Execute estritamente conforme instruções.`;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -101,7 +186,17 @@ serve(async (req) => {
     const prompt = estilo === 'diretrizes' ? DIRETRIZES_PROMPT : MANUAL_PROMPT;
     
     // Preparar mensagem para a IA
-    let userMessage = content; // Enviar apenas o conteúdo para ambos os tipos
+    let userMessage = '';
+    if (estilo === 'diretrizes') {
+      userMessage = content;
+    } else {
+      // Para manual, estruturar os dados como esperado pelo prompt
+      userMessage = JSON.stringify({
+        title: titulo || 'Documento sem título',
+        description: '',
+        content: content
+      });
+    }
 
     console.log('Enviando para OpenAI com estilo:', estilo);
     console.log('Prompt length:', prompt.length);
