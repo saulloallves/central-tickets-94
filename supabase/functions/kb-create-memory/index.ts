@@ -483,9 +483,9 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         memoria_id: data.id,
-        titulo: processedData.titulo,
-        categoria: processedData.categoria,
-        subcategoria: processedData.subcategoria
+        titulo: data.titulo,  // Usar o título que foi salvo no banco
+        categoria: data.categoria,  // Usar a categoria que foi salva no banco
+        subcategoria: data.subcategoria
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
