@@ -322,16 +322,16 @@ const KanbanColumn = ({ status, tickets, selectedTicketId, onTicketSelect, equip
       )}
     >
       {/* Header da coluna com efeito glass */}
-      <div className="flex items-center justify-between p-3 bg-white/25 backdrop-blur-md border border-white/40 rounded-lg shadow-lg m-2 mb-0">
+      <div className="flex items-center justify-between p-3 bg-gradient-to-b from-white/10 to-transparent backdrop-blur-lg border border-white/20 rounded-lg shadow-lg m-2 mb-0">
         <div className="flex items-center gap-2">
           {(() => {
             const IconComponent = COLUMN_ICONS[status];
             const iconColor = COLUMN_ICON_COLORS[status];
             return <IconComponent className={`h-4 w-4 ${iconColor}`} />;
           })()}
-          <h3 className="font-semibold text-sm text-black">{COLUMN_STATUS[status]}</h3>
+          <h3 className="font-semibold text-sm text-gray-800 drop-shadow-sm">{COLUMN_STATUS[status]}</h3>
         </div>
-        <Badge variant="secondary" className="text-xs bg-white/50 backdrop-blur-sm border border-white/40 rounded-full">
+        <Badge variant="secondary" className="text-xs bg-white/30 backdrop-blur-sm border border-white/30 rounded-full text-gray-700">
           {tickets.length}
         </Badge>
       </div>
