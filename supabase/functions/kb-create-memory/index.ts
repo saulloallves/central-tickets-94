@@ -249,9 +249,9 @@ serve(async (req) => {
       try {
         const jsonResponse = JSON.parse(aiResponse);
         processedData = {
-          conteudo_formatado: jsonResponse.content_full || content,
+          conteudo_formatado: jsonResponse.content_full || content || aiResponse,
           titulo: jsonResponse.titulo_padrao || titulo || 'Manual sem título',
-          categoria: `${jsonResponse.classe_abrev} - ${jsonResponse.classe_nome}` || 'Manual',
+          categoria: jsonResponse.classe_nome ? `${jsonResponse.classe_abrev} - ${jsonResponse.classe_nome}` : 'Manual',
           subcategoria: jsonResponse.subclasse_nome || null,
           classificacao: {
             tipo: 'manual',
