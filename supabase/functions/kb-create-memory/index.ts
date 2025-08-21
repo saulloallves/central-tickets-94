@@ -318,9 +318,10 @@ serve(async (req) => {
         body: JSON.stringify({
           model: 'gpt-4o-mini',
           messages: [
-            { role: 'system', content: MANUAL_CLASSIFIER_PROMPT },
+            { role: 'system', content: MANUAL_CLASSIFIER_PROMPT + '\n\nIMPORTANTE: Defina content_full como null para evitar truncamento. Retorne apenas o JSON sem texto adicional.' },
             { role: 'user', content: classifierUserMessage }
           ],
+          response_format: { type: "json_object" },
           max_tokens: 2000,
           temperature: 0.3
         }),
@@ -435,17 +436,31 @@ serve(async (req) => {
           }
         };
       } catch (e) {
-        console.error('Erro ao parsear JSON do manual, processando como texto:', e);
-        // Se não conseguir parsear como JSON, processar como texto simples (igual diretrizes)
+        console.error('Erro ao parsear JSON do manual, usando fallback regex:', e);
+        console.log('Tentando extrair título e categoria com regex...');
+        
+        // Fallback inteligente: extrair título e categoria usando regex
+        const tituloMatch = aiResponse.match(/"titulo_padrao":\s*"([^"]+)"/);
+        const categoriaMatch = aiResponse.match(/"classe_nome":\s*"([^"]+)"/);
+        
+        const extractedTitulo = tituloMatch ? tituloMatch[1] : (titulo || 'Manual sem título');
+        const extractedCategoria = categoriaMatch ? categoriaMatch[1] : (categoria || 'Manual');
+        
+        console.log('Valores extraídos por regex:', {
+          titulo: extractedTitulo,
+          categoria: extractedCategoria
+        });
+        
         processedData = {
-          conteudo_formatado: aiResponse || content,
-          titulo: titulo || 'Manual sem título',
-          categoria: categoria || 'Manual',
+          conteudo_formatado: organizedContent || content,
+          titulo: extractedTitulo,
+          categoria: extractedCategoria,
           subcategoria: null,
           classificacao: { 
             tipo: 'manual', 
             processado_em: new Date().toISOString(),
-            resposta_bruta: aiResponse
+            resposta_bruta: aiResponse,
+            metodo_extracao: 'regex_fallback'
           }
         };
       }
