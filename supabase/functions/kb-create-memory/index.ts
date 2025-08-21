@@ -399,7 +399,23 @@ serve(async (req) => {
     } else {
       // Para manual, extrair do JSON do classificador
       try {
-        const jsonResponse = JSON.parse(aiResponse);
+        console.log('Tentando parsear JSON do classificador...');
+        console.log('Resposta do classificador (primeiros 500 chars):', aiResponse?.substring(0, 500) || 'EMPTY');
+        
+        // Limpar possível texto extra antes/depois do JSON
+        const jsonStart = aiResponse.indexOf('{');
+        const jsonEnd = aiResponse.lastIndexOf('}') + 1;
+        const cleanJson = aiResponse.substring(jsonStart, jsonEnd);
+        
+        console.log('JSON limpo para parsing:', cleanJson?.substring(0, 200) || 'EMPTY');
+        
+        const jsonResponse = JSON.parse(cleanJson);
+        
+        console.log('JSON parseado com sucesso:', {
+          titulo_padrao: jsonResponse.titulo_padrao,
+          classe_nome: jsonResponse.classe_nome
+        });
+        
         processedData = {
           conteudo_formatado: organizedContent || jsonResponse.content_full || content || aiResponse,
           titulo: jsonResponse.titulo_padrao || titulo || 'Manual sem título',
