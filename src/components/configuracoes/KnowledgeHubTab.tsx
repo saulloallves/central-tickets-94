@@ -861,6 +861,49 @@ export const KnowledgeHubTab = () => {
               />
             </div>
 
+            {/* Informações de Classificação */}
+            {selectedArticle?.classificacao && (
+              <div className="border rounded-lg p-4 bg-muted/50">
+                <Label className="text-sm font-medium mb-2 block">Informações de Classificação</Label>
+                <div className="space-y-2 text-sm">
+                  {typeof selectedArticle.classificacao === 'object' && (
+                    <>
+                      {selectedArticle.classificacao.tipo && (
+                        <div className="flex justify-between">
+                          <span className="font-medium">Tipo:</span>
+                          <span>{selectedArticle.classificacao.tipo}</span>
+                        </div>
+                      )}
+                      {selectedArticle.classificacao.classe_nome && (
+                        <div className="flex justify-between">
+                          <span className="font-medium">Classe:</span>
+                          <span>{selectedArticle.classificacao.classe_nome}</span>
+                        </div>
+                      )}
+                      {selectedArticle.classificacao.subclasse_nome && (
+                        <div className="flex justify-between">
+                          <span className="font-medium">Subclasse:</span>
+                          <span>{selectedArticle.classificacao.subclasse_nome}</span>
+                        </div>
+                      )}
+                      {selectedArticle.classificacao.justificativa && (
+                        <div className="flex flex-col gap-1">
+                          <span className="font-medium">Justificativa:</span>
+                          <span className="text-muted-foreground">{selectedArticle.classificacao.justificativa}</span>
+                        </div>
+                      )}
+                      {selectedArticle.classificacao.processado_em && (
+                        <div className="flex justify-between">
+                          <span className="font-medium">Processado em:</span>
+                          <span>{new Date(selectedArticle.classificacao.processado_em).toLocaleString('pt-BR')}</span>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
                 <input
