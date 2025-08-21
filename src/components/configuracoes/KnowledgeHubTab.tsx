@@ -228,16 +228,26 @@ export const KnowledgeHubTab = () => {
     console.log('Classificação do artigo:', article.classificacao);
     setSelectedArticle(article);
     
-    // Extract content from classificacao if available, otherwise use conteudo
-    let contentToEdit = article.conteudo;
-    if (article.classificacao) {
-      // Try to get content from classificacao field
-      if (typeof article.classificacao === 'object') {
+    // Extract content from classificacao - this is where the real content is
+    let contentToEdit = '';
+    if (article.classificacao && typeof article.classificacao === 'object') {
+      // Para manual: usar content_full ou conteudo_organizado
+      if (article.classificacao.tipo === 'manual') {
         contentToEdit = article.classificacao.content_full || 
-                      article.classificacao.conteudo_organizado || 
-                      article.classificacao.conteudo_original || 
-                      article.conteudo;
+                       article.classificacao.conteudo_organizado || 
+                       article.classificacao.conteudo_original || 
+                       article.conteudo;
+      } 
+      // Para diretrizes: usar resultado_diretrizes
+      else if (article.classificacao.tipo === 'diretrizes') {
+        contentToEdit = article.classificacao.resultado_diretrizes || article.conteudo;
       }
+      // Fallback
+      else {
+        contentToEdit = article.conteudo;
+      }
+    } else {
+      contentToEdit = article.conteudo;
     }
     
     setEditData({
@@ -255,7 +265,17 @@ export const KnowledgeHubTab = () => {
 
   const handleUpdateArticle = async () => {
     try {
-      await updateArticle(editData.id, editData);
+      // Sempre salvar o conteúdo editado na coluna conteudo
+      // A classificacao mantém os dados originais de processamento
+      await updateArticle(editData.id, {
+        titulo: editData.titulo,
+        conteudo: editData.conteudo, // Conteúdo editado
+        categoria: editData.categoria,
+        tags: editData.tags,
+        aprovado: editData.aprovado,
+        usado_pela_ia: editData.usado_pela_ia,
+        tipo_midia: editData.tipo_midia
+      });
       
       setIsEditModalOpen(false);
       setSelectedArticle(null);
