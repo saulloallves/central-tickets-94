@@ -216,7 +216,7 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
     >
       <CardContent className="p-2 space-y-2 pointer-events-none">
         {/* Título - Maior e mais destaque */}
-        <h3 className="font-bold text-gray-900 text-base line-clamp-2 leading-tight group-hover:text-gray-700 transition-colors">
+        <h3 className="font-semibold text-gray-900 text-base line-clamp-2 leading-tight group-hover:text-gray-700 transition-colors">
           {(() => {
             const title = ticket.titulo || ticket.descricao_problema || "Sem título";
             const words = title.trim().split(/\s+/);
