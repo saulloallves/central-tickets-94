@@ -811,16 +811,20 @@ export type Database = {
       knowledge_articles: {
         Row: {
           aprovado: boolean
+          arquivo_path: string | null
           ativo: boolean
           categoria: string | null
+          classificacao: Json | null
           conteudo: string
           created_at: string
           criado_por: string | null
           equipe_id: string | null
+          estilo: string | null
           feedback_negativo: number
           feedback_positivo: number
           id: string
           link_arquivo: string | null
+          subcategoria: string | null
           tags: string[] | null
           tipo_midia: Database["public"]["Enums"]["knowledge_media_type"] | null
           titulo: string
@@ -829,16 +833,20 @@ export type Database = {
         }
         Insert: {
           aprovado?: boolean
+          arquivo_path?: string | null
           ativo?: boolean
           categoria?: string | null
+          classificacao?: Json | null
           conteudo: string
           created_at?: string
           criado_por?: string | null
           equipe_id?: string | null
+          estilo?: string | null
           feedback_negativo?: number
           feedback_positivo?: number
           id?: string
           link_arquivo?: string | null
+          subcategoria?: string | null
           tags?: string[] | null
           tipo_midia?:
             | Database["public"]["Enums"]["knowledge_media_type"]
@@ -849,16 +857,20 @@ export type Database = {
         }
         Update: {
           aprovado?: boolean
+          arquivo_path?: string | null
           ativo?: boolean
           categoria?: string | null
+          classificacao?: Json | null
           conteudo?: string
           created_at?: string
           criado_por?: string | null
           equipe_id?: string | null
+          estilo?: string | null
           feedback_negativo?: number
           feedback_positivo?: number
           id?: string
           link_arquivo?: string | null
+          subcategoria?: string | null
           tags?: string[] | null
           tipo_midia?:
             | Database["public"]["Enums"]["knowledge_media_type"]
