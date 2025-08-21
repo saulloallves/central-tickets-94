@@ -401,14 +401,18 @@ serve(async (req) => {
       // Para manual, extrair do JSON do classificador
       try {
         console.log('Tentando parsear JSON do classificador...');
-        console.log('Resposta do classificador (primeiros 500 chars):', aiResponse?.substring(0, 500) || 'EMPTY');
+        console.log('Resposta do classificador (completa):', aiResponse);
         
         // Limpar possível texto extra antes/depois do JSON
         const jsonStart = aiResponse.indexOf('{');
         const jsonEnd = aiResponse.lastIndexOf('}') + 1;
-        const cleanJson = aiResponse.substring(jsonStart, jsonEnd);
         
-        console.log('JSON limpo para parsing:', cleanJson?.substring(0, 200) || 'EMPTY');
+        if (jsonStart === -1 || jsonEnd === 0) {
+          throw new Error('Nenhum JSON válido encontrado na resposta');
+        }
+        
+        const cleanJson = aiResponse.substring(jsonStart, jsonEnd);
+        console.log('JSON extraído:', cleanJson);
         
         const jsonResponse = JSON.parse(cleanJson);
         
