@@ -13,7 +13,7 @@ import { useKnowledgeArticles } from '@/hooks/useKnowledgeArticles';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { CreateMemoryModal } from './CreateMemoryModal';
-import { Search, Eye, Check, X, Edit, Users, Download, FileText, Plus, BookOpen, Brain } from 'lucide-react';
+import { Search, Eye, Check, X, Edit, Users, Download, FileText, Plus, BookOpen, Brain, Trash2 } from 'lucide-react';
 
 // Extended type for KnowledgeArticle with new fields
 interface ExtendedKnowledgeArticle {
@@ -85,6 +85,31 @@ export const KnowledgeHubTab = () => {
   const { articles, loading: loadingArticles, fetchArticles, createArticle, updateArticle } = useKnowledgeArticles();
   const { toast } = useToast();
 
+  const deleteArticle = async (articleId: string) => {
+    try {
+      const { error } = await supabase
+        .from('knowledge_articles')
+        .delete()
+        .eq('id', articleId);
+
+      if (error) throw error;
+
+      toast({
+        title: "✅ Artigo Excluído",
+        description: "Artigo removido da base de conhecimento",
+      });
+      
+      fetchArticles();
+    } catch (error) {
+      console.error('Error deleting article:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível excluir o artigo",
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
     fetchEquipes();
     fetchRAGDocuments();
@@ -132,10 +157,10 @@ export const KnowledgeHubTab = () => {
   const pendingSuggestions = suggestions.filter(s => s.status === 'pending');
   const approvedSuggestions = suggestions.filter(s => s.status === 'approved');
 
-  // Separar artigos por estilo (cast to extended type)
+  // Cast articles to extended type and separate by style  
   const extendedArticles = articles as ExtendedKnowledgeArticle[];
-  const memoryArticles = extendedArticles.filter(a => a.estilo);
   const regularArticles = extendedArticles.filter(a => !a.estilo);
+  const memoryArticles = extendedArticles.filter(a => a.estilo);
 
   const filteredSuggestions = pendingSuggestions.filter(suggestion =>
     suggestion.texto_sugerido.toLowerCase().includes(searchTerm.toLowerCase())
@@ -413,7 +438,7 @@ export const KnowledgeHubTab = () => {
             className="gap-2"
           >
             <Plus className="h-4 w-4" />
-            Nova Memória
+            Novo Artigo
           </Button>
           
           <div className="relative">
@@ -547,16 +572,25 @@ export const KnowledgeHubTab = () => {
                         <CardTitle className="text-lg">{memory.titulo}</CardTitle>
                         {getEstiloBadge(memory.estilo)}
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleEditArticle(memory)}
-                          className="gap-1"
-                        >
-                          <Edit className="h-3 w-3" />
-                          Editar
-                        </Button>
+                       <div className="flex items-center gap-2">
+                         <Button
+                           size="sm"
+                           variant="outline"
+                           onClick={() => handleEditArticle(memory)}
+                           className="gap-1"
+                         >
+                           <Edit className="h-3 w-3" />
+                           Editar
+                         </Button>
+                         <Button
+                           size="sm"
+                           variant="outline"
+                           onClick={() => deleteArticle(memory.id)}
+                           className="gap-1 text-red-600 hover:text-red-700"
+                         >
+                           <Trash2 className="h-3 w-3" />
+                           Excluir
+                         </Button>
                         {memory.aprovado && (
                           <Badge variant="outline" className="text-green-600 border-green-300">
                             Aprovado
@@ -702,16 +736,25 @@ export const KnowledgeHubTab = () => {
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-lg">{article.titulo}</CardTitle>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleEditArticle(article)}
-                          className="gap-1"
-                        >
-                          <Edit className="h-3 w-3" />
-                          Editar
-                        </Button>
+                       <div className="flex items-center gap-2">
+                         <Button
+                           size="sm"
+                           variant="outline"
+                           onClick={() => handleEditArticle(article)}
+                           className="gap-1"
+                         >
+                           <Edit className="h-3 w-3" />
+                           Editar
+                         </Button>
+                         <Button
+                           size="sm"
+                           variant="outline"
+                           onClick={() => deleteArticle(article.id)}
+                           className="gap-1 text-red-600 hover:text-red-700"
+                         >
+                           <Trash2 className="h-3 w-3" />
+                           Excluir
+                         </Button>
                         {article.aprovado && (
                           <Badge variant="outline" className="text-green-600 border-green-300">
                             Aprovado

@@ -85,17 +85,17 @@ export const CreateMemoryModal = ({ open, onOpenChange, onSuccess }: CreateMemor
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <BookOpen className="h-5 w-5" />
-            Nova Memória da Base de Conhecimento
+            Novo Artigo da Base de Conhecimento
           </DialogTitle>
           <DialogDescription>
-            Adicione uma nova memória que será processada pela IA e classificada automaticamente
+            Adicione um novo artigo que será processado pela IA e classificado automaticamente por categoria
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
           {/* Estilo */}
           <div className="space-y-2">
-            <Label htmlFor="estilo">Estilo da Memória</Label>
+            <Label htmlFor="estilo">Tipo de Artigo</Label>
             <Select value={estilo} onValueChange={(value: 'manual' | 'diretrizes') => setEstilo(value)}>
               <SelectTrigger>
                 <SelectValue />
@@ -198,7 +198,7 @@ export const CreateMemoryModal = ({ open, onOpenChange, onSuccess }: CreateMemor
             Cancelar
           </Button>
           <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? 'Processando...' : 'Criar Memória'}
+            {loading ? 'Processando...' : 'Criar Artigo'}
           </Button>
         </DialogFooter>
       </DialogContent>
