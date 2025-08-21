@@ -6,8 +6,6 @@ import { useToast } from '@/hooks/use-toast';
 interface CreateMemoryData {
   estilo: 'manual' | 'diretrizes';
   content: string;
-  title?: string;
-  description?: string;
   file?: File;
 }
 
@@ -49,8 +47,6 @@ export const useKnowledgeMemories = () => {
         body: {
           estilo: data.estilo,
           content: finalContent,
-          title: data.title,
-          description: data.description,
           arquivo_path
         }
       });

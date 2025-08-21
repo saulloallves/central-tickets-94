@@ -17,8 +17,6 @@ interface CreateMemoryModalProps {
 
 export const CreateMemoryModal = ({ open, onOpenChange, onSuccess }: CreateMemoryModalProps) => {
   const [estilo, setEstilo] = useState<'manual' | 'diretrizes'>('diretrizes');
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
   const [content, setContent] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [inputMethod, setInputMethod] = useState<'text' | 'file'>('text');
@@ -42,11 +40,6 @@ export const CreateMemoryModal = ({ open, onOpenChange, onSuccess }: CreateMemor
       }
 
       setFile(selectedFile);
-      
-      // Se não tem título, usar nome do arquivo
-      if (!title) {
-        setTitle(selectedFile.name.replace(/\.[^/.]+$/, ''));
-      }
     }
   };
 
@@ -65,14 +58,10 @@ export const CreateMemoryModal = ({ open, onOpenChange, onSuccess }: CreateMemor
       await createMemory({
         estilo,
         content: inputMethod === 'file' ? '' : content,
-        title: title.trim() || undefined,
-        description: description.trim() || undefined,
         file: inputMethod === 'file' ? file : undefined
       });
 
       // Limpar formulário
-      setTitle('');
-      setDescription('');
       setContent('');
       setFile(null);
       setInputMethod('text');
@@ -147,27 +136,6 @@ export const CreateMemoryModal = ({ open, onOpenChange, onSuccess }: CreateMemor
             </div>
           </div>
 
-          {/* Campos opcionais */}
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="title">Título (opcional)</Label>
-              <Input
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Título da memória"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Descrição (opcional)</Label>
-              <Input
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Breve descrição"
-              />
-            </div>
-          </div>
 
           {/* Input de conteúdo */}
           {inputMethod === 'text' ? (
