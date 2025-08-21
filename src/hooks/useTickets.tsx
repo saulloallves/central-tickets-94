@@ -191,9 +191,27 @@ export const useTickets = (filters: TicketFilters) => {
     if (!user || roleLoading) return;
 
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('tickets')
-        .select('status, status_sla, created_at, resolvido_em, data_abertura');
+        .select('status, status_sla, created_at, resolvido_em, data_abertura, unidade_id, equipe_responsavel_id');
+
+      // Apply same permission filters as main tickets query
+      if (!isAdmin) {
+        if (isGerente) {
+          // For now, gerentes see all tickets (will be refined with proper unit mapping later)
+          // This ensures the stats match what they see in the tickets list
+        } else {
+          // Regular users see tickets from their teams
+          const userEquipeIds = userEquipes.map(eq => eq.equipe_id);
+          if (userEquipeIds.length > 0) {
+            query = query.in('equipe_responsavel_id', userEquipeIds);
+          } else {
+            query = query.eq('equipe_responsavel_id', 'none');
+          }
+        }
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching stats:', error);
@@ -221,6 +239,7 @@ export const useTickets = (filters: TicketFilters) => {
         stats.tempo_medio = totalHours / resolvedTickets.length;
       }
 
+      console.log('📊 Stats calculated:', stats);
       setTicketStats(stats);
     } catch (error) {
       console.error('Error fetching stats:', error);
