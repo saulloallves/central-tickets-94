@@ -187,63 +187,36 @@ export const useTickets = (filters: TicketFilters) => {
     }
   };
 
-  const fetchTicketStats = async () => {
-    if (!user || roleLoading) return;
+  const calculateStatsFromTickets = (ticketsList: Ticket[]) => {
+    const today = new Date().toISOString().split('T')[0];
+    const stats: TicketStats = {
+      total: ticketsList.length,
+      novos: ticketsList.filter(t => t.created_at.startsWith(today)).length,
+      sla_vencido: ticketsList.filter(t => t.status_sla === 'vencido').length,
+      em_atendimento: ticketsList.filter(t => t.status === 'em_atendimento').length,
+      tempo_medio: 0
+    };
 
-    try {
-      let query = supabase
-        .from('tickets')
-        .select('status, status_sla, created_at, resolvido_em, data_abertura, unidade_id, equipe_responsavel_id');
-
-      // Apply same permission filters as main tickets query
-      if (!isAdmin) {
-        if (isGerente) {
-          // For now, gerentes see all tickets (will be refined with proper unit mapping later)
-          // This ensures the stats match what they see in the tickets list
-        } else {
-          // Regular users see tickets from their teams
-          const userEquipeIds = userEquipes.map(eq => eq.equipe_id);
-          if (userEquipeIds.length > 0) {
-            query = query.in('equipe_responsavel_id', userEquipeIds);
-          } else {
-            query = query.eq('equipe_responsavel_id', 'none');
-          }
-        }
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Error fetching stats:', error);
-        return;
-      }
-
-      const today = new Date().toISOString().split('T')[0];
-      const stats: TicketStats = {
-        total: data.length,
-        novos: data.filter(t => t.created_at.startsWith(today)).length,
-        sla_vencido: data.filter(t => t.status_sla === 'vencido').length,
-        em_atendimento: data.filter(t => t.status === 'em_atendimento').length,
-        tempo_medio: 0
-      };
-
-      // Calculate average resolution time
-      const resolvedTickets = data.filter(t => t.resolvido_em);
-      if (resolvedTickets.length > 0) {
-        const totalHours = resolvedTickets.reduce((acc, ticket) => {
-          const opened = new Date(ticket.data_abertura);
-          const resolved = new Date(ticket.resolvido_em);
-          const hours = (resolved.getTime() - opened.getTime()) / (1000 * 60 * 60);
-          return acc + hours;
-        }, 0);
-        stats.tempo_medio = totalHours / resolvedTickets.length;
-      }
-
-      console.log('📊 Stats calculated:', stats);
-      setTicketStats(stats);
-    } catch (error) {
-      console.error('Error fetching stats:', error);
+    // Calculate average resolution time
+    const resolvedTickets = ticketsList.filter(t => t.resolvido_em);
+    if (resolvedTickets.length > 0) {
+      const totalHours = resolvedTickets.reduce((acc, ticket) => {
+        const opened = new Date(ticket.data_abertura);
+        const resolved = new Date(ticket.resolvido_em!);
+        const hours = (resolved.getTime() - opened.getTime()) / (1000 * 60 * 60);
+        return acc + hours;
+      }, 0);
+      stats.tempo_medio = totalHours / resolvedTickets.length;
     }
+
+    console.log('📊 Stats calculated from visible tickets:', stats);
+    setTicketStats(stats);
+  };
+
+  const fetchTicketStats = async () => {
+    // Stats are now calculated from the filtered tickets list
+    // This ensures metrics reflect only what the user can see
+    calculateStatsFromTickets(tickets);
   };
 
   useEffect(() => {
@@ -296,6 +269,13 @@ export const useTickets = (filters: TicketFilters) => {
       return () => clearTimeout(timeoutId);
     }
   }, [filters.search, filters.status, filters.categoria, filters.prioridade, filters.status_sla, filters.unidade_id, filters.equipe_id]);
+
+  // Recalculate stats whenever tickets change (including filters)
+  useEffect(() => {
+    if (tickets.length >= 0) {
+      calculateStatsFromTickets(tickets);
+    }
+  }, [tickets]);
 
   // Enhanced realtime subscription with handlers
   const handleTicketUpdate = (ticket: Ticket) => {
