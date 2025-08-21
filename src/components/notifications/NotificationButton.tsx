@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Bell, AlertTriangle, Clock, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +11,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export const NotificationButton = () => {
+  const navigate = useNavigate();
   const { alerts, loading, markAlertAsProcessed } = useInternalAlerts();
   const [open, setOpen] = useState(false);
 
@@ -181,7 +183,15 @@ export const NotificationButton = () => {
           <>
             <Separator className="my-2" />
             <div className="p-3">
-              <Button variant="outline" size="sm" className="w-full" onClick={() => setOpen(false)}>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full" 
+                onClick={() => {
+                  setOpen(false);
+                  navigate('/admin');
+                }}
+              >
                 Ver Todos os Alertas
               </Button>
             </div>
