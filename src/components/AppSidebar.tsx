@@ -163,7 +163,7 @@ export function AppSidebar() {
                               
                               {/* Active indicator - green dot */}
                               {isActive && (
-                                <div className="absolute -right-1 -top-1 w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse"></div>
+                                <div className="p-2 w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse"></div>
                               )}
                             </>
                           )}
