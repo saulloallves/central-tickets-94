@@ -12,7 +12,8 @@ import { useKnowledgeSuggestions } from '@/hooks/useKnowledgeSuggestions';
 import { useKnowledgeArticles } from '@/hooks/useKnowledgeArticles';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, Eye, Check, X, Edit, Users, Download, FileText } from 'lucide-react';
+import { CreateMemoryModal } from './CreateMemoryModal';
+import { Search, Eye, Check, X, Edit, Users, Download, FileText, Plus, BookOpen, Brain } from 'lucide-react';
 
 interface Equipe {
   id: string;
@@ -37,6 +38,7 @@ export const KnowledgeHubTab = () => {
   const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isCreateMemoryModalOpen, setIsCreateMemoryModalOpen] = useState(false);
   const [selectedRAGDoc, setSelectedRAGDoc] = useState<RAGDocument | null>(null);
   const [importProgress, setImportProgress] = useState({ current: 0, total: 0, importing: false });
   
@@ -110,13 +112,22 @@ export const KnowledgeHubTab = () => {
   const pendingSuggestions = suggestions.filter(s => s.status === 'pending');
   const approvedSuggestions = suggestions.filter(s => s.status === 'approved');
 
+  // Separar artigos por estilo
+  const memoryArticles = articles.filter(a => a.estilo);
+  const regularArticles = articles.filter(a => !a.estilo);
+
   const filteredSuggestions = pendingSuggestions.filter(suggestion =>
     suggestion.texto_sugerido.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const filteredArticles = articles.filter(article =>
+  const filteredArticles = regularArticles.filter(article =>
     article.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
     article.conteudo.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredMemories = memoryArticles.filter(memory =>
+    memory.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    memory.conteudo.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleApproveSuggestion = (suggestion: any) => {
@@ -353,16 +364,35 @@ export const KnowledgeHubTab = () => {
     }
   };
 
+  const getEstiloBadge = (estilo: string) => {
+    switch (estilo) {
+      case 'diretrizes':
+        return <Badge className="bg-purple-100 text-purple-700 border-purple-300">📋 Diretrizes</Badge>;
+      case 'manual':
+        return <Badge className="bg-blue-100 text-blue-700 border-blue-300">📚 Manual</Badge>;
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header with filters */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Hub de Conhecimento</h2>
-          <p className="text-muted-foreground">Gerencie sugestões da IA e artigos da base de conhecimento</p>
+          <p className="text-muted-foreground">Gerencie sugestões da IA, artigos e memórias da base de conhecimento</p>
         </div>
         
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <Button
+            onClick={() => setIsCreateMemoryModalOpen(true)}
+            className="gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Nova Memória
+          </Button>
+          
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -390,7 +420,7 @@ export const KnowledgeHubTab = () => {
       </div>
 
       {/* Statistics */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Sugestões Pendentes</CardTitle>
@@ -407,7 +437,17 @@ export const KnowledgeHubTab = () => {
             <Check className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{articles.filter(a => a.aprovado).length}</div>
+            <div className="text-2xl font-bold">{regularArticles.filter(a => a.aprovado).length}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Memórias Processadas</CardTitle>
+            <Brain className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{memoryArticles.length}</div>
           </CardContent>
         </Card>
         
@@ -423,8 +463,11 @@ export const KnowledgeHubTab = () => {
       </div>
 
       {/* Content tabs */}
-      <Tabs defaultValue="suggestions" className="space-y-4">
+      <Tabs defaultValue="memories" className="space-y-4">
         <TabsList>
+          <TabsTrigger value="memories">
+            Memórias ({filteredMemories.length})
+          </TabsTrigger>
           <TabsTrigger value="suggestions">
             Sugestões Pendentes ({filteredSuggestions.length})
           </TabsTrigger>
@@ -432,6 +475,109 @@ export const KnowledgeHubTab = () => {
             Artigos Publicados ({filteredArticles.length})
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="memories" className="space-y-4">
+          {loadingArticles ? (
+            <div className="text-center py-8">Carregando memórias...</div>
+          ) : filteredMemories.length === 0 ? (
+            <Card>
+              <CardContent className="py-8 text-center">
+                <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground mb-4">Nenhuma memória encontrada</p>
+                <Button onClick={() => setIsCreateMemoryModalOpen(true)} className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Criar primeira memória
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <p className="text-sm text-muted-foreground">
+                  {filteredMemories.length} memórias encontradas
+                </p>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={handleApproveAll}
+                    variant="outline"
+                    className="gap-2"
+                  >
+                    <Check className="h-4 w-4" />
+                    Aprovar Todas
+                  </Button>
+                  <Button 
+                    onClick={handleActivateAllForAI}
+                    variant="outline"
+                    className="gap-2"
+                  >
+                    <Brain className="h-4 w-4" />
+                    Ativar Todas para IA
+                  </Button>
+                </div>
+              </div>
+              
+              {filteredMemories.map((memory) => (
+                <Card key={memory.id}>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 flex-1">
+                        <CardTitle className="text-lg">{memory.titulo}</CardTitle>
+                        {getEstiloBadge(memory.estilo)}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleEditArticle(memory)}
+                          className="gap-1"
+                        >
+                          <Edit className="h-3 w-3" />
+                          Editar
+                        </Button>
+                        {memory.aprovado && (
+                          <Badge variant="outline" className="text-green-600 border-green-300">
+                            Aprovado
+                          </Badge>
+                        )}
+                        {memory.usado_pela_ia && (
+                          <Badge variant="outline" className="text-blue-600 border-blue-300">
+                            Usado pela IA
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <CardDescription className="flex items-center gap-2">
+                      <span>Categoria: {memory.categoria || 'Sem categoria'}</span>
+                      {memory.subcategoria && (
+                        <>
+                          <span>•</span>
+                          <span>Subcategoria: {memory.subcategoria}</span>
+                        </>
+                      )}
+                      <span>•</span>
+                      <span>Criado em {new Date(memory.created_at).toLocaleDateString('pt-BR')}</span>
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm leading-relaxed line-clamp-2">
+                      {memory.conteudo}
+                    </p>
+                    <div className="flex items-center gap-4 mt-4 text-xs text-muted-foreground">
+                      <span>👍 {memory.feedback_positivo}</span>
+                      <span>👎 {memory.feedback_negativo}</span>
+                      {memory.arquivo_path && (
+                        <span className="flex items-center gap-1">
+                          <FileText className="h-3 w-3" />
+                          Arquivo anexado
+                        </span>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
 
         <TabsContent value="suggestions" className="space-y-4">
           {loadingSuggestions ? (
@@ -574,8 +720,16 @@ export const KnowledgeHubTab = () => {
             </div>
           )}
         </TabsContent>
-
       </Tabs>
+
+      {/* Create Memory Modal */}
+      <CreateMemoryModal
+        open={isCreateMemoryModalOpen}
+        onOpenChange={setIsCreateMemoryModalOpen}
+        onSuccess={() => {
+          fetchArticles();
+        }}
+      />
 
       {/* Approval Modal */}
       <Dialog open={isApprovalModalOpen} onOpenChange={setIsApprovalModalOpen}>
