@@ -105,7 +105,7 @@ export function AppSidebar() {
                       end
                       className={({ isActive }) => cn(
                         "group flex items-center px-3 py-2 transition-all duration-300",
-                        "hover:scale-105",
+                        "hover:scale-[1.02]",
                         isActive 
                           ? "bg-white/25 backdrop-blur-md border border-white/20 shadow-neumorphic rounded-xl" 
                           : ""
@@ -147,8 +147,8 @@ export function AppSidebar() {
                           className={({ isActive }) => cn(
                             "group relative flex items-center justify-center w-10 h-10 transition-all duration-300 mx-auto",
                             isActive 
-                              ? "bg-white/25 scale-105 rounded-xl hover:scale-105" 
-                              : "hover:scale-105"
+                              ? "bg-white/25 scale-[1.02] rounded-xl hover:scale-[1.02]" 
+                              : "hover:scale-[1.02]"
                           )}
                         >
                           {({ isActive }) => (
@@ -187,7 +187,7 @@ export function AppSidebar() {
                 <Button 
                   variant="ghost" 
                   onClick={handleSignOut}
-                  className="group w-full flex items-center justify-start px-3 py-2 text-white hover:bg-red-500/10 hover:scale-105 transition-all duration-300"
+                  className="group w-full flex items-center justify-start px-3 py-2 text-white hover:bg-red-500/10 hover:scale-[1.02] transition-all duration-300"
                 >
                   <LogOut className="h-4 w-4 opacity-80 group-hover:opacity-100 transition-all duration-300 mr-2" strokeWidth={1.5} />
                   <span className="text-sm font-medium">Sair do Sistema</span>
@@ -198,7 +198,7 @@ export function AppSidebar() {
                     <Button 
                       variant="ghost" 
                       onClick={handleSignOut}
-                      className="group relative w-10 h-10 p-0 text-white hover:bg-red-500/10 hover:scale-105 transition-all duration-300"
+                      className="group relative w-10 h-10 p-0 text-white hover:bg-red-500/10 hover:scale-[1.02] transition-all duration-300"
                     >
                       <LogOut className="h-4 w-4 opacity-80 group-hover:opacity-100 transition-all duration-300" strokeWidth={1.5} />
                     </Button>
