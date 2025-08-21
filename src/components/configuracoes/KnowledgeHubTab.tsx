@@ -51,7 +51,8 @@ interface RAGDocument {
 export const KnowledgeHubTab = () => {
   const [equipes, setEquipes] = useState<Equipe[]>([]);
   const [ragDocuments, setRagDocuments] = useState<RAGDocument[]>([]);
-  const [selectedEquipe, setSelectedEquipe] = useState<string>('all');
+  const [selectedCategoria, setSelectedCategoria] = useState<string>('all');
+  const [categorias, setCategorias] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSuggestion, setSelectedSuggestion] = useState<any>(null);
   const [selectedArticle, setSelectedArticle] = useState<any>(null);
@@ -110,20 +111,39 @@ export const KnowledgeHubTab = () => {
     }
   };
 
+  const fetchCategorias = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('knowledge_articles')
+        .select('categoria')
+        .not('categoria', 'is', null)
+        .neq('categoria', '');
+
+      if (error) throw error;
+      
+      // Extrair categorias únicas
+      const uniqueCategorias = [...new Set(data.map(item => item.categoria))].filter(Boolean);
+      setCategorias(uniqueCategorias);
+    } catch (error) {
+      console.error('Error fetching categorias:', error);
+    }
+  };
+
   useEffect(() => {
     fetchEquipes();
     fetchRAGDocuments();
+    fetchCategorias();
   }, []);
 
   useEffect(() => {
-    if (selectedEquipe && selectedEquipe !== 'all') {
-      fetchSuggestions();
-      fetchArticles({ equipe_id: selectedEquipe, ativo: true });
-    } else {
-      fetchSuggestions();
-      fetchArticles({ ativo: true });
+    const filters: any = { ativo: true };
+    if (selectedCategoria && selectedCategoria !== 'all') {
+      filters.categoria = selectedCategoria;
     }
-  }, [selectedEquipe]);
+    
+    fetchSuggestions();
+    fetchArticles(filters);
+  }, [selectedCategoria]);
 
   const fetchRAGDocuments = async () => {
     try {
@@ -338,7 +358,7 @@ export const KnowledgeHubTab = () => {
         await createArticle({
           titulo: title,
           conteudo: ragDoc.content,
-          equipe_id: selectedEquipe !== 'all' ? selectedEquipe : undefined,
+          equipe_id: undefined, // Removido filtro de equipe
           tags: ragDoc.metadata?.tags || [],
           tipo_midia: 'texto',
           usado_pela_ia: true
@@ -495,15 +515,15 @@ export const KnowledgeHubTab = () => {
             />
           </div>
           
-          <Select value={selectedEquipe} onValueChange={setSelectedEquipe}>
+          <Select value={selectedCategoria} onValueChange={setSelectedCategoria}>
             <SelectTrigger className="w-full sm:w-[200px]">
-              <SelectValue placeholder="Filtrar por equipe" />
+              <SelectValue placeholder="Filtrar por categoria" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todas as equipes</SelectItem>
-              {equipes.map((equipe) => (
-                <SelectItem key={equipe.id} value={equipe.id}>
-                  {equipe.nome}
+              <SelectItem value="all">Todas as categorias</SelectItem>
+              {categorias.map((categoria) => (
+                <SelectItem key={categoria} value={categoria}>
+                  {categoria}
                 </SelectItem>
               ))}
             </SelectContent>
