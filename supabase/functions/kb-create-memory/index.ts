@@ -213,8 +213,7 @@ Retorne **exclusivamente** um objeto JSON (sem comentários) contendo, nesta ord
 5. **subclasse_codigo**
 6. **subclasse_nome**
 7. **justificativa** – 1 – 2 frases citando palavras-chave que sustentam a escolha
-8. **content_full** – **texto completo** do documento recebido (campo *content*).  
-   Se *content* não for fornecido, use \`null\`.
+8. **content_full** – **texto completo** do documento organizado e estruturado.
 
 > **Nada deve ser incluído fora desse objeto JSON.**  
 > Não forneça exemplos, nem repita estas instruções.
@@ -318,7 +317,7 @@ serve(async (req) => {
         body: JSON.stringify({
           model: 'gpt-4o-mini',
           messages: [
-            { role: 'system', content: MANUAL_CLASSIFIER_PROMPT + '\n\nIMPORTANTE: Defina content_full como null para evitar truncamento. Retorne apenas o JSON sem texto adicional.' },
+            { role: 'system', content: MANUAL_CLASSIFIER_PROMPT + '\n\nIMPORTANTE: No campo content_full, inclua o texto completo organizado recebido. Retorne apenas o JSON sem texto adicional.' },
             { role: 'user', content: classifierUserMessage }
           ],
           response_format: { type: "json_object" },
@@ -391,11 +390,15 @@ serve(async (req) => {
       const extractedCategory = categoryMatch ? (categoryMatch[1] || categoryMatch[2] || categoryMatch[3] || categoryMatch[4] || categoryMatch[5] || categoryMatch[6] || '').trim() : (categoria || 'Diretrizes Institucionais');
       
       processedData = {
-        conteudo_formatado: aiResponse,
+        conteudo_formatado: content, // Para diretrizes, mantém o conteúdo original
         titulo: extractedTitle,
         categoria: extractedCategory,
         subcategoria: 'Regras e Normas',
-        classificacao: { tipo: 'diretrizes', processado_em: new Date().toISOString() }
+        classificacao: { 
+          tipo: 'diretrizes', 
+          resultado_diretrizes: aiResponse,
+          processado_em: new Date().toISOString() 
+        }
       };
     } else {
       // Para manual, extrair do JSON do classificador
@@ -421,7 +424,7 @@ serve(async (req) => {
           classe_nome: jsonResponse.classe_nome
         });
         
-        // Priorizar content_full do classificador se disponível
+        // Para manual: conteúdo vai para o campo principal, detalhes para classificacao
         const finalContent = jsonResponse.content_full || organizedContent || content;
         
         console.log('Escolhendo conteúdo final:', {
@@ -467,7 +470,7 @@ serve(async (req) => {
         });
         
         processedData = {
-          conteudo_formatado: organizedContent || content,
+          conteudo_formatado: organizedContent || content, // Fallback usa conteúdo organizado
           titulo: extractedTitulo,
           categoria: extractedCategoria,
           subcategoria: null,
@@ -475,7 +478,9 @@ serve(async (req) => {
             tipo: 'manual', 
             processado_em: new Date().toISOString(),
             resposta_bruta: aiResponse,
-            metodo_extracao: 'regex_fallback'
+            metodo_extracao: 'regex_fallback',
+            conteudo_original: content,
+            conteudo_organizado: organizedContent
           }
         };
       }
