@@ -232,7 +232,7 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
         }
       }}
     >
-      <CardContent className="p-3 space-y-2.5 pointer-events-none">
+      <CardContent className="p-4 space-y-3 pointer-events-none">
         {/* Título - Maior e mais destaque */}
         <h3 className="font-medium text-gray-800 text-base line-clamp-2 leading-tight group-hover:text-gray-600 transition-colors">
           {(() => {
