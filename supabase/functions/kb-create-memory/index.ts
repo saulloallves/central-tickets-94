@@ -421,24 +421,35 @@ serve(async (req) => {
           classe_nome: jsonResponse.classe_nome
         });
         
-        processedData = {
-          conteudo_formatado: organizedContent || jsonResponse.content_full || content || aiResponse,
-          titulo: jsonResponse.titulo_padrao || titulo || 'Manual sem título',
-          categoria: jsonResponse.classe_nome || categoria || 'Manual',
-          subcategoria: jsonResponse.subclasse_nome || null,
-          classificacao: {
-            tipo: 'manual',
-            classe_abrev: jsonResponse.classe_abrev,
-            classe_codigo: jsonResponse.classe_codigo,
-            classe_nome: jsonResponse.classe_nome,
-            subclasse_codigo: jsonResponse.subclasse_codigo,
-            subclasse_nome: jsonResponse.subclasse_nome,
-            justificativa: jsonResponse.justificativa,
-            conteudo_original: content,
-            conteudo_organizado: organizedContent,
-            processado_em: new Date().toISOString()
-          }
-        };
+         // Priorizar content_full do classificador se disponível
+         const finalContent = jsonResponse.content_full || organizedContent || content;
+         
+         console.log('Escolhendo conteúdo final:', {
+           tem_content_full: !!jsonResponse.content_full,
+           content_full_length: jsonResponse.content_full?.length || 0,
+           tem_organized: !!organizedContent,
+           organized_length: organizedContent?.length || 0,
+           escolhido: jsonResponse.content_full ? 'content_full' : organizedContent ? 'organized' : 'original'
+         });
+         
+         processedData = {
+           conteudo_formatado: finalContent,
+           titulo: jsonResponse.titulo_padrao || titulo || 'Manual sem título',
+           categoria: jsonResponse.classe_nome || categoria || 'Manual',
+           subcategoria: jsonResponse.subclasse_nome || null,
+           classificacao: {
+             tipo: 'manual',
+             classe_abrev: jsonResponse.classe_abrev,
+             classe_codigo: jsonResponse.classe_codigo,
+             classe_nome: jsonResponse.classe_nome,
+             subclasse_codigo: jsonResponse.subclasse_codigo,
+             subclasse_nome: jsonResponse.subclasse_nome,
+             justificativa: jsonResponse.justificativa,
+             conteudo_original: content,
+             conteudo_organizado: organizedContent,
+             processado_em: new Date().toISOString()
+           }
+         };
       } catch (e) {
         console.error('Erro ao parsear JSON do manual, usando fallback regex:', e);
         console.log('Tentando extrair título e categoria com regex...');
