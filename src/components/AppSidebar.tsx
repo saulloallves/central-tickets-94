@@ -124,7 +124,7 @@ export function AppSidebar() {
                             
                             {/* Active indicator - green dot */}
                             {isActive && (
-                              <div className="absolute -right-1 -top-1 w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse"></div>
+                              <div className="absolute -right-0.5 -top-2 w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(16,185,129,0.6)] animate-pulse"></div>
                             )}
                           </div>
                           
@@ -163,7 +163,7 @@ export function AppSidebar() {
                               
                               {/* Active indicator - green dot */}
                               {isActive && (
-                                <div className="pl-5 pb-5 w-1 h-auto rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse"></div>
+                                <div className="absolute -top-1 -right-0.5 w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(16,185,129,0.6)] animate-pulse"></div>
                               )}
                             </>
                           )}
