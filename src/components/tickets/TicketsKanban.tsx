@@ -87,10 +87,10 @@ const COLUMN_ICON_COLORS = {
 };
 
 const COLUMN_COLORS = {
-  aberto: 'border-blue-300/60 bg-blue-100/70',
-  em_atendimento: 'border-blue-300/60 bg-blue-100/70',
-  escalonado: 'border-blue-300/60 bg-blue-100/70',
-  concluido: 'border-blue-300/60 bg-blue-100/70'
+  aberto: 'border-gray-200/40 bg-gray-50/30',
+  em_atendimento: 'border-gray-200/40 bg-gray-50/30',
+  escalonado: 'border-gray-200/40 bg-gray-50/30',
+  concluido: 'border-gray-200/40 bg-gray-50/30'
 };
 
 interface KanbanTicketCardProps {
@@ -321,17 +321,19 @@ const KanbanColumn = ({ status, tickets, selectedTicketId, onTicketSelect, equip
           "border-dashed border-muted/40 hover:border-muted/60"
       )}
     >
-      {/* Header da coluna com efeito glass */}
-      <div className="flex items-center justify-between p-3 bg-gradient-to-b from-white/70 to-white/20 backdrop-blur-xl border border-white/50 rounded-lg shadow-xl m-2 mb-0">
-        <div className="flex items-center gap-2">
+      {/* Header da coluna com efeito glass iOS 26 */}
+      <div className="flex items-center justify-between p-4 bg-gradient-to-b from-white/80 via-white/40 to-white/10 backdrop-blur-2xl border border-white/30 rounded-2xl shadow-2xl m-2 mb-0 relative overflow-hidden">
+        {/* Glassmorphism overlay effect */}
+        <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-gray-100/10 rounded-2xl"></div>
+        <div className="relative flex items-center gap-3 z-10">
           {(() => {
             const IconComponent = COLUMN_ICONS[status];
             const iconColor = COLUMN_ICON_COLORS[status];
-            return <IconComponent className={`h-4 w-4 ${iconColor}`} />;
+            return <IconComponent className={`h-5 w-5 ${iconColor} drop-shadow-sm`} />;
           })()}
-          <h3 className="font-semibold text-sm text-gray-900 drop-shadow-sm">{COLUMN_STATUS[status]}</h3>
+          <h3 className="font-bold text-base text-gray-900 drop-shadow-sm tracking-tight">{COLUMN_STATUS[status]}</h3>
         </div>
-        <Badge variant="secondary" className="text-xs bg-white/60 backdrop-blur-sm border border-white/60 rounded-full text-gray-800 shadow-sm">
+        <Badge variant="secondary" className="relative z-10 text-xs bg-white/70 backdrop-blur-sm border border-white/40 rounded-full text-gray-800 shadow-lg font-semibold">
           {tickets.length}
         </Badge>
       </div>
