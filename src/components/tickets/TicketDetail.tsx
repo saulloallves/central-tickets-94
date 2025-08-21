@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { X, Clock, User, Building, Tag, AlertTriangle, MessageSquare, Send, Paperclip, Zap, Sparkles, Copy, Bot, Phone } from 'lucide-react';
+import { X, Clock, User, Building, Tag, AlertTriangle, MessageSquare, Send, Paperclip, Zap, Sparkles, Copy, Bot, Phone, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTicketMessages } from '@/hooks/useTickets';
 import { useAISuggestion } from '@/hooks/useAISuggestion';
 import { useAIChat } from '@/hooks/useAIChat';
@@ -214,6 +215,44 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
     }
   };
 
+  const handleTeamChange = async (equipeId: string) => {
+    try {
+      const { error } = await supabase
+        .from('tickets')
+        .update({ 
+          equipe_responsavel_id: equipeId || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', ticketId);
+
+      if (error) {
+        throw error;
+      }
+
+      // Update local ticket state
+      setTicket(prev => ({
+        ...prev,
+        equipe_responsavel_id: equipeId || null,
+        equipes: equipes.find(e => e.id === equipeId) || null
+      }));
+
+      toast({
+        title: "Sucesso",
+        description: "Equipe responsável atualizada",
+      });
+
+      // Refresh ticket details to get latest data
+      fetchTicketDetails();
+    } catch (error) {
+      console.error('Error updating team:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar equipe responsável",
+        variant: "destructive"
+      });
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'aberto': return 'bg-blue-500';
@@ -416,6 +455,37 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Team Management Section */}
+        <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2 bg-blue-100 rounded-full">
+                <Users className="h-4 w-4 text-blue-600" />
+              </div>
+              <div>
+                <h4 className="font-semibold text-blue-900">Equipe Responsável</h4>
+                <p className="text-xs text-blue-700">Altere a equipe responsável pelo atendimento</p>
+              </div>
+            </div>
+            <Select
+              value={ticket.equipe_responsavel_id || ""}
+              onValueChange={handleTeamChange}
+            >
+              <SelectTrigger className="w-full bg-white">
+                <SelectValue placeholder="Selecionar equipe..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Nenhuma equipe</SelectItem>
+                {equipes.map((equipe) => (
+                  <SelectItem key={equipe.id} value={equipe.id}>
+                    {equipe.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </CardContent>
+        </Card>
 
         {/* Atendimento Status */}
         {ticket.atendimento_iniciado_por && ticket.atendimento_iniciado_profile?.nome_completo && (
