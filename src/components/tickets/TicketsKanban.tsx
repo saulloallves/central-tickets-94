@@ -323,8 +323,8 @@ const KanbanColumn = ({ status, tickets, selectedTicketId, onTicketSelect, equip
         </Badge>
       </div>
       
-      {/* Área de drop elegante */}
-      <div className="flex-1 p-2 relative">
+      {/* Área de drop elegante com scroll limitado */}
+      <div className="flex-1 p-2 relative max-h-[calc(100vh-300px)] overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
         {/* Drop zone visual elegante */}
         {isOver && (
           <div className="absolute inset-3 border-2 border-dashed border-primary/40 rounded-xl bg-gradient-to-br from-primary/5 via-transparent to-primary/10 flex items-center justify-center z-10 animate-fade-in backdrop-blur-sm">
@@ -335,7 +335,7 @@ const KanbanColumn = ({ status, tickets, selectedTicketId, onTicketSelect, equip
           </div>
         )}
         <SortableContext items={tickets.map(t => t.id)} strategy={verticalListSortingStrategy}>
-          <div className="space-y-3">
+          <div className="space-y-3 pb-4">
             {tickets.map((ticket) => (
               <KanbanTicketCard
                 key={ticket.id}
