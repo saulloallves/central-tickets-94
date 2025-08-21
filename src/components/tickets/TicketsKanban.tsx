@@ -87,10 +87,10 @@ const COLUMN_ICON_COLORS = {
 };
 
 const COLUMN_COLORS = {
-  aberto: 'border-blue-300/70 bg-blue-100/90',
-  em_atendimento: 'border-blue-300/70 bg-blue-100/90',
-  escalonado: 'border-blue-300/70 bg-blue-100/90',
-  concluido: 'border-blue-300/70 bg-blue-100/90'
+  aberto: 'border-blue-300/60 bg-blue-100/70',
+  em_atendimento: 'border-blue-300/60 bg-blue-100/70',
+  escalonado: 'border-blue-300/60 bg-blue-100/70',
+  concluido: 'border-blue-300/60 bg-blue-100/70'
 };
 
 interface KanbanTicketCardProps {
