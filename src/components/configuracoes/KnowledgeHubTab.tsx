@@ -511,130 +511,15 @@ export const KnowledgeHubTab = () => {
       </div>
 
       {/* Content tabs */}
-      <Tabs defaultValue="memories" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="memories">
-            Memórias ({filteredMemories.length})
-          </TabsTrigger>
+      <Tabs defaultValue="suggestions" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="suggestions">
             Sugestões Pendentes ({filteredSuggestions.length})
           </TabsTrigger>
           <TabsTrigger value="articles">
-            Artigos Publicados ({filteredArticles.length})
+            Artigos Publicados ({filteredArticles.length + filteredMemories.length})
           </TabsTrigger>
         </TabsList>
-
-        <TabsContent value="memories" className="space-y-4">
-          {loadingArticles ? (
-            <div className="text-center py-8">Carregando memórias...</div>
-          ) : filteredMemories.length === 0 ? (
-            <Card>
-              <CardContent className="py-8 text-center">
-                <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground mb-4">Nenhuma memória encontrada</p>
-                <Button onClick={() => setIsCreateMemoryModalOpen(true)} className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  Criar primeira memória
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <p className="text-sm text-muted-foreground">
-                  {filteredMemories.length} memórias encontradas
-                </p>
-                <div className="flex gap-2">
-                  <Button 
-                    onClick={handleApproveAll}
-                    variant="outline"
-                    className="gap-2"
-                  >
-                    <Check className="h-4 w-4" />
-                    Aprovar Todas
-                  </Button>
-                  <Button 
-                    onClick={handleActivateAllForAI}
-                    variant="outline"
-                    className="gap-2"
-                  >
-                    <Brain className="h-4 w-4" />
-                    Ativar Todas para IA
-                  </Button>
-                </div>
-              </div>
-              
-              {filteredMemories.map((memory) => (
-                <Card key={memory.id}>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 flex-1">
-                        <CardTitle className="text-lg">{memory.titulo}</CardTitle>
-                        {getEstiloBadge(memory.estilo)}
-                      </div>
-                       <div className="flex items-center gap-2">
-                         <Button
-                           size="sm"
-                           variant="outline"
-                           onClick={() => handleEditArticle(memory)}
-                           className="gap-1"
-                         >
-                           <Edit className="h-3 w-3" />
-                           Editar
-                         </Button>
-                         <Button
-                           size="sm"
-                           variant="outline"
-                           onClick={() => deleteArticle(memory.id)}
-                           className="gap-1 text-red-600 hover:text-red-700"
-                         >
-                           <Trash2 className="h-3 w-3" />
-                           Excluir
-                         </Button>
-                        {memory.aprovado && (
-                          <Badge variant="outline" className="text-green-600 border-green-300">
-                            Aprovado
-                          </Badge>
-                        )}
-                        {memory.usado_pela_ia && (
-                          <Badge variant="outline" className="text-blue-600 border-blue-300">
-                            Usado pela IA
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    <CardDescription className="flex items-center gap-2">
-                      <span>Categoria: {memory.categoria || 'Sem categoria'}</span>
-                      {memory.subcategoria && (
-                        <>
-                          <span>•</span>
-                          <span>Subcategoria: {memory.subcategoria}</span>
-                        </>
-                      )}
-                      <span>•</span>
-                      <span>Criado em {new Date(memory.created_at).toLocaleDateString('pt-BR')}</span>
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm leading-relaxed line-clamp-2">
-                      {memory.conteudo}
-                    </p>
-                    <div className="flex items-center gap-4 mt-4 text-xs text-muted-foreground">
-                      <span>👍 {memory.feedback_positivo}</span>
-                      <span>👎 {memory.feedback_negativo}</span>
-                      {memory.arquivo_path && (
-                        <span className="flex items-center gap-1">
-                          <FileText className="h-3 w-3" />
-                          Arquivo anexado
-                        </span>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
 
         <TabsContent value="suggestions" className="space-y-4">
           {loadingSuggestions ? (
@@ -700,89 +585,169 @@ export const KnowledgeHubTab = () => {
         <TabsContent value="articles" className="space-y-4">
           {loadingArticles ? (
             <div className="text-center py-8">Carregando artigos...</div>
-          ) : filteredArticles.length === 0 ? (
+          ) : (filteredArticles.length === 0 && filteredMemories.length === 0) ? (
             <Card>
               <CardContent className="py-8 text-center">
                 <p className="text-muted-foreground">Nenhum artigo encontrado</p>
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <p className="text-sm text-muted-foreground">
-                  {filteredArticles.length} artigos encontrados
-                </p>
-                <div className="flex gap-2">
-                  <Button 
-                    onClick={handleApproveAll}
-                    variant="outline"
-                    className="gap-2"
-                  >
-                    <Check className="h-4 w-4" />
-                    Aprovar Todos
-                  </Button>
-                  <Button 
-                    onClick={handleActivateAllForAI}
-                    variant="outline"
-                    className="gap-2"
-                  >
-                    <Check className="h-4 w-4" />
-                    Ativar Todos para IA
-                  </Button>
+            <div className="space-y-6">
+              {/* Artigos Regulares */}
+              {filteredArticles.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-semibold">Artigos Regulares ({filteredArticles.length})</h3>
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={handleApproveAll}
+                        variant="outline"
+                        className="gap-2"
+                      >
+                        <Check className="h-4 w-4" />
+                        Aprovar Todos
+                      </Button>
+                      <Button 
+                        onClick={handleActivateAllForAI}
+                        variant="outline"
+                        className="gap-2"
+                      >
+                        <Check className="h-4 w-4" />
+                        Ativar Todos para IA
+                      </Button>
+                    </div>
+                  </div>
+                  {filteredArticles.map((article) => (
+                    <Card key={article.id}>
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-lg">{article.titulo}</CardTitle>
+                           <div className="flex items-center gap-2">
+                             <Button
+                               size="sm"
+                               variant="outline"
+                               onClick={() => handleEditArticle(article)}
+                               className="gap-1"
+                             >
+                               <Edit className="h-3 w-3" />
+                               Editar
+                             </Button>
+                             <Button
+                               size="sm"
+                               variant="outline"
+                               onClick={() => deleteArticle(article.id)}
+                               className="gap-1 text-red-600 hover:text-red-700"
+                             >
+                               <Trash2 className="h-3 w-3" />
+                               Excluir
+                             </Button>
+                            {article.aprovado && (
+                              <Badge variant="outline" className="text-green-600 border-green-300">
+                                Aprovado
+                              </Badge>
+                            )}
+                            {article.usado_pela_ia && (
+                              <Badge variant="outline" className="text-blue-600 border-blue-300">
+                                Usado pela IA
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        <CardDescription>
+                          Categoria: {article.categoria || 'Sem categoria'} • 
+                          Criado em {new Date(article.created_at).toLocaleDateString('pt-BR')}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm leading-relaxed line-clamp-2">
+                          {article.conteudo}
+                        </p>
+                        <div className="flex items-center gap-4 mt-4 text-xs text-muted-foreground">
+                          <span>👍 {article.feedback_positivo}</span>
+                          <span>👎 {article.feedback_negativo}</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
-              </div>
-                {filteredArticles.map((article) => (
-                <Card key={article.id}>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">{article.titulo}</CardTitle>
-                       <div className="flex items-center gap-2">
-                         <Button
-                           size="sm"
-                           variant="outline"
-                           onClick={() => handleEditArticle(article)}
-                           className="gap-1"
-                         >
-                           <Edit className="h-3 w-3" />
-                           Editar
-                         </Button>
-                         <Button
-                           size="sm"
-                           variant="outline"
-                           onClick={() => deleteArticle(article.id)}
-                           className="gap-1 text-red-600 hover:text-red-700"
-                         >
-                           <Trash2 className="h-3 w-3" />
-                           Excluir
-                         </Button>
-                        {article.aprovado && (
-                          <Badge variant="outline" className="text-green-600 border-green-300">
-                            Aprovado
-                          </Badge>
-                        )}
-                        {article.usado_pela_ia && (
-                          <Badge variant="outline" className="text-blue-600 border-blue-300">
-                            Usado pela IA
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    <CardDescription>
-                      Categoria: {article.categoria || 'Sem categoria'} • 
-                      Criado em {new Date(article.created_at).toLocaleDateString('pt-BR')}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm leading-relaxed line-clamp-2">
-                      {article.conteudo}
-                    </p>
-                    <div className="flex items-center gap-4 mt-4 text-xs text-muted-foreground">
-                      <span>👍 {article.feedback_positivo}</span>
-                      <span>👎 {article.feedback_negativo}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+              )}
+
+              {/* Memórias/Artigos com Estilo */}
+              {filteredMemories.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-semibold">Memórias Processadas ({filteredMemories.length})</h3>
+                  </div>
+                  {filteredMemories.map((memory) => (
+                    <Card key={memory.id}>
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 flex-1">
+                            <CardTitle className="text-lg">{memory.titulo}</CardTitle>
+                            {getEstiloBadge(memory.estilo)}
+                          </div>
+                           <div className="flex items-center gap-2">
+                             <Button
+                               size="sm"
+                               variant="outline"
+                               onClick={() => handleEditArticle(memory)}
+                               className="gap-1"
+                             >
+                               <Edit className="h-3 w-3" />
+                               Editar
+                             </Button>
+                             <Button
+                               size="sm"
+                               variant="outline"
+                               onClick={() => deleteArticle(memory.id)}
+                               className="gap-1 text-red-600 hover:text-red-700"
+                             >
+                               <Trash2 className="h-3 w-3" />
+                               Excluir
+                             </Button>
+                            {memory.aprovado && (
+                              <Badge variant="outline" className="text-green-600 border-green-300">
+                                Aprovado
+                              </Badge>
+                            )}
+                            {memory.usado_pela_ia && (
+                              <Badge variant="outline" className="text-blue-600 border-blue-300">
+                                Usado pela IA
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        <CardDescription className="flex items-center gap-2">
+                          <span>Categoria: {memory.categoria || 'Sem categoria'}</span>
+                          {memory.subcategoria && (
+                            <>
+                              <span>•</span>
+                              <span>Subcategoria: {memory.subcategoria}</span>
+                            </>
+                          )}
+                          <span>•</span>
+                          <span>Criado em {new Date(memory.created_at).toLocaleDateString('pt-BR')}</span>
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm leading-relaxed line-clamp-2">
+                          {memory.conteudo}
+                        </p>
+                        <div className="flex items-center gap-4 mt-4 text-xs text-muted-foreground">
+                          <span>👍 {memory.feedback_positivo}</span>
+                          <span>👎 {memory.feedback_negativo}</span>
+                          {memory.arquivo_path && (
+                            <span className="flex items-center gap-1">
+                              <FileText className="h-3 w-3" />
+                              Arquivo anexado
+                            </span>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </TabsContent>
