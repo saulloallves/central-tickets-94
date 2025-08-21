@@ -87,10 +87,10 @@ const COLUMN_ICON_COLORS = {
 };
 
 const COLUMN_COLORS = {
-  aberto: 'border-gray-300/50 bg-gray-100/80',
-  em_atendimento: 'border-gray-300/50 bg-gray-100/80',
-  escalonado: 'border-gray-300/50 bg-gray-100/80',
-  concluido: 'border-gray-300/50 bg-gray-100/80'
+  aberto: 'border-gray-200/30 bg-gray-50/40',
+  em_atendimento: 'border-gray-200/30 bg-gray-50/40',
+  escalonado: 'border-gray-200/30 bg-gray-50/40',
+  concluido: 'border-gray-200/30 bg-gray-50/40'
 };
 
 interface KanbanTicketCardProps {
@@ -218,7 +218,7 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
       {...attributes}
       {...listeners}
       className={cn(
-        "cursor-grab active:cursor-grabbing transition-all duration-200 mb-2 bg-gradient-to-br from-white to-gray-50/50 border border-gray-200/60 shadow-sm hover:shadow-md select-none overflow-hidden group",
+        "cursor-grab active:cursor-grabbing transition-all duration-200 mb-3 bg-gradient-to-br from-white to-gray-50/50 border border-gray-200/60 shadow-sm hover:shadow-md select-none overflow-hidden group",
         ticket.status === 'concluido' ? "border-l-4 border-l-emerald-400" : 
         ticket.prioridade === 'crise' ? "border-l-4 border-l-red-500" :
         ticket.prioridade === 'urgente' ? "border-l-4 border-l-orange-500" :
@@ -232,9 +232,9 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
         }
       }}
     >
-      <CardContent className="p-2 space-y-2 pointer-events-none">
+      <CardContent className="p-3 space-y-2.5 pointer-events-none">
         {/* Título - Maior e mais destaque */}
-        <h3 className="font-semibold text-gray-900 text-base line-clamp-2 leading-tight group-hover:text-gray-700 transition-colors">
+        <h3 className="font-medium text-gray-800 text-base line-clamp-2 leading-tight group-hover:text-gray-600 transition-colors">
           {(() => {
             const title = ticket.titulo || ticket.descricao_problema || "Sem título";
             const words = title.trim().split(/\s+/);
@@ -249,10 +249,10 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
             const colors = getEquipeColor(ticket.equipes.nome);
             return (
               <div className={cn(
-                "inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full transition-all",
+                "inline-flex items-center gap-1.5 px-2 py-1 rounded-full transition-all",
                 colors.bg, colors.border, "border"
               )}>
-                <div className={cn("w-1 h-1 rounded-full", colors.dot)}></div>
+                <div className={cn("w-1.5 h-1.5 rounded-full", colors.dot)}></div>
                 <span className={cn("text-xs font-medium truncate max-w-20", colors.text)}>
                   {ticket.equipes.nome}
                 </span>
@@ -262,7 +262,7 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
 
           {/* Prioridade - Menor */}
           <div className={cn(
-            "px-1.5 py-0.5 rounded-full text-xs font-medium transition-colors",
+            "px-2 py-1 rounded-full text-xs font-medium transition-colors",
             ticket.status === 'concluido' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
             ticket.prioridade === 'crise' ? 'bg-red-50 text-red-700 border border-red-200' :
             ticket.prioridade === 'urgente' ? 'bg-orange-50 text-orange-700 border border-orange-200' :
