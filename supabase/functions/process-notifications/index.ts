@@ -622,6 +622,37 @@ serve(async (req) => {
       case 'sla_breach':
         console.log('Processing sla_breach');
         
+        // First, escalate the ticket automatically if not already concluded
+        if (ticket.status !== 'concluido') {
+          console.log(`Auto-escalating ticket ${ticket.codigo_ticket} due to SLA breach`);
+          
+          const { error: escalationError } = await supabase
+            .from('tickets')
+            .update({ 
+              status: 'escalonado',
+              escalonamento_nivel: (ticket.escalonamento_nivel || 0) + 1,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', ticket.id);
+
+          if (escalationError) {
+            console.error('Error escalating ticket:', escalationError);
+          } else {
+            console.log(`Ticket ${ticket.codigo_ticket} successfully escalated`);
+            
+            // Log the escalation action
+            await supabase
+              .from('escalation_logs')
+              .insert({
+                ticket_id: ticket.id,
+                event_type: 'auto_escalation',
+                message: `Ticket automatically escalated due to SLA breach at ${new Date().toISOString()}`,
+                to_level: (ticket.escalonamento_nivel || 0) + 1,
+                canal: 'system'
+              });
+          }
+        }
+        
         if (customDestination) {
           destinoFinal = customDestination;
           console.log(`Using configured destination for sla_breach: ${destinoFinal}`);

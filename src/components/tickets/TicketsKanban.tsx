@@ -40,7 +40,7 @@ import { useTickets, type TicketFilters, type Ticket } from '@/hooks/useTickets'
 import { useSimpleTicketDragDrop } from '@/hooks/useSimpleTicketDragDrop';
 import { TicketDetail } from './TicketDetail';
 import { TicketActions } from './TicketActions';
-import { formatDistanceToNowInSaoPaulo } from '@/lib/date-utils';
+import { formatDistanceToNowInSaoPaulo, calculateTimeRemaining, isFromPreviousBusinessDay } from '@/lib/date-utils';
 import { cn } from '@/lib/utils';
 
 interface TicketsKanbanProps {
@@ -100,17 +100,6 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
     transition,
   };
 
-  const formatTimeElapsed = (createdAt: string) => {
-    const now = new Date();
-    const created = new Date(createdAt);
-    const diffMs = now.getTime() - created.getTime();
-    
-    const hours = Math.floor(diffMs / (1000 * 60 * 60));
-    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
-    
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  };
 
   const getTimeColor = (statusSla: string, prioridade: string) => {
     if (prioridade === 'crise') return 'text-critical';
@@ -262,20 +251,34 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
               {ticket.status === 'concluido' ? 'Resolvido' : getPriorityLabel(ticket.prioridade)}
             </div>
           </div>
-          
-          <div className="flex items-center gap-1.5 text-slate-500">
-            <div className="w-1 h-1 bg-slate-400 rounded-full animate-pulse"></div>
-            <span className={cn(
-              "text-xs font-mono transition-colors",
-              ticket.status === 'concluido' ? 'text-emerald-600' :
-              ticket.status_sla === 'vencido' ? 'text-red-600' :
-              ticket.status_sla === 'alerta' ? 'text-amber-600' :
-              'text-slate-600'
-            )}>
-              {formatTimeElapsed(ticket.created_at)}
-            </span>
-          </div>
         </div>
+
+        {/* Countdowns */}
+        {ticket.status !== 'concluido' && ticket.data_limite_sla && (
+          <div className="space-y-1 text-xs">
+            {/* Escalation countdown */}
+            {(() => {
+              const escalationTime = getEscalationTime(ticket);
+              return escalationTime && (
+                <div className={cn("flex items-center gap-1", escalationTime.color)}>
+                  <AlertTriangle className="h-3 w-3" />
+                  <span className="font-mono">{escalationTime.text}</span>
+                </div>
+              );
+            })()}
+            
+            {/* SLA countdown */}
+            {(() => {
+              const slaTime = getSLATime(ticket);
+              return slaTime && (
+                <div className={cn("flex items-center gap-1", slaTime.color)}>
+                  <Clock className="h-3 w-3" />
+                  <span className="font-mono">{slaTime.text}</span>
+                </div>
+              );
+            })()}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -351,10 +354,41 @@ const KanbanColumn = ({ status, tickets, selectedTicketId, onTicketSelect, equip
   );
 };
 
+// Helper functions for time calculations
+const formatTimeRemaining = (targetDate: Date | string, label: string) => {
+  const timeData = calculateTimeRemaining(targetDate);
+  
+  if (timeData.isOverdue) {
+    return {
+      text: `${label} venceu há ${timeData.hours}h${timeData.remainingMinutes}m`,
+      color: 'text-critical',
+      priority: 1000 + timeData.minutes // Higher number = more urgent (overdue)
+    };
+  } else {
+    return {
+      text: `${label} em ${timeData.hours}h${timeData.remainingMinutes}m`,
+      color: timeData.minutes < 120 ? 'text-critical' : timeData.minutes < 240 ? 'text-warning' : 'text-success',
+      priority: timeData.minutes // Lower number = more urgent
+    };
+  }
+};
+
+const getEscalationTime = (ticket: Ticket) => {
+  if (!ticket.data_limite_sla) return null;
+  // Escalation happens when SLA is breached
+  return formatTimeRemaining(ticket.data_limite_sla, 'Escalar');
+};
+
+const getSLATime = (ticket: Ticket) => {
+  if (!ticket.data_limite_sla) return null;
+  return formatTimeRemaining(ticket.data_limite_sla, 'Resolver');
+};
+
 export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicketId, equipes, onChangeStatus }: TicketsKanbanProps) => {
   const [activeTicket, setActiveTicket] = useState<Ticket | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [draggedOverColumn, setDraggedOverColumn] = useState<string | null>(null);
+  const [showArchivedTickets, setShowArchivedTickets] = useState(false);
 
   // Update timestamp when tickets change
   useEffect(() => {
@@ -482,7 +516,38 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
   };
 
   const getTicketsByStatus = (status: keyof typeof COLUMN_STATUS) => {
-    return tickets.filter(ticket => ticket.status === status);
+    let filteredTickets = tickets.filter(ticket => ticket.status === status);
+    
+    // For completed tickets, filter out old ones unless showing archived
+    if (status === 'concluido' && !showArchivedTickets) {
+      filteredTickets = filteredTickets.filter(ticket => !isFromPreviousBusinessDay(ticket.created_at));
+    }
+    
+    // Sort by urgency (escalation time, then SLA time, then creation date)
+    return filteredTickets.sort((a, b) => {
+      if (a.status === 'concluido') return 1; // Completed tickets at bottom
+      if (b.status === 'concluido') return -1;
+      
+      const aEscalation = getEscalationTime(a);
+      const bEscalation = getEscalationTime(b);
+      const aSLA = getSLATime(a);
+      const bSLA = getSLATime(b);
+      
+      // Compare escalation urgency first
+      if (aEscalation && bEscalation) {
+        const diff = aEscalation.priority - bEscalation.priority;
+        if (diff !== 0) return diff;
+      }
+      
+      // Then compare SLA urgency
+      if (aSLA && bSLA) {
+        const diff = aSLA.priority - bSLA.priority;
+        if (diff !== 0) return diff;
+      }
+      
+      // Finally by creation date (newest first)
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
   };
 
   if (loading) {
@@ -519,17 +584,32 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {Object.keys(COLUMN_STATUS).map((status) => (
-          <KanbanColumn
-            key={status}
-            status={status as keyof typeof COLUMN_STATUS}
-            tickets={getTicketsByStatus(status as keyof typeof COLUMN_STATUS)}
-            selectedTicketId={selectedTicketId}
-            onTicketSelect={handleTicketClick}
-            equipes={equipes}
-          />
-        ))}
+      <div className="space-y-4">
+        {/* Archive toggle for completed tickets */}
+        <div className="flex justify-between items-center">
+          <h2 className="text-lg font-semibold">Kanban Board</h2>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowArchivedTickets(!showArchivedTickets)}
+            className="text-xs"
+          >
+            {showArchivedTickets ? 'Ocultar Arquivados' : 'Mostrar Arquivados'}
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {Object.keys(COLUMN_STATUS).map((status) => (
+            <KanbanColumn
+              key={status}
+              status={status as keyof typeof COLUMN_STATUS}
+              tickets={getTicketsByStatus(status as keyof typeof COLUMN_STATUS)}
+              selectedTicketId={selectedTicketId}
+              onTicketSelect={handleTicketClick}
+              equipes={equipes}
+            />
+          ))}
+        </div>
       </div>
 
       <DragOverlay>

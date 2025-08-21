@@ -50,3 +50,18 @@ export function calculateTimeRemaining(targetDate: Date | string) {
     remainingMinutes: Math.abs(diffMinutes) % 60
   };
 }
+
+export function getBusinessShiftStart(date?: Date) {
+  const targetDate = date ? getSaoPauloDate(date) : getSaoPauloDate();
+  // Set to 8:30 AM
+  targetDate.setHours(8, 30, 0, 0);
+  return targetDate;
+}
+
+export function isFromPreviousBusinessDay(ticketDate: Date | string) {
+  const ticket = getSaoPauloDate(ticketDate);
+  const today = new Date();
+  const todayShiftStart = getBusinessShiftStart(today);
+  
+  return ticket < todayShiftStart;
+}

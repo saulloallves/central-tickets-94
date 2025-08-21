@@ -25,6 +25,42 @@ serve(async (req) => {
 
     console.log(`Found ${pendingNotifications?.length || 0} pending notifications`);
 
+    // Check for SLA breaches and queue new notifications
+    const { data: overdueTickets } = await supabase
+      .from('tickets')
+      .select('*')
+      .eq('status_sla', 'vencido')
+      .neq('status', 'concluido')
+      .not('status', 'eq', 'escalonado');
+
+    if (overdueTickets && overdueTickets.length > 0) {
+      console.log(`Found ${overdueTickets.length} overdue tickets for escalation`);
+      
+      for (const ticket of overdueTickets) {
+        // Check if SLA breach notification already exists
+        const { data: existingNotification } = await supabase
+          .from('notifications_queue')
+          .select('id')
+          .eq('ticket_id', ticket.id)
+          .eq('type', 'sla_breach')
+          .maybeSingle();
+
+        if (!existingNotification) {
+          console.log(`Queueing SLA breach notification for ticket ${ticket.codigo_ticket}`);
+          await supabase
+            .from('notifications_queue')
+            .insert({
+              ticket_id: ticket.id,
+              type: 'sla_breach',
+              payload: {
+                unidade_id: ticket.unidade_id,
+                codigo_ticket: ticket.codigo_ticket
+              }
+            });
+        }
+      }
+    }
+
     // Processar cada notificação
     for (const notification of pendingNotifications || []) {
       try {
