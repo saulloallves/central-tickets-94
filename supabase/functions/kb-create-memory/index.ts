@@ -230,11 +230,17 @@ serve(async (req) => {
     let processedData: any = {};
     
     if (estilo === 'diretrizes') {
-      // Para diretrizes, extrair informações do texto formatado
+      // Para diretrizes, extrair título e categoria da resposta da IA
+      const titleMatch = aiResponse.match(/📌 Título:\s*(.+)/);
+      const categoryMatch = aiResponse.match(/📂 Classificação:\s*🟢\s*(.+)|📂 Classificação:\s*🔵\s*(.+)|📂 Classificação:\s*🟠\s*(.+)|📂 Classificação:\s*🟡\s*(.+)|📂 Classificação:\s*🟣\s*(.+)|📂 Classificação:\s*⚪\s*(.+)/);
+      
+      const extractedTitle = titleMatch ? titleMatch[1].trim() : (title || 'Diretriz sem título');
+      const extractedCategory = categoryMatch ? (categoryMatch[1] || categoryMatch[2] || categoryMatch[3] || categoryMatch[4] || categoryMatch[5] || categoryMatch[6] || '').trim() : 'Diretrizes Institucionais';
+      
       processedData = {
         conteudo_formatado: aiResponse,
-        titulo: title || 'Diretriz sem título',
-        categoria: 'Diretrizes Institucionais',
+        titulo: extractedTitle,
+        categoria: extractedCategory,
         subcategoria: 'Regras e Normas',
         classificacao: { tipo: 'diretrizes', processado_em: new Date().toISOString() }
       };
