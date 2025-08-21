@@ -214,45 +214,44 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
         }
       }}
     >
-      <CardContent className="p-2 space-y-1.5 pointer-events-none">
-        {/* Título */}
-        <h3 className="font-semibold text-gray-900 text-sm line-clamp-1 leading-tight group-hover:text-gray-700 transition-colors">
+      <CardContent className="p-2 space-y-2 pointer-events-none">
+        {/* Título - Maior e mais destaque */}
+        <h3 className="font-bold text-gray-900 text-base line-clamp-2 leading-tight group-hover:text-gray-700 transition-colors">
           {(() => {
             const title = ticket.titulo || ticket.descricao_problema || "Sem título";
             const words = title.trim().split(/\s+/);
-            return words.length > 3 ? words.slice(0, 3).join(' ') : title;
+            return words.length > 4 ? words.slice(0, 4).join(' ') + '...' : title;
           })()}
         </h3>
 
-        {/* Equipe Responsável - Design Moderno */}
-        {ticket.equipes?.nome && (() => {
-          const colors = getEquipeColor(ticket.equipes.nome);
-          return (
-            <div className={cn(
-              "inline-flex items-center gap-1 px-2 py-1 rounded-full transition-all",
-              colors.bg, colors.border, "border"
-            )}>
-              <div className={cn("w-1.5 h-1.5 rounded-full", colors.dot)}></div>
-              <span className={cn("text-xs font-medium truncate", colors.text)}>
-                {ticket.equipes.nome}
-              </span>
-            </div>
-          );
-        })()}
+        {/* Equipe e Prioridade - Menores */}
+        <div className="flex items-center justify-between">
+          {/* Equipe Responsável - Menor */}
+          {ticket.equipes?.nome && (() => {
+            const colors = getEquipeColor(ticket.equipes.nome);
+            return (
+              <div className={cn(
+                "inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full transition-all",
+                colors.bg, colors.border, "border"
+              )}>
+                <div className={cn("w-1 h-1 rounded-full", colors.dot)}></div>
+                <span className={cn("text-xs font-medium truncate max-w-20", colors.text)}>
+                  {ticket.equipes.nome}
+                </span>
+              </div>
+            );
+          })()}
 
-        {/* Status e Tempo - Layout Moderno */}
-        <div className="flex items-center justify-between pt-1">
-          <div className="flex items-center gap-1.5">
-            <div className={cn(
-              "px-2 py-1 rounded-full text-xs font-medium transition-colors",
-              ticket.status === 'concluido' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
-              ticket.prioridade === 'crise' ? 'bg-red-50 text-red-700 border border-red-200' :
-              ticket.prioridade === 'urgente' ? 'bg-orange-50 text-orange-700 border border-orange-200' :
-              ticket.prioridade === 'alta' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
-              'bg-slate-50 text-slate-700 border border-slate-200'
-            )}>
-              {ticket.status === 'concluido' ? 'Resolvido' : getPriorityLabel(ticket.prioridade)}
-            </div>
+          {/* Prioridade - Menor */}
+          <div className={cn(
+            "px-1.5 py-0.5 rounded-full text-xs font-medium transition-colors",
+            ticket.status === 'concluido' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+            ticket.prioridade === 'crise' ? 'bg-red-50 text-red-700 border border-red-200' :
+            ticket.prioridade === 'urgente' ? 'bg-orange-50 text-orange-700 border border-orange-200' :
+            ticket.prioridade === 'alta' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+            'bg-slate-50 text-slate-700 border border-slate-200'
+          )}>
+            {ticket.status === 'concluido' ? 'Resolvido' : getPriorityLabel(ticket.prioridade)}
           </div>
         </div>
 
