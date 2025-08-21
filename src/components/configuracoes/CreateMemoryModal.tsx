@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useKnowledgeMemories } from '@/hooks/useKnowledgeMemories';
-import { Upload, FileText, BookOpen, Plus } from 'lucide-react';
+import { Upload, FileText, BookOpen, Plus, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface CreateMemoryModalProps {
@@ -24,6 +24,8 @@ export const CreateMemoryModal = ({ open, onOpenChange, onSuccess }: CreateMemor
   const [content, setContent] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [inputMethod, setInputMethod] = useState<'text' | 'file'>('text');
+  const [processingState, setProcessingState] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { createMemory, loading } = useKnowledgeMemories();
@@ -86,6 +88,9 @@ export const CreateMemoryModal = ({ open, onOpenChange, onSuccess }: CreateMemor
         return;
       }
 
+      setProcessingState('processing');
+      setErrorMessage('');
+
       const result = await createMemory({
         estilo,
         titulo: titulo.trim() || undefined,
@@ -104,29 +109,96 @@ export const CreateMemoryModal = ({ open, onOpenChange, onSuccess }: CreateMemor
         }
       }
 
-      // Limpar formulário
-      setTitulo('');
-      setCategoria('');
-      setContent('');
-      setFile(null);
-      setInputMethod('text');
-      setEstilo('diretrizes');
+      setProcessingState('success');
       
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+      // Aguardar um momento para mostrar sucesso, depois limpar e fechar
+      setTimeout(() => {
+        setTitulo('');
+        setCategoria('');
+        setContent('');
+        setFile(null);
+        setInputMethod('text');
+        setEstilo('diretrizes');
+        setProcessingState('idle');
+        
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
 
-      onOpenChange(false);
-      onSuccess?.();
+        onOpenChange(false);
+        onSuccess?.();
+      }, 1500);
 
-    } catch (error) {
-      // Erro já tratado no hook
+    } catch (error: any) {
+      setProcessingState('error');
+      setErrorMessage(error?.message || 'Erro inesperado ao processar artigo');
     }
   };
 
+  const handleTryAgain = () => {
+    setProcessingState('idle');
+    setErrorMessage('');
+  };
+
+  const handleClose = () => {
+    setProcessingState('idle');
+    setErrorMessage('');
+    onOpenChange(false);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={processingState === 'processing' ? () => {} : onOpenChange}>
       <DialogContent className="max-w-2xl">
+        {processingState === 'processing' && (
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-background border rounded-lg p-6 text-center space-y-4 min-w-[300px]">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+              <div className="space-y-2">
+                <h3 className="font-semibold">Processando artigo com IA...</h3>
+                <p className="text-sm text-muted-foreground">
+                  A IA está analisando e classificando o conteúdo
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {processingState === 'success' && (
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-background border rounded-lg p-6 text-center space-y-4 min-w-[300px]">
+              <CheckCircle className="h-8 w-8 mx-auto text-green-500" />
+              <div className="space-y-2">
+                <h3 className="font-semibold text-green-700">Concluído!</h3>
+                <p className="text-sm text-muted-foreground">
+                  Artigo criado e classificado com sucesso
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {processingState === 'error' && (
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-background border rounded-lg p-6 text-center space-y-4 min-w-[300px]">
+              <XCircle className="h-8 w-8 mx-auto text-red-500" />
+              <div className="space-y-2">
+                <h3 className="font-semibold text-red-700">Erro no processamento</h3>
+                <p className="text-sm text-muted-foreground">
+                  {errorMessage}
+                </p>
+              </div>
+              <div className="flex gap-2 justify-center">
+                <Button variant="outline" onClick={handleTryAgain} size="sm">
+                  Tentar novamente
+                </Button>
+                <Button variant="default" onClick={handleClose} size="sm">
+                  Fechar
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <BookOpen className="h-5 w-5" />
@@ -164,6 +236,7 @@ export const CreateMemoryModal = ({ open, onOpenChange, onSuccess }: CreateMemor
               value={titulo}
               onChange={(e) => setTitulo(e.target.value)}
               placeholder="Digite o título do artigo (opcional - IA pode gerar automaticamente)"
+              disabled={processingState !== 'idle'}
             />
           </div>
 
@@ -191,6 +264,7 @@ export const CreateMemoryModal = ({ open, onOpenChange, onSuccess }: CreateMemor
               value={categoria}
               onChange={(e) => setCategoria(e.target.value)}
               placeholder="Digite uma nova categoria (opcional - IA pode gerar automaticamente)"
+              disabled={processingState !== 'idle'}
             />
           </div>
 
@@ -203,6 +277,7 @@ export const CreateMemoryModal = ({ open, onOpenChange, onSuccess }: CreateMemor
                 variant={inputMethod === 'text' ? 'default' : 'outline'}
                 onClick={() => setInputMethod('text')}
                 className="flex-1"
+                disabled={processingState !== 'idle'}
               >
                 <FileText className="h-4 w-4 mr-2" />
                 Digitar Texto
@@ -212,6 +287,7 @@ export const CreateMemoryModal = ({ open, onOpenChange, onSuccess }: CreateMemor
                 variant={inputMethod === 'file' ? 'default' : 'outline'}
                 onClick={() => setInputMethod('file')}
                 className="flex-1"
+                disabled={processingState !== 'idle'}
               >
                 <Upload className="h-4 w-4 mr-2" />
                 Upload de Arquivo
@@ -231,6 +307,7 @@ export const CreateMemoryModal = ({ open, onOpenChange, onSuccess }: CreateMemor
                 placeholder="Cole aqui o conteúdo que será processado pela IA..."
                 rows={8}
                 className="min-h-[200px]"
+                disabled={processingState !== 'idle'}
               />
             </div>
           ) : (
@@ -244,6 +321,7 @@ export const CreateMemoryModal = ({ open, onOpenChange, onSuccess }: CreateMemor
                   accept=".txt,.md,text/plain,text/markdown"
                   onChange={handleFileChange}
                   className="cursor-pointer"
+                  disabled={processingState !== 'idle'}
                 />
                 <p className="text-sm text-muted-foreground">
                   Suportados: .txt, .md (máx. 10MB)
@@ -276,12 +354,12 @@ export const CreateMemoryModal = ({ open, onOpenChange, onSuccess }: CreateMemor
           <Button 
             variant="outline" 
             onClick={() => onOpenChange(false)}
-            disabled={loading}
+            disabled={processingState !== 'idle'}
           >
             Cancelar
           </Button>
-          <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? 'Processando...' : 'Criar Artigo'}
+          <Button onClick={handleSubmit} disabled={processingState !== 'idle'}>
+            {processingState === 'processing' ? 'Processando...' : 'Criar Artigo'}
           </Button>
         </DialogFooter>
       </DialogContent>
