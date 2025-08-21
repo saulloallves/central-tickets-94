@@ -171,9 +171,9 @@ serve(async (req) => {
   }
 
   try {
-    const { estilo, content, title, description, arquivo_path } = await req.json();
+    const { estilo, titulo, categoria, content, arquivo_path } = await req.json();
 
-    console.log('Processando nova memória:', { estilo, title, arquivo_path });
+    console.log('Processando nova memória:', { estilo, titulo, categoria, arquivo_path });
 
     if (!estilo || !content) {
       return new Response(
@@ -192,8 +192,8 @@ serve(async (req) => {
     } else {
       // Para manual, estruturar os dados
       userMessage = JSON.stringify({
-        title: title || 'Documento sem título',
-        description: description || '',
+        title: titulo || 'Documento sem título',
+        description: '',
         content: content
       });
     }
@@ -234,8 +234,8 @@ serve(async (req) => {
       const titleMatch = aiResponse.match(/📌 Título:\s*(.+)/);
       const categoryMatch = aiResponse.match(/📂 Classificação:\s*🟢\s*(.+)|📂 Classificação:\s*🔵\s*(.+)|📂 Classificação:\s*🟠\s*(.+)|📂 Classificação:\s*🟡\s*(.+)|📂 Classificação:\s*🟣\s*(.+)|📂 Classificação:\s*⚪\s*(.+)/);
       
-      const extractedTitle = titleMatch ? titleMatch[1].trim() : (title || 'Diretriz sem título');
-      const extractedCategory = categoryMatch ? (categoryMatch[1] || categoryMatch[2] || categoryMatch[3] || categoryMatch[4] || categoryMatch[5] || categoryMatch[6] || '').trim() : 'Diretrizes Institucionais';
+      const extractedTitle = titleMatch ? titleMatch[1].trim() : (titulo || 'Diretriz sem título');
+      const extractedCategory = categoryMatch ? (categoryMatch[1] || categoryMatch[2] || categoryMatch[3] || categoryMatch[4] || categoryMatch[5] || categoryMatch[6] || '').trim() : (categoria || 'Diretrizes Institucionais');
       
       processedData = {
         conteudo_formatado: aiResponse,
@@ -250,7 +250,7 @@ serve(async (req) => {
         const jsonResponse = JSON.parse(aiResponse);
         processedData = {
           conteudo_formatado: jsonResponse.content_full || content,
-          titulo: jsonResponse.titulo_padrao || title || 'Manual sem título',
+          titulo: jsonResponse.titulo_padrao || titulo || 'Manual sem título',
           categoria: `${jsonResponse.classe_abrev} - ${jsonResponse.classe_nome}` || 'Manual',
           subcategoria: jsonResponse.subclasse_nome || null,
           classificacao: {
@@ -269,7 +269,7 @@ serve(async (req) => {
         // Fallback se não conseguir parsear
         processedData = {
           conteudo_formatado: aiResponse,
-          titulo: title || 'Manual sem título',
+          titulo: titulo || 'Manual sem título',
           categoria: 'Manual',
           subcategoria: null,
           classificacao: { 

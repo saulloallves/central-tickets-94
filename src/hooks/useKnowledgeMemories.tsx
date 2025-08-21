@@ -5,6 +5,8 @@ import { useToast } from '@/hooks/use-toast';
 
 interface CreateMemoryData {
   estilo: 'manual' | 'diretrizes';
+  titulo?: string;
+  categoria?: string;
   content: string;
   file?: File;
 }
@@ -46,6 +48,8 @@ export const useKnowledgeMemories = () => {
       const { data: result, error } = await supabase.functions.invoke('kb-create-memory', {
         body: {
           estilo: data.estilo,
+          titulo: data.titulo,
+          categoria: data.categoria,
           content: finalContent,
           arquivo_path
         }

@@ -1,5 +1,5 @@
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useKnowledgeMemories } from '@/hooks/useKnowledgeMemories';
-import { Upload, FileText, BookOpen } from 'lucide-react';
+import { Upload, FileText, BookOpen, Plus } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CreateMemoryModalProps {
   open: boolean;
@@ -17,12 +18,42 @@ interface CreateMemoryModalProps {
 
 export const CreateMemoryModal = ({ open, onOpenChange, onSuccess }: CreateMemoryModalProps) => {
   const [estilo, setEstilo] = useState<'manual' | 'diretrizes'>('diretrizes');
+  const [titulo, setTitulo] = useState('');
+  const [categoria, setCategoria] = useState('');
+  const [categorias, setCategorias] = useState<string[]>([]);
   const [content, setContent] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [inputMethod, setInputMethod] = useState<'text' | 'file'>('text');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { createMemory, loading } = useKnowledgeMemories();
+
+  // Buscar categorias existentes
+  useEffect(() => {
+    const fetchCategorias = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('knowledge_articles')
+          .select('categoria')
+          .not('categoria', 'is', null);
+
+        if (error) throw error;
+
+        // Extrair categorias únicas
+        const uniqueCategorias = Array.from(new Set(
+          data.map(item => item.categoria).filter(Boolean)
+        )).sort();
+
+        setCategorias(uniqueCategorias);
+      } catch (error) {
+        console.error('Erro ao buscar categorias:', error);
+      }
+    };
+
+    if (open) {
+      fetchCategorias();
+    }
+  }, [open]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -57,11 +88,15 @@ export const CreateMemoryModal = ({ open, onOpenChange, onSuccess }: CreateMemor
 
       await createMemory({
         estilo,
+        titulo: titulo.trim() || undefined,
+        categoria: categoria.trim() || undefined,
         content: inputMethod === 'file' ? '' : content,
         file: inputMethod === 'file' ? file : undefined
       });
 
       // Limpar formulário
+      setTitulo('');
+      setCategoria('');
       setContent('');
       setFile(null);
       setInputMethod('text');
@@ -109,6 +144,44 @@ export const CreateMemoryModal = ({ open, onOpenChange, onSuccess }: CreateMemor
                 </SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Título */}
+          <div className="space-y-2">
+            <Label htmlFor="titulo">Título do Artigo</Label>
+            <Input
+              id="titulo"
+              value={titulo}
+              onChange={(e) => setTitulo(e.target.value)}
+              placeholder="Digite o título do artigo (opcional - IA pode gerar automaticamente)"
+            />
+          </div>
+
+          {/* Categoria */}
+          <div className="space-y-2">
+            <Label htmlFor="categoria">Categoria</Label>
+            <div className="flex gap-2">
+              <Select value={categoria} onValueChange={setCategoria}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Selecione ou digite uma categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categorias.map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {cat}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="flex items-center gap-1">
+                <span className="text-sm text-muted-foreground">ou</span>
+              </div>
+            </div>
+            <Input
+              value={categoria}
+              onChange={(e) => setCategoria(e.target.value)}
+              placeholder="Digite uma nova categoria (opcional - IA pode gerar automaticamente)"
+            />
           </div>
 
           {/* Método de input */}
