@@ -146,10 +146,9 @@ export function AppSidebar() {
                           end
                           className={({ isActive }) => cn(
                             "group relative flex items-center justify-center w-10 h-10 transition-all duration-300 mx-auto",
-                            "hover:scale-105",
                             isActive 
-                              ? "bg-white/25 backdrop-blur-md border border-white/20 shadow-neumorphic scale-105 rounded-xl" 
-                              : ""
+                              ? "bg-white/25 backdrop-blur-md border border-white/20 shadow-neumorphic scale-105 rounded-xl hover:scale-105" 
+                              : "hover:scale-105"
                           )}
                         >
                           {({ isActive }) => (
