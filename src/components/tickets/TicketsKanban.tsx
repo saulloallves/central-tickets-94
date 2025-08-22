@@ -319,10 +319,10 @@ const KanbanColumn = ({ status, individualTickets, selectedTicketId, onTicketSel
       ref={setNodeRef}
       className={cn(
         "flex flex-col h-full min-h-[600px] w-full rounded-xl border-2 transition-all duration-300 ease-in-out overflow-hidden",
-        "bg-gray-100/80 shadow-lg shadow-gray-400/20",
+        "bg-transparent shadow-lg shadow-gray-400/10",
         isOver ? 
           "border-primary bg-gradient-to-b from-primary/5 to-primary/10 shadow-xl scale-[1.02] border-solid shadow-primary/20" : 
-          "border-dashed border-gray-300/50 hover:border-gray-300/70 hover:shadow-xl hover:shadow-gray-400/25"
+          "border-dashed border-gray-300/30 hover:border-gray-300/50 hover:shadow-xl hover:shadow-gray-400/15"
       )}
     >
       {/* Header da coluna com efeito de vidro ultra transparente */}
