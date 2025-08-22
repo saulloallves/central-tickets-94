@@ -49,7 +49,7 @@ export function AppSidebar() {
     // Ajustar margin do conteúdo principal
     const mainContent = document.querySelector('[data-main-content]') as HTMLElement;
     if (mainContent) {
-      mainContent.style.marginLeft = '208px'; // 16px (left) + 192px (expanded width)
+      mainContent.style.marginLeft = '176px'; // 16px (left) + 160px (expanded width)
     }
   };
 
@@ -58,15 +58,15 @@ export function AppSidebar() {
     // Restaurar margin original
     const mainContent = document.querySelector('[data-main-content]') as HTMLElement;
     if (mainContent) {
-      mainContent.style.marginLeft = '80px'; // 80px original (mais próximo)
+      mainContent.style.marginLeft = '64px'; // 64px original (mais próximo)
     }
   };
 
   return (
     <div
       className={cn(
-        "h-[calc(100vh-12rem)] fixed left-4 top-1/2 -translate-y-1/2 z-40 transition-all duration-500",
-        isExpanded ? "w-48" : "w-16"
+        "h-[calc(100vh-16rem)] fixed left-4 top-1/2 -translate-y-1/2 z-40 transition-all duration-500",
+        isExpanded ? "w-40" : "w-12"
       )}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
