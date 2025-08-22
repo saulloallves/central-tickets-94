@@ -149,7 +149,7 @@ export default function Equipes() {
   if (loading) {
     return (
       <ProtectedRoute requiredRole="admin">
-        <div className="max-w-7xl space-y-6">
+        <div className="w-full space-y-6">
           <div className="animate-pulse">
             <div className="h-8 bg-muted rounded w-48 mb-2"></div>
             <div className="h-4 bg-muted rounded w-96"></div>
@@ -174,7 +174,7 @@ export default function Equipes() {
 
   return (
     <ProtectedRoute requiredRole="admin">
-      <div className="max-w-7xl space-y-6">
+      <div className="w-full space-y-6">
         <div className="flex justify-between items-center">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">Equipes</h2>

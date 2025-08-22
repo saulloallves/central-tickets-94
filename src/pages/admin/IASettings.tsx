@@ -165,7 +165,7 @@ export default function IASettings() {
 
   if (loading) {
     return (
-      <div className="max-w-7xl py-6">
+      <div className="w-full py-6">
         <div className="space-y-6">
           <div>
             <h1 className="text-3xl font-bold">Configurações da IA</h1>
@@ -178,7 +178,7 @@ export default function IASettings() {
 
   if (!settings) {
     return (
-      <div className="max-w-7xl py-6">
+      <div className="w-full py-6">
         <div className="space-y-6">
           <div>
             <h1 className="text-3xl font-bold">Configurações da IA</h1>
@@ -190,7 +190,7 @@ export default function IASettings() {
   }
 
   return (
-    <div className="max-w-7xl py-6">
+    <div className="w-full py-6">
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
