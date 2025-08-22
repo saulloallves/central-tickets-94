@@ -1,5 +1,5 @@
 
-import { Edit, MessageSquare, Clock, User, AlertTriangle } from 'lucide-react';
+import { Clock, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { NewCrisisButton } from './NewCrisisButton';
@@ -68,14 +68,6 @@ export const TicketActions = ({ ticket, equipes, size = 'default', onEdit, onRep
             categoria: ticket.categoria
           }}
         />
-        
-        <Button variant="ghost" size="sm" onClick={onReply}>
-          <MessageSquare className="h-3 w-3" />
-        </Button>
-        
-        <Button variant="ghost" size="sm" onClick={onEdit}>
-          <Edit className="h-3 w-3" />
-        </Button>
       </div>
     </div>
   );
