@@ -46,7 +46,33 @@ export const useNewCrisisManagement = () => {
 
   const fetchActiveCrises = async () => {
     try {
-      const { data, error } = await supabase
+      // Buscar da tabela crises_ativas também
+      const { data: activeCrisesData, error: activeCrisesError } = await supabase
+        .from('crises_ativas')
+        .select(`
+          id,
+          motivo,
+          criada_em,
+          resolvida_em,
+          ticket_id,
+          impacto_regional,
+          tickets:ticket_id (
+            codigo_ticket,
+            titulo,
+            descricao_problema,
+            unidade_id,
+            prioridade,
+            status,
+            unidades:unidade_id (
+              grupo
+            )
+          )
+        `)
+        .is('resolvida_em', null)
+        .order('criada_em', { ascending: false });
+
+      // Buscar também da tabela crises
+      const { data: crisesData, error: crisesError } = await supabase
         .from('crises')
         .select(`
           *,
@@ -76,17 +102,67 @@ export const useNewCrisisManagement = () => {
         .neq('status', 'encerrado')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching active crises:', error);
-        toast({
-          title: "Erro",
-          description: "Não foi possível carregar as crises ativas",
-          variant: "destructive",
-        });
-        return;
+      if (activeCrisesError) {
+        console.error('Error fetching active crises:', activeCrisesError);
       }
 
-      setActiveCrises(data || []);
+      if (crisesError) {
+        console.error('Error fetching crises:', crisesError);
+      }
+
+      // Converter crises_ativas para formato compatível e buscar TODOS os tickets de crise
+      const formattedActiveCrises = await Promise.all((activeCrisesData || []).map(async (crisis) => {
+        // Buscar todos os tickets com prioridade crise que têm problema similar
+        const { data: allCrisisTickets } = await supabase
+          .from('tickets')
+          .select(`
+            id,
+            codigo_ticket,
+            titulo,
+            descricao_problema,
+            unidade_id,
+            prioridade,
+            status,
+            unidades:unidade_id (
+              grupo
+            )
+          `)
+          .eq('prioridade', 'crise')
+          .eq('status', 'escalonado')
+          .gte('data_abertura', new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString()); // Últimas 4 horas
+
+        const similarTickets = (allCrisisTickets || []).filter(ticket => 
+          ticket.descricao_problema && 
+          crisis.tickets?.descricao_problema &&
+          ticket.descricao_problema.toLowerCase().includes(
+            crisis.tickets.descricao_problema.split(' ')[0].toLowerCase()
+          )
+        );
+
+        return {
+          id: crisis.id,
+          titulo: crisis.motivo || 'Crise Ativa',
+          descricao: `Crise iniciada em ${new Date(crisis.criada_em).toLocaleString('pt-BR')} - ${similarTickets.length} tickets afetados`,
+          status: 'aberto' as const,
+          palavras_chave: null,
+          canal_oficial: null,
+          created_at: crisis.criada_em,
+          updated_at: crisis.criada_em,
+          abriu_por: null,
+          ultima_atualizacao: crisis.criada_em,
+          crise_ticket_links: similarTickets.map(ticket => ({
+            ticket_id: ticket.id,
+            tickets: ticket
+          })),
+          crise_updates: []
+        };
+      }));
+
+      // Combinar ambas as fontes
+      const allCrises = [...formattedActiveCrises, ...(crisesData || [])];
+      setActiveCrises(allCrises);
+
+      console.log('🚨 Active crises loaded:', allCrises.length);
     } catch (error) {
       console.error('Error fetching active crises:', error);
       toast({
@@ -290,6 +366,19 @@ export const useNewCrisisManagement = () => {
         (payload) => {
           console.log('🚨 Realtime crisis change:', payload);
           // Refetch immediately for any crisis change
+          setTimeout(() => fetchActiveCrises(), 100);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'crises_ativas'
+        },
+        (payload) => {
+          console.log('🚨 Realtime crises_ativas change:', payload);
+          // Refetch immediately for any active crisis change
           setTimeout(() => fetchActiveCrises(), 100);
         }
       )

@@ -2191,6 +2191,10 @@ export type Database = {
           permission: Database["public"]["Enums"]["app_permission"]
         }[]
       }
+      group_similar_tickets_to_crisis: {
+        Args: { p_crisis_id: string }
+        Returns: number
+      }
       has_permission: {
         Args: {
           _permission: Database["public"]["Enums"]["app_permission"]
