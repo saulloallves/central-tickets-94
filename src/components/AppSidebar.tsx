@@ -63,47 +63,47 @@ export function AppSidebar() {
   };
 
   return (
-    <TooltipProvider delayDuration={0}>
-      <div 
-        className={cn(
-          "h-[calc(100vh-12rem)] fixed left-4 top-1/2 -translate-y-1/2 z-40 transition-all duration-500",
-          isExpanded ? "w-48" : "w-16"
-        )}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-      >
-        {/* Modern curved sidebar container */}
-        <div className="
-          relative h-full bg-gradient-sidebar shadow-glow backdrop-blur-xl
-          rounded-t-[24px] rounded-b-[24px] overflow-hidden
-          border border-white/20
-          before:absolute before:top-0 before:right-0 before:w-8 before:h-1/3
-          before:bg-gradient-to-l before:from-white/10 before:to-transparent
-          before:rounded-bl-[40px]
-          after:absolute after:bottom-0 after:right-0 after:w-8 before:h-1/3
-          after:bg-gradient-to-l after:from-white/10 after:to-transparent
-          after:rounded-tl-[40px]
-        ">
-          {/* Curved right edge effect */}
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 w-6 h-3/4">
-            <div className="w-full h-full bg-gradient-to-r from-transparent via-white/5 to-transparent rounded-l-full"></div>
-          </div>
-          
-          {/* Content wrapper with padding for curves */}
-          <div className="relative z-10 h-full flex flex-col py-4 px-2">
-            {/* Main logo/brand icon */}
-            <div className="flex justify-center mb-4">
-              <div className="w-8 h-8 flex items-center justify-center">
-                <ClipboardList className="h-4 w-4 text-white" strokeWidth={1.5} />
-              </div>
+    <div
+      className={cn(
+        "h-[calc(100vh-12rem)] fixed left-4 top-1/2 -translate-y-1/2 z-40 transition-all duration-500",
+        isExpanded ? "w-48" : "w-16"
+      )}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {/* Modern curved sidebar container */}
+      <div className="
+        relative h-full bg-gradient-sidebar shadow-glow backdrop-blur-xl
+        rounded-t-[24px] rounded-b-[24px] overflow-hidden
+        border border-white/20
+        before:absolute before:top-0 before:right-0 before:w-8 before:h-1/3
+        before:bg-gradient-to-l before:from-white/10 before:to-transparent
+        before:rounded-bl-[40px]
+        after:absolute after:bottom-0 after:right-0 after:w-8 before:h-1/3
+        after:bg-gradient-to-l after:from-white/10 after:to-transparent
+        after:rounded-tl-[40px]
+      ">
+        {/* Curved right edge effect */}
+        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-6 h-3/4">
+          <div className="w-full h-full bg-gradient-to-r from-transparent via-white/5 to-transparent rounded-l-full"></div>
+        </div>
+        
+        {/* Content wrapper with padding for curves */}
+        <div className="relative z-10 h-full flex flex-col py-4 px-2">
+          {/* Main logo/brand icon */}
+          <div className="flex justify-center mb-4">
+            <div className="w-8 h-8 flex items-center justify-center">
+              <ClipboardList className="h-4 w-4 text-white" strokeWidth={1.5} />
             </div>
+          </div>
 
-            {/* Navigation Icons */}
-            <div className="flex-1 flex flex-col space-y-2">
-              {navigationItems.map((item) => (
-                <PermissionGuard key={item.title} requiredPermission={item.permission}>
-                  {isExpanded ? (
-                    // Expanded view with labels
+          {/* Navigation Icons */}
+          <div className="flex-1 flex flex-col space-y-2">
+            {navigationItems.map((item) => (
+              <PermissionGuard key={item.title} requiredPermission={item.permission}>
+                {isExpanded ? (
+                  // Expanded view with labels
+                  <TooltipProvider delayDuration={0}>
                     <NavLink
                       to={item.url}
                       end
@@ -141,8 +141,10 @@ export function AppSidebar() {
                         </>
                       )}
                     </NavLink>
-                  ) : (
-                    // Collapsed view with tooltips
+                  </TooltipProvider>
+                ) : (
+                  // Collapsed view with tooltips
+                  <TooltipProvider delayDuration={0}>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <NavLink
@@ -180,61 +182,68 @@ export function AppSidebar() {
                         {item.title}
                       </TooltipContent>
                     </Tooltip>
-                  )}
-                </PermissionGuard>
-              ))}
-            </div>
+                  </TooltipProvider>
+                )}
+              </PermissionGuard>
+            ))}
+          </div>
 
-            {/* User Profile Section */}
-            <div className="mt-4 space-y-2">
-              {isExpanded ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      className="group w-full flex items-center justify-between px-3 py-2 text-white hover:bg-white/10 hover:scale-[1.02] transition-all duration-300 rounded-xl"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <Avatar className="h-6 w-6">
-                          <AvatarImage src={user?.user_metadata?.avatar_url} />
-                          <AvatarFallback className="bg-white/20 text-white text-xs">
-                            {user?.email?.charAt(0).toUpperCase() || 'U'}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex flex-col items-start min-w-0">
-                          <span className="text-xs font-medium truncate max-w-20">
-                            {user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'Usuário'}
-                          </span>
-                          <div className="flex items-center space-x-1">
-                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_4px_rgba(16,185,129,0.6)]"></div>
-                            <span className="text-[10px] opacity-70">Online</span>
-                          </div>
+          {/* User Profile Section */}
+          <div className="mt-4 space-y-2">
+            {isExpanded ? (
+              <DropdownMenu modal={false}>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    className="group w-full flex items-center justify-between px-3 py-2 text-white hover:bg-white/10 transition-all duration-200 rounded-xl"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <Avatar className="h-6 w-6">
+                        <AvatarImage src={user?.user_metadata?.avatar_url} />
+                        <AvatarFallback className="bg-white/20 text-white text-xs">
+                          {user?.email?.charAt(0).toUpperCase() || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col items-start min-w-0">
+                        <span className="text-xs font-medium truncate max-w-20">
+                          {user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'Usuário'}
+                        </span>
+                        <div className="flex items-center space-x-1">
+                          <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
+                          <span className="text-[10px] opacity-70">Online</span>
                         </div>
                       </div>
-                      <ChevronDown className="h-3 w-3 opacity-60" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent 
-                    side="right" 
-                    className="z-50 bg-white dark:bg-gray-800 shadow-elegant rounded-xl border border-gray-200 dark:border-gray-700 ml-2 min-w-[160px]"
-                    sideOffset={8}
+                    </div>
+                    <ChevronDown className="h-3 w-3 opacity-60" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent 
+                  side="right" 
+                  align="start"
+                  className="z-[100] bg-white dark:bg-gray-900 shadow-2xl rounded-lg border border-gray-200 dark:border-gray-700 w-48"
+                  sideOffset={12}
+                  avoidCollisions={true}
+                >
+                  <DropdownMenuItem className="text-gray-700 dark:text-gray-200 focus:bg-gray-100 dark:focus:bg-gray-800 cursor-pointer">
+                    <User className="h-4 w-4 mr-2" />
+                    Perfil
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="text-gray-700 dark:text-gray-200 focus:bg-gray-100 dark:focus:bg-gray-800 cursor-pointer">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Configurações
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-700" />
+                  <DropdownMenuItem 
+                    className="text-red-600 focus:bg-red-50 dark:focus:bg-red-900/20 cursor-pointer" 
+                    onClick={handleSignOut}
                   >
-                    <DropdownMenuItem className="text-gray-800 dark:text-gray-200 focus:bg-gray-100 dark:focus:bg-gray-700">
-                      <User className="h-4 w-4 mr-2" />
-                      Perfil
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="text-gray-800 dark:text-gray-200 focus:bg-gray-100 dark:focus:bg-gray-700">
-                      <Settings className="h-4 w-4 mr-2" />
-                      Configurações
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-600" />
-                    <DropdownMenuItem className="text-red-600 focus:bg-red-50 dark:focus:bg-red-900/20" onClick={handleSignOut}>
-                      <LogOut className="h-4 w-4 mr-2" />
-                      Sair do Sistema
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : (
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sair do Sistema
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <TooltipProvider delayDuration={0}>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div className="relative">
@@ -255,11 +264,11 @@ export function AppSidebar() {
                     {user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'Usuário'} • Online
                   </TooltipContent>
                 </Tooltip>
-              )}
-            </div>
+              </TooltipProvider>
+            )}
           </div>
         </div>
       </div>
-    </TooltipProvider>
+    </div>
   );
 }
