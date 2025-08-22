@@ -2,11 +2,15 @@
 
 export const cleanupLegacyPriorityData = () => {
   try {
+    console.log('🧹 Starting legacy priority cleanup...');
+    
     // List of localStorage keys that might contain legacy priority data
     const keysToCheck = [
       'createTicket_formData',
       'ticket_filters',
-      'dashboard_filters'
+      'dashboard_filters',
+      'ticketForm_data',
+      'ticket_create_form'
     ];
 
     keysToCheck.forEach(key => {
@@ -41,7 +45,23 @@ export const cleanupLegacyPriorityData = () => {
       }
     });
 
-    console.log('Legacy priority data cleanup completed');
+    // More aggressive cleanup: check all localStorage keys for any that might contain legacy data
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key) {
+        try {
+          const value = localStorage.getItem(key);
+          if (value && (value.includes('urgente') || value.includes('alta') || value.includes('padrao_24h'))) {
+            console.log(`Found potential legacy data in ${key}, removing`);
+            localStorage.removeItem(key);
+          }
+        } catch (error) {
+          // Ignore parsing errors for non-JSON data
+        }
+      }
+    }
+
+    console.log('✅ Legacy priority data cleanup completed');
   } catch (error) {
     console.error('Error during legacy cleanup:', error);
   }

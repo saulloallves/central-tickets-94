@@ -318,6 +318,7 @@ export const useTickets = (filters: TicketFilters) => {
 
     try {
       console.log('Creating ticket with data:', ticketData);
+      console.log('Priority value:', ticketData.prioridade, 'Type:', typeof ticketData.prioridade);
 
       // Get user profile to establish relationships
       const { data: profile } = await supabase
@@ -341,18 +342,27 @@ export const useTickets = (filters: TicketFilters) => {
         }
       }
 
+      // Validate priority before inserting
+      const validPriorities = ['imediato', 'ate_1_hora', 'ainda_hoje', 'posso_esperar', 'crise'];
+      let finalPriority = ticketData.prioridade || 'posso_esperar';
+      
+      if (!validPriorities.includes(finalPriority)) {
+        console.warn(`Invalid priority "${finalPriority}", using default "posso_esperar"`);
+        finalPriority = 'posso_esperar';
+      }
+
       const ticketInsertData = {
         unidade_id: ticketData.unidade_id!,
         descricao_problema: ticketData.descricao_problema!,
         equipe_responsavel_id: ticketData.equipe_responsavel_id || null,
-        prioridade: ticketData.prioridade || 'posso_esperar',
+        prioridade: finalPriority,
         subcategoria: ticketData.subcategoria || null,
         colaborador_id,
         criado_por: user.id,
         canal_origem: 'web' as const
       };
 
-      console.log('Inserting ticket data:', ticketInsertData);
+      console.log('Final ticket insert data:', ticketInsertData);
 
       const { data, error } = await supabase
         .from('tickets')
