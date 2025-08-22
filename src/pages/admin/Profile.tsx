@@ -73,13 +73,23 @@ export default function Profile() {
 
   // Upload de avatar após crop
   const handleCroppedImage = async (croppedBlob: Blob) => {
-    if (!user) return;
+    if (!user) {
+      console.error('No user found');
+      return;
+    }
+
+    console.log('Starting avatar upload process...', {
+      userId: user.id,
+      blobSize: croppedBlob.size,
+      blobType: croppedBlob.type
+    });
 
     setIsUploadingAvatar(true);
 
     try {
       // Criar nome único para o arquivo
       const fileName = `${user.id}/avatar.jpg`;
+      console.log('Upload filename:', fileName);
 
       // Upload para o storage
       const { data: uploadData, error: uploadError } = await supabase.storage
@@ -89,15 +99,23 @@ export default function Profile() {
           contentType: 'image/jpeg'
         });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw uploadError;
+      }
+
+      console.log('Upload successful:', uploadData);
 
       // Obter URL público
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(fileName);
 
+      console.log('Public URL:', publicUrl);
+
       // Atualizar perfil com nova URL do avatar
-      await updateProfile({ avatar_url: publicUrl });
+      const result = await updateProfile({ avatar_url: publicUrl });
+      console.log('Profile update result:', result);
 
       toast({
         title: "Sucesso",
@@ -108,7 +126,7 @@ export default function Profile() {
       console.error('Erro ao fazer upload:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível fazer upload da imagem",
+        description: `Não foi possível fazer upload da imagem: ${error.message || 'Erro desconhecido'}`,
         variant: "destructive"
       });
     } finally {
