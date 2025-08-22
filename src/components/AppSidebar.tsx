@@ -71,18 +71,8 @@ export function AppSidebar() {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Modern curved sidebar container */}
-      <div className="
-        relative h-full bg-gradient-sidebar shadow-glow backdrop-blur-xl
-        rounded-t-[24px] rounded-b-[24px] overflow-hidden
-        border border-white/20
-        before:absolute before:top-0 before:right-0 before:w-8 before:h-1/3
-        before:bg-gradient-to-l before:from-white/10 before:to-transparent
-        before:rounded-bl-[40px]
-        after:absolute after:bottom-0 after:right-0 after:w-8 before:h-1/3
-        after:bg-gradient-to-l after:from-white/10 after:to-transparent
-        after:rounded-tl-[40px]
-      ">
+      {/* Modern liquid glass sidebar container */}
+      <div className="liquid-glass-sidebar h-full">
         {/* Curved right edge effect */}
         <div className="absolute right-0 top-1/2 -translate-y-1/2 w-6 h-3/4">
           <div className="w-full h-full bg-gradient-to-r from-transparent via-white/5 to-transparent rounded-l-full"></div>
@@ -111,8 +101,8 @@ export function AppSidebar() {
                         "group flex items-center px-3 py-2 transition-all duration-300",
                         "hover:scale-[1.02]",
                         isActive 
-                          ? "bg-white/25 backdrop-blur-md border border-white/20 shadow-neumorphic rounded-xl" 
-                          : ""
+                          ? "liquid-glass-button text-white/95" 
+                          : "hover:liquid-glass-button hover:text-white/90"
                       )}
                     >
                       {({ isActive }) => (
@@ -153,8 +143,8 @@ export function AppSidebar() {
                           className={({ isActive }) => cn(
                             "group relative flex items-center justify-center w-10 h-10 transition-all duration-300 mx-auto",
                             isActive 
-                              ? "bg-white/25 scale-[1.02] rounded-xl hover:scale-[1.02]" 
-                              : "hover:scale-[1.02]"
+                              ? "liquid-glass-button text-white/95" 
+                              : "hover:liquid-glass-button hover:text-white/90"
                           )}
                         >
                           {({ isActive }) => (
