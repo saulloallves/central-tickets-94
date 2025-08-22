@@ -30,7 +30,7 @@ const Unidades = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [searchLoading, setSearchLoading] = useState(false);
 
-  const ITEMS_PER_PAGE = 12; // 24 items per page (8x3 grid)
+  const ITEMS_PER_PAGE = 12; // 12 items per page
 
   useEffect(() => {
     fetchUnidades();
