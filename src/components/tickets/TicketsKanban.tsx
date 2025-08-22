@@ -328,15 +328,12 @@ const KanbanColumn = ({ status, individualTickets, selectedTicketId, onTicketSel
           "border-dashed border-gray-300/50 hover:border-gray-300/70"
       )}
     >
-      {/* Header da coluna com efeito glassmorphism ultra forte */}
+      {/* Header da coluna com mesmo efeito glassmorphism dos cards */}
       <div className="
-        flex items-center justify-between p-4 m-2 mb-0 relative overflow-hidden
-        bg-white/30 backdrop-blur-[100px] backdrop-saturate-[200%] 
-        border-2 border-white/50 rounded-3xl
-        shadow-[0_20px_80px_rgba(0,0,0,0.3),inset_0_4px_8px_rgba(255,255,255,0.6),inset_0_-2px_4px_rgba(0,0,0,0.1)]
-        before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/40 before:via-transparent before:to-white/10 before:rounded-3xl
-        after:absolute after:top-2 after:left-4 after:w-12 after:h-4 after:bg-white/60 after:rounded-full after:blur-xl
-        transition-all duration-500 hover:shadow-[0_25px_100px_rgba(0,0,0,0.4)]
+        flex items-center justify-between p-4 m-2 mb-0 
+        bg-white/10 backdrop-blur-md border border-white/20 rounded-xl
+        shadow-sm hover:shadow-md
+        transition-all duration-300
       ">
         <div className="relative flex items-center gap-3 z-10">
           {(() => {
