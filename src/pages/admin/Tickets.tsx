@@ -143,7 +143,16 @@ const Tickets = () => {
           
           <div className="flex gap-2">
             <NotificationButton />
-            <RefreshButton onRefresh={refetch} />
+            <RefreshButton onRefresh={() => {
+              console.log('🔄 Manual refresh triggered');
+              refetch();
+            }} />
+            <Button variant="outline" onClick={() => {
+              console.log('🔄 Force refresh all data');
+              window.location.reload();
+            }}>
+              ↻ Refresh Completo
+            </Button>
             <Button variant="outline" onClick={testNotificationSound}>
               🔊 Testar Som
             </Button>
