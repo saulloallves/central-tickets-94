@@ -43,7 +43,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gradient-subtle">
         <AppSidebar />
-        <div className="flex-1 flex flex-col transition-all duration-500" data-main-content style={{ marginLeft: '80px' }}>
+        <div className="flex-1 flex flex-col transition-all duration-500" data-main-content style={{ marginLeft: '64px' }}>
           
           {/* Main content area with optimized spacing */}
           <main className="flex-1 p-6">
