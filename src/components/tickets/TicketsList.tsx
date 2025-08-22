@@ -157,13 +157,15 @@ export const TicketsList = ({ filters, onTicketSelect, selectedTicketId }: Ticke
                     </Badge>
                   )}
                 </div>
-                <h3 className="font-medium text-sm line-clamp-2">
-                  {(() => {
-                    const title = getTicketDisplayTitle(ticket);
-                    const words = title.trim().split(/\s+/);
-                    return words.length > 3 ? words.slice(0, 3).join(' ') : title;
-                  })()}
-                </h3>
+                <div className="glass-badge p-3 rounded-lg">
+                  <h3 className="font-medium text-sm line-clamp-2 text-foreground">
+                    {(() => {
+                      const title = getTicketDisplayTitle(ticket);
+                      const words = title.trim().split(/\s+/);
+                      return words.length > 3 ? words.slice(0, 3).join(' ') : title;
+                    })()}
+                  </h3>
+                </div>
                 <p className="text-xs text-muted-foreground">
                   {formatDistanceToNowInSaoPaulo(ticket.created_at, { addSuffix: true })}
                 </p>

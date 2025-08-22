@@ -23,6 +23,8 @@ const buttonVariants = cva(
         warning: "bg-warning text-warning-foreground hover:bg-warning/90 shadow-neumorphic hover:shadow-glow",
         info: "bg-info text-info-foreground hover:bg-info/90 shadow-neumorphic hover:shadow-glow",
         critical: "bg-critical text-critical-foreground hover:bg-critical/90 shadow-neumorphic hover:shadow-glow",
+        glass: "glass-strong glass-hover text-foreground border-transparent",
+        "glass-pill": "glass-pill glass-hover text-foreground border-transparent rounded-full",
       },
       size: {
         default: "h-12 px-6 py-3",

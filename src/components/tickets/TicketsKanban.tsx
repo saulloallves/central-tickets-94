@@ -237,14 +237,16 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
       }}
     >
       <CardContent className="p-4 space-y-3 pointer-events-none">
-        {/* Título - Maior e mais destaque */}
-        <h3 className="font-medium text-gray-800 text-base line-clamp-2 leading-tight group-hover:text-gray-600 transition-colors">
-          {(() => {
-            const title = ticket.titulo || ticket.descricao_problema || "Sem título";
-            const words = title.trim().split(/\s+/);
-            return words.length > 4 ? words.slice(0, 4).join(' ') + '...' : title;
-          })()}
-        </h3>
+        {/* Título com efeito glassmorphism */}
+        <div className="glass-badge p-3 rounded-lg">
+          <h3 className="font-medium text-foreground text-base line-clamp-2 leading-tight group-hover:text-primary transition-colors">
+            {(() => {
+              const title = ticket.titulo || ticket.descricao_problema || "Sem título";
+              const words = title.trim().split(/\s+/);
+              return words.length > 4 ? words.slice(0, 4).join(' ') + '...' : title;
+            })()}
+          </h3>
+        </div>
 
         {/* Equipe e Prioridade - Menores */}
         <div className="flex items-center justify-between">
