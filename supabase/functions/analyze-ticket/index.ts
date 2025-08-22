@@ -103,6 +103,7 @@ IMPORTANTE: Use APENAS estas 4 prioridades: imediato, ate_1_hora, ainda_hoje, po
     const aiResponse = openaiData.choices[0]?.message?.content
 
     console.log('OpenAI response:', aiResponse)
+    console.log('OpenAI full response data:', JSON.stringify(openaiData, null, 2))
 
     // Função para garantir máximo 3 palavras no título e melhorar qualidade
     const limitTitleToThreeWords = (title: string): string => {
@@ -133,6 +134,8 @@ IMPORTANTE: Use APENAS estas 4 prioridades: imediato, ate_1_hora, ainda_hoje, po
     let analysis = null
     try {
       analysis = JSON.parse(aiResponse)
+      console.log('Parsed AI analysis:', analysis)
+      
       // Garantir que o título tenha no máximo 3 palavras e qualidade
       if (analysis.titulo) {
         analysis.titulo = limitTitleToThreeWords(analysis.titulo);
@@ -141,7 +144,7 @@ IMPORTANTE: Use APENAS estas 4 prioridades: imediato, ate_1_hora, ainda_hoje, po
       // Validar e corrigir prioridade para usar apenas as 4 novas opções
       const validPriorities = ['imediato', 'ate_1_hora', 'ainda_hoje', 'posso_esperar'];
       if (!validPriorities.includes(analysis.prioridade)) {
-        console.log(`Prioridade inválida "${analysis.prioridade}", usando fallback`);
+        console.log(`❌ INVALID PRIORITY: AI suggested "${analysis.prioridade}", mapping to valid priority`);
         // Mapear prioridades antigas para novas se necessário
         switch (analysis.prioridade) {
           case 'urgente':
