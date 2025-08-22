@@ -218,10 +218,10 @@ const Tickets = () => {
                   <SelectContent className="bg-background border-border z-50 shadow-lg">
                     <SelectItem value="all">Todas</SelectItem>
                     <SelectItem value="crise">Crise</SelectItem>
-                    <SelectItem value="urgente">Urgente</SelectItem>
-                    <SelectItem value="alta">Alta</SelectItem>
-                    <SelectItem value="hoje_18h">Hoje até 18h</SelectItem>
-                    <SelectItem value="padrao_24h">Padrão (24h)</SelectItem>
+                    <SelectItem value="imediato">Imediato (15min)</SelectItem>
+                    <SelectItem value="ate_1_hora">Até 1 hora</SelectItem>
+                    <SelectItem value="ainda_hoje">Ainda Hoje (18h)</SelectItem>
+                    <SelectItem value="posso_esperar">Posso Esperar (24h)</SelectItem>
                   </SelectContent>
                 </Select>
                 

@@ -65,6 +65,11 @@ export const TicketsList = ({ filters, onTicketSelect, selectedTicketId }: Ticke
   const getPriorityColor = (prioridade: string) => {
     switch (prioridade) {
       case 'crise': return 'destructive';
+      case 'imediato': return 'destructive';
+      case 'ate_1_hora': return 'outline';
+      case 'ainda_hoje': return 'secondary';
+      case 'posso_esperar': return 'secondary';
+      // Legacy support
       case 'urgente': return 'destructive';
       case 'alta': return 'outline';
       case 'hoje_18h': return 'secondary';
@@ -76,6 +81,11 @@ export const TicketsList = ({ filters, onTicketSelect, selectedTicketId }: Ticke
   const getPriorityLabel = (prioridade: string) => {
     switch (prioridade) {
       case 'crise': return 'Crise';
+      case 'imediato': return 'Imediato';
+      case 'ate_1_hora': return 'Até 1h';
+      case 'ainda_hoje': return 'Ainda Hoje';
+      case 'posso_esperar': return 'Posso Esperar';
+      // Legacy support
       case 'urgente': return 'Urgente';
       case 'alta': return 'Alta';
       case 'hoje_18h': return 'Hoje 18h';

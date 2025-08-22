@@ -45,7 +45,7 @@ Analise este ticket de suporte e forneça:
    - "Criação mídia planfetos" (não "mídias para planfetos")
 
 2. CATEGORIA: Classifique em uma das opções: juridico, sistema, midia, operacoes, rh, financeiro, outro
-3. PRIORIDADE: Determine se é: crise, urgente, alta, hoje_18h, padrao_24h
+3. PRIORIDADE: Determine se é: imediato (15min), ate_1_hora (1h), ainda_hoje (até 18h), posso_esperar (24h)
 4. EQUIPE_SUGERIDA: Sugira qual equipe deve atender baseado no problema e nas equipes disponíveis
 
 Descrição do problema: "${descricao}"
@@ -138,7 +138,7 @@ Responda APENAS em formato JSON válido:
       analysis = {
         titulo: fallbackTitle,
         categoria: categoria || 'outro',
-        prioridade: 'padrao_24h',
+        prioridade: 'posso_esperar',
         equipe_sugerida: null,
         justificativa: 'Análise automática com fallback'
       }

@@ -134,6 +134,11 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
   const getPriorityIcon = (prioridade: string) => {
     switch (prioridade) {
       case 'crise': return <AlertTriangle className="h-2 w-2 text-critical" />;
+      case 'imediato': return <Clock className="h-2 w-2 text-critical" />;
+      case 'ate_1_hora': return <ArrowUp className="h-2 w-2 text-warning" />;
+      case 'ainda_hoje': return <ArrowUp className="h-2 w-2 text-warning" />;
+      case 'posso_esperar': return null;
+      // Legacy support
       case 'urgente': return <Clock className="h-2 w-2 text-critical" />;
       case 'alta': return <ArrowUp className="h-2 w-2 text-warning" />;
       default: return null;
@@ -166,6 +171,11 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
   const getPriorityLabel = (prioridade: string) => {
     switch (prioridade) {
       case 'crise': return 'CRISE';
+      case 'imediato': return 'Imediato';
+      case 'ate_1_hora': return 'Até 1h';
+      case 'ainda_hoje': return 'Ainda Hoje';
+      case 'posso_esperar': return 'Posso Esperar';
+      // Legacy support
       case 'urgente': return 'Urgente';
       case 'alta': return 'Alta';
       case 'media': return 'Média';
@@ -177,6 +187,11 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
   const getPriorityButtonVariant = (prioridade: string) => {
     switch (prioridade) {
       case 'crise': return 'critical';
+      case 'imediato': return 'critical';
+      case 'ate_1_hora': return 'warning';
+      case 'ainda_hoje': return 'outline';
+      case 'posso_esperar': return 'outline';
+      // Legacy support
       case 'urgente': return 'critical';
       case 'alta': return 'warning';
       case 'media': return 'outline';
@@ -223,8 +238,12 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
         "cursor-grab active:cursor-grabbing transition-all duration-200 mb-3 bg-gradient-to-br from-white to-gray-50/50 border border-gray-200/60 shadow-sm hover:shadow-md select-none overflow-hidden group",
         ticket.status === 'concluido' ? "border-l-4 border-l-emerald-400" : 
         ticket.prioridade === 'crise' ? "border-l-4 border-l-red-500" :
-        ticket.prioridade === 'urgente' ? "border-l-4 border-l-orange-500" :
-        ticket.prioridade === 'alta' ? "border-l-4 border-l-amber-500" : "border-l-4 border-l-slate-300",
+        ticket.prioridade === 'imediato' ? "border-l-4 border-l-red-500" :
+        ticket.prioridade === 'ate_1_hora' ? "border-l-4 border-l-orange-500" :
+        ticket.prioridade === 'ainda_hoje' ? "border-l-4 border-l-amber-500" :
+        // Legacy support
+        ticket.prioridade === 'urgente' ? "border-l-4 border-l-red-500" :
+        ticket.prioridade === 'alta' ? "border-l-4 border-l-orange-500" : "border-l-4 border-l-slate-300",
         isSelected && "ring-2 ring-blue-500/20 shadow-lg",
         isDragging && "opacity-70 scale-95 z-50 shadow-xl rotate-1"
       )}
@@ -267,8 +286,12 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
             "px-2 py-1 rounded-full text-xs font-medium transition-colors",
             ticket.status === 'concluido' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
             ticket.prioridade === 'crise' ? 'bg-red-50 text-red-700 border border-red-200' :
-            ticket.prioridade === 'urgente' ? 'bg-orange-50 text-orange-700 border border-orange-200' :
-            ticket.prioridade === 'alta' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+            ticket.prioridade === 'imediato' ? 'bg-red-50 text-red-700 border border-red-200' :
+            ticket.prioridade === 'ate_1_hora' ? 'bg-orange-50 text-orange-700 border border-orange-200' :
+            ticket.prioridade === 'ainda_hoje' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+            // Legacy support
+            ticket.prioridade === 'urgente' ? 'bg-red-50 text-red-700 border border-red-200' :
+            ticket.prioridade === 'alta' ? 'bg-orange-50 text-orange-700 border border-orange-200' :
             'bg-slate-50 text-slate-700 border border-slate-200'
           )}>
             {ticket.status === 'concluido' ? 'Resolvido' : getPriorityLabel(ticket.prioridade)}

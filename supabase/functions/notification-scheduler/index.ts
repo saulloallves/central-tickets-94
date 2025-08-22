@@ -25,7 +25,7 @@ serve(async (req) => {
 
     console.log(`Found ${pendingNotifications?.length || 0} pending notifications`);
 
-    // Check for SLA breaches and queue new notifications
+    // Check for SLA breaches and escalate overdue tickets
     const { data: overdueTickets } = await supabase
       .from('tickets')
       .select('*')
@@ -37,6 +37,32 @@ serve(async (req) => {
       console.log(`Found ${overdueTickets.length} overdue tickets for escalation`);
       
       for (const ticket of overdueTickets) {
+        // Escalate ticket to "escalonado" status
+        const { error: escalateError } = await supabase
+          .from('tickets')
+          .update({ 
+            status: 'escalonado',
+            escalonamento_nivel: (ticket.escalonamento_nivel || 0) + 1,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', ticket.id);
+
+        if (escalateError) {
+          console.error(`Error escalating ticket ${ticket.codigo_ticket}:`, escalateError);
+        } else {
+          console.log(`Escalated ticket ${ticket.codigo_ticket} due to SLA breach`);
+          
+          // Log the escalation action
+          await supabase
+            .rpc('log_system_action', {
+              p_tipo_log: 'sistema',
+              p_entidade_afetada: 'tickets',
+              p_entidade_id: ticket.id,
+              p_acao_realizada: 'Ticket escalado automaticamente por vencimento de SLA',
+              p_canal: 'sistema_automatico'
+            });
+        }
+
         // Check if SLA breach notification already exists
         const { data: existingNotification } = await supabase
           .from('notifications_queue')
@@ -54,7 +80,8 @@ serve(async (req) => {
               type: 'sla_breach',
               payload: {
                 unidade_id: ticket.unidade_id,
-                codigo_ticket: ticket.codigo_ticket
+                codigo_ticket: ticket.codigo_ticket,
+                escalated: true
               }
             });
         }
