@@ -44,6 +44,7 @@ export const NewCrisisPanel = ({ className }: NewCrisisPanelProps) => {
   const [broadcastText, setBroadcastText] = useState('');
   const [newCrisisTitle, setNewCrisisTitle] = useState('');
   const [newCrisisDescription, setNewCrisisDescription] = useState('');
+  const [activeTab, setActiveTab] = useState<'tickets' | 'updates'>('tickets');
 
   const handleUpdateStatus = async (crisisId: string, status: Crisis['status'], message?: string) => {
     await updateCrisisStatus(crisisId, status, message);
@@ -308,83 +309,110 @@ export const NewCrisisPanel = ({ className }: NewCrisisPanelProps) => {
                             </div>
                           </div>
 
-                          {/* Tickets Vinculados - Melhorado */}
-                          {crisis.crise_ticket_links && crisis.crise_ticket_links.length > 0 && (
-                            <div>
-                              <h4 className="font-medium mb-3 flex items-center gap-2">
+                          {/* Tabs para Tickets e Histórico */}
+                          <div>
+                            <div className="flex gap-2 mb-4">
+                              <Button
+                                variant={activeTab === 'tickets' ? 'default' : 'outline'}
+                                size="sm"
+                                onClick={() => setActiveTab('tickets')}
+                                className="flex items-center gap-2"
+                              >
                                 <FileText className="h-4 w-4" />
-                                Tickets Vinculados ({crisis.crise_ticket_links.length})
-                              </h4>
-                              <div className="space-y-2 max-h-64 overflow-y-auto border rounded-lg">
-                                 {crisis.crise_ticket_links.map((link, index) => (
-                                   <div 
-                                     key={link.ticket_id} 
-                                     className={cn(
-                                       "p-3 bg-white border-b last:border-b-0 cursor-pointer hover:bg-gray-100 transition-colors",
-                                       index % 2 === 0 ? "bg-gray-50" : "bg-white"
-                                     )}
-                                     onClick={() => {
-                                       // Abrir modal do ticket
-                                       const ticketEvent = new CustomEvent('openTicketModal', {
-                                         detail: { ticketId: link.ticket_id }
-                                       });
-                                       window.dispatchEvent(ticketEvent);
-                                     }}
-                                   >
-                                     <div className="flex items-center justify-between mb-2">
-                                       <div className="flex items-center gap-2">
-                                         <Badge variant="outline" className="text-xs">
-                                           {link.tickets?.unidades?.grupo || 'N/A'}
-                                         </Badge>
-                                       </div>
-                                       <div className="flex items-center gap-2">
-                                         <Badge 
-                                           variant={link.tickets?.status === 'concluido' ? 'default' : 'destructive'} 
-                                           className="text-xs"
-                                         >
-                                           {link.tickets?.status || 'N/A'}
-                                         </Badge>
-                                         <Badge 
-                                           variant={link.tickets?.prioridade === 'crise' ? 'destructive' : 'secondary'} 
-                                           className="text-xs"
-                                         >
-                                           {link.tickets?.prioridade || 'N/A'}
-                                         </Badge>
-                                       </div>
-                                     </div>
-                                     <p className="text-sm font-medium mb-2">
-                                       {link.tickets?.descricao_problema || 'Sem descrição'}
-                                     </p>
-                                    </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Histórico de Atualizações */}
-                          {crisis.crise_updates && crisis.crise_updates.length > 0 && (
-                            <div>
-                              <h4 className="font-medium mb-3 flex items-center gap-2">
+                                Tickets Vinculados ({crisis.crise_ticket_links?.length || 0})
+                              </Button>
+                              <Button
+                                variant={activeTab === 'updates' ? 'default' : 'outline'}
+                                size="sm"
+                                onClick={() => setActiveTab('updates')}
+                                className="flex items-center gap-2"
+                              >
                                 <Clock className="h-4 w-4" />
                                 Histórico de Atualizações
-                              </h4>
-                              <div className="space-y-2 max-h-48 overflow-y-auto border rounded-lg p-2">
-                                {crisis.crise_updates.slice(0, 10).map((update) => (
-                                  <div key={update.id} className="text-xs bg-gray-50 p-3 rounded border">
-                                    <div className="flex justify-between items-start mb-2">
-                                      <Badge variant="outline" className="text-xs">
-                                        {update.tipo}
-                                      </Badge>
-                                      <span className="text-muted-foreground">
-                                        {new Date(update.created_at).toLocaleString('pt-BR')}
-                                      </span>
-                                    </div>
-                                    <p className="text-muted-foreground">{update.mensagem}</p>
-                                  </div>
-                                ))}
-                              </div>
+                              </Button>
                             </div>
-                          )}
+
+                            {/* Conteúdo da Tab Ativa */}
+                            <div className="min-h-[200px]">
+                              {activeTab === 'tickets' && crisis.crise_ticket_links && crisis.crise_ticket_links.length > 0 && (
+                                <div className="space-y-2 max-h-64 overflow-y-auto border rounded-lg">
+                                   {crisis.crise_ticket_links.map((link, index) => (
+                                     <div 
+                                       key={link.ticket_id} 
+                                       className={cn(
+                                         "p-3 bg-white border-b last:border-b-0 cursor-pointer hover:bg-gray-100 transition-colors",
+                                         index % 2 === 0 ? "bg-gray-50" : "bg-white"
+                                       )}
+                                       onClick={() => {
+                                         // Abrir modal do ticket
+                                         const ticketEvent = new CustomEvent('openTicketModal', {
+                                           detail: { ticketId: link.ticket_id }
+                                         });
+                                         window.dispatchEvent(ticketEvent);
+                                       }}
+                                     >
+                                       <div className="flex items-center justify-between mb-2">
+                                         <div className="flex items-center gap-2">
+                                           <Badge variant="outline" className="text-xs">
+                                             {link.tickets?.unidades?.grupo || 'N/A'}
+                                           </Badge>
+                                         </div>
+                                         <div className="flex items-center gap-2">
+                                           <Badge 
+                                             variant={link.tickets?.status === 'concluido' ? 'default' : 'destructive'} 
+                                             className="text-xs"
+                                           >
+                                             {link.tickets?.status || 'N/A'}
+                                           </Badge>
+                                           <Badge 
+                                             variant={link.tickets?.prioridade === 'crise' ? 'destructive' : 'secondary'} 
+                                             className="text-xs"
+                                           >
+                                             {link.tickets?.prioridade || 'N/A'}
+                                           </Badge>
+                                         </div>
+                                       </div>
+                                       <p className="text-sm font-medium mb-2">
+                                         {link.tickets?.descricao_problema || 'Sem descrição'}
+                                       </p>
+                                      </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              {activeTab === 'tickets' && (!crisis.crise_ticket_links || crisis.crise_ticket_links.length === 0) && (
+                                <div className="text-center py-8 text-muted-foreground border rounded-lg">
+                                  <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                  <p>Nenhum ticket vinculado a esta crise</p>
+                                </div>
+                              )}
+
+                              {activeTab === 'updates' && crisis.crise_updates && crisis.crise_updates.length > 0 && (
+                                <div className="space-y-2 max-h-48 overflow-y-auto border rounded-lg p-2">
+                                  {crisis.crise_updates.slice(0, 10).map((update) => (
+                                    <div key={update.id} className="text-xs bg-gray-50 p-3 rounded border">
+                                      <div className="flex justify-between items-start mb-2">
+                                        <Badge variant="outline" className="text-xs">
+                                          {update.tipo}
+                                        </Badge>
+                                        <span className="text-muted-foreground">
+                                          {new Date(update.created_at).toLocaleString('pt-BR')}
+                                        </span>
+                                      </div>
+                                      <p className="text-muted-foreground">{update.mensagem}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              {activeTab === 'updates' && (!crisis.crise_updates || crisis.crise_updates.length === 0) && (
+                                <div className="text-center py-8 text-muted-foreground border rounded-lg">
+                                  <Clock className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                  <p>Nenhuma atualização registrada</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
 
                           {/* Atualizar Status da Crise */}
                           <div>
