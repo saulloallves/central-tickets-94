@@ -45,7 +45,6 @@ import { useTickets, type TicketFilters, type Ticket } from '@/hooks/useTickets'
 import { useSimpleTicketDragDrop } from '@/hooks/useSimpleTicketDragDrop';
 import { TicketDetail } from './TicketDetail';
 import { TicketActions } from './TicketActions';
-import { CrisisGroupCard } from './CrisisGroupCard';
 import { useNewCrisisManagement } from '@/hooks/useNewCrisisManagement';
 import { formatDistanceToNowInSaoPaulo, calculateTimeRemaining, isFromPreviousBusinessDay } from '@/lib/date-utils';
 import { cn } from '@/lib/utils';
@@ -301,15 +300,13 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
 
 interface KanbanColumnProps {
   status: keyof typeof COLUMN_STATUS;
-  crisisGroups: { crisis: any; tickets: Ticket[] }[];
   individualTickets: Ticket[];
   selectedTicketId: string | null;
   onTicketSelect: (ticketId: string) => void;
   equipes: Array<{ id: string; nome: string }>;
-  onViewCrisis: (crisis: any) => void;
 }
 
-const KanbanColumn = ({ status, crisisGroups, individualTickets, selectedTicketId, onTicketSelect, equipes, onViewCrisis }: KanbanColumnProps) => {
+const KanbanColumn = ({ status, individualTickets, selectedTicketId, onTicketSelect, equipes }: KanbanColumnProps) => {
   const { setNodeRef, isOver } = useDroppable({
     id: status,
     data: {
@@ -361,7 +358,7 @@ const KanbanColumn = ({ status, crisisGroups, individualTickets, selectedTicketI
             color: 'rgba(0, 0, 0, 0.7)'
           }}
         >
-          {crisisGroups.length + individualTickets.length}
+          {individualTickets.length}
         </Badge>
       </div>
       
@@ -378,17 +375,6 @@ const KanbanColumn = ({ status, crisisGroups, individualTickets, selectedTicketI
         )}
         <SortableContext items={individualTickets.map(t => t.id)} strategy={verticalListSortingStrategy}>
           <div className="space-y-4 pb-6">
-            {/* Crisis Groups */}
-            {crisisGroups.map((group) => (
-              <CrisisGroupCard
-                key={`crisis-${group.crisis.id}`}
-                crisis={group.crisis}
-                tickets={group.tickets}
-                onViewCrisis={() => onViewCrisis(group.crisis)}
-                onSelectTicket={(ticket) => onTicketSelect(ticket.id)}
-              />
-            ))}
-            
             {/* Individual Tickets */}
             {individualTickets.map((ticket) => (
               <KanbanTicketCard
@@ -400,7 +386,7 @@ const KanbanColumn = ({ status, crisisGroups, individualTickets, selectedTicketI
               />
             ))}
             
-            {crisisGroups.length === 0 && individualTickets.length === 0 && (
+            {individualTickets.length === 0 && (
               <div className="text-center text-muted-foreground text-sm py-8">
                 Nenhum ticket nesta coluna
               </div>
@@ -447,8 +433,6 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [draggedOverColumn, setDraggedOverColumn] = useState<string | null>(null);
   const [showArchivedTickets, setShowArchivedTickets] = useState(false);
-  const [showCrisisPanel, setShowCrisisPanel] = useState(false);
-  const [selectedCrisis, setSelectedCrisis] = useState<any>(null);
   
   const { activeCrises } = useNewCrisisManagement();
 
@@ -614,28 +598,20 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
 
   const getGroupedTicketsAndCrises = (status: keyof typeof COLUMN_STATUS) => {
     const statusTickets = getTicketsByStatus(status);
-    const crisisGroups: { crisis: any; tickets: Ticket[] }[] = [];
     const ticketsInCrisis = new Set<string>();
     
-    // Group tickets by crisis
+    // Mark tickets that are in any crisis
     activeCrises.forEach(crisis => {
       const crisisTicketIds = crisis.crise_ticket_links?.map(link => link.ticket_id) || [];
-      const crisisTickets = statusTickets.filter(ticket => 
-        crisisTicketIds.includes(ticket.id)
-      );
-      
-      if (crisisTickets.length > 0) {
-        crisisGroups.push({ crisis, tickets: crisisTickets });
-        crisisTickets.forEach(ticket => ticketsInCrisis.add(ticket.id));
-      }
+      crisisTicketIds.forEach(ticketId => ticketsInCrisis.add(ticketId));
     });
     
-    // Get tickets not in any crisis
+    // Get only tickets NOT in any crisis
     const individualTickets = statusTickets.filter(ticket => 
       !ticketsInCrisis.has(ticket.id)
     );
     
-    return { crisisGroups, individualTickets };
+    return { crisisGroups: [], individualTickets };
   };
 
   if (loading) {
@@ -698,17 +674,15 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {Object.keys(COLUMN_STATUS).map((status) => {
-            const { crisisGroups, individualTickets } = getGroupedTicketsAndCrises(status as keyof typeof COLUMN_STATUS);
+            const { individualTickets } = getGroupedTicketsAndCrises(status as keyof typeof COLUMN_STATUS);
             return (
               <KanbanColumn
                 key={status}
                 status={status as keyof typeof COLUMN_STATUS}
-                crisisGroups={crisisGroups}
                 individualTickets={individualTickets}
                 selectedTicketId={selectedTicketId}
                 onTicketSelect={handleTicketClick}
                 equipes={equipes}
-                onViewCrisis={setSelectedCrisis}
               />
             );
           })}
