@@ -9,6 +9,7 @@ import {
   Users2,
   Activity,
   Shield,
+  ChevronRight,
   User,
   ChevronDown
 } from "lucide-react";
@@ -45,31 +46,48 @@ export function AppSidebar() {
 
   const handleMouseEnter = () => {
     setIsExpanded(true);
+    // Ajustar margin do conteúdo principal
+    const mainContent = document.querySelector('[data-main-content]') as HTMLElement;
+    if (mainContent) {
+      mainContent.style.marginLeft = '208px'; // 16px (left) + 192px (expanded width)
+    }
   };
 
   const handleMouseLeave = () => {
     setIsExpanded(false);
+    // Restaurar margin original
+    const mainContent = document.querySelector('[data-main-content]') as HTMLElement;
+    if (mainContent) {
+      mainContent.style.marginLeft = '80px'; // 80px original (mais próximo)
+    }
   };
 
   return (
     <div
       className={cn(
-        "h-[calc(100vh-18rem)] fixed left-4 top-1/2 -translate-y-1/2 z-40 transition-all duration-200",
+        "h-[calc(100vh-18rem)] fixed left-4 top-1/2 -translate-y-1/2 z-40 transition-all duration-500",
         isExpanded ? "w-48" : "w-16"
       )}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
       {/* Modern liquid glass sidebar container */}
-      <div className="relative h-full bg-gradient-to-b from-primary via-primary/95 to-primary/90 rounded-[24px] overflow-hidden">
-        {/* Simplified glass overlay */}
-        <div className="absolute inset-0 bg-white/5 backdrop-blur-sm"></div>
+      <div className="relative h-full bg-gradient-to-b from-primary via-primary/95 to-primary/90 rounded-[32px] overflow-hidden">
+        {/* Liquid glass overlay effect */}
+        <div className="absolute inset-0 liquid-glass-sidebar"></div>
         
-        {/* Content wrapper */}
-        <div className="relative z-10 h-full flex flex-col py-4 px-2">
-          {/* Logo */}
+        {/* Curved right edge effect */}
+        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-6 h-3/4 z-10">
+          <div className="w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent rounded-l-full"></div>
+        </div>
+        
+        {/* Content wrapper with padding for curves */}
+        <div className="relative z-20 h-full flex flex-col py-4 px-2">
+          {/* Main logo/brand icon */}
           <div className="flex justify-center mb-4">
-            <ClipboardList className="h-5 w-5 text-white" strokeWidth={1.5} />
+            <div className="w-8 h-8 flex items-center justify-center">
+              <ClipboardList className="h-4 w-4 text-white drop-shadow-lg" strokeWidth={1.5} />
+            </div>
           </div>
 
           {/* Navigation Icons */}
@@ -77,80 +95,100 @@ export function AppSidebar() {
             {navigationItems.map((item) => (
               <PermissionGuard key={item.title} requiredPermission={item.permission}>
                 {isExpanded ? (
-                  // Expanded view
-                  <NavLink
-                    to={item.url}
-                    end
-                    className={({ isActive }) => cn(
-                      "group flex items-center px-3 py-2 rounded-xl transition-all duration-150",
-                      isActive 
-                        ? "bg-white/10 text-white" 
-                        : "hover:bg-white/5 hover:text-white/95"
-                    )}
-                  >
-                    {({ isActive }) => (
-                      <>
-                        <item.icon 
-                          className={cn(
-                            "h-4 w-4 text-white mr-3 transition-colors duration-150",
-                            isActive ? "opacity-100" : "opacity-90"
-                          )} 
-                          strokeWidth={1.5}
-                        />
-                        <span className={cn(
-                          "text-white text-sm font-medium",
-                          isActive ? "opacity-100" : "opacity-90"
-                        )}>
-                          {item.title}
-                        </span>
-                      </>
-                    )}
-                  </NavLink>
-                ) : (
-                  // Collapsed view
-                  <Tooltip delayDuration={300}>
-                    <TooltipTrigger asChild>
-                      <NavLink
-                        to={item.url}
-                        end
-                        className={({ isActive }) => cn(
-                          "group relative flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-150 mx-auto",
-                          isActive 
-                            ? "bg-white/10 text-white" 
-                            : "hover:bg-white/5 hover:text-white/95"
-                        )}
-                      >
-                        {({ isActive }) => (
-                          <item.icon 
-                            className={cn(
-                              "h-4 w-4 text-white transition-colors duration-150",
-                              isActive ? "opacity-100" : "opacity-90"
-                            )} 
-                            strokeWidth={1.5}
-                          />
-                        )}
-                      </NavLink>
-                    </TooltipTrigger>
-                    <TooltipContent 
-                      side="right" 
-                      className="bg-primary/90 text-white border-white/20 ml-2"
+                  // Expanded view with labels
+                  <TooltipProvider delayDuration={0}>
+                    <NavLink
+                      to={item.url}
+                      end
+                      className={({ isActive }) => cn(
+                        "group flex items-center px-3 py-2 rounded-xl transition-all duration-300",
+                        "hover:scale-[1.02]",
+                        isActive 
+                          ? "bg-white/10 backdrop-blur-sm text-white border border-white/20" 
+                          : "hover:bg-white/5 hover:backdrop-blur-sm hover:text-white/95 hover:border hover:border-white/10"
+                      )}
                     >
-                      {item.title}
-                    </TooltipContent>
-                  </Tooltip>
+                      {({ isActive }) => (
+                        <>
+                          <div className="relative flex items-center justify-center w-6 h-6 mr-2">
+                            <item.icon 
+                              className={cn(
+                                "h-4 w-4 text-white transition-all duration-300 drop-shadow-md",
+                                isActive ? "drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" : "opacity-90"
+                              )} 
+                              strokeWidth={1.5}
+                            />
+                            
+                            {/* Active indicator - white glow dot */}
+                            {isActive && (
+                              <div className="absolute -right-0.5 -top-2 w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)] animate-pulse"></div>
+                            )}
+                          </div>
+                          
+                          <span className={cn(
+                            "text-white text-sm font-medium transition-all duration-300 drop-shadow-md",
+                            isActive ? "opacity-100" : "opacity-90"
+                          )}>
+                            {item.title}
+                          </span>
+                        </>
+                      )}
+                    </NavLink>
+                  </TooltipProvider>
+                ) : (
+                  // Collapsed view with tooltips
+                  <TooltipProvider delayDuration={0}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <NavLink
+                          to={item.url}
+                          end
+                          className={({ isActive }) => cn(
+                            "group relative flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-300 mx-auto",
+                            isActive 
+                              ? "bg-white/10 backdrop-blur-sm text-white" 
+                              : "hover:bg-white/5 hover:backdrop-blur-sm hover:text-white/95"
+                          )}
+                        >
+                          {({ isActive }) => (
+                            <>
+                              <item.icon 
+                                className={cn(
+                                  "h-4 w-4 text-white transition-all duration-300 drop-shadow-md",
+                                  isActive ? "drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" : "opacity-90"
+                                )} 
+                                strokeWidth={1.5}
+                              />
+                              
+                              {/* Active indicator - white glow dot */}
+                              {isActive && (
+                                <div className="absolute -top-1 -right-0.5 w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)] animate-pulse"></div>
+                              )}
+                            </>
+                          )}
+                        </NavLink>
+                      </TooltipTrigger>
+                      <TooltipContent 
+                        side="right" 
+                        className="liquid-glass-card text-white ml-2"
+                      >
+                        {item.title}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 )}
               </PermissionGuard>
             ))}
           </div>
 
-          {/* User Profile */}
-          <div className="mt-4">
+          {/* User Profile Section */}
+          <div className="mt-4 space-y-2">
             {isExpanded ? (
               <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <Button 
                     variant="ghost" 
-                    className="group w-full flex items-center justify-between px-3 py-2 text-white hover:bg-white/5 transition-all duration-150 rounded-xl"
+                    className="group w-full flex items-center justify-between px-3 py-2 text-white hover:bg-white/5 transition-all duration-200 rounded-xl"
                   >
                     <div className="flex items-center space-x-2">
                       <Avatar className="h-6 w-6">
@@ -160,12 +198,12 @@ export function AppSidebar() {
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col items-start min-w-0">
-                        <span className="text-xs font-medium truncate max-w-20">
+                        <span className="text-xs font-medium truncate max-w-20 drop-shadow-md">
                           {user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'Usuário'}
                         </span>
                         <div className="flex items-center space-x-1">
-                          <div className="w-1.5 h-1.5 rounded-full bg-green-400"></div>
-                          <span className="text-[10px] opacity-70">Online</span>
+                          <div className="w-1.5 h-1.5 rounded-full bg-green-400 shadow-[0_0_4px_rgba(34,197,94,0.6)]"></div>
+                          <span className="text-[10px] opacity-70 drop-shadow-sm">Online</span>
                         </div>
                       </div>
                     </div>
@@ -198,25 +236,28 @@ export function AppSidebar() {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Tooltip delayDuration={300}>
-                <TooltipTrigger asChild>
-                  <div className="relative">
-                    <Avatar className="h-8 w-8 mx-auto cursor-pointer hover:scale-105 transition-transform duration-150">
-                      <AvatarImage src={user?.user_metadata?.avatar_url} />
-                      <AvatarFallback className="bg-white/20 text-white text-xs">
-                        {user?.email?.charAt(0).toUpperCase() || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-green-400 border border-white/50"></div>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent 
-                  side="right" 
-                  className="bg-primary/90 text-white border-white/20 ml-2"
-                >
-                  {user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'Usuário'} • Online
-                </TooltipContent>
-              </Tooltip>
+              <TooltipProvider delayDuration={0}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="relative">
+                      <Avatar className="h-8 w-8 mx-auto cursor-pointer hover:scale-[1.02] transition-all duration-300">
+                        <AvatarImage src={user?.user_metadata?.avatar_url} />
+                        <AvatarFallback className="bg-white/20 text-white text-xs">
+                          {user?.email?.charAt(0).toUpperCase() || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      {/* Online status indicator */}
+                      <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-green-400 border border-white/50 shadow-[0_0_4px_rgba(34,197,94,0.6)]"></div>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent 
+                    side="right" 
+                    className="liquid-glass-card text-white ml-2"
+                  >
+                    {user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'Usuário'} • Online
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
           </div>
         </div>
