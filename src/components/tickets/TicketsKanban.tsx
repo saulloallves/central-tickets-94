@@ -221,7 +221,7 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
       {...attributes}
       {...listeners}
       className={cn(
-        "cursor-grab active:cursor-grabbing transition-all duration-200 mb-3 bg-gradient-to-br from-white to-gray-50/50 border border-gray-200/60 shadow-sm hover:shadow-md select-none overflow-hidden group",
+        "cursor-grab active:cursor-grabbing transition-all duration-200 mb-3 bg-white/10 backdrop-blur-md border border-white/20 shadow-sm hover:shadow-md select-none overflow-hidden group",
         ticket.status === 'concluido' ? "border-l-4 border-l-emerald-400" : 
         ticket.prioridade === 'crise' ? "border-l-4 border-l-red-500" :
         ticket.prioridade === 'imediato' ? "border-l-4 border-l-red-500" :
