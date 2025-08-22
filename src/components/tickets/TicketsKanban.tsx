@@ -221,11 +221,12 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
       {...attributes}
       {...listeners}
       className={cn(
-        "cursor-grab active:cursor-grabbing transition-all duration-200 mb-3 bg-white/5 backdrop-blur-[20px] backdrop-saturate-150 border border-white/30 select-none overflow-hidden group",
-        "border-l-4 border-l-gray-300/60",
-        "shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:shadow-[0_16px_48px_rgba(0,0,0,0.18)] hover:-translate-y-1",
-        "hover:scale-[1.02] hover:bg-white/8 transform-gpu",
-        isSelected && "ring-2 ring-blue-500/20 shadow-[0_20px_64px_rgba(0,0,0,0.25)] -translate-y-2 bg-white/10",
+        "cursor-grab active:cursor-grabbing transition-all duration-200 mb-3 bg-white/[0.02] backdrop-blur-[40px] backdrop-saturate-[200%] border-2 border-white/40 select-none overflow-hidden group rounded-2xl",
+        "border-l-4 border-l-white/60",
+        "shadow-[0_8px_32px_rgba(0,0,0,0.12),inset_0_1px_0_rgba(255,255,255,0.6),inset_0_-1px_0_rgba(0,0,0,0.1)] hover:shadow-[0_16px_48px_rgba(0,0,0,0.18),inset_0_2px_4px_rgba(255,255,255,0.8)] hover:-translate-y-1",
+        "hover:scale-[1.02] hover:bg-white/[0.05] hover:border-white/50 transform-gpu",
+        "before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/20 before:via-transparent before:to-white/5 before:rounded-2xl before:pointer-events-none",
+        isSelected && "ring-2 ring-blue-500/20 shadow-[0_20px_64px_rgba(0,0,0,0.25)] -translate-y-2 bg-white/[0.08] border-white/60",
         isDragging && "opacity-70 scale-95 z-50 shadow-[0_24px_80px_rgba(0,0,0,0.3)] rotate-1"
       )}
       onClick={(e) => {
@@ -324,12 +325,14 @@ const KanbanColumn = ({ status, individualTickets, selectedTicketId, onTicketSel
           "border-dashed border-gray-300/50 hover:border-gray-300/70 hover:shadow-xl hover:shadow-gray-400/25"
       )}
     >
-      {/* Header da coluna com efeito de profundidade */}
+      {/* Header da coluna com efeito de vidro ultra transparente */}
       <div className="
-        flex items-center justify-between p-4 m-2 mb-0 
-        bg-white/10 backdrop-blur-md border border-white/20 rounded-xl
-        shadow-[0_12px_40px_rgba(0,0,0,0.15)] hover:shadow-[0_20px_64px_rgba(0,0,0,0.2)]
-        hover:-translate-y-0.5 hover:scale-[1.01]
+        flex items-center justify-between p-4 m-2 mb-0 relative overflow-hidden
+        bg-white/[0.02] backdrop-blur-[50px] backdrop-saturate-[250%] border-2 border-white/50 rounded-3xl
+        shadow-[0_12px_40px_rgba(0,0,0,0.15),inset_0_2px_4px_rgba(255,255,255,0.8),inset_0_-1px_2px_rgba(0,0,0,0.1)] hover:shadow-[0_20px_64px_rgba(0,0,0,0.2)]
+        hover:-translate-y-0.5 hover:scale-[1.01] hover:bg-white/[0.05] hover:border-white/60
+        before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/30 before:via-transparent before:to-white/5 before:rounded-3xl before:pointer-events-none
+        after:absolute after:top-2 after:left-6 after:w-16 after:h-6 after:bg-white/40 after:rounded-full after:blur-xl after:pointer-events-none
         transition-all duration-300 transform-gpu
       ">
         <div className="relative flex items-center gap-3 z-10">
