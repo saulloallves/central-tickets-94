@@ -73,7 +73,7 @@ export const useNewCrisisManagement = () => {
             created_by
           )
         `)
-        .not('status', 'in', '("encerrado", "resolvido")')
+        .neq('status', 'encerrado')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -242,7 +242,7 @@ export const useNewCrisisManagement = () => {
   const resolveCrisisAndCloseTickets = async (
     crisisId: string,
     mensagem?: string,
-    statusTicket: 'concluido' | 'pendente' = 'concluido'
+    statusTicket: 'concluido' | 'em_atendimento' = 'concluido'
   ) => {
     try {
       const { error } = await supabase.rpc('resolve_crise_close_tickets', {

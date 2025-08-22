@@ -45,6 +45,8 @@ import { useTickets, type TicketFilters, type Ticket } from '@/hooks/useTickets'
 import { useSimpleTicketDragDrop } from '@/hooks/useSimpleTicketDragDrop';
 import { TicketDetail } from './TicketDetail';
 import { TicketActions } from './TicketActions';
+import { CrisisGroupCard } from './CrisisGroupCard';
+import { useNewCrisisManagement } from '@/hooks/useNewCrisisManagement';
 import { formatDistanceToNowInSaoPaulo, calculateTimeRemaining, isFromPreviousBusinessDay } from '@/lib/date-utils';
 import { cn } from '@/lib/utils';
 
@@ -295,13 +297,15 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
 
 interface KanbanColumnProps {
   status: keyof typeof COLUMN_STATUS;
-  tickets: Ticket[];
+  crisisGroups: { crisis: any; tickets: Ticket[] }[];
+  individualTickets: Ticket[];
   selectedTicketId: string | null;
   onTicketSelect: (ticketId: string) => void;
   equipes: Array<{ id: string; nome: string }>;
+  onViewCrisis: (crisis: any) => void;
 }
 
-const KanbanColumn = ({ status, tickets, selectedTicketId, onTicketSelect, equipes }: KanbanColumnProps) => {
+const KanbanColumn = ({ status, crisisGroups, individualTickets, selectedTicketId, onTicketSelect, equipes, onViewCrisis }: KanbanColumnProps) => {
   const { setNodeRef, isOver } = useDroppable({
     id: status,
     data: {
@@ -353,7 +357,7 @@ const KanbanColumn = ({ status, tickets, selectedTicketId, onTicketSelect, equip
             color: 'rgba(0, 0, 0, 0.7)'
           }}
         >
-          {tickets.length}
+          {crisisGroups.length + individualTickets.length}
         </Badge>
       </div>
       
@@ -368,9 +372,21 @@ const KanbanColumn = ({ status, tickets, selectedTicketId, onTicketSelect, equip
             </div>
           </div>
         )}
-        <SortableContext items={tickets.map(t => t.id)} strategy={verticalListSortingStrategy}>
+        <SortableContext items={individualTickets.map(t => t.id)} strategy={verticalListSortingStrategy}>
           <div className="space-y-4 pb-6">
-            {tickets.map((ticket) => (
+            {/* Crisis Groups */}
+            {crisisGroups.map((group) => (
+              <CrisisGroupCard
+                key={`crisis-${group.crisis.id}`}
+                crisis={group.crisis}
+                tickets={group.tickets}
+                onViewCrisis={() => onViewCrisis(group.crisis)}
+                onSelectTicket={(ticket) => onTicketSelect(ticket.id)}
+              />
+            ))}
+            
+            {/* Individual Tickets */}
+            {individualTickets.map((ticket) => (
               <KanbanTicketCard
                 key={ticket.id}
                 ticket={ticket}
@@ -379,7 +395,8 @@ const KanbanColumn = ({ status, tickets, selectedTicketId, onTicketSelect, equip
                 equipes={equipes}
               />
             ))}
-            {tickets.length === 0 && (
+            
+            {crisisGroups.length === 0 && individualTickets.length === 0 && (
               <div className="text-center text-muted-foreground text-sm py-8">
                 Nenhum ticket nesta coluna
               </div>
@@ -426,6 +443,10 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [draggedOverColumn, setDraggedOverColumn] = useState<string | null>(null);
   const [showArchivedTickets, setShowArchivedTickets] = useState(false);
+  const [showCrisisPanel, setShowCrisisPanel] = useState(false);
+  const [selectedCrisis, setSelectedCrisis] = useState<any>(null);
+  
+  const { activeCrises } = useNewCrisisManagement();
 
   // Update timestamp when tickets change
   useEffect(() => {
@@ -587,6 +608,32 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
     });
   };
 
+  const getGroupedTicketsAndCrises = (status: keyof typeof COLUMN_STATUS) => {
+    const statusTickets = getTicketsByStatus(status);
+    const crisisGroups: { crisis: any; tickets: Ticket[] }[] = [];
+    const ticketsInCrisis = new Set<string>();
+    
+    // Group tickets by crisis
+    activeCrises.forEach(crisis => {
+      const crisisTicketIds = crisis.crise_ticket_links?.map(link => link.ticket_id) || [];
+      const crisisTickets = statusTickets.filter(ticket => 
+        crisisTicketIds.includes(ticket.id)
+      );
+      
+      if (crisisTickets.length > 0) {
+        crisisGroups.push({ crisis, tickets: crisisTickets });
+        crisisTickets.forEach(ticket => ticketsInCrisis.add(ticket.id));
+      }
+    });
+    
+    // Get tickets not in any crisis
+    const individualTickets = statusTickets.filter(ticket => 
+      !ticketsInCrisis.has(ticket.id)
+    );
+    
+    return { crisisGroups, individualTickets };
+  };
+
   if (loading) {
     return (
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -646,16 +693,21 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {Object.keys(COLUMN_STATUS).map((status) => (
-            <KanbanColumn
-              key={status}
-              status={status as keyof typeof COLUMN_STATUS}
-              tickets={getTicketsByStatus(status as keyof typeof COLUMN_STATUS)}
-              selectedTicketId={selectedTicketId}
-              onTicketSelect={handleTicketClick}
-              equipes={equipes}
-            />
-          ))}
+          {Object.keys(COLUMN_STATUS).map((status) => {
+            const { crisisGroups, individualTickets } = getGroupedTicketsAndCrises(status as keyof typeof COLUMN_STATUS);
+            return (
+              <KanbanColumn
+                key={status}
+                status={status as keyof typeof COLUMN_STATUS}
+                crisisGroups={crisisGroups}
+                individualTickets={individualTickets}
+                selectedTicketId={selectedTicketId}
+                onTicketSelect={handleTicketClick}
+                equipes={equipes}
+                onViewCrisis={setSelectedCrisis}
+              />
+            );
+          })}
         </div>
       </div>
 

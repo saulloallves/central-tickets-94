@@ -1,12 +1,13 @@
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings, Brain, BookOpen, TrendingUp, Shield, Database } from "lucide-react";
+import { Settings, Brain, BookOpen, TrendingUp, Shield, AlertTriangle } from "lucide-react";
 import { IASettingsTab } from "@/components/configuracoes/IASettingsTab";
 import { KnowledgeHubTab } from "@/components/configuracoes/KnowledgeHubTab";
 import { RegrasUsoTab } from "@/components/configuracoes/RegrasUsoTab";
 import { RelatoriosTab } from "@/components/configuracoes/RelatoriosTab";
 import { NotificacoesTab } from "@/components/configuracoes/NotificacoesTab";
+import { CrisisConfigTab } from "@/components/configuracoes/CrisisConfigTab";
 
 export default function Configuracoes() {
   return (
@@ -27,7 +28,7 @@ export default function Configuracoes() {
         <Card className="shadow-elegant border-0 bg-gradient-card">
           <CardContent className="p-6">
             <Tabs defaultValue="ia" className="w-full">
-              <TabsList className="grid w-full grid-cols-5 mb-6">
+              <TabsList className="grid w-full grid-cols-6 mb-6">
                 <TabsTrigger value="ia" className="flex items-center gap-2">
                   <Brain className="h-4 w-4" />
                   IA
@@ -47,6 +48,10 @@ export default function Configuracoes() {
                 <TabsTrigger value="relatorios" className="flex items-center gap-2">
                   <TrendingUp className="h-4 w-4" />
                   Relatórios
+                </TabsTrigger>
+                <TabsTrigger value="crise" className="flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4" />
+                  Modo Crise
                 </TabsTrigger>
               </TabsList>
 
@@ -68,6 +73,10 @@ export default function Configuracoes() {
 
               <TabsContent value="relatorios" className="space-y-6">
                 <RelatoriosTab />
+              </TabsContent>
+
+              <TabsContent value="crise" className="space-y-6">
+                <CrisisConfigTab />
               </TabsContent>
             </Tabs>
           </CardContent>

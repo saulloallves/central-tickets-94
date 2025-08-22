@@ -20,11 +20,13 @@ interface TicketActionsProps {
       grupo: string;
     };
   };
-  onEdit: () => void;
-  onReply: () => void;
+  equipes?: { id: string; nome: string; }[];
+  size?: 'sm' | 'default';
+  onEdit?: () => void;
+  onReply?: () => void;
 }
 
-export const TicketActions = ({ ticket, onEdit, onReply }: TicketActionsProps) => {
+export const TicketActions = ({ ticket, equipes, size = 'default', onEdit, onReply }: TicketActionsProps) => {
   const getSLAColor = (status: string) => {
     switch (status) {
       case 'vencido': return 'text-red-600 bg-red-50';
