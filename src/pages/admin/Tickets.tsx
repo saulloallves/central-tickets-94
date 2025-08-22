@@ -283,10 +283,7 @@ const Tickets = () => {
 
         {/* Modal de Ticket */}
         <Dialog open={ticketModalOpen} onOpenChange={setTicketModalOpen}>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Detalhes do Ticket</DialogTitle>
-            </DialogHeader>
+          <DialogContent className="w-[96vw] max-w-6xl h-[90vh] p-0 overflow-hidden">
             {selectedTicketId && (
               <TicketDetail 
                 ticketId={selectedTicketId}

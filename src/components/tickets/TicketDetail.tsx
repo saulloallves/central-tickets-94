@@ -318,40 +318,22 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Carregando...</CardTitle>
-              <Button variant="ghost" size="sm" onClick={onClose}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">Carregando detalhes do ticket...</p>
-          </CardContent>
-        </Card>
+      <div className="flex items-center justify-center p-8">
+        <div className="flex items-center gap-3">
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <span className="text-muted-foreground">Carregando detalhes do ticket...</span>
+        </div>
       </div>
     );
   }
 
   if (!ticket) {
     return (
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Erro</CardTitle>
-              <Button variant="ghost" size="sm" onClick={onClose}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">Ticket não encontrado</p>
-          </CardContent>
-        </Card>
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <h3 className="text-lg font-medium text-red-600 mb-2">Erro ao carregar ticket</h3>
+          <p className="text-muted-foreground">Não foi possível carregar os detalhes do ticket. Tente novamente.</p>
+        </div>
       </div>
     );
   }
@@ -359,15 +341,14 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
   const slaStatus = getSLAStatus();
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-auto">
-      <Card className="w-full max-w-6xl min-h-[80vh] max-h-[90vh] flex flex-col shadow-2xl border-0 rounded-lg overflow-hidden bg-white">
-        {/* Header - Fixed */}
-        <CardHeader className="flex-shrink-0 border-b bg-white">
+    <div className="w-full h-full flex flex-col overflow-hidden p-6">
+        {/* Header */}
+        <div className="flex-shrink-0 border-b pb-4 mb-6">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
-              <CardTitle className="text-xl line-clamp-2 mb-3 font-bold text-foreground">
+              <h2 className="text-xl line-clamp-2 mb-3 font-bold text-foreground">
                 {getTicketDisplayTitle(ticket)}
-              </CardTitle>
+              </h2>
               <div className="flex items-center gap-3 flex-wrap">
                 <Badge variant="outline" className="font-mono text-sm">
                   {ticket.codigo_ticket}
@@ -399,10 +380,10 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
               </Button>
             </div>
           </div>
-        </CardHeader>
+        </div>
 
         {/* Content - Scrollable */}
-        <CardContent className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto space-y-6">
           {/* Info Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Unidade Card */}
@@ -582,7 +563,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
             </div>
 
             {/* Tab Content */}
-            <Card className="bg-white">
+            <Card>
               <CardContent className="p-6">
                 {activeTab === 'suggestion' && (
                   <div className="space-y-4">
@@ -813,8 +794,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
               </CardContent>
             </Card>
           </div>
-        </CardContent>
-      </Card>
+        </div>
     </div>
   );
 };
