@@ -236,41 +236,16 @@ export function AppSidebar() {
               ) : (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button 
-                          variant="ghost" 
-                          className="group relative w-10 h-10 p-0 text-white hover:bg-white/10 hover:scale-[1.02] transition-all duration-300 rounded-xl mx-auto"
-                        >
-                          <Avatar className="h-6 w-6">
-                            <AvatarImage src={user?.user_metadata?.avatar_url} />
-                            <AvatarFallback className="bg-white/20 text-white text-xs">
-                              {user?.email?.charAt(0).toUpperCase() || 'U'}
-                            </AvatarFallback>
-                          </Avatar>
-                          {/* Online status indicator */}
-                          <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 border border-white/50 shadow-[0_0_4px_rgba(16,185,129,0.6)]"></div>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent 
-                        side="right" 
-                        className="bg-white/95 backdrop-blur-md shadow-elegant rounded-xl border border-white/20 ml-2"
-                      >
-                        <DropdownMenuItem className="text-gray-800">
-                          <User className="h-4 w-4 mr-2" />
-                          Perfil
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-gray-800">
-                          <Settings className="h-4 w-4 mr-2" />
-                          Configurações
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-red-600" onClick={handleSignOut}>
-                          <LogOut className="h-4 w-4 mr-2" />
-                          Sair do Sistema
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <div className="relative">
+                      <Avatar className="h-8 w-8 mx-auto cursor-pointer hover:scale-[1.02] transition-all duration-300">
+                        <AvatarImage src={user?.user_metadata?.avatar_url} />
+                        <AvatarFallback className="bg-white/20 text-white text-xs">
+                          {user?.email?.charAt(0).toUpperCase() || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      {/* Online status indicator */}
+                      <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 border border-white/50 shadow-[0_0_4px_rgba(16,185,129,0.6)]"></div>
+                    </div>
                   </TooltipTrigger>
                   <TooltipContent 
                     side="right" 
