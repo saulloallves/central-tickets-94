@@ -2,7 +2,7 @@ import {
   Users, 
   Building2, 
   UserCheck, 
-  ClipboardList, 
+  ClipboardList,
   Settings, 
   LogOut,
   Home,
@@ -24,6 +24,7 @@ import { ProfileSettingsDialog } from "@/components/profile/ProfileSettingsDialo
 import { useProfile } from "@/hooks/useProfile";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { LogoUpload } from "@/components/LogoUpload";
 
 const navigationItems = [
   { title: "Dashboard", url: "/admin", icon: Home, permission: 'access_dashboards' as const },
@@ -43,6 +44,7 @@ export function AppSidebar() {
   const location = useLocation();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string>('');
 
   const handleSignOut = async () => {
     await signOut();
@@ -87,11 +89,13 @@ export function AppSidebar() {
         
         {/* Content wrapper with padding for curves */}
         <div className="relative z-20 h-full flex flex-col py-4 px-2">
-          {/* Main logo/brand icon */}
+          {/* Logo Upload Section */}
           <div className="flex justify-center mb-4">
-            <div className="w-8 h-8 flex items-center justify-center">
-              <ClipboardList className="h-4 w-4 text-white drop-shadow-lg" strokeWidth={1.5} />
-            </div>
+            <LogoUpload 
+              logoUrl={logoUrl} 
+              onLogoChange={setLogoUrl}
+              className="w-8 h-8"
+            />
           </div>
 
           {/* Navigation Icons */}
