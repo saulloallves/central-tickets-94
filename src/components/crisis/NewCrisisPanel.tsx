@@ -356,68 +356,75 @@ export const NewCrisisPanel = ({ className }: NewCrisisPanelProps) => {
                                 Tickets Vinculados ({crisis.crise_ticket_links.length})
                               </h4>
                               <div className="space-y-2 max-h-64 overflow-y-auto border rounded-lg">
-                                {crisis.crise_ticket_links.map((link, index) => (
-                                  <div key={link.ticket_id} className={cn(
-                                    "p-3 bg-white border-b last:border-b-0",
-                                    index % 2 === 0 ? "bg-gray-50" : "bg-white"
-                                  )}>
-                                    <div className="flex items-center justify-between mb-2">
-                                      <div className="flex items-center gap-2">
-                                        <span className="font-medium text-sm">
-                                          {link.tickets?.codigo_ticket}
-                                        </span>
-                                        <Badge variant="outline" className="text-xs">
-                                          {link.tickets?.unidades?.grupo || 'N/A'}
-                                        </Badge>
-                                      </div>
-                                      <div className="flex items-center gap-2">
-                                        <Badge 
-                                          variant={link.tickets?.status === 'concluido' ? 'default' : 'destructive'} 
-                                          className="text-xs"
+                                 {crisis.crise_ticket_links.map((link, index) => (
+                                   <div 
+                                     key={link.ticket_id} 
+                                     className={cn(
+                                       "p-3 bg-white border-b last:border-b-0 cursor-pointer hover:bg-gray-100 transition-colors",
+                                       index % 2 === 0 ? "bg-gray-50" : "bg-white"
+                                     )}
+                                     onClick={() => {
+                                       // Abrir modal do ticket
+                                       const ticketEvent = new CustomEvent('openTicketModal', {
+                                         detail: { ticketId: link.ticket_id }
+                                       });
+                                       window.dispatchEvent(ticketEvent);
+                                     }}
+                                   >
+                                     <div className="flex items-center justify-between mb-2">
+                                       <div className="flex items-center gap-2">
+                                         <Badge variant="outline" className="text-xs">
+                                           {link.tickets?.unidades?.grupo || 'N/A'}
+                                         </Badge>
+                                       </div>
+                                       <div className="flex items-center gap-2">
+                                         <Badge 
+                                           variant={link.tickets?.status === 'concluido' ? 'default' : 'destructive'} 
+                                           className="text-xs"
+                                         >
+                                           {link.tickets?.status || 'N/A'}
+                                         </Badge>
+                                         <Badge 
+                                           variant={link.tickets?.prioridade === 'crise' ? 'destructive' : 'secondary'} 
+                                           className="text-xs"
+                                         >
+                                           {link.tickets?.prioridade || 'N/A'}
+                                         </Badge>
+                                       </div>
+                                     </div>
+                                     <p className="text-sm font-medium mb-2">
+                                       {link.tickets?.descricao_problema || 'Sem descrição'}
+                                     </p>
+                                      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                                        <Select 
+                                          defaultValue={link.tickets?.status}
+                                          onValueChange={(value) => {
+                                            const validStatuses = ['aberto', 'em_atendimento', 'escalonado', 'concluido'] as const;
+                                            if (validStatuses.includes(value as any)) {
+                                              handleUpdateTicketStatus(link.ticket_id, value as typeof validStatuses[number]);
+                                            }
+                                          }}
                                         >
-                                          {link.tickets?.status || 'N/A'}
-                                        </Badge>
-                                        <Badge 
-                                          variant={link.tickets?.prioridade === 'crise' ? 'destructive' : 'secondary'} 
-                                          className="text-xs"
-                                        >
-                                          {link.tickets?.prioridade || 'N/A'}
-                                        </Badge>
-                                      </div>
-                                    </div>
-                                    <p className="text-xs text-muted-foreground mb-2">
-                                      {link.tickets?.descricao_problema || 'Sem descrição'}
-                                    </p>
-                                     <div className="flex items-center gap-2">
-                                       <Select 
-                                         defaultValue={link.tickets?.status}
-                                         onValueChange={(value) => {
-                                           const validStatuses = ['aberto', 'em_atendimento', 'escalonado', 'concluido'] as const;
-                                           if (validStatuses.includes(value as any)) {
-                                             handleUpdateTicketStatus(link.ticket_id, value as typeof validStatuses[number]);
-                                           }
-                                         }}
+                                         <SelectTrigger className="h-7 text-xs w-auto">
+                                           <SelectValue />
+                                         </SelectTrigger>
+                                         <SelectContent>
+                                           <SelectItem value="aberto">Aberto</SelectItem>
+                                           <SelectItem value="em_atendimento">Em Atendimento</SelectItem>
+                                           <SelectItem value="escalonado">Escalonado</SelectItem>
+                                           <SelectItem value="concluido">Concluído</SelectItem>
+                                         </SelectContent>
+                                       </Select>
+                                       <Button
+                                         variant="outline"
+                                         size="sm"
+                                         className="h-7 text-xs"
+                                         onClick={() => handleSendMessageToTicket(link.ticket_id)}
                                        >
-                                        <SelectTrigger className="h-7 text-xs w-auto">
-                                          <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          <SelectItem value="aberto">Aberto</SelectItem>
-                                          <SelectItem value="em_atendimento">Em Atendimento</SelectItem>
-                                          <SelectItem value="escalonado">Escalonado</SelectItem>
-                                          <SelectItem value="concluido">Concluído</SelectItem>
-                                        </SelectContent>
-                                      </Select>
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-7 text-xs"
-                                        onClick={() => handleSendMessageToTicket(link.ticket_id)}
-                                      >
-                                        <MessageCircle className="h-3 w-3 mr-1" />
-                                        Responder
-                                      </Button>
-                                    </div>
+                                         <MessageCircle className="h-3 w-3 mr-1" />
+                                         Responder
+                                       </Button>
+                                     </div>
                                   </div>
                                 ))}
                               </div>
