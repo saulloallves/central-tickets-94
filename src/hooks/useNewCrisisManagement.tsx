@@ -277,6 +277,36 @@ export const useNewCrisisManagement = () => {
     }
   };
 
+  const unlinkTicketFromCrisis = async (crisisId: string, ticketId: string) => {
+    try {
+      const { error } = await supabase.rpc('unlink_ticket_from_crisis', {
+        p_crise_id: crisisId,
+        p_ticket_id: ticketId
+      });
+
+      if (error) {
+        console.error('Error unlinking ticket from crisis:', error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível desvincular o ticket da crise",
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      toast({
+        title: "Ticket Desvinculado",
+        description: "O ticket foi desvinculado da crise com sucesso",
+      });
+
+      await fetchActiveCrises();
+      return true;
+    } catch (error) {
+      console.error('Error unlinking ticket from crisis:', error);
+      return false;
+    }
+  };
+
   useEffect(() => {
     fetchActiveCrises();
 
@@ -354,6 +384,7 @@ export const useNewCrisisManagement = () => {
     updateCrisisStatus,
     broadcastMessage,
     resolveCrisisAndCloseTickets,
+    unlinkTicketFromCrisis,
     refetch: fetchActiveCrises
   };
 };

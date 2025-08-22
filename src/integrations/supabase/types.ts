@@ -2306,6 +2306,10 @@ export type Database = {
         Args: { "": string }
         Returns: string[]
       }
+      unlink_ticket_from_crisis: {
+        Args: { p_by?: string; p_crise_id: string; p_ticket_id: string }
+        Returns: undefined
+      }
       update_crise_status: {
         Args: {
           p_by?: string

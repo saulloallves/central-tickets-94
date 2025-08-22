@@ -39,7 +39,8 @@ export const NewCrisisPanel = ({ className }: NewCrisisPanelProps) => {
     createCrisis,
     updateCrisisStatus,
     broadcastMessage,
-    resolveCrisisAndCloseTickets
+    resolveCrisisAndCloseTickets,
+    unlinkTicketFromCrisis
   } = useNewCrisisManagement();
   
   const [selectedCrisis, setSelectedCrisis] = useState<Crisis | null>(null);
@@ -66,6 +67,10 @@ export const NewCrisisPanel = ({ className }: NewCrisisPanelProps) => {
     await createCrisis(newCrisisTitle, newCrisisDescription || undefined);
     setNewCrisisTitle('');
     setNewCrisisDescription('');
+  };
+
+  const handleUnlinkTicket = async (crisisId: string, ticketId: string) => {
+    await unlinkTicketFromCrisis(crisisId, ticketId);
   };
 
 
@@ -329,47 +334,62 @@ export const NewCrisisPanel = ({ className }: NewCrisisPanelProps) => {
                               <div className="min-h-[200px]">
                                 {crisis.crise_ticket_links && crisis.crise_ticket_links.length > 0 ? (
                                   <div className="space-y-2 max-h-64 overflow-y-auto border rounded-lg">
-                                     {crisis.crise_ticket_links.map((link, index) => (
-                                       <div 
-                                         key={link.ticket_id} 
-                                         className={cn(
-                                           "p-3 bg-white border-b last:border-b-0 cursor-pointer hover:bg-gray-100 transition-colors",
-                                           index % 2 === 0 ? "bg-gray-50" : "bg-white"
-                                         )}
-                                         onClick={() => {
-                                           // Abrir modal do ticket
-                                           const ticketEvent = new CustomEvent('openTicketModal', {
-                                             detail: { ticketId: link.ticket_id }
-                                           });
-                                           window.dispatchEvent(ticketEvent);
-                                         }}
-                                       >
-                                         <div className="flex items-center justify-between mb-2">
-                                           <div className="flex items-center gap-2">
-                                             <Badge variant="outline" className="text-xs">
-                                               {link.tickets?.unidades?.grupo || 'N/A'}
-                                             </Badge>
-                                           </div>
-                                           <div className="flex items-center gap-2">
-                                             <Badge 
-                                               variant={link.tickets?.status === 'concluido' ? 'default' : 'destructive'} 
-                                               className="text-xs"
-                                             >
-                                               {link.tickets?.status || 'N/A'}
-                                             </Badge>
-                                             <Badge 
-                                               variant={link.tickets?.prioridade === 'crise' ? 'destructive' : 'secondary'} 
-                                               className="text-xs"
-                                             >
-                                               {link.tickets?.prioridade || 'N/A'}
-                                             </Badge>
-                                           </div>
+                                      {crisis.crise_ticket_links.map((link, index) => (
+                                        <div 
+                                          key={link.ticket_id} 
+                                          className={cn(
+                                            "p-3 bg-white border-b last:border-b-0",
+                                            index % 2 === 0 ? "bg-gray-50" : "bg-white"
+                                          )}
+                                        >
+                                          <div className="flex items-center justify-between mb-2">
+                                            <div className="flex items-center gap-2">
+                                              <Badge variant="outline" className="text-xs">
+                                                {link.tickets?.unidades?.grupo || 'N/A'}
+                                              </Badge>
+                                              <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-6 text-xs hover:bg-blue-100 hover:text-blue-700"
+                                                onClick={() => {
+                                                  // Abrir modal do ticket
+                                                  const ticketEvent = new CustomEvent('openTicketModal', {
+                                                    detail: { ticketId: link.ticket_id }
+                                                  });
+                                                  window.dispatchEvent(ticketEvent);
+                                                }}
+                                              >
+                                                {link.tickets?.codigo_ticket || 'N/A'}
+                                              </Button>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                              <Badge 
+                                                variant={link.tickets?.status === 'concluido' ? 'default' : 'destructive'} 
+                                                className="text-xs"
+                                              >
+                                                {link.tickets?.status || 'N/A'}
+                                              </Badge>
+                                              <Badge 
+                                                variant={link.tickets?.prioridade === 'crise' ? 'destructive' : 'secondary'} 
+                                                className="text-xs"
+                                              >
+                                                {link.tickets?.prioridade || 'N/A'}
+                                              </Badge>
+                                              <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="h-6 text-xs hover:bg-red-100 hover:text-red-700 border-red-200"
+                                                onClick={() => handleUnlinkTicket(crisis.id, link.ticket_id)}
+                                              >
+                                                Desvincular
+                                              </Button>
+                                            </div>
+                                          </div>
+                                          <p className="text-sm font-medium mb-2">
+                                            {link.tickets?.descricao_problema || 'Sem descrição'}
+                                          </p>
                                          </div>
-                                         <p className="text-sm font-medium mb-2">
-                                           {link.tickets?.descricao_problema || 'Sem descrição'}
-                                         </p>
-                                        </div>
-                                    ))}
+                                     ))}
                                   </div>
                                 ) : (
                                   <div className="text-center py-8 text-muted-foreground border rounded-lg">
