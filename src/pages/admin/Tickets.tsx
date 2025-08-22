@@ -7,9 +7,11 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useRole } from '@/hooks/useRole';
 import { TicketsKanban } from '@/components/tickets/TicketsKanban';
 import { CreateTicketDialog } from '@/components/tickets/CreateTicketDialog';
+import { TicketDetail } from '@/components/tickets/TicketDetail';
 import { SLAAlerts } from '@/components/tickets/SLAAlerts';
 import { TestAIButton } from '@/components/tickets/TestAIButton';
 import { RefreshButton } from '@/components/ui/refresh-button';
@@ -34,12 +36,14 @@ const Tickets = () => {
   // Inicializar notificações sonoras
   const { testNotificationSound } = useTicketNotifications();
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
+  const [ticketModalOpen, setTicketModalOpen] = useState(false);
   
   // Listen for notification ticket modal events
   useEffect(() => {
     const handleOpenTicketModal = (event: CustomEvent) => {
       console.log('Received openTicketModal event:', event.detail);
       setSelectedTicketId(event.detail.ticketId);
+      setTicketModalOpen(true);
     };
     
     window.addEventListener('openTicketModal', handleOpenTicketModal as EventListener);
@@ -276,6 +280,24 @@ const Tickets = () => {
           open={createDialogOpen}
           onOpenChange={setCreateDialogOpen}
         />
+
+        {/* Modal de Ticket */}
+        <Dialog open={ticketModalOpen} onOpenChange={setTicketModalOpen}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Detalhes do Ticket</DialogTitle>
+            </DialogHeader>
+            {selectedTicketId && (
+              <TicketDetail 
+                ticketId={selectedTicketId}
+                onClose={() => {
+                  setTicketModalOpen(false);
+                  setSelectedTicketId(null);
+                }}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
