@@ -25,10 +25,25 @@ export function ImageCropper({ isOpen, onClose, onCrop, imageFile }: ImageCroppe
 
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !imageData || !isImageReady) return;
+    if (!canvas || !imageData || !isImageReady) {
+      console.log('Cannot draw canvas:', { canvas: !!canvas, imageData: !!imageData, isImageReady });
+      return;
+    }
 
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) {
+      console.log('Cannot get canvas context');
+      return;
+    }
+
+    console.log('Drawing canvas with:', {
+      imageWidth: imageData.naturalWidth,
+      imageHeight: imageData.naturalHeight,
+      zoom,
+      position,
+      canvasWidth: canvas.width,
+      canvasHeight: canvas.height
+    });
 
     // Limpar canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -37,14 +52,22 @@ export function ImageCropper({ isOpen, onClose, onCrop, imageFile }: ImageCroppe
     const imageWidth = imageData.naturalWidth * zoom;
     const imageHeight = imageData.naturalHeight * zoom;
 
+    console.log('Calculated dimensions:', { imageWidth, imageHeight });
+
     // Desenhar imagem
-    ctx.drawImage(
-      imageData,
-      position.x,
-      position.y,
-      imageWidth,
-      imageHeight
-    );
+    try {
+      ctx.drawImage(
+        imageData,
+        position.x,
+        position.y,
+        imageWidth,
+        imageHeight
+      );
+      console.log('Image drawn successfully');
+    } catch (error) {
+      console.error('Error drawing image:', error);
+      return;
+    }
 
     // Desenhar overlay escuro
     ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
