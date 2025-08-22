@@ -9,6 +9,7 @@ import { UnidadeCombobox } from './UnidadeCombobox';
 import { useTickets } from '@/hooks/useTickets';
 import { useRole } from '@/hooks/useRole';
 import { useAuth } from '@/hooks/useAuth';
+import '@/lib/legacy-cleanup';
 import { supabase } from '@/integrations/supabase/client';
 import { useFAQSuggestion } from '@/hooks/useFAQSuggestion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -57,9 +58,21 @@ export const CreateTicketDialog = ({ open, onOpenChange }: CreateTicketDialogPro
       if (savedData) {
         try {
           const parsed = JSON.parse(savedData);
+          
+          // Validate and fix legacy priority values
+          const validPriorities = ['imediato', 'ate_1_hora', 'ainda_hoje', 'posso_esperar', 'crise'];
+          if (parsed.prioridade && !validPriorities.includes(parsed.prioridade)) {
+            console.log('Found legacy priority value:', parsed.prioridade, '- clearing localStorage and using default');
+            // Clear localStorage completely to remove legacy data
+            localStorage.removeItem('createTicket_formData');
+            return;
+          }
+          
           setFormData(prev => ({ ...prev, ...parsed }));
         } catch (error) {
           console.error('Error loading saved form data:', error);
+          // Clear corrupted data
+          localStorage.removeItem('createTicket_formData');
         }
       }
     }
