@@ -50,35 +50,33 @@ export function AppSidebar() {
 
   const handleMouseEnter = () => {
     setIsExpanded(true);
-    // Ajustar margin do conteúdo principal responsivamente
+    // Ajustar margin do conteúdo principal
     const mainContent = document.querySelector('[data-main-content]') as HTMLElement;
     if (mainContent) {
-      // Responsive: diferentes margens para diferentes tamanhos de tela
-      mainContent.style.marginLeft = window.innerWidth >= 640 ? '208px' : '184px'; // sm: 16+192, mobile: 8+176
+      mainContent.style.marginLeft = '208px'; // Fixo para simplicidade
     }
   };
 
   const handleMouseLeave = () => {
     setIsExpanded(false);
-    // Restaurar margin original responsivamente
+    // Restaurar margin original
     const mainContent = document.querySelector('[data-main-content]') as HTMLElement;
     if (mainContent) {
-      // Responsive: diferentes margens para diferentes tamanhos de tela  
-      mainContent.style.marginLeft = window.innerWidth >= 640 ? '80px' : '64px'; // sm: 16+64, mobile: 8+56
+      mainContent.style.marginLeft = '80px'; // Fixo para simplicidade
     }
   };
 
   return (
     <div
       className={cn(
-        "h-[calc(100vh-6rem)] sm:h-[calc(100vh-8rem)] md:h-[calc(100vh-12rem)] lg:h-[calc(100vh-18rem)] fixed left-2 sm:left-4 top-1/2 -translate-y-1/2 z-40 transition-all duration-150",
-        isExpanded ? "w-44 sm:w-48" : "w-14 sm:w-16"
+        "h-[calc(100vh-12rem)] fixed left-4 top-1/2 -translate-y-1/2 z-40 transition-all duration-150",
+        isExpanded ? "w-48" : "w-16"
       )}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
       {/* Modern liquid glass sidebar container */}
-      <div className="relative h-full bg-gradient-to-b from-primary via-primary/95 to-primary/90 rounded-[24px] sm:rounded-[32px] overflow-hidden">
+      <div className="relative h-full bg-gradient-to-b from-primary via-primary/95 to-primary/90 rounded-[32px] overflow-hidden">
         {/* Liquid glass overlay effect */}
         <div className="absolute inset-0 liquid-glass-sidebar"></div>
         
@@ -88,16 +86,16 @@ export function AppSidebar() {
         </div>
         
         {/* Content wrapper with padding for curves */}
-        <div className="relative z-20 h-full flex flex-col py-2 sm:py-4 px-1 sm:px-2">
+        <div className="relative z-20 h-full flex flex-col py-4 px-2">
           {/* Main logo/brand icon */}
-          <div className="flex justify-center mb-2 sm:mb-4">
-            <div className="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center">
-              <ClipboardList className="h-3 w-3 sm:h-4 sm:w-4 text-white drop-shadow-lg" strokeWidth={1.5} />
+          <div className="flex justify-center mb-4">
+            <div className="w-8 h-8 flex items-center justify-center">
+              <ClipboardList className="h-4 w-4 text-white drop-shadow-lg" strokeWidth={1.5} />
             </div>
           </div>
 
           {/* Navigation Icons */}
-          <div className="flex-1 flex flex-col space-y-1 sm:space-y-2">
+          <div className="flex-1 flex flex-col space-y-2">
             {navigationItems.map((item) => (
               <PermissionGuard key={item.title} requiredPermission={item.permission}>
                 {isExpanded ? (
@@ -188,7 +186,7 @@ export function AppSidebar() {
           </div>
 
           {/* User Profile Section */}
-          <div className="mt-2 sm:mt-4 space-y-1 sm:space-y-2 flex-shrink-0">
+          <div className="mt-4 space-y-2 flex-shrink-0">
             {isExpanded ? (
               <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen} modal={false}>
                 <DropdownMenuTrigger asChild>
