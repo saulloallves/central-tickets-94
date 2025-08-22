@@ -270,9 +270,6 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
       case 'ate_1_hora': return 'outline';
       case 'ainda_hoje': return 'secondary';
       case 'posso_esperar': return 'secondary';
-      // Legacy support
-      case 'urgente': return 'destructive';
-      case 'alta': return 'outline';
       default: return 'secondary';
     }
   };

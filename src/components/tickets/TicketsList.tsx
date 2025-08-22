@@ -69,11 +69,6 @@ export const TicketsList = ({ filters, onTicketSelect, selectedTicketId }: Ticke
       case 'ate_1_hora': return 'outline';
       case 'ainda_hoje': return 'secondary';
       case 'posso_esperar': return 'secondary';
-      // Legacy support
-      case 'urgente': return 'destructive';
-      case 'alta': return 'outline';
-      case 'hoje_18h': return 'secondary';
-      case 'padrao_24h': return 'secondary';
       default: return 'secondary';
     }
   };
@@ -85,11 +80,6 @@ export const TicketsList = ({ filters, onTicketSelect, selectedTicketId }: Ticke
       case 'ate_1_hora': return 'Até 1h';
       case 'ainda_hoje': return 'Ainda Hoje';
       case 'posso_esperar': return 'Posso Esperar';
-      // Legacy support
-      case 'urgente': return 'Urgente';
-      case 'alta': return 'Alta';
-      case 'hoje_18h': return 'Hoje 18h';
-      case 'padrao_24h': return 'Padrão';
       default: return prioridade;
     }
   };

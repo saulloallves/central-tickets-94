@@ -17,7 +17,7 @@ export interface Ticket {
   status: 'aberto' | 'em_atendimento' | 'escalonado' | 'concluido';
   categoria?: 'juridico' | 'sistema' | 'midia' | 'operacoes' | 'rh' | 'financeiro' | 'outro';
   subcategoria?: string;
-  prioridade: 'imediato' | 'ate_1_hora' | 'ainda_hoje' | 'posso_esperar' | 'crise' | 'urgente' | 'alta' | 'hoje_18h' | 'padrao_24h';
+  prioridade: 'imediato' | 'ate_1_hora' | 'ainda_hoje' | 'posso_esperar' | 'crise';
   data_abertura: string;
   data_limite_sla?: string;
   equipe_responsavel_id?: string;
@@ -535,7 +535,7 @@ export const useTickets = (filters: TicketFilters) => {
           
           // Special handling for enum fields - only include if they have valid values
           if (key === 'prioridade') {
-            const validPrioridades = ['imediato', 'ate_1_hora', 'ainda_hoje', 'posso_esperar', 'crise', 'urgente', 'alta', 'hoje_18h', 'padrao_24h'];
+            const validPrioridades = ['imediato', 'ate_1_hora', 'ainda_hoje', 'posso_esperar', 'crise'];
             const isValid = validPrioridades.includes(value as string);
             console.log(`Prioridade validation for "${value}":`, isValid);
             return isValid;

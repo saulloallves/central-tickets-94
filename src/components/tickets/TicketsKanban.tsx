@@ -138,9 +138,6 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
       case 'ate_1_hora': return <ArrowUp className="h-2 w-2 text-warning" />;
       case 'ainda_hoje': return <ArrowUp className="h-2 w-2 text-warning" />;
       case 'posso_esperar': return null;
-      // Legacy support
-      case 'urgente': return <Clock className="h-2 w-2 text-critical" />;
-      case 'alta': return <ArrowUp className="h-2 w-2 text-warning" />;
       default: return null;
     }
   };
@@ -175,11 +172,6 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
       case 'ate_1_hora': return 'Até 1h';
       case 'ainda_hoje': return 'Ainda Hoje';
       case 'posso_esperar': return 'Posso Esperar';
-      // Legacy support
-      case 'urgente': return 'Urgente';
-      case 'alta': return 'Alta';
-      case 'media': return 'Média';
-      case 'baixa': return 'Baixa';
       default: return 'Posso esperar';
     }
   };
@@ -191,11 +183,6 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
       case 'ate_1_hora': return 'warning';
       case 'ainda_hoje': return 'outline';
       case 'posso_esperar': return 'outline';
-      // Legacy support
-      case 'urgente': return 'critical';
-      case 'alta': return 'warning';
-      case 'media': return 'outline';
-      case 'baixa': return 'outline';
       default: return 'outline';
     }
   };
@@ -240,10 +227,7 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
         ticket.prioridade === 'crise' ? "border-l-4 border-l-red-500" :
         ticket.prioridade === 'imediato' ? "border-l-4 border-l-red-500" :
         ticket.prioridade === 'ate_1_hora' ? "border-l-4 border-l-orange-500" :
-        ticket.prioridade === 'ainda_hoje' ? "border-l-4 border-l-amber-500" :
-        // Legacy support
-        ticket.prioridade === 'urgente' ? "border-l-4 border-l-red-500" :
-        ticket.prioridade === 'alta' ? "border-l-4 border-l-orange-500" : "border-l-4 border-l-slate-300",
+        ticket.prioridade === 'ainda_hoje' ? "border-l-4 border-l-amber-500" : "border-l-4 border-l-slate-300",
         isSelected && "ring-2 ring-blue-500/20 shadow-lg",
         isDragging && "opacity-70 scale-95 z-50 shadow-xl rotate-1"
       )}
@@ -289,9 +273,6 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
             ticket.prioridade === 'imediato' ? 'bg-red-50 text-red-700 border border-red-200' :
             ticket.prioridade === 'ate_1_hora' ? 'bg-orange-50 text-orange-700 border border-orange-200' :
             ticket.prioridade === 'ainda_hoje' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
-            // Legacy support
-            ticket.prioridade === 'urgente' ? 'bg-red-50 text-red-700 border border-red-200' :
-            ticket.prioridade === 'alta' ? 'bg-orange-50 text-orange-700 border border-orange-200' :
             'bg-slate-50 text-slate-700 border border-slate-200'
           )}>
             {ticket.status === 'concluido' ? 'Resolvido' : getPriorityLabel(ticket.prioridade)}
