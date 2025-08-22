@@ -251,13 +251,13 @@ export const NewCrisisPanel = ({ className }: NewCrisisPanelProps) => {
                 <div className="p-4 border-l-4 border-l-destructive bg-destructive/5 hover:bg-destructive/10 transition-colors">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
+                      <div className="flex items-center gap-2 mb-1">
                         <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0" />
                         <div>
-                          <h4 className="font-medium text-sm text-destructive">
+                          <h4 className="font-medium text-sm text-destructive leading-tight">
                             {crisis.titulo}
                           </h4>
-                          <div className="flex items-center gap-2 mt-1">
+                          <div className="flex items-center gap-2 mt-0.5">
                             <Badge variant={getStatusColor(crisis.status)} className="text-xs">
                               {getStatusLabel(crisis.status)}
                             </Badge>
