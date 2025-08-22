@@ -2195,6 +2195,26 @@ export type Database = {
         Args: { p_crisis_id: string }
         Returns: number
       }
+      gtrgm_compress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gtrgm_decompress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gtrgm_in: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gtrgm_options: {
+        Args: { "": unknown }
+        Returns: undefined
+      }
+      gtrgm_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
       has_permission: {
         Args: {
           _permission: Database["public"]["Enums"]["app_permission"]
@@ -2270,6 +2290,18 @@ export type Database = {
         Args: { p_crisis_id: string; p_resolvida_por?: string }
         Returns: undefined
       }
+      set_limit: {
+        Args: { "": number }
+        Returns: number
+      }
+      show_limit: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      show_trgm: {
+        Args: { "": string }
+        Returns: string[]
+      }
       update_crise_status: {
         Args: {
           p_by?: string
@@ -2282,6 +2314,10 @@ export type Database = {
       vincular_tickets_existentes_a_crise: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      vincular_tickets_similares_manual: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
     }
     Enums: {
