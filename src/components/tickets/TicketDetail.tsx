@@ -318,7 +318,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <Card className="w-full max-w-md">
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -338,7 +338,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
 
   if (!ticket) {
     return (
-      <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <Card className="w-full max-w-md">
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -359,13 +359,13 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
   const slaStatus = getSLAStatus();
 
   return (
-    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-7xl h-[90vh] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-auto">
+      <Card className="w-full max-w-6xl min-h-[80vh] max-h-[90vh] flex flex-col shadow-2xl border-0 rounded-lg overflow-hidden bg-white">
         {/* Header - Fixed */}
-        <CardHeader className="flex-shrink-0 border-b bg-card">
+        <CardHeader className="flex-shrink-0 border-b bg-white">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
-              <CardTitle className="text-xl line-clamp-2 mb-3 font-bold">
+              <CardTitle className="text-xl line-clamp-2 mb-3 font-bold text-foreground">
                 {getTicketDisplayTitle(ticket)}
               </CardTitle>
               <div className="flex items-center gap-3 flex-wrap">
@@ -582,7 +582,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
             </div>
 
             {/* Tab Content */}
-            <Card>
+            <Card className="bg-white">
               <CardContent className="p-6">
                 {activeTab === 'suggestion' && (
                   <div className="space-y-4">
