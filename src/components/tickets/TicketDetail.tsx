@@ -377,11 +377,16 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
           
           {/* SLA Status Row */}
           {slaStatus && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 pt-2">
               <Badge variant="outline" className={`${slaStatus.color} flex items-center gap-1`}>
                 {slaStatus.icon}
-                <span className="text-xs">{slaStatus.text}</span>
+                <span className="text-xs font-medium">{slaStatus.text}</span>
               </Badge>
+              {ticket.data_limite_sla && (
+                <span className="text-xs text-muted-foreground">
+                  Vence em {new Date(ticket.data_limite_sla).toLocaleString('pt-BR')}
+                </span>
+              )}
             </div>
           )}
         </div>
