@@ -131,50 +131,48 @@ export const NewCrisisAlertBanner = () => {
           </div>
 
           {!isMinimized && (
-            <div className="mt-3 space-y-2">
-              {activeCrises.slice(0, 3).map((crisis) => {
-                const ticketCount = crisis.crise_ticket_links?.length || 0;
-                const lastUpdate = crisis.crise_updates?.[0];
-                
-                return (
-                  <div key={crisis.id} className="bg-red-700/30 rounded p-3 text-sm">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <Badge 
-                          variant="outline" 
-                          className={cn("text-white border-white text-xs", getStatusColor(crisis.status))}
-                        >
-                          {getStatusLabel(crisis.status)}
-                        </Badge>
-                        <span className="font-medium">{crisis.titulo}</span>
-                      </div>
-                      
-                      <div className="flex items-center gap-2 text-xs opacity-75">
-                        <Clock className="h-3 w-3" />
-                        {formatDistanceToNowInSaoPaulo(crisis.created_at)} atrás
-                      </div>
+            <div className="mt-3">
+              <div className="bg-red-700/30 rounded p-3 text-sm">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <Badge 
+                        variant="outline" 
+                        className="text-white border-white text-xs bg-red-600"
+                      >
+                        ATIVA
+                      </Badge>
+                      <span className="font-medium">
+                        {activeCrises.length === 1 
+                          ? activeCrises[0].titulo 
+                          : `${activeCrises.length} crises simultâneas`
+                        }
+                      </span>
                     </div>
                     
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3 text-xs">
-                        <span>📋 {ticketCount} ticket{ticketCount !== 1 ? 's' : ''} vinculado{ticketCount !== 1 ? 's' : ''}</span>
-                        {lastUpdate && (
-                          <div className="flex items-center gap-1">
-                            <MessageSquare className="h-3 w-3" />
-                            <span>Última atualização: {lastUpdate.mensagem.substring(0, 30)}...</span>
-                          </div>
-                        )}
-                      </div>
+                    <div className="text-xs opacity-75">
+                      {activeCrises.reduce((total, crisis) => 
+                        total + (crisis.crise_ticket_links?.length || 0), 0
+                      )} tickets afetados
                     </div>
                   </div>
-                );
-              })}
-              
-              {activeCrises.length > 3 && (
-                <div className="text-center text-sm opacity-75">
-                  +{activeCrises.length - 3} crises adicionais
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-white hover:bg-red-600 text-xs"
+                    onClick={() => {
+                      const crisisPanel = document.querySelector('[data-crisis-panel-trigger]');
+                      if (crisisPanel) {
+                        (crisisPanel as HTMLElement).click();
+                      }
+                    }}
+                  >
+                    <MessageSquare className="h-3 w-3 mr-1" />
+                    Ver Detalhes
+                  </Button>
                 </div>
-              )}
+              </div>
             </div>
           )}
         </div>

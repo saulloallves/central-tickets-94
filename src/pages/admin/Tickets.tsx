@@ -147,6 +147,7 @@ const Tickets = () => {
               variant="outline" 
               onClick={() => setShowCrisisPanel(!showCrisisPanel)}
               className={showCrisisPanel ? "bg-red-50 border-red-200" : ""}
+              data-crisis-panel-trigger
             >
               <AlertTriangle className="h-4 w-4 mr-2" />
               Painel de Crises
