@@ -326,38 +326,19 @@ const KanbanColumn = ({ status, individualTickets, selectedTicketId, onTicketSel
           "border-dashed border-muted/40 hover:border-muted/60"
       )}
     >
-      {/* Header da coluna com efeito glass iOS 26 */}
-      <div 
-        className="flex items-center justify-between p-4 m-2 mb-0 relative overflow-hidden backdrop-blur-xl backdrop-saturate-150"
-        style={{
-          background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.05) 100%)',
-          border: '1px solid rgba(255, 255, 255, 0.4)',
-          borderRadius: '20px',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3)'
-        }}
-      >
+      {/* Header da coluna com efeito glassmorphism */}
+      <div className="flex items-center justify-between p-4 m-2 mb-0 glass-pill glass-hover relative overflow-hidden">
         <div className="relative flex items-center gap-3 z-10">
           {(() => {
             const IconComponent = COLUMN_ICONS[status];
             const iconColor = COLUMN_ICON_COLORS[status];
-            return <IconComponent className={`h-5 w-5 ${iconColor}`} />;
+            return <IconComponent className={`h-5 w-5 ${iconColor} drop-shadow-sm`} />;
           })()}
-          <h3 
-            className="font-bold text-base tracking-tight"
-            style={{ color: 'rgba(0, 0, 0, 0.7)' }}
-          >
+          <h3 className="font-bold text-base tracking-tight text-foreground/80 drop-shadow-sm">
             {COLUMN_STATUS[status]}
           </h3>
         </div>
-        <Badge 
-          variant="secondary" 
-          className="relative z-10 text-xs backdrop-blur-sm rounded-full font-semibold"
-          style={{
-            background: 'rgba(255, 255, 255, 0.3)',
-            border: '1px solid rgba(255, 255, 255, 0.4)',
-            color: 'rgba(0, 0, 0, 0.7)'
-          }}
-        >
+        <Badge className="relative z-10 text-xs rounded-full font-semibold glass-badge text-foreground/70">
           {individualTickets.length}
         </Badge>
       </div>
