@@ -129,7 +129,7 @@ const Unidades = () => {
 
   return (
     <ProtectedRoute requiredRole="admin">
-      <div className="w-full space-y-6">
+      <div className="w-full space-y-6 pt-6">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Unidades</h2>
           <p className="text-muted-foreground">

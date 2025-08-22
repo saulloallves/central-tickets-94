@@ -181,7 +181,7 @@ export default function Profile() {
   }
 
   return (
-    <div className="w-full p-6" data-main-content>
+    <div className="w-full p-6 pt-12" data-main-content>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Meu Perfil</h1>

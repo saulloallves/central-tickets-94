@@ -190,7 +190,7 @@ export default function IASettings() {
   }
 
   return (
-    <div className="w-full py-6">
+    <div className="w-full py-6 pt-12">
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">

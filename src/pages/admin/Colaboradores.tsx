@@ -103,7 +103,7 @@ const Colaboradores = () => {
 
   return (
     <ProtectedRoute requiredRole="admin">
-      <div className="w-full space-y-6">
+      <div className="w-full space-y-6 pt-6">
         <div className="flex justify-between items-center">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">Colaboradores</h2>

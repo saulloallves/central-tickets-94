@@ -11,8 +11,8 @@ import { CrisisConfigTab } from "@/components/configuracoes/CrisisConfigTab";
 
 export default function Configuracoes() {
   return (
-    <div className="min-h-screen bg-gradient-subtle p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-subtle p-6 pt-12">
+      <div className="w-full space-y-6">
         <div className="text-center space-y-2">
           <div className="flex items-center justify-center gap-3 mb-4">
             <div className="p-3 rounded-lg bg-gradient-primary">
