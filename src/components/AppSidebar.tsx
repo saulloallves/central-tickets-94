@@ -101,11 +101,11 @@ export function AppSidebar() {
                       to={item.url}
                       end
                       className={({ isActive }) => cn(
-                        "group flex items-center px-3 py-2 transition-all duration-300",
+                        "group flex items-center px-3 py-2 rounded-xl transition-all duration-300",
                         "hover:scale-[1.02]",
                         isActive 
-                          ? "liquid-glass-button text-white bg-white/10" 
-                          : "hover:liquid-glass-button hover:text-white/95 hover:bg-white/5"
+                          ? "bg-white/10 backdrop-blur-sm text-white border border-white/20" 
+                          : "hover:bg-white/5 hover:backdrop-blur-sm hover:text-white/95 hover:border hover:border-white/10"
                       )}
                     >
                       {({ isActive }) => (
@@ -144,10 +144,10 @@ export function AppSidebar() {
                           to={item.url}
                           end
                           className={({ isActive }) => cn(
-                            "group relative flex items-center justify-center w-10 h-10 transition-all duration-300 mx-auto",
+                            "group relative flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-300 mx-auto",
                             isActive 
-                              ? "liquid-glass-button text-white bg-white/10" 
-                              : "hover:liquid-glass-button hover:text-white/95 hover:bg-white/5"
+                              ? "bg-white/10 backdrop-blur-sm text-white border border-white/20" 
+                              : "hover:bg-white/5 hover:backdrop-blur-sm hover:text-white/95 hover:border hover:border-white/10"
                           )}
                         >
                           {({ isActive }) => (
