@@ -650,14 +650,6 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
               {showFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}
             </Button>
           )}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowArchivedTickets(!showArchivedTickets)}
-            className="text-xs"
-          >
-            {showArchivedTickets ? 'Ocultar Arquivados' : 'Mostrar Arquivados'}
-          </Button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
