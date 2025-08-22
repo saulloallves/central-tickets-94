@@ -187,6 +187,12 @@ export function ImageCropper({ isOpen, onClose, onCrop, imageFile }: ImageCroppe
     if (isOpen && imageFile) {
       const img = imageRef.current;
       if (img) {
+        // Limpar imagem anterior
+        setImageLoaded(false);
+        setZoom(1);
+        setPosition({ x: 0, y: 0 });
+        
+        // Carregar nova imagem
         img.src = URL.createObjectURL(imageFile);
       }
     }
