@@ -113,8 +113,11 @@ export default function Profile() {
 
       console.log('Public URL:', publicUrl);
 
+      // Adicionar timestamp para evitar cache
+      const urlWithTimestamp = `${publicUrl}?t=${Date.now()}`;
+
       // Atualizar perfil com nova URL do avatar
-      const result = await updateProfile({ avatar_url: publicUrl });
+      const result = await updateProfile({ avatar_url: urlWithTimestamp });
       console.log('Profile update result:', result);
 
       toast({
@@ -199,7 +202,10 @@ export default function Profile() {
             <div className="flex items-center space-x-6">
               <div className="relative">
                 <Avatar className="h-24 w-24">
-                  <AvatarImage src={profile?.avatar_url} />
+                  <AvatarImage 
+                    src={profile?.avatar_url} 
+                    key={profile?.avatar_url} // Force re-render when URL changes
+                  />
                   <AvatarFallback className="text-2xl">
                     {profile?.nome_completo?.charAt(0)?.toUpperCase() || 
                      profile?.email?.charAt(0)?.toUpperCase() || 
