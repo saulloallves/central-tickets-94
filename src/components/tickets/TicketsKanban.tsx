@@ -302,7 +302,11 @@ interface KanbanColumnProps {
   equipes: Array<{ id: string; nome: string }>;
 }
 
+const TICKETS_PER_PAGE = 10;
+
 const KanbanColumn = ({ status, individualTickets, selectedTicketId, onTicketSelect, equipes }: KanbanColumnProps) => {
+  const [showAll, setShowAll] = useState(false);
+  
   const { setNodeRef, isOver } = useDroppable({
     id: status,
     data: {
@@ -310,6 +314,9 @@ const KanbanColumn = ({ status, individualTickets, selectedTicketId, onTicketSel
       status: status
     }
   });
+
+  const ticketsToShow = showAll ? individualTickets : individualTickets.slice(0, TICKETS_PER_PAGE);
+  const hasMoreTickets = individualTickets.length > TICKETS_PER_PAGE;
 
   return (
     <div 
@@ -361,10 +368,10 @@ const KanbanColumn = ({ status, individualTickets, selectedTicketId, onTicketSel
             </div>
           </div>
         )}
-        <SortableContext items={individualTickets.map(t => t.id)} strategy={verticalListSortingStrategy}>
+        <SortableContext items={ticketsToShow.map(t => t.id)} strategy={verticalListSortingStrategy}>
           <div className="space-y-4 pb-6">
             {/* Individual Tickets */}
-            {individualTickets.map((ticket) => (
+            {ticketsToShow.map((ticket) => (
               <KanbanTicketCard
                 key={ticket.id}
                 ticket={ticket}
@@ -377,6 +384,34 @@ const KanbanColumn = ({ status, individualTickets, selectedTicketId, onTicketSel
             {individualTickets.length === 0 && (
               <div className="text-center text-muted-foreground text-sm py-8">
                 Nenhum ticket nesta coluna
+              </div>
+            )}
+
+            {/* Ver mais button */}
+            {hasMoreTickets && !showAll && (
+              <div className="pt-4 border-t border-gray-200/50">
+                <Button
+                  variant="ghost" 
+                  size="sm"
+                  className="w-full text-sm text-muted-foreground hover:text-primary transition-colors"
+                  onClick={() => setShowAll(true)}
+                >
+                  Ver mais {individualTickets.length - TICKETS_PER_PAGE} tickets
+                </Button>
+              </div>
+            )}
+
+            {/* Ver menos button */}
+            {showAll && hasMoreTickets && (
+              <div className="pt-4 border-t border-gray-200/50">
+                <Button
+                  variant="ghost" 
+                  size="sm"
+                  className="w-full text-sm text-muted-foreground hover:text-primary transition-colors"
+                  onClick={() => setShowAll(false)}
+                >
+                  Ver menos
+                </Button>
               </div>
             )}
           </div>
