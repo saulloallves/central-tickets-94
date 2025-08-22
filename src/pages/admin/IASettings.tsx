@@ -165,9 +165,9 @@ export default function IASettings() {
 
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto py-6">
+      <div className="max-w-7xl py-6">
         <div className="space-y-6">
-          <div className="text-center">
+          <div>
             <h1 className="text-3xl font-bold">Configurações da IA</h1>
             <p className="text-muted-foreground">Carregando configurações...</p>
           </div>
@@ -178,9 +178,9 @@ export default function IASettings() {
 
   if (!settings) {
     return (
-      <div className="max-w-7xl mx-auto py-6">
+      <div className="max-w-7xl py-6">
         <div className="space-y-6">
-          <div className="text-center">
+          <div>
             <h1 className="text-3xl font-bold">Configurações da IA</h1>
             <p className="text-muted-foreground">Erro ao carregar configurações</p>
           </div>
@@ -190,12 +190,12 @@ export default function IASettings() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto py-6">
+    <div className="max-w-7xl py-6">
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div className="text-center flex-1">
-            <h1 className="text-3xl font-bold flex items-center gap-2 justify-center">
+          <div>
+            <h1 className="text-3xl font-bold flex items-center gap-2">
               <Sparkles className="h-8 w-8" />
               Configurações da IA
             </h1>

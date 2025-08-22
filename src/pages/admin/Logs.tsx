@@ -61,10 +61,10 @@ const LogsPage = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
+    <div className="max-w-7xl space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <div className="text-center flex-1">
+        <div>
           <h1 className="text-3xl font-bold tracking-tight">Logs do Sistema</h1>
           <p className="text-muted-foreground">
             Auditoria completa de todas as ações realizadas no sistema

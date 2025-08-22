@@ -201,8 +201,8 @@ export default function PermissionsControl() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto py-6 space-y-6">
-      <div className="flex items-center gap-2 justify-center">
+    <div className="max-w-7xl py-6 space-y-6">
+      <div className="flex items-center gap-2">
         <Shield className="h-6 w-6" />
         <h1 className="text-3xl font-bold">Controle de Permissões</h1>
       </div>
