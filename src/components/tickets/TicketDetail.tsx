@@ -341,140 +341,140 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
   const slaStatus = getSLAStatus();
 
   return (
-    <div className="w-full h-full flex flex-col overflow-hidden p-6">
-        {/* Header */}
-        <div className="flex-shrink-0 border-b pb-4 mb-6">
-          <div className="flex items-start justify-between gap-4 mb-3">
-            <div className="flex-1 min-w-0">
-              <h2 className="text-xl line-clamp-2 mb-3 font-bold text-foreground">
-                {getTicketDisplayTitle(ticket)}
-              </h2>
-              <div className="flex items-center gap-3 flex-wrap">
-                <Badge variant="outline" className="font-mono text-sm">
-                  {ticket.codigo_ticket}
-                </Badge>
-                <div className="flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full ${getStatusColor(ticket.status)}`} />
-                  <span className="text-sm text-muted-foreground capitalize font-medium">{ticket.status}</span>
-                </div>
+    <div className="w-full h-full flex flex-col overflow-hidden">
+      {/* Header com Glass Effect */}
+      <div className="flex-shrink-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border/40 p-6">
+        <div className="flex items-start justify-between gap-4 mb-3">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-xl line-clamp-2 mb-3 font-bold text-foreground">
+              {getTicketDisplayTitle(ticket)}
+            </h2>
+            <div className="flex items-center gap-3 flex-wrap">
+              <Badge variant="outline" className="font-mono text-sm bg-muted/50">
+                {ticket.codigo_ticket}
+              </Badge>
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${getStatusColor(ticket.status)}`} />
+                <span className="text-sm text-muted-foreground capitalize font-medium">{ticket.status}</span>
               </div>
-            </div>
-            
-            <div className="flex items-center gap-2 flex-shrink-0">
-              {ticket.prioridade === 'crise' && (
-                <Badge variant="destructive" className="whitespace-nowrap animate-pulse">
-                  <AlertTriangle className="h-3 w-3 mr-1" />
-                  EM CRISE
-                </Badge>
-              )}
-              <CrisisButton ticketId={ticket.id} currentPriority={ticket.prioridade} />
-              <TicketActions ticket={ticket} equipes={equipes} />
-              <Button variant="ghost" size="sm" onClick={onClose}>
-                <X className="h-4 w-4" />
-              </Button>
             </div>
           </div>
           
-          {/* SLA Status Row */}
-          {slaStatus && (
-            <div className="flex items-center gap-3 pt-2">
-              <Badge variant="outline" className={`${slaStatus.color} flex items-center gap-1`}>
-                {slaStatus.icon}
-                <span className="text-xs font-medium">{slaStatus.text}</span>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {ticket.prioridade === 'crise' && (
+              <Badge variant="destructive" className="whitespace-nowrap animate-pulse">
+                <AlertTriangle className="h-3 w-3 mr-1" />
+                EM CRISE
               </Badge>
-              {ticket.data_limite_sla && (
-                <span className="text-xs text-muted-foreground">
-                  Vence em {new Date(ticket.data_limite_sla).toLocaleString('pt-BR')}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto space-y-6">
-          {/* Info Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Unidade Card */}
-            <Card className="border-l-4 border-l-blue-500">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-50 rounded-lg">
-                    <Building className="h-4 w-4 text-blue-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-muted-foreground mb-1">Unidade</p>
-                    <p className="font-semibold text-sm truncate">
-                      {ticket.unidades?.grupo || ticket.unidade_id}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Solicitante Card */}
-            <Card className="border-l-4 border-l-green-500">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-50 rounded-lg">
-                    <User className="h-4 w-4 text-green-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-muted-foreground mb-1">Solicitante</p>
-                    <p className="font-semibold text-sm truncate">
-                      {ticket.colaboradores?.nome_completo || 
-                       ticket.profiles?.nome_completo || 
-                       (ticket.franqueado_id ? (ticket.franqueados?.name || "Franqueado") : "Sistema")}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Prioridade/Equipe Card */}
-            <Card className="border-l-4 border-l-purple-500">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-purple-50 rounded-lg">
-                    <Tag className="h-4 w-4 text-purple-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="text-xs text-muted-foreground">Prioridade</p>
-                      <Badge variant={getPriorityVariant(ticket.prioridade)} className="text-xs h-5">
-                        {ticket.prioridade === 'crise' && <Zap className="h-3 w-3 mr-1" />}
-                        {ticket.prioridade?.toUpperCase()}
-                      </Badge>
-                    </div>
-                    <p className="font-semibold text-sm truncate">
-                      {ticket.equipes?.nome || 'Aguardando designação'}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            )}
+            <CrisisButton ticketId={ticket.id} currentPriority={ticket.prioridade} />
+            <TicketActions ticket={ticket} equipes={equipes} />
+            <Button variant="ghost" size="sm" onClick={onClose}>
+              <X className="h-4 w-4" />
+            </Button>
           </div>
+        </div>
+        
+        {/* SLA Status Row */}
+        {slaStatus && (
+          <div className="flex items-center gap-3 pt-2">
+            <Badge variant="outline" className={`${slaStatus.color} flex items-center gap-1 bg-background/50`}>
+              {slaStatus.icon}
+              <span className="text-xs font-medium">{slaStatus.text}</span>
+            </Badge>
+            {ticket.data_limite_sla && (
+              <span className="text-xs text-muted-foreground">
+                Vence em {new Date(ticket.data_limite_sla).toLocaleString('pt-BR')}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
 
-          {/* Team Management */}
-          <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
+      {/* Content - Scrollable */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        {/* Info Cards Grid - Sem linhas coloridas */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Unidade Card */}
+          <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50 hover:bg-card/70 transition-all">
             <CardContent className="p-4">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Users className="h-4 w-4 text-blue-600" />
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                  <Building className="h-4 w-4 text-blue-600" />
                 </div>
-                <div>
-                  <h4 className="font-semibold text-blue-900">Equipe Responsável</h4>
-                  <p className="text-xs text-blue-700">Altere a equipe responsável pelo atendimento</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-muted-foreground mb-1">Unidade</p>
+                  <p className="font-semibold text-sm truncate">
+                    {ticket.unidades?.grupo || ticket.unidade_id}
+                  </p>
                 </div>
               </div>
-              <Select
-                value={ticket.equipe_responsavel_id || "none"}
-                onValueChange={(value) => handleTeamChange(value === "none" ? "" : value)}
-              >
-                <SelectTrigger className="w-full bg-white border-blue-200">
-                  <SelectValue placeholder="Selecionar equipe..." />
-                </SelectTrigger>
-                <SelectContent className="bg-white border border-border shadow-lg z-[60]">
+            </CardContent>
+          </Card>
+
+          {/* Solicitante Card */}
+          <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50 hover:bg-card/70 transition-all">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-500/10 border border-green-500/20 rounded-lg">
+                  <User className="h-4 w-4 text-green-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-muted-foreground mb-1">Solicitante</p>
+                  <p className="font-semibold text-sm truncate">
+                    {ticket.colaboradores?.nome_completo || 
+                     ticket.profiles?.nome_completo || 
+                     (ticket.franqueado_id ? (ticket.franqueados?.name || "Franqueado") : "Sistema")}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Prioridade/Equipe Card */}
+          <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50 hover:bg-card/70 transition-all">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-purple-500/10 border border-purple-500/20 rounded-lg">
+                  <Tag className="h-4 w-4 text-purple-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-xs text-muted-foreground">Prioridade</p>
+                    <Badge variant={getPriorityVariant(ticket.prioridade)} className="text-xs h-5">
+                      {ticket.prioridade === 'crise' && <Zap className="h-3 w-3 mr-1" />}
+                      {ticket.prioridade?.toUpperCase()}
+                    </Badge>
+                  </div>
+                  <p className="font-semibold text-sm truncate">
+                    {ticket.equipes?.nome || 'Aguardando designação'}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Team Management */}
+        <Card className="bg-gradient-to-br from-blue-500/5 to-purple-500/5 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-border/40">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                <Users className="h-4 w-4 text-blue-600" />
+              </div>
+              <div>
+                <h4 className="font-semibold text-foreground">Equipe Responsável</h4>
+                <p className="text-xs text-muted-foreground">Altere a equipe responsável pelo atendimento</p>
+              </div>
+            </div>
+            <Select
+              value={ticket.equipe_responsavel_id || "none"}
+              onValueChange={(value) => handleTeamChange(value === "none" ? "" : value)}
+            >
+              <SelectTrigger className="w-full bg-background/50 border-border/40">
+                <SelectValue placeholder="Selecionar equipe..." />
+              </SelectTrigger>
+              <SelectContent className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border border-border shadow-lg z-[60]">
                   <SelectItem value="none">Nenhuma equipe</SelectItem>
                   {equipes.map((equipe) => (
                     <SelectItem key={equipe.id} value={equipe.id}>
@@ -488,17 +488,17 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
 
           {/* Atendimento Status */}
           {ticket.atendimento_iniciado_por && ticket.atendimento_iniciado_profile?.nome_completo && (
-            <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+            <Card className="bg-gradient-to-br from-green-500/5 to-emerald-500/5 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-border/40">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-100 rounded-lg">
+                  <div className="p-2 bg-green-500/10 border border-green-500/20 rounded-lg">
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                   </div>
                   <div className="flex-1">
-                    <div className="text-sm font-semibold text-green-800">
+                    <div className="text-sm font-semibold text-foreground">
                       Atendimento em andamento
                     </div>
-                    <div className="text-xs text-green-700">
+                    <div className="text-xs text-muted-foreground">
                       <span className="font-medium">{ticket.atendimento_iniciado_profile.nome_completo}</span>
                       {' • '}iniciado em {ticket.atendimento_iniciado_em 
                         ? new Date(ticket.atendimento_iniciado_em).toLocaleString('pt-BR', {
@@ -518,10 +518,10 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
           )}
 
           {/* Problem Description */}
-          <Card>
+          <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50">
             <CardContent className="p-4">
               <h4 className="font-semibold text-base mb-3">Descrição do Problema</h4>
-              <div className="p-4 bg-muted/50 rounded-lg border-l-4 border-primary">
+              <div className="p-4 bg-muted/30 rounded-lg border border-primary/20">
                 <p className="text-sm leading-relaxed text-foreground">
                   {ticket.descricao_problema}
                 </p>
@@ -534,7 +534,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
           {/* Tab Navigation */}
           <div className="space-y-4">
             {/* Tab Buttons */}
-            <div className="flex gap-1 p-1 bg-muted rounded-lg">
+            <div className="flex gap-1 p-1 bg-muted/50 backdrop-blur supports-[backdrop-filter]:bg-muted/30 rounded-lg border border-border/40">
               <Button
                 variant={activeTab === 'suggestion' ? 'default' : 'ghost'}
                 size="sm"
@@ -572,13 +572,13 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
             </div>
 
             {/* Tab Content */}
-            <Card>
+            <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50">
               <CardContent className="p-6">
                 {activeTab === 'suggestion' && (
                   <div className="space-y-4">
                     {suggestion ? (
                       <div className="space-y-4">
-                        <div className="p-4 bg-muted/50 rounded-lg border-l-4 border-primary">
+                        <div className="p-4 bg-muted/30 rounded-lg border border-primary/20">
                           <p className="text-sm leading-relaxed">{suggestion.resposta}</p>
                           <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
                             <div className="flex items-center gap-2">
@@ -650,7 +650,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                 {activeTab === 'chat' && (
                   <div className="flex flex-col h-[400px]">
                     {/* Chat Messages Area */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-muted/20 rounded-lg">
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-muted/10 backdrop-blur supports-[backdrop-filter]:bg-muted/20 rounded-lg border border-border/30">
                       {chatHistory.length === 0 ? (
                         <div className="text-center py-8">
                           <Bot className="h-12 w-12 mx-auto text-muted-foreground/50 mb-2" />
@@ -708,7 +708,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                     </div>
                     
                     {/* Input Area */}
-                    <div className="border-t bg-background p-4 rounded-b-lg">
+                    <div className="border-t bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/80 p-4 rounded-b-lg">
                       <div className="flex gap-3">
                         <Input
                           placeholder="Digite sua mensagem..."

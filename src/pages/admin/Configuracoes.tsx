@@ -25,7 +25,7 @@ export default function Configuracoes() {
           </p>
         </div>
 
-        <Card className="shadow-elegant border-0 bg-gradient-card">
+        <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50 shadow-lg">
           <CardContent className="p-6">
             <Tabs defaultValue="ia" className="w-full">
               <TabsList className="grid w-full grid-cols-6 mb-6">
