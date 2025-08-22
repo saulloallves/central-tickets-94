@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Camera, Save, Loader2, User, Mail, Phone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { ImageCropper } from "@/components/profile/ImageCropper";
 
 export default function Profile() {
   const { user } = useAuth();
@@ -16,6 +17,8 @@ export default function Profile() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isCropperOpen, setIsCropperOpen] = useState(false);
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [formData, setFormData] = useState({
     nome_completo: profile?.nome_completo || "",
     email: profile?.email || user?.email || "",
@@ -34,10 +37,10 @@ export default function Profile() {
     }
   }, [profile, user]);
 
-  // Upload de avatar
-  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Seleção de arquivo para crop
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !user) return;
+    if (!file) return;
 
     // Validar tipo de arquivo
     if (!file.type.startsWith('image/')) {
@@ -59,18 +62,31 @@ export default function Profile() {
       return;
     }
 
+    setSelectedImageFile(file);
+    setIsCropperOpen(true);
+    
+    // Limpar o input para permitir selecionar o mesmo arquivo novamente
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // Upload de avatar após crop
+  const handleCroppedImage = async (croppedBlob: Blob) => {
+    if (!user) return;
+
     setIsUploadingAvatar(true);
 
     try {
       // Criar nome único para o arquivo
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/avatar.${fileExt}`;
+      const fileName = `${user.id}/avatar.jpg`;
 
       // Upload para o storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(fileName, file, {
-          upsert: true // Substitui se já existir
+        .upload(fileName, croppedBlob, {
+          upsert: true, // Substitui se já existir
+          contentType: 'image/jpeg'
         });
 
       if (uploadError) throw uploadError;
@@ -216,7 +232,7 @@ export default function Profile() {
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
-                onChange={handleAvatarUpload}
+                onChange={handleFileSelect}
                 className="hidden"
               />
             </div>
@@ -290,6 +306,16 @@ export default function Profile() {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Image Cropper */}
+      {selectedImageFile && (
+        <ImageCropper
+          isOpen={isCropperOpen}
+          onClose={() => setIsCropperOpen(false)}
+          onCrop={handleCroppedImage}
+          imageFile={selectedImageFile}
+        />
+      )}
     </div>
   );
 }
