@@ -793,7 +793,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                             className="h-10 px-4"
                           >
                             <Phone className="h-4 w-4 mr-2" />
-                            {isSendingToFranqueado ? 'Enviando...' : 'WhatsApp'}
+                            {isSendingToFranqueado ? 'Enviando...' : 'Enviar para Franqueado'}
                           </Button>
                         </div>
                       </div>
