@@ -46,32 +46,7 @@ export const useNewCrisisManagement = () => {
 
   const fetchActiveCrises = async () => {
     try {
-      // Buscar da tabela crises_ativas também
-      const { data: activeCrisesData, error: activeCrisesError } = await supabase
-        .from('crises_ativas')
-        .select(`
-          id,
-          motivo,
-          criada_em,
-          resolvida_em,
-          ticket_id,
-          impacto_regional,
-          tickets:ticket_id (
-            codigo_ticket,
-            titulo,
-            descricao_problema,
-            unidade_id,
-            prioridade,
-            status,
-            unidades:unidade_id (
-              grupo
-            )
-          )
-        `)
-        .is('resolvida_em', null)
-        .order('criada_em', { ascending: false });
-
-      // Buscar também da tabela crises
+      // Buscar apenas da tabela crises (novo sistema unificado)
       const { data: crisesData, error: crisesError } = await supabase
         .from('crises')
         .select(`
@@ -102,67 +77,18 @@ export const useNewCrisisManagement = () => {
         .neq('status', 'encerrado')
         .order('created_at', { ascending: false });
 
-      if (activeCrisesError) {
-        console.error('Error fetching active crises:', activeCrisesError);
-      }
-
       if (crisesError) {
         console.error('Error fetching crises:', crisesError);
+        toast({
+          title: "Erro",
+          description: "Erro ao carregar crises",
+          variant: "destructive",
+        });
+        return;
       }
 
-      // Converter crises_ativas para formato compatível e buscar TODOS os tickets de crise
-      const formattedActiveCrises = await Promise.all((activeCrisesData || []).map(async (crisis) => {
-        // Buscar todos os tickets com prioridade crise que têm problema similar
-        const { data: allCrisisTickets } = await supabase
-          .from('tickets')
-          .select(`
-            id,
-            codigo_ticket,
-            titulo,
-            descricao_problema,
-            unidade_id,
-            prioridade,
-            status,
-            unidades:unidade_id (
-              grupo
-            )
-          `)
-          .eq('prioridade', 'crise')
-          .eq('status', 'escalonado')
-          .gte('data_abertura', new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString()); // Últimas 4 horas
-
-        const similarTickets = (allCrisisTickets || []).filter(ticket => 
-          ticket.descricao_problema && 
-          crisis.tickets?.descricao_problema &&
-          ticket.descricao_problema.toLowerCase().includes(
-            crisis.tickets.descricao_problema.split(' ')[0].toLowerCase()
-          )
-        );
-
-        return {
-          id: crisis.id,
-          titulo: crisis.motivo || 'Crise Ativa',
-          descricao: `Crise iniciada em ${new Date(crisis.criada_em).toLocaleString('pt-BR')} - ${similarTickets.length} tickets afetados`,
-          status: 'aberto' as const,
-          palavras_chave: null,
-          canal_oficial: null,
-          created_at: crisis.criada_em,
-          updated_at: crisis.criada_em,
-          abriu_por: null,
-          ultima_atualizacao: crisis.criada_em,
-          crise_ticket_links: similarTickets.map(ticket => ({
-            ticket_id: ticket.id,
-            tickets: ticket
-          })),
-          crise_updates: []
-        };
-      }));
-
-      // Combinar ambas as fontes
-      const allCrises = [...formattedActiveCrises, ...(crisesData || [])];
-      setActiveCrises(allCrises);
-
-      console.log('🚨 Active crises loaded:', allCrises.length);
+      setActiveCrises(crisesData || []);
+      console.log('🚨 Active crises loaded:', (crisesData || []).length);
     } catch (error) {
       console.error('Error fetching active crises:', error);
       toast({
@@ -321,54 +247,21 @@ export const useNewCrisisManagement = () => {
     statusTicket: 'concluido' | 'em_atendimento' = 'concluido'
   ) => {
     try {
-      // Verificar se é uma crise da tabela crises_ativas ou crises
-      const { data: activeCrisis } = await supabase
-        .from('crises_ativas')
-        .select('id, ticket_id')
-        .eq('id', crisisId)
-        .single();
+      // Usar apenas a função para resolver crises da tabela crises
+      const { error } = await supabase.rpc('resolve_crise_close_tickets', {
+        p_crise_id: crisisId,
+        p_mensagem: mensagem,
+        p_status_ticket: statusTicket
+      });
 
-      if (activeCrisis) {
-        // É uma crise ativa - usar função específica para resolver
-        const { error } = await supabase.rpc('resolve_crisis', {
-          p_crisis_id: crisisId,
-          p_resolvida_por: (await supabase.auth.getUser()).data.user?.id
+      if (error) {
+        console.error('Error resolving crisis:', error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível encerrar a crise",
+          variant: "destructive",
         });
-
-        if (error) {
-          console.error('Error resolving active crisis:', error);
-          toast({
-            title: "Erro",
-            description: "Não foi possível encerrar a crise ativa",
-            variant: "destructive",
-          });
-          return false;
-        }
-
-        // Atualizar ticket vinculado se necessário
-        if (activeCrisis.ticket_id && statusTicket === 'concluido') {
-          await supabase
-            .from('tickets')
-            .update({ status: statusTicket })
-            .eq('id', activeCrisis.ticket_id);
-        }
-      } else {
-        // É uma crise da tabela crises - usar função original
-        const { error } = await supabase.rpc('resolve_crise_close_tickets', {
-          p_crise_id: crisisId,
-          p_mensagem: mensagem,
-          p_status_ticket: statusTicket
-        });
-
-        if (error) {
-          console.error('Error resolving crisis:', error);
-          toast({
-            title: "Erro",
-            description: "Não foi possível encerrar a crise",
-            variant: "destructive",
-          });
-          return false;
-        }
+        return false;
       }
 
       toast({
@@ -387,9 +280,9 @@ export const useNewCrisisManagement = () => {
   useEffect(() => {
     fetchActiveCrises();
 
-    // Enhanced realtime subscription para crises e tickets
+    // Realtime subscription apenas para a tabela crises
     const channel = supabase
-      .channel('crises-enhanced-realtime')
+      .channel('crises-realtime')
       .on(
         'postgres_changes',
         {
@@ -399,20 +292,6 @@ export const useNewCrisisManagement = () => {
         },
         (payload) => {
           console.log('🚨 Realtime crisis change:', payload);
-          // Refetch immediately for any crisis change
-          setTimeout(() => fetchActiveCrises(), 100);
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'crises_ativas'
-        },
-        (payload) => {
-          console.log('🚨 Realtime crises_ativas change:', payload);
-          // Refetch immediately for any active crisis change
           setTimeout(() => fetchActiveCrises(), 100);
         }
       )
@@ -425,7 +304,6 @@ export const useNewCrisisManagement = () => {
         },
         (payload) => {
           console.log('🔗 Realtime crisis-ticket link change:', payload);
-          // Refetch immediately when tickets are linked/unlinked
           setTimeout(() => fetchActiveCrises(), 100);
         }
       )
@@ -438,7 +316,6 @@ export const useNewCrisisManagement = () => {
         },
         (payload) => {
           console.log('📝 Realtime crisis update change:', payload);
-          // Refetch immediately for any update
           setTimeout(() => fetchActiveCrises(), 100);
         }
       )
@@ -452,7 +329,6 @@ export const useNewCrisisManagement = () => {
         },
         (payload) => {
           console.log('🎫 Realtime crisis ticket change:', payload);
-          // Refetch when any ticket becomes/stops being a crisis
           setTimeout(() => fetchActiveCrises(), 200);
         }
       )
