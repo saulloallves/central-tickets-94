@@ -2249,6 +2249,10 @@ export type Database = {
         Args: { p_unidade_id: string }
         Returns: string
       }
+      process_existing_girabot_crisis: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       resolve_crise_close_tickets: {
         Args: {
           p_by?: string
