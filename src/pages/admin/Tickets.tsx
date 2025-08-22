@@ -132,7 +132,7 @@ const Tickets = () => {
       {/* New Crisis Alert Banner */}
       <NewCrisisAlertBanner />
       
-      <div className="p-6 space-y-6" style={{ paddingTop: '6rem' }}>
+      <div className="p-6 space-y-4" style={{ paddingTop: '2rem' }}>
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Tickets de Suporte</h1>
