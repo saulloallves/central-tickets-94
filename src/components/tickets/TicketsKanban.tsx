@@ -322,10 +322,10 @@ const KanbanColumn = ({ status, individualTickets, selectedTicketId, onTicketSel
       ref={setNodeRef}
       className={cn(
         "flex flex-col h-full min-h-[600px] w-full rounded-xl border-2 transition-all duration-300 ease-in-out overflow-hidden",
-        "bg-transparent",
+        "bg-gray-100/80",
         isOver ? 
           "border-primary bg-gradient-to-b from-primary/5 to-primary/10 shadow-xl scale-[1.02] border-solid" : 
-          "border-dashed border-white/20 hover:border-white/40"
+          "border-dashed border-gray-300/50 hover:border-gray-300/70"
       )}
     >
       {/* Header da coluna com efeito glassmorphism ultra forte */}
