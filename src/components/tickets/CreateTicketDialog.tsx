@@ -10,6 +10,7 @@ import { useTickets } from '@/hooks/useTickets';
 import { useRole } from '@/hooks/useRole';
 import { useAuth } from '@/hooks/useAuth';
 import '@/lib/legacy-cleanup';
+import '@/lib/aggressive-cleanup';
 import { supabase } from '@/integrations/supabase/client';
 import { useFAQSuggestion } from '@/hooks/useFAQSuggestion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -50,6 +51,15 @@ export const CreateTicketDialog = ({ open, onOpenChange }: CreateTicketDialogPro
     prioridade: 'posso_esperar' as const,
     subcategoria: ''
   });
+
+  // Force check on every render
+  useEffect(() => {
+    const validPriorities = ['imediato', 'ate_1_hora', 'ainda_hoje', 'posso_esperar', 'crise'];
+    if (!validPriorities.includes(formData.prioridade)) {
+      console.error('🚨 INVALID PRIORITY IN STATE, FORCING RESET');
+      setFormData(prev => ({ ...prev, prioridade: 'posso_esperar' }));
+    }
+  }, [formData.prioridade]);
 
   // Load saved form data from localStorage when dialog opens
   useEffect(() => {

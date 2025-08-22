@@ -348,13 +348,24 @@ export const useTickets = (filters: TicketFilters) => {
         }
       }
 
-      // Validate priority before inserting
+      // Validate priority before inserting - AGGRESSIVE CLEANUP
       const validPriorities = ['imediato', 'ate_1_hora', 'ainda_hoje', 'posso_esperar', 'crise'];
       let finalPriority = ticketData.prioridade || 'posso_esperar';
       
+      console.log('🔧 PRIORITY VALIDATION:');
+      console.log('  - Original priority:', finalPriority);
+      console.log('  - Is valid?', validPriorities.includes(finalPriority));
+      
+      // FORCE CLEANUP - if ANY invalid priority, use default
       if (!validPriorities.includes(finalPriority)) {
-        console.warn(`Invalid priority "${finalPriority}", using default "posso_esperar"`);
+        console.warn(`❌ INVALID PRIORITY DETECTED: "${finalPriority}" - FORCING to "posso_esperar"`);
         finalPriority = 'posso_esperar';
+      }
+      
+      // Extra safety check - convert invalid priority
+      if (typeof finalPriority === 'string' && finalPriority.includes('urgente')) {
+        console.error('🚨 URGENTE-LIKE VALUE DETECTED - FORCING TO IMEDIATO');
+        finalPriority = 'imediato';
       }
 
       const ticketInsertData = {
