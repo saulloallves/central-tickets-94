@@ -221,14 +221,16 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
       {...attributes}
       {...listeners}
       className={cn(
-        "cursor-grab active:cursor-grabbing transition-all duration-200 mb-3 bg-white/10 backdrop-blur-md border border-white/20 shadow-sm hover:shadow-md select-none overflow-hidden group",
+        "cursor-grab active:cursor-grabbing transition-all duration-200 mb-3 bg-white/10 backdrop-blur-md border border-white/20 select-none overflow-hidden group",
+        "shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:shadow-[0_16px_48px_rgba(0,0,0,0.18)] hover:-translate-y-1",
+        "hover:scale-[1.02] transform-gpu",
         ticket.status === 'concluido' ? "border-l-4 border-l-emerald-400" : 
         ticket.prioridade === 'crise' ? "border-l-4 border-l-red-500" :
         ticket.prioridade === 'imediato' ? "border-l-4 border-l-red-500" :
         ticket.prioridade === 'ate_1_hora' ? "border-l-4 border-l-orange-500" :
         ticket.prioridade === 'ainda_hoje' ? "border-l-4 border-l-amber-500" : "border-l-4 border-l-slate-300",
-        isSelected && "ring-2 ring-blue-500/20 shadow-lg",
-        isDragging && "opacity-70 scale-95 z-50 shadow-xl rotate-1"
+        isSelected && "ring-2 ring-blue-500/20 shadow-[0_20px_64px_rgba(0,0,0,0.25)] -translate-y-2",
+        isDragging && "opacity-70 scale-95 z-50 shadow-[0_24px_80px_rgba(0,0,0,0.3)] rotate-1"
       )}
       onClick={(e) => {
         if (!isDragging) {
@@ -328,12 +330,13 @@ const KanbanColumn = ({ status, individualTickets, selectedTicketId, onTicketSel
           "border-dashed border-gray-300/50 hover:border-gray-300/70 hover:shadow-xl hover:shadow-gray-400/25"
       )}
     >
-      {/* Header da coluna com mesmo efeito glassmorphism dos cards */}
+      {/* Header da coluna com efeito de profundidade */}
       <div className="
         flex items-center justify-between p-4 m-2 mb-0 
         bg-white/10 backdrop-blur-md border border-white/20 rounded-xl
-        shadow-sm hover:shadow-md
-        transition-all duration-300
+        shadow-[0_12px_40px_rgba(0,0,0,0.15)] hover:shadow-[0_20px_64px_rgba(0,0,0,0.2)]
+        hover:-translate-y-0.5 hover:scale-[1.01]
+        transition-all duration-300 transform-gpu
       ">
         <div className="relative flex items-center gap-3 z-10">
           {(() => {
