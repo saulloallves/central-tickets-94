@@ -178,16 +178,16 @@ All colors MUST be HSL.
   /* Glassmorphism Utilities */
   .glass {
     background: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
     border: 1px solid rgba(255, 255, 255, 0.3);
     box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
   }
 
   .glass-pill {
     background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
     border: 1px solid rgba(255, 255, 255, 0.4);
     border-radius: 20px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3);
@@ -195,8 +195,8 @@ All colors MUST be HSL.
 
   .glass-badge {
     background: rgba(255, 255, 255, 0.3);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(35px);
+    -webkit-backdrop-filter: blur(35px);
     border: 1px solid rgba(255, 255, 255, 0.4);
     border-radius: 16px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
@@ -204,8 +204,8 @@ All colors MUST be HSL.
 
   .glass-strong {
     background: rgba(255, 255, 255, 0.25);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: blur(50px);
+    -webkit-backdrop-filter: blur(50px);
     border: 1px solid rgba(255, 255, 255, 0.5);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), inset 0 2px 4px rgba(255, 255, 255, 0.4);
   }
