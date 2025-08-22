@@ -65,7 +65,7 @@ export function AppSidebar() {
   return (
     <div
       className={cn(
-        "h-[calc(100vh-18rem)] fixed left-4 top-1/2 -translate-y-1/2 z-40 transition-all duration-150",
+        "h-[calc(100vh-18rem)] fixed left-4 top-1/2 -translate-y-1/2 z-40 transition-all duration-200",
         isExpanded ? "w-48" : "w-16"
       )}
       onMouseEnter={handleMouseEnter}
@@ -101,7 +101,7 @@ export function AppSidebar() {
                       to={item.url}
                       end
                       className={({ isActive }) => cn(
-                        "group flex items-center px-3 py-2 rounded-xl transition-all duration-150",
+                        "group flex items-center px-3 py-2 rounded-xl transition-all duration-200",
                         "hover:scale-[1.02]",
                         isActive 
                           ? "bg-white/10 backdrop-blur-sm text-white border border-white/20" 
@@ -113,7 +113,7 @@ export function AppSidebar() {
                           <div className="relative flex items-center justify-center w-6 h-6 mr-2">
                             <item.icon 
                                className={cn(
-                                 "h-4 w-4 text-white transition-all duration-150 drop-shadow-md",
+                                 "h-4 w-4 text-white transition-all duration-200 drop-shadow-md",
                                  isActive ? "drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" : "opacity-90"
                                )}
                               strokeWidth={1.5}
@@ -126,7 +126,7 @@ export function AppSidebar() {
                           </div>
                           
                            <span className={cn(
-                             "text-white text-sm font-medium transition-all duration-150 drop-shadow-md",
+                             "text-white text-sm font-medium transition-all duration-200 drop-shadow-md",
                              isActive ? "opacity-100" : "opacity-90"
                            )}>
                             {item.title}
@@ -144,7 +144,7 @@ export function AppSidebar() {
                           to={item.url}
                           end
                           className={({ isActive }) => cn(
-                            "group relative flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-150 mx-auto",
+                            "group relative flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200 mx-auto",
                             isActive 
                               ? "bg-white/10 backdrop-blur-sm text-white" 
                               : "hover:bg-white/5 hover:backdrop-blur-sm hover:text-white/95"
@@ -154,7 +154,7 @@ export function AppSidebar() {
                             <>
                               <item.icon 
                                  className={cn(
-                                   "h-4 w-4 text-white transition-all duration-150 drop-shadow-md",
+                                   "h-4 w-4 text-white transition-all duration-200 drop-shadow-md",
                                    isActive ? "drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" : "opacity-90"
                                  )}
                                 strokeWidth={1.5}
@@ -240,7 +240,7 @@ export function AppSidebar() {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div className="relative">
-                      <Avatar className="h-8 w-8 mx-auto cursor-pointer hover:scale-[1.02] transition-all duration-150">
+                      <Avatar className="h-8 w-8 mx-auto cursor-pointer hover:scale-[1.02] transition-all duration-200">
                         <AvatarImage src={user?.user_metadata?.avatar_url} />
                         <AvatarFallback className="bg-white/20 text-white text-xs">
                           {user?.email?.charAt(0).toUpperCase() || 'U'}
