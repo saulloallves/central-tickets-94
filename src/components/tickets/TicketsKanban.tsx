@@ -328,16 +328,13 @@ const KanbanColumn = ({ status, individualTickets, selectedTicketId, onTicketSel
           "border-dashed border-muted/40 hover:border-muted/60"
       )}
     >
-      {/* Header da coluna com efeito glass iOS 26 */}
-      <div 
-        className="flex items-center justify-between p-4 m-2 mb-0 relative overflow-hidden backdrop-blur-xl backdrop-saturate-150"
-        style={{
-          background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.05) 100%)',
-          border: '1px solid rgba(255, 255, 255, 0.4)',
-          borderRadius: '20px',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3)'
-        }}
-      >
+      {/* Header da coluna com efeito glassmorphism consistente */}
+      <div className="
+        flex items-center justify-between p-4 m-2 mb-0 
+        bg-white/25 backdrop-blur-md border border-white/20 
+        shadow-neumorphic rounded-xl
+        transition-all duration-300
+      ">
         <div className="relative flex items-center gap-3 z-10">
           {(() => {
             const IconComponent = COLUMN_ICONS[status];
