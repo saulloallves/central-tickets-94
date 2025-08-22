@@ -116,7 +116,9 @@ export const NewCrisisPanel = ({ className }: NewCrisisPanelProps) => {
       case 'investigando': return 'secondary';
       case 'comunicado': return 'default';
       case 'mitigado': return 'outline';
+      case 'resolvido': return 'default';
       case 'reaberto': return 'destructive';
+      case 'encerrado': return 'secondary';
       default: return 'secondary';
     }
   };
@@ -127,7 +129,9 @@ export const NewCrisisPanel = ({ className }: NewCrisisPanelProps) => {
       case 'investigando': return 'Investigando';
       case 'comunicado': return 'Comunicada';
       case 'mitigado': return 'Mitigada';
+      case 'resolvido': return 'Resolvida';
       case 'reaberto': return 'Reaberta';
+      case 'encerrado': return 'Encerrada';
       default: return status;
     }
   };
@@ -456,56 +460,48 @@ export const NewCrisisPanel = ({ className }: NewCrisisPanelProps) => {
                             </div>
                           )}
 
-                          {/* Ações de Status da Crise - Melhorado */}
+                          {/* Atualizar Status da Crise */}
                           <div>
                             <h4 className="font-medium mb-3 flex items-center gap-2">
-                              <Settings className="h-4 w-4" />
-                              Status da Crise
+                              <BarChart3 className="h-4 w-4" />
+                              Atualizar Status da Crise
                             </h4>
-                            <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200 mb-3">
-                              <p className="text-xs text-yellow-700 mb-1">
-                                Status atual: <strong>{getStatusLabel(crisis.status)}</strong>
-                              </p>
-                              <p className="text-xs text-yellow-600">
-                                Clique em um dos botões abaixo para atualizar o status da crise
-                              </p>
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleUpdateStatus(crisis.id, 'investigando', 'Crise em investigação - equipe analisando a situação')}
-                                className="text-xs justify-start"
-                                disabled={crisis.status === 'investigando'}
+                            <div className="space-y-3">
+                              <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                                <p className="text-xs text-yellow-700">
+                                  Status atual: <strong>{getStatusLabel(crisis.status)}</strong>
+                                </p>
+                              </div>
+                              
+                              <Select 
+                                defaultValue={crisis.status}
+                                onValueChange={(value) => {
+                                  const validStatuses = ['aberto', 'investigando', 'comunicado', 'mitigado', 'resolvido', 'reaberto'] as const;
+                                  if (validStatuses.includes(value as any)) {
+                                    handleUpdateStatus(crisis.id, value as typeof validStatuses[number], `Status alterado para ${getStatusLabel(value)}`);
+                                  }
+                                }}
                               >
-                                🔍 Investigando
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleUpdateStatus(crisis.id, 'comunicado', 'Comunicado oficial enviado - stakeholders informados')}
-                                className="text-xs justify-start"
-                                disabled={crisis.status === 'comunicado'}
+                                <SelectTrigger className="w-full">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="aberto">🚨 Aberta</SelectItem>
+                                  <SelectItem value="investigando">🔍 Investigando</SelectItem>
+                                  <SelectItem value="comunicado">📢 Comunicada</SelectItem>
+                                  <SelectItem value="mitigado">⚠️ Mitigada</SelectItem>
+                                  <SelectItem value="resolvido">✅ Resolvida</SelectItem>
+                                  <SelectItem value="reaberto">🔄 Reaberta</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              
+                              <Button 
+                                variant="destructive" 
+                                size="sm" 
+                                onClick={() => resolveCrisisAndCloseTickets(crisis.id, 'Crise encerrada - todos os tickets foram resolvidos')}
+                                className="w-full"
                               >
-                                📢 Comunicado Enviado
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleUpdateStatus(crisis.id, 'mitigado', 'Estamos resolvendo - ações corretivas em andamento')}
-                                className="text-xs justify-start"
-                                disabled={crisis.status === 'mitigado'}
-                              >
-                                🔧 Estamos Resolvendo
-                              </Button>
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => resolveCrisisAndCloseTickets(crisis.id, 'Crise totalmente resolvida - todos os tickets foram encerrados automaticamente')}
-                                className="text-xs justify-start col-span-2"
-                                disabled={crisis.status === 'resolvido'}
-                              >
-                                ✅ Resolver e Encerrar Todos os Tickets
+                                🏁 Encerrar Crise e Fechar Tickets
                               </Button>
                             </div>
                           </div>
