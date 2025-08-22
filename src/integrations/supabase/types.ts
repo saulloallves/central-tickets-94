@@ -2166,6 +2166,10 @@ export type Database = {
         }
         Returns: string
       }
+      detect_girabot_crisis: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_realtime_kpis: {
         Args: {
           p_equipe_filter?: string
