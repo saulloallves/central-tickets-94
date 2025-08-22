@@ -248,13 +248,13 @@ export const NewCrisisPanel = ({ className }: NewCrisisPanelProps) => {
             
             return (
               <div key={crisis.id}>
-                <div className="p-6 border-l-4 border-l-destructive bg-destructive/5 hover:bg-destructive/10 transition-colors">
-                  <div className="flex items-start justify-between mb-4">
+                <div className="p-4 border-l-4 border-l-destructive bg-destructive/5 hover:bg-destructive/10 transition-colors">
+                  <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-3">
-                        <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0" />
+                      <div className="flex items-center gap-2 mb-2">
+                        <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0" />
                         <div>
-                          <h4 className="font-semibold text-base text-destructive">
+                          <h4 className="font-medium text-sm text-destructive">
                             {crisis.titulo}
                           </h4>
                           <div className="flex items-center gap-2 mt-1">
@@ -269,26 +269,26 @@ export const NewCrisisPanel = ({ className }: NewCrisisPanelProps) => {
                       </div>
                       
                       {crisis.descricao && (
-                        <p className="text-sm text-muted-foreground mb-3 bg-background/50 p-3 rounded-md border">
+                        <p className="text-xs text-muted-foreground mb-2 bg-background/50 p-2 rounded border">
                           {crisis.descricao}
                         </p>
                       )}
                       
-                      <div className="grid grid-cols-2 gap-4 text-sm mb-3">
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground mb-2">
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
                           <span>Criada {formatDistanceToNowInSaoPaulo(crisis.created_at)} atrás</span>
                         </div>
                         {lastUpdate && (
-                          <div className="flex items-center gap-2">
-                            <MessageCircle className="h-4 w-4 text-muted-foreground" />
+                          <div className="flex items-center gap-1">
+                            <MessageCircle className="h-3 w-3" />
                             <span>Última: {formatDistanceToNowInSaoPaulo(lastUpdate.created_at)} atrás</span>
                           </div>
                         )}
                       </div>
 
                       {crisis.palavras_chave && crisis.palavras_chave.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mb-4">
+                        <div className="flex flex-wrap gap-1 mb-3">
                           {crisis.palavras_chave.slice(0, 3).map((palavra, i) => (
                             <Badge key={i} variant="outline" className="text-xs">
                               {palavra}
@@ -304,7 +304,7 @@ export const NewCrisisPanel = ({ className }: NewCrisisPanelProps) => {
                     </div>
                   </div>
 
-                  <div className="flex gap-3">
+                  <div className="flex gap-2">
                     <Dialog>
                       <DialogTrigger asChild>
                         <Button 
@@ -312,7 +312,7 @@ export const NewCrisisPanel = ({ className }: NewCrisisPanelProps) => {
                           size="sm"
                           className="hover:bg-destructive/10 hover:border-destructive/30 border-destructive/20"
                         >
-                          <Settings className="h-4 w-4 mr-2" />
+                          <Settings className="h-3 w-3 mr-1" />
                           Gerenciar Crise
                         </Button>
                       </DialogTrigger>
