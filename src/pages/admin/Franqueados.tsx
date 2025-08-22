@@ -91,8 +91,8 @@ const Franqueados = () => {
   if (loading) {
     return (
       <ProtectedRoute requiredRole="admin">
-        <div className="space-y-6">
-          <div className="animate-pulse">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div className="animate-pulse text-center">
             <div className="h-8 bg-muted rounded w-48 mb-2"></div>
             <div className="h-4 bg-muted rounded w-96"></div>
           </div>
@@ -116,8 +116,8 @@ const Franqueados = () => {
 
   return (
     <ProtectedRoute requiredRole="admin">
-      <div className="space-y-6">
-        <div>
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="text-center">
           <h2 className="text-3xl font-bold tracking-tight">Franqueados</h2>
           <p className="text-muted-foreground">
             Gerencie todos os franqueados da rede
