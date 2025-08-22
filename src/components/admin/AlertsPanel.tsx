@@ -5,12 +5,15 @@ import { Button } from '@/components/ui/button';
 import { useInternalAlerts } from '@/hooks/useInternalAlerts';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { AlertTriangle, CheckCircle, Clock, ExternalLink } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Clock, ExternalLink, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
 export const AlertsPanel = () => {
   const { alerts, loading, markAlertAsProcessed } = useInternalAlerts();
   const [processingAlerts, setProcessingAlerts] = useState<Set<string>>(new Set());
+  const [clearingAll, setClearingAll] = useState(false);
+  const { toast } = useToast();
 
   const getAlertLevelBadge = (level: string) => {
     switch (level) {
@@ -95,6 +98,31 @@ export const AlertsPanel = () => {
     }
   };
 
+  const handleClearAllAlerts = async () => {
+    if (alerts.length === 0) return;
+    
+    setClearingAll(true);
+    try {
+      // Marcar todos os alertas como processados em paralelo
+      await Promise.all(
+        alerts.map(alert => markAlertAsProcessed(alert.id))
+      );
+      
+      toast({
+        title: "Alertas limpos",
+        description: `${alerts.length} alertas foram marcados como processados.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao limpar alertas",
+        description: "Não foi possível limpar todos os alertas. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setClearingAll(false);
+    }
+  };
+
   if (loading) {
     return (
       <Card>
@@ -111,13 +139,29 @@ export const AlertsPanel = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <AlertTriangle className="h-5 w-5 text-warning" />
-          Alertas Internos ({alerts.length})
-        </CardTitle>
-        <CardDescription>
-          Alertas automáticos de segurança e conformidade
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-warning" />
+              Alertas Internos ({alerts.length})
+            </CardTitle>
+            <CardDescription>
+              Alertas automáticos de segurança e conformidade
+            </CardDescription>
+          </div>
+          {alerts.length > 0 && (
+            <Button
+              onClick={handleClearAllAlerts}
+              disabled={clearingAll}
+              size="sm"
+              variant="outline"
+              className="text-critical border-critical hover:bg-critical hover:text-critical-foreground"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              {clearingAll ? "Limpando..." : "Limpar Todos"}
+            </Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         {alerts.length === 0 ? (
