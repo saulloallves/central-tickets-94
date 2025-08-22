@@ -45,11 +45,11 @@ Analise este ticket de suporte e forneça:
    - "Criação mídia planfetos" (não "mídias para planfetos")
 
 2. CATEGORIA: Classifique em uma das opções: juridico, sistema, midia, operacoes, rh, financeiro, outro
-3. PRIORIDADE: Determine APENAS uma das opções: imediato, ate_1_hora, ainda_hoje, posso_esperar
-   - imediato: problemas críticos que impedem funcionamento (15min)
-   - ate_1_hora: problemas urgentes que afetam produtividade (1h)
-   - ainda_hoje: problemas importantes mas não bloqueiam trabalho (até 18h)
-   - posso_esperar: dúvidas, solicitações, problemas menores (24h)
+3. PRIORIDADE: Escolha OBRIGATORIAMENTE uma destas 4 opções: imediato, ate_1_hora, ainda_hoje, posso_esperar
+   - imediato: problemas críticos que impedem funcionamento
+   - ate_1_hora: problemas urgentes que afetam produtividade  
+   - ainda_hoje: problemas importantes mas não bloqueiam trabalho
+   - posso_esperar: dúvidas, solicitações, problemas menores
 4. EQUIPE_SUGERIDA: Sugira qual equipe deve atender baseado no problema e nas equipes disponíveis
 
 Descrição do problema: "${descricao}"
@@ -58,16 +58,19 @@ Categoria atual: ${categoria || 'não definida'}
 EQUIPES DISPONÍVEIS:
 ${equipesDisponiveis}
 
+ATENÇÃO: A prioridade deve ser EXATAMENTE uma destas palavras: imediato, ate_1_hora, ainda_hoje, posso_esperar
+NÃO use: urgente, crítico, alta, baixa, crise, normal ou qualquer outra variação.
+
 Responda APENAS em formato JSON válido:
 {
   "titulo": "Título Descritivo Criativo",
   "categoria": "categoria_sugerida", 
-  "prioridade": "uma_das_4_opcoes_apenas",
+  "prioridade": "imediato_ou_ate_1_hora_ou_ainda_hoje_ou_posso_esperar",
   "equipe_sugerida": "nome_exato_da_equipe_ou_null",
   "justificativa": "Breve explicação da análise"
 }
 
-IMPORTANTE: Use APENAS estas 4 prioridades: imediato, ate_1_hora, ainda_hoje, posso_esperar
+CRÍTICO: Use APENAS estas 4 prioridades: imediato, ate_1_hora, ainda_hoje, posso_esperar
 `
 
     console.log('Calling OpenAI for ticket analysis...')
