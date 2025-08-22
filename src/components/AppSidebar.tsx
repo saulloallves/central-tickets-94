@@ -97,7 +97,7 @@ export function AppSidebar() {
           </div>
 
           {/* Navigation Icons */}
-          <div className="flex-1 flex flex-col space-y-1 sm:space-y-2 overflow-y-auto max-h-[calc(100%-8rem)]">
+          <div className="flex-1 flex flex-col space-y-1 sm:space-y-2">
             {navigationItems.map((item) => (
               <PermissionGuard key={item.title} requiredPermission={item.permission}>
                 {isExpanded ? (
