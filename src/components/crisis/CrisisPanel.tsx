@@ -19,6 +19,7 @@ import { Separator } from '@/components/ui/separator';
 import { useCrisisManagement, type CrisisActive } from '@/hooks/useCrisisManagement';
 import { formatDistanceToNowInSaoPaulo } from '@/lib/date-utils';
 import { cn } from '@/lib/utils';
+import { CrisisCleanupButton } from './CrisisCleanupButton';
 
 interface CrisisPanelProps {
   className?: string;
@@ -67,10 +68,13 @@ export const CrisisPanel = ({ className }: CrisisPanelProps) => {
     return (
       <Card className={className}>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-green-600" />
-            Sistema Normal
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              Sistema Normal
+            </CardTitle>
+            <CrisisCleanupButton />
+          </div>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8 text-muted-foreground">
@@ -92,6 +96,7 @@ export const CrisisPanel = ({ className }: CrisisPanelProps) => {
             <span className="text-red-700">🚨 CRISES ATIVAS</span>
             <Badge variant="destructive">{activeCrises.length}</Badge>
           </div>
+          <CrisisCleanupButton />
         </CardTitle>
       </CardHeader>
       

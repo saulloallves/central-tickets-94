@@ -2148,6 +2148,10 @@ export type Database = {
           | { ticket_unidade_id: string }
         Returns: boolean
       }
+      cleanup_orphaned_crises: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       create_crise: {
         Args: {
           p_abriu_por?: string
