@@ -5,7 +5,7 @@ import {
   Clock, 
   MapPin, 
   User, 
-  CheckCircle, 
+  CheckCircle,
   MessageCircle,
   FileText,
   Phone,
@@ -25,7 +25,6 @@ import { Separator } from '@/components/ui/separator';
 import { useNewCrisisManagement, type Crisis } from '@/hooks/useNewCrisisManagement';
 import { formatDistanceToNowInSaoPaulo } from '@/lib/date-utils';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/integrations/supabase/client';
 
 interface NewCrisisPanelProps {
   className?: string;
@@ -66,49 +65,6 @@ export const NewCrisisPanel = ({ className }: NewCrisisPanelProps) => {
     setNewCrisisDescription('');
   };
 
-  // Função para atualizar status individual de ticket
-  const handleUpdateTicketStatus = async (ticketId: string, status: 'aberto' | 'concluido' | 'em_atendimento' | 'escalonado') => {
-    try {
-      const { error } = await supabase
-        .from('tickets')
-        .update({ status })
-        .eq('id', ticketId);
-
-      if (error) {
-        console.error('Error updating ticket status:', error);
-        return;
-      }
-
-      console.log(`Ticket ${ticketId} status updated to ${status}`);
-    } catch (error) {
-      console.error('Error updating ticket status:', error);
-    }
-  };
-
-  // Função para enviar mensagem individual para ticket
-  const handleSendMessageToTicket = async (ticketId: string) => {
-    if (!broadcastText.trim()) return;
-    
-    try {
-      const { error } = await supabase
-        .from('ticket_mensagens')
-        .insert({
-          ticket_id: ticketId,
-          mensagem: broadcastText,
-          direcao: 'saida',
-          canal: 'web'
-        });
-
-      if (error) {
-        console.error('Error sending message to ticket:', error);
-        return;
-      }
-
-      console.log(`Message sent to ticket ${ticketId}`);
-    } catch (error) {
-      console.error('Error sending message to ticket:', error);
-    }
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -399,37 +355,7 @@ export const NewCrisisPanel = ({ className }: NewCrisisPanelProps) => {
                                      <p className="text-sm font-medium mb-2">
                                        {link.tickets?.descricao_problema || 'Sem descrição'}
                                      </p>
-                                      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                                        <Select 
-                                          defaultValue={link.tickets?.status}
-                                          onValueChange={(value) => {
-                                            const validStatuses = ['aberto', 'em_atendimento', 'escalonado', 'concluido'] as const;
-                                            if (validStatuses.includes(value as any)) {
-                                              handleUpdateTicketStatus(link.ticket_id, value as typeof validStatuses[number]);
-                                            }
-                                          }}
-                                        >
-                                         <SelectTrigger className="h-7 text-xs w-auto">
-                                           <SelectValue />
-                                         </SelectTrigger>
-                                         <SelectContent>
-                                           <SelectItem value="aberto">Aberto</SelectItem>
-                                           <SelectItem value="em_atendimento">Em Atendimento</SelectItem>
-                                           <SelectItem value="escalonado">Escalonado</SelectItem>
-                                           <SelectItem value="concluido">Concluído</SelectItem>
-                                         </SelectContent>
-                                       </Select>
-                                       <Button
-                                         variant="outline"
-                                         size="sm"
-                                         className="h-7 text-xs"
-                                         onClick={() => handleSendMessageToTicket(link.ticket_id)}
-                                       >
-                                         <MessageCircle className="h-3 w-3 mr-1" />
-                                         Responder
-                                       </Button>
-                                     </div>
-                                  </div>
+                                    </div>
                                 ))}
                               </div>
                             </div>
