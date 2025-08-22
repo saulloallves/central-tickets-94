@@ -101,7 +101,7 @@ export function LogoUpload({ logoUrl, onLogoChange, className }: LogoUploadProps
         <img 
           src={logoUrl} 
           alt="Logo" 
-          className="w-6 h-6 object-contain rounded drop-shadow-lg"
+          className="w-10 h-10 object-contain rounded drop-shadow-lg"
         />
       ) : (
         <div className="relative">
