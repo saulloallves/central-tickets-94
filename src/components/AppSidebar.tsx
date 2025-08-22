@@ -65,7 +65,7 @@ export function AppSidebar() {
   return (
     <div
       className={cn(
-        "h-[calc(100vh-12rem)] fixed left-4 top-1/2 -translate-y-1/2 z-40 transition-all duration-500",
+        "h-[calc(100vh-18rem)] fixed left-4 top-1/2 -translate-y-1/2 z-40 transition-all duration-500",
         isExpanded ? "w-48" : "w-16"
       )}
       onMouseEnter={handleMouseEnter}
