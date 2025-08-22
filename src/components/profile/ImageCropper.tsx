@@ -36,15 +36,6 @@ export function ImageCropper({ isOpen, onClose, onCrop, imageFile }: ImageCroppe
       return;
     }
 
-    console.log('Drawing canvas with:', {
-      imageWidth: imageData.naturalWidth,
-      imageHeight: imageData.naturalHeight,
-      zoom,
-      position,
-      canvasWidth: canvas.width,
-      canvasHeight: canvas.height
-    });
-
     // Limpar canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -52,9 +43,19 @@ export function ImageCropper({ isOpen, onClose, onCrop, imageFile }: ImageCroppe
     const imageWidth = imageData.naturalWidth * zoom;
     const imageHeight = imageData.naturalHeight * zoom;
 
-    console.log('Calculated dimensions:', { imageWidth, imageHeight });
+    // Calcular área do crop
+    const cropX = (canvas.width - CROP_SIZE) / 2;
+    const cropY = (canvas.height - CROP_SIZE) / 2;
 
-    // Desenhar imagem
+    // Salvar contexto
+    ctx.save();
+
+    // Criar máscara para mostrar apenas a área do crop
+    ctx.beginPath();
+    ctx.rect(cropX, cropY, CROP_SIZE, CROP_SIZE);
+    ctx.clip();
+
+    // Desenhar imagem dentro da área do crop
     try {
       ctx.drawImage(
         imageData,
@@ -63,24 +64,26 @@ export function ImageCropper({ isOpen, onClose, onCrop, imageFile }: ImageCroppe
         imageWidth,
         imageHeight
       );
-      console.log('Image drawn successfully');
+      console.log('Image drawn successfully in crop area');
     } catch (error) {
       console.error('Error drawing image:', error);
+      ctx.restore();
       return;
     }
 
-    // Desenhar overlay escuro
+    // Restaurar contexto
+    ctx.restore();
+
+    // Desenhar overlay escuro ao redor da área do crop
     ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Limpar área do crop (criar "buraco" transparente)
-    ctx.globalCompositeOperation = 'destination-out';
-    const cropX = (canvas.width - CROP_SIZE) / 2;
-    const cropY = (canvas.height - CROP_SIZE) / 2;
-    ctx.fillRect(cropX, cropY, CROP_SIZE, CROP_SIZE);
-
-    // Voltar ao modo normal
-    ctx.globalCompositeOperation = 'source-over';
+    // Top
+    ctx.fillRect(0, 0, canvas.width, cropY);
+    // Bottom
+    ctx.fillRect(0, cropY + CROP_SIZE, canvas.width, canvas.height - (cropY + CROP_SIZE));
+    // Left
+    ctx.fillRect(0, cropY, cropX, CROP_SIZE);
+    // Right
+    ctx.fillRect(cropX + CROP_SIZE, cropY, canvas.width - (cropX + CROP_SIZE), CROP_SIZE);
 
     // Desenhar borda do crop
     ctx.strokeStyle = '#fff';
