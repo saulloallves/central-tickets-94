@@ -25,6 +25,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { LogoUpload } from "@/components/LogoUpload";
+import { SystemLogo } from "@/components/SystemLogo";
 
 const navigationItems = [
   { title: "Dashboard", url: "/admin", icon: Home, permission: 'access_dashboards' as const },
@@ -44,7 +45,6 @@ export function AppSidebar() {
   const location = useLocation();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [logoUrl, setLogoUrl] = useState<string>('');
 
   const handleSignOut = async () => {
     await signOut();
@@ -89,13 +89,9 @@ export function AppSidebar() {
         
         {/* Content wrapper with padding for curves */}
         <div className="relative z-20 h-full flex flex-col py-4 px-2">
-          {/* Logo Upload Section */}
+          {/* System Logo Section */}
           <div className="flex justify-center mb-4">
-            <LogoUpload 
-              logoUrl={logoUrl} 
-              onLogoChange={setLogoUrl}
-              className="w-12 h-12"
-            />
+            <SystemLogo />
           </div>
 
           {/* Navigation Icons */}
