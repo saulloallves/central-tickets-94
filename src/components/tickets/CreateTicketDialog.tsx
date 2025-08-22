@@ -54,20 +54,25 @@ export const CreateTicketDialog = ({ open, onOpenChange }: CreateTicketDialogPro
   // Load saved form data from localStorage when dialog opens
   useEffect(() => {
     if (open) {
+      console.log('🔄 Loading form data from localStorage...');
       const savedData = localStorage.getItem('createTicket_formData');
+      console.log('💾 Raw localStorage data:', savedData);
+      
       if (savedData) {
         try {
           const parsed = JSON.parse(savedData);
+          console.log('📊 Parsed localStorage data:', parsed);
           
           // Validate and fix legacy priority values
           const validPriorities = ['imediato', 'ate_1_hora', 'ainda_hoje', 'posso_esperar', 'crise'];
           if (parsed.prioridade && !validPriorities.includes(parsed.prioridade)) {
-            console.log('Found legacy priority value:', parsed.prioridade, '- clearing localStorage and using default');
+            console.log('❌ Found legacy priority value:', parsed.prioridade, '- clearing localStorage and using default');
             // Clear localStorage completely to remove legacy data
             localStorage.removeItem('createTicket_formData');
             return;
           }
           
+          console.log('✅ localStorage data is valid, applying to form');
           setFormData(prev => ({ ...prev, ...parsed }));
         } catch (error) {
           console.error('Error loading saved form data:', error);
@@ -269,7 +274,13 @@ export const CreateTicketDialog = ({ open, onOpenChange }: CreateTicketDialogPro
 
     setSubmitting(true);
     try {
-      console.log('Submitting ticket with data:', formData);
+      console.log('🚀 === FORM SUBMISSION DEBUG ===');
+      console.log('📋 Form data being submitted:', JSON.stringify(formData, null, 2));
+      console.log('🔍 Priority analysis:');
+      console.log('  - formData.prioridade:', formData.prioridade);
+      console.log('  - Type:', typeof formData.prioridade);
+      console.log('  - Contains legacy value check: checking if any legacy value is present');
+      console.log('==================================');
       
       const ticket = await createTicket({
         unidade_id: formData.unidade_id,

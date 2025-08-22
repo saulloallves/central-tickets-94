@@ -317,8 +317,14 @@ export const useTickets = (filters: TicketFilters) => {
     }
 
     try {
-      console.log('Creating ticket with data:', ticketData);
-      console.log('Priority value:', ticketData.prioridade, 'Type:', typeof ticketData.prioridade);
+      console.log('🎫 === TICKET CREATION DEBUG ===');
+      console.log('📥 Raw ticketData received:', JSON.stringify(ticketData, null, 2));
+      console.log('🔍 Priority value detailed analysis:');
+      console.log('  - Value:', ticketData.prioridade);
+      console.log('  - Type:', typeof ticketData.prioridade);
+      console.log('  - JSON stringified:', JSON.stringify(ticketData.prioridade));
+      console.log('  - Contains legacy value check: validating priority value');
+      console.log('================================');
 
       // Get user profile to establish relationships
       const { data: profile } = await supabase
