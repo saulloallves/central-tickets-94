@@ -9,13 +9,17 @@ import {
   Users2,
   Activity,
   Shield,
-  ChevronRight
+  ChevronRight,
+  User,
+  ChevronDown
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { PermissionGuard } from "@/components/PermissionGuard";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 
@@ -32,7 +36,7 @@ const navigationItems = [
 ];
 
 export function AppSidebar() {
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const location = useLocation();
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -181,33 +185,98 @@ export function AppSidebar() {
               ))}
             </div>
 
-            {/* Logout button at bottom */}
-            <div className="flex justify-center mt-4">
+            {/* User Profile Section */}
+            <div className="mt-4 space-y-2">
               {isExpanded ? (
-                <Button 
-                  variant="ghost" 
-                  onClick={handleSignOut}
-                  className="group w-full flex items-center justify-start px-3 py-2 text-white hover:bg-red-500/10 hover:scale-[1.02] transition-all duration-300"
-                >
-                  <LogOut className="h-4 w-4 opacity-80 group-hover:opacity-100 transition-all duration-300 mr-2" strokeWidth={1.5} />
-                  <span className="text-sm font-medium">Sair do Sistema</span>
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      className="group w-full flex items-center justify-between px-3 py-2 text-white hover:bg-white/10 hover:scale-[1.02] transition-all duration-300 rounded-xl"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage src={user?.user_metadata?.avatar_url} />
+                          <AvatarFallback className="bg-white/20 text-white text-xs">
+                            {user?.email?.charAt(0).toUpperCase() || 'U'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col items-start min-w-0">
+                          <span className="text-xs font-medium truncate max-w-20">
+                            {user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'Usuário'}
+                          </span>
+                          <div className="flex items-center space-x-1">
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_4px_rgba(16,185,129,0.6)]"></div>
+                            <span className="text-[10px] opacity-70">Online</span>
+                          </div>
+                        </div>
+                      </div>
+                      <ChevronDown className="h-3 w-3 opacity-60" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent 
+                    side="right" 
+                    className="bg-white/95 backdrop-blur-md shadow-elegant rounded-xl border border-white/20 ml-2"
+                  >
+                    <DropdownMenuItem className="text-gray-800">
+                      <User className="h-4 w-4 mr-2" />
+                      Perfil
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="text-gray-800">
+                      <Settings className="h-4 w-4 mr-2" />
+                      Configurações
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem className="text-red-600" onClick={handleSignOut}>
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Sair do Sistema
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               ) : (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      onClick={handleSignOut}
-                      className="group relative w-10 h-10 p-0 text-white hover:bg-red-500/10 hover:scale-[1.02] transition-all duration-300"
-                    >
-                      <LogOut className="h-4 w-4 opacity-80 group-hover:opacity-100 transition-all duration-300" strokeWidth={1.5} />
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          className="group relative w-10 h-10 p-0 text-white hover:bg-white/10 hover:scale-[1.02] transition-all duration-300 rounded-xl mx-auto"
+                        >
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage src={user?.user_metadata?.avatar_url} />
+                            <AvatarFallback className="bg-white/20 text-white text-xs">
+                              {user?.email?.charAt(0).toUpperCase() || 'U'}
+                            </AvatarFallback>
+                          </Avatar>
+                          {/* Online status indicator */}
+                          <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 border border-white/50 shadow-[0_0_4px_rgba(16,185,129,0.6)]"></div>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent 
+                        side="right" 
+                        className="bg-white/95 backdrop-blur-md shadow-elegant rounded-xl border border-white/20 ml-2"
+                      >
+                        <DropdownMenuItem className="text-gray-800">
+                          <User className="h-4 w-4 mr-2" />
+                          Perfil
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-gray-800">
+                          <Settings className="h-4 w-4 mr-2" />
+                          Configurações
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem className="text-red-600" onClick={handleSignOut}>
+                          <LogOut className="h-4 w-4 mr-2" />
+                          Sair do Sistema
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TooltipTrigger>
                   <TooltipContent 
                     side="right" 
                     className="bg-white/95 backdrop-blur-md text-gray-800 shadow-elegant rounded-xl border border-white/20 ml-2"
                   >
-                    Sair do Sistema
+                    {user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'Usuário'} • Online
                   </TooltipContent>
                 </Tooltip>
               )}
