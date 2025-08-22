@@ -255,7 +255,7 @@ serve(async (req) => {
                 content: `Você é um classificador especializado em tickets de suporte de franquia. Sua única função é analisar a mensagem e retornar APENAS um JSON válido seguindo EXATAMENTE este formato:
 
 {
-  "prioridade": "crise|urgente|alta|hoje_18h|padrao_24h",
+  "prioridade": "imediato|ate_1_hora|ainda_hoje|posso_esperar",
   "categoria": "juridico|sistema|midia|operacoes|rh|financeiro|outro",
   "subcategoria": "string ou null",
   "is_crise": boolean,
@@ -266,12 +266,11 @@ serve(async (req) => {
 
 REGRAS OBRIGATÓRIAS:
 - RETORNE APENAS O JSON, sem texto adicional
-- prioridade CRISE: problemas que afetam operação crítica (vendas paradas, sistema fora do ar, problemas legais graves)
-- prioridade URGENTE: problemas graves que precisam resolução no mesmo dia
-- prioridade ALTA: problemas importantes mas que podem aguardar algumas horas
-- prioridade HOJE_18H: problemas que devem ser resolvidos até 18h do dia
-- prioridade PADRAO_24H: problemas normais com prazo de 24h úteis
-- is_crise = true APENAS se prioridade = "crise"
+- prioridade IMEDIATO: problemas críticos que impedem funcionamento (15min)
+- prioridade ATE_1_HORA: problemas urgentes que afetam produtividade (1h) 
+- prioridade AINDA_HOJE: problemas importantes mas não bloqueiam trabalho (até 18h)
+- prioridade POSSO_ESPERAR: dúvidas, solicitações, problemas menores (24h)
+- is_crise = true APENAS para casos EXTREMAMENTE críticos que paralisam operação
 - motivo_crise APENAS se is_crise = true
 - equipe_responsavel deve ser o NOME EXATO de uma das equipes disponíveis:
 
@@ -329,7 +328,7 @@ Analise o conteúdo e classifique adequadamente:`
         descricao_problema: message,
         categoria: analysisResult?.categoria || null,
         subcategoria: analysisResult?.subcategoria || null,
-        prioridade: analysisResult?.prioridade || 'padrao_24h',
+        prioridade: analysisResult?.prioridade || 'posso_esperar',
         equipe_responsavel_id: equipeResponsavelId,
         canal_origem: 'typebot',
         status: analysisResult?.is_crise ? 'escalonado' : 'aberto',
