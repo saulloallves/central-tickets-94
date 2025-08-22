@@ -25,6 +25,7 @@ import { Separator } from '@/components/ui/separator';
 import { useNewCrisisManagement, type Crisis } from '@/hooks/useNewCrisisManagement';
 import { formatDistanceToNowInSaoPaulo } from '@/lib/date-utils';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 
 interface NewCrisisPanelProps {
   className?: string;
@@ -63,6 +64,50 @@ export const NewCrisisPanel = ({ className }: NewCrisisPanelProps) => {
     await createCrisis(newCrisisTitle, newCrisisDescription || undefined);
     setNewCrisisTitle('');
     setNewCrisisDescription('');
+  };
+
+  // Função para atualizar status individual de ticket
+  const handleUpdateTicketStatus = async (ticketId: string, status: 'aberto' | 'concluido' | 'em_atendimento' | 'escalonado') => {
+    try {
+      const { error } = await supabase
+        .from('tickets')
+        .update({ status })
+        .eq('id', ticketId);
+
+      if (error) {
+        console.error('Error updating ticket status:', error);
+        return;
+      }
+
+      console.log(`Ticket ${ticketId} status updated to ${status}`);
+    } catch (error) {
+      console.error('Error updating ticket status:', error);
+    }
+  };
+
+  // Função para enviar mensagem individual para ticket
+  const handleSendMessageToTicket = async (ticketId: string) => {
+    if (!broadcastText.trim()) return;
+    
+    try {
+      const { error } = await supabase
+        .from('ticket_mensagens')
+        .insert({
+          ticket_id: ticketId,
+          mensagem: broadcastText,
+          direcao: 'saida',
+          canal: 'web'
+        });
+
+      if (error) {
+        console.error('Error sending message to ticket:', error);
+        return;
+      }
+
+      console.log(`Message sent to ticket ${ticketId}`);
+    } catch (error) {
+      console.error('Error sending message to ticket:', error);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -262,36 +307,108 @@ export const NewCrisisPanel = ({ className }: NewCrisisPanelProps) => {
                           Gerenciar Crise
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                      <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
                         <DialogHeader>
                           <DialogTitle className="flex items-center gap-2">
                             <AlertTriangle className="h-5 w-5 text-red-600" />
                             Gestão de Crise - {crisis.titulo}
+                            <Badge variant="destructive" className="ml-2">
+                              {ticketCount} ticket{ticketCount !== 1 ? 's' : ''}
+                            </Badge>
                           </DialogTitle>
                         </DialogHeader>
                         
-                        <div className="space-y-4">
-                          <div className="bg-red-50 p-3 rounded">
-                            <h4 className="font-medium text-red-700 mb-2">Informações da Crise</h4>
-                            <p className="text-sm mb-2">{crisis.descricao || 'Sem descrição'}</p>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                              <span>Status: {getStatusLabel(crisis.status)}</span>
-                              <span>•</span>
-                              <span>{ticketCount} ticket{ticketCount !== 1 ? 's' : ''} vinculado{ticketCount !== 1 ? 's' : ''}</span>
+                        <div className="space-y-6">
+                          {/* Informações da Crise */}
+                          <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+                            <h4 className="font-medium text-red-700 mb-2 flex items-center gap-2">
+                              <AlertTriangle className="h-4 w-4" />
+                              Informações da Crise
+                            </h4>
+                            <p className="text-sm mb-3">{crisis.descricao || 'Sem descrição'}</p>
+                            <div className="grid grid-cols-3 gap-4 text-xs">
+                              <div>
+                                <span className="font-medium">Status:</span> {getStatusLabel(crisis.status)}
+                              </div>
+                              <div>
+                                <span className="font-medium">Criada:</span> {formatDistanceToNowInSaoPaulo(crisis.created_at)} atrás
+                              </div>
+                              <div>
+                                <span className="font-medium">Tickets:</span> {ticketCount} vinculado{ticketCount !== 1 ? 's' : ''}
+                              </div>
                             </div>
                           </div>
 
-                          {/* Tickets Vinculados */}
+                          {/* Tickets Vinculados - Melhorado */}
                           {crisis.crise_ticket_links && crisis.crise_ticket_links.length > 0 && (
                             <div>
-                              <h4 className="font-medium mb-2">Tickets Vinculados</h4>
-                              <div className="space-y-1 max-h-32 overflow-y-auto">
-                                {crisis.crise_ticket_links.map((link) => (
-                                  <div key={link.ticket_id} className="text-xs bg-gray-50 p-2 rounded flex items-center justify-between">
-                                    <span>{link.tickets?.codigo_ticket} - {link.tickets?.unidades?.grupo}</span>
-                                    <Badge variant="outline" className="text-xs">
-                                      {link.tickets?.status}
-                                    </Badge>
+                              <h4 className="font-medium mb-3 flex items-center gap-2">
+                                <FileText className="h-4 w-4" />
+                                Tickets Vinculados ({crisis.crise_ticket_links.length})
+                              </h4>
+                              <div className="space-y-2 max-h-64 overflow-y-auto border rounded-lg">
+                                {crisis.crise_ticket_links.map((link, index) => (
+                                  <div key={link.ticket_id} className={cn(
+                                    "p-3 bg-white border-b last:border-b-0",
+                                    index % 2 === 0 ? "bg-gray-50" : "bg-white"
+                                  )}>
+                                    <div className="flex items-center justify-between mb-2">
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-medium text-sm">
+                                          {link.tickets?.codigo_ticket}
+                                        </span>
+                                        <Badge variant="outline" className="text-xs">
+                                          {link.tickets?.unidades?.grupo || 'N/A'}
+                                        </Badge>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <Badge 
+                                          variant={link.tickets?.status === 'concluido' ? 'default' : 'destructive'} 
+                                          className="text-xs"
+                                        >
+                                          {link.tickets?.status || 'N/A'}
+                                        </Badge>
+                                        <Badge 
+                                          variant={link.tickets?.prioridade === 'crise' ? 'destructive' : 'secondary'} 
+                                          className="text-xs"
+                                        >
+                                          {link.tickets?.prioridade || 'N/A'}
+                                        </Badge>
+                                      </div>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mb-2">
+                                      {link.tickets?.descricao_problema || 'Sem descrição'}
+                                    </p>
+                                     <div className="flex items-center gap-2">
+                                       <Select 
+                                         defaultValue={link.tickets?.status}
+                                         onValueChange={(value) => {
+                                           const validStatuses = ['aberto', 'em_atendimento', 'escalonado', 'concluido'] as const;
+                                           if (validStatuses.includes(value as any)) {
+                                             handleUpdateTicketStatus(link.ticket_id, value as typeof validStatuses[number]);
+                                           }
+                                         }}
+                                       >
+                                        <SelectTrigger className="h-7 text-xs w-auto">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="aberto">Aberto</SelectItem>
+                                          <SelectItem value="em_atendimento">Em Atendimento</SelectItem>
+                                          <SelectItem value="escalonado">Escalonado</SelectItem>
+                                          <SelectItem value="concluido">Concluído</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-7 text-xs"
+                                        onClick={() => handleSendMessageToTicket(link.ticket_id)}
+                                      >
+                                        <MessageCircle className="h-3 w-3 mr-1" />
+                                        Responder
+                                      </Button>
+                                    </div>
                                   </div>
                                 ))}
                               </div>
@@ -301,11 +418,14 @@ export const NewCrisisPanel = ({ className }: NewCrisisPanelProps) => {
                           {/* Histórico de Atualizações */}
                           {crisis.crise_updates && crisis.crise_updates.length > 0 && (
                             <div>
-                              <h4 className="font-medium mb-2">Histórico de Atualizações</h4>
-                              <div className="space-y-2 max-h-32 overflow-y-auto">
-                                {crisis.crise_updates.slice(0, 5).map((update) => (
-                                  <div key={update.id} className="text-xs bg-gray-50 p-2 rounded">
-                                    <div className="flex justify-between mb-1">
+                              <h4 className="font-medium mb-3 flex items-center gap-2">
+                                <Clock className="h-4 w-4" />
+                                Histórico de Atualizações
+                              </h4>
+                              <div className="space-y-2 max-h-48 overflow-y-auto border rounded-lg p-2">
+                                {crisis.crise_updates.slice(0, 10).map((update) => (
+                                  <div key={update.id} className="text-xs bg-gray-50 p-3 rounded border">
+                                    <div className="flex justify-between items-start mb-2">
                                       <Badge variant="outline" className="text-xs">
                                         {update.tipo}
                                       </Badge>
@@ -320,52 +440,89 @@ export const NewCrisisPanel = ({ className }: NewCrisisPanelProps) => {
                             </div>
                           )}
 
-                          {/* Atualizar Status */}
+                          {/* Ações de Status da Crise */}
                           <div>
-                            <h4 className="font-medium mb-2">Atualizar Status</h4>
-                            <div className="flex gap-2 flex-wrap">
+                            <h4 className="font-medium mb-3 flex items-center gap-2">
+                              <Settings className="h-4 w-4" />
+                              Atualizar Status da Crise
+                            </h4>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleUpdateStatus(crisis.id, 'investigando', 'Status atualizado para investigando')}
+                                className="text-xs"
                               >
-                                Investigando
+                                🔍 Investigando
                               </Button>
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleUpdateStatus(crisis.id, 'comunicado', 'Crise comunicada aos stakeholders')}
+                                className="text-xs"
                               >
-                                Comunicado
+                                📢 Comunicado
                               </Button>
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleUpdateStatus(crisis.id, 'mitigado', 'Crise mitigada, monitorando')}
+                                className="text-xs"
                               >
-                                Mitigado
+                                ⚡ Mitigado
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => resolveCrisisAndCloseTickets(crisis.id, 'Crise resolvida - todos os tickets encerrados')}
+                                className="text-xs"
+                              >
+                                ✅ Resolver Crise
                               </Button>
                             </div>
                           </div>
 
-                          {/* Broadcast Message */}
-                          <div>
-                            <h4 className="font-medium mb-2">Enviar Mensagem para Todos os Tickets</h4>
+                          {/* Broadcast Message - Melhorado */}
+                          <div className="border-t pt-4">
+                            <h4 className="font-medium mb-3 flex items-center gap-2">
+                              <Send className="h-4 w-4" />
+                              Enviar Mensagem para Todos os Tickets ({ticketCount})
+                            </h4>
+                            <div className="bg-blue-50 p-3 rounded-lg border border-blue-200 mb-3">
+                              <p className="text-xs text-blue-700 mb-1">
+                                📨 Esta mensagem será enviada para <strong>todos os {ticketCount} tickets</strong> vinculados a esta crise
+                              </p>
+                              <p className="text-xs text-blue-600">
+                                Grupos afetados: {crisis.crise_ticket_links?.map(link => link.tickets?.unidades?.grupo).filter(Boolean).join(', ') || 'N/A'}
+                              </p>
+                            </div>
                             <Textarea
-                              placeholder="Digite a mensagem que será enviada para todos os tickets desta crise..."
+                              placeholder="Digite a mensagem que será enviada para TODOS os tickets desta crise e seus respectivos grupos..."
                               value={broadcastText}
                               onChange={(e) => setBroadcastText(e.target.value)}
-                              className="mb-2"
+                              className="mb-3 min-h-[80px]"
+                              rows={3}
                             />
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleBroadcast(crisis.id)}
-                              disabled={!broadcastText.trim()}
-                            >
-                              <Send className="h-3 w-3 mr-1" />
-                              Enviar para Todos
-                            </Button>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() => handleBroadcast(crisis.id)}
+                                disabled={!broadcastText.trim()}
+                                className="flex-1"
+                              >
+                                <Send className="h-3 w-3 mr-2" />
+                                Enviar para Todos os Tickets ({ticketCount})
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setBroadcastText('')}
+                                disabled={!broadcastText.trim()}
+                              >
+                                Limpar
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       </DialogContent>
