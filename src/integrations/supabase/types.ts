@@ -188,6 +188,122 @@ export type Database = {
           },
         ]
       }
+      crise_ticket_links: {
+        Row: {
+          crise_id: string
+          id: string
+          linked_at: string
+          linked_by: string | null
+          ticket_id: string
+        }
+        Insert: {
+          crise_id: string
+          id?: string
+          linked_at?: string
+          linked_by?: string | null
+          ticket_id: string
+        }
+        Update: {
+          crise_id?: string
+          id?: string
+          linked_at?: string
+          linked_by?: string | null
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crise_ticket_links_crise_id_fkey"
+            columns: ["crise_id"]
+            isOneToOne: false
+            referencedRelation: "crises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crise_ticket_links_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crise_updates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          crise_id: string
+          id: string
+          mensagem: string
+          status: Database["public"]["Enums"]["crise_status"] | null
+          tipo: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          crise_id: string
+          id?: string
+          mensagem: string
+          status?: Database["public"]["Enums"]["crise_status"] | null
+          tipo?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          crise_id?: string
+          id?: string
+          mensagem?: string
+          status?: Database["public"]["Enums"]["crise_status"] | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crise_updates_crise_id_fkey"
+            columns: ["crise_id"]
+            isOneToOne: false
+            referencedRelation: "crises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crises: {
+        Row: {
+          abriu_por: string | null
+          canal_oficial: string | null
+          created_at: string
+          descricao: string | null
+          id: string
+          palavras_chave: string[] | null
+          status: Database["public"]["Enums"]["crise_status"]
+          titulo: string
+          ultima_atualizacao: string
+          updated_at: string
+        }
+        Insert: {
+          abriu_por?: string | null
+          canal_oficial?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          palavras_chave?: string[] | null
+          status?: Database["public"]["Enums"]["crise_status"]
+          titulo: string
+          ultima_atualizacao?: string
+          updated_at?: string
+        }
+        Update: {
+          abriu_por?: string | null
+          canal_oficial?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          palavras_chave?: string[] | null
+          status?: Database["public"]["Enums"]["crise_status"]
+          titulo?: string
+          ultima_atualizacao?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       crises_ativas: {
         Row: {
           comunicado_emitido: boolean
@@ -2149,6 +2265,19 @@ export type Database = {
         Args: { ts: string }
         Returns: string
       }
+      add_tickets_to_crise: {
+        Args: { p_by?: string; p_crise_id: string; p_ticket_ids: string[] }
+        Returns: undefined
+      }
+      broadcast_crise_message: {
+        Args: {
+          p_by?: string
+          p_canal?: Database["public"]["Enums"]["canal_resposta"]
+          p_crise_id: string
+          p_mensagem: string
+        }
+        Returns: undefined
+      }
       calculate_new_position: {
         Args: { p_after_id?: string; p_before_id?: string; p_status: string }
         Returns: number
@@ -2168,6 +2297,17 @@ export type Database = {
           | { ticket_equipe_id?: string; ticket_unidade_id: string }
           | { ticket_unidade_id: string }
         Returns: boolean
+      }
+      create_crise: {
+        Args: {
+          p_abriu_por?: string
+          p_canal_oficial?: string
+          p_descricao?: string
+          p_palavras_chave?: string[]
+          p_ticket_ids?: string[]
+          p_titulo: string
+        }
+        Returns: string
       }
       create_internal_alert: {
         Args: {
@@ -2262,8 +2402,26 @@ export type Database = {
         Args: { p_unidade_id: string }
         Returns: string
       }
+      resolve_crise_close_tickets: {
+        Args: {
+          p_by?: string
+          p_crise_id: string
+          p_mensagem?: string
+          p_status_ticket?: Database["public"]["Enums"]["ticket_status"]
+        }
+        Returns: undefined
+      }
       resolve_crisis: {
         Args: { p_crisis_id: string; p_resolvida_por?: string }
+        Returns: undefined
+      }
+      update_crise_status: {
+        Args: {
+          p_by?: string
+          p_crise_id: string
+          p_mensagem?: string
+          p_status: Database["public"]["Enums"]["crise_status"]
+        }
         Returns: undefined
       }
     }
@@ -2304,6 +2462,14 @@ export type Database = {
         | "diretor"
         | "admin"
       colaborador_status: "ativo" | "inativo"
+      crise_status:
+        | "aberto"
+        | "investigando"
+        | "comunicado"
+        | "mitigado"
+        | "resolvido"
+        | "encerrado"
+        | "reaberto"
       knowledge_media_type: "texto" | "video" | "pdf" | "link"
       log_canal: "web" | "whatsapp" | "typebot" | "painel_interno"
       log_tipo:
@@ -2496,6 +2662,15 @@ export const Constants = {
         "admin",
       ],
       colaborador_status: ["ativo", "inativo"],
+      crise_status: [
+        "aberto",
+        "investigando",
+        "comunicado",
+        "mitigado",
+        "resolvido",
+        "encerrado",
+        "reaberto",
+      ],
       knowledge_media_type: ["texto", "video", "pdf", "link"],
       log_canal: ["web", "whatsapp", "typebot", "painel_interno"],
       log_tipo: [

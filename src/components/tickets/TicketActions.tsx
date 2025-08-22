@@ -1,222 +1,80 @@
-import { useState } from 'react';
-import { Play, CheckCircle, Users, Loader2 } from 'lucide-react';
+
+import { Edit, MessageSquare, Clock, User, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ResolveCrisisButton } from './ResolveCrisisButton';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { useTickets, type Ticket } from '@/hooks/useTickets';
-import { useUserEquipes } from '@/hooks/useUserEquipes';
-import { useOptimisticTicketActions } from '@/hooks/useOptimisticTicketActions';
+import { NewCrisisButton } from './NewCrisisButton';
+import { formatDistanceToNowInSaoPaulo } from '@/lib/date-utils';
 
 interface TicketActionsProps {
-  ticket: Ticket;
-  equipes: Array<{ id: string; nome: string }>;
-  size?: 'sm' | 'default';
+  ticket: {
+    id: string;
+    codigo_ticket: string;
+    prioridade: string;
+    status: string;
+    data_abertura: string;
+    data_limite_sla?: string;
+    status_sla: string;
+    unidade_id: string;
+    categoria?: string;
+    unidades?: {
+      grupo: string;
+    };
+  };
+  onEdit: () => void;
+  onReply: () => void;
 }
 
-export const TicketActions = ({ ticket, equipes, size = 'default' }: TicketActionsProps) => {
-  const { startAttendance, concludeTicket } = useTickets({
-    search: '',
-    status: 'all',
-    categoria: 'all',
-    prioridade: 'all',
-    unidade_id: 'all',
-    status_sla: 'all',
-    equipe_id: 'all'
-  });
-  
-  const { userEquipes, getPrimaryEquipe } = useUserEquipes();
-  const [selectedEquipe, setSelectedEquipe] = useState('');
-  const [startDialogOpen, setStartDialogOpen] = useState(false);
-  const [concludeDialogOpen, setConcludeDialogOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  const handleStartAttendance = async () => {
-    setLoading(true);
-    try {
-      // Se o usuário tem múltiplas equipes e não selecionou uma, exigir seleção
-      if (userEquipes.length > 1 && !selectedEquipe && !getPrimaryEquipe()) {
-        return; // Dialog permanece aberto para seleção
-      }
-      
-      await startAttendance(ticket.id, selectedEquipe || undefined);
-      setStartDialogOpen(false);
-      setSelectedEquipe('');
-    } finally {
-      setLoading(false);
+export const TicketActions = ({ ticket, onEdit, onReply }: TicketActionsProps) => {
+  const getSLAColor = (status: string) => {
+    switch (status) {
+      case 'vencido': return 'text-red-600 bg-red-50';
+      case 'alerta': return 'text-orange-600 bg-orange-50';
+      default: return 'text-green-600 bg-green-50';
     }
   };
 
-  const handleQuickStart = async () => {
-    // Início rápido: tentar iniciar sem dialog se possível
-    if (userEquipes.length <= 1 || getPrimaryEquipe()) {
-      setLoading(true);
-      try {
-        await startAttendance(ticket.id);
-      } finally {
-        setLoading(false);
-      }
-    } else {
-      // Múltiplas equipes sem primária: abrir dialog
-      setStartDialogOpen(true);
+  const getSLALabel = (status: string) => {
+    switch (status) {
+      case 'vencido': return 'SLA Vencido';
+      case 'alerta': return 'SLA Alerta';
+      default: return 'SLA OK';
     }
   };
-
-  const handleConclude = async () => {
-    setLoading(true);
-    try {
-      await concludeTicket(ticket.id);
-      setConcludeDialogOpen(false);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const buttonSize = size === 'sm' ? 'sm' : 'default';
-  const iconSize = size === 'sm' ? 'h-3 w-3' : 'h-4 w-4';
-
-  const needsEquipeSelection = userEquipes.length > 1 && !getPrimaryEquipe();
 
   return (
-    <div className="flex gap-2">
-      {/* Botão Resolver Crise - só aparece para tickets com prioridade crise */}
-      {ticket.prioridade === 'crise' && (
-        <ResolveCrisisButton 
-          ticketId={ticket.id} 
-          size={size}
-        />
-      )}
+    <div className="flex items-center justify-between pt-3 border-t">
+      <div className="flex items-center gap-2">
+        <Badge variant="outline" className={`text-xs ${getSLAColor(ticket.status_sla)}`}>
+          <Clock className="h-3 w-3 mr-1" />
+          {getSLALabel(ticket.status_sla)}
+        </Badge>
+        
+        {ticket.data_limite_sla && (
+          <span className="text-xs text-muted-foreground">
+            Vence {formatDistanceToNowInSaoPaulo(ticket.data_limite_sla)}
+          </span>
+        )}
+      </div>
       
-      {/* Botão Iniciar Atendimento - só aparece se não estiver em atendimento ou concluído */}
-      {ticket.status === 'aberto' && (
-        <>
-          {/* Botão direto quando não precisa de seleção */}
-          {!needsEquipeSelection && (
-            <Button variant="outline" size={buttonSize} onClick={handleQuickStart} disabled={loading}>
-              <Play className={`${iconSize} mr-2`} />
-              {size === 'sm' ? 'Iniciar' : 'Iniciar Atendimento'}
-            </Button>
-          )}
-
-          {/* Dialog para seleção de equipe quando necessário */}
-          {needsEquipeSelection && (
-            <Dialog open={startDialogOpen} onOpenChange={setStartDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size={buttonSize}>
-                  <Play className={`${iconSize} mr-2`} />
-                  {size === 'sm' ? 'Iniciar' : 'Iniciar Atendimento'}
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Selecionar Equipe</DialogTitle>
-                  <DialogDescription>
-                    Você pertence a múltiplas equipes. Selecione qual equipe será responsável por este atendimento.
-                  </DialogDescription>
-                </DialogHeader>
-                
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium">Suas Equipes</label>
-                    <Select value={selectedEquipe} onValueChange={setSelectedEquipe}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione uma equipe" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {userEquipes.map((userEquipe) => (
-                          <SelectItem key={userEquipe.equipes.id} value={userEquipe.equipes.id}>
-                            <div className="flex items-center gap-2">
-                              <Users className="h-4 w-4" />
-                              {userEquipe.equipes.nome}
-                              {userEquipe.is_primary && (
-                                <Badge variant="secondary" className="text-xs">Primária</Badge>
-                              )}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setStartDialogOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button 
-                    onClick={handleStartAttendance}
-                    disabled={!selectedEquipe || loading}
-                  >
-                    {loading ? 'Iniciando...' : 'Iniciar Atendimento'}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          )}
-        </>
-      )}
-
-      {/* Botão Concluir - aparece se estiver em atendimento ou escalonado */}
-      {(ticket.status === 'em_atendimento' || ticket.status === 'escalonado') && (
-        <Dialog open={concludeDialogOpen} onOpenChange={setConcludeDialogOpen}>
-          <DialogTrigger asChild>
-            <Button variant="default" size={buttonSize}>
-              <CheckCircle className={`${iconSize} mr-2`} />
-              {size === 'sm' ? 'Concluir' : 'Concluído'}
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Concluir Ticket</DialogTitle>
-              <DialogDescription>
-                Tem certeza que deseja marcar este ticket como concluído?
-              </DialogDescription>
-            </DialogHeader>
-
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setConcludeDialogOpen(false)}>
-                Cancelar
-              </Button>
-              <Button 
-                onClick={handleConclude}
-                disabled={loading}
-              >
-                {loading ? 'Concluindo...' : 'Concluir Ticket'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {/* Mostrar info de quem iniciou o atendimento */}
-      {ticket.status === 'em_atendimento' && ticket.atendimento_iniciado_por_profile && (
-        <Badge variant="secondary" className="text-xs">
-          Por: {ticket.atendimento_iniciado_por_profile.nome_completo}
-        </Badge>
-      )}
-
-      {/* Mostrar se já foi concluído */}
-      {ticket.status === 'concluido' && (
-        <Badge variant="default" className="text-xs">
-          <CheckCircle className="h-3 w-3 mr-1" />
-          Concluído
-        </Badge>
-      )}
+      <div className="flex items-center gap-1">
+        <NewCrisisButton 
+          ticketId={ticket.id}
+          currentPriority={ticket.prioridade}
+          ticketInfo={{
+            codigo_ticket: ticket.codigo_ticket,
+            unidade: ticket.unidades?.grupo,
+            categoria: ticket.categoria
+          }}
+        />
+        
+        <Button variant="ghost" size="sm" onClick={onReply}>
+          <MessageSquare className="h-3 w-3" />
+        </Button>
+        
+        <Button variant="ghost" size="sm" onClick={onEdit}>
+          <Edit className="h-3 w-3" />
+        </Button>
+      </div>
     </div>
   );
 };
