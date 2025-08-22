@@ -29,7 +29,7 @@ const Franqueados = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [searchLoading, setSearchLoading] = useState(false);
 
-  const ITEMS_PER_PAGE = 24; // 24 items per page
+  const ITEMS_PER_PAGE = 12; // 24 items per page
 
   useEffect(() => {
     fetchFranqueados();
