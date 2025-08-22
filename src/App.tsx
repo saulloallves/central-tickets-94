@@ -19,6 +19,7 @@ import Equipes from "./pages/admin/Equipes";
 import Configuracoes from "./pages/admin/Configuracoes";
 import Logs from "./pages/admin/Logs";
 import PermissionsControl from "./pages/admin/PermissionsControl";
+import Profile from "./pages/admin/Profile";
 
 const queryClient = new QueryClient();
 
@@ -75,6 +76,11 @@ const App = () => (
             <Route path="/admin/permissions" element={
               <AdminLayout>
                 <PermissionsControl />
+              </AdminLayout>
+             } />
+            <Route path="/admin/profile" element={
+              <AdminLayout>
+                <Profile />
               </AdminLayout>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

@@ -42,6 +42,7 @@ export function AppSidebar() {
   const { profile } = useProfile();
   const location = useLocation();
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
@@ -187,7 +188,7 @@ export function AppSidebar() {
           {/* User Profile Section */}
           <div className="mt-4 space-y-2">
             {isExpanded ? (
-              <DropdownMenu modal={false}>
+              <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen} modal={false}>
                 <DropdownMenuTrigger asChild>
                   <Button 
                     variant="ghost" 
@@ -222,11 +223,18 @@ export function AppSidebar() {
                   sideOffset={12}
                   avoidCollisions={true}
                 >
-                   <ProfileSettingsDialog />
-                  <DropdownMenuItem className="text-gray-700 dark:text-gray-200 focus:bg-gray-100 dark:focus:bg-gray-800 cursor-pointer">
-                    <Settings className="h-4 w-4 mr-2" />
-                    Configurações
-                  </DropdownMenuItem>
+                   <DropdownMenuItem asChild className="text-gray-700 dark:text-gray-200 focus:bg-gray-100 dark:focus:bg-gray-800 cursor-pointer">
+                     <NavLink to="/admin/profile" className="flex items-center">
+                       <User className="h-4 w-4 mr-2" />
+                       Meu Perfil
+                     </NavLink>
+                   </DropdownMenuItem>
+                   <DropdownMenuItem asChild className="text-gray-700 dark:text-gray-200 focus:bg-gray-100 dark:focus:bg-gray-800 cursor-pointer">
+                     <NavLink to="/admin/profile" className="flex items-center">
+                       <Settings className="h-4 w-4 mr-2" />
+                       Configurações
+                     </NavLink>
+                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-700" />
                   <DropdownMenuItem 
                     className="text-red-600 focus:bg-red-50 dark:focus:bg-red-900/20 cursor-pointer" 

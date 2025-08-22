@@ -9,6 +9,10 @@ import { Camera, User, Save, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
+interface ProfileSettingsDialogProps {
+  onOpenChange?: (open: boolean) => void;
+}
+
 interface ProfileData {
   nome_completo: string;
   email: string;
@@ -16,7 +20,7 @@ interface ProfileData {
   avatar_url?: string;
 }
 
-export function ProfileSettingsDialog() {
+export function ProfileSettingsDialog({ onOpenChange }: ProfileSettingsDialogProps = {}) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
@@ -33,6 +37,7 @@ export function ProfileSettingsDialog() {
   // Carregar dados do perfil quando abrir o dialog
   const handleOpenChange = async (open: boolean) => {
     setIsOpen(open);
+    onOpenChange?.(open); // Callback para o parent component
     if (open && user) {
       setIsLoading(true);
       try {
@@ -176,128 +181,130 @@ export function ProfileSettingsDialog() {
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button variant="ghost" className="justify-start gap-2 w-full text-gray-700 dark:text-gray-200">
-          <User className="h-4 w-4" />
-          Meu Perfil
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Configurações do Perfil</DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+        <DialogTrigger asChild>
+          <Button variant="ghost" className="justify-start gap-2 w-full text-gray-700 dark:text-gray-200 h-8 px-2 font-normal">
+            <User className="h-4 w-4" />
+            Meu Perfil
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Configurações do Perfil</DialogTitle>
+          </DialogHeader>
 
-        {isLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin" />
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {/* Avatar */}
-            <div className="flex flex-col items-center space-y-4">
-              <div className="relative">
-                <Avatar className="h-24 w-24">
-                  <AvatarImage src={profileData.avatar_url} />
-                  <AvatarFallback className="text-xl">
-                    {profileData.nome_completo?.charAt(0)?.toUpperCase() || 
-                     profileData.email?.charAt(0)?.toUpperCase() || 'U'}
-                  </AvatarFallback>
-                </Avatar>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Avatar */}
+              <div className="flex flex-col items-center space-y-4">
+                <div className="relative">
+                  <Avatar className="h-24 w-24">
+                    <AvatarImage src={profileData.avatar_url} />
+                    <AvatarFallback className="text-xl">
+                      {profileData.nome_completo?.charAt(0)?.toUpperCase() || 
+                       profileData.email?.charAt(0)?.toUpperCase() || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full p-0"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploadingAvatar}
+                  >
+                    {isUploadingAvatar ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Camera className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
                 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full p-0"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploadingAvatar}
-                >
-                  {isUploadingAvatar ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  className="hidden"
+                />
+                
+                <p className="text-sm text-muted-foreground text-center">
+                  Clique no ícone da câmera para alterar sua foto
+                </p>
+              </div>
+
+              {/* Campos do perfil */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="nome_completo">Nome Completo</Label>
+                  <Input
+                    id="nome_completo"
+                    value={profileData.nome_completo}
+                    onChange={(e) => setProfileData(prev => ({
+                      ...prev,
+                      nome_completo: e.target.value
+                    }))}
+                    placeholder="Seu nome completo"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={profileData.email}
+                    onChange={(e) => setProfileData(prev => ({
+                      ...prev,
+                      email: e.target.value
+                    }))}
+                    placeholder="seu@email.com"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="telefone">Telefone</Label>
+                  <Input
+                    id="telefone"
+                    value={profileData.telefone}
+                    onChange={(e) => setProfileData(prev => ({
+                      ...prev,
+                      telefone: e.target.value
+                    }))}
+                    placeholder="(11) 99999-9999"
+                  />
+                </div>
+              </div>
+
+              {/* Botões */}
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setIsOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleSave} disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Salvando...
+                    </>
                   ) : (
-                    <Camera className="h-4 w-4" />
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      Salvar
+                    </>
                   )}
                 </Button>
               </div>
-              
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarUpload}
-                className="hidden"
-              />
-              
-              <p className="text-sm text-muted-foreground text-center">
-                Clique no ícone da câmera para alterar sua foto
-              </p>
             </div>
-
-            {/* Campos do perfil */}
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="nome_completo">Nome Completo</Label>
-                <Input
-                  id="nome_completo"
-                  value={profileData.nome_completo}
-                  onChange={(e) => setProfileData(prev => ({
-                    ...prev,
-                    nome_completo: e.target.value
-                  }))}
-                  placeholder="Seu nome completo"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={profileData.email}
-                  onChange={(e) => setProfileData(prev => ({
-                    ...prev,
-                    email: e.target.value
-                  }))}
-                  placeholder="seu@email.com"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="telefone">Telefone</Label>
-                <Input
-                  id="telefone"
-                  value={profileData.telefone}
-                  onChange={(e) => setProfileData(prev => ({
-                    ...prev,
-                    telefone: e.target.value
-                  }))}
-                  placeholder="(11) 99999-9999"
-                />
-              </div>
-            </div>
-
-            {/* Botões */}
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setIsOpen(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={handleSave} disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Salvando...
-                  </>
-                ) : (
-                  <>
-                    <Save className="h-4 w-4 mr-2" />
-                    Salvar
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
