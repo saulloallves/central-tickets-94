@@ -216,18 +216,19 @@ export function AppSidebar() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent 
                     side="right" 
-                    className="bg-white/95 backdrop-blur-md shadow-elegant rounded-xl border border-white/20 ml-2"
+                    className="z-50 bg-white dark:bg-gray-800 shadow-elegant rounded-xl border border-gray-200 dark:border-gray-700 ml-2 min-w-[160px]"
+                    sideOffset={8}
                   >
-                    <DropdownMenuItem className="text-gray-800">
+                    <DropdownMenuItem className="text-gray-800 dark:text-gray-200 focus:bg-gray-100 dark:focus:bg-gray-700">
                       <User className="h-4 w-4 mr-2" />
                       Perfil
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="text-gray-800">
+                    <DropdownMenuItem className="text-gray-800 dark:text-gray-200 focus:bg-gray-100 dark:focus:bg-gray-700">
                       <Settings className="h-4 w-4 mr-2" />
                       Configurações
                     </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-red-600" onClick={handleSignOut}>
+                    <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-600" />
+                    <DropdownMenuItem className="text-red-600 focus:bg-red-50 dark:focus:bg-red-900/20" onClick={handleSignOut}>
                       <LogOut className="h-4 w-4 mr-2" />
                       Sair do Sistema
                     </DropdownMenuItem>
