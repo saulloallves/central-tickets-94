@@ -78,10 +78,10 @@ const Colaboradores = () => {
   if (loading) {
     return (
       <ProtectedRoute requiredRole="admin">
-        <div className="space-y-6">
-          <div className="animate-pulse">
-            <div className="h-8 bg-muted rounded w-48 mb-2"></div>
-            <div className="h-4 bg-muted rounded w-96"></div>
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div className="animate-pulse text-center">
+            <div className="h-8 bg-muted rounded w-48 mb-2 mx-auto"></div>
+            <div className="h-4 bg-muted rounded w-96 mx-auto"></div>
           </div>
           <Card>
             <CardContent className="p-6">
@@ -103,9 +103,9 @@ const Colaboradores = () => {
 
   return (
     <ProtectedRoute requiredRole="admin">
-      <div className="space-y-6">
+      <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex justify-between items-center">
-          <div>
+          <div className="text-center flex-1">
             <h2 className="text-3xl font-bold tracking-tight">Colaboradores</h2>
             <p className="text-muted-foreground">
               Gerencie todos os colaboradores da empresa

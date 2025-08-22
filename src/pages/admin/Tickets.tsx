@@ -132,9 +132,9 @@ const Tickets = () => {
       {/* New Crisis Alert Banner */}
       <NewCrisisAlertBanner />
       
-      <div className="p-6 space-y-4" style={{ paddingTop: '2rem' }}>
+      <div className="max-w-7xl mx-auto p-6 space-y-4" style={{ paddingTop: '2rem' }}>
         <div className="flex items-center justify-between">
-          <div>
+          <div className="text-center flex-1">
             <h1 className="text-3xl font-bold tracking-tight">Tickets de Suporte</h1>
             <p className="text-muted-foreground">
               Gerencie tickets de suporte e acompanhe SLAs
