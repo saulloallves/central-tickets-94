@@ -2424,6 +2424,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      vincular_tickets_existentes_a_crise: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       ai_interaction_kind: "suggestion" | "chat"

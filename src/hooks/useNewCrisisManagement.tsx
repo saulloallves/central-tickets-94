@@ -277,9 +277,9 @@ export const useNewCrisisManagement = () => {
   useEffect(() => {
     fetchActiveCrises();
 
-    // Realtime subscription para crises
+    // Enhanced realtime subscription para crises e tickets
     const channel = supabase
-      .channel('crises-realtime')
+      .channel('crises-enhanced-realtime')
       .on(
         'postgres_changes',
         {
@@ -288,8 +288,9 @@ export const useNewCrisisManagement = () => {
           table: 'crises'
         },
         (payload) => {
-          console.log('Realtime crisis change:', payload);
-          fetchActiveCrises();
+          console.log('🚨 Realtime crisis change:', payload);
+          // Refetch immediately for any crisis change
+          setTimeout(() => fetchActiveCrises(), 100);
         }
       )
       .on(
@@ -300,8 +301,9 @@ export const useNewCrisisManagement = () => {
           table: 'crise_ticket_links'
         },
         (payload) => {
-          console.log('Realtime crisis-ticket link change:', payload);
-          fetchActiveCrises();
+          console.log('🔗 Realtime crisis-ticket link change:', payload);
+          // Refetch immediately when tickets are linked/unlinked
+          setTimeout(() => fetchActiveCrises(), 100);
         }
       )
       .on(
@@ -312,14 +314,36 @@ export const useNewCrisisManagement = () => {
           table: 'crise_updates'
         },
         (payload) => {
-          console.log('Realtime crisis update change:', payload);
-          fetchActiveCrises();
+          console.log('📝 Realtime crisis update change:', payload);
+          // Refetch immediately for any update
+          setTimeout(() => fetchActiveCrises(), 100);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tickets',
+          filter: 'prioridade=eq.crise'
+        },
+        (payload) => {
+          console.log('🎫 Realtime crisis ticket change:', payload);
+          // Refetch when any ticket becomes/stops being a crisis
+          setTimeout(() => fetchActiveCrises(), 200);
         }
       )
       .subscribe();
 
+    // Auto-refresh every 30 seconds to ensure data consistency
+    const autoRefresh = setInterval(() => {
+      console.log('🔄 Auto-refreshing crisis data...');
+      fetchActiveCrises();
+    }, 30000);
+
     return () => {
       supabase.removeChannel(channel);
+      clearInterval(autoRefresh);
     };
   }, []);
 

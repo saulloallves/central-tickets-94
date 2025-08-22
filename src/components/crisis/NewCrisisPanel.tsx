@@ -256,10 +256,10 @@ export const NewCrisisPanel = ({ className }: NewCrisisPanelProps) => {
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => setSelectedCrisis(crisis)}
+                          className="hover:bg-red-50 hover:border-red-200"
                         >
                           <Settings className="h-3 w-3 mr-1" />
-                          Gerenciar
+                          Gerenciar Crise
                         </Button>
                       </DialogTrigger>
                       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
