@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/AppSidebar"
 import { Toaster } from "@/components/ui/toaster"
-import { CrisisAlertBanner } from "@/components/crisis/CrisisAlertBanner"
+
 
 interface AdminLayoutProps {
   children: React.ReactNode
@@ -44,8 +44,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       <div className="min-h-screen flex w-full bg-gradient-subtle">
         <AppSidebar />
         <div className="flex-1 flex flex-col transition-all duration-500" data-main-content style={{ marginLeft: '80px' }}>
-          {/* Crisis Alert Banner - Always visible when there are active crises */}
-          <CrisisAlertBanner />
           
           {/* Main content area with optimized spacing */}
           <main className="flex-1 p-6">
