@@ -1,13 +1,14 @@
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings, Brain, BookOpen, TrendingUp, Shield, AlertTriangle } from "lucide-react";
+import { Settings, Brain, BookOpen, TrendingUp, Shield, AlertTriangle, Image } from "lucide-react";
 import { IASettingsTab } from "@/components/configuracoes/IASettingsTab";
 import { KnowledgeHubTab } from "@/components/configuracoes/KnowledgeHubTab";
 import { RegrasUsoTab } from "@/components/configuracoes/RegrasUsoTab";
 import { RelatoriosTab } from "@/components/configuracoes/RelatoriosTab";
 import { NotificacoesTab } from "@/components/configuracoes/NotificacoesTab";
 import { CrisisConfigTab } from "@/components/configuracoes/CrisisConfigTab";
+import { LogoSettings } from "@/components/configuracoes/LogoSettingsTab";
 
 export default function Configuracoes() {
   return (
@@ -28,7 +29,11 @@ export default function Configuracoes() {
         <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50 shadow-lg">
           <CardContent className="p-6">
             <Tabs defaultValue="ia" className="w-full">
-              <TabsList className="grid w-full grid-cols-6 mb-6">
+              <TabsList className="grid w-full grid-cols-7 mb-6">
+                <TabsTrigger value="logo" className="flex items-center gap-2">
+                  <Image className="h-4 w-4" />
+                  Logo
+                </TabsTrigger>
                 <TabsTrigger value="ia" className="flex items-center gap-2">
                   <Brain className="h-4 w-4" />
                   IA
@@ -54,6 +59,10 @@ export default function Configuracoes() {
                   Modo Crise
                 </TabsTrigger>
               </TabsList>
+
+              <TabsContent value="logo" className="space-y-6">
+                <LogoSettings />
+              </TabsContent>
 
               <TabsContent value="ia" className="space-y-6">
                 <IASettingsTab />
