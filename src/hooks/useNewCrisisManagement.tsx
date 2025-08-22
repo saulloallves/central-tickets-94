@@ -321,20 +321,54 @@ export const useNewCrisisManagement = () => {
     statusTicket: 'concluido' | 'em_atendimento' = 'concluido'
   ) => {
     try {
-      const { error } = await supabase.rpc('resolve_crise_close_tickets', {
-        p_crise_id: crisisId,
-        p_mensagem: mensagem,
-        p_status_ticket: statusTicket
-      });
+      // Verificar se é uma crise da tabela crises_ativas ou crises
+      const { data: activeCrisis } = await supabase
+        .from('crises_ativas')
+        .select('id, ticket_id')
+        .eq('id', crisisId)
+        .single();
 
-      if (error) {
-        console.error('Error resolving crisis:', error);
-        toast({
-          title: "Erro",
-          description: "Não foi possível encerrar a crise",
-          variant: "destructive",
+      if (activeCrisis) {
+        // É uma crise ativa - usar função específica para resolver
+        const { error } = await supabase.rpc('resolve_crisis', {
+          p_crisis_id: crisisId,
+          p_resolvida_por: (await supabase.auth.getUser()).data.user?.id
         });
-        return false;
+
+        if (error) {
+          console.error('Error resolving active crisis:', error);
+          toast({
+            title: "Erro",
+            description: "Não foi possível encerrar a crise ativa",
+            variant: "destructive",
+          });
+          return false;
+        }
+
+        // Atualizar ticket vinculado se necessário
+        if (activeCrisis.ticket_id && statusTicket === 'concluido') {
+          await supabase
+            .from('tickets')
+            .update({ status: statusTicket })
+            .eq('id', activeCrisis.ticket_id);
+        }
+      } else {
+        // É uma crise da tabela crises - usar função original
+        const { error } = await supabase.rpc('resolve_crise_close_tickets', {
+          p_crise_id: crisisId,
+          p_mensagem: mensagem,
+          p_status_ticket: statusTicket
+        });
+
+        if (error) {
+          console.error('Error resolving crisis:', error);
+          toast({
+            title: "Erro",
+            description: "Não foi possível encerrar a crise",
+            variant: "destructive",
+          });
+          return false;
+        }
       }
 
       toast({
