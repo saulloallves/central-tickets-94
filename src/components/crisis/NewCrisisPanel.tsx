@@ -46,7 +46,7 @@ export const NewCrisisPanel = ({ className }: NewCrisisPanelProps) => {
   const [broadcastText, setBroadcastText] = useState('');
   const [newCrisisTitle, setNewCrisisTitle] = useState('');
   const [newCrisisDescription, setNewCrisisDescription] = useState('');
-  const [showTickets, setShowTickets] = useState(false);
+  const [showTickets, setShowTickets] = useState(false); // State for collapsible tickets section
 
   const handleUpdateStatus = async (crisisId: string, status: Crisis['status'], message?: string) => {
     await updateCrisisStatus(crisisId, status, message);
