@@ -322,6 +322,8 @@ const KanbanColumn = ({ status, individualTickets, selectedTicketId, onTicketSel
       ref={setNodeRef}
       className={cn(
         "flex flex-col h-full min-h-[600px] w-full rounded-xl border-2 transition-all duration-300 ease-in-out overflow-hidden",
+        "bg-gradient-to-br from-blue-50 via-blue-100/50 to-blue-200/30",
+        "bg-[radial-gradient(circle_at_1px_1px,rgba(59,130,246,0.15)_1px,transparent_0)] bg-[length:24px_24px]",
         COLUMN_COLORS[status],
         isOver ? 
           "border-primary bg-gradient-to-b from-primary/5 to-primary/10 shadow-xl scale-[1.02] border-solid" : 
