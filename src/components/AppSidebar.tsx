@@ -217,10 +217,10 @@ export function AppSidebar() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent 
-                  side="right" 
+                  side="bottom" 
                   align="start"
                   className="z-[100] bg-white dark:bg-gray-900 shadow-2xl rounded-lg border border-gray-200 dark:border-gray-700 w-48"
-                  sideOffset={12}
+                  sideOffset={8}
                   avoidCollisions={true}
                 >
                    <DropdownMenuItem asChild className="text-gray-700 dark:text-gray-200 focus:bg-gray-100 dark:focus:bg-gray-800 cursor-pointer">
