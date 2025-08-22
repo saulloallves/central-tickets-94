@@ -318,488 +318,503 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
 
   if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Carregando...</CardTitle>
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">Carregando detalhes do ticket...</p>
-        </CardContent>
-      </Card>
+      <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Carregando...</CardTitle>
+              <Button variant="ghost" size="sm" onClick={onClose}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">Carregando detalhes do ticket...</p>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   if (!ticket) {
     return (
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Erro</CardTitle>
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">Ticket não encontrado</p>
-        </CardContent>
-      </Card>
+      <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Erro</CardTitle>
+              <Button variant="ghost" size="sm" onClick={onClose}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">Ticket não encontrado</p>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   const slaStatus = getSLAStatus();
 
   return (
-    <Card className="h-full flex flex-col max-w-6xl w-full mx-auto">
-      <CardHeader className="pb-6">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            <CardTitle className="text-2xl line-clamp-2 mb-3 font-bold">
-              {getTicketDisplayTitle(ticket)}
-            </CardTitle>
-            <div className="flex items-center gap-3 flex-wrap">
-              <span className="font-mono text-sm text-muted-foreground px-2 py-1 bg-muted rounded">
-                {ticket.codigo_ticket}
-              </span>
-              <div className="flex items-center gap-2">
-                <div className={`w-3 h-3 rounded-full ${getStatusColor(ticket.status)}`} />
-                <span className="text-sm text-muted-foreground capitalize font-medium">{ticket.status}</span>
-              </div>
-              {slaStatus && (
-                <div className={`flex items-center gap-2 px-2 py-1 rounded ${slaStatus.color} bg-muted`}>
-                  {slaStatus.icon}
-                  <span className="text-xs font-medium">{slaStatus.text}</span>
+    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <Card className="w-full max-w-7xl h-[90vh] flex flex-col overflow-hidden">
+        {/* Header - Fixed */}
+        <CardHeader className="flex-shrink-0 border-b bg-card">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-xl line-clamp-2 mb-3 font-bold">
+                {getTicketDisplayTitle(ticket)}
+              </CardTitle>
+              <div className="flex items-center gap-3 flex-wrap">
+                <Badge variant="outline" className="font-mono text-sm">
+                  {ticket.codigo_ticket}
+                </Badge>
+                <div className="flex items-center gap-2">
+                  <div className={`w-3 h-3 rounded-full ${getStatusColor(ticket.status)}`} />
+                  <span className="text-sm text-muted-foreground capitalize font-medium">{ticket.status}</span>
                 </div>
-              )}
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {ticket.prioridade === 'crise' && (
-              <Badge variant="destructive" className="whitespace-nowrap animate-pulse">
-                <AlertTriangle className="h-3 w-3 mr-1" />
-                EM CRISE
-              </Badge>
-            )}
-            <TicketActions ticket={ticket} equipes={equipes} />
-            <CrisisButton ticketId={ticket.id} currentPriority={ticket.prioridade} />
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
-
-      <CardContent className="flex-1 flex flex-col space-y-4 p-4">
-        {/* Ticket Info Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 place-items-center w-full">
-          {/* Unidade Card */}
-          <Card className="border-l-4 border-l-blue-500 w-full max-w-xs h-16">
-            <CardContent className="p-2 h-full flex items-center">
-              <div className="flex items-center gap-2 w-full">
-                <div className="p-0.5 bg-blue-50 rounded">
-                  <Building className="h-2 w-2 text-blue-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-semibold text-foreground truncate">
-                    {ticket.unidades?.grupo || ticket.unidade_id}
-                  </div>
-                  <div className="text-xs text-muted-foreground">Unidade</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Solicitante Card */}
-          <Card className="border-l-4 border-l-green-500 w-full max-w-xs h-16">
-            <CardContent className="p-2 h-full flex items-center">
-              <div className="flex items-center gap-2 w-full">
-                <div className="p-0.5 bg-green-50 rounded">
-                  <User className="h-2 w-2 text-green-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-semibold text-foreground truncate">
-                    {ticket.colaboradores?.nome_completo || 
-                     ticket.profiles?.nome_completo || 
-                     (ticket.franqueado_id ? (ticket.franqueados?.name || "Franqueado") : "Sistema")}
-                  </div>
-                  <div className="text-xs text-muted-foreground">Solicitante</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Sistema/Equipe Card */}
-          <Card className="border-l-4 border-l-purple-500 w-full max-w-xs h-16">
-            <CardContent className="p-2 h-full flex items-center">
-              <div className="flex items-center gap-2 w-full">
-                <div className="p-0.5 bg-purple-50 rounded">
-                  <Tag className="h-2 w-2 text-purple-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1">
-                    <Badge variant={getPriorityVariant(ticket.prioridade)} className="text-xs px-1 py-0 h-2.5">
-                      {ticket.prioridade === 'crise' && <Zap className="h-1.5 w-1.5 mr-0.5" />}
-                      {ticket.prioridade?.toUpperCase()}
-                    </Badge>
-                  </div>
-                  <div className="text-xs font-semibold text-foreground truncate">
-                    {ticket.equipes?.nome || 'Aguardando'}
-                  </div>
-                  <div className="text-xs text-muted-foreground">Equipe</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Team Management Section */}
-        <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 bg-blue-100 rounded-full">
-                <Users className="h-4 w-4 text-blue-600" />
-              </div>
-              <div>
-                <h4 className="font-semibold text-blue-900">Equipe Responsável</h4>
-                <p className="text-xs text-blue-700">Altere a equipe responsável pelo atendimento</p>
+                {slaStatus && (
+                  <Badge variant="outline" className={`${slaStatus.color} flex items-center gap-1`}>
+                    {slaStatus.icon}
+                    <span className="text-xs">{slaStatus.text}</span>
+                  </Badge>
+                )}
               </div>
             </div>
-            <Select
-              value={ticket.equipe_responsavel_id || "none"}
-              onValueChange={(value) => handleTeamChange(value === "none" ? "" : value)}
-            >
-              <SelectTrigger className="w-full bg-white">
-                <SelectValue placeholder="Selecionar equipe..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Nenhuma equipe</SelectItem>
-                {equipes.map((equipe) => (
-                  <SelectItem key={equipe.id} value={equipe.id}>
-                    {equipe.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </CardContent>
-        </Card>
-
-        {/* Atendimento Status */}
-        {ticket.atendimento_iniciado_por && ticket.atendimento_iniciado_profile?.nome_completo && (
-          <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
-            <CardContent className="p-3">
-              <div className="flex items-center gap-3">
-                <div className="p-1.5 bg-green-100 rounded-full">
-                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-                </div>
-                <div className="flex-1">
-                  <div className="text-sm font-semibold text-green-800">
-                    Atendimento em andamento
-                  </div>
-                  <div className="text-xs text-green-700">
-                    <span className="font-medium">{ticket.atendimento_iniciado_profile.nome_completo}</span>
-                    {' • '}iniciado em {ticket.atendimento_iniciado_em 
-                      ? new Date(ticket.atendimento_iniciado_em).toLocaleString('pt-BR', {
-                          day: '2-digit',
-                          month: '2-digit', 
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })
-                      : 'Data não disponível'
-                    }
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Problem Description */}
-        <div className="space-y-2">
-          <h4 className="font-semibold text-base">Descrição do Problema</h4>
-          <div className="p-3 bg-muted/50 rounded-lg border-l-4 border-primary">
-            <p className="text-sm leading-relaxed text-foreground">
-              {ticket.descricao_problema}
-            </p>
-          </div>
-        </div>
-
-        <Separator className="my-4" />
-
-        {/* Tab Navigation */}
-        <div className="space-y-4">
-          {/* Tab Buttons */}
-          <div className="flex gap-2 p-1 bg-muted rounded-lg">
-            <Button
-              variant={activeTab === 'suggestion' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setActiveTab('suggestion')}
-              className="flex-1 relative h-9"
-            >
-              <Sparkles className="h-4 w-4 mr-2" />
-              IA Sugestão
-              {suggestion && !suggestion.foi_usada && (
-                <Badge variant="secondary" className="ml-2 text-xs">Nova</Badge>
+            
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {ticket.prioridade === 'crise' && (
+                <Badge variant="destructive" className="whitespace-nowrap animate-pulse">
+                  <AlertTriangle className="h-3 w-3 mr-1" />
+                  EM CRISE
+                </Badge>
               )}
-            </Button>
-            <Button
-              variant={activeTab === 'chat' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setActiveTab('chat')}
-              className="flex-1 relative h-9"
-            >
-              <Bot className="h-4 w-4 mr-2" />
-              Chat com IA
-              {chatHistory.length > 0 && (
-                <Badge variant="secondary" className="ml-2 text-xs">{chatHistory.length}</Badge>
-              )}
-            </Button>
-            <Button
-              variant={activeTab === 'messages' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setActiveTab('messages')}
-              className="flex-1 relative h-9"
-            >
-              <MessageSquare className="h-4 w-4 mr-2" />
-              Conversas
-              <Badge variant="secondary" className="ml-2 text-xs">{messages.length}</Badge>
-            </Button>
-          </div>
-
-          {/* Tab Content */}
-          {activeTab === 'suggestion' && (
-            <div className="space-y-4">
-              {suggestion ? (
-                <div className="space-y-3">
-                  <div className="p-4 bg-muted/50 rounded-lg border-l-4 border-primary">
-                    <p className="text-sm leading-relaxed">{suggestion.resposta}</p>
-                    <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
-                      <div className="flex items-center gap-2">
-                        <span>Gerada em {formatDateTimeBR(suggestion.created_at)}</span>
-                        {suggestion.log?.rag_hits !== undefined && suggestion.log?.kb_hits !== undefined && (
-                          <span className="text-primary">
-                            ({(suggestion.log.rag_hits + suggestion.log.kb_hits)} docs)
-                          </span>
-                        )}
-                      </div>
-                      {suggestion.foi_usada && (
-                        <Badge variant="secondary" className="text-xs">✓ Utilizada</Badge>
-                      )}
-                    </div>
-                  </div>
-                  {!suggestion.foi_usada && (
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline" onClick={handleCopySuggestion}>
-                        <Copy className="h-4 w-4 mr-2" />
-                        Copiar
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={handleEditAndSend}>
-                        Editar e Enviar
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              ) : suggestionLoading ? (
-                <div className="text-center py-6">
-                  <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mb-3">
-                    <Bot className="h-4 w-4 animate-spin" />
-                    Gerando sugestão da IA...
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-2">
-                    <div className="bg-primary h-2 rounded-full w-1/2 animate-pulse"></div>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-6">
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Nenhuma sugestão gerada ainda
-                  </p>
-                  <Button 
-                    onClick={generateSuggestion} 
-                    disabled={suggestionLoading}
-                    size="sm"
-                  >
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    Gerar Sugestão
-                  </Button>
-                </div>
-              )}
-              {suggestion && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={generateSuggestion} 
-                  disabled={suggestionLoading}
-                  className="w-full"
-                >
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  {suggestionLoading ? 'Gerando...' : 'Regenerar Sugestão'}
-                </Button>
-              )}
+              <CrisisButton ticketId={ticket.id} currentPriority={ticket.prioridade} />
+              <TicketActions ticket={ticket} equipes={equipes} />
+              <Button variant="ghost" size="sm" onClick={onClose}>
+                <X className="h-4 w-4" />
+              </Button>
             </div>
-          )}
+          </div>
+        </CardHeader>
 
-          {activeTab === 'chat' && (
-            <div className="flex flex-col h-[400px]">
-              {/* Chat Messages Area */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-muted/20">
-                {chatHistory.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Bot className="h-12 w-12 mx-auto text-muted-foreground/50 mb-2" />
-                    <p className="text-sm text-muted-foreground">
-                      Nenhuma conversa ainda. Faça uma pergunta à IA!
+        {/* Content - Scrollable */}
+        <CardContent className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Info Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Unidade Card */}
+            <Card className="border-l-4 border-l-blue-500">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-50 rounded-lg">
+                    <Building className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-muted-foreground mb-1">Unidade</p>
+                    <p className="font-semibold text-sm truncate">
+                      {ticket.unidades?.grupo || ticket.unidade_id}
                     </p>
                   </div>
-                ) : (
-                  <>
-                    {chatHistory.map((chat) => (
-                      <div key={chat.id} className="space-y-3">
-                        {/* User Message */}
-                        <div className="flex justify-end">
-                          <div className="max-w-[80%] bg-primary text-primary-foreground rounded-2xl rounded-br-md px-4 py-3">
-                            <p className="text-sm leading-relaxed">{chat.mensagem}</p>
-                          </div>
-                        </div>
-                        
-                        {/* AI Response */}
-                        <div className="flex justify-start">
-                          <div className="max-w-[80%] bg-card border rounded-2xl rounded-bl-md px-4 py-3 shadow-sm">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Bot className="h-4 w-4 text-primary" />
-                              <span className="text-xs text-muted-foreground font-medium">Assistente IA</span>
-                              {chat.log?.rag_hits !== undefined && chat.log?.kb_hits !== undefined && (
-                                <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                                  {(chat.log.rag_hits + chat.log.kb_hits)} docs
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Solicitante Card */}
+            <Card className="border-l-4 border-l-green-500">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-50 rounded-lg">
+                    <User className="h-4 w-4 text-green-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-muted-foreground mb-1">Solicitante</p>
+                    <p className="font-semibold text-sm truncate">
+                      {ticket.colaboradores?.nome_completo || 
+                       ticket.profiles?.nome_completo || 
+                       (ticket.franqueado_id ? (ticket.franqueados?.name || "Franqueado") : "Sistema")}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Prioridade/Equipe Card */}
+            <Card className="border-l-4 border-l-purple-500">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-purple-50 rounded-lg">
+                    <Tag className="h-4 w-4 text-purple-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="text-xs text-muted-foreground">Prioridade</p>
+                      <Badge variant={getPriorityVariant(ticket.prioridade)} className="text-xs h-5">
+                        {ticket.prioridade === 'crise' && <Zap className="h-3 w-3 mr-1" />}
+                        {ticket.prioridade?.toUpperCase()}
+                      </Badge>
+                    </div>
+                    <p className="font-semibold text-sm truncate">
+                      {ticket.equipes?.nome || 'Aguardando designação'}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Team Management */}
+          <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Users className="h-4 w-4 text-blue-600" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-blue-900">Equipe Responsável</h4>
+                  <p className="text-xs text-blue-700">Altere a equipe responsável pelo atendimento</p>
+                </div>
+              </div>
+              <Select
+                value={ticket.equipe_responsavel_id || "none"}
+                onValueChange={(value) => handleTeamChange(value === "none" ? "" : value)}
+              >
+                <SelectTrigger className="w-full bg-white border-blue-200">
+                  <SelectValue placeholder="Selecionar equipe..." />
+                </SelectTrigger>
+                <SelectContent className="bg-white border border-border shadow-lg z-[60]">
+                  <SelectItem value="none">Nenhuma equipe</SelectItem>
+                  {equipes.map((equipe) => (
+                    <SelectItem key={equipe.id} value={equipe.id}>
+                      {equipe.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </CardContent>
+          </Card>
+
+          {/* Atendimento Status */}
+          {ticket.atendimento_iniciado_por && ticket.atendimento_iniciado_profile?.nome_completo && (
+            <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-semibold text-green-800">
+                      Atendimento em andamento
+                    </div>
+                    <div className="text-xs text-green-700">
+                      <span className="font-medium">{ticket.atendimento_iniciado_profile.nome_completo}</span>
+                      {' • '}iniciado em {ticket.atendimento_iniciado_em 
+                        ? new Date(ticket.atendimento_iniciado_em).toLocaleString('pt-BR', {
+                            day: '2-digit',
+                            month: '2-digit', 
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })
+                        : 'Data não disponível'
+                      }
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Problem Description */}
+          <Card>
+            <CardContent className="p-4">
+              <h4 className="font-semibold text-base mb-3">Descrição do Problema</h4>
+              <div className="p-4 bg-muted/50 rounded-lg border-l-4 border-primary">
+                <p className="text-sm leading-relaxed text-foreground">
+                  {ticket.descricao_problema}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Separator />
+
+          {/* Tab Navigation */}
+          <div className="space-y-4">
+            {/* Tab Buttons */}
+            <div className="flex gap-1 p-1 bg-muted rounded-lg">
+              <Button
+                variant={activeTab === 'suggestion' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setActiveTab('suggestion')}
+                className="flex-1 h-10"
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                IA Sugestão
+                {suggestion && !suggestion.foi_usada && (
+                  <Badge variant="secondary" className="ml-2 text-xs h-5">Nova</Badge>
+                )}
+              </Button>
+              <Button
+                variant={activeTab === 'chat' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setActiveTab('chat')}
+                className="flex-1 h-10"
+              >
+                <Bot className="h-4 w-4 mr-2" />
+                Chat com IA
+                {chatHistory.length > 0 && (
+                  <Badge variant="secondary" className="ml-2 text-xs h-5">{chatHistory.length}</Badge>
+                )}
+              </Button>
+              <Button
+                variant={activeTab === 'messages' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setActiveTab('messages')}
+                className="flex-1 h-10"
+              >
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Conversas
+                <Badge variant="secondary" className="ml-2 text-xs h-5">{messages.length}</Badge>
+              </Button>
+            </div>
+
+            {/* Tab Content */}
+            <Card>
+              <CardContent className="p-6">
+                {activeTab === 'suggestion' && (
+                  <div className="space-y-4">
+                    {suggestion ? (
+                      <div className="space-y-4">
+                        <div className="p-4 bg-muted/50 rounded-lg border-l-4 border-primary">
+                          <p className="text-sm leading-relaxed">{suggestion.resposta}</p>
+                          <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-2">
+                              <span>Gerada em {formatDateTimeBR(suggestion.created_at)}</span>
+                              {suggestion.log?.rag_hits !== undefined && suggestion.log?.kb_hits !== undefined && (
+                                <span className="text-primary">
+                                  ({(suggestion.log.rag_hits + suggestion.log.kb_hits)} docs)
                                 </span>
                               )}
                             </div>
-                            <p className="text-sm leading-relaxed text-foreground">{chat.resposta}</p>
+                            {suggestion.foi_usada && (
+                              <Badge variant="secondary" className="text-xs">✓ Utilizada</Badge>
+                            )}
                           </div>
+                        </div>
+                        {!suggestion.foi_usada && (
+                          <div className="flex gap-3">
+                            <Button size="sm" variant="outline" onClick={handleCopySuggestion} className="h-9">
+                              <Copy className="h-4 w-4 mr-2" />
+                              Copiar
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={handleEditAndSend} className="h-9">
+                              Editar e Enviar
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    ) : suggestionLoading ? (
+                      <div className="text-center py-8">
+                        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mb-3">
+                          <Bot className="h-4 w-4 animate-spin" />
+                          Gerando sugestão da IA...
+                        </div>
+                        <div className="w-full bg-muted rounded-full h-2">
+                          <div className="bg-primary h-2 rounded-full w-1/2 animate-pulse"></div>
                         </div>
                       </div>
-                    ))}
-                    
-                    {/* Loading Indicator */}
-                    {chatLoading && (
-                      <div className="flex justify-start">
-                        <div className="max-w-[80%] bg-card border rounded-2xl rounded-bl-md px-4 py-3 shadow-sm">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Bot className="h-4 w-4 text-primary" />
-                            <span className="text-xs text-muted-foreground font-medium">Assistente IA</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <div className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                            <div className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                            <div className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce"></div>
-                          </div>
-                        </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Nenhuma sugestão gerada ainda
+                        </p>
+                        <Button 
+                          onClick={generateSuggestion} 
+                          disabled={suggestionLoading}
+                          size="sm"
+                          className="h-9"
+                        >
+                          <Sparkles className="h-4 w-4 mr-2" />
+                          Gerar Sugestão
+                        </Button>
                       </div>
                     )}
-                  </>
+                    {suggestion && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={generateSuggestion} 
+                        disabled={suggestionLoading}
+                        className="w-full h-9"
+                      >
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        {suggestionLoading ? 'Gerando...' : 'Regenerar Sugestão'}
+                      </Button>
+                    )}
+                  </div>
                 )}
-              </div>
-              
-              {/* Input Area */}
-              <div className="border-t bg-background p-4">
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Digite sua mensagem..."
-                    value={aiQuestion}
-                    onChange={(e) => setAiQuestion(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleAskAI())}
-                    className="flex-1"
-                    disabled={chatLoading}
-                  />
-                  <Button 
-                    onClick={handleAskAI}
-                    disabled={!aiQuestion.trim() || chatLoading}
-                    size="icon"
-                    className="shrink-0"
-                  >
-                    <Send className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
 
-          {activeTab === 'messages' && (
-            <div className="space-y-4">
-              <div className="max-h-60 overflow-y-auto space-y-3">
-                {messagesLoading ? (
-                  <p className="text-sm text-muted-foreground">Carregando mensagens...</p>
-                ) : messages.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Nenhuma mensagem ainda</p>
-                ) : (
-                  messages.map((message) => (
-                    <div
-                      key={message.id}
-                      className={`p-3 rounded-lg text-sm ${
-                        message.direcao === 'saida' 
-                          ? 'bg-primary text-primary-foreground ml-8' 
-                          : 'bg-muted mr-8'
-                      }`}
-                    >
-                      <p>{message.mensagem}</p>
-                      <div className="flex items-center justify-between mt-2 text-xs opacity-70">
-                        <span>{message.profiles?.nome_completo || 'Sistema'}</span>
-                        <span title={formatDateTimeBR(message.created_at)}>
-                          {formatDistanceToNowInSaoPaulo(message.created_at, { addSuffix: true })}
-                        </span>
+                {activeTab === 'chat' && (
+                  <div className="flex flex-col h-[400px]">
+                    {/* Chat Messages Area */}
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-muted/20 rounded-lg">
+                      {chatHistory.length === 0 ? (
+                        <div className="text-center py-8">
+                          <Bot className="h-12 w-12 mx-auto text-muted-foreground/50 mb-2" />
+                          <p className="text-sm text-muted-foreground">
+                            Nenhuma conversa ainda. Faça uma pergunta à IA!
+                          </p>
+                        </div>
+                      ) : (
+                        <>
+                          {chatHistory.map((chat) => (
+                            <div key={chat.id} className="space-y-3">
+                              {/* User Message */}
+                              <div className="flex justify-end">
+                                <div className="max-w-[80%] bg-primary text-primary-foreground rounded-2xl rounded-br-md px-4 py-3">
+                                  <p className="text-sm leading-relaxed">{chat.mensagem}</p>
+                                </div>
+                              </div>
+                              
+                              {/* AI Response */}
+                              <div className="flex justify-start">
+                                <div className="max-w-[80%] bg-card border rounded-2xl rounded-bl-md px-4 py-3 shadow-sm">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <Bot className="h-4 w-4 text-primary" />
+                                    <span className="text-xs text-muted-foreground font-medium">Assistente IA</span>
+                                    {chat.log?.rag_hits !== undefined && chat.log?.kb_hits !== undefined && (
+                                      <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+                                        {(chat.log.rag_hits + chat.log.kb_hits)} docs
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-sm leading-relaxed text-foreground">{chat.resposta}</p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                          
+                          {/* Loading Indicator */}
+                          {chatLoading && (
+                            <div className="flex justify-start">
+                              <div className="max-w-[80%] bg-card border rounded-2xl rounded-bl-md px-4 py-3 shadow-sm">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Bot className="h-4 w-4 text-primary" />
+                                  <span className="text-xs text-muted-foreground font-medium">Assistente IA</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <div className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                                  <div className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                                  <div className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce"></div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                    
+                    {/* Input Area */}
+                    <div className="border-t bg-background p-4 rounded-b-lg">
+                      <div className="flex gap-3">
+                        <Input
+                          placeholder="Digite sua mensagem..."
+                          value={aiQuestion}
+                          onChange={(e) => setAiQuestion(e.target.value)}
+                          onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleAskAI())}
+                          className="flex-1 h-10"
+                          disabled={chatLoading}
+                        />
+                        <Button 
+                          onClick={handleAskAI}
+                          disabled={!aiQuestion.trim() || chatLoading}
+                          size="icon"
+                          className="h-10 w-10 shrink-0"
+                        >
+                          <Send className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
-                  ))
-                )}
-              </div>
-
-              {/* Send Message */}
-              <div className="space-y-3">
-                <Textarea
-                  placeholder="Digite sua mensagem..."
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  rows={4}
-                  className="text-sm resize-none"
-                />
-                <div className="flex justify-between items-center">
-                  <Button variant="outline" size="sm" className="h-9">
-                    <Paperclip className="h-4 w-4 mr-2" />
-                    Anexar
-                  </Button>
-                  <div className="flex gap-2">
-                    <Button 
-                      size="sm" 
-                      onClick={handleSendMessage}
-                      disabled={!newMessage.trim()}
-                      className="h-9 px-4"
-                    >
-                      <Send className="h-4 w-4 mr-2" />
-                      Enviar
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={handleSendToFranqueado}
-                      disabled={!newMessage.trim() || isSendingToFranqueado || !ticket?.franqueado_id}
-                      title={!ticket?.franqueado_id ? 'Nenhum franqueado vinculado a este ticket' : ''}
-                      className="h-9 px-3"
-                    >
-                      <Phone className="h-4 w-4 mr-2" />
-                      {isSendingToFranqueado ? 'Enviando...' : 'WhatsApp Franqueado'}
-                    </Button>
                   </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+                )}
+
+                {activeTab === 'messages' && (
+                  <div className="space-y-4">
+                    <div className="max-h-60 overflow-y-auto space-y-3 p-2">
+                      {messagesLoading ? (
+                        <p className="text-sm text-muted-foreground">Carregando mensagens...</p>
+                      ) : messages.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">Nenhuma mensagem ainda</p>
+                      ) : (
+                        messages.map((message) => (
+                          <div
+                            key={message.id}
+                            className={`p-3 rounded-lg text-sm ${
+                              message.direcao === 'saida' 
+                                ? 'bg-primary text-primary-foreground ml-8' 
+                                : 'bg-muted mr-8'
+                            }`}
+                          >
+                            <p>{message.mensagem}</p>
+                            <div className="flex items-center justify-between mt-2 text-xs opacity-70">
+                              <span>{message.profiles?.nome_completo || 'Sistema'}</span>
+                              <span title={formatDateTimeBR(message.created_at)}>
+                                {formatDistanceToNowInSaoPaulo(message.created_at, { addSuffix: true })}
+                              </span>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    {/* Send Message */}
+                    <div className="space-y-4">
+                      <Textarea
+                        placeholder="Digite sua mensagem..."
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        rows={4}
+                        className="text-sm resize-none"
+                      />
+                      <div className="flex justify-between items-center gap-3">
+                        <Button variant="outline" size="sm" className="h-10 px-4">
+                          <Paperclip className="h-4 w-4 mr-2" />
+                          Anexar
+                        </Button>
+                        <div className="flex gap-3">
+                          <Button 
+                            size="sm" 
+                            onClick={handleSendMessage}
+                            disabled={!newMessage.trim()}
+                            className="h-10 px-6"
+                          >
+                            <Send className="h-4 w-4 mr-2" />
+                            Enviar
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={handleSendToFranqueado}
+                            disabled={!newMessage.trim() || isSendingToFranqueado || !ticket?.franqueado_id}
+                            title={!ticket?.franqueado_id ? 'Nenhum franqueado vinculado a este ticket' : ''}
+                            className="h-10 px-4"
+                          >
+                            <Phone className="h-4 w-4 mr-2" />
+                            {isSendingToFranqueado ? 'Enviando...' : 'WhatsApp'}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
