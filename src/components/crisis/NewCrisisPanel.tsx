@@ -302,10 +302,6 @@ export const NewCrisisPanel = ({ className }: NewCrisisPanelProps) => {
                           variant="outline" 
                           size="sm"
                           className="hover:bg-red-50 hover:border-red-200"
-                          onClick={(e) => {
-                            console.log('Gerenciar Crise clicked', crisis.id);
-                            e.stopPropagation();
-                          }}
                         >
                           <Settings className="h-3 w-3 mr-1" />
                           Gerenciar Crise
