@@ -274,20 +274,35 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
           </div>
         </div>
 
-        {/* SLA countdown - apenas Resolver */}
-        {ticket.status !== 'concluido' && ticket.data_limite_sla && (
-          <div className="space-y-1 text-xs">
-            {/* SLA countdown */}
-            {(() => {
-              const slaTime = getSLATime(ticket);
-              return slaTime && (
-                <div className={cn("flex items-center gap-1", slaTime.color)}>
-                  <Clock className="h-3 w-3" />
-                  <span className="font-mono">{slaTime.text}</span>
-                </div>
-              );
-            })()}
-          </div>
+        {/* SLA countdown ou data de resolução */}
+        {ticket.status === 'concluido' ? (
+          /* Mostrar quando foi resolvido */
+          ticket.resolvido_em && (
+            <div className="space-y-1 text-xs">
+              <div className="flex items-center gap-1 text-success">
+                <CheckCircle className="h-3 w-3" />
+                <span className="font-mono">
+                  Resolvido: {formatDistanceToNowInSaoPaulo(ticket.resolvido_em)}
+                </span>
+              </div>
+            </div>
+          )
+        ) : (
+          /* SLA countdown para tickets não concluídos */
+          ticket.data_limite_sla && (
+            <div className="space-y-1 text-xs">
+              {/* SLA countdown */}
+              {(() => {
+                const slaTime = getSLATime(ticket);
+                return slaTime && (
+                  <div className={cn("flex items-center gap-1", slaTime.color)}>
+                    <Clock className="h-3 w-3" />
+                    <span className="font-mono">{slaTime.text}</span>
+                  </div>
+                );
+              })()}
+            </div>
+          )
         )}
       </CardContent>
     </Card>
