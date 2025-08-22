@@ -45,7 +45,11 @@ Analise este ticket de suporte e forneça:
    - "Criação mídia planfetos" (não "mídias para planfetos")
 
 2. CATEGORIA: Classifique em uma das opções: juridico, sistema, midia, operacoes, rh, financeiro, outro
-3. PRIORIDADE: Determine se é: imediato (15min), ate_1_hora (1h), ainda_hoje (até 18h), posso_esperar (24h)
+3. PRIORIDADE: Determine APENAS uma das opções: imediato, ate_1_hora, ainda_hoje, posso_esperar
+   - imediato: problemas críticos que impedem funcionamento (15min)
+   - ate_1_hora: problemas urgentes que afetam produtividade (1h)
+   - ainda_hoje: problemas importantes mas não bloqueiam trabalho (até 18h)
+   - posso_esperar: dúvidas, solicitações, problemas menores (24h)
 4. EQUIPE_SUGERIDA: Sugira qual equipe deve atender baseado no problema e nas equipes disponíveis
 
 Descrição do problema: "${descricao}"
@@ -58,10 +62,12 @@ Responda APENAS em formato JSON válido:
 {
   "titulo": "Título Descritivo Criativo",
   "categoria": "categoria_sugerida", 
-  "prioridade": "prioridade_sugerida",
+  "prioridade": "uma_das_4_opcoes_apenas",
   "equipe_sugerida": "nome_exato_da_equipe_ou_null",
   "justificativa": "Breve explicação da análise"
 }
+
+IMPORTANTE: Use APENAS estas 4 prioridades: imediato, ate_1_hora, ainda_hoje, posso_esperar
 `
 
     console.log('Calling OpenAI for ticket analysis...')
@@ -130,6 +136,29 @@ Responda APENAS em formato JSON válido:
       // Garantir que o título tenha no máximo 3 palavras e qualidade
       if (analysis.titulo) {
         analysis.titulo = limitTitleToThreeWords(analysis.titulo);
+      }
+      
+      // Validar e corrigir prioridade para usar apenas as 4 novas opções
+      const validPriorities = ['imediato', 'ate_1_hora', 'ainda_hoje', 'posso_esperar'];
+      if (!validPriorities.includes(analysis.prioridade)) {
+        console.log(`Prioridade inválida "${analysis.prioridade}", usando fallback`);
+        // Mapear prioridades antigas para novas se necessário
+        switch (analysis.prioridade) {
+          case 'urgente':
+          case 'crise':
+            analysis.prioridade = 'imediato';
+            break;
+          case 'alta':
+            analysis.prioridade = 'ate_1_hora';
+            break;
+          case 'hoje_18h':
+            analysis.prioridade = 'ainda_hoje';
+            break;
+          case 'padrao_24h':
+          default:
+            analysis.prioridade = 'posso_esperar';
+            break;
+        }
       }
     } catch (error) {
       console.error('Error parsing AI response:', error)
