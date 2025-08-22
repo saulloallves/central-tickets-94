@@ -203,7 +203,7 @@ export const NewCrisisPanel = ({ className }: NewCrisisPanelProps) => {
 
   return (
     <Card className={cn("border-red-200", className)}>
-      <CardHeader className="bg-red-50 flex flex-row items-center justify-between">
+      <CardHeader className="bg-red-50 flex flex-row items-center justify-between py-3 px-4">
         <CardTitle className="flex items-center gap-2">
           <AlertTriangle className="h-5 w-5 text-red-600 animate-pulse" />
           <span className="text-red-700">🚨 CRISES ATIVAS</span>
