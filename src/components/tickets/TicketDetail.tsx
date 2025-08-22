@@ -344,7 +344,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
     <div className="w-full h-full flex flex-col overflow-hidden p-6">
         {/* Header */}
         <div className="flex-shrink-0 border-b pb-4 mb-6">
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start justify-between gap-4 mb-3">
             <div className="flex-1 min-w-0">
               <h2 className="text-xl line-clamp-2 mb-3 font-bold text-foreground">
                 {getTicketDisplayTitle(ticket)}
@@ -357,12 +357,6 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                   <div className={`w-3 h-3 rounded-full ${getStatusColor(ticket.status)}`} />
                   <span className="text-sm text-muted-foreground capitalize font-medium">{ticket.status}</span>
                 </div>
-                {slaStatus && (
-                  <Badge variant="outline" className={`${slaStatus.color} flex items-center gap-1`}>
-                    {slaStatus.icon}
-                    <span className="text-xs">{slaStatus.text}</span>
-                  </Badge>
-                )}
               </div>
             </div>
             
@@ -380,6 +374,16 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
               </Button>
             </div>
           </div>
+          
+          {/* SLA Status Row */}
+          {slaStatus && (
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className={`${slaStatus.color} flex items-center gap-1`}>
+                {slaStatus.icon}
+                <span className="text-xs">{slaStatus.text}</span>
+              </Badge>
+            </div>
+          )}
         </div>
 
         {/* Content - Scrollable */}
