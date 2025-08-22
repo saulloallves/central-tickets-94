@@ -13,20 +13,19 @@ interface ImageCropperProps {
 
 export function ImageCropper({ isOpen, onClose, onCrop, imageFile }: ImageCropperProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const imageRef = useRef<HTMLImageElement>(null);
   const [zoom, setZoom] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageData, setImageData] = useState<HTMLImageElement | null>(null);
+  const [isImageReady, setIsImageReady] = useState(false);
 
   // Tamanho fixo do crop (quadrado)
   const CROP_SIZE = 300;
 
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current;
-    const image = imageRef.current;
-    if (!canvas || !image || !imageLoaded) return;
+    if (!canvas || !imageData || !isImageReady) return;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -35,12 +34,12 @@ export function ImageCropper({ isOpen, onClose, onCrop, imageFile }: ImageCroppe
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Calcular dimensões da imagem com zoom
-    const imageWidth = image.naturalWidth * zoom;
-    const imageHeight = image.naturalHeight * zoom;
+    const imageWidth = imageData.naturalWidth * zoom;
+    const imageHeight = imageData.naturalHeight * zoom;
 
     // Desenhar imagem
     ctx.drawImage(
-      image,
+      imageData,
       position.x,
       position.y,
       imageWidth,
@@ -64,31 +63,27 @@ export function ImageCropper({ isOpen, onClose, onCrop, imageFile }: ImageCroppe
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = 2;
     ctx.strokeRect(cropX, cropY, CROP_SIZE, CROP_SIZE);
-  }, [zoom, position, imageLoaded]);
+  }, [zoom, position, imageData, isImageReady]);
 
-  const handleImageLoad = () => {
-    const image = imageRef.current;
+  const initializeImage = useCallback(() => {
+    if (!imageData || !canvasRef.current) return;
+
     const canvas = canvasRef.current;
-    if (!image || !canvas) {
-      console.log('Image or canvas not ready');
-      return;
-    }
-
-    console.log('Image loaded:', {
-      naturalWidth: image.naturalWidth,
-      naturalHeight: image.naturalHeight,
+    console.log('Initializing image:', {
+      naturalWidth: imageData.naturalWidth,
+      naturalHeight: imageData.naturalHeight,
       canvasWidth: canvas.width,
       canvasHeight: canvas.height
     });
 
     // Calcular zoom inicial para que a imagem cubra pelo menos o crop
-    const scaleX = CROP_SIZE / image.naturalWidth;
-    const scaleY = CROP_SIZE / image.naturalHeight;
-    const initialZoom = Math.max(scaleX, scaleY, 0.1); // Garantir zoom mínimo
+    const scaleX = CROP_SIZE / imageData.naturalWidth;
+    const scaleY = CROP_SIZE / imageData.naturalHeight;
+    const initialZoom = Math.max(scaleX, scaleY, 0.1);
 
     // Centralizar a imagem
-    const scaledWidth = image.naturalWidth * initialZoom;
-    const scaledHeight = image.naturalHeight * initialZoom;
+    const scaledWidth = imageData.naturalWidth * initialZoom;
+    const scaledHeight = imageData.naturalHeight * initialZoom;
     const initialX = (canvas.width - scaledWidth) / 2;
     const initialY = (canvas.height - scaledHeight) / 2;
 
@@ -102,8 +97,8 @@ export function ImageCropper({ isOpen, onClose, onCrop, imageFile }: ImageCroppe
 
     setZoom(initialZoom);
     setPosition({ x: initialX, y: initialY });
-    setImageLoaded(true);
-  };
+    setIsImageReady(true);
+  }, [imageData]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
@@ -128,11 +123,9 @@ export function ImageCropper({ isOpen, onClose, onCrop, imageFile }: ImageCroppe
 
   const handleZoomChange = (value: number[]) => {
     const newZoom = value[0];
-    const image = imageRef.current;
-    const canvas = canvasRef.current;
-    if (!image || !canvas) return;
+    if (!imageData || !canvasRef.current) return;
 
-    // Ajustar posição para manter o centro
+    const canvas = canvasRef.current;
     const zoomRatio = newZoom / zoom;
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
@@ -147,8 +140,7 @@ export function ImageCropper({ isOpen, onClose, onCrop, imageFile }: ImageCroppe
 
   const handleCrop = () => {
     const canvas = canvasRef.current;
-    const image = imageRef.current;
-    if (!canvas || !image) return;
+    if (!canvas || !imageData) return;
 
     // Criar canvas para o crop final
     const cropCanvas = document.createElement('canvas');
@@ -162,11 +154,8 @@ export function ImageCropper({ isOpen, onClose, onCrop, imageFile }: ImageCroppe
     const cropY = (canvas.height - CROP_SIZE) / 2;
 
     // Desenhar apenas a área cortada
-    const imageWidth = image.naturalWidth * zoom;
-    const imageHeight = image.naturalHeight * zoom;
-
     cropCtx.drawImage(
-      image,
+      imageData,
       // Área de origem na imagem
       (cropX - position.x) / zoom,
       (cropY - position.y) / zoom,
@@ -189,24 +178,41 @@ export function ImageCropper({ isOpen, onClose, onCrop, imageFile }: ImageCroppe
   };
 
   const resetPosition = () => {
-    handleImageLoad();
+    initializeImage();
   };
 
   // Carregar imagem quando o dialog abrir
   useEffect(() => {
     if (isOpen && imageFile) {
-      const img = imageRef.current;
-      if (img) {
-        // Limpar imagem anterior
-        setImageLoaded(false);
-        setZoom(1);
-        setPosition({ x: 0, y: 0 });
-        
-        // Carregar nova imagem
-        img.src = URL.createObjectURL(imageFile);
-      }
+      console.log('Loading new image file:', imageFile.name);
+      
+      // Reset states
+      setIsImageReady(false);
+      setZoom(1);
+      setPosition({ x: 0, y: 0 });
+      setImageData(null);
+
+      // Create new image
+      const img = new Image();
+      img.onload = () => {
+        console.log('Image loaded successfully');
+        setImageData(img);
+      };
+      img.onerror = (error) => {
+        console.error('Error loading image:', error);
+      };
+      
+      // Load image
+      img.src = URL.createObjectURL(imageFile);
     }
   }, [isOpen, imageFile]);
+
+  // Initialize image when imageData is ready
+  useEffect(() => {
+    if (imageData) {
+      initializeImage();
+    }
+  }, [imageData, initializeImage]);
 
   // Redesenhar canvas quando houver mudanças
   useEffect(() => {
@@ -235,13 +241,11 @@ export function ImageCropper({ isOpen, onClose, onCrop, imageFile }: ImageCroppe
             />
           </div>
 
-          {/* Imagem invisível para carregar */}
-          <img
-            ref={imageRef}
-            onLoad={handleImageLoad}
-            className="hidden"
-            alt="Preview"
-          />
+          {!isImageReady && (
+            <div className="text-center text-sm text-muted-foreground">
+              Carregando imagem...
+            </div>
+          )}
 
           {/* Controles de zoom */}
           <div className="space-y-2">
@@ -254,6 +258,7 @@ export function ImageCropper({ isOpen, onClose, onCrop, imageFile }: ImageCroppe
                 max={3}
                 step={0.1}
                 className="flex-1"
+                disabled={!isImageReady}
               />
               <ZoomIn className="h-4 w-4" />
             </div>
@@ -264,7 +269,7 @@ export function ImageCropper({ isOpen, onClose, onCrop, imageFile }: ImageCroppe
 
           {/* Botões de ação */}
           <div className="flex justify-between">
-            <Button variant="outline" onClick={resetPosition}>
+            <Button variant="outline" onClick={resetPosition} disabled={!isImageReady}>
               <RotateCcw className="h-4 w-4 mr-2" />
               Resetar
             </Button>
@@ -274,7 +279,7 @@ export function ImageCropper({ isOpen, onClose, onCrop, imageFile }: ImageCroppe
                 <X className="h-4 w-4 mr-2" />
                 Cancelar
               </Button>
-              <Button onClick={handleCrop}>
+              <Button onClick={handleCrop} disabled={!isImageReady}>
                 <Check className="h-4 w-4 mr-2" />
                 Confirmar
               </Button>
