@@ -69,26 +69,36 @@ export function ImageCropper({ isOpen, onClose, onCrop, imageFile }: ImageCroppe
   const handleImageLoad = () => {
     const image = imageRef.current;
     const canvas = canvasRef.current;
-    if (!image || !canvas) return;
-
-    // Calcular posição inicial para centralizar a imagem
-    const imageAspect = image.naturalWidth / image.naturalHeight;
-    const canvasAspect = canvas.width / canvas.height;
-
-    let initialZoom = 1;
-    let initialX = 0;
-    let initialY = 0;
-
-    // Calcular zoom inicial para que a imagem cubra pelo menos o crop
-    if (imageAspect > canvasAspect) {
-      initialZoom = CROP_SIZE / image.naturalHeight;
-    } else {
-      initialZoom = CROP_SIZE / image.naturalWidth;
+    if (!image || !canvas) {
+      console.log('Image or canvas not ready');
+      return;
     }
 
+    console.log('Image loaded:', {
+      naturalWidth: image.naturalWidth,
+      naturalHeight: image.naturalHeight,
+      canvasWidth: canvas.width,
+      canvasHeight: canvas.height
+    });
+
+    // Calcular zoom inicial para que a imagem cubra pelo menos o crop
+    const scaleX = CROP_SIZE / image.naturalWidth;
+    const scaleY = CROP_SIZE / image.naturalHeight;
+    const initialZoom = Math.max(scaleX, scaleY, 0.1); // Garantir zoom mínimo
+
     // Centralizar a imagem
-    initialX = (canvas.width - image.naturalWidth * initialZoom) / 2;
-    initialY = (canvas.height - image.naturalHeight * initialZoom) / 2;
+    const scaledWidth = image.naturalWidth * initialZoom;
+    const scaledHeight = image.naturalHeight * initialZoom;
+    const initialX = (canvas.width - scaledWidth) / 2;
+    const initialY = (canvas.height - scaledHeight) / 2;
+
+    console.log('Setting initial values:', {
+      initialZoom,
+      initialX,
+      initialY,
+      scaledWidth,
+      scaledHeight
+    });
 
     setZoom(initialZoom);
     setPosition({ x: initialX, y: initialY });
