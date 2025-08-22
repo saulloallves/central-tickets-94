@@ -308,7 +308,7 @@ const Unidades = () => {
 
               {/* Controles de paginação */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-center space-x-2 pt-4">
+                <div className="flex items-center justify-center space-x-2 pt-8 pb-6">
                   <Button
                     variant="outline"
                     size="sm"
