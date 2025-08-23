@@ -274,8 +274,18 @@ export function RealtimeDashboard() {
               <p className="text-muted-foreground text-center py-4">Nenhum ticket encontrado</p>
             ) : (
               recentTickets.map((ticket) => {
-                const isUuidCode = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ticket.codigo_ticket);
-                const displayCode = isUuidCode ? `Ticket sem código • ${ticket.categoria || 'Sem categoria'}` : ticket.codigo_ticket;
+                // Check if codigo_ticket is a UUID and create friendly display
+                const isUuidCode = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ticket.codigo_ticket || '');
+                
+                // Create a friendly display code
+                let displayCode;
+                if (isUuidCode || !ticket.codigo_ticket) {
+                  // Generate a friendly ticket reference
+                  const shortId = ticket.id.split('-')[0].toUpperCase();
+                  displayCode = `#${shortId} • ${ticket.titulo?.substring(0, 30) || ticket.categoria || 'Ticket'}${ticket.titulo?.length > 30 ? '...' : ''}`;
+                } else {
+                  displayCode = ticket.codigo_ticket;
+                }
                 
                 return (
                   <div key={ticket.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
@@ -321,22 +331,35 @@ export function RealtimeDashboard() {
             {slaAlerts.length === 0 ? (
               <p className="text-muted-foreground text-center py-4">✅ Nenhum alerta de SLA</p>
             ) : (
-              slaAlerts.map((ticket) => (
-                <div key={ticket.id} className="flex items-center justify-between p-3 bg-warning/10 border border-warning/20 rounded-lg">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{ticket.codigo_ticket}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Vence: {ticket.data_limite_sla ? 
-                        formatDistanceToNow(new Date(ticket.data_limite_sla), { addSuffix: true, locale: ptBR }) :
-                        'N/A'
-                      }
-                    </p>
+              slaAlerts.map((ticket) => {
+                // Check if codigo_ticket is a UUID and create friendly display for SLA alerts too
+                const isUuidCode = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ticket.codigo_ticket || '');
+                
+                let displayCode;
+                if (isUuidCode || !ticket.codigo_ticket) {
+                  const shortId = ticket.id.split('-')[0].toUpperCase();
+                  displayCode = `#${shortId} • ${ticket.titulo?.substring(0, 25) || ticket.categoria || 'SLA Alert'}${ticket.titulo?.length > 25 ? '...' : ''}`;
+                } else {
+                  displayCode = ticket.codigo_ticket;
+                }
+                
+                return (
+                  <div key={ticket.id} className="flex items-center justify-between p-3 bg-warning/10 border border-warning/20 rounded-lg">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{displayCode}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Vence: {ticket.data_limite_sla ? 
+                          formatDistanceToNow(new Date(ticket.data_limite_sla), { addSuffix: true, locale: ptBR }) :
+                          'N/A'
+                        }
+                      </p>
+                    </div>
+                    <Badge variant="destructive" className="text-xs">
+                      {ticket.status_sla}
+                    </Badge>
                   </div>
-                  <Badge variant="destructive" className="text-xs">
-                    {ticket.status_sla}
-                  </Badge>
-                </div>
-              ))
+                );
+              })
             )}
           </CardContent>
         </Card>
