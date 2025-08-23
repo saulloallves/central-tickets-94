@@ -204,11 +204,8 @@ export function IASettingsTab() {
       {/* Seção 1: Modelos de IA */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Brain className="h-5 w-5 text-primary" />
-            Modelos de IA
-          </CardTitle>
-          <CardDescription>
+          <CardTitle className="text-base font-medium">Modelos de IA</CardTitle>
+          <CardDescription className="text-sm">
             Configure modelos específicos para cada funcionalidade da IA
           </CardDescription>
         </CardHeader>
@@ -296,11 +293,8 @@ export function IASettingsTab() {
       {/* Seção 2: Parâmetros de Geração */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
-            Parâmetros de Geração
-          </CardTitle>
-          <CardDescription>
+          <CardTitle className="text-base font-medium">Parâmetros de Geração</CardTitle>
+          <CardDescription className="text-sm">
             Configure temperatura e tokens para cada funcionalidade
           </CardDescription>
         </CardHeader>
@@ -396,11 +390,8 @@ export function IASettingsTab() {
       {/* Seção 3: Comportamento da IA */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5 text-primary" />
-            Comportamento da IA
-          </CardTitle>
-          <CardDescription>
+          <CardTitle className="text-base font-medium">Comportamento da IA</CardTitle>
+          <CardDescription className="text-sm">
             Configure como a IA se comporta em diferentes situações
           </CardDescription>
         </CardHeader>
@@ -489,11 +480,8 @@ export function IASettingsTab() {
       {/* Seção 4: Configuração de Prompts */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageCircle className="h-5 w-5 text-primary" />
-            Configuração de Prompts
-          </CardTitle>
-          <CardDescription>
+          <CardTitle className="text-base font-medium">Configuração de Prompts</CardTitle>
+          <CardDescription className="text-sm">
             Configure as instruções específicas para cada funcionalidade da IA
           </CardDescription>
         </CardHeader>

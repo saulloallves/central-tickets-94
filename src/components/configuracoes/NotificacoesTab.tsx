@@ -241,11 +241,8 @@ export function NotificacoesTab() {
       {/* Seção 1: Origem dos Números */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Settings className="h-5 w-5 text-primary" />
-            Origem dos Números
-          </CardTitle>
-          <CardDescription>
+          <CardTitle className="text-base font-medium">Origem dos Números</CardTitle>
+          <CardDescription className="text-sm">
             Configure a origem dos números para notificações
           </CardDescription>
         </CardHeader>
@@ -257,11 +254,8 @@ export function NotificacoesTab() {
       {/* Seção 2: Configurações Z-API */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <MessageSquare className="h-5 w-5 text-primary" />
-            Configurações do Z-API
-          </CardTitle>
-          <CardDescription>
+          <CardTitle className="text-base font-medium">Configurações do Z-API</CardTitle>
+          <CardDescription className="text-sm">
             Configure as credenciais e URL base para integração com Z-API
           </CardDescription>
         </CardHeader>
@@ -378,11 +372,8 @@ export function NotificacoesTab() {
       {/* Seção 3: Templates de Mensagens */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Send className="h-5 w-5 text-primary" />
-            Templates de Mensagens
-          </CardTitle>
-          <CardDescription>
+          <CardTitle className="text-base font-medium">Templates de Mensagens</CardTitle>
+          <CardDescription className="text-sm">
             Gerencie os templates de mensagens do sistema
           </CardDescription>
         </CardHeader>

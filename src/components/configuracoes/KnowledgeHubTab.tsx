@@ -573,14 +573,13 @@ export const KnowledgeHubTab = () => {
       {/* Seção 1: Sugestões Pendentes */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Brain className="h-5 w-5 text-primary" />
+          <CardTitle className="text-base font-medium">
             Sugestões Pendentes
             <Badge variant="secondary" className="ml-2">
               {filteredSuggestions.length}
             </Badge>
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-sm">
             Sugestões da IA aguardando aprovação para se tornarem artigos
           </CardDescription>
         </CardHeader>
@@ -649,14 +648,13 @@ export const KnowledgeHubTab = () => {
       {/* Seção 2: Artigos Publicados */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-primary" />
+          <CardTitle className="text-base font-medium">
             Artigos Publicados
             <Badge variant="secondary" className="ml-2">
               {filteredArticles.length + filteredMemories.length}
             </Badge>
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-sm">
             Artigos ativos na base de conhecimento
           </CardDescription>
         </CardHeader>
