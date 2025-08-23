@@ -77,7 +77,7 @@ const Colaboradores = () => {
 
   if (loading) {
     return (
-      <ProtectedRoute requiredRole="admin">
+      <ProtectedRoute requiredPermission="view_all_tickets">
         <div className="w-full space-y-6">
           <div className="animate-pulse">
             <div className="h-8 bg-muted rounded w-48 mb-2"></div>
@@ -102,7 +102,7 @@ const Colaboradores = () => {
   }
 
   return (
-    <ProtectedRoute requiredRole="admin">
+    <ProtectedRoute requiredPermission="view_all_tickets">
       <div className="w-full space-y-6 pt-6">
         <div className="flex justify-between items-center">
           <div>

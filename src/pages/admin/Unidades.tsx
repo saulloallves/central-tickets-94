@@ -103,7 +103,7 @@ const Unidades = () => {
 
   if (loading) {
     return (
-      <ProtectedRoute requiredRole="admin">
+      <ProtectedRoute requiredPermission="view_all_tickets">
         <div className="w-full space-y-6">
           <div className="animate-pulse">
             <div className="h-8 bg-muted rounded w-48 mb-2"></div>
@@ -128,7 +128,7 @@ const Unidades = () => {
   }
 
   return (
-    <ProtectedRoute requiredRole="admin">
+    <ProtectedRoute requiredPermission="view_all_tickets">
       <div className="w-full space-y-6 pt-6">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Unidades</h2>
