@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,18 +39,26 @@ export function UsageReports() {
   const [timeRange, setTimeRange] = useState<number>(30); // dias
 
   useEffect(() => {
+    console.log('🔄 UsageReports: Refetching tickets data');
     refetch();
   }, [refetch]);
 
   // Processar dados para gráficos
   const chartData = useMemo(() => {
-    if (!tickets) return { volumeData: [], channelData: [], categoryData: [], unitData: [], hourlyData: [] };
+    console.log('📊 Processing chart data, tickets:', tickets?.length || 0);
+    
+    if (!tickets || tickets.length === 0) {
+      console.log('⚠️ No tickets available for chart processing');
+      return { volumeData: [], channelData: [], categoryData: [], unitData: [], hourlyData: [] };
+    }
 
     const now = new Date();
     const filteredTickets = tickets.filter(ticket => {
       const ticketDate = new Date(ticket.data_abertura);
       return ticketDate >= subDays(now, timeRange);
     });
+
+    console.log('📈 Filtered tickets for time range:', filteredTickets.length);
 
     // Volume temporal
     const volumeData = [];
@@ -94,7 +103,7 @@ export function UsageReports() {
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value);
 
-    // Unidades
+    // Unidades - usar diretamente o unidade_id já que não temos a relação
     const unitCounts = filteredTickets.reduce((acc, ticket) => {
       const unit = ticket.unidade_id || 'Não informado';
       acc[unit] = (acc[unit] || 0) + 1;
@@ -119,6 +128,8 @@ export function UsageReports() {
       };
     });
 
+    console.log('✅ Chart data processed successfully');
+
     return {
       volumeData,
       channelData,
@@ -129,6 +140,8 @@ export function UsageReports() {
   }, [tickets, period, timeRange]);
 
   const handleExport = () => {
+    console.log('📤 Exporting usage report data');
+    
     // Preparar dados específicos para exportação
     const exportData = {
       periodo: period,
@@ -342,17 +355,23 @@ export function UsageReports() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={chartData.volumeData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="total" fill="hsl(var(--primary))" name="Total" />
-                <Bar dataKey="concluidos" fill="hsl(var(--success))" name="Concluídos" />
-                <Bar dataKey="pendentes" fill="hsl(var(--warning))" name="Pendentes" />
-              </BarChart>
-            </ResponsiveContainer>
+            {loading ? (
+              <div className="h-[300px] flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={chartData.volumeData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="total" fill="hsl(var(--primary))" name="Total" />
+                  <Bar dataKey="concluidos" fill="hsl(var(--success))" name="Concluídos" />
+                  <Bar dataKey="pendentes" fill="hsl(var(--warning))" name="Pendentes" />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
 
@@ -368,25 +387,31 @@ export function UsageReports() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <RechartsPieChart>
-                <Pie
-                  data={chartData.channelData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                >
-                  {chartData.channelData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </RechartsPieChart>
-            </ResponsiveContainer>
+            {loading ? (
+              <div className="h-[300px] flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <RechartsPieChart>
+                  <Pie
+                    data={chartData.channelData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  >
+                    {chartData.channelData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </RechartsPieChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
 
@@ -402,21 +427,27 @@ export function UsageReports() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={chartData.hourlyData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="hour" />
-                <YAxis />
-                <Tooltip />
-                <Line 
-                  type="monotone" 
-                  dataKey="count" 
-                  stroke="hsl(var(--primary))" 
-                  strokeWidth={2}
-                  dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            {loading ? (
+              <div className="h-[300px] flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={chartData.hourlyData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="hour" />
+                  <YAxis />
+                  <Tooltip />
+                  <Line 
+                    type="monotone" 
+                    dataKey="count" 
+                    stroke="hsl(var(--primary))" 
+                    strokeWidth={2}
+                    dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
 
@@ -434,9 +465,9 @@ export function UsageReports() {
           <CardContent>
             <div className="space-y-3">
               {loading ? (
-                <p className="text-muted-foreground text-center py-4">
-                  Carregando métricas das unidades...
-                </p>
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
               ) : chartData.unitData.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
                   <MapPin className="h-12 w-12 text-muted-foreground mb-4" />
@@ -444,7 +475,7 @@ export function UsageReports() {
                     Sem dados de unidades
                   </h4>
                   <p className="text-sm text-muted-foreground">
-                    Não há dados de tickets por unidades no período selecionado ou as métricas não estão disponíveis.
+                    Não há dados de tickets por unidades no período selecionado.
                   </p>
                 </div>
               ) : (
@@ -484,28 +515,34 @@ export function UsageReports() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {chartData.categoryData.map((category, index) => (
-              <div key={category.name} className="p-4 bg-muted/50 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm font-medium truncate">{category.name}</p>
-                  <Badge variant="outline">{category.value}</Badge>
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {chartData.categoryData.map((category, index) => (
+                <div key={category.name} className="p-4 bg-muted/50 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-medium truncate">{category.name}</p>
+                    <Badge variant="outline">{category.value}</Badge>
+                  </div>
+                  <div className="w-full bg-muted rounded-full h-2">
+                    <div 
+                      className="h-2 rounded-full"
+                      style={{ 
+                        width: `${(category.value / (chartData.categoryData[0]?.value || 1)) * 100}%`,
+                        backgroundColor: COLORS[index % COLORS.length]
+                      }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {((category.value / (tickets?.length || 1)) * 100).toFixed(1)}% do total
+                  </p>
                 </div>
-                <div className="w-full bg-muted rounded-full h-2">
-                  <div 
-                    className="h-2 rounded-full"
-                    style={{ 
-                      width: `${(category.value / (chartData.categoryData[0]?.value || 1)) * 100}%`,
-                      backgroundColor: COLORS[index % COLORS.length]
-                    }}
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {((category.value / (tickets?.length || 1)) * 100).toFixed(1)}% do total
-                </p>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
