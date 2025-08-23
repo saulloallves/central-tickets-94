@@ -1,4 +1,4 @@
-import { Shield } from "lucide-react";
+import { BarChart3 } from "lucide-react";
 import { useEffect } from "react";
 import { PermissionGuard } from "@/components/PermissionGuard";
 import { useRole } from "@/hooks/useRole";
@@ -38,7 +38,7 @@ export default function Governanca() {
         <Card className="liquid-glass-card">
           <CardContent className="p-8">
             <div className="flex items-center space-x-3">
-              <Shield className="h-8 w-8 text-critical" />
+              <BarChart3 className="h-8 w-8 text-critical" />
               <div>
                 <h3 className="text-lg font-semibold text-foreground">Acesso Negado</h3>
                 <p className="text-muted-foreground">Este módulo é exclusivo para administradores.</p>
@@ -56,7 +56,7 @@ export default function Governanca() {
         <Card className="liquid-glass-card">
           <CardContent className="p-8">
             <div className="flex items-center space-x-3">
-              <Shield className="h-8 w-8 text-critical" />
+              <BarChart3 className="h-8 w-8 text-critical" />
               <div>
                 <h3 className="text-lg font-semibold text-foreground">Acesso Restrito</h3>
                 <p className="text-muted-foreground">Você não tem permissão para acessar este módulo.</p>
@@ -71,7 +71,7 @@ export default function Governanca() {
         <div className="liquid-glass-header p-6">
           <div className="flex items-center space-x-4">
             <div className="p-3 bg-primary/10 rounded-2xl">
-              <Shield className="h-8 w-8 text-primary" />
+              <BarChart3 className="h-8 w-8 text-primary" />
             </div>
             <div>
               <h1 className="text-3xl font-bold text-foreground">Monitoramento & Governança</h1>
