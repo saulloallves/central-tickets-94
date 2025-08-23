@@ -21,6 +21,8 @@ import { usePresence } from "@/hooks/usePresence";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { MetricsDisplay } from "./MetricsDisplay";
+import { EmptyState } from "./EmptyState";
 
 export function RealtimeDashboard() {
   const { kpis, loading: kpisLoading, fetchKPIs } = useDashboardMetrics();

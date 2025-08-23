@@ -12,6 +12,7 @@ import { AuditPanel } from "@/components/governanca/AuditPanel";
 import { BottleneckDetection } from "@/components/governanca/BottleneckDetection";
 import { UsageReports } from "@/components/governanca/UsageReports";
 import { AccessControl } from "@/components/governanca/AccessControl";
+import { MetricsSection } from "@/components/governanca/MetricsSection";
 
 export default function Governanca() {
   const { isAdmin } = useRole();
@@ -88,6 +89,9 @@ export default function Governanca() {
             <TabsTrigger value="tempo-real" className="flex items-center space-x-2">
               <span>Tempo Real</span>
             </TabsTrigger>
+            <TabsTrigger value="metricas" className="flex items-center space-x-2">
+              <span>Métricas</span>
+            </TabsTrigger>
             <TabsTrigger value="auditoria" className="flex items-center space-x-2">
               <span>Auditoria</span>
             </TabsTrigger>
@@ -104,6 +108,10 @@ export default function Governanca() {
 
           <TabsContent value="tempo-real" className="space-y-6">
             <RealtimeDashboard />
+          </TabsContent>
+
+          <TabsContent value="metricas" className="space-y-6">
+            <MetricsSection />
           </TabsContent>
 
           <TabsContent value="auditoria" className="space-y-6">

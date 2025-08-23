@@ -433,10 +433,20 @@ export function UsageReports() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {chartData.unitData.length === 0 ? (
+              {loading ? (
                 <p className="text-muted-foreground text-center py-4">
-                  Sem dados de unidades
+                  Carregando métricas das unidades...
                 </p>
+              ) : chartData.unitData.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <MapPin className="h-12 w-12 text-muted-foreground mb-4" />
+                  <h4 className="text-lg font-semibold text-foreground mb-2">
+                    Sem dados de unidades
+                  </h4>
+                  <p className="text-sm text-muted-foreground">
+                    Não há dados de tickets por unidades no período selecionado ou as métricas não estão disponíveis.
+                  </p>
+                </div>
               ) : (
                 chartData.unitData.slice(0, 8).map((unit, index) => (
                   <div key={unit.name} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">

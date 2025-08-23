@@ -138,17 +138,24 @@ export const useDashboardMetrics = () => {
 
       if (error) {
         console.error('Error fetching team metrics:', error);
-        throw error;
+        setTeamMetrics([]);
+        toast({
+          title: "Informação",
+          description: "Métricas das equipes não estão disponíveis no momento.",
+          variant: "default",
+        });
+        return;
       }
 
       setTeamMetrics(data || []);
       console.log('Team metrics loaded:', data?.length);
     } catch (error) {
       console.error('Error fetching team metrics:', error);
+      setTeamMetrics([]);
       toast({
-        title: "Erro",
-        description: "Não foi possível carregar métricas das equipes",
-        variant: "destructive",
+        title: "Informação",
+        description: "Métricas das equipes não estão disponíveis no momento.",
+        variant: "default",
       });
     }
   };
@@ -163,17 +170,25 @@ export const useDashboardMetrics = () => {
 
       if (error) {
         console.error('Error fetching unit metrics:', error);
-        throw error;
+        // Set empty array with fallback message instead of throwing
+        setUnitMetrics([]);
+        toast({
+          title: "Informação",
+          description: "Não foi possível carregar métricas das unidades. Dados não disponíveis no momento.",
+          variant: "default",
+        });
+        return;
       }
 
       setUnitMetrics(data || []);
       console.log('Unit metrics loaded:', data?.length);
     } catch (error) {
       console.error('Error fetching unit metrics:', error);
+      setUnitMetrics([]);
       toast({
-        title: "Erro",
-        description: "Não foi possível carregar métricas das unidades",
-        variant: "destructive",
+        title: "Informação",
+        description: "Métricas das unidades não estão disponíveis no momento.",
+        variant: "default",
       });
     }
   };
