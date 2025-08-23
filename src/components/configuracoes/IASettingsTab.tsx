@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
 import { Save, RotateCcw, Info, Zap, MessageCircle, Sparkles, Settings, Brain } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -201,334 +201,339 @@ export function IASettingsTab() {
         </AlertDescription>
       </Alert>
 
-      <Tabs defaultValue="modelos" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="modelos" className="flex items-center gap-2">
-            <Brain className="h-4 w-4" />
-            Modelos
-          </TabsTrigger>
-          <TabsTrigger value="comportamento" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            Comportamento
-          </TabsTrigger>
-          <TabsTrigger value="prompts" className="flex items-center gap-2">
-            <MessageCircle className="h-4 w-4" />
-            Prompts
-          </TabsTrigger>
-        </TabsList>
+      {/* Seção 1: Modelos de IA */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Brain className="h-5 w-5 text-primary" />
+            Modelos de IA
+          </CardTitle>
+          <CardDescription>
+            Configure modelos específicos para cada funcionalidade da IA
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="modelo_sugestao">🔮 Modelo Sugestões</Label>
+              <Select value={settings.modelo_sugestao} onValueChange={(value) => setSettings(prev => ({...prev, modelo_sugestao: value}))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {modelOptions.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      <div>
+                        <div className="font-medium">{option.label}</div>
+                        <div className="text-xs text-muted-foreground">{option.description}</div>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-        {/* Modelos de IA */}
-        <TabsContent value="modelos" className="space-y-6 animate-fade-in">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Zap className="h-5 w-5 text-primary" />
-                Seleção de Modelos de IA
-              </CardTitle>
-              <CardDescription>
-                Configure modelos específicos para cada funcionalidade da IA
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="modelo_chat">💬 Modelo Chat com IA</Label>
+              <Select value={settings.modelo_chat} onValueChange={(value) => setSettings(prev => ({...prev, modelo_chat: value}))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {modelOptions.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      <div>
+                        <div className="font-medium">{option.label}</div>
+                        <div className="text-xs text-muted-foreground">{option.description}</div>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="modelo_classificacao">🏷️ Modelo Classificação</Label>
+              <Select value={settings.modelo_classificacao} onValueChange={(value) => setSettings(prev => ({...prev, modelo_classificacao: value}))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {modelOptions.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      <div>
+                        <div className="font-medium">{option.label}</div>
+                        <div className="text-xs text-muted-foreground">{option.description}</div>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="estilo_resposta">🎨 Estilo de Resposta Global</Label>
+            <Select value={settings.estilo_resposta} onValueChange={(value) => setSettings(prev => ({...prev, estilo_resposta: value}))}>
+              <SelectTrigger className="max-w-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {styleOptions.map(option => (
+                  <SelectItem key={option.value} value={option.value}>
+                    <div>
+                      <div className="font-medium">{option.label}</div>
+                      <div className="text-xs text-muted-foreground">{option.description}</div>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Seção 2: Parâmetros de Geração */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" />
+            Parâmetros de Geração
+          </CardTitle>
+          <CardDescription>
+            Configure temperatura e tokens para cada funcionalidade
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="space-y-4">
+              <h4 className="font-semibold text-sm flex items-center gap-2">
+                🔮 Sugestões
+              </h4>
+              <div className="space-y-3">
                 <div className="space-y-2">
-                  <Label htmlFor="modelo_sugestao">🔮 Modelo Sugestões</Label>
-                  <Select value={settings.modelo_sugestao} onValueChange={(value) => setSettings(prev => ({...prev, modelo_sugestao: value}))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {modelOptions.map(option => (
-                        <SelectItem key={option.value} value={option.value}>
-                          <div>
-                            <div className="font-medium">{option.label}</div>
-                            <div className="text-xs text-muted-foreground">{option.description}</div>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label>Temperatura: {settings.temperatura_sugestao}</Label>
+                  <Slider
+                    value={[settings.temperatura_sugestao]}
+                    onValueChange={([value]) => setSettings(prev => ({...prev, temperatura_sugestao: value}))}
+                    max={1}
+                    min={0}
+                    step={0.1}
+                  />
                 </div>
-
                 <div className="space-y-2">
-                  <Label htmlFor="modelo_chat">💬 Modelo Chat com IA</Label>
-                  <Select value={settings.modelo_chat} onValueChange={(value) => setSettings(prev => ({...prev, modelo_chat: value}))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {modelOptions.map(option => (
-                        <SelectItem key={option.value} value={option.value}>
-                          <div>
-                            <div className="font-medium">{option.label}</div>
-                            <div className="text-xs text-muted-foreground">{option.description}</div>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="modelo_classificacao">🏷️ Modelo Classificação</Label>
-                  <Select value={settings.modelo_classificacao} onValueChange={(value) => setSettings(prev => ({...prev, modelo_classificacao: value}))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {modelOptions.map(option => (
-                        <SelectItem key={option.value} value={option.value}>
-                          <div>
-                            <div className="font-medium">{option.label}</div>
-                            <div className="text-xs text-muted-foreground">{option.description}</div>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label>Max Tokens</Label>
+                  <Input
+                    type="number"
+                    value={settings.max_tokens_sugestao}
+                    onChange={(e) => setSettings(prev => ({...prev, max_tokens_sugestao: parseInt(e.target.value) || 1000}))}
+                    min={100}
+                    max={4000}
+                  />
                 </div>
               </div>
+            </div>
 
+            <div className="space-y-4">
+              <h4 className="font-semibold text-sm flex items-center gap-2">
+                💬 Chat
+              </h4>
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label>Temperatura: {settings.temperatura_chat}</Label>
+                  <Slider
+                    value={[settings.temperatura_chat]}
+                    onValueChange={([value]) => setSettings(prev => ({...prev, temperatura_chat: value}))}
+                    max={1}
+                    min={0}
+                    step={0.1}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Max Tokens</Label>
+                  <Input
+                    type="number"
+                    value={settings.max_tokens_chat}
+                    onChange={(e) => setSettings(prev => ({...prev, max_tokens_chat: parseInt(e.target.value) || 800}))}
+                    min={100}
+                    max={4000}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="font-semibold text-sm flex items-center gap-2">
+                🏷️ Classificação
+              </h4>
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label>Temperatura: {settings.temperatura_classificacao}</Label>
+                  <Slider
+                    value={[settings.temperatura_classificacao]}
+                    onValueChange={([value]) => setSettings(prev => ({...prev, temperatura_classificacao: value}))}
+                    max={1}
+                    min={0}
+                    step={0.1}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Max Tokens</Label>
+                  <Input
+                    type="number"
+                    value={settings.max_tokens_classificacao}
+                    onChange={(e) => setSettings(prev => ({...prev, max_tokens_classificacao: parseInt(e.target.value) || 500}))}
+                    min={100}
+                    max={2000}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Seção 3: Comportamento da IA */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Settings className="h-5 w-5 text-primary" />
+            Comportamento da IA
+          </CardTitle>
+          <CardDescription>
+            Configure como a IA se comporta em diferentes situações
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <h4 className="font-semibold text-sm">🤖 Automação</h4>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="auto_classificacao">Classificação Automática</Label>
+                  <Switch
+                    id="auto_classificacao"
+                    checked={settings.auto_classificacao}
+                    onCheckedChange={(checked) => setSettings(prev => ({...prev, auto_classificacao: checked}))}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="font-semibold text-sm">🔍 Funcionalidades</h4>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="usar_busca_semantica">Busca Semântica</Label>
+                  <Switch
+                    id="usar_busca_semantica"
+                    checked={settings.usar_busca_semantica}
+                    onCheckedChange={(checked) => setSettings(prev => ({...prev, usar_busca_semantica: checked}))}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Status da IA */}
+          <div className="bg-muted/30 border border-primary/20 rounded-lg p-4">
+            <h4 className="text-lg font-semibold mb-4">🤖 Status Atual da IA</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
               <div className="space-y-2">
-                <Label htmlFor="estilo_resposta">🎨 Estilo de Resposta Global</Label>
-                <Select value={settings.estilo_resposta} onValueChange={(value) => setSettings(prev => ({...prev, estilo_resposta: value}))}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {styleOptions.map(option => (
-                      <SelectItem key={option.value} value={option.value}>
-                        <div>
-                          <div className="font-medium">{option.label}</div>
-                          <div className="text-xs text-muted-foreground">{option.description}</div>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 border-t">
-                <div className="space-y-4">
-                  <h4 className="font-semibold text-sm">🔮 Parâmetros - Sugestões</h4>
-                  <div className="space-y-3">
-                    <div className="space-y-2">
-                      <Label>Temperatura: {settings.temperatura_sugestao}</Label>
-                      <Slider
-                        value={[settings.temperatura_sugestao]}
-                        onValueChange={([value]) => setSettings(prev => ({...prev, temperatura_sugestao: value}))}
-                        max={1}
-                        min={0}
-                        step={0.1}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Max Tokens</Label>
-                      <Input
-                        type="number"
-                        value={settings.max_tokens_sugestao}
-                        onChange={(e) => setSettings(prev => ({...prev, max_tokens_sugestao: parseInt(e.target.value) || 1000}))}
-                        min={100}
-                        max={4000}
-                      />
-                    </div>
-                  </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-muted-foreground">Sugestões:</span>
+                  <Badge variant="secondary">{settings.modelo_sugestao.split('-')[0]}</Badge>
                 </div>
-
-                <div className="space-y-4">
-                  <h4 className="font-semibold text-sm">💬 Parâmetros - Chat</h4>
-                  <div className="space-y-3">
-                    <div className="space-y-2">
-                      <Label>Temperatura: {settings.temperatura_chat}</Label>
-                      <Slider
-                        value={[settings.temperatura_chat]}
-                        onValueChange={([value]) => setSettings(prev => ({...prev, temperatura_chat: value}))}
-                        max={1}
-                        min={0}
-                        step={0.1}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Max Tokens</Label>
-                      <Input
-                        type="number"
-                        value={settings.max_tokens_chat}
-                        onChange={(e) => setSettings(prev => ({...prev, max_tokens_chat: parseInt(e.target.value) || 800}))}
-                        min={100}
-                        max={4000}
-                      />
-                    </div>
-                  </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-muted-foreground">Chat:</span>
+                  <Badge variant="secondary">{settings.modelo_chat.split('-')[0]}</Badge>
                 </div>
-
-                <div className="space-y-4">
-                  <h4 className="font-semibold text-sm">🏷️ Parâmetros - Classificação</h4>
-                  <div className="space-y-3">
-                    <div className="space-y-2">
-                      <Label>Temperatura: {settings.temperatura_classificacao}</Label>
-                      <Slider
-                        value={[settings.temperatura_classificacao]}
-                        onValueChange={([value]) => setSettings(prev => ({...prev, temperatura_classificacao: value}))}
-                        max={1}
-                        min={0}
-                        step={0.1}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Max Tokens</Label>
-                      <Input
-                        type="number"
-                        value={settings.max_tokens_classificacao}
-                        onChange={(e) => setSettings(prev => ({...prev, max_tokens_classificacao: parseInt(e.target.value) || 500}))}
-                        min={100}
-                        max={2000}
-                      />
-                    </div>
-                  </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-muted-foreground">Classificação:</span>
+                  <Badge variant="secondary">{settings.modelo_classificacao.split('-')[0]}</Badge>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Comportamento */}
-        <TabsContent value="comportamento" className="space-y-6 animate-fade-in">
-          <Card>
-            <CardHeader>
-              <CardTitle>⚙️ Configurações de Comportamento</CardTitle>
-              <CardDescription>
-                Configure como a IA se comporta em diferentes situações
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <h4 className="font-semibold text-sm">🤖 Automação</h4>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="auto_classificacao">Classificação Automática</Label>
-                      <Switch
-                        id="auto_classificacao"
-                        checked={settings.auto_classificacao}
-                        onCheckedChange={(checked) => setSettings(prev => ({...prev, auto_classificacao: checked}))}
-                      />
-                    </div>
-                  </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-muted-foreground">Auto Classificação:</span>
+                  <Badge variant={settings.auto_classificacao ? "default" : "outline"}>
+                    {settings.auto_classificacao ? "Ativo" : "Inativo"}
+                  </Badge>
                 </div>
-
-                <div className="space-y-4">
-                  <h4 className="font-semibold text-sm">🔍 Funcionalidades</h4>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="usar_busca_semantica">Busca Semântica</Label>
-                      <Switch
-                        id="usar_busca_semantica"
-                        checked={settings.usar_busca_semantica}
-                        onCheckedChange={(checked) => setSettings(prev => ({...prev, usar_busca_semantica: checked}))}
-                      />
-                    </div>
-                  </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-muted-foreground">Busca Semântica:</span>
+                  <Badge variant={settings.usar_busca_semantica ? "default" : "outline"}>
+                    {settings.usar_busca_semantica ? "Ativo" : "Inativo"}
+                  </Badge>
                 </div>
               </div>
-
-              {/* Status da IA */}
-              <div className="bg-muted/30 border border-primary/20 rounded-lg p-4 mt-6">
-                <h4 className="text-lg font-semibold mb-4">🤖 Status Atual da IA</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-muted-foreground">Sugestões:</span>
-                      <Badge variant="secondary">{settings.modelo_sugestao.split('-')[0]}</Badge>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-muted-foreground">Chat:</span>
-                      <Badge variant="secondary">{settings.modelo_chat.split('-')[0]}</Badge>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-muted-foreground">Classificação:</span>
-                      <Badge variant="secondary">{settings.modelo_classificacao.split('-')[0]}</Badge>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-muted-foreground">Auto Classificação:</span>
-                      <Badge variant={settings.auto_classificacao ? "default" : "outline"}>
-                        {settings.auto_classificacao ? "Ativo" : "Inativo"}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-muted-foreground">Busca Semântica:</span>
-                      <Badge variant={settings.usar_busca_semantica ? "default" : "outline"}>
-                        {settings.usar_busca_semantica ? "Ativo" : "Inativo"}
-                      </Badge>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-muted-foreground">Estilo:</span>
-                      <Badge variant="outline">{settings.estilo_resposta}</Badge>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-muted-foreground">Sistema:</span>
-                      <Badge variant={settings.ativo ? "default" : "destructive"}>
-                        {settings.ativo ? "Online" : "Offline"}
-                      </Badge>
-                    </div>
-                  </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-muted-foreground">Estilo:</span>
+                  <Badge variant="outline">{settings.estilo_resposta}</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-muted-foreground">Sistema:</span>
+                  <Badge variant={settings.ativo ? "default" : "destructive"}>
+                    {settings.ativo ? "Online" : "Offline"}
+                  </Badge>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-        {/* Prompts */}
-        <TabsContent value="prompts" className="space-y-6 animate-fade-in">
-          <Card>
-            <CardHeader>
-              <CardTitle>💬 Configuração de Prompts</CardTitle>
-              <CardDescription>
-                Configure as instruções específicas para cada funcionalidade da IA
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="prompt_sugestao">🔮 Prompt para Sugestões</Label>
-                  <Textarea
-                    id="prompt_sugestao"
-                    value={settings.prompt_sugestao}
-                    onChange={(e) => setSettings(prev => ({...prev, prompt_sugestao: e.target.value}))}
-                    rows={3}
-                    placeholder="Instruções para gerar sugestões..."
-                  />
-                </div>
+      {/* Seção 4: Configuração de Prompts */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageCircle className="h-5 w-5 text-primary" />
+            Configuração de Prompts
+          </CardTitle>
+          <CardDescription>
+            Configure as instruções específicas para cada funcionalidade da IA
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="prompt_sugestao">🔮 Prompt para Sugestões</Label>
+              <Textarea
+                id="prompt_sugestao"
+                value={settings.prompt_sugestao}
+                onChange={(e) => setSettings(prev => ({...prev, prompt_sugestao: e.target.value}))}
+                rows={3}
+                placeholder="Instruções para gerar sugestões..."
+              />
+            </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="prompt_chat">💬 Prompt para Chat com IA</Label>
-                  <Textarea
-                    id="prompt_chat"
-                    value={settings.prompt_chat}
-                    onChange={(e) => setSettings(prev => ({...prev, prompt_chat: e.target.value}))}
-                    rows={3}
-                    placeholder="Instruções para o chat com IA..."
-                  />
-                </div>
+            <div className="space-y-2">
+              <Label htmlFor="prompt_chat">💬 Prompt para Chat com IA</Label>
+              <Textarea
+                id="prompt_chat"
+                value={settings.prompt_chat}
+                onChange={(e) => setSettings(prev => ({...prev, prompt_chat: e.target.value}))}
+                rows={3}
+                placeholder="Instruções para o chat com IA..."
+              />
+            </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="prompt_classificacao">🏷️ Prompt para Classificação</Label>
-                  <Textarea
-                    id="prompt_classificacao"
-                    value={settings.prompt_classificacao}
-                    onChange={(e) => setSettings(prev => ({...prev, prompt_classificacao: e.target.value}))}
-                    rows={3}
-                    placeholder="Instruções para classificação automática..."
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            <div className="space-y-2">
+              <Label htmlFor="prompt_classificacao">🏷️ Prompt para Classificação</Label>
+              <Textarea
+                id="prompt_classificacao"
+                value={settings.prompt_classificacao}
+                onChange={(e) => setSettings(prev => ({...prev, prompt_classificacao: e.target.value}))}
+                rows={3}
+                placeholder="Instruções para classificação automática..."
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Alertas de mudanças pendentes */}
       {hasChanges() && (
