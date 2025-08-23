@@ -231,12 +231,6 @@ export function AppSidebar() {
                        Meu Perfil
                      </NavLink>
                    </DropdownMenuItem>
-                   <DropdownMenuItem asChild className="text-gray-700 dark:text-gray-200 focus:bg-gray-100 dark:focus:bg-gray-800 cursor-pointer">
-                     <NavLink to="/admin/profile" className="flex items-center">
-                       <Settings className="h-4 w-4 mr-2" />
-                       Configurações
-                     </NavLink>
-                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-700" />
                   <DropdownMenuItem 
                     className="text-red-600 focus:bg-red-50 dark:focus:bg-red-900/20 cursor-pointer" 
