@@ -30,7 +30,7 @@ import { LogoUpload } from "@/components/LogoUpload";
 import { SystemLogo } from "@/components/SystemLogo";
 
 const navigationItems = [
-  { title: "Dashboard", url: "/admin", icon: Home, permission: 'access_dashboards' as const },
+  { title: "Dashboard", url: "/admin", icon: Home, permission: 'view_own_unit_tickets' as const }, // Permite que colaboradores vejam o dashboard
   { title: "Tickets", url: "/admin/tickets", icon: Ticket, permission: 'view_own_unit_tickets' as const },
   { title: "Unidades", url: "/admin/unidades", icon: Building2, permission: 'view_all_tickets' as const },
   { title: "Franqueados", url: "/admin/franqueados", icon: Users, permission: 'view_all_tickets' as const },
