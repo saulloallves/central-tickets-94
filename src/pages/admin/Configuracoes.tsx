@@ -1,7 +1,7 @@
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings, Brain, BookOpen, TrendingUp, Shield, AlertTriangle, Image } from "lucide-react";
+import { Settings, Brain, BookOpen, TrendingUp, Shield, AlertTriangle, Image, Bell, Users } from "lucide-react";
 import { IASettingsTab } from "@/components/configuracoes/IASettingsTab";
 import { KnowledgeHubTab } from "@/components/configuracoes/KnowledgeHubTab";
 import { RegrasUsoTab } from "@/components/configuracoes/RegrasUsoTab";
@@ -43,7 +43,7 @@ export default function Configuracoes() {
                   Hub de Conhecimento
                 </TabsTrigger>
                 <TabsTrigger value="notificacoes" className="flex items-center gap-2">
-                  <Settings className="h-4 w-4" />
+                  <Bell className="h-4 w-4" />
                   Notificações
                 </TabsTrigger>
                 <TabsTrigger value="regras" className="flex items-center gap-2">
