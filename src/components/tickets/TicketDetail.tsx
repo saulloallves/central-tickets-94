@@ -369,9 +369,6 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
             )}
             <CrisisButton ticketId={ticket.id} currentPriority={ticket.prioridade} />
             <TicketActions ticket={ticket} equipes={equipes} />
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
           </div>
         </div>
         
