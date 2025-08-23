@@ -833,6 +833,45 @@ export type Database = {
         }
         Relationships: []
       }
+      internal_access_requests: {
+        Row: {
+          comments: string | null
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          desired_role: string
+          equipe_id: string
+          id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comments?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          desired_role?: string
+          equipe_id: string
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comments?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          desired_role?: string
+          equipe_id?: string
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       knowledge_article_usage: {
         Row: {
           article_id: string
@@ -2149,6 +2188,10 @@ export type Database = {
         Args: { p_by?: string; p_crise_id: string; p_ticket_ids: string[] }
         Returns: undefined
       }
+      approve_internal_access: {
+        Args: { p_request_id: string }
+        Returns: undefined
+      }
       broadcast_crise_message: {
         Args: {
           p_by?: string
@@ -2355,6 +2398,10 @@ export type Database = {
       process_existing_girabot_crisis: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      reject_internal_access: {
+        Args: { p_reason?: string; p_request_id: string }
+        Returns: undefined
       }
       resolve_crise_close_tickets: {
         Args: {

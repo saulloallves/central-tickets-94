@@ -6,8 +6,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Pencil, Plus, Trash2, Users, Search, Calendar } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Pencil, Plus, Trash2, Users, Search, Calendar, UserCheck } from "lucide-react";
 import { EquipeMembersDialog } from "@/components/equipes/EquipeMembersDialog";
+import { InternalAccessApproval } from "@/components/equipes/InternalAccessApproval";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -248,190 +250,207 @@ export default function Equipes() {
           </Dialog>
         </div>
 
-        <div className="space-y-4">
-          <div className="flex items-center space-x-2">
-            <Search className="w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por nome ou descrição..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="max-w-sm"
-            />
-          </div>
+        <Tabs defaultValue="equipes" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="equipes" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Equipes
+            </TabsTrigger>
+            <TabsTrigger value="solicitacoes" className="flex items-center gap-2">
+              <UserCheck className="h-4 w-4" />
+              Solicitações de Acesso
+            </TabsTrigger>
+          </TabsList>
 
-          <div className="text-sm text-muted-foreground mb-4">
-            {filteredEquipes.length} equipes encontradas
-          </div>
+          <TabsContent value="equipes" className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <Search className="w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome ou descrição..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="max-w-sm"
+              />
+            </div>
 
-          {filteredEquipes.length === 0 ? (
-            <Card>
-              <CardContent className="text-center py-8">
-                <div className="text-muted-foreground">
-                  {searchTerm ? 'Nenhuma equipe encontrada com os filtros aplicados.' : 'Nenhuma equipe cadastrada.'}
-                </div>
-                {!searchTerm && (
-                  <Button onClick={openCreateDialog} className="mt-4">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Criar primeira equipe
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredEquipes.map((equipe) => (
-                <Dialog key={equipe.id}>
-                  <DialogTrigger asChild>
-                    <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border bg-white dark:bg-card relative overflow-hidden">
-                      <CardHeader className="pb-2 pt-3 px-4">
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="p-1 bg-green-50 dark:bg-green-900/20 rounded-md">
-                            <Users className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
-                          </div>
-                          <div className="flex space-x-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openMembersDialog(equipe);
-                              }}
-                              title="Gerenciar membros"
-                            >
-                              <Users className="w-3 h-3 text-muted-foreground" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleEdit(equipe);
-                              }}
-                            >
-                              <Pencil className="w-3 h-3 text-muted-foreground" />
-                            </Button>
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-1">
-                          <div>
-                            <CardTitle className="text-sm font-semibold leading-tight">
-                              {equipe.nome}
-                            </CardTitle>
-                            <p className="text-xs text-muted-foreground">
-                              {equipe.descricao}
-                            </p>
+            <div className="text-sm text-muted-foreground mb-4">
+              {filteredEquipes.length} equipes encontradas
+            </div>
+
+            {filteredEquipes.length === 0 ? (
+              <Card>
+                <CardContent className="text-center py-8">
+                  <div className="text-muted-foreground">
+                    {searchTerm ? 'Nenhuma equipe encontrada com os filtros aplicados.' : 'Nenhuma equipe cadastrada.'}
+                  </div>
+                  {!searchTerm && (
+                    <Button onClick={openCreateDialog} className="mt-4">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Criar primeira equipe
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredEquipes.map((equipe) => (
+                  <Dialog key={equipe.id}>
+                    <DialogTrigger asChild>
+                      <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border bg-white dark:bg-card relative overflow-hidden">
+                        <CardHeader className="pb-2 pt-3 px-4">
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="p-1 bg-green-50 dark:bg-green-900/20 rounded-md">
+                              <Users className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
+                            </div>
+                            <div className="flex space-x-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 w-6 p-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openMembersDialog(equipe);
+                                }}
+                                title="Gerenciar membros"
+                              >
+                                <Users className="w-3 h-3 text-muted-foreground" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 w-6 p-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEdit(equipe);
+                                }}
+                              >
+                                <Pencil className="w-3 h-3 text-muted-foreground" />
+                              </Button>
+                            </div>
                           </div>
                           
-                          <div className="text-xs text-muted-foreground">
-                            <div>#{equipe.id.substring(0, 8)}</div>
+                          <div className="space-y-1">
+                            <div>
+                              <CardTitle className="text-sm font-semibold leading-tight">
+                                {equipe.nome}
+                              </CardTitle>
+                              <p className="text-xs text-muted-foreground">
+                                {equipe.descricao}
+                              </p>
+                            </div>
+                            
+                            <div className="text-xs text-muted-foreground">
+                              <div>#{equipe.id.substring(0, 8)}</div>
+                            </div>
                           </div>
-                        </div>
-                      </CardHeader>
-                      
-                      <CardContent className="pt-0 pb-3 px-4">
-                        <Badge 
-                          className={`${
-                            equipe.ativo
-                              ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400'
-                              : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
-                          } border-0 font-medium uppercase text-xs tracking-wide py-1 px-2`}
-                        >
-                          {equipe.ativo ? "Ativa" : "Inativa"}
-                        </Badge>
-                      </CardContent>
-                    </Card>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-2xl">
-                    <DialogHeader>
-                      <DialogTitle className="flex items-center gap-3">
-                        <Users className="w-5 h-5" />
-                        {equipe.nome}
-                      </DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-4">
-                          <div>
-                            <h4 className="font-semibold mb-2">Informações Básicas</h4>
-                            <div className="space-y-2 text-sm">
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">ID:</span>
-                                <span>{equipe.id}</span>
+                        </CardHeader>
+                        
+                        <CardContent className="pt-0 pb-3 px-4">
+                          <Badge 
+                            className={`${
+                              equipe.ativo
+                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400'
+                                : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
+                            } border-0 font-medium uppercase text-xs tracking-wide py-1 px-2`}
+                          >
+                            {equipe.ativo ? "Ativa" : "Inativa"}
+                          </Badge>
+                        </CardContent>
+                      </Card>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl">
+                      <DialogHeader>
+                        <DialogTitle className="flex items-center gap-3">
+                          <Users className="w-5 h-5" />
+                          {equipe.nome}
+                        </DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="space-y-4">
+                            <div>
+                              <h4 className="font-semibold mb-2">Informações Básicas</h4>
+                              <div className="space-y-2 text-sm">
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">ID:</span>
+                                  <span>{equipe.id}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Nome:</span>
+                                  <span>{equipe.nome}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Status:</span>
+                                  <Badge variant={equipe.ativo ? "default" : "secondary"}>
+                                    {equipe.ativo ? "Ativa" : "Inativa"}
+                                  </Badge>
+                                </div>
                               </div>
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">Nome:</span>
-                                <span>{equipe.nome}</span>
+                            </div>
+                          </div>
+
+                          <div className="space-y-4">
+                            <div>
+                              <h4 className="font-semibold mb-2">Descrição</h4>
+                              <div className="space-y-2 text-sm">
+                                <div>
+                                  <span className="text-muted-foreground">Descrição:</span>
+                                  <p className="mt-1">{equipe.descricao}</p>
+                                </div>
                               </div>
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">Status:</span>
-                                <Badge variant={equipe.ativo ? "default" : "secondary"}>
-                                  {equipe.ativo ? "Ativa" : "Inativa"}
-                                </Badge>
+                            </div>
+
+                            <div>
+                              <h4 className="font-semibold mb-2">Ações</h4>
+                              <div className="space-y-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => openMembersDialog(equipe)}
+                                  className="w-full"
+                                >
+                                  <Users className="h-4 w-4 mr-2" />
+                                  Gerenciar Membros
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleEdit(equipe)}
+                                  className="w-full"
+                                >
+                                  <Pencil className="h-4 w-4 mr-2" />
+                                  Editar Equipe
+                                </Button>
                               </div>
                             </div>
                           </div>
                         </div>
 
-                        <div className="space-y-4">
-                          <div>
-                            <h4 className="font-semibold mb-2">Descrição</h4>
-                            <div className="space-y-2 text-sm">
-                              <div>
-                                <span className="text-muted-foreground">Descrição:</span>
-                                <p className="mt-1">{equipe.descricao}</p>
-                              </div>
-                            </div>
-                          </div>
+                        <div>
+                          <h4 className="font-semibold mb-2">Introdução para IA</h4>
+                          <p className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
+                            {equipe.introducao}
+                          </p>
+                        </div>
 
-                          <div>
-                            <h4 className="font-semibold mb-2">Ações</h4>
-                            <div className="space-y-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openMembersDialog(equipe)}
-                                className="w-full"
-                              >
-                                <Users className="h-4 w-4 mr-2" />
-                                Gerenciar Membros
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleEdit(equipe)}
-                                className="w-full"
-                              >
-                                <Pencil className="h-4 w-4 mr-2" />
-                                Editar Equipe
-                              </Button>
-                            </div>
+                        <div className="pt-4 border-t">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Calendar className="w-3 h-3" />
+                            <span>Criado em: {new Date(equipe.created_at).toLocaleDateString('pt-BR')}</span>
                           </div>
                         </div>
                       </div>
+                    </DialogContent>
+                  </Dialog>
+                ))}
+              </div>
+            )}
+          </TabsContent>
 
-                      <div>
-                        <h4 className="font-semibold mb-2">Introdução para IA</h4>
-                        <p className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
-                          {equipe.introducao}
-                        </p>
-                      </div>
-
-                      <div className="pt-4 border-t">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Calendar className="w-3 h-3" />
-                          <span>Criado em: {new Date(equipe.created_at).toLocaleDateString('pt-BR')}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              ))}
-            </div>
-          )}
-        </div>
+          <TabsContent value="solicitacoes">
+            <InternalAccessApproval />
+          </TabsContent>
+        </Tabs>
 
         {/* Members Dialog */}
         {selectedEquipeForMembers && (
