@@ -274,16 +274,29 @@ export function RealtimeDashboard() {
               <p className="text-muted-foreground text-center py-4">Nenhum ticket encontrado</p>
             ) : (
               recentTickets.map((ticket) => {
+                // Debug: log ticket structure to understand what fields are available
+                console.log('🎫 [RECENT TICKET DEBUG]', {
+                  id: ticket.id,
+                  titulo: ticket.titulo,
+                  codigo_ticket: ticket.codigo_ticket,
+                  categoria: ticket.categoria,
+                  descricao_problema: ticket.descricao_problema,
+                  allFields: Object.keys(ticket)
+                });
+                
                 // Check if codigo_ticket is a UUID and create friendly display
                 const isUuidCode = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ticket.codigo_ticket || '');
                 
-                // Prioritize showing ticket title
+                // Prioritize showing ticket title - try different title fields
                 let displayCode;
                 let displayTitle;
                 
-                if (ticket.titulo) {
+                // Try multiple possible title fields
+                const ticketTitle = ticket.titulo || ticket.descricao_problema;
+                
+                if (ticketTitle && ticketTitle.trim() !== '') {
                   // If we have a title, show it prominently
-                  displayTitle = ticket.titulo;
+                  displayTitle = ticketTitle.length > 50 ? ticketTitle.substring(0, 50) + '...' : ticketTitle;
                   if (isUuidCode || !ticket.codigo_ticket) {
                     const shortId = ticket.id.split('-')[0].toUpperCase();
                     displayCode = `#${shortId}`;
