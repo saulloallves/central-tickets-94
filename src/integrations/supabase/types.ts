@@ -2251,11 +2251,6 @@ export type Database = {
               p_periodo_dias?: number
               p_user_id: string
             }
-          | {
-              p_equipe_filter?: string
-              p_periodo_dias?: number
-              p_user_id?: string
-            }
           | { p_periodo_dias?: number; p_user_id?: string }
         Returns: {
           percentual_sla: number
