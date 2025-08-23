@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -251,186 +250,183 @@ export function NotificacoesTab() {
         </div>
       </div>
 
-      <Tabs defaultValue="origem" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="origem" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
+      {/* Seção 1: Origem dos Números */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Settings className="h-5 w-5 text-primary" />
             Origem dos Números
-          </TabsTrigger>
-          <TabsTrigger value="zapi" className="flex items-center gap-2">
-            <MessageSquare className="h-4 w-4" />
-            Configurações Z-API
-          </TabsTrigger>
-          <TabsTrigger value="templates" className="flex items-center gap-2">
-            <Send className="h-4 w-4" />
-            Templates de Mensagens
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="origem" className="space-y-6">
+          </CardTitle>
+          <CardDescription>
+            Configure a origem dos números para notificações
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
           <ConfiguracaoOrigemTab />
-        </TabsContent>
+        </CardContent>
+      </Card>
 
-        <TabsContent value="zapi" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Configurações do Z-API</CardTitle>
-              <CardDescription>
-                Configure as credenciais e URL base para integração com Z-API
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="instance_id">Instance ID</Label>
-                  <Input
-                    id="instance_id"
-                    value={zapiConfig.instance_id}
-                    onChange={(e) => setZapiConfig({ ...zapiConfig, instance_id: e.target.value })}
-                    placeholder="Seu Instance ID"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="base_url">Base URL</Label>
-                  <Input
-                    id="base_url"
-                    value={zapiConfig.base_url}
-                    onChange={(e) => setZapiConfig({ ...zapiConfig, base_url: e.target.value })}
-                    placeholder="https://api.z-api.io"
-                  />
-                </div>
-              </div>
+      {/* Seção 2: Configurações Z-API */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5 text-primary" />
+            Configurações do Z-API
+          </CardTitle>
+          <CardDescription>
+            Configure as credenciais e URL base para integração com Z-API
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="instance_id">Instance ID</Label>
+              <Input
+                id="instance_id"
+                value={zapiConfig.instance_id}
+                onChange={(e) => setZapiConfig({ ...zapiConfig, instance_id: e.target.value })}
+                placeholder="Seu Instance ID"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="base_url">Base URL</Label>
+              <Input
+                id="base_url"
+                value={zapiConfig.base_url}
+                onChange={(e) => setZapiConfig({ ...zapiConfig, base_url: e.target.value })}
+                placeholder="https://api.z-api.io"
+              />
+            </div>
+          </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="instance_token">Instance Token</Label>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowTokens(!showTokens)}
-                  >
-                    {showTokens ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
-                </div>
-                <Input
-                  id="instance_token"
-                  type={showTokens ? "text" : "password"}
-                  value={showTokens ? zapiConfig.instance_token : maskToken(zapiConfig.instance_token)}
-                  onChange={(e) => setZapiConfig({ ...zapiConfig, instance_token: e.target.value })}
-                  placeholder="Seu Instance Token"
-                />
-              </div>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="instance_token">Instance Token</Label>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowTokens(!showTokens)}
+              >
+                {showTokens ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </Button>
+            </div>
+            <Input
+              id="instance_token"
+              type={showTokens ? "text" : "password"}
+              value={showTokens ? zapiConfig.instance_token : maskToken(zapiConfig.instance_token)}
+              onChange={(e) => setZapiConfig({ ...zapiConfig, instance_token: e.target.value })}
+              placeholder="Seu Instance Token"
+            />
+          </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="client_token">Client Token</Label>
-                <Input
-                  id="client_token"
-                  type={showTokens ? "text" : "password"}
-                  value={showTokens ? zapiConfig.client_token : maskToken(zapiConfig.client_token)}
-                  onChange={(e) => setZapiConfig({ ...zapiConfig, client_token: e.target.value })}
-                  placeholder="Seu Client Token"
-                />
-              </div>
+          <div className="space-y-2">
+            <Label htmlFor="client_token">Client Token</Label>
+            <Input
+              id="client_token"
+              type={showTokens ? "text" : "password"}
+              value={showTokens ? zapiConfig.client_token : maskToken(zapiConfig.client_token)}
+              onChange={(e) => setZapiConfig({ ...zapiConfig, client_token: e.target.value })}
+              placeholder="Seu Client Token"
+            />
+          </div>
 
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="is_active"
-                  checked={zapiConfig.is_active}
-                  onCheckedChange={(checked) => setZapiConfig({ ...zapiConfig, is_active: checked })}
-                />
-                <Label htmlFor="is_active">Configuração ativa</Label>
-              </div>
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="is_active"
+              checked={zapiConfig.is_active}
+              onCheckedChange={(checked) => setZapiConfig({ ...zapiConfig, is_active: checked })}
+            />
+            <Label htmlFor="is_active">Configuração ativa</Label>
+          </div>
 
-              <Separator />
+          <Separator />
 
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="test_phone">Número para teste (opcional)</Label>
-                  <Input
-                    id="test_phone"
-                    value={testPhone}
-                    onChange={(e) => setTestPhone(e.target.value)}
-                    placeholder="5511999999999 (com código do país)"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Se informado, enviará uma mensagem de teste. Caso contrário, apenas verificará as credenciais.
-                  </p>
-                </div>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="test_phone">Número para teste (opcional)</Label>
+              <Input
+                id="test_phone"
+                value={testPhone}
+                onChange={(e) => setTestPhone(e.target.value)}
+                placeholder="5511999999999 (com código do país)"
+              />
+              <p className="text-xs text-muted-foreground">
+                Se informado, enviará uma mensagem de teste. Caso contrário, apenas verificará as credenciais.
+              </p>
+            </div>
 
-                <div className="flex gap-2">
-                  <Button 
-                    onClick={saveZApiConfig} 
-                    disabled={loading}
-                    className="flex items-center gap-2"
-                  >
-                    <Save className="h-4 w-4" />
-                    Salvar Configuração
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={testConnection} 
-                    disabled={loading}
-                    className="flex items-center gap-2"
-                  >
-                    <TestTube className="h-4 w-4" />
-                    Testar Conexão
-                  </Button>
-                </div>
-              </div>
+            <div className="flex gap-2">
+              <Button 
+                onClick={saveZApiConfig} 
+                disabled={loading}
+                className="flex items-center gap-2"
+              >
+                <Save className="h-4 w-4" />
+                Salvar Configuração
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={testConnection} 
+                disabled={loading}
+                className="flex items-center gap-2"
+              >
+                <TestTube className="h-4 w-4" />
+                Testar Conexão
+              </Button>
+            </div>
+          </div>
 
-              <Alert>
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription>
-                  Os tokens são sensíveis. Mantenha-os seguros e não os compartilhe.
-                  A configuração ativa será usada para todas as notificações.
-                </AlertDescription>
-              </Alert>
-            </CardContent>
-          </Card>
-        </TabsContent>
+          <Alert>
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              Os tokens são sensíveis. Mantenha-os seguros e não os compartilhe.
+              A configuração ativa será usada para todas as notificações.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
 
-        <TabsContent value="templates" className="space-y-6">
+      {/* Seção 3: Templates de Mensagens */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Send className="h-5 w-5 text-primary" />
+            Templates de Mensagens
+          </CardTitle>
+          <CardDescription>
+            Gerencie os templates de mensagens do sistema
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Templates Disponíveis</CardTitle>
-                <CardDescription>
-                  Clique em um template para editá-lo
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {templates.map((template) => (
-                    <div
-                      key={template.id}
-                      className="p-3 rounded-lg border cursor-pointer hover:bg-muted transition-colors"
-                      onClick={() => setSelectedTemplate(template)}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium">{template.template_key}</h4>
-                          <p className="text-sm text-muted-foreground">{template.description}</p>
-                        </div>
-                        <Badge variant={template.is_active ? "default" : "secondary"}>
-                          {template.is_active ? "Ativo" : "Inativo"}
-                        </Badge>
+            <div>
+              <h4 className="font-medium mb-4">Templates Disponíveis</h4>
+              <div className="space-y-2">
+                {templates.map((template) => (
+                  <div
+                    key={template.id}
+                    className="p-3 rounded-lg border cursor-pointer hover:bg-muted transition-colors"
+                    onClick={() => setSelectedTemplate(template)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium">{template.template_key}</h4>
+                        <p className="text-sm text-muted-foreground">{template.description}</p>
                       </div>
+                      <Badge variant={template.is_active ? "default" : "secondary"}>
+                        {template.is_active ? "Ativo" : "Inativo"}
+                      </Badge>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                  </div>
+                ))}
+              </div>
+            </div>
 
             {selectedTemplate && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Editar Template</CardTitle>
-                  <CardDescription>
-                    {selectedTemplate.description}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
+              <div>
+                <h4 className="font-medium mb-4">Editar Template</h4>
+                <div className="space-y-4">
                   <div className="space-y-2">
                     <Label>Variáveis disponíveis:</Label>
                     <div className="flex flex-wrap gap-1">
@@ -484,12 +480,12 @@ export function NotificacoesTab() {
                       Cancelar
                     </Button>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             )}
           </div>
-        </TabsContent>
-      </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+// Removed Tabs imports as they're no longer needed
 import { useKnowledgeSuggestions } from '@/hooks/useKnowledgeSuggestions';
 import { useKnowledgeArticles } from '@/hooks/useKnowledgeArticles';
 import { useToast } from '@/hooks/use-toast';
@@ -579,18 +579,21 @@ export const KnowledgeHubTab = () => {
         </Card>
       </div>
 
-      {/* Content tabs */}
-      <Tabs defaultValue="suggestions" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="suggestions">
-            Sugestões Pendentes ({filteredSuggestions.length})
-          </TabsTrigger>
-          <TabsTrigger value="articles">
-            Artigos Publicados ({filteredArticles.length + filteredMemories.length})
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="suggestions" className="space-y-4">
+      {/* Seção 1: Sugestões Pendentes */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Brain className="h-5 w-5 text-primary" />
+            Sugestões Pendentes
+            <Badge variant="secondary" className="ml-2">
+              {filteredSuggestions.length}
+            </Badge>
+          </CardTitle>
+          <CardDescription>
+            Sugestões da IA aguardando aprovação para se tornarem artigos
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
           {loadingSuggestions ? (
             <div className="text-center py-8">Carregando sugestões...</div>
           ) : filteredSuggestions.length === 0 ? (
@@ -649,9 +652,24 @@ export const KnowledgeHubTab = () => {
               ))}
             </div>
           )}
-        </TabsContent>
+        </CardContent>
+      </Card>
 
-        <TabsContent value="articles" className="space-y-4">
+      {/* Seção 2: Artigos Publicados */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5 text-primary" />
+            Artigos Publicados
+            <Badge variant="secondary" className="ml-2">
+              {filteredArticles.length + filteredMemories.length}
+            </Badge>
+          </CardTitle>
+          <CardDescription>
+            Artigos ativos na base de conhecimento
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
           {loadingArticles ? (
             <div className="text-center py-8">Carregando artigos...</div>
           ) : (filteredArticles.length === 0 && filteredMemories.length === 0) ? (
@@ -819,8 +837,8 @@ export const KnowledgeHubTab = () => {
               )}
             </div>
           )}
-        </TabsContent>
-      </Tabs>
+        </CardContent>
+      </Card>
 
       {/* Create Memory Modal */}
       <CreateMemoryModal
