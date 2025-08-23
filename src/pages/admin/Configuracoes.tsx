@@ -60,31 +60,31 @@ export default function Configuracoes() {
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="logo" className="space-y-6">
+              <TabsContent value="logo" className="space-y-6 animate-fade-in">
                 <LogoSettings />
               </TabsContent>
 
-              <TabsContent value="ia" className="space-y-6">
+              <TabsContent value="ia" className="space-y-6 animate-fade-in">
                 <IASettingsTab />
               </TabsContent>
 
-              <TabsContent value="conhecimento" className="space-y-6">
+              <TabsContent value="conhecimento" className="space-y-6 animate-fade-in">
                 <KnowledgeHubTab />
               </TabsContent>
 
-              <TabsContent value="notificacoes" className="space-y-6">
+              <TabsContent value="notificacoes" className="space-y-6 animate-fade-in">
                 <NotificacoesTab />
               </TabsContent>
 
-              <TabsContent value="regras" className="space-y-6">
+              <TabsContent value="regras" className="space-y-6 animate-fade-in">
                 <RegrasUsoTab />
               </TabsContent>
 
-              <TabsContent value="relatorios" className="space-y-6">
+              <TabsContent value="relatorios" className="space-y-6 animate-fade-in">
                 <RelatoriosTab />
               </TabsContent>
 
-              <TabsContent value="crise" className="space-y-6">
+              <TabsContent value="crise" className="space-y-6 animate-fade-in">
                 <CrisisConfigTab />
               </TabsContent>
             </Tabs>
