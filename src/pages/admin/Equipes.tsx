@@ -1,14 +1,9 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Pencil, Plus, Trash2, Users, Search, Calendar, UserCheck } from "lucide-react";
-import { EquipeMembersDialog } from "@/components/equipes/EquipeMembersDialog";
+import { Users, Search, Calendar, UserCheck } from "lucide-react";
 import { InternalAccessApproval } from "@/components/equipes/InternalAccessApproval";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -29,16 +24,6 @@ export default function Equipes() {
   const [equipes, setEquipes] = useState<Equipe[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [editingEquipe, setEditingEquipe] = useState<Equipe | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [membersDialogOpen, setMembersDialogOpen] = useState(false);
-  const [selectedEquipeForMembers, setSelectedEquipeForMembers] = useState<Equipe | null>(null);
-  const [formData, setFormData] = useState({
-    nome: "",
-    descricao: "",
-    introducao: "",
-    ativo: true
-  });
   const { toast } = useToast();
 
   const fetchEquipes = async () => {
@@ -71,86 +56,9 @@ export default function Equipes() {
     equipe.descricao?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleSave = async () => {
-    try {
-      if (editingEquipe) {
-        const { error } = await supabase
-          .from('equipes')
-          .update(formData)
-          .eq('id', editingEquipe.id);
-
-        if (error) throw error;
-        toast({ title: "Equipe atualizada com sucesso!" });
-      } else {
-        const { error } = await supabase
-          .from('equipes')
-          .insert([formData]);
-
-        if (error) throw error;
-        toast({ title: "Equipe criada com sucesso!" });
-      }
-
-      setIsDialogOpen(false);
-      setEditingEquipe(null);
-      setFormData({ nome: "", descricao: "", introducao: "", ativo: true });
-      fetchEquipes();
-    } catch (error) {
-      console.error('Error saving equipe:', error);
-      toast({
-        title: "Erro ao salvar equipe",
-        description: "Não foi possível salvar a equipe.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleEdit = (equipe: Equipe) => {
-    setEditingEquipe(equipe);
-    setFormData({
-      nome: equipe.nome,
-      descricao: equipe.descricao,
-      introducao: equipe.introducao,
-      ativo: equipe.ativo
-    });
-    setIsDialogOpen(true);
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!confirm("Tem certeza que deseja excluir esta equipe?")) return;
-
-    try {
-      const { error } = await supabase
-        .from('equipes')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      toast({ title: "Equipe excluída com sucesso!" });
-      fetchEquipes();
-    } catch (error) {
-      console.error('Error deleting equipe:', error);
-      toast({
-        title: "Erro ao excluir equipe",
-        description: "Não foi possível excluir a equipe.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const openCreateDialog = () => {
-    setEditingEquipe(null);
-    setFormData({ nome: "", descricao: "", introducao: "", ativo: true });
-    setIsDialogOpen(true);
-  };
-
-  const openMembersDialog = (equipe: Equipe) => {
-    setSelectedEquipeForMembers(equipe);
-    setMembersDialogOpen(true);
-  };
-
   if (loading) {
     return (
-      <ProtectedRoute requiredRole="admin">
+      <ProtectedRoute requiredPermission="view_all_tickets">
         <div className="w-full space-y-6">
           <div className="animate-pulse">
             <div className="h-8 bg-muted rounded w-48 mb-2"></div>
@@ -175,79 +83,13 @@ export default function Equipes() {
   }
 
   return (
-    <ProtectedRoute requiredRole="admin">
+    <ProtectedRoute requiredPermission="view_all_tickets">
       <div className="w-full space-y-6 pt-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight">Equipes</h2>
-            <p className="text-muted-foreground">
-              Gerencie as equipes responsáveis pelos tickets. A IA usa essas informações para classificar automaticamente os tickets.
-            </p>
-          </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={openCreateDialog}>
-                <Plus className="h-4 w-4 mr-2" />
-                Nova Equipe
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingEquipe ? "Editar Equipe" : "Nova Equipe"}
-                </DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="nome">Nome da Equipe</Label>
-                  <Input
-                    id="nome"
-                    value={formData.nome}
-                    onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                    placeholder="Ex: Sistema, Jurídico, RH..."
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="descricao">Descrição</Label>
-                  <Input
-                    id="descricao"
-                    value={formData.descricao}
-                    onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-                    placeholder="Breve descrição da equipe"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="introducao">Introdução para IA</Label>
-                  <Textarea
-                    id="introducao"
-                    value={formData.introducao}
-                    onChange={(e) => setFormData({ ...formData, introducao: e.target.value })}
-                    placeholder="Descreva detalhadamente o que esta equipe faz para a IA entender quando direcionar tickets para ela..."
-                    rows={4}
-                  />
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Esta descrição é usada pela IA para classificar automaticamente os tickets. Seja específico sobre os tipos de problemas que esta equipe resolve.
-                  </p>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="ativo"
-                    checked={formData.ativo}
-                    onCheckedChange={(checked) => setFormData({ ...formData, ativo: checked })}
-                  />
-                  <Label htmlFor="ativo">Equipe ativa</Label>
-                </div>
-                <div className="flex justify-end space-x-2">
-                  <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button onClick={handleSave}>
-                    {editingEquipe ? "Atualizar" : "Criar"}
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Equipes</h2>
+          <p className="text-muted-foreground">
+            Visualize todas as equipes disponíveis no sistema.
+          </p>
         </div>
 
         <Tabs defaultValue="equipes" className="w-full">
@@ -283,12 +125,6 @@ export default function Equipes() {
                   <div className="text-muted-foreground">
                     {searchTerm ? 'Nenhuma equipe encontrada com os filtros aplicados.' : 'Nenhuma equipe cadastrada.'}
                   </div>
-                  {!searchTerm && (
-                    <Button onClick={openCreateDialog} className="mt-4">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Criar primeira equipe
-                    </Button>
-                  )}
                 </CardContent>
               </Card>
             ) : (
@@ -301,31 +137,6 @@ export default function Equipes() {
                           <div className="flex items-start justify-between mb-2">
                             <div className="p-1 bg-green-50 dark:bg-green-900/20 rounded-md">
                               <Users className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
-                            </div>
-                            <div className="flex space-x-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 w-6 p-0"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  openMembersDialog(equipe);
-                                }}
-                                title="Gerenciar membros"
-                              >
-                                <Users className="w-3 h-3 text-muted-foreground" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 w-6 p-0"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEdit(equipe);
-                                }}
-                              >
-                                <Pencil className="w-3 h-3 text-muted-foreground" />
-                              </Button>
                             </div>
                           </div>
                           
@@ -397,40 +208,13 @@ export default function Equipes() {
                                   <span className="text-muted-foreground">Descrição:</span>
                                   <p className="mt-1">{equipe.descricao}</p>
                                 </div>
-                              </div>
-                            </div>
-
-                            <div>
-                              <h4 className="font-semibold mb-2">Ações</h4>
-                              <div className="space-y-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => openMembersDialog(equipe)}
-                                  className="w-full"
-                                >
-                                  <Users className="h-4 w-4 mr-2" />
-                                  Gerenciar Membros
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleEdit(equipe)}
-                                  className="w-full"
-                                >
-                                  <Pencil className="h-4 w-4 mr-2" />
-                                  Editar Equipe
-                                </Button>
+                                <div>
+                                  <span className="text-muted-foreground">Introdução:</span>
+                                  <p className="mt-1 text-xs">{equipe.introducao}</p>
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-
-                        <div>
-                          <h4 className="font-semibold mb-2">Introdução para IA</h4>
-                          <p className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
-                            {equipe.introducao}
-                          </p>
                         </div>
 
                         <div className="pt-4 border-t">
@@ -447,20 +231,10 @@ export default function Equipes() {
             )}
           </TabsContent>
 
-          <TabsContent value="solicitacoes">
+          <TabsContent value="solicitacoes" className="space-y-4">
             <InternalAccessApproval />
           </TabsContent>
         </Tabs>
-
-        {/* Members Dialog */}
-        {selectedEquipeForMembers && (
-          <EquipeMembersDialog
-            equipeId={selectedEquipeForMembers.id}
-            equipeNome={selectedEquipeForMembers.nome}
-            open={membersDialogOpen}
-            onOpenChange={setMembersDialogOpen}
-          />
-        )}
       </div>
     </ProtectedRoute>
   );
