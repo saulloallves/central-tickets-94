@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -18,6 +17,7 @@ import Colaboradores from "./pages/admin/Colaboradores";
 import Equipes from "./pages/admin/Equipes";
 import Configuracoes from "./pages/admin/Configuracoes";
 import Logs from "./pages/admin/Logs";
+import Governanca from "./pages/admin/Governanca";
 import PermissionsControl from "./pages/admin/PermissionsControl";
 import Profile from "./pages/admin/Profile";
 
@@ -73,11 +73,16 @@ const App = () => (
                 <Logs />
               </AdminLayout>
             } />
+            <Route path="/admin/governanca" element={
+              <AdminLayout>
+                <Governanca />
+              </AdminLayout>
+            } />
             <Route path="/admin/permissions" element={
               <AdminLayout>
                 <PermissionsControl />
               </AdminLayout>
-             } />
+            } />
             <Route path="/admin/profile" element={
               <AdminLayout>
                 <Profile />
