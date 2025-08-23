@@ -5,7 +5,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
-import { Download, TrendingUp, Activity, Users, Clock, Calendar } from 'lucide-react';
+import { Download, TrendingUp, Activity, Users, Clock, Calendar, FileText } from 'lucide-react';
 
 interface UserActivity {
   date: string;

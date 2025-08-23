@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { SidebarProvider } from "@/hooks/useSidebar";
 import Index from "./pages/Index";
@@ -21,7 +21,7 @@ import Configuracoes from "./pages/admin/Configuracoes";
 import Logs from "./pages/admin/Logs";
 import Profile from "./pages/admin/Profile";
 import NotFound from "./pages/NotFound";
-import ProtectedRoute from "./components/ProtectedRoute";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -39,7 +39,9 @@ function App() {
                 <Route path="/" element={<Index />} />
                 <Route path="/admin" element={
                   <ProtectedRoute>
-                    <AdminLayout />
+                    <AdminLayout>
+                      <Outlet />
+                    </AdminLayout>
                   </ProtectedRoute>
                 }>
                   <Route index element={<Dashboard />} />
