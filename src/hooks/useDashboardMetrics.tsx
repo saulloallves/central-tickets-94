@@ -253,7 +253,7 @@ export const useDashboardMetrics = () => {
 
       if (error) throw error;
 
-      // Group by team
+      // Group by team name instead of ID
       const equipeCounts = data.reduce((acc: Record<string, number>, ticket) => {
         const equipeName = (ticket.equipes as any)?.nome || 'Sem Equipe';
         acc[equipeName] = (acc[equipeName] || 0) + 1;

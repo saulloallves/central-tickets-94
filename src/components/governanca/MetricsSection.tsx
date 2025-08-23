@@ -1,21 +1,25 @@
 
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Users, Building, AlertCircle, BarChart3 } from "lucide-react";
 import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
+import { useTeamMetrics } from "@/hooks/useTeamMetrics";
 import { EmptyState } from "./EmptyState";
 
 export function MetricsSection() {
   const { 
-    teamMetrics, 
     unitMetrics, 
-    loading, 
-    fetchTeamMetrics, 
+    loading: unitLoading, 
     fetchUnitMetrics 
   } = useDashboardMetrics();
+  
+  const {
+    teamMetrics,
+    loading: teamLoading,
+    refetch: refetchTeamMetrics
+  } = useTeamMetrics();
   
   const [refreshing, setRefreshing] = useState(false);
 
@@ -24,22 +28,33 @@ export function MetricsSection() {
     console.log('🏢 [METRICS SECTION] Unit metrics state changed:', {
       unitMetrics,
       length: unitMetrics?.length,
-      loading,
+      loading: unitLoading,
       sample: unitMetrics?.[0]
     });
-  }, [unitMetrics, loading]);
+  }, [unitMetrics, unitLoading]);
+
+  useEffect(() => {
+    console.log('👥 [METRICS SECTION] Team metrics state changed:', {
+      teamMetrics,
+      length: teamMetrics?.length,
+      loading: teamLoading,
+      sample: teamMetrics?.[0]
+    });
+  }, [teamMetrics, teamLoading]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
       await Promise.all([
-        fetchTeamMetrics(),
+        refetchTeamMetrics(),
         fetchUnitMetrics()
       ]);
     } finally {
       setRefreshing(false);
     }
   };
+
+  const loading = unitLoading || teamLoading;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -67,7 +82,7 @@ export function MetricsSection() {
           </div>
         </CardHeader>
         <CardContent>
-          {loading ? (
+          {teamLoading ? (
             <div className="flex flex-col items-center justify-center py-8">
               <RefreshCw className="h-8 w-8 animate-spin text-primary mb-4" />
               <p className="text-sm text-muted-foreground">
@@ -87,6 +102,9 @@ export function MetricsSection() {
             </div>
           ) : (
             <div className="space-y-4">
+              <div className="text-xs text-muted-foreground mb-2">
+                👥 {teamMetrics.length} equipes carregadas
+              </div>
               {teamMetrics.slice(0, 5).map((team, index) => {
                 const slaPercentage = team.total_tickets > 0 
                   ? (team.tickets_sla_ok / team.total_tickets * 100) 
@@ -97,7 +115,7 @@ export function MetricsSection() {
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex-1 min-w-0">
                         <h4 className="text-sm font-semibold truncate">
-                          {team.equipe_nome || `Equipe ${team.equipe_id}`}
+                          {team.equipe_nome}
                         </h4>
                         <p className="text-xs text-muted-foreground">
                           {team.total_tickets} tickets • {team.tickets_resolvidos} resolvidos
@@ -194,7 +212,7 @@ export function MetricsSection() {
           </div>
         </CardHeader>
         <CardContent>
-          {loading ? (
+          {unitLoading ? (
             <div className="flex flex-col items-center justify-center py-8">
               <RefreshCw className="h-8 w-8 animate-spin text-primary mb-4" />
               <p className="text-sm text-muted-foreground">
@@ -237,7 +255,7 @@ export function MetricsSection() {
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex-1 min-w-0">
                       <h4 className="text-sm font-semibold truncate">
-                        {unit.unidade_nome || unit.unidade_id}
+                        {unit.unidade_nome}
                       </h4>
                       <p className="text-xs text-muted-foreground">
                         {unit.total_tickets_mes} tickets • {unit.tickets_resolvidos} resolvidos
