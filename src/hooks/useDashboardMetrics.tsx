@@ -50,13 +50,11 @@ export interface UnitMetrics {
   unidade_nome: string;
   total_tickets_mes: number;
   tickets_resolvidos: number;
-  tickets_sla_ok: number;
   tickets_abertos: number;
-  tickets_crise: number;
-  tempo_medio_resolucao: number;
-  interacoes_ia_total: number;
-  ia_bem_sucedida: number;
   percentual_sla: number;
+  tempo_medio_resolucao: number;
+  tickets_crise: number;
+  ia_bem_sucedida: number;
 }
 
 export const useDashboardMetrics = () => {
@@ -191,8 +189,21 @@ export const useDashboardMetrics = () => {
         console.log('🔍 [UNIT METRICS] First unit sample:', data[0]);
       }
 
-      setUnitMetrics(data || []);
-      console.log('💾 [UNIT METRICS] State updated with', data?.length || 0, 'units');
+      // Map the database response to match our interface
+      const mappedData = (data || []).map((unit: any) => ({
+        unidade_id: unit.unidade_id,
+        unidade_nome: unit.unidade_nome,
+        total_tickets_mes: unit.total_tickets_mes,
+        tickets_resolvidos: unit.tickets_resolvidos,
+        tickets_abertos: unit.tickets_abertos,
+        percentual_sla: unit.percentual_sla,
+        tempo_medio_resolucao: unit.tempo_medio_resolucao,
+        tickets_crise: unit.tickets_crise,
+        ia_bem_sucedida: unit.ia_bem_sucedida
+      }));
+
+      setUnitMetrics(mappedData);
+      console.log('💾 [UNIT METRICS] State updated with', mappedData.length, 'units');
     } catch (error) {
       console.error('💥 [UNIT METRICS] Unexpected error:', error);
       setUnitMetrics([]);
