@@ -24,8 +24,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 export function AuditPanel() {
   const { logs, loading, fetchLogs, exportLogs } = useSystemLogs();
   const [filters, setFilters] = useState({
-    tipo_log: '',
-    entidade_afetada: '',
+    tipo_log: 'all',
+    entidade_afetada: 'all',
     usuario_responsavel: '',
     data_inicio: '',
     data_fim: ''
@@ -33,8 +33,8 @@ export function AuditPanel() {
   const [searchTerm, setSearchTerm] = useState('');
 
   const handleFilterChange = (key: string, value: string) => {
-    const newFilters = { ...filters, [key]: value };
-    setFilters(newFilters);
+    const newFilters = { ...filters, [key]: value === 'all' ? '' : value };
+    setFilters({ ...filters, [key]: value });
     fetchLogs(newFilters);
   };
 
@@ -131,7 +131,7 @@ export function AuditPanel() {
                   <SelectValue placeholder="Todos os tipos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os tipos</SelectItem>
+                  <SelectItem value="all">Todos os tipos</SelectItem>
                   <SelectItem value="acao_humana">Ação Humana</SelectItem>
                   <SelectItem value="sistema">Sistema</SelectItem>
                   <SelectItem value="ia_interacao">IA Interação</SelectItem>
@@ -150,7 +150,7 @@ export function AuditPanel() {
                   <SelectValue placeholder="Todas as entidades" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas as entidades</SelectItem>
+                  <SelectItem value="all">Todas as entidades</SelectItem>
                   <SelectItem value="tickets">Tickets</SelectItem>
                   <SelectItem value="usuarios">Usuários</SelectItem>
                   <SelectItem value="configuracoes">Configurações</SelectItem>
