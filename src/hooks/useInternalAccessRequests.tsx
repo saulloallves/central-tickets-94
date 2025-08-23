@@ -51,7 +51,14 @@ export const useInternalAccessRequests = () => {
         .maybeSingle();
 
       if (error) throw error;
-      setUserRequest(data);
+      
+      // Type cast the status field to the expected union type
+      const typedData = data ? {
+        ...data,
+        status: data.status as 'pending' | 'approved' | 'rejected'
+      } : null;
+      
+      setUserRequest(typedData);
     } catch (error) {
       console.error('Error fetching user request:', error);
     }
@@ -77,7 +84,14 @@ export const useInternalAccessRequests = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setRequests(data || []);
+      
+      // Type cast the status field for each request
+      const typedData = (data || []).map(item => ({
+        ...item,
+        status: item.status as 'pending' | 'approved' | 'rejected'
+      }));
+      
+      setRequests(typedData);
     } catch (error) {
       console.error('Error fetching requests:', error);
     } finally {
