@@ -55,8 +55,12 @@ export const useTeamMetrics = () => {
 
       if (teamsError) {
         console.error('❌ [TEAM METRICS] Error fetching team names:', teamsError);
-        // Still proceed with IDs if we can't get names
-        setTeamMetrics(metricsData || []);
+        // Still proceed with metrics data without showing error toast for team names
+        const enrichedMetrics = (metricsData || []).map((metric: any) => ({
+          ...metric,
+          equipe_nome: metric.equipe_nome || 'Sem Equipe'
+        }));
+        setTeamMetrics(enrichedMetrics);
         return;
       }
 
