@@ -491,15 +491,6 @@ export const KnowledgeHubTab = () => {
     <div className="space-y-6">
       {/* Header with filters */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-gradient-primary">
-            <BookOpen className="h-6 w-6 text-primary-foreground" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold">Hub de Conhecimento</h2>
-            <p className="text-muted-foreground">Gerencie sugestões da IA, artigos e memórias da base de conhecimento</p>
-          </div>
-        </div>
         
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <Button

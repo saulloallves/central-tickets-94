@@ -238,22 +238,10 @@ export function NotificacoesTab() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 rounded-lg bg-gradient-primary">
-          <Settings className="h-6 w-6 text-primary-foreground" />
-        </div>
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">Configurações de Notificações</h2>
-          <p className="text-muted-foreground">
-            Gerencie as configurações do Z-API, templates de mensagens e rotas de envio
-          </p>
-        </div>
-      </div>
-
       {/* Seção 1: Origem dos Números */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-lg">
             <Settings className="h-5 w-5 text-primary" />
             Origem dos Números
           </CardTitle>
@@ -269,7 +257,7 @@ export function NotificacoesTab() {
       {/* Seção 2: Configurações Z-API */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-lg">
             <MessageSquare className="h-5 w-5 text-primary" />
             Configurações do Z-API
           </CardTitle>

@@ -96,75 +96,55 @@ export function ConfiguracaoOrigemTab() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="text-center space-y-2">
-        <h2 className="text-2xl font-bold text-foreground">Configuração de Origem dos Números</h2>
-        <p className="text-muted-foreground">
-          Configure de onde vem os números para cada tipo de notificação
-        </p>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings2 className="h-5 w-5" />
-            Configurações por Tipo de Notificação
-          </CardTitle>
-          <CardDescription>
-            Para cada tipo de notificação, defina se o número vem de uma coluna específica ou se é um valor fixo
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {configs.map((config) => (
-              <div
-                key={config.id}
-                className="flex items-center justify-between p-4 rounded-lg border bg-muted/50"
-              >
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Badge variant={config.is_active ? "default" : "secondary"}>
-                      {getTypeLabel(config.notification_type)}
-                    </Badge>
-                    {!config.is_active && (
-                      <Badge variant="outline" className="text-xs">
-                        Inativo
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      {config.source_type === 'column' ? (
-                        <Database className="h-4 w-4 text-blue-600" />
-                      ) : (
-                        <Hash className="h-4 w-4 text-green-600" />
-                      )}
-                      <span className="font-medium text-sm">
-                        {config.source_type === 'column' ? 'Da Coluna:' : 'Valor Fixo:'}
-                      </span>
-                      <span className="text-sm text-muted-foreground">
-                        {getSourceDescription(config)}
-                      </span>
-                    </div>
-                    {config.description && (
-                      <p className="text-xs text-muted-foreground">
-                        {config.description}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => openEditDialog(config)}
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
+    <div className="space-y-4">
+      <div className="space-y-3">
+        {configs.map((config) => (
+          <div
+            key={config.id}
+            className="flex items-center justify-between p-4 rounded-lg border bg-muted/50"
+          >
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <Badge variant={config.is_active ? "default" : "secondary"}>
+                  {getTypeLabel(config.notification_type)}
+                </Badge>
+                {!config.is_active && (
+                  <Badge variant="outline" className="text-xs">
+                    Inativo
+                  </Badge>
+                )}
               </div>
-            ))}
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  {config.source_type === 'column' ? (
+                    <Database className="h-4 w-4 text-blue-600" />
+                  ) : (
+                    <Hash className="h-4 w-4 text-green-600" />
+                  )}
+                  <span className="font-medium text-sm">
+                    {config.source_type === 'column' ? 'Da Coluna:' : 'Valor Fixo:'}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {getSourceDescription(config)}
+                  </span>
+                </div>
+                {config.description && (
+                  <p className="text-xs text-muted-foreground">
+                    {config.description}
+                  </p>
+                )}
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => openEditDialog(config)}
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
           </div>
-        </CardContent>
-      </Card>
+        ))}
+      </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg">
