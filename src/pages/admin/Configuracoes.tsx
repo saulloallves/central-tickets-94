@@ -12,20 +12,8 @@ import { LogoSettings } from "@/components/configuracoes/LogoSettingsTab";
 
 export default function Configuracoes() {
   return (
-    <div className="min-h-screen bg-gradient-subtle p-6 pt-12">
-      <div className="w-full space-y-6">
-        <div className="text-center space-y-2">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="p-3 rounded-lg bg-gradient-primary">
-              <Settings className="h-8 w-8 text-primary-foreground" />
-            </div>
-            <h1 className="text-4xl font-bold text-foreground">Configurações do Sistema</h1>
-          </div>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Gerencie as configurações de IA, base de conhecimento e aprendizado contínuo do sistema
-          </p>
-        </div>
-
+    <div className="min-h-screen bg-gradient-subtle p-6">
+      <div className="w-full space-y-4">
         <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50 shadow-lg">
           <CardContent className="p-6">
             <Tabs defaultValue="ia" className="w-full">
