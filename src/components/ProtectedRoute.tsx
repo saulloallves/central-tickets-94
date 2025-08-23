@@ -1,4 +1,3 @@
-
 import { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -39,25 +38,8 @@ export const ProtectedRoute = ({
     return <Navigate to="/auth" replace />;
   }
 
-  // If both role and permission are specified, user needs EITHER
-  const hasRoleAccess = requiredRole ? hasRole(requiredRole) : false;
-  const hasPermissionAccess = requiredPermission ? hasPermission(requiredPermission) : false;
-
-  // Check role-based access OR permission-based access
-  if (requiredRole && requiredPermission) {
-    if (!hasRoleAccess && !hasPermissionAccess) {
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-background">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-destructive">Acesso Negado</h1>
-            <p className="mt-2 text-muted-foreground">
-              Você não tem permissão para acessar esta página.
-            </p>
-          </div>
-        </div>
-      );
-    }
-  } else if (requiredRole && !hasRoleAccess) {
+  // Check role-based access
+  if (requiredRole && !hasRole(requiredRole)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
@@ -68,7 +50,10 @@ export const ProtectedRoute = ({
         </div>
       </div>
     );
-  } else if (requiredPermission && !hasPermissionAccess) {
+  }
+
+  // Check single permission
+  if (requiredPermission && !hasPermission(requiredPermission)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">

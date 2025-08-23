@@ -44,10 +44,10 @@ export const useRole = () => {
     return roles.includes(role);
   };
 
-  const isAdmin = hasRole('admin');
-  const isGerente = hasRole('gerente');
-  const isDiretor = hasRole('diretor');
-  const isColaborador = hasRole('colaborador');
+  const isAdmin = (): boolean => hasRole('admin');
+  const isGerente = (): boolean => hasRole('gerente');
+  const isDiretor = (): boolean => hasRole('diretor');
+  const isColaborador = (): boolean => hasRole('colaborador');
 
   return {
     roles,
