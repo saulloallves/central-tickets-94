@@ -35,6 +35,8 @@ export const useCrisisManagement = () => {
 
   const fetchActiveCrises = async () => {
     try {
+      setLoading(true);
+      
       const { data, error } = await supabase
         .from('crises_ativas')
         .select(`
@@ -45,10 +47,7 @@ export const useCrisisManagement = () => {
             descricao_problema,
             unidade_id,
             prioridade,
-            status,
-            unidades:unidade_id (
-              grupo
-            )
+            status
           )
         `)
         .is('resolvida_em', null)
@@ -56,11 +55,11 @@ export const useCrisisManagement = () => {
 
       if (error) {
         console.error('Error fetching active crises:', error);
-        toast({
-          title: "Erro",
-          description: "Não foi possível carregar as crises ativas",
-          variant: "destructive",
-        });
+        // Apenas log o erro, não mostrar toast para evitar spam  
+        if (error.code !== 'PGRST116') { // Ignore empty result errors
+          console.warn('Legacy crisis fetch error (non-critical):', error.message);
+        }
+        setActiveCrises([]);
         return;
       }
 
@@ -73,11 +72,7 @@ export const useCrisisManagement = () => {
       setActiveCrises(transformedData);
     } catch (error) {
       console.error('Error fetching active crises:', error);
-      toast({
-        title: "Erro",
-        description: "Erro inesperado ao carregar crises",
-        variant: "destructive",
-      });
+      setActiveCrises([]);
     } finally {
       setLoading(false);
     }
@@ -105,13 +100,7 @@ export const useCrisisManagement = () => {
         description: "A crise foi marcada como resolvida com sucesso",
       });
 
-      // Force update to ensure UI reflects the change
       await fetchActiveCrises();
-      // Small delay to ensure database consistency
-      setTimeout(() => {
-        fetchActiveCrises();
-      }, 500);
-      
       return true;
     } catch (error) {
       console.error('Error resolving crisis:', error);
@@ -149,9 +138,9 @@ export const useCrisisManagement = () => {
   useEffect(() => {
     fetchActiveCrises();
 
-    // Realtime subscription for active crises
+    // Realtime subscription for active crises (legacy system)
     const channel = supabase
-      .channel('crises-realtime')
+      .channel('legacy-crises-realtime')
       .on(
         'postgres_changes',
         {
@@ -160,8 +149,8 @@ export const useCrisisManagement = () => {
           table: 'crises_ativas'
         },
         (payload) => {
-          console.log('Realtime crisis change:', payload);
-          fetchActiveCrises();
+          console.log('Legacy crisis change:', payload);
+          setTimeout(() => fetchActiveCrises(), 100);
         }
       )
       .subscribe();

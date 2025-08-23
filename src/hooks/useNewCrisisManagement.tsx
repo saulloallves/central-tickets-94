@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -46,6 +45,8 @@ export const useNewCrisisManagement = () => {
 
   const fetchActiveCrises = async () => {
     try {
+      setLoading(true);
+      
       // Buscar apenas da tabela crises (novo sistema unificado)
       const { data: crisesData, error: crisesError } = await supabase
         .from('crises')
@@ -59,10 +60,7 @@ export const useNewCrisisManagement = () => {
               descricao_problema,
               unidade_id,
               prioridade,
-              status,
-              unidades:unidade_id (
-                grupo
-              )
+              status
             )
           ),
           crise_updates (
@@ -79,11 +77,11 @@ export const useNewCrisisManagement = () => {
 
       if (crisesError) {
         console.error('Error fetching crises:', crisesError);
-        toast({
-          title: "Erro",
-          description: "Erro ao carregar crises",
-          variant: "destructive",
-        });
+        // Apenas log o erro, não mostrar toast para evitar spam
+        if (crisesError.code !== 'PGRST116') { // Ignore empty result errors
+          console.warn('Crisis fetch error (non-critical):', crisesError.message);
+        }
+        setActiveCrises([]);
         return;
       }
 
@@ -91,11 +89,7 @@ export const useNewCrisisManagement = () => {
       console.log('🚨 Active crises loaded:', (crisesData || []).length);
     } catch (error) {
       console.error('Error fetching active crises:', error);
-      toast({
-        title: "Erro",
-        description: "Erro inesperado ao carregar crises",
-        variant: "destructive",
-      });
+      setActiveCrises([]);
     } finally {
       setLoading(false);
     }
@@ -247,7 +241,6 @@ export const useNewCrisisManagement = () => {
     statusTicket: 'concluido' | 'em_atendimento' = 'concluido'
   ) => {
     try {
-      // Usar apenas a função para resolver crises da tabela crises
       const { error } = await supabase.rpc('resolve_crise_close_tickets', {
         p_crise_id: crisisId,
         p_mensagem: mensagem,
@@ -349,26 +342,13 @@ export const useNewCrisisManagement = () => {
           setTimeout(() => fetchActiveCrises(), 100);
         }
       )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'tickets',
-          filter: 'prioridade=eq.crise'
-        },
-        (payload) => {
-          console.log('🎫 Realtime crisis ticket change:', payload);
-          setTimeout(() => fetchActiveCrises(), 200);
-        }
-      )
       .subscribe();
 
-    // Auto-refresh every 30 seconds to ensure data consistency
+    // Auto-refresh every 60 seconds to ensure data consistency (reduced frequency)
     const autoRefresh = setInterval(() => {
       console.log('🔄 Auto-refreshing crisis data...');
       fetchActiveCrises();
-    }, 30000);
+    }, 60000);
 
     return () => {
       supabase.removeChannel(channel);
