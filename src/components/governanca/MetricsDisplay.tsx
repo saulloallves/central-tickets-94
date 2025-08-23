@@ -164,8 +164,8 @@ export function MetricsDisplay({
               ? (item as TeamMetrics).tickets_resolvidos 
               : (item as UnitMetrics).tickets_resolvidos;
             const slaPercentage = isTeam 
-              ? ((item as TeamMetrics).tickets_sla_ok / totalTickets * 100) 
-              : (item as UnitMetrics).percentual_sla;
+              ? (totalTickets > 0 ? ((item as TeamMetrics).tickets_sla_ok / totalTickets * 100) : 0)
+              : ((item as UnitMetrics).percentual_sla || 0);
 
             return (
               <div key={index} className="p-4 bg-muted/50 rounded-lg">
@@ -193,8 +193,8 @@ export function MetricsDisplay({
                     <p className="text-muted-foreground">Tempo médio resolução</p>
                     <p className="font-medium">
                       {isTeam 
-                        ? (item as TeamMetrics).tempo_medio_resolucao.toFixed(1) 
-                        : (item as UnitMetrics).tempo_medio_resolucao.toFixed(1)
+                        ? ((item as TeamMetrics).tempo_medio_resolucao || 0).toFixed(1) 
+                        : ((item as UnitMetrics).tempo_medio_resolucao || 0).toFixed(1)
                       }h
                     </p>
                   </div>
@@ -216,14 +216,14 @@ export function MetricsDisplay({
                   <div className="flex justify-between items-center mb-1">
                     <span className="text-xs text-muted-foreground">Taxa de resolução</span>
                     <span className="text-xs font-medium">
-                      {((resolvedTickets / totalTickets) * 100).toFixed(1)}%
+                      {totalTickets > 0 ? ((resolvedTickets / totalTickets) * 100).toFixed(1) : 0}%
                     </span>
                   </div>
                   <div className="w-full bg-muted rounded-full h-1.5">
                     <div 
                       className="h-1.5 rounded-full bg-primary"
                       style={{ 
-                        width: `${(resolvedTickets / totalTickets) * 100}%`
+                        width: `${totalTickets > 0 ? (resolvedTickets / totalTickets) * 100 : 0}%`
                       }}
                     />
                   </div>

@@ -2256,6 +2256,7 @@ export type Database = {
               p_periodo_dias?: number
               p_user_id?: string
             }
+          | { p_periodo_dias?: number; p_user_id?: string }
         Returns: {
           ia_bem_sucedida: number
           interacoes_ia_total: number
