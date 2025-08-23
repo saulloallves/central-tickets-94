@@ -11,7 +11,8 @@ import {
   Shield,
   ChevronRight,
   User,
-  ChevronDown
+  ChevronDown,
+  Eye
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -36,7 +37,7 @@ const navigationItems = [
   { title: "Equipes", url: "/admin/equipes", icon: Users2, permission: 'view_all_tickets' as const },
   { title: "Permissões", url: "/admin/permissions", icon: Shield, permission: 'configure_ai_models' as const },
   { title: "Configurações", url: "/admin/configuracoes", icon: Settings, permission: 'configure_ai_models' as const },
-  { title: "Governança", url: "/admin/governanca", icon: Shield, permission: 'view_audit_logs' as const },
+  { title: "Governança", url: "/admin/governanca", icon: Eye, permission: 'view_audit_logs' as const },
 ];
 
 export function AppSidebar() {
