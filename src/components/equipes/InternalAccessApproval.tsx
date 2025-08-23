@@ -14,6 +14,18 @@ export const InternalAccessApproval = () => {
   const [rejectReason, setRejectReason] = useState('');
   const [rejectingId, setRejectingId] = useState<string | null>(null);
 
+  // Debug logging
+  console.log('InternalAccessApproval render:', { 
+    loading, 
+    requestsCount: requests.length, 
+    requests: requests.map(r => ({ 
+      id: r.id, 
+      user: r.profiles?.nome_completo, 
+      equipe: r.equipes?.nome,
+      status: r.status 
+    }))
+  });
+
   const handleReject = async (requestId: string) => {
     await rejectRequest(requestId, rejectReason);
     setRejectReason('');
@@ -66,6 +78,9 @@ export const InternalAccessApproval = () => {
           <div className="text-center py-8 text-muted-foreground">
             <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>Todas as solicitações foram processadas</p>
+            <div className="mt-4 text-xs bg-muted p-2 rounded">
+              Debug: {requests.length} solicitações carregadas
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -91,11 +106,13 @@ export const InternalAccessApproval = () => {
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">{request.profiles?.nome_completo}</span>
+                    <span className="font-medium">
+                      {request.profiles?.nome_completo || 'Nome não encontrado'}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Mail className="h-4 w-4" />
-                    <span>{request.profiles?.email}</span>
+                    <span>{request.profiles?.email || 'Email não encontrado'}</span>
                   </div>
                 </div>
                 <Badge variant="outline" className="text-yellow-600">
@@ -106,7 +123,7 @@ export const InternalAccessApproval = () => {
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="text-muted-foreground">Equipe:</span>
-                  <p className="font-medium">{request.equipes?.nome}</p>
+                  <p className="font-medium">{request.equipes?.nome || 'Equipe não encontrada'}</p>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Cargo:</span>
@@ -122,6 +139,11 @@ export const InternalAccessApproval = () => {
                   hour: '2-digit',
                   minute: '2-digit'
                 })}
+              </div>
+
+              {/* Debug info */}
+              <div className="text-xs bg-muted p-2 rounded mt-2">
+                <strong>Debug:</strong> ID: {request.id}, Status: {request.status}, User: {request.user_id}, Equipe: {request.equipe_id}
               </div>
 
               <div className="flex gap-2 pt-2">

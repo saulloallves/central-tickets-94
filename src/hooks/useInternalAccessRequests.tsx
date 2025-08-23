@@ -37,6 +37,8 @@ export const useInternalAccessRequests = () => {
     if (!user) return;
 
     try {
+      console.log('Fetching user request for user:', user.id);
+      
       const { data, error } = await supabase
         .from('internal_access_requests')
         .select(`
@@ -50,14 +52,18 @@ export const useInternalAccessRequests = () => {
         .eq('status', 'pending')
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching user request:', error);
+        throw error;
+      }
       
-      // Type cast the result properly
+      console.log('User request data:', data);
+      
       if (data) {
         const typedData: InternalAccessRequest = {
           ...data,
           status: data.status as 'pending' | 'approved' | 'rejected',
-          equipes: Array.isArray(data.equipes) ? data.equipes[0] : data.equipes
+          equipes: data.equipes
         };
         setUserRequest(typedData);
       } else {
@@ -70,6 +76,8 @@ export const useInternalAccessRequests = () => {
 
   const fetchAllRequests = async () => {
     try {
+      console.log('Fetching all pending requests...');
+      
       const { data, error } = await supabase
         .from('internal_access_requests')
         .select(`
@@ -87,19 +95,29 @@ export const useInternalAccessRequests = () => {
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching all requests:', error);
+        throw error;
+      }
       
-      // Type cast the results properly
+      console.log('All requests data:', data);
+      console.log('Number of requests found:', data?.length || 0);
+      
       const typedData: InternalAccessRequest[] = (data || []).map(item => ({
         ...item,
         status: item.status as 'pending' | 'approved' | 'rejected',
-        equipes: Array.isArray(item.equipes) ? item.equipes[0] : item.equipes,
-        profiles: Array.isArray(item.profiles) ? item.profiles[0] : item.profiles
+        equipes: item.equipes,
+        profiles: item.profiles
       }));
       
       setRequests(typedData);
     } catch (error) {
       console.error('Error fetching requests:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar solicitações: " + (error as Error).message,
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
@@ -109,6 +127,8 @@ export const useInternalAccessRequests = () => {
     if (!user) return { error: 'Usuário não autenticado' };
 
     try {
+      console.log('Creating request:', { user_id: user.id, equipe_id: equipeId, desired_role: desiredRole });
+      
       const { error } = await supabase
         .from('internal_access_requests')
         .insert([{
@@ -118,7 +138,10 @@ export const useInternalAccessRequests = () => {
           status: 'pending'
         }]);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating request:', error);
+        throw error;
+      }
 
       toast({
         title: "Solicitação enviada",
@@ -141,11 +164,16 @@ export const useInternalAccessRequests = () => {
 
   const approveRequest = async (requestId: string) => {
     try {
+      console.log('Approving request:', requestId);
+      
       const { error } = await supabase.rpc('approve_internal_access', {
         p_request_id: requestId
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error approving request:', error);
+        throw error;
+      }
 
       toast({
         title: "Solicitação aprovada",
@@ -165,12 +193,17 @@ export const useInternalAccessRequests = () => {
 
   const rejectRequest = async (requestId: string, reason?: string) => {
     try {
+      console.log('Rejecting request:', requestId, 'reason:', reason);
+      
       const { error } = await supabase.rpc('reject_internal_access', {
         p_request_id: requestId,
         p_reason: reason
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error rejecting request:', error);
+        throw error;
+      }
 
       toast({
         title: "Solicitação recusada",
@@ -194,6 +227,7 @@ export const useInternalAccessRequests = () => {
       return;
     }
 
+    console.log('useInternalAccessRequests effect running for user:', user.id);
     fetchUserRequest();
     fetchAllRequests();
   }, [user]);
