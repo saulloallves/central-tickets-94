@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { 
   Activity, 
   Users, 
@@ -12,14 +13,20 @@ import {
   RefreshCw,
   Eye,
   UserCheck,
-  Zap
+  Zap,
+  Calendar,
+  User,
+  Building,
+  Tag,
+  FileText,
+  MapPin
 } from "lucide-react";
 import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
 import { useTicketsRealtime } from "@/hooks/useTicketsRealtime";
 import { useTickets } from "@/hooks/useTickets";
 import { usePresence } from "@/hooks/usePresence";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { MetricsDisplay } from "./MetricsDisplay";
 import { EmptyState } from "./EmptyState";
@@ -37,6 +44,20 @@ export function RealtimeDashboard() {
   });
   const { onlineUsers, totalOnline } = usePresence();
   const [lastUpdate, setLastUpdate] = useState(new Date());
+  const [selectedTicket, setSelectedTicket] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Function to open ticket modal
+  const openTicketModal = (ticket: any) => {
+    setSelectedTicket(ticket);
+    setIsModalOpen(true);
+  };
+
+  // Function to close ticket modal
+  const closeTicketModal = () => {
+    setSelectedTicket(null);
+    setIsModalOpen(false);
+  };
 
   // Real-time updates
   useTicketsRealtime({
@@ -316,7 +337,11 @@ export function RealtimeDashboard() {
                 }
                 
                 return (
-                  <div key={ticket.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                  <div 
+                    key={ticket.id} 
+                    className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted/70 cursor-pointer transition-colors"
+                    onClick={() => openTicketModal(ticket)}
+                  >
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{displayTitle}</p>
                       <p className="text-xs text-muted-foreground truncate">{displayCode}</p>
@@ -474,6 +499,170 @@ export function RealtimeDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Ticket Details Modal */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <FileText className="h-5 w-5" />
+              <span>Detalhes do Ticket</span>
+            </DialogTitle>
+            <DialogDescription>
+              Informações completas do ticket selecionado
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedTicket && (
+            <div className="space-y-6">
+              {/* Basic Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Tag className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Código do Ticket</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedTicket.codigo_ticket || `#${selectedTicket.id.split('-')[0].toUpperCase()}`}
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Data de Abertura</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {format(new Date(selectedTicket.data_abertura), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Canal de Origem</span>
+                  </div>
+                  <Badge variant="outline">{selectedTicket.canal_origem}</Badge>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Prioridade</span>
+                  </div>
+                  <Badge 
+                    variant={
+                      selectedTicket.prioridade === 'crise' ? 'destructive' :
+                      selectedTicket.prioridade === 'imediato' ? 'destructive' :
+                      selectedTicket.prioridade === 'ate_1_hora' ? 'destructive' :
+                      'secondary'
+                    }
+                  >
+                    {selectedTicket.prioridade}
+                  </Badge>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Building className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Status</span>
+                  </div>
+                  <Badge 
+                    variant={
+                      selectedTicket.status === 'concluido' ? 'default' :
+                      selectedTicket.status === 'em_atendimento' ? 'secondary' :
+                      'outline'
+                    }
+                  >
+                    {selectedTicket.status}
+                  </Badge>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Status SLA</span>
+                  </div>
+                  <Badge 
+                    variant={
+                      selectedTicket.status_sla === 'dentro_prazo' ? 'default' :
+                      selectedTicket.status_sla === 'alerta' ? 'secondary' :
+                      'destructive'
+                    }
+                  >
+                    {selectedTicket.status_sla}
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Title and Description */}
+              {(selectedTicket.titulo || selectedTicket.descricao_problema) && (
+                <div className="space-y-4">
+                  <div className="border-t pt-4">
+                    <h4 className="text-lg font-semibold mb-2">Título/Descrição</h4>
+                    {selectedTicket.titulo && (
+                      <div className="mb-3">
+                        <p className="text-sm font-medium text-muted-foreground mb-1">Título:</p>
+                        <p className="text-sm">{selectedTicket.titulo}</p>
+                      </div>
+                    )}
+                    {selectedTicket.descricao_problema && (
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground mb-1">Descrição do Problema:</p>
+                        <p className="text-sm bg-muted/50 p-3 rounded-lg">{selectedTicket.descricao_problema}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Additional Info */}
+              <div className="space-y-4 border-t pt-4">
+                <h4 className="text-lg font-semibold">Informações Adicionais</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  {selectedTicket.categoria && (
+                    <div>
+                      <span className="font-medium text-muted-foreground">Categoria:</span>
+                      <p>{selectedTicket.categoria}</p>
+                    </div>
+                  )}
+                  {selectedTicket.equipes?.nome && (
+                    <div>
+                      <span className="font-medium text-muted-foreground">Equipe Responsável:</span>
+                      <p>{selectedTicket.equipes.nome}</p>
+                    </div>
+                  )}
+                  {selectedTicket.unidades?.nome && (
+                    <div>
+                      <span className="font-medium text-muted-foreground">Unidade:</span>
+                      <p>{selectedTicket.unidades.nome}</p>
+                    </div>
+                  )}
+                  {selectedTicket.data_limite_sla && (
+                    <div>
+                      <span className="font-medium text-muted-foreground">Prazo SLA:</span>
+                      <p>{format(new Date(selectedTicket.data_limite_sla), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
+                    </div>
+                  )}
+                  {selectedTicket.resolvido_em && (
+                    <div>
+                      <span className="font-medium text-muted-foreground">Resolvido em:</span>
+                      <p>{format(new Date(selectedTicket.resolvido_em), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Close Button */}
+              <div className="flex justify-end pt-4">
+                <Button onClick={closeTicketModal} variant="outline">
+                  Fechar
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
