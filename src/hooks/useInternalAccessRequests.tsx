@@ -52,13 +52,17 @@ export const useInternalAccessRequests = () => {
 
       if (error) throw error;
       
-      // Type cast the status field to the expected union type
-      const typedData = data ? {
-        ...data,
-        status: data.status as 'pending' | 'approved' | 'rejected'
-      } : null;
-      
-      setUserRequest(typedData);
+      // Type cast the result properly
+      if (data) {
+        const typedData: InternalAccessRequest = {
+          ...data,
+          status: data.status as 'pending' | 'approved' | 'rejected',
+          equipes: Array.isArray(data.equipes) ? data.equipes[0] : data.equipes
+        };
+        setUserRequest(typedData);
+      } else {
+        setUserRequest(null);
+      }
     } catch (error) {
       console.error('Error fetching user request:', error);
     }
@@ -85,10 +89,12 @@ export const useInternalAccessRequests = () => {
 
       if (error) throw error;
       
-      // Type cast the status field for each request
-      const typedData = (data || []).map(item => ({
+      // Type cast the results properly
+      const typedData: InternalAccessRequest[] = (data || []).map(item => ({
         ...item,
-        status: item.status as 'pending' | 'approved' | 'rejected'
+        status: item.status as 'pending' | 'approved' | 'rejected',
+        equipes: Array.isArray(item.equipes) ? item.equipes[0] : item.equipes,
+        profiles: Array.isArray(item.profiles) ? item.profiles[0] : item.profiles
       }));
       
       setRequests(typedData);
