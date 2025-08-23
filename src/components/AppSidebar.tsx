@@ -158,7 +158,7 @@ export function AppSidebar() {
     <Sidebar variant="floating" className="border-r border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <SidebarHeader className="border-b border-border/40">
         <div className="flex items-center gap-2 px-4 py-2">
-          <SystemLogo className="h-8 w-8" />
+          <SystemLogo />
           <div className="flex flex-col">
             <span className="text-lg font-bold text-foreground">Sistema</span>
             <span className="text-xs text-muted-foreground">Gestão</span>
