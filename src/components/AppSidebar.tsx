@@ -37,6 +37,7 @@ const navigationItems = [
   { title: "Permissões", url: "/admin/permissions", icon: Shield, permission: 'configure_ai_models' as const },
   { title: "Configurações", url: "/admin/configuracoes", icon: Settings, permission: 'configure_ai_models' as const },
   { title: "Logs & Auditoria", url: "/admin/logs", icon: Activity, permission: 'view_audit_logs' as const },
+  { title: "Governança", url: "/admin/governanca", icon: Shield, permission: 'view_audit_logs' as const },
 ];
 
 export function AppSidebar() {

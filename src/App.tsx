@@ -20,6 +20,7 @@ import Configuracoes from "./pages/admin/Configuracoes";
 import Logs from "./pages/admin/Logs";
 import PermissionsControl from "./pages/admin/PermissionsControl";
 import Profile from "./pages/admin/Profile";
+import Governanca from "./pages/admin/Governanca";
 
 const queryClient = new QueryClient();
 
@@ -81,6 +82,11 @@ const App = () => (
             <Route path="/admin/profile" element={
               <AdminLayout>
                 <Profile />
+              </AdminLayout>
+            } />
+            <Route path="/admin/governanca" element={
+              <AdminLayout>
+                <Governanca />
               </AdminLayout>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
