@@ -2245,11 +2245,17 @@ export type Database = {
         }[]
       }
       get_unit_metrics: {
-        Args: {
-          p_equipe_filter?: string
-          p_periodo_dias?: number
-          p_user_id?: string
-        }
+        Args:
+          | {
+              p_equipe_filter?: string
+              p_periodo_dias?: number
+              p_user_id: string
+            }
+          | {
+              p_equipe_filter?: string
+              p_periodo_dias?: number
+              p_user_id?: string
+            }
         Returns: {
           ia_bem_sucedida: number
           interacoes_ia_total: number
