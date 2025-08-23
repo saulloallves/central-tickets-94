@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSystemSettings } from '@/hooks/useSystemSettings';
 import { LogoUpload } from '@/components/LogoUpload';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
-import { useEffect } from 'react';
+import { Image } from 'lucide-react';
 
 export function LogoSettings() {
   const { logoUrl, updateLogo, isUpdating } = useSystemSettings();
@@ -29,13 +29,24 @@ export function LogoSettings() {
   };
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader>
-        <CardTitle>Logo do Sistema</CardTitle>
-        <CardDescription>
-          Defina o logo que aparecerá na sidebar para todos os usuários
-        </CardDescription>
-      </CardHeader>
+    <div className="space-y-6">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="p-2 rounded-lg bg-gradient-primary">
+          <Image className="h-6 w-6 text-primary-foreground" />
+        </div>
+        <div>
+          <h2 className="text-2xl font-bold">Configurações de Logo</h2>
+          <p className="text-muted-foreground">Defina o logo que aparecerá na sidebar para todos os usuários</p>
+        </div>
+      </div>
+      
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Logo do Sistema</CardTitle>
+          <CardDescription>
+            Gerencie o logotipo exibido no sistema
+          </CardDescription>
+        </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex flex-col items-center space-y-4">
           <div className="w-24 h-24 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
@@ -66,5 +77,6 @@ export function LogoSettings() {
         </div>
       </CardContent>
     </Card>
+    </div>
   );
 }

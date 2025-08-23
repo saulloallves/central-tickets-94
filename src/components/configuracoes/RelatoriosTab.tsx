@@ -136,6 +136,16 @@ export function RelatoriosTab() {
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="p-2 rounded-lg bg-gradient-primary">
+          <TrendingUp className="h-6 w-6 text-primary-foreground" />
+        </div>
+        <div>
+          <h2 className="text-2xl font-bold">Relatórios e Analytics</h2>
+          <p className="text-muted-foreground">Acompanhe o desempenho da base de conhecimento e eficácia da IA</p>
+        </div>
+      </div>
+      
       <Alert className="border-green-200 bg-green-50">
         <BarChart3 className="h-4 w-4" />
         <AlertDescription>

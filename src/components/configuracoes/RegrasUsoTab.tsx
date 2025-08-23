@@ -197,8 +197,18 @@ export function RegrasUsoTab() {
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="p-2 rounded-lg bg-gradient-primary">
+          <Shield className="h-6 w-6 text-primary-foreground" />
+        </div>
+        <div>
+          <h2 className="text-2xl font-bold">Regras de Uso da IA</h2>
+          <p className="text-muted-foreground">Configure como a IA deve selecionar e usar o conteúdo da base de conhecimento</p>
+        </div>
+      </div>
+      
       <Alert className="border-blue-200 bg-blue-50">
-        <Shield className="h-4 w-4" />
+        <Info className="h-4 w-4" />
         <AlertDescription>
           <strong>Regras de Uso:</strong> Configure como a IA deve selecionar e usar o conteúdo da base de conhecimento. 
           Estas regras garantem que apenas conteúdo autorizado seja utilizado nas respostas.
