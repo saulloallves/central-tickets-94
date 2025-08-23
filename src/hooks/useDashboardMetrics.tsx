@@ -161,6 +161,9 @@ export const useDashboardMetrics = () => {
   };
 
   const fetchUnitMetrics = async (filters?: { equipe_id?: string; periodo_dias?: number }) => {
+    console.log('🏢 [UNIT METRICS] Starting fetch with filters:', filters);
+    console.log('🔑 [UNIT METRICS] User ID:', user?.id);
+    
     try {
       const { data, error } = await supabase.rpc('get_unit_metrics', {
         p_user_id: user?.id,
@@ -168,27 +171,35 @@ export const useDashboardMetrics = () => {
         p_equipe_filter: filters?.equipe_id || null
       });
 
+      console.log('📊 [UNIT METRICS] Raw response from Supabase:', { data, error });
+
       if (error) {
-        console.error('Error fetching unit metrics:', error);
-        // Set empty array with fallback message instead of throwing
+        console.error('❌ [UNIT METRICS] Supabase error:', error);
         setUnitMetrics([]);
         toast({
-          title: "Informação",
-          description: "Não foi possível carregar métricas das unidades. Dados não disponíveis no momento.",
-          variant: "default",
+          title: "Erro",
+          description: `Erro ao carregar métricas das unidades: ${error.message}`,
+          variant: "destructive",
         });
         return;
       }
 
+      console.log('✅ [UNIT METRICS] Data received:', data);
+      console.log('📈 [UNIT METRICS] Number of units:', data?.length || 0);
+      
+      if (data && data.length > 0) {
+        console.log('🔍 [UNIT METRICS] First unit sample:', data[0]);
+      }
+
       setUnitMetrics(data || []);
-      console.log('Unit metrics loaded:', data?.length);
+      console.log('💾 [UNIT METRICS] State updated with', data?.length || 0, 'units');
     } catch (error) {
-      console.error('Error fetching unit metrics:', error);
+      console.error('💥 [UNIT METRICS] Unexpected error:', error);
       setUnitMetrics([]);
       toast({
-        title: "Informação",
-        description: "Métricas das unidades não estão disponíveis no momento.",
-        variant: "default",
+        title: "Erro",
+        description: "Erro inesperado ao carregar métricas das unidades.",
+        variant: "destructive",
       });
     }
   };
@@ -306,6 +317,7 @@ export const useDashboardMetrics = () => {
 
   useEffect(() => {
     if (user) {
+      console.log('🚀 [DASHBOARD] Initializing dashboard metrics for user:', user.id);
       fetchKPIs();
       fetchTrends();
       fetchTeamMetrics();

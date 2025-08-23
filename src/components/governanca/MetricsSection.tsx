@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,16 @@ export function MetricsSection() {
   } = useDashboardMetrics();
   
   const [refreshing, setRefreshing] = useState(false);
+
+  // Log para debugar o estado das métricas
+  useEffect(() => {
+    console.log('🏢 [METRICS SECTION] Unit metrics state changed:', {
+      unitMetrics,
+      length: unitMetrics?.length,
+      loading,
+      sample: unitMetrics?.[0]
+    });
+  }, [unitMetrics, loading]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -199,19 +210,27 @@ export function MetricsSection() {
                 Não foi possível carregar métricas das unidades. 
                 Verifique se há tickets no período selecionado ou tente atualizar novamente.
               </p>
-              <Button 
-                onClick={handleRefresh} 
-                disabled={loading || refreshing}
-                className="mt-4"
-                variant="outline"
-                size="sm"
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${(loading || refreshing) ? 'animate-spin' : ''}`} />
-                Tentar novamente
-              </Button>
+              <div className="mt-4 space-y-2">
+                <Button 
+                  onClick={handleRefresh} 
+                  disabled={loading || refreshing}
+                  className="mb-2"
+                  variant="outline"
+                  size="sm"
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 ${(loading || refreshing) ? 'animate-spin' : ''}`} />
+                  Tentar novamente
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  Debug: {unitMetrics?.length || 0} unidades encontradas
+                </p>
+              </div>
             </div>
           ) : (
             <div className="space-y-4">
+              <div className="text-xs text-muted-foreground mb-2">
+                📊 {unitMetrics.length} unidades carregadas
+              </div>
               {unitMetrics.slice(0, 5).map((unit, index) => (
                 <div key={unit.unidade_id} className="p-4 bg-muted/50 rounded-lg">
                   <div className="flex items-center justify-between mb-3">
@@ -238,7 +257,7 @@ export function MetricsSection() {
                     <div>
                       <p className="text-muted-foreground">Tempo médio</p>
                       <p className="font-medium">
-                        {unit.tempo_medio_resolucao.toFixed(1)}h
+                        {unit.tempo_medio_resolucao?.toFixed(1) || '0'}h
                       </p>
                     </div>
                     <div>
