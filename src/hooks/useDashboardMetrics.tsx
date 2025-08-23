@@ -74,7 +74,6 @@ export const useDashboardMetrics = () => {
   } = {}) => {
     if (!user) return;
 
-    setLoading(true);
     try {
       const { data, error } = await supabase.rpc('get_realtime_kpis', {
         p_user_id: user.id,
@@ -94,8 +93,6 @@ export const useDashboardMetrics = () => {
         description: "Não foi possível carregar os indicadores",
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -329,10 +326,20 @@ export const useDashboardMetrics = () => {
   useEffect(() => {
     if (user) {
       console.log('🚀 [DASHBOARD] Initializing dashboard metrics for user:', user.id);
-      fetchKPIs();
-      fetchTrends();
-      fetchTeamMetrics();
-      fetchUnitMetrics();
+      const loadAllMetrics = async () => {
+        setLoading(true);
+        try {
+          await Promise.allSettled([
+            fetchKPIs(),
+            fetchTrends(),
+            fetchTeamMetrics(),
+            fetchUnitMetrics()
+          ]);
+        } finally {
+          setLoading(false);
+        }
+      };
+      loadAllMetrics();
     }
   }, [user]);
 

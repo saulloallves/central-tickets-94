@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -37,11 +37,16 @@ export function UsageReports() {
   const { exportDashboardData } = useDashboardMetrics();
   const [period, setPeriod] = useState<'day' | 'week' | 'month'>('week');
   const [timeRange, setTimeRange] = useState<number>(30); // dias
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [isChangingFilters, setIsChangingFilters] = useState(false);
 
   useEffect(() => {
-    console.log('🔄 UsageReports: Refetching tickets data');
-    refetch();
-  }, [refetch]);
+    if (isInitialLoad) {
+      console.log('🔄 UsageReports: Initial data load');
+      refetch();
+      setIsInitialLoad(false);
+    }
+  }, [refetch, isInitialLoad]);
 
   // Processar dados para gráficos
   const chartData = useMemo(() => {
@@ -195,6 +200,18 @@ export function UsageReports() {
     document.body.removeChild(link);
   };
 
+  const handlePeriodChange = useCallback((value: 'day' | 'week' | 'month') => {
+    setIsChangingFilters(true);
+    setPeriod(value);
+    setTimeout(() => setIsChangingFilters(false), 300);
+  }, []);
+
+  const handleTimeRangeChange = useCallback((value: string) => {
+    setIsChangingFilters(true);
+    setTimeRange(Number(value));
+    setTimeout(() => setIsChangingFilters(false), 300);
+  }, []);
+
   const peak = chartData.hourlyData.reduce((max, current) => 
     current.count > max.count ? current : max, 
     { hour: '00:00', count: 0 }
@@ -240,7 +257,7 @@ export function UsageReports() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Período de Agrupamento</label>
-              <Select value={period} onValueChange={(value: any) => setPeriod(value)}>
+              <Select value={period} onValueChange={handlePeriodChange}>
                 <SelectTrigger className="liquid-glass-input">
                   <SelectValue />
                 </SelectTrigger>
@@ -253,7 +270,7 @@ export function UsageReports() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Intervalo de Tempo</label>
-              <Select value={timeRange.toString()} onValueChange={(value) => setTimeRange(Number(value))}>
+              <Select value={timeRange.toString()} onValueChange={handleTimeRangeChange}>
                 <SelectTrigger className="liquid-glass-input">
                   <SelectValue />
                 </SelectTrigger>
@@ -355,7 +372,7 @@ export function UsageReports() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {loading ? (
+            {(loading || isChangingFilters) ? (
               <div className="h-[300px] flex items-center justify-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
@@ -387,7 +404,7 @@ export function UsageReports() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {loading ? (
+            {(loading || isChangingFilters) ? (
               <div className="h-[300px] flex items-center justify-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
@@ -427,7 +444,7 @@ export function UsageReports() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {loading ? (
+            {(loading || isChangingFilters) ? (
               <div className="h-[300px] flex items-center justify-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
@@ -464,7 +481,7 @@ export function UsageReports() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {loading ? (
+              {(loading || isChangingFilters) ? (
                 <div className="flex items-center justify-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 </div>
@@ -515,7 +532,7 @@ export function UsageReports() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {loading ? (
+          {(loading || isChangingFilters) ? (
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
