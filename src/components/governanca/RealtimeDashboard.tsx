@@ -277,20 +277,36 @@ export function RealtimeDashboard() {
                 // Check if codigo_ticket is a UUID and create friendly display
                 const isUuidCode = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ticket.codigo_ticket || '');
                 
-                // Create a friendly display code
+                // Prioritize showing ticket title
                 let displayCode;
-                if (isUuidCode || !ticket.codigo_ticket) {
-                  // Generate a friendly ticket reference
-                  const shortId = ticket.id.split('-')[0].toUpperCase();
-                  displayCode = `#${shortId} • ${ticket.titulo?.substring(0, 30) || ticket.categoria || 'Ticket'}${ticket.titulo?.length > 30 ? '...' : ''}`;
+                let displayTitle;
+                
+                if (ticket.titulo) {
+                  // If we have a title, show it prominently
+                  displayTitle = ticket.titulo;
+                  if (isUuidCode || !ticket.codigo_ticket) {
+                    const shortId = ticket.id.split('-')[0].toUpperCase();
+                    displayCode = `#${shortId}`;
+                  } else {
+                    displayCode = ticket.codigo_ticket;
+                  }
                 } else {
-                  displayCode = ticket.codigo_ticket;
+                  // Fallback when no title is available
+                  if (isUuidCode || !ticket.codigo_ticket) {
+                    const shortId = ticket.id.split('-')[0].toUpperCase();
+                    displayTitle = `Ticket #${shortId}`;
+                    displayCode = ticket.categoria || 'Sem categoria';
+                  } else {
+                    displayTitle = ticket.codigo_ticket;
+                    displayCode = ticket.categoria || 'Ticket';
+                  }
                 }
                 
                 return (
                   <div key={ticket.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{displayCode}</p>
+                      <p className="text-sm font-medium truncate">{displayTitle}</p>
+                      <p className="text-xs text-muted-foreground truncate">{displayCode}</p>
                       <div className="flex items-center space-x-2 mt-1">
                         <Badge variant="outline" className="text-xs">
                           {ticket.canal_origem}
@@ -335,18 +351,34 @@ export function RealtimeDashboard() {
                 // Check if codigo_ticket is a UUID and create friendly display for SLA alerts too
                 const isUuidCode = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ticket.codigo_ticket || '');
                 
+                // Prioritize showing ticket title for SLA alerts too
                 let displayCode;
-                if (isUuidCode || !ticket.codigo_ticket) {
-                  const shortId = ticket.id.split('-')[0].toUpperCase();
-                  displayCode = `#${shortId} • ${ticket.titulo?.substring(0, 25) || ticket.categoria || 'SLA Alert'}${ticket.titulo?.length > 25 ? '...' : ''}`;
+                let displayTitle;
+                
+                if (ticket.titulo) {
+                  displayTitle = ticket.titulo;
+                  if (isUuidCode || !ticket.codigo_ticket) {
+                    const shortId = ticket.id.split('-')[0].toUpperCase();
+                    displayCode = `#${shortId}`;
+                  } else {
+                    displayCode = ticket.codigo_ticket;
+                  }
                 } else {
-                  displayCode = ticket.codigo_ticket;
+                  if (isUuidCode || !ticket.codigo_ticket) {
+                    const shortId = ticket.id.split('-')[0].toUpperCase();
+                    displayTitle = `Ticket #${shortId}`;
+                    displayCode = ticket.categoria || 'SLA Alert';
+                  } else {
+                    displayTitle = ticket.codigo_ticket;
+                    displayCode = ticket.categoria || 'SLA Alert';
+                  }
                 }
                 
                 return (
                   <div key={ticket.id} className="flex items-center justify-between p-3 bg-warning/10 border border-warning/20 rounded-lg">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{displayCode}</p>
+                      <p className="text-sm font-medium truncate">{displayTitle}</p>
+                      <p className="text-xs text-muted-foreground truncate">{displayCode}</p>
                       <p className="text-xs text-muted-foreground">
                         Vence: {ticket.data_limite_sla ? 
                           formatDistanceToNow(new Date(ticket.data_limite_sla), { addSuffix: true, locale: ptBR }) :
