@@ -2258,15 +2258,13 @@ export type Database = {
             }
           | { p_periodo_dias?: number; p_user_id?: string }
         Returns: {
-          ia_bem_sucedida: number
-          interacoes_ia_total: number
           percentual_sla: number
           tempo_medio_resolucao: number
           tickets_abertos: number
           tickets_crise: number
           tickets_resolvidos: number
-          tickets_sla_ok: number
-          total_tickets_mes: number
+          tickets_sucesso: number
+          total_tickets: number
           unidade_id: string
           unidade_nome: string
         }[]
