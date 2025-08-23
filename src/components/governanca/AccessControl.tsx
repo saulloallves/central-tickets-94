@@ -65,6 +65,13 @@ export function AccessControl() {
 
       if (rolesError) throw rolesError;
 
+      // Buscar permissões por role
+      const { data: rolePermissions, error: rolePermError } = await supabase
+        .from('role_permissions')
+        .select('role, permission');
+
+      if (rolePermError) console.warn('Could not fetch role permissions:', rolePermError);
+
       // Processar última atividade dos logs
       const { data: lastActivities, error: activitiesError } = await supabase
         .from('logs_de_sistema')
@@ -81,11 +88,20 @@ export function AccessControl() {
       // Combinar dados
       const usersWithRoles = profiles?.map(profile => {
         const userRolesList = userRoles?.filter(ur => ur.user_id === profile.id) || [];
+        const roles = userRolesList.map(ur => ur.role);
+        
+        // Calcular permissões baseadas nos roles
+        const permissions = roles.flatMap(role => 
+          (rolePermissions || [])
+            .filter(rp => rp.role === role)
+            .map(rp => rp.permission)
+        );
+        
         return {
           ...profile,
-          roles: userRolesList.map(ur => ur.role),
+          roles,
           last_activity: latestActivity[profile.id] || profile.created_at,
-          permissions: [] // TODO: Calcular permissões baseadas nos roles
+          permissions: [...new Set(permissions)] // Remove duplicatas
         };
       }) || [];
 

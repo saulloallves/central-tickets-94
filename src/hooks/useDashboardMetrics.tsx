@@ -128,11 +128,21 @@ export const useDashboardMetrics = () => {
     }
   };
 
-  const fetchTeamMetrics = async () => {
+  const fetchTeamMetrics = async (filters?: { unidade_id?: string; periodo_dias?: number }) => {
     try {
-      // Since the view doesn't exist, create a simple placeholder
-      setTeamMetrics([]);
-      console.log('Team metrics placeholder loaded');
+      const { data, error } = await supabase.rpc('get_team_metrics', {
+        p_user_id: user?.id,
+        p_periodo_dias: filters?.periodo_dias || 30,
+        p_unidade_filter: filters?.unidade_id || null
+      });
+
+      if (error) {
+        console.error('Error fetching team metrics:', error);
+        throw error;
+      }
+
+      setTeamMetrics(data || []);
+      console.log('Team metrics loaded:', data?.length);
     } catch (error) {
       console.error('Error fetching team metrics:', error);
       toast({
@@ -143,11 +153,21 @@ export const useDashboardMetrics = () => {
     }
   };
 
-  const fetchUnitMetrics = async () => {
+  const fetchUnitMetrics = async (filters?: { equipe_id?: string; periodo_dias?: number }) => {
     try {
-      // Since the view doesn't exist, create a simple placeholder
-      setUnitMetrics([]);
-      console.log('Unit metrics placeholder loaded');
+      const { data, error } = await supabase.rpc('get_unit_metrics', {
+        p_user_id: user?.id,
+        p_periodo_dias: filters?.periodo_dias || 30,
+        p_equipe_filter: filters?.equipe_id || null
+      });
+
+      if (error) {
+        console.error('Error fetching unit metrics:', error);
+        throw error;
+      }
+
+      setUnitMetrics(data || []);
+      console.log('Unit metrics loaded:', data?.length);
     } catch (error) {
       console.error('Error fetching unit metrics:', error);
       toast({

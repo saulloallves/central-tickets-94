@@ -2216,6 +2216,24 @@ export type Database = {
         }
         Returns: Json
       }
+      get_team_metrics: {
+        Args: {
+          p_periodo_dias?: number
+          p_unidade_filter?: string
+          p_user_id?: string
+        }
+        Returns: {
+          equipe_id: string
+          equipe_nome: string
+          tempo_medio_resolucao: number
+          tickets_crise: number
+          tickets_reabertos: number
+          tickets_resolvidos: number
+          tickets_sla_ok: number
+          total_tickets: number
+          unidades_atendidas: number
+        }[]
+      }
       get_ticket_trends: {
         Args: { p_dias?: number; p_unidade_filter?: string; p_user_id?: string }
         Returns: {
@@ -2224,6 +2242,26 @@ export type Database = {
           tickets_resolvidos: number
           tickets_sla_ok: number
           total_tickets: number
+        }[]
+      }
+      get_unit_metrics: {
+        Args: {
+          p_equipe_filter?: string
+          p_periodo_dias?: number
+          p_user_id?: string
+        }
+        Returns: {
+          ia_bem_sucedida: number
+          interacoes_ia_total: number
+          percentual_sla: number
+          tempo_medio_resolucao: number
+          tickets_abertos: number
+          tickets_crise: number
+          tickets_resolvidos: number
+          tickets_sla_ok: number
+          total_tickets_mes: number
+          unidade_id: string
+          unidade_nome: string
         }[]
       }
       get_user_permissions: {

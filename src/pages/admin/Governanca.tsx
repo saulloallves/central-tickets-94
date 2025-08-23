@@ -1,6 +1,9 @@
 import { Shield } from "lucide-react";
+import { useEffect } from "react";
 import { PermissionGuard } from "@/components/PermissionGuard";
 import { useRole } from "@/hooks/useRole";
+import { useAuth } from "@/hooks/useAuth";
+import { useSystemLogs } from "@/hooks/useSystemLogs";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +15,20 @@ import { AccessControl } from "@/components/governanca/AccessControl";
 
 export default function Governanca() {
   const { isAdmin } = useRole();
+  const { user } = useAuth();
+  const { logSystemAction } = useSystemLogs();
+
+  useEffect(() => {
+    if (user && isAdmin) {
+      // Log access to governance module
+      logSystemAction({
+        tipo_log: 'acao_humana',
+        entidade_afetada: 'governanca',
+        entidade_id: 'painel_governanca',
+        acao_realizada: 'Acesso ao módulo de Monitoramento & Governança'
+      });
+    }
+  }, [user, isAdmin, logSystemAction]);
 
   // Dupla proteção: PermissionGuard + verificação manual de admin
   if (!isAdmin) {
