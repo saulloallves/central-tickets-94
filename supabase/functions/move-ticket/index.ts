@@ -89,26 +89,7 @@ Deno.serve(async (req) => {
       .from('tickets')
       .update(updatePayload)
       .eq('id', ticketId)
-      .select(`
-        *,
-        unidades:unidade_id (
-          id,
-          grupo
-        ),
-        equipes:equipe_responsavel_id (
-          id,
-          nome
-        ),
-        atendimento_iniciado_por_profile:atendimento_iniciado_por (
-          nome_completo
-        ),
-        colaboradores (
-          nome_completo
-        ),
-        created_by_profile:criado_por (
-          nome_completo
-        )
-      `)
+      .select('id, status, position, updated_at')
       .single();
 
     if (updateError) {

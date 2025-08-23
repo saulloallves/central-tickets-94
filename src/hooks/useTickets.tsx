@@ -545,15 +545,69 @@ export const useTickets = (filters: TicketFilters) => {
 
       if (error) {
         console.error('❌ Edge function error:', error);
-        // Rollback optimistic update
-        optimisticRollback(ticketId, fromStatus);
         
-        toast({
-          title: "Erro ao mover ticket",
-          description: error.message || "Erro desconhecido",
-          variant: "destructive",
-        });
-        return false;
+        // Fallback: try direct update without edge function
+        console.log('🔄 Attempting fallback direct update...');
+        
+        try {
+          // Calculate position using RPC
+          const { data: newPosition, error: positionError } = await supabase
+            .rpc('calculate_new_position', {
+              p_status: toStatus,
+              p_before_id: beforeId || null,
+              p_after_id: afterId || null
+            });
+
+          if (positionError) {
+            throw new Error(`Position calculation failed: ${positionError.message}`);
+          }
+
+          // Direct update
+          const fallbackPayload: any = {
+            position: newPosition,
+            updated_at: new Date().toISOString(),
+          };
+
+          if (toStatus !== fromStatus) {
+            fallbackPayload.status = toStatus;
+          }
+
+          const { data: fallbackResult, error: fallbackError } = await supabase
+            .from('tickets')
+            .update(fallbackPayload)
+            .eq('id', ticketId)
+            .select('id, status, position')
+            .single();
+
+          if (fallbackError) {
+            throw new Error(`Direct update failed: ${fallbackError.message}`);
+          }
+
+          console.log('✅ Fallback update successful:', fallbackResult);
+          
+          // Refresh tickets to ensure consistency
+          fetchTickets();
+          fetchTicketStats();
+          
+          toast({
+            title: "Sucesso",
+            description: toStatus !== fromStatus ? `Ticket movido para ${toStatus}` : 'Ordem atualizada',
+          });
+          
+          return true;
+          
+        } catch (fallbackError) {
+          console.error('❌ Fallback also failed:', fallbackError);
+          // Rollback optimistic update
+          optimisticRollback(ticketId, fromStatus);
+          
+          toast({
+            title: "Erro ao mover ticket",
+            description: "Falha na operação principal e backup",
+            variant: "destructive",
+          });
+          return false;
+        }
       }
 
       if (!data?.success) {
