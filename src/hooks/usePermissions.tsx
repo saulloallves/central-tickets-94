@@ -39,13 +39,24 @@ export const usePermissions = () => {
 
         if (error) {
           console.error('Error fetching permissions:', error);
-          setPermissions([]);
+          // Only set empty array if it's not a network error
+          if (error.message?.includes('Failed to fetch')) {
+            // Network error - keep existing permissions if any
+            console.warn('Network error fetching permissions, keeping existing state');
+          } else {
+            setPermissions([]);
+          }
         } else {
           setPermissions(data?.map((p: any) => p.permission) || []);
         }
       } catch (error) {
         console.error('Error fetching permissions:', error);
-        setPermissions([]);
+        // For network errors, don't clear existing permissions
+        if (error instanceof TypeError && error.message?.includes('Failed to fetch')) {
+          console.warn('Network connectivity issue, keeping existing permissions');
+        } else {
+          setPermissions([]);
+        }
       } finally {
         setLoading(false);
       }
