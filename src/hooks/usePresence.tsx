@@ -43,7 +43,21 @@ export const usePresence = (channelName: string = 'presence:governanca') => {
     channel
       .on('presence', { event: 'sync' }, () => {
         const state = channel.presenceState();
-        setPresenceState(state as PresenceState);
+        const transformedState: PresenceState = {};
+        
+        Object.entries(state).forEach(([userId, presences]) => {
+          if (Array.isArray(presences) && presences.length > 0) {
+            const presence = presences[0] as any;
+            transformedState[userId] = [{
+              userId,
+              name: presence.name || 'Usuário',
+              route: presence.route || '/',
+              timestamp: presence.timestamp || new Date().toISOString()
+            }];
+          }
+        });
+        
+        setPresenceState(transformedState);
       })
       .on('presence', { event: 'join' }, ({ key, newPresences }) => {
         console.log('User joined:', key, newPresences);

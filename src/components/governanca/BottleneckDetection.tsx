@@ -22,7 +22,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Progress } from "@/components/ui/progress";
 
 export function BottleneckDetection() {
-  const { tickets, loading, refetch } = useTickets();
+  const { tickets, loading, refetch } = useTickets({
+    search: '',
+    status: '',
+    categoria: '',
+    prioridade: '',
+    unidade_id: '',
+    status_sla: '',
+    equipe_id: ''
+  });
   const { logSystemAction } = useSystemLogs();
   const [threshold, setThreshold] = useState<number>(24); // horas
   const [teamThreshold, setTeamThreshold] = useState<number>(10); // número de tickets

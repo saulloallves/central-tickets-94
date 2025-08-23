@@ -24,7 +24,15 @@ import { ptBR } from "date-fns/locale";
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--success))', 'hsl(var(--warning))', 'hsl(var(--critical))', 'hsl(var(--info))'];
 
 export function UsageReports() {
-  const { tickets, loading, refetch } = useTickets();
+  const { tickets, loading, refetch } = useTickets({
+    search: '',
+    status: '',
+    categoria: '',
+    prioridade: '',
+    unidade_id: '',
+    status_sla: '',
+    equipe_id: ''
+  });
   const { exportDashboardData } = useDashboardMetrics();
   const [period, setPeriod] = useState<'day' | 'week' | 'month'>('week');
   const [timeRange, setTimeRange] = useState<number>(30); // dias

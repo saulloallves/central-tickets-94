@@ -24,7 +24,15 @@ import { ptBR } from "date-fns/locale";
 
 export function RealtimeDashboard() {
   const { kpis, loading: kpisLoading, fetchKPIs } = useDashboardMetrics();
-  const { tickets, loading: ticketsLoading, refetch } = useTickets();
+  const { tickets, loading: ticketsLoading, refetch } = useTickets({
+    search: '',
+    status: '',
+    categoria: '',
+    prioridade: '',
+    unidade_id: '',
+    status_sla: '',
+    equipe_id: ''
+  });
   const { onlineUsers, totalOnline } = usePresence();
   const [lastUpdate, setLastUpdate] = useState(new Date());
 
