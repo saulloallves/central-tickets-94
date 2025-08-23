@@ -2456,6 +2456,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      user_can_view_unidade: {
+        Args: { u_id: string }
+        Returns: boolean
+      }
       vincular_tickets_existentes_a_crise: {
         Args: Record<PropertyKey, never>
         Returns: undefined
