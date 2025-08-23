@@ -113,7 +113,7 @@ export function RealtimeDashboard() {
       if (!acc[teamId]) {
         acc[teamId] = {
           id: teamId,
-          name: 'Equipe', // TODO: Get team name from equipes table
+          name: ticket.equipes?.nome || 'Sem Equipe',
           count: 0,
           tickets: []
         };
@@ -273,33 +273,38 @@ export function RealtimeDashboard() {
             {recentTickets.length === 0 ? (
               <p className="text-muted-foreground text-center py-4">Nenhum ticket encontrado</p>
             ) : (
-              recentTickets.map((ticket) => (
-                <div key={ticket.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{ticket.codigo_ticket}</p>
-                    <div className="flex items-center space-x-2 mt-1">
-                      <Badge variant="outline" className="text-xs">
-                        {ticket.canal_origem}
-                      </Badge>
-                      <Badge 
-                        variant={
-                          ticket.prioridade === 'crise' ? 'destructive' :
-                          ticket.prioridade === 'imediato' ? 'destructive' :
-                          ticket.prioridade === 'ate_1_hora' ? 'destructive' :
-                          'secondary'
-                        }
-                        className="text-xs"
-                      >
-                        {ticket.prioridade}
-                      </Badge>
+              recentTickets.map((ticket) => {
+                const isUuidCode = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ticket.codigo_ticket);
+                const displayCode = isUuidCode ? `Ticket sem código • ${ticket.categoria || 'Sem categoria'}` : ticket.codigo_ticket;
+                
+                return (
+                  <div key={ticket.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{displayCode}</p>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <Badge variant="outline" className="text-xs">
+                          {ticket.canal_origem}
+                        </Badge>
+                        <Badge 
+                          variant={
+                            ticket.prioridade === 'crise' ? 'destructive' :
+                            ticket.prioridade === 'imediato' ? 'destructive' :
+                            ticket.prioridade === 'ate_1_hora' ? 'destructive' :
+                            'secondary'
+                          }
+                          className="text-xs"
+                        >
+                          {ticket.prioridade}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {formatDistanceToNow(new Date(ticket.data_abertura), { addSuffix: true, locale: ptBR })}
                     </div>
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(ticket.data_abertura), { addSuffix: true, locale: ptBR })}
-                  </div>
-                </div>
-              ))
-            )}
+                 );
+               })
+             )}
           </CardContent>
         </Card>
 
@@ -353,7 +358,6 @@ export function RealtimeDashboard() {
                 <div key={team.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                   <div>
                     <p className="text-sm font-medium">{team.name}</p>
-                    <p className="text-xs text-muted-foreground">ID: {team.id}</p>
                   </div>
                   <Badge variant="secondary">
                     {team.count} tickets

@@ -69,10 +69,10 @@ export const useTeamMetrics = () => {
         return acc;
       }, {});
 
-      // Combine metrics with team names
+      // Combine metrics with team names - preserve RPC-returned name if available
       const enrichedMetrics = (metricsData || []).map((metric: any) => ({
         ...metric,
-        equipe_nome: teamNamesMap[metric.equipe_id] || `Equipe ${metric.equipe_id}`
+        equipe_nome: teamNamesMap[metric.equipe_id] ?? metric.equipe_nome ?? 'Sem Equipe'
       }));
 
       console.log('✅ [TEAM METRICS] Enriched metrics:', enrichedMetrics);
