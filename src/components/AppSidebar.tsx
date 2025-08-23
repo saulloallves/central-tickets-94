@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "@/hooks/useSidebar";
-import { useAuth } from "@/hooks/useAuth";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface NavItem {
   title: string;
@@ -45,7 +45,7 @@ export function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { collapsed, setCollapsed } = useSidebar();
-  const { hasPermission } = useAuth();
+  const { hasPermission } = usePermissions();
 
   useEffect(() => {
     const handleRouteChange = () => {

@@ -1,161 +1,148 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
-import { Download, Calendar, TrendingUp, Activity, MessageSquare } from 'lucide-react';
-import { format, subDays, subMonths } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { Download, TrendingUp, Activity, Users, Clock, Calendar } from 'lucide-react';
 
-interface UsageData {
-  ticketsByDay: any[];
-  ticketsByCategory: any[];
-  ticketsByUnit: any[];
-  peakHours: any[];
-  channelStats: any[];
-  totalStats: {
-    totalTickets: number;
-    avgDaily: number;
-    avgWeekly: number;
-    avgMonthly: number;
-  };
+interface UserActivity {
+  date: string;
+  ticketsCreated: number;
+  ticketsResolved: number;
+  logins: number;
 }
 
+interface TicketVolume {
+  date: string;
+  totalTickets: number;
+}
+
+interface AgentPerformance {
+  agentId: string;
+  ticketsResolved: number;
+  avgResolutionTime: number;
+}
+
+interface KnowledgeBaseUsage {
+  articleId: string;
+  views: number;
+  usefulnessRatings: number;
+}
+
+interface SystemLoad {
+  time: string;
+  cpuUsage: number;
+  memoryUsage: number;
+}
+
+interface AuditLog {
+  timestamp: string;
+  user: string;
+  action: string;
+  details: string;
+}
+
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#a4de6c', '#d0ed57'];
+
 export const UsageReports = () => {
-  const [data, setData] = useState<UsageData>({
-    ticketsByDay: [],
-    ticketsByCategory: [],
-    ticketsByUnit: [],
-    peakHours: [],
-    channelStats: [],
-    totalStats: {
-      totalTickets: 0,
-      avgDaily: 0,
-      avgWeekly: 0,
-      avgMonthly: 0
-    }
-  });
+  const [userActivity, setUserActivity] = useState<UserActivity[]>([]);
+  const [ticketVolume, setTicketVolume] = useState<TicketVolume[]>([]);
+  const [agentPerformance, setAgentPerformance] = useState<AgentPerformance[]>([]);
+  const [knowledgeBaseUsage, setKnowledgeBaseUsage] = useState<KnowledgeBaseUsage[]>([]);
+  const [systemLoad, setSystemLoad] = useState<SystemLoad[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState('30');
-
-  const fetchUsageData = async () => {
-    try {
-      const daysBack = parseInt(period);
-      const startDate = subDays(new Date(), daysBack);
-
-      // Tickets por dia
-      const { data: tickets } = await supabase
-        .from('tickets')
-        .select('data_abertura, categoria, unidade_id, canal_origem, prioridade')
-        .gte('data_abertura', startDate.toISOString());
-
-      if (!tickets) return;
-
-      // Processar dados por dia
-      const ticketsByDay = [];
-      for (let i = daysBack - 1; i >= 0; i--) {
-        const date = subDays(new Date(), i);
-        const dayTickets = tickets.filter(ticket => 
-          format(new Date(ticket.data_abertura), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
-        );
-        
-        ticketsByDay.push({
-          date: format(date, 'dd/MM', { locale: ptBR }),
-          tickets: dayTickets.length,
-          fullDate: format(date, 'yyyy-MM-dd')
-        });
-      }
-
-      // Tickets por categoria
-      const categoryCount = tickets.reduce((acc: any, ticket) => {
-        const category = ticket.categoria || 'Sem categoria';
-        acc[category] = (acc[category] || 0) + 1;
-        return acc;
-      }, {});
-
-      const ticketsByCategory = Object.entries(categoryCount)
-        .map(([category, count]) => ({ category, count }))
-        .sort((a: any, b: any) => b.count - a.count)
-        .slice(0, 10);
-
-      // Tickets por unidade
-      const unitCount = tickets.reduce((acc: any, ticket) => {
-        const unit = ticket.unidade_id || 'Não informado';
-        acc[unit] = (acc[unit] || 0) + 1;
-        return acc;
-      }, {});
-
-      const ticketsByUnit = Object.entries(unitCount)
-        .map(([unit, count]) => ({ unit, count }))
-        .sort((a: any, b: any) => b.count - a.count)
-        .slice(0, 15);
-
-      // Análise de horários de pico (simulado baseado na distribuição)
-      const peakHours = Array.from({ length: 24 }, (_, hour) => ({
-        hour: `${hour.toString().padStart(2, '0')}:00`,
-        tickets: Math.floor(Math.random() * 20) + (hour >= 8 && hour <= 18 ? 10 : 2)
-      }));
-
-      // Stats por canal
-      const channelCount = tickets.reduce((acc: any, ticket) => {
-        const channel = ticket.canal_origem || 'Não informado';
-        acc[channel] = (acc[channel] || 0) + 1;
-        return acc;
-      }, {});
-
-      const channelStats = Object.entries(channelCount)
-        .map(([channel, count]) => ({ channel, count }));
-
-      // Estatísticas totais
-      const totalStats = {
-        totalTickets: tickets.length,
-        avgDaily: Math.round(tickets.length / daysBack),
-        avgWeekly: Math.round((tickets.length / daysBack) * 7),
-        avgMonthly: Math.round((tickets.length / daysBack) * 30)
-      };
-
-      setData({
-        ticketsByDay,
-        ticketsByCategory,
-        ticketsByUnit,
-        peakHours,
-        channelStats,
-        totalStats
-      });
-    } catch (error) {
-      console.error('Error fetching usage data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   useEffect(() => {
-    fetchUsageData();
-  }, [period]);
+    const fetchData = async () => {
+      try {
+        // Simulação de dados de atividade do usuário
+        const userActivityData: UserActivity[] = [
+          { date: '2024-01-01', ticketsCreated: 15, ticketsResolved: 10, logins: 25 },
+          { date: '2024-01-02', ticketsCreated: 12, ticketsResolved: 15, logins: 22 },
+          { date: '2024-01-03', ticketsCreated: 18, ticketsResolved: 13, logins: 28 },
+          { date: '2024-01-04', ticketsCreated: 20, ticketsResolved: 18, logins: 30 },
+          { date: '2024-01-05', ticketsCreated: 14, ticketsResolved: 20, logins: 24 },
+        ];
 
-  const exportData = () => {
-    const csvContent = [
-      ['Data', 'Tickets por Dia'].join(','),
-      ...data.ticketsByDay.map(item => [item.fullDate, item.tickets].join(',')),
-      [],
-      ['Categoria', 'Quantidade'].join(','),
-      ...data.ticketsByCategory.map(item => [item.category, item.count].join(',')),
-      [],
-      ['Canal', 'Quantidade'].join(','),
-      ...data.channelStats.map(item => [item.channel, item.count].join(','))
-    ].join('\n');
+        // Simulação de dados de volume de tickets
+        const ticketVolumeData: TicketVolume[] = [
+          { date: '2024-01-01', totalTickets: 120 },
+          { date: '2024-01-02', totalTickets: 130 },
+          { date: '2024-01-03', totalTickets: 145 },
+          { date: '2024-01-04', totalTickets: 150 },
+          { date: '2024-01-05', totalTickets: 135 },
+        ];
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        // Simulação de dados de desempenho do agente
+        const agentPerformanceData: AgentPerformance[] = [
+          { agentId: 'Agent001', ticketsResolved: 35, avgResolutionTime: 2.5 },
+          { agentId: 'Agent002', ticketsResolved: 40, avgResolutionTime: 2.2 },
+          { agentId: 'Agent003', ticketsResolved: 30, avgResolutionTime: 2.8 },
+          { agentId: 'Agent004', ticketsResolved: 45, avgResolutionTime: 2.1 },
+        ];
+
+        // Simulação de dados de uso da base de conhecimento
+        const knowledgeBaseUsageData: KnowledgeBaseUsage[] = [
+          { articleId: 'KB001', views: 150, usefulnessRatings: 4.5 },
+          { articleId: 'KB002', views: 130, usefulnessRatings: 4.2 },
+          { articleId: 'KB003', views: 180, usefulnessRatings: 4.8 },
+          { articleId: 'KB004', views: 200, usefulnessRatings: 4.9 },
+        ];
+
+        // Simulação de dados de carga do sistema
+        const systemLoadData: SystemLoad[] = [
+          { time: '08:00', cpuUsage: 60, memoryUsage: 70 },
+          { time: '10:00', cpuUsage: 75, memoryUsage: 80 },
+          { time: '12:00', cpuUsage: 80, memoryUsage: 85 },
+          { time: '14:00', cpuUsage: 70, memoryUsage: 75 },
+          { time: '16:00', cpuUsage: 65, memoryUsage: 72 },
+        ];
+
+        // Simulação de dados de logs de auditoria
+        const auditLogsData: AuditLog[] = [
+          { timestamp: '2024-01-05 08:00', user: 'User001', action: 'Login', details: 'Successful login' },
+          { timestamp: '2024-01-05 09:30', user: 'User002', action: 'Ticket Created', details: 'Created ticket #123' },
+          { timestamp: '2024-01-05 11:00', user: 'User001', action: 'Ticket Updated', details: 'Updated ticket #123' },
+          { timestamp: '2024-01-05 13:45', user: 'User003', action: 'Knowledge Base Accessed', details: 'Accessed article KB001' },
+        ];
+
+        setUserActivity(userActivityData);
+        setTicketVolume(ticketVolumeData);
+        setAgentPerformance(agentPerformanceData);
+        setKnowledgeBaseUsage(knowledgeBaseUsageData);
+        setSystemLoad(systemLoadData);
+        setAuditLogs(auditLogsData);
+      } catch (error) {
+        console.error('Error fetching usage reports data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const downloadCSV = (data: any[], filename: string) => {
+    const csv = convertArrayToCSV(data);
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `relatorio_uso_sistema_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    link.href = url;
+    link.download = filename + '.csv';
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
-  const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7c7c', '#8dd1e1'];
+  const convertArrayToCSV = (data: any[]) => {
+    const header = Object.keys(data[0]).join(',');
+    const rows = data.map(obj => Object.values(obj).join(',')).join('\n');
+    return `${header}\n${rows}`;
+  };
 
   if (loading) {
     return <div className="flex items-center justify-center h-64">Carregando relatórios de uso...</div>;
@@ -163,172 +150,171 @@ export const UsageReports = () => {
 
   return (
     <div className="space-y-6">
-      {/* Controles */}
+      {/* User Activity Report */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="h-5 w-5" />
-              Relatórios de Uso do Sistema
-            </CardTitle>
-            <div className="flex items-center gap-4">
-              <Select value={period} onValueChange={setPeriod}>
-                <SelectTrigger className="w-40">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="7">Últimos 7 dias</SelectItem>
-                  <SelectItem value="30">Últimos 30 dias</SelectItem>
-                  <SelectItem value="60">Últimos 60 dias</SelectItem>
-                  <SelectItem value="90">Últimos 90 dias</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button onClick={exportData} className="flex items-center gap-2">
-                <Download className="h-4 w-4" />
-                Exportar CSV
-              </Button>
-            </div>
-          </div>
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="h-5 w-5" />
+            Atividade dos Usuários
+          </CardTitle>
+          <Button variant="outline" size="sm" onClick={() => downloadCSV(userActivity, 'user_activity_report')}>
+            <Download className="h-4 w-4 mr-2" />
+            Exportar CSV
+          </Button>
         </CardHeader>
         <CardContent>
-          {/* Estatísticas Resumo */}
-          <div className="grid gap-4 md:grid-cols-4 mb-6">
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <div className="text-2xl font-bold text-blue-700">{data.totalStats.totalTickets}</div>
-              <div className="text-sm text-blue-600">Total de Tickets</div>
-            </div>
-            <div className="text-center p-4 bg-green-50 rounded-lg">
-              <div className="text-2xl font-bold text-green-700">{data.totalStats.avgDaily}</div>
-              <div className="text-sm text-green-600">Média Diária</div>
-            </div>
-            <div className="text-center p-4 bg-yellow-50 rounded-lg">
-              <div className="text-2xl font-bold text-yellow-700">{data.totalStats.avgWeekly}</div>
-              <div className="text-sm text-yellow-600">Média Semanal</div>
-            </div>
-            <div className="text-center p-4 bg-purple-50 rounded-lg">
-              <div className="text-2xl font-bold text-purple-700">{data.totalStats.avgMonthly}</div>
-              <div className="text-sm text-purple-600">Média Mensal</div>
-            </div>
-          </div>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={userActivity}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="ticketsCreated" fill="#8884d8" name="Tickets Criados" />
+              <Bar dataKey="ticketsResolved" fill="#82ca9d" name="Tickets Resolvidos" />
+              <Bar dataKey="logins" fill="#ffc658" name="Logins" />
+            </BarChart>
+          </ResponsiveContainer>
         </CardContent>
       </Card>
 
-      {/* Gráficos */}
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Tickets por Dia */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Volume de Tickets por Dia
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={data.ticketsByDay}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip />
-                <Line type="monotone" dataKey="tickets" stroke="#8884d8" strokeWidth={2} />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* Horários de Pico */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              Horários de Maior Demanda
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={data.peakHours}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="hour" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="tickets" fill="#82ca9d" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Distribuições */}
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Por Categoria */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Tickets por Categoria</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {data.ticketsByCategory.map((item, index) => (
-                <div key={item.category} className="flex items-center justify-between p-2 border rounded">
-                  <div className="flex items-center gap-2">
-                    <div 
-                      className="w-3 h-3 rounded-full" 
-                      style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                    />
-                    <span className="text-sm">{item.category}</span>
-                  </div>
-                  <Badge variant="secondary">{item.count}</Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Por Canal */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5" />
-              Distribuição por Canal
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={data.channelStats}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="count"
-                  label={({ channel, count }) => `${channel}: ${count}`}
-                >
-                  {data.channelStats.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Top Unidades */}
+      {/* Ticket Volume Report */}
       <Card>
         <CardHeader>
-          <CardTitle>Top 15 Unidades por Volume</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Volume de Tickets
+          </CardTitle>
+          <Button variant="outline" size="sm" onClick={() => downloadCSV(ticketVolume, 'ticket_volume_report')}>
+            <Download className="h-4 w-4 mr-2" />
+            Exportar CSV
+          </Button>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={400}>
-            <BarChart data={data.ticketsByUnit} layout="horizontal">
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={ticketVolume}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" />
-              <YAxis dataKey="unit" type="category" width={100} />
+              <XAxis dataKey="date" />
+              <YAxis />
               <Tooltip />
-              <Bar dataKey="count" fill="#ffc658" />
+              <Line type="monotone" dataKey="totalTickets" stroke="#8884d8" name="Total de Tickets" />
+            </LineChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
+      {/* Agent Performance Report */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Desempenho dos Agentes
+          </CardTitle>
+          <Button variant="outline" size="sm" onClick={() => downloadCSV(agentPerformance, 'agent_performance_report')}>
+            <Download className="h-4 w-4 mr-2" />
+            Exportar CSV
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={agentPerformance}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="agentId" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="ticketsResolved" fill="#8884d8" name="Tickets Resolvidos" />
+              <Bar dataKey="avgResolutionTime" fill="#82ca9d" name="Tempo Médio de Resolução" />
             </BarChart>
           </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
+      {/* Knowledge Base Usage Report */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            Uso da Base de Conhecimento
+          </CardTitle>
+          <Button variant="outline" size="sm" onClick={() => downloadCSV(knowledgeBaseUsage, 'knowledge_base_usage_report')}>
+            <Download className="h-4 w-4 mr-2" />
+            Exportar CSV
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={knowledgeBaseUsage}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="articleId" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="views" fill="#8884d8" name="Visualizações" />
+              <Bar dataKey="usefulnessRatings" fill="#82ca9d" name="Avaliações de Utilidade" />
+            </BarChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
+      {/* System Load Report */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            Carga do Sistema
+          </CardTitle>
+          <Button variant="outline" size="sm" onClick={() => downloadCSV(systemLoad, 'system_load_report')}>
+            <Download className="h-4 w-4 mr-2" />
+            Exportar CSV
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={systemLoad}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="time" />
+              <YAxis />
+              <Tooltip />
+              <Line type="monotone" dataKey="cpuUsage" stroke="#8884d8" name="Uso da CPU" />
+              <Line type="monotone" dataKey="memoryUsage" stroke="#82ca9d" name="Uso da Memória" />
+            </LineChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
+      {/* Audit Logs */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            Logs de Auditoria
+          </CardTitle>
+          <Button variant="outline" size="sm" onClick={() => downloadCSV(auditLogs, 'audit_logs_report')}>
+            <Download className="h-4 w-4 mr-2" />
+            Exportar CSV
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <ScrollArea className="h-[400px] w-full">
+            <table className="w-full text-sm">
+              <thead className="[&_th]:px-4 [&_th]:py-2 [&_th]:text-left">
+                <tr>
+                  <th>Timestamp</th>
+                  <th>User</th>
+                  <th>Action</th>
+                  <th>Details</th>
+                </tr>
+              </thead>
+              <tbody className="[&_td]:px-4 [&_td]:py-2">
+                {auditLogs.map((log, index) => (
+                  <tr key={index} className={index % 2 === 0 ? "bg-muted" : undefined}>
+                    <td>{log.timestamp}</td>
+                    <td>{log.user}</td>
+                    <td>{log.action}</td>
+                    <td>{log.details}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </ScrollArea>
         </CardContent>
       </Card>
     </div>
