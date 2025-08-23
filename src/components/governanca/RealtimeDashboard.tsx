@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,7 +11,7 @@ import { ptBR } from 'date-fns/locale';
 interface TicketStats {
   abertos: number;
   em_atendimento: number;
-  escalonado: number;
+  pendente: number;
   concluidos: number;
   total: number;
 }
@@ -38,7 +39,7 @@ export const RealtimeDashboard = () => {
   const [ticketStats, setTicketStats] = useState<TicketStats>({
     abertos: 0,
     em_atendimento: 0,
-    escalonado: 0,
+    pendente: 0,
     concluidos: 0,
     total: 0
   });
@@ -64,8 +65,8 @@ export const RealtimeDashboard = () => {
           case 'em_atendimento':
             acc.em_atendimento++;
             break;
-          case 'escalonado':
-            acc.escalonado++;
+          case 'pendente':
+            acc.pendente++;
             break;
           case 'concluido':
             acc.concluidos++;
@@ -75,7 +76,7 @@ export const RealtimeDashboard = () => {
       }, {
         abertos: 0,
         em_atendimento: 0,
-        escalonado: 0,
+        pendente: 0,
         concluidos: 0,
         total: 0
       });
@@ -111,7 +112,7 @@ export const RealtimeDashboard = () => {
         .from('tickets')
         .select('id, codigo_ticket, data_limite_sla, prioridade')
         .not('data_limite_sla', 'is', null)
-        .in('status', ['aberto', 'em_atendimento', 'escalonado'])
+        .in('status', ['aberto', 'em_atendimento', 'pendente'])
         .order('data_limite_sla', { ascending: true })
         .limit(5);
 
@@ -186,7 +187,7 @@ export const RealtimeDashboard = () => {
     switch (status) {
       case 'aberto': return 'bg-red-500';
       case 'em_atendimento': return 'bg-yellow-500';
-      case 'escalonado': return 'bg-blue-500';
+      case 'pendente': return 'bg-blue-500';
       case 'concluido': return 'bg-green-500';
       default: return 'bg-gray-500';
     }
@@ -240,14 +241,14 @@ export const RealtimeDashboard = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Escalonados</CardTitle>
+            <CardTitle className="text-sm font-medium">Pendentes</CardTitle>
             <Clock className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{ticketStats.escalonado}</div>
+            <div className="text-2xl font-bold">{ticketStats.pendente}</div>
             <div className="flex items-center">
               <div className="h-2 w-2 bg-blue-500 rounded-full mr-2"></div>
-              <span className="text-xs text-muted-foreground">Escalonados</span>
+              <span className="text-xs text-muted-foreground">Aguardando</span>
             </div>
           </CardContent>
         </Card>

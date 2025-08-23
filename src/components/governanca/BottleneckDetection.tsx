@@ -34,7 +34,7 @@ export const BottleneckDetection = () => {
           id, codigo_ticket, descricao_problema, prioridade, status,
           data_abertura, equipe_responsavel_id, unidade_id
         `)
-        .in('status', ['aberto', 'em_atendimento', 'escalonado'])
+        .in('status', ['aberto', 'em_atendimento', 'pendente'])
         .order('data_abertura', { ascending: true })
         .limit(20);
 
@@ -42,13 +42,13 @@ export const BottleneckDetection = () => {
       const { data: teamCounts } = await supabase
         .from('tickets')
         .select('equipe_responsavel_id, status')
-        .in('status', ['aberto', 'em_atendimento', 'escalonado']);
+        .in('status', ['aberto', 'em_atendimento', 'pendente']);
 
       // Processar dados das equipes
       const teamStats = teamCounts?.reduce((acc: any, ticket) => {
         const teamId = ticket.equipe_responsavel_id || 'unassigned';
         if (!acc[teamId]) {
-          acc[teamId] = { total: 0, abertos: 0, em_atendimento: 0, escalonado: 0 };
+          acc[teamId] = { total: 0, abertos: 0, em_atendimento: 0, pendente: 0 };
         }
         acc[teamId].total++;
         acc[teamId][ticket.status]++;
@@ -269,8 +269,8 @@ export const BottleneckDetection = () => {
                           <div className="text-yellow-600">Em Atend.</div>
                         </div>
                         <div className="text-center p-2 bg-blue-50 rounded">
-                          <div className="font-medium text-blue-700">{team.escalonado}</div>
-                          <div className="text-blue-600">Escalonado</div>
+                          <div className="font-medium text-blue-700">{team.pendente}</div>
+                          <div className="text-blue-600">Pendente</div>
                         </div>
                       </div>
                     </div>
