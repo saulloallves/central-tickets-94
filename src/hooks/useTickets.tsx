@@ -157,11 +157,64 @@ export const useTickets = (filters: TicketFilters) => {
         }
       }
 
-      const { data, error } = await query;
+      let { data, error } = await query;
+
+      // Handle RLS recursion errors with fallback
+      if (error && error.code === '42P17') {
+        console.warn('RLS recursion detected, falling back to simple query:', error.message);
+        
+        // Fallback query without relations to avoid RLS recursion
+        const fallbackQuery = supabase
+          .from('tickets')
+          .select('*')
+          .order('status', { ascending: true })
+          .order('position', { ascending: true });
+
+        // Apply same filters
+        let fallbackQueryWithFilters = fallbackQuery;
+        if (filters.search) {
+          fallbackQueryWithFilters = fallbackQueryWithFilters.or(`codigo_ticket.ilike.%${filters.search}%,descricao_problema.ilike.%${filters.search}%,titulo.ilike.%${filters.search}%`);
+        }
+        if (filters.status && filters.status !== 'all') fallbackQueryWithFilters = fallbackQueryWithFilters.eq('status', filters.status as any);
+        if (filters.categoria && filters.categoria !== 'all') fallbackQueryWithFilters = fallbackQueryWithFilters.eq('categoria', filters.categoria as any);
+        if (filters.prioridade && filters.prioridade !== 'all') fallbackQueryWithFilters = fallbackQueryWithFilters.eq('prioridade', filters.prioridade as any);
+        if (filters.status_sla && filters.status_sla !== 'all') fallbackQueryWithFilters = fallbackQueryWithFilters.eq('status_sla', filters.status_sla as any);
+        if (filters.unidade_id && filters.unidade_id !== 'all') fallbackQueryWithFilters = fallbackQueryWithFilters.eq('unidade_id', filters.unidade_id);
+        if (filters.equipe_id && filters.equipe_id !== 'all') {
+          if (filters.equipe_id === 'minhas_equipes') {
+            const userEquipeIds = userEquipes.map(ue => ue.equipe_id);
+            if (userEquipeIds.length > 0) {
+              fallbackQueryWithFilters = fallbackQueryWithFilters.in('equipe_responsavel_id', userEquipeIds);
+            } else {
+              fallbackQueryWithFilters = fallbackQueryWithFilters.eq('equipe_responsavel_id', 'none');
+            }
+          } else {
+            fallbackQueryWithFilters = fallbackQueryWithFilters.eq('equipe_responsavel_id', filters.equipe_id);
+          }
+        }
+
+        const fallbackResult = await fallbackQueryWithFilters;
+        const fallbackData = fallbackResult.data;
+        error = fallbackResult.error;
+        
+        if (!error && fallbackData) {
+          console.log('✅ Fallback query successful, tickets loaded without relations');
+          // Transform data to match expected interface (add missing optional relations)
+          data = fallbackData.map(ticket => ({
+            ...ticket,
+            unidades: undefined,
+            colaboradores: undefined,
+            equipes: undefined,
+            atendimento_iniciado_por_profile: undefined,
+            created_by_profile: undefined
+          })) as any;
+        }
+      }
 
       if (error) {
         console.error('Error fetching tickets:', error);
-        if (!loading) {
+        // Only show toast for non-recursion errors to avoid spam
+        if (error.code !== '42P17' && !loading) {
           toast({
             title: "Erro",
             description: "Não foi possível carregar os tickets",
