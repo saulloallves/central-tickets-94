@@ -49,14 +49,27 @@ export function MetricsSection({ periodDays = 30 }: MetricsSectionProps) {
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
+      // Use a very large period (999 days) when periodDays is 0 (means "all")
+      const actualPeriod = periodDays === 0 ? 999 : periodDays;
+      console.log('🔄 [METRICS] Refreshing with period:', { periodDays, actualPeriod });
+      
       await Promise.all([
-        refetchTeamMetrics(),
-        fetchUnitMetrics()
+        refetchTeamMetrics({ periodo_dias: actualPeriod }),
+        fetchUnitMetrics({ periodo_dias: actualPeriod })
       ]);
     } finally {
       setRefreshing(false);
     }
   };
+
+  // Update data when period changes
+  useEffect(() => {
+    const actualPeriod = periodDays === 0 ? 999 : periodDays;
+    console.log('🔄 [METRICS] Period changed, fetching with:', { periodDays, actualPeriod });
+    
+    fetchUnitMetrics({ periodo_dias: actualPeriod });
+    refetchTeamMetrics({ periodo_dias: actualPeriod });
+  }, [periodDays, fetchUnitMetrics, refetchTeamMetrics]);
 
   const loading = unitLoading || teamLoading;
 

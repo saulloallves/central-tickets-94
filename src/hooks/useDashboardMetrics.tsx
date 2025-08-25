@@ -79,7 +79,7 @@ export const useDashboardMetrics = () => {
         p_user_id: user.id,
         p_unidade_filter: filters.unidade_filter || null,
         p_equipe_filter: filters.equipe_filter || null,
-        p_periodo_dias: filters.periodo_dias || 0
+        p_periodo_dias: filters.periodo_dias ?? 30  // Use 30 as default instead of 0
       });
 
       if (error) throw error;
@@ -127,7 +127,7 @@ export const useDashboardMetrics = () => {
     try {
       const { data, error } = await supabase.rpc('get_team_metrics', {
         p_user_id: user?.id,
-        p_periodo_dias: filters?.periodo_dias || 0,
+        p_periodo_dias: filters?.periodo_dias ?? 30,  // Use 30 as default instead of 0
         p_unidade_filter: filters?.unidade_id || null
       });
 
@@ -162,7 +162,7 @@ export const useDashboardMetrics = () => {
     try {
       const { data, error } = await supabase.rpc('get_unit_metrics', {
         p_user_id: user?.id,
-        p_periodo_dias: filters?.periodo_dias || 0,
+        p_periodo_dias: filters?.periodo_dias ?? 30,  // Use 30 as default instead of 0
         p_equipe_filter: filters?.equipe_id || null
       });
 

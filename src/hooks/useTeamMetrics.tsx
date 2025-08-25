@@ -32,7 +32,7 @@ export const useTeamMetrics = () => {
       // First get team metrics using the existing RPC
       const { data: metricsData, error: metricsError } = await supabase.rpc('get_team_metrics', {
         p_user_id: user.id,
-        p_periodo_dias: filters?.periodo_dias || 30,
+        p_periodo_dias: filters?.periodo_dias ?? 30,  // Use 30 as default instead of 0
         p_unidade_filter: filters?.unidade_id || null
       });
 

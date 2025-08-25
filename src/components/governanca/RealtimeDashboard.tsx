@@ -80,11 +80,16 @@ export function RealtimeDashboard({ periodDays = 30 }: RealtimeDashboardProps) {
   });
 
   useEffect(() => {
-    fetchKPIs();
+    // Use a very large period (999 days) when periodDays is 0 (means "all")
+    const actualPeriod = periodDays === 0 ? 999 : periodDays;
+    console.log('🔄 [REALTIME] Fetching KPIs with period:', { periodDays, actualPeriod });
+    fetchKPIs({ periodo_dias: actualPeriod });
   }, [fetchKPIs, periodDays]);
 
   const refreshData = () => {
-    fetchKPIs();
+    const actualPeriod = periodDays === 0 ? 999 : periodDays;
+    console.log('🔄 [REALTIME] Refreshing data with period:', { periodDays, actualPeriod });
+    fetchKPIs({ periodo_dias: actualPeriod });
     refetch();
     setLastUpdate(new Date());
   };
