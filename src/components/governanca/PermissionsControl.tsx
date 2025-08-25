@@ -87,6 +87,7 @@ export function PermissionsControl() {
   ];
 
   useEffect(() => {
+    console.log('🔍 Hook values:', { isAdmin, hasDiretoria: hasRole('diretoria') });
     fetchData();
   }, []);
 
@@ -221,10 +222,16 @@ export function PermissionsControl() {
   };
 
   const grantUserRole = async () => {
-    if (!selectedUserForRole || !selectedRole) return;
+    console.log('🔄 Iniciando grantUserRole...', { selectedUserForRole, selectedRole });
+    
+    if (!selectedUserForRole || !selectedRole) {
+      console.log('❌ Campos obrigatórios não preenchidos', { selectedUserForRole, selectedRole });
+      return;
+    }
 
     // Verificar se o usuário tem permissão para atribuir cargos
     if (!isAdmin && !hasRole('diretoria')) {
+      console.log('❌ Usuário sem permissão', { isAdmin, hasDiretoria: hasRole('diretoria') });
       toast({
         title: "Acesso Negado",
         description: "Apenas administradores e diretoria podem editar cargos de usuários",
@@ -232,6 +239,8 @@ export function PermissionsControl() {
       });
       return;
     }
+
+    console.log('✅ Permissões OK, iniciando inserção no banco...');
 
     try {
       const { error } = await supabase
@@ -241,8 +250,14 @@ export function PermissionsControl() {
           role: selectedRole as any
         });
 
-      if (error) throw error;
+      console.log('📊 Resultado da inserção:', { error });
 
+      if (error) {
+        console.error('❌ Erro na inserção:', error);
+        throw error;
+      }
+
+      console.log('✅ Cargo atribuído com sucesso!');
       toast({
         title: "Sucesso",
         description: "Cargo atribuído com sucesso"
@@ -252,9 +267,10 @@ export function PermissionsControl() {
       setSelectedUserForRole('');
       setSelectedRole('colaborador');
       
+      console.log('🔄 Recarregando dados...');
       fetchData();
     } catch (error) {
-      console.error('Error granting role:', error);
+      console.error('❌ Error granting role:', error);
       toast({
         title: "Erro", 
         description: "Erro ao atribuir cargo",
