@@ -7,11 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Plus, Search, Filter } from 'lucide-react';
-import { TicketsList } from '@/components/tickets/TicketsList';
-import { TicketDetail } from '@/components/tickets/TicketDetail';
-import { CreateTicketDialog } from '@/components/tickets/CreateTicketDialog';
+import { FranqueadoTicketsList } from '@/components/franqueado/FranqueadoTicketsList';
+import { FranqueadoTicketDetail } from '@/components/franqueado/FranqueadoTicketDetail';
+import { FranqueadoCreateTicketDialog } from '@/components/franqueado/FranqueadoCreateTicketDialog';
 import { useFranqueadoUnits } from '@/hooks/useFranqueadoUnits';
-import { useTickets } from '@/hooks/useTickets';
+
 import { supabase } from '@/integrations/supabase/client';
 
 export default function FranqueadoTickets() {
@@ -31,37 +31,24 @@ export default function FranqueadoTickets() {
     equipe_id: ''
   });
 
-  const { 
-    tickets, 
-    loading, 
-    ticketStats,
-    refetch 
-  } = useTickets(filters);
+  const [ticketStats, setTicketStats] = useState({ total: 0 });
 
-  // Buscar tickets com resposta (respondidos)
+  // Buscar estatísticas de tickets
   useEffect(() => {
-    const fetchRespondidos = async () => {
-      if (tickets.length === 0) return;
+    const fetchStats = async () => {
+      if (units.length === 0) return;
 
-      const ticketIds = tickets.map(t => t.id);
-      
+      const unitIds = units.map(u => u.id);
       const { data } = await supabase
-        .from('ticket_mensagens')
-        .select('ticket_id')
-        .eq('direcao', 'saida')
-        .in('ticket_id', ticketIds);
+        .from('tickets')
+        .select('id')
+        .in('unidade_id', unitIds);
 
-      const respondidosSet = new Set(data?.map(m => m.ticket_id) || []);
-      const newMap: Record<string, boolean> = {};
-      ticketIds.forEach(id => {
-        newMap[id] = respondidosSet.has(id);
-      });
-      
-      setRespondidosMap(newMap);
+      setTicketStats({ total: data?.length || 0 });
     };
 
-    fetchRespondidos();
-  }, [tickets]);
+    fetchStats();
+  }, [units]);
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -199,7 +186,7 @@ export default function FranqueadoTickets() {
           </CardHeader>
           <CardContent className="flex-1 overflow-hidden">
             <div className="h-full overflow-y-auto">
-              <TicketsList
+              <FranqueadoTicketsList
                 filters={filters}
                 onTicketSelect={setSelectedTicketId}
                 selectedTicketId={selectedTicketId}
@@ -218,7 +205,7 @@ export default function FranqueadoTickets() {
           <CardContent className="flex-1 overflow-hidden">
             {selectedTicketId ? (
               <div className="h-full overflow-y-auto">
-                <TicketDetail 
+                <FranqueadoTicketDetail 
                   ticketId={selectedTicketId} 
                   onClose={() => setSelectedTicketId(null)}
                 />
@@ -233,7 +220,7 @@ export default function FranqueadoTickets() {
       </div>
 
       {/* Dialog de Criação */}
-      <CreateTicketDialog
+      <FranqueadoCreateTicketDialog
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
       />
