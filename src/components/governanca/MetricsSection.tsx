@@ -274,17 +274,17 @@ export function MetricsSection({ periodDays = 30 }: MetricsSectionProps) {
                       <h4 className="text-sm font-semibold truncate">
                         {unit.unidade_nome}
                       </h4>
-                      <p className="text-xs text-muted-foreground">
-                        {unit.total_tickets_mes} tickets • {unit.tickets_resolvidos} resolvidos
-                      </p>
+                       <p className="text-xs text-muted-foreground">
+                         {unit.total_tickets_mes || 0} tickets • {unit.tickets_resolvidos || 0} resolvidos
+                       </p>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Badge variant={
-                        unit.percentual_sla >= 80 ? "default" : 
-                        unit.percentual_sla >= 60 ? "secondary" : 
+                        (unit.percentual_sla || 0) >= 80 ? "default" : 
+                        (unit.percentual_sla || 0) >= 60 ? "secondary" : 
                         "destructive"
                       }>
-                        {unit.percentual_sla.toFixed(1)}% SLA
+                        {(unit.percentual_sla || 0).toFixed(1)}% SLA
                       </Badge>
                     </div>
                   </div>
@@ -296,36 +296,36 @@ export function MetricsSection({ periodDays = 30 }: MetricsSectionProps) {
                         {unit.tempo_medio_resolucao?.toFixed(1) || '0'}h
                       </p>
                     </div>
-                    <div>
-                      <p className="text-muted-foreground">Tickets crise</p>
-                      <p className="font-medium">{unit.tickets_crise}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">IA sucesso</p>
-                      <p className="font-medium">{unit.ia_bem_sucedida}</p>
-                    </div>
+                     <div>
+                       <p className="text-muted-foreground">Tickets crise</p>
+                       <p className="font-medium">{unit.tickets_crise || 0}</p>
+                     </div>
+                     <div>
+                       <p className="text-muted-foreground">IA sucesso</p>
+                       <p className="font-medium">{unit.ia_bem_sucedida || 0}</p>
+                     </div>
                   </div>
 
                   {/* Progress bar for resolution rate */}
                   <div className="mt-3">
                     <div className="flex justify-between items-center mb-1">
                       <span className="text-xs text-muted-foreground">Taxa de resolução</span>
-                      <span className="text-xs font-medium">
-                        {unit.total_tickets_mes > 0 
-                          ? ((unit.tickets_resolvidos / unit.total_tickets_mes) * 100).toFixed(1)
-                          : 0
-                        }%
-                      </span>
+                       <span className="text-xs font-medium">
+                         {(unit.total_tickets_mes || 0) > 0 
+                           ? (((unit.tickets_resolvidos || 0) / (unit.total_tickets_mes || 1)) * 100).toFixed(1)
+                           : '0'
+                         }%
+                       </span>
                     </div>
                     <div className="w-full bg-muted rounded-full h-1.5">
                       <div 
                         className="h-1.5 rounded-full bg-primary"
-                        style={{ 
-                          width: `${unit.total_tickets_mes > 0 
-                            ? (unit.tickets_resolvidos / unit.total_tickets_mes) * 100 
-                            : 0
-                          }%`
-                        }}
+                         style={{ 
+                           width: `${(unit.total_tickets_mes || 0) > 0 
+                             ? ((unit.tickets_resolvidos || 0) / (unit.total_tickets_mes || 1)) * 100 
+                             : 0
+                           }%`
+                         }}
                       />
                     </div>
                   </div>
