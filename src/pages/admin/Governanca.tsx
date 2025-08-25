@@ -12,6 +12,7 @@ import { AuditPanel } from "@/components/governanca/AuditPanel";
 import { BottleneckDetection } from "@/components/governanca/BottleneckDetection";
 import { UsageReports } from "@/components/governanca/UsageReports";
 import { AccessControl } from "@/components/governanca/AccessControl";
+import { PermissionsControl } from "@/components/governanca/PermissionsControl";
 import { MetricsSection } from "@/components/governanca/MetricsSection";
 
 export default function Governanca() {
@@ -104,6 +105,9 @@ export default function Governanca() {
             <TabsTrigger value="acessos" className="flex items-center space-x-2">
               <span>Acessos & Sessões</span>
             </TabsTrigger>
+            <TabsTrigger value="permissoes" className="flex items-center space-x-2">
+              <span>Controle de Permissões</span>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="tempo-real" className="space-y-6">
@@ -128,6 +132,10 @@ export default function Governanca() {
 
           <TabsContent value="acessos" className="space-y-6">
             <AccessControl />
+          </TabsContent>
+
+          <TabsContent value="permissoes" className="space-y-6">
+            <PermissionsControl />
           </TabsContent>
         </Tabs>
       </div>

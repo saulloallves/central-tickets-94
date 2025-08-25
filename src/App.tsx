@@ -18,7 +18,7 @@ import Colaboradores from "./pages/admin/Colaboradores";
 import Equipes from "./pages/admin/Equipes";
 import Configuracoes from "./pages/admin/Configuracoes";
 import Logs from "./pages/admin/Logs";
-import PermissionsControl from "./pages/admin/PermissionsControl";
+
 import Profile from "./pages/admin/Profile";
 import Governanca from "./pages/admin/Governanca";
 
@@ -74,11 +74,6 @@ const App = () => (
                 <Logs />
               </AdminLayout>
             } />
-            <Route path="/admin/permissions" element={
-              <AdminLayout>
-                <PermissionsControl />
-              </AdminLayout>
-             } />
             <Route path="/admin/profile" element={
               <AdminLayout>
                 <Profile />
