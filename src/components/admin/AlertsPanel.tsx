@@ -70,7 +70,7 @@ export const AlertsPanel = () => {
           <div className="flex items-center gap-2">
             <span className="text-xs font-medium">Unidade:</span>
             <span className="text-xs text-muted-foreground font-mono">
-              {payload.unidade_id.slice(0, 8)}...
+              {payload.unidade_id ? payload.unidade_id.slice(0, 8) + '...' : 'N/A'}
             </span>
           </div>
         )}
@@ -78,7 +78,7 @@ export const AlertsPanel = () => {
           <div className="flex items-center gap-2">
             <span className="text-xs font-medium">Usuário:</span>
             <span className="text-xs text-muted-foreground font-mono">
-              {payload.user_id.slice(0, 8)}...
+              {payload.user_id ? payload.user_id.slice(0, 8) + '...' : 'N/A'}
             </span>
           </div>
         )}
