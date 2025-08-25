@@ -79,7 +79,7 @@ export function AppSidebar() {
           </div>
 
           {/* Navigation Icons - sempre vertical */}
-          <div className="flex-1 flex flex-col space-y-2 overflow-y-auto scrollbar-hide py-2">
+          <div className="flex-1 flex flex-col space-y-1 overflow-y-auto scrollbar-hide py-2">
             {navigationItems.map((item) => (
               <PermissionGuard key={item.title} requiredPermission={item.permission}>
                 <TooltipProvider delayDuration={0}>
@@ -88,7 +88,7 @@ export function AppSidebar() {
                       to={item.url}
                       end
                       className={({ isActive }) => cn(
-                        "group flex items-center px-3 py-3 rounded-xl transition-all duration-300",
+                        "group flex items-center px-3 py-2 rounded-xl transition-all duration-300",
                         "hover:scale-[1.02]",
                         isActive 
                           ? "bg-white/10 backdrop-blur-sm text-white border border-white/20" 
@@ -125,7 +125,7 @@ export function AppSidebar() {
                           to={item.url}
                           end
                           className={({ isActive }) => cn(
-                            "group relative flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-300 mx-auto",
+                            "group relative flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-300 mx-auto",
                             isActive 
                               ? "bg-white/10 backdrop-blur-sm text-white" 
                               : "hover:bg-white/5 hover:backdrop-blur-sm hover:text-white/95"
@@ -161,7 +161,7 @@ export function AppSidebar() {
           </div>
 
           {/* Bottom Section - sempre vertical */}
-          <div className="flex flex-col space-y-3 mt-auto">
+          <div className="flex flex-col space-y-2 mt-auto">
             {/* Notifications Section */}
             <div className="flex justify-center">
               <NotificationButton isExpanded={isExpanded} />
