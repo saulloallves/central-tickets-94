@@ -17,6 +17,19 @@ export interface InternalAlert {
     descricao_problema: string;
     codigo_ticket: string;
   };
+  // Dados da solicitação de acesso interno (quando aplicável)
+  user_id?: string;
+  equipe_id?: string;
+  desired_role?: string;
+  equipes?: {
+    id: string;
+    nome: string;
+  };
+  profiles?: {
+    id: string;
+    nome_completo: string;
+    email: string;
+  };
 }
 
 export const useInternalAlerts = () => {
@@ -38,22 +51,62 @@ export const useInternalAlerts = () => {
 
       if (alertsError) throw alertsError;
 
-      // Buscar tickets relacionados
-      const ticketIds = alertsData?.map(alert => alert.ticket_id) || [];
-      const { data: ticketsData, error: ticketsError } = await supabase
-        .from('tickets')
-        .select('id, titulo, descricao_problema, codigo_ticket')
-        .in('id', ticketIds);
+      // Buscar dados relacionados
+      const enrichedAlerts = await Promise.all((alertsData || []).map(async (alert) => {
+        let additionalData = null;
 
-      if (ticketsError) throw ticketsError;
+        // Se for uma notificação de solicitação de acesso interno
+        if (alert.type === 'internal_access_request') {
+          try {
+            const payload = alert.payload as any;
+            const requestId = payload?.request_id;
+            
+            if (requestId) {
+              const { data: requestData } = await supabase
+                .from('internal_access_requests')
+                .select(`
+                  *,
+                  equipes:equipe_id (
+                    id,
+                    nome
+                  ),
+                  profiles:user_id (
+                    id,
+                    nome_completo,
+                    email
+                  )
+                `)
+                .eq('id', requestId)
+                .single();
+              
+              additionalData = requestData;
+            }
+          } catch (error) {
+            console.error('Error fetching access request data:', error);
+          }
+        }
+        // Se for relacionado a ticket
+        else if (alert.ticket_id) {
+          try {
+            const { data: ticketData } = await supabase
+              .from('tickets')
+              .select('id, titulo, descricao_problema, codigo_ticket')
+              .eq('id', alert.ticket_id)
+              .single();
+            
+            additionalData = { tickets: ticketData };
+          } catch (error) {
+            console.error('Error fetching ticket data:', error);
+          }
+        }
 
-      // Combinar dados
-      const alertsWithTickets = alertsData?.map(alert => ({
-        ...alert,
-        tickets: ticketsData?.find(ticket => ticket.id === alert.ticket_id)
-      })) || [];
+        return {
+          ...alert,
+          ...additionalData
+        };
+      }));
 
-      setAlerts(alertsWithTickets as InternalAlert[]);
+      setAlerts(enrichedAlerts as InternalAlert[]);
       console.log('Internal alerts fetched:', alertsData?.length);
     } catch (error) {
       console.error('Error fetching alerts:', error);
@@ -146,8 +199,17 @@ export const useInternalAlerts = () => {
           console.log('New internal alert received:', payload.new);
           const newAlert = payload.new as InternalAlert;
           
+          // Notificação para solicitações de acesso interno
+          if (newAlert.type === 'internal_access_request') {
+            const alertPayload = newAlert.payload as any;
+            toast({
+              title: "📝 Nova Solicitação de Acesso",
+              description: "Um usuário solicitou acesso à equipe interna",
+              variant: "default",
+            });
+          }
           // Show toast notification for critical alerts
-          if (newAlert.alert_level === 'critical') {
+          else if (newAlert.alert_level === 'critical') {
             // Buscar dados do ticket para a notificação
             supabase
               .from('tickets')
