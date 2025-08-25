@@ -1,14 +1,15 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Search, Calendar, UserCheck } from "lucide-react";
+import { Users, Search, UserCheck, Plus } from "lucide-react";
 import { InternalAccessApproval } from "@/components/equipes/InternalAccessApproval";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { EquipeCard } from "@/components/equipes/EquipeCard";
+import { CreateEquipeDialog } from "@/components/equipes/CreateEquipeDialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { useAuth } from "@/hooks/useAuth";
+import { useRole } from "@/hooks/useRole";
 
 interface Equipe {
   id: string;
@@ -20,21 +21,63 @@ interface Equipe {
   updated_at: string;
 }
 
+interface EquipeWithMembers extends Equipe {
+  member_count: number;
+  is_user_leader: boolean;
+}
+
 export default function Equipes() {
-  const [equipes, setEquipes] = useState<Equipe[]>([]);
+  const [equipes, setEquipes] = useState<EquipeWithMembers[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { hasRole } = useRole();
 
   const fetchEquipes = async () => {
     try {
-      const { data, error } = await supabase
+      // Buscar equipes básicas
+      const { data: equipesData, error: equipesError } = await supabase
         .from('equipes')
         .select('*')
         .order('nome');
 
-      if (error) throw error;
-      setEquipes(data || []);
+      if (equipesError) throw equipesError;
+
+      // Para cada equipe, buscar contagem de membros e verificar se o usuário é líder
+      const equipesWithMembers = await Promise.all(
+        (equipesData || []).map(async (equipe) => {
+          // Contar membros ativos
+          const { count: memberCount } = await supabase
+            .from('equipe_members')
+            .select('*', { count: 'exact', head: true })
+            .eq('equipe_id', equipe.id)
+            .eq('ativo', true);
+
+          // Verificar se o usuário atual é líder desta equipe
+          let isUserLeader = false;
+          if (user) {
+            const { data: leaderData } = await supabase
+              .from('equipe_members')
+              .select('role')
+              .eq('equipe_id', equipe.id)
+              .eq('user_id', user.id)
+              .eq('ativo', true)
+              .in('role', ['leader', 'supervisor'])
+              .maybeSingle();
+
+            isUserLeader = !!leaderData;
+          }
+
+          return {
+            ...equipe,
+            member_count: memberCount || 0,
+            is_user_leader: isUserLeader
+          };
+        })
+      );
+
+      setEquipes(equipesWithMembers);
     } catch (error) {
       console.error('Error fetching equipes:', error);
       toast({
@@ -49,12 +92,14 @@ export default function Equipes() {
 
   useEffect(() => {
     fetchEquipes();
-  }, []);
+  }, [user]);
 
   const filteredEquipes = equipes.filter(equipe =>
     equipe.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     equipe.descricao?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const canCreateEquipe = hasRole('admin') || hasRole('diretoria');
 
   if (loading) {
     return (
@@ -64,19 +109,13 @@ export default function Equipes() {
             <div className="h-8 bg-muted rounded w-48 mb-2"></div>
             <div className="h-4 bg-muted rounded w-96"></div>
           </div>
-          <Card>
-            <CardContent className="p-6">
-              <div className="space-y-4">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <div key={i} className="flex space-x-4 animate-pulse">
-                    <div className="h-4 bg-muted rounded flex-1"></div>
-                    <div className="h-4 bg-muted rounded w-20"></div>
-                    <div className="h-4 bg-muted rounded w-16"></div>
-                  </div>
-                ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="animate-pulse">
+                <div className="h-48 bg-muted rounded-lg"></div>
               </div>
-            </CardContent>
-          </Card>
+            ))}
+          </div>
         </div>
       </ProtectedRoute>
     );
@@ -85,18 +124,24 @@ export default function Equipes() {
   return (
     <ProtectedRoute requiredPermission="view_all_tickets">
       <div className="w-full space-y-6 pt-6">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Equipes</h2>
-          <p className="text-muted-foreground">
-            Visualize todas as equipes disponíveis no sistema.
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight">Equipes</h2>
+            <p className="text-muted-foreground">
+              Gerencie as equipes e seus membros no sistema.
+            </p>
+          </div>
+          
+          {canCreateEquipe && (
+            <CreateEquipeDialog onSuccess={fetchEquipes} />
+          )}
         </div>
 
         <Tabs defaultValue="equipes" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="equipes" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
-              Equipes
+              Equipes ({filteredEquipes.length})
             </TabsTrigger>
             <TabsTrigger value="solicitacoes" className="flex items-center gap-2">
               <UserCheck className="h-4 w-4" />
@@ -104,128 +149,45 @@ export default function Equipes() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="equipes" className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <Search className="w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por nome ou descrição..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="max-w-sm"
-              />
-            </div>
-
-            <div className="text-sm text-muted-foreground mb-4">
-              {filteredEquipes.length} equipes encontradas
+          <TabsContent value="equipes" className="space-y-6">
+            <div className="flex items-center gap-4">
+              <div className="relative flex-1 max-w-sm">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por nome ou descrição..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
             </div>
 
             {filteredEquipes.length === 0 ? (
-              <Card>
-                <CardContent className="text-center py-8">
-                  <div className="text-muted-foreground">
-                    {searchTerm ? 'Nenhuma equipe encontrada com os filtros aplicados.' : 'Nenhuma equipe cadastrada.'}
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="text-center py-12">
+                <Users className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">
+                  {searchTerm ? 'Nenhuma equipe encontrada' : 'Nenhuma equipe cadastrada'}
+                </h3>
+                <p className="text-muted-foreground mb-6">
+                  {searchTerm 
+                    ? 'Tente ajustar os filtros de busca.' 
+                    : 'Comece criando sua primeira equipe para organizar os membros.'
+                  }
+                </p>
+                {canCreateEquipe && !searchTerm && (
+                  <CreateEquipeDialog onSuccess={fetchEquipes} />
+                )}
+              </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredEquipes.map((equipe) => (
-                  <Dialog key={equipe.id}>
-                    <DialogTrigger asChild>
-                      <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border bg-white dark:bg-card relative overflow-hidden">
-                        <CardHeader className="pb-2 pt-3 px-4">
-                          <div className="flex items-start justify-between mb-2">
-                            <div className="p-1 bg-green-50 dark:bg-green-900/20 rounded-md">
-                              <Users className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
-                            </div>
-                          </div>
-                          
-                          <div className="space-y-1">
-                            <div>
-                              <CardTitle className="text-sm font-semibold leading-tight">
-                                {equipe.nome}
-                              </CardTitle>
-                              <p className="text-xs text-muted-foreground">
-                                {equipe.descricao}
-                              </p>
-                            </div>
-                            
-                            <div className="text-xs text-muted-foreground">
-                              <div>#{equipe.id.substring(0, 8)}</div>
-                            </div>
-                          </div>
-                        </CardHeader>
-                        
-                        <CardContent className="pt-0 pb-3 px-4">
-                          <Badge 
-                            className={`${
-                              equipe.ativo
-                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400'
-                                : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
-                            } border-0 font-medium uppercase text-xs tracking-wide py-1 px-2`}
-                          >
-                            {equipe.ativo ? "Ativa" : "Inativa"}
-                          </Badge>
-                        </CardContent>
-                      </Card>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-2xl">
-                      <DialogHeader>
-                        <DialogTitle className="flex items-center gap-3">
-                          <Users className="w-5 h-5" />
-                          {equipe.nome}
-                        </DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div className="space-y-4">
-                            <div>
-                              <h4 className="font-semibold mb-2">Informações Básicas</h4>
-                              <div className="space-y-2 text-sm">
-                                <div className="flex justify-between">
-                                  <span className="text-muted-foreground">ID:</span>
-                                  <span>{equipe.id}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-muted-foreground">Nome:</span>
-                                  <span>{equipe.nome}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-muted-foreground">Status:</span>
-                                  <Badge variant={equipe.ativo ? "default" : "secondary"}>
-                                    {equipe.ativo ? "Ativa" : "Inativa"}
-                                  </Badge>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="space-y-4">
-                            <div>
-                              <h4 className="font-semibold mb-2">Descrição</h4>
-                              <div className="space-y-2 text-sm">
-                                <div>
-                                  <span className="text-muted-foreground">Descrição:</span>
-                                  <p className="mt-1">{equipe.descricao}</p>
-                                </div>
-                                <div>
-                                  <span className="text-muted-foreground">Introdução:</span>
-                                  <p className="mt-1 text-xs">{equipe.introducao}</p>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="pt-4 border-t">
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Calendar className="w-3 h-3" />
-                            <span>Criado em: {new Date(equipe.created_at).toLocaleDateString('pt-BR')}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+                  <EquipeCard
+                    key={equipe.id}
+                    equipe={equipe}
+                    memberCount={equipe.member_count}
+                    isLeader={equipe.is_user_leader}
+                    onRefresh={fetchEquipes}
+                  />
                 ))}
               </div>
             )}
