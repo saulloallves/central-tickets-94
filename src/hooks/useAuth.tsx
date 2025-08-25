@@ -92,10 +92,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    
+    // Limpar dados do localStorage
+    localStorage.removeItem('last_login_origin');
+    
     toast({
       title: "Logout realizado",
       description: "Você foi desconectado do sistema"
     });
+    
+    // Redirecionar para página de login
+    window.location.href = '/auth';
   };
 
   return (
