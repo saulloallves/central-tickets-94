@@ -53,7 +53,6 @@ export function FranqueadoTicketDetail({ ticketId, onClose }: FranqueadoTicketDe
   const [ticket, setTicket] = useState<TicketData | null>(null);
   const [messages, setMessages] = useState<TicketMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
-  const [newStatus, setNewStatus] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -80,7 +79,6 @@ export function FranqueadoTicketDetail({ ticketId, onClose }: FranqueadoTicketDe
         }
 
         setTicket(ticketData as any);
-        setNewStatus(ticketData.status);
 
         // Buscar mensagens do ticket
         const { data: messagesData, error: messagesError } = await supabase
@@ -162,40 +160,6 @@ export function FranqueadoTicketDetail({ ticketId, onClose }: FranqueadoTicketDe
     }
   };
 
-  const handleStatusChange = async () => {
-    if (!newStatus || newStatus === ticket?.status) return;
-
-    try {
-      const { error } = await supabase
-        .from('tickets')
-        .update({ status: newStatus as any })
-        .eq('id', ticketId);
-
-      if (error) {
-        console.error('Erro ao atualizar status:', error);
-        toast({
-          title: "Erro",
-          description: "Falha ao atualizar status",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      setTicket(prev => prev ? { ...prev, status: newStatus } : null);
-
-      toast({
-        title: "Sucesso",
-        description: "Status atualizado com sucesso"
-      });
-    } catch (error) {
-      console.error('Erro ao atualizar status:', error);
-      toast({
-        title: "Erro",
-        description: "Falha ao atualizar status",
-        variant: "destructive"
-      });
-    }
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -308,29 +272,6 @@ export function FranqueadoTicketDetail({ ticketId, onClose }: FranqueadoTicketDe
         </div>
       </div>
 
-      {/* Status Update */}
-      <div className="p-4 border-b">
-        <div className="flex items-center gap-2">
-          <Select value={newStatus} onValueChange={setNewStatus}>
-            <SelectTrigger className="w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="aberto">Aberto</SelectItem>
-              <SelectItem value="em_atendimento">Em Atendimento</SelectItem>
-              <SelectItem value="aguardando_cliente">Aguardando Cliente</SelectItem>
-              <SelectItem value="concluido">Concluído</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button 
-            size="sm" 
-            onClick={handleStatusChange}
-            disabled={newStatus === ticket.status}
-          >
-            Atualizar Status
-          </Button>
-        </div>
-      </div>
 
       {/* Messages */}
       <ScrollArea className="flex-1 p-4">
