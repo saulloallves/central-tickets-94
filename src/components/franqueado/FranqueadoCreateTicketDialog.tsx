@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useFranqueadoUnits } from '@/hooks/useFranqueadoUnits';
+import { useAIAnalysis } from '@/hooks/useAIAnalysis';
 
 interface FranqueadoCreateTicketDialogProps {
   open: boolean;
@@ -19,15 +20,13 @@ export function FranqueadoCreateTicketDialog({ open, onOpenChange }: FranqueadoC
   const { user } = useAuth();
   const { toast } = useToast();
   const { units } = useFranqueadoUnits();
+  const { analyzeTicket, loading: aiLoading } = useAIAnalysis();
   const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     titulo: '',
     descricao_problema: '',
-    categoria: '',
-    prioridade: 'posso_esperar',
-    unidade_id: '',
-    canal_origem: 'web'
+    unidade_id: ''
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,19 +44,21 @@ export function FranqueadoCreateTicketDialog({ open, onOpenChange }: FranqueadoC
     setLoading(true);
 
     try {
-      const { error } = await supabase
+      // Create ticket with minimal data
+      const { data: ticket, error } = await supabase
         .from('tickets')
         .insert({
-          codigo_ticket: '', // Será gerado automaticamente
+          codigo_ticket: '', // Will be generated automatically
           descricao_problema: formData.descricao_problema,
           titulo: formData.titulo,
-          categoria: (formData.categoria || 'outro') as any,
-          prioridade: formData.prioridade as any,
+          prioridade: 'posso_esperar' as any, // Default until AI analysis
           unidade_id: formData.unidade_id,
-          canal_origem: formData.canal_origem as any,
+          canal_origem: 'web' as any,
           criado_por: user.id,
           status: 'aberto' as any
-        });
+        })
+        .select()
+        .single();
 
       if (error) {
         console.error('Erro ao criar ticket:', error);
@@ -71,20 +72,29 @@ export function FranqueadoCreateTicketDialog({ open, onOpenChange }: FranqueadoC
 
       toast({
         title: "Sucesso",
-        description: "Ticket criado com sucesso"
+        description: "Ticket criado. Analisando com IA..."
       });
 
-      // Reset form
+      // Reset form and close dialog
       setFormData({
         titulo: '',
         descricao_problema: '',
-        categoria: '',
-        prioridade: 'posso_esperar',
-        unidade_id: '',
-        canal_origem: 'web'
+        unidade_id: ''
       });
-
       onOpenChange(false);
+
+      // Analyze ticket with AI in background
+      try {
+        await analyzeTicket(ticket.id, formData.descricao_problema);
+      } catch (aiError) {
+        console.error('AI analysis failed:', aiError);
+        // Ticket was created successfully, AI analysis failure is not critical
+        toast({
+          title: "Aviso",
+          description: "Ticket criado mas análise IA falhou. Será processado manualmente.",
+          variant: "destructive"
+        });
+      }
     } catch (error) {
       console.error('Erro ao criar ticket:', error);
       toast({
@@ -147,59 +157,9 @@ export function FranqueadoCreateTicketDialog({ open, onOpenChange }: FranqueadoC
               placeholder="Descreva detalhadamente o problema"
               rows={4}
             />
-          </div>
-
-          {/* Categoria e Prioridade */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="categoria">Categoria</Label>
-              <Select value={formData.categoria} onValueChange={(value) => handleInputChange('categoria', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione a categoria" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="sistema">Sistema</SelectItem>
-                  <SelectItem value="financeiro">Financeiro</SelectItem>
-                  <SelectItem value="operacoes">Operações</SelectItem>
-                  <SelectItem value="juridico">Jurídico</SelectItem>
-                  <SelectItem value="outro">Outro</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="prioridade">Prioridade</Label>
-              <Select value={formData.prioridade} onValueChange={(value) => handleInputChange('prioridade', value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="crise">Crise</SelectItem>
-                  <SelectItem value="imediato">Imediato</SelectItem>
-                  <SelectItem value="ate_1_hora">Até 1 hora</SelectItem>
-                  <SelectItem value="ainda_hoje">Ainda hoje</SelectItem>
-                  <SelectItem value="posso_esperar">Posso esperar</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-
-          {/* Canal de Origem */}
-          <div className="space-y-2">
-            <Label htmlFor="canal_origem">Canal de Origem</Label>
-            <Select value={formData.canal_origem} onValueChange={(value) => handleInputChange('canal_origem', value)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="web">Web</SelectItem>
-                <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                <SelectItem value="telefone">Telefone</SelectItem>
-                <SelectItem value="email">E-mail</SelectItem>
-                <SelectItem value="presencial">Presencial</SelectItem>
-              </SelectContent>
-            </Select>
+            <p className="text-xs text-muted-foreground">
+              Categoria, prioridade e equipe responsável serão definidas automaticamente pela IA após criar o ticket.
+            </p>
           </div>
 
           {/* Buttons */}
@@ -207,8 +167,8 @@ export function FranqueadoCreateTicketDialog({ open, onOpenChange }: FranqueadoC
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Criando...' : 'Criar Ticket'}
+            <Button type="submit" disabled={loading || aiLoading}>
+              {loading ? 'Criando...' : aiLoading ? 'Analisando...' : 'Criar Ticket'}
             </Button>
           </div>
         </form>
