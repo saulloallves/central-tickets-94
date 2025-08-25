@@ -729,6 +729,7 @@ export type Database = {
           name: string | null
           nationality: string | null
           neighborhood: string | null
+          normalized_phone: string | null
           phone: string | null
           profile_picture: string | null
           receive_for_labor: string | null
@@ -772,6 +773,7 @@ export type Database = {
           name?: string | null
           nationality?: string | null
           neighborhood?: string | null
+          normalized_phone?: string | null
           phone?: string | null
           profile_picture?: string | null
           receive_for_labor?: string | null
@@ -815,6 +817,7 @@ export type Database = {
           name?: string | null
           nationality?: string | null
           neighborhood?: string | null
+          normalized_phone?: string | null
           phone?: string | null
           profile_picture?: string | null
           receive_for_labor?: string | null
