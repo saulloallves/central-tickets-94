@@ -20,7 +20,7 @@ export default function FranqueadoLayout({ children }: FranqueadoLayoutProps) {
           className="flex-1 transition-all duration-300 overflow-hidden"
           data-main-content
           style={{ 
-            marginLeft: isMobile ? '0' : '80px',
+            marginLeft: isMobile ? '0' : '64px',
             paddingBottom: isMobile ? '80px' : '0'
           }}
         >

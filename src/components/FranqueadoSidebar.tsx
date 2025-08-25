@@ -41,7 +41,7 @@ export function FranqueadoSidebar() {
     if (!isMobile) {
       const mainContent = document.querySelector('[data-main-content]') as HTMLElement;
       if (mainContent) {
-        mainContent.style.marginLeft = '240px';
+        mainContent.style.marginLeft = '224px';
       }
     }
   };
@@ -51,7 +51,7 @@ export function FranqueadoSidebar() {
     if (!isMobile) {
       const mainContent = document.querySelector('[data-main-content]') as HTMLElement;
       if (mainContent) {
-        mainContent.style.marginLeft = '80px';
+        mainContent.style.marginLeft = '64px';
       }
     }
   };
@@ -59,15 +59,14 @@ export function FranqueadoSidebar() {
   return (
     <div
       className={cn(
-        "fixed left-4 top-1/2 -translate-y-1/2 z-40 transition-all duration-300",
-        "h-[calc(100vh-16rem)]",
+        "fixed left-0 top-0 z-40 transition-all duration-300 h-full",
         isExpanded ? "w-56" : "w-16"
       )}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <div className="relative h-full bg-gradient-to-b from-primary via-primary/95 to-primary/90 rounded-3xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.1)] border border-white/10">
-        <div className="absolute inset-0 liquid-glass-sidebar rounded-3xl"></div>
+      <div className="relative h-full bg-gradient-to-b from-primary via-primary/95 to-primary/90 overflow-hidden shadow-xl border-r border-white/10">
+        <div className="absolute inset-0 bg-white/5 backdrop-blur-sm"></div>
         
         <div className={cn(
           "relative z-20 h-full flex flex-col overflow-hidden",
