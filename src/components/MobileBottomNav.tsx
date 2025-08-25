@@ -28,7 +28,7 @@ export function MobileBottomNav() {
                     to={item.url}
                     end
                       className={({ isActive }) => cn(
-                        "relative flex flex-col items-center justify-center w-12 h-12 rounded-lg transition-all duration-300 flex-shrink-0",
+                        "relative flex flex-col items-center justify-center w-16 h-14 rounded-lg transition-all duration-300 flex-shrink-0",
                       isActive 
                         ? "bg-white/10 backdrop-blur-sm text-white" 
                         : "hover:bg-white/5 hover:backdrop-blur-sm hover:text-white/95"
@@ -38,7 +38,7 @@ export function MobileBottomNav() {
                       <>
                         <item.icon 
                           className={cn(
-                            "h-4 w-4 text-white transition-all duration-300 drop-shadow-md",
+                            "h-5 w-5 text-white transition-all duration-300 drop-shadow-md",
                             isActive ? "drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" : "opacity-90"
                           )}
                           strokeWidth={1.5}
@@ -51,10 +51,10 @@ export function MobileBottomNav() {
                         
                         {/* Small label */}
                         <span className={cn(
-                          "text-[9px] text-white font-medium mt-0.5 drop-shadow-md text-center leading-tight",
+                          "text-[9px] text-white font-medium mt-0.5 drop-shadow-md text-center leading-tight max-w-full",
                           isActive ? "opacity-100" : "opacity-70"
                         )}>
-                          {item.title.length > 5 ? item.title.substring(0, 5) + '.' : item.title}
+                          {item.title}
                         </span>
                       </>
                     )}
@@ -68,7 +68,7 @@ export function MobileBottomNav() {
               <NavLink
                 to="/admin/profile"
                   className={({ isActive }) => cn(
-                    "relative flex flex-col items-center justify-center w-12 h-12 rounded-lg transition-all duration-300 flex-shrink-0",
+                    "relative flex flex-col items-center justify-center w-16 h-14 rounded-lg transition-all duration-300 flex-shrink-0",
                   isActive 
                     ? "bg-white/10 backdrop-blur-sm text-white" 
                     : "hover:bg-white/5 hover:backdrop-blur-sm hover:text-white/95"
@@ -77,7 +77,7 @@ export function MobileBottomNav() {
                 {({ isActive }) => (
                   <>
                     <div className="relative">
-                      <Avatar className="h-6 w-6">
+                      <Avatar className="h-7 w-7">
                         <AvatarImage src={profile?.avatar_url || user?.user_metadata?.avatar_url} />
                         <AvatarFallback className="bg-white/20 text-white text-xs">
                           {profile?.nome_completo?.charAt(0)?.toUpperCase() ||
