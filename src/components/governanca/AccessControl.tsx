@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useSystemLogs } from "@/hooks/useSystemLogs";
 import { usePresence } from "@/hooks/usePresence";
+import { useRole } from "@/hooks/useRole";
 import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -39,6 +40,7 @@ interface UserProfile {
 export function AccessControl() {
   const { logSystemAction } = useSystemLogs();
   const { onlineUsers, totalOnline } = usePresence();
+  const { isAdmin, hasRole } = useRole();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -119,6 +121,16 @@ export function AccessControl() {
   };
 
   const handleRevokeRole = async (userId: string, role: string) => {
+    // Verificar se o usuário tem permissão para revogar roles
+    if (!isAdmin && !hasRole('diretoria')) {
+      toast({
+        title: "Acesso Negado",
+        description: "Apenas administradores e diretoria podem editar cargos de usuários",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('user_roles')
