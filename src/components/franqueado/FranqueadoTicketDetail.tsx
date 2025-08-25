@@ -39,6 +39,9 @@ interface TicketData {
   cliente_telefone: string;
   cliente_email: string;
   reaberto_count: number;
+  equipes?: {
+    nome: string;
+  };
 }
 
 interface FranqueadoTicketDetailProps {
@@ -69,7 +72,10 @@ export function FranqueadoTicketDetail({ ticketId, onClose }: FranqueadoTicketDe
         // Buscar dados do ticket
         const { data: ticketData, error: ticketError } = await supabase
           .from('tickets')
-          .select('*')
+          .select(`
+            *,
+            equipes:equipe_responsavel_id(nome)
+          `)
           .eq('id', ticketId)
           .single();
 
@@ -310,20 +316,20 @@ export function FranqueadoTicketDetail({ ticketId, onClose }: FranqueadoTicketDe
           <div>
             <div className="flex items-center gap-1 text-muted-foreground">
               <User className="h-3 w-3" />
-              <span>Cliente:</span>
+              <span>Equipe:</span>
             </div>
-            <p>{ticket.cliente_nome}</p>
+            <p>{ticket.equipes?.nome || 'Não atribuída'}</p>
           </div>
           <div>
             <div className="flex items-center gap-1 text-muted-foreground">
               <Phone className="h-3 w-3" />
               <span>Telefone:</span>
             </div>
-            <p>{ticket.cliente_telefone}</p>
+            <p>{ticket.cliente_telefone || 'Não informado'}</p>
           </div>
           <div>
             <span className="text-muted-foreground">Categoria:</span>
-            <p>{ticket.categoria}</p>
+            <p>{ticket.categoria || 'Não definida'}</p>
           </div>
         </div>
 
