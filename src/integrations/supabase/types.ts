@@ -2288,7 +2288,7 @@ export type Database = {
         Args: {
           p_periodo_dias?: number
           p_unidade_filter?: string
-          p_user_id: string
+          p_user_id?: string
         }
         Returns: {
           equipe_id: string
@@ -2318,6 +2318,11 @@ export type Database = {
               p_equipe_filter: string
               p_periodo_dias: number
               p_user_id: string
+            }
+          | {
+              p_equipe_filter?: string
+              p_periodo_dias?: number
+              p_user_id?: string
             }
           | { p_periodo_dias?: number; p_user_id?: string }
         Returns: {
