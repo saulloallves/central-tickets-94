@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, AlertTriangle, Clock, CheckCircle } from 'lucide-react';
+import { Bell, AlertTriangle, Clock, CheckCircle, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { useInternalAlerts } from '@/hooks/useInternalAlerts';
+import { NotificationSounds } from '@/lib/notification-sounds';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -82,10 +83,27 @@ export const NotificationButton = ({ isExpanded = false }: { isExpanded?: boolea
       </PopoverTrigger>
       <PopoverContent className="w-80 p-0" align="end">
         <div className="p-4 pb-0">
-          <h4 className="font-semibold">Notificações</h4>
-          <p className="text-sm text-muted-foreground">
-            {alerts.length} {alerts.length === 1 ? 'alerta pendente' : 'alertas pendentes'}
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h4 className="font-semibold">Notificações</h4>
+              <p className="text-sm text-muted-foreground">
+                {alerts.length} {alerts.length === 1 ? 'alerta pendente' : 'alertas pendentes'}
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                NotificationSounds.requestAudioPermission().then(() => {
+                  NotificationSounds.playNotificationSound('info');
+                });
+              }}
+              className="h-8 w-8 p-0"
+              title="Testar som das notificações"
+            >
+              <Volume2 className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
         
         <Separator className="my-2" />
