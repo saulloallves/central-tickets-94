@@ -116,38 +116,38 @@ const Franqueados = () => {
 
   return (
     <ProtectedRoute requiredPermission="view_all_tickets">
-      <div className="w-full space-y-6 pt-6">
+      <div className="w-full space-y-4 md:space-y-6 pt-3 md:pt-6">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Franqueados</h2>
-          <p className="text-muted-foreground">
+          <h2 className="text-xl md:text-3xl font-bold tracking-tight">Franqueados</h2>
+          <p className="text-sm md:text-base text-muted-foreground">
             Gerencie todos os franqueados da rede
           </p>
         </div>
 
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
+        <div className="space-y-3 md:space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
             <div className="flex items-center space-x-2">
               <Search className="w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar por nome, email ou cidade..."
                 value={searchTerm}
                 onChange={(e) => handleSearch(e.target.value)}
-                className="max-w-sm"
+                className="w-full md:max-w-sm"
               />
             </div>
             
             {/* Info de paginação */}
-            <div className="text-sm text-muted-foreground">
+            <div className="text-xs md:text-sm text-muted-foreground">
               {totalCount > 0 && (
                 <>
-                  Página {currentPage} de {totalPages} • {totalCount} franqueados
+                  Pág {currentPage}/{totalPages} • {totalCount} franqueados
                 </>
               )}
             </div>
           </div>
 
           {searchLoading && (
-            <div className="text-center text-sm text-muted-foreground">
+            <div className="text-center text-xs md:text-sm text-muted-foreground">
               Carregando...
             </div>
           )}
@@ -162,110 +162,108 @@ const Franqueados = () => {
             </Card>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
                 {franqueados.map((franqueado) => (
                   <Dialog key={franqueado.id}>
                     <DialogTrigger asChild>
                       <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border bg-white dark:bg-card relative overflow-hidden">
-                        <CardHeader className="pb-2 pt-3 px-4">
-                          <div className="flex items-start justify-between mb-2">
+                        <CardHeader className="pb-2 pt-2 md:pt-3 px-3 md:px-4">
+                          <div className="flex items-start justify-between mb-1 md:mb-2">
                             <div className="p-1 bg-purple-50 dark:bg-purple-900/20 rounded-md">
-                              <User className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                              <User className="w-3 h-3 md:w-3.5 md:h-3.5 text-purple-600 dark:text-purple-400" />
                             </div>
-                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                              <Search className="w-3 h-3 text-muted-foreground" />
+                            <Button variant="ghost" size="sm" className="h-5 w-5 md:h-6 md:w-6 p-0">
+                              <Search className="w-2.5 h-2.5 md:w-3 md:h-3 text-muted-foreground" />
                             </Button>
                           </div>
                           
                           <div className="space-y-1">
                             <div>
-                              <CardTitle className="text-sm font-semibold leading-tight">
+                              <CardTitle className="text-xs md:text-sm font-semibold leading-tight line-clamp-1">
                                 {franqueado.name || 'Franqueado'}
                               </CardTitle>
-                              <p className="text-xs text-muted-foreground">
+                              <p className="text-[10px] md:text-xs text-muted-foreground line-clamp-1">
                                 {franqueado.city || 'N/A'}, {franqueado.state || 'N/A'}
                               </p>
                             </div>
                             
-                            <div className="text-xs text-muted-foreground">
-                              <div>#{franqueado.id} • {getUnitDisplay(franqueado.unit_name, franqueado.unit_code)}</div>
+                            <div className="text-[10px] md:text-xs text-muted-foreground">
+                              <div className="line-clamp-1">#{franqueado.id} • {getUnitDisplay(franqueado.unit_name, franqueado.unit_code)}</div>
                             </div>
                           </div>
                         </CardHeader>
                         
-                        <CardContent className="pt-0 pb-3 px-4">
+                        <CardContent className="pt-0 pb-2 md:pb-3 px-3 md:px-4">
                           <Badge 
                             variant="secondary" 
-                            className="border-0 font-medium uppercase text-xs tracking-wide py-1 px-2 bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
+                            className="border-0 font-medium uppercase text-[9px] md:text-xs tracking-wide py-0.5 md:py-1 px-1.5 md:px-2 bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
                           >
                             {franqueado.franchisee_type || 'N/A'}
                           </Badge>
                         </CardContent>
                       </Card>
                     </DialogTrigger>
-                    <DialogContent className="max-w-2xl">
+                    <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
                       <DialogHeader>
-                        <DialogTitle className="flex items-center gap-3">
-                          <User className="w-5 h-5" />
-                          {franqueado.name || 'Franqueado'}
+                        <DialogTitle className="flex items-center gap-2 md:gap-3 text-base md:text-lg">
+                          <User className="w-4 h-4 md:w-5 md:h-5" />
+                          <span className="line-clamp-1">{franqueado.name || 'Franqueado'}</span>
                         </DialogTitle>
                       </DialogHeader>
-                      <div className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div className="space-y-4">
+                      <div className="space-y-4 md:space-y-6">
+                        <div className="grid grid-cols-1 gap-4 md:gap-6">
+                          <div className="space-y-3 md:space-y-4">
                             <div>
-                              <h4 className="font-semibold mb-2">Informações Pessoais</h4>
-                              <div className="space-y-2 text-sm">
-                                <div className="flex justify-between">
+                              <h4 className="font-semibold mb-2 text-sm md:text-base">Informações Pessoais</h4>
+                              <div className="space-y-1.5 md:space-y-2 text-xs md:text-sm">
+                                <div className="flex justify-between items-center">
                                   <span className="text-muted-foreground">ID:</span>
-                                  <span>{franqueado.id}</span>
+                                  <span className="font-medium">{franqueado.id}</span>
                                 </div>
-                                <div className="flex justify-between">
-                                  <span className="text-muted-foreground">Nome:</span>
-                                  <span>{franqueado.name || 'N/A'}</span>
+                                <div className="flex justify-between items-start gap-2">
+                                  <span className="text-muted-foreground flex-shrink-0">Nome:</span>
+                                  <span className="text-right break-words">{franqueado.name || 'N/A'}</span>
                                 </div>
-                                <div className="flex justify-between">
+                                <div className="flex justify-between items-center">
                                   <span className="text-muted-foreground">Tipo:</span>
-                                  <Badge variant="secondary">{franqueado.franchisee_type || 'N/A'}</Badge>
+                                  <Badge variant="secondary" className="text-xs">{franqueado.franchisee_type || 'N/A'}</Badge>
                                 </div>
                               </div>
                             </div>
 
                             <div>
-                              <h4 className="font-semibold mb-2">Unidade</h4>
-                              <div className="space-y-2 text-sm">
-                                <div className="flex justify-between">
-                                  <span className="text-muted-foreground">Nome:</span>
-                                  <span>{getUnitDisplay(franqueado.unit_name, franqueado.unit_code)}</span>
+                              <h4 className="font-semibold mb-2 text-sm md:text-base">Unidade</h4>
+                              <div className="space-y-1.5 md:space-y-2 text-xs md:text-sm">
+                                <div className="flex justify-between items-start gap-2">
+                                  <span className="text-muted-foreground flex-shrink-0">Nome:</span>
+                                  <span className="text-right break-words">{getUnitDisplay(franqueado.unit_name, franqueado.unit_code)}</span>
                                 </div>
                               </div>
                             </div>
-                          </div>
 
-                          <div className="space-y-4">
                             <div>
-                              <h4 className="font-semibold mb-2">Localização</h4>
-                              <div className="space-y-2 text-sm">
-                                <div className="flex justify-between">
+                              <h4 className="font-semibold mb-2 text-sm md:text-base">Localização</h4>
+                              <div className="space-y-1.5 md:space-y-2 text-xs md:text-sm">
+                                <div className="flex justify-between items-center">
                                   <span className="text-muted-foreground">Cidade:</span>
-                                  <span>{franqueado.city || 'N/A'}</span>
+                                  <span className="font-medium">{franqueado.city || 'N/A'}</span>
                                 </div>
-                                <div className="flex justify-between">
+                                <div className="flex justify-between items-center">
                                   <span className="text-muted-foreground">Estado:</span>
-                                  <span>{franqueado.state || 'N/A'}</span>
+                                  <span className="font-medium">{franqueado.state || 'N/A'}</span>
                                 </div>
                               </div>
                             </div>
 
                             <div>
-                              <h4 className="font-semibold mb-2">Contato</h4>
-                              <div className="space-y-2 text-sm">
+                              <h4 className="font-semibold mb-2 text-sm md:text-base">Contato</h4>
+                              <div className="space-y-1.5 md:space-y-2 text-xs md:text-sm">
                                 <div className="flex items-center gap-2">
-                                  <Mail className="w-3 h-3 text-muted-foreground" />
-                                  <span>{franqueado.email || 'N/A'}</span>
+                                  <Mail className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+                                  <span className="break-all text-xs">{franqueado.email || 'N/A'}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <Phone className="w-3 h-3 text-muted-foreground" />
+                                  <Phone className="w-3 h-3 text-muted-foreground flex-shrink-0" />
                                   <span>{franqueado.phone || 'N/A'}</span>
                                 </div>
                               </div>
@@ -273,9 +271,9 @@ const Franqueados = () => {
                           </div>
                         </div>
 
-                        <div className="pt-4 border-t">
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Calendar className="w-3 h-3" />
+                        <div className="pt-3 md:pt-4 border-t">
+                          <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
+                            <Calendar className="w-3 h-3 flex-shrink-0" />
                             <span>Criado em: {new Date(franqueado.CreatedAt).toLocaleDateString('pt-BR')}</span>
                           </div>
                         </div>
@@ -287,21 +285,23 @@ const Franqueados = () => {
 
               {/* Controles de paginação */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-center space-x-2 pt-8 pb-6">
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-6 md:pt-8 pb-4 md:pb-6">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                     disabled={currentPage === 1 || searchLoading}
+                    className="w-full sm:w-auto"
                   >
                     <ChevronLeft className="h-4 w-4" />
-                    Anterior
+                    <span className="hidden md:inline">Anterior</span>
+                    <span className="md:hidden">Ant</span>
                   </Button>
                   
                   <div className="flex items-center space-x-1">
                     {/* Mostrar algumas páginas ao redor da atual */}
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      const pageNum = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
+                    {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
+                      const pageNum = Math.max(1, Math.min(totalPages - 2, currentPage - 1)) + i;
                       if (pageNum > totalPages) return null;
                       
                       return (
@@ -311,7 +311,7 @@ const Franqueados = () => {
                           size="sm"
                           onClick={() => setCurrentPage(pageNum)}
                           disabled={searchLoading}
-                          className="w-10"
+                          className="w-8 h-8 md:w-10 md:h-10 text-xs md:text-sm"
                         >
                           {pageNum}
                         </Button>
@@ -324,8 +324,10 @@ const Franqueados = () => {
                     size="sm"
                     onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                     disabled={currentPage === totalPages || searchLoading}
+                    className="w-full sm:w-auto"
                   >
-                    Próxima
+                    <span className="hidden md:inline">Próxima</span>
+                    <span className="md:hidden">Prox</span>
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>
