@@ -1,5 +1,5 @@
-import { BarChart3 } from "lucide-react";
-import { useEffect } from "react";
+import { BarChart3, Calendar } from "lucide-react";
+import { useEffect, useState } from "react";
 import { PermissionGuard } from "@/components/PermissionGuard";
 import { useRole } from "@/hooks/useRole";
 import { useAuth } from "@/hooks/useAuth";
@@ -7,6 +7,8 @@ import { useSystemLogs } from "@/hooks/useSystemLogs";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RealtimeDashboard } from "@/components/governanca/RealtimeDashboard";
 import { AuditPanel } from "@/components/governanca/AuditPanel";
 import { BottleneckDetection } from "@/components/governanca/BottleneckDetection";
@@ -18,6 +20,14 @@ export default function Governanca() {
   const { isAdmin } = useRole();
   const { user } = useAuth();
   const { logSystemAction } = useSystemLogs();
+  const [periodFilter, setPeriodFilter] = useState("30");
+
+  const periodOptions = [
+    { value: "1", label: "Hoje" },
+    { value: "7", label: "7 dias" },
+    { value: "30", label: "30 dias" },
+    { value: "0", label: "Todos" }
+  ];
 
   useEffect(() => {
     if (user && isAdmin) {
@@ -69,17 +79,36 @@ export default function Governanca() {
       <div className="space-y-6 p-6">
         {/* Header */}
         <div className="liquid-glass-header p-6">
-          <div className="flex items-center space-x-4">
-            <div className="p-3 bg-primary/10 rounded-2xl">
-              <BarChart3 className="h-8 w-8 text-primary" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="p-3 bg-primary/10 rounded-2xl">
+                <BarChart3 className="h-8 w-8 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-foreground">Monitoramento & Governança</h1>
+                <p className="text-muted-foreground">Central de controle e análise estratégica do sistema</p>
+              </div>
+              <Badge variant="secondary">
+                Admin Only
+              </Badge>
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">Monitoramento & Governança</h1>
-              <p className="text-muted-foreground">Central de controle e análise estratégica do sistema</p>
+            
+            {/* Period Filter */}
+            <div className="flex items-center space-x-3">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <Select value={periodFilter} onValueChange={setPeriodFilter}>
+                <SelectTrigger className="w-[140px] liquid-glass-button">
+                  <SelectValue placeholder="Período" />
+                </SelectTrigger>
+                <SelectContent>
+                  {periodOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <Badge variant="secondary" className="ml-auto">
-              Admin Only
-            </Badge>
           </div>
         </div>
 
@@ -107,11 +136,11 @@ export default function Governanca() {
           </TabsList>
 
           <TabsContent value="tempo-real" className="space-y-6">
-            <RealtimeDashboard />
+            <RealtimeDashboard periodDays={parseInt(periodFilter)} />
           </TabsContent>
 
           <TabsContent value="metricas" className="space-y-6">
-            <MetricsSection />
+            <MetricsSection periodDays={parseInt(periodFilter)} />
           </TabsContent>
 
           <TabsContent value="auditoria" className="space-y-6">

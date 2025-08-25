@@ -8,7 +8,11 @@ import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
 import { useTeamMetrics } from "@/hooks/useTeamMetrics";
 import { EmptyState } from "./EmptyState";
 
-export function MetricsSection() {
+interface MetricsSectionProps {
+  periodDays?: number;
+}
+
+export function MetricsSection({ periodDays = 30 }: MetricsSectionProps) {
   const { 
     unitMetrics, 
     loading: unitLoading, 

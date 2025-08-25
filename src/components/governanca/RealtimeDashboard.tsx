@@ -31,7 +31,11 @@ import { ptBR } from "date-fns/locale";
 import { MetricsDisplay } from "./MetricsDisplay";
 import { EmptyState } from "./EmptyState";
 
-export function RealtimeDashboard() {
+interface RealtimeDashboardProps {
+  periodDays?: number;
+}
+
+export function RealtimeDashboard({ periodDays = 30 }: RealtimeDashboardProps) {
   const { kpis, loading: kpisLoading, fetchKPIs } = useDashboardMetrics();
   const { tickets, loading: ticketsLoading, refetch } = useTickets({
     search: '',
@@ -77,7 +81,7 @@ export function RealtimeDashboard() {
 
   useEffect(() => {
     fetchKPIs();
-  }, [fetchKPIs]);
+  }, [fetchKPIs, periodDays]);
 
   const refreshData = () => {
     fetchKPIs();
@@ -185,7 +189,7 @@ export function RealtimeDashboard() {
             </div>
             <div className="mt-2 flex items-center text-xs text-muted-foreground">
               <TrendingUp className="h-3 w-3 mr-1" />
-              Hoje
+              {periodDays === 1 ? 'Hoje' : periodDays === 0 ? 'Todos' : `${periodDays} dias`}
             </div>
           </CardContent>
         </Card>
