@@ -225,7 +225,7 @@ export function AppSidebar() {
                 <Tooltip>
                   <TooltipTrigger asChild>
                      <div className="relative">
-                        <Avatar className="h-12 w-12 mx-auto cursor-pointer hover:scale-[1.02] transition-all duration-450">
+                        <Avatar className="h-8 w-8 mx-auto cursor-pointer hover:scale-[1.02] transition-all duration-450">
                           <AvatarImage src={profile?.avatar_url || user?.user_metadata?.avatar_url} />
                           <AvatarFallback className="bg-white/20 text-white text-sm">
                             {profile?.nome_completo?.charAt(0)?.toUpperCase() ||
@@ -234,7 +234,7 @@ export function AppSidebar() {
                           </AvatarFallback>
                         </Avatar>
                         {/* Online status indicator */}
-                        <div className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full bg-green-400 border-2 border-white/50 shadow-[0_0_4px_rgba(34,197,94,0.6)]"></div>
+                        <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-white/50 shadow-[0_0_4px_rgba(34,197,94,0.6)]"></div>
                       </div>
                    </TooltipTrigger>
                    <TooltipContent 
