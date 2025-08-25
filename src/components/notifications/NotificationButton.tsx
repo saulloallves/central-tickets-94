@@ -118,26 +118,42 @@ export const NotificationButton = ({ isExpanded = false }: { isExpanded?: boolea
                         </Badge>
                       </div>
                       
-                      <div className="text-xs text-muted-foreground space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono bg-muted px-1 rounded">
-                            #{formatTicketCode(alert.ticket_id)}
-                          </span>
-                          <span>
-                            {formatDistanceToNow(new Date(alert.created_at), {
-                              addSuffix: true,
-                              locale: ptBR
-                            })}
-                          </span>
-                        </div>
-                        
-                        {/* Mostrar título do ticket em vez do ID */}
-                        <div className="text-xs">
-                          <span className="text-primary font-medium">
-                            {alert.tickets?.titulo || alert.tickets?.descricao_problema || 
-                             alert.payload?.codigo_ticket || 'Ticket sem título'}
-                          </span>
-                        </div>
+                       <div className="text-xs text-muted-foreground space-y-1">
+                        {alert.ticket_id ? (
+                          <>
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono bg-muted px-1 rounded">
+                                #{formatTicketCode(alert.ticket_id)}
+                              </span>
+                              <span>
+                                {formatDistanceToNow(new Date(alert.created_at), {
+                                  addSuffix: true,
+                                  locale: ptBR
+                                })}
+                              </span>
+                            </div>
+                            
+                            {/* Mostrar título do ticket em vez do ID */}
+                            <div className="text-xs">
+                              <span className="text-primary font-medium">
+                                {alert.tickets?.titulo || alert.tickets?.descricao_problema || 
+                                 alert.payload?.codigo_ticket || 'Ticket sem título'}
+                              </span>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono bg-muted px-1 rounded">
+                              #SISTEMA
+                            </span>
+                            <span>
+                              {formatDistanceToNow(new Date(alert.created_at), {
+                                addSuffix: true,
+                                locale: ptBR
+                              })}
+                            </span>
+                          </div>
+                        )}
                       </div>
                       
                       <div className="flex items-center gap-2 mt-2">
