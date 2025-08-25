@@ -281,6 +281,12 @@ export function FranqueadoTicketsList({ onTicketSelect, selectedTicketId, filter
                 >
                   {getStatusLabel(ticket.status)}
                 </Badge>
+                {ticket.equipes?.nome && (
+                  <Badge variant="secondary" className="text-xs">
+                    <User className="h-3 w-3 mr-1" />
+                    {ticket.equipes.nome}
+                  </Badge>
+                )}
               </div>
 
               {/* Footer */}
