@@ -2229,9 +2229,7 @@ export type Database = {
         Returns: boolean
       }
       can_update_ticket: {
-        Args:
-          | { ticket_equipe_id?: string; ticket_unidade_id: string }
-          | { ticket_unidade_id: string }
+        Args: { ticket_equipe_id?: string; ticket_unidade_id: string }
         Returns: boolean
       }
       can_view_ticket: {
@@ -2502,7 +2500,7 @@ export type Database = {
         | "validate_ai_responses"
       app_role:
         | "admin"
-        | "gerente"
+        | "supervisor"
         | "diretor"
         | "colaborador"
         | "juridico"
@@ -2700,7 +2698,7 @@ export const Constants = {
       ],
       app_role: [
         "admin",
-        "gerente",
+        "supervisor",
         "diretor",
         "colaborador",
         "juridico",

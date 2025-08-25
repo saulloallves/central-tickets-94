@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ClipboardList, Sparkles, Shield, Zap } from 'lucide-react';
 
 const Auth = () => {
@@ -20,7 +21,8 @@ const Auth = () => {
     password: '',
     confirmPassword: '',
     nomeCompleto: '',
-    telefone: ''
+    telefone: '',
+    role: ''
   });
 
   // Redirect if already authenticated
@@ -49,11 +51,16 @@ const Auth = () => {
       return;
     }
 
+    if (!signupData.role) {
+      return;
+    }
+
     setIsSubmitting(true);
 
     const { error } = await signUp(signupData.email, signupData.password, {
       nome_completo: signupData.nomeCompleto,
-      telefone: signupData.telefone
+      telefone: signupData.telefone,
+      role: signupData.role
     });
 
     if (!error) {
@@ -63,7 +70,8 @@ const Auth = () => {
         password: '',
         confirmPassword: '',
         nomeCompleto: '',
-        telefone: ''
+        telefone: '',
+        role: ''
       });
     }
 
@@ -227,6 +235,24 @@ const Auth = () => {
                       onChange={(e) => setSignupData({ ...signupData, telefone: e.target.value })}
                       className="h-11"
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-role">Tipo de Usuário</Label>
+                    <Select
+                      value={signupData.role}
+                      onValueChange={(value) => setSignupData({ ...signupData, role: value })}
+                      required
+                    >
+                      <SelectTrigger className="h-11">
+                        <SelectValue placeholder="Selecione seu papel no sistema" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="colaborador">Colaborador Interno</SelectItem>
+                        <SelectItem value="supervisor">Supervisor</SelectItem>
+                        <SelectItem value="admin">Administrador</SelectItem>
+                        <SelectItem value="diretoria">Diretor</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-password">Senha</Label>
