@@ -10,10 +10,31 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Shield, Users, Clock, Plus, Trash2, UserCog, Crown } from 'lucide-react';
+import { 
+  Shield, 
+  Users, 
+  Clock, 
+  Plus, 
+  Trash2, 
+  UserCog, 
+  Crown, 
+  Search,
+  RefreshCw,
+  UserX,
+  Key,
+  Eye,
+  Activity,
+  UserCheck,
+  AlertTriangle
+} from 'lucide-react';
 import { AppPermission } from '@/hooks/usePermissions';
 import { AppRole, useRole } from '@/hooks/useRole';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { useSystemLogs } from '@/hooks/useSystemLogs';
+import { usePresence } from '@/hooks/usePresence';
 
 interface UserPermission {
   id: string;
@@ -35,24 +56,29 @@ interface UserWithRoles {
   email: string;
   nome_completo: string;
   roles: AppRole[];
+  last_activity?: string;
+  permissions?: string[];
+  created_at: string;
 }
 
-export function PermissionsControl() {
+export function AccessPermissionsControl() {
   const { toast } = useToast();
   const { isAdmin, hasRole } = useRole();
+  const { logSystemAction } = useSystemLogs();
+  const { onlineUsers, totalOnline } = usePresence();
+  
   const [userPermissions, setUserPermissions] = useState<UserPermission[]>([]);
   const [rolePermissions, setRolePermissions] = useState<RolePermission[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [usersWithRoles, setUsersWithRoles] = useState<UserWithRoles[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Form states
   const [selectedUser, setSelectedUser] = useState('');
   const [selectedPermission, setSelectedPermission] = useState<AppPermission>('view_own_unit_tickets');
   const [hasExpiry, setHasExpiry] = useState(false);
   const [expiryDate, setExpiryDate] = useState('');
-
-  // Role management states
   const [selectedUserForRole, setSelectedUserForRole] = useState('');
   const [selectedRole, setSelectedRole] = useState<AppRole>('colaborador');
 
@@ -95,17 +121,10 @@ export function PermissionsControl() {
     try {
       setLoading(true);
 
-      // Fetch user permissions with user details
-      const { data: userPermsData, error: userPermsError } = await supabase
-        .from('user_permissions')
-        .select('*');
-
-      if (userPermsError) throw userPermsError;
-
-      // Fetch user details separately
+      // Fetch user details
       const { data: usersData, error: usersError } = await supabase
         .from('profiles')
-        .select('id, email, nome_completo');
+        .select('id, email, nome_completo, created_at');
 
       if (usersError) throw usersError;
 
@@ -116,7 +135,55 @@ export function PermissionsControl() {
 
       if (userRolesError) throw userRolesError;
 
-      // Combine user permissions with user details
+      // Fetch user permissions
+      const { data: userPermsData, error: userPermsError } = await supabase
+        .from('user_permissions')
+        .select('*');
+
+      if (userPermsError) throw userPermsError;
+
+      // Fetch role permissions
+      const { data: rolePermsData, error: rolePermsError } = await supabase
+        .from('role_permissions')
+        .select('role, permission');
+
+      if (rolePermsError) throw rolePermsError;
+
+      // Processar última atividade dos logs
+      const { data: lastActivities, error: activitiesError } = await supabase
+        .from('logs_de_sistema')
+        .select('usuario_responsavel, timestamp')
+        .order('timestamp', { ascending: false });
+
+      const latestActivity = lastActivities?.reduce((acc, log) => {
+        if (log.usuario_responsavel && !acc[log.usuario_responsavel]) {
+          acc[log.usuario_responsavel] = log.timestamp;
+        }
+        return acc;
+      }, {} as Record<string, string>) || {};
+
+      // Combine users with their roles and permissions
+      const usersWithRolesData = usersData?.map(user => {
+        const userRoles = userRolesData?.filter(ur => ur.user_id === user.id).map(ur => ur.role as AppRole) || [];
+        
+        // Calcular permissões baseadas nos roles
+        const permissions = userRoles.flatMap(role => 
+          (rolePermsData || [])
+            .filter(rp => rp.role === role)
+            .map(rp => rp.permission)
+        );
+        
+        return {
+          ...user,
+          roles: userRoles,
+          last_activity: latestActivity[user.id] || user.created_at,
+          permissions: [...new Set(permissions)] // Remove duplicatas
+        };
+      }) || [];
+
+      setUsersWithRoles(usersWithRolesData);
+
+      // Format user permissions with user details
       const formattedUserPerms = userPermsData?.map(up => {
         const user = usersData?.find(u => u.id === up.user_id);
         return {
@@ -126,33 +193,14 @@ export function PermissionsControl() {
       }) || [];
       
       setUserPermissions(formattedUserPerms);
-
-      // Combine users with their roles
-      const usersWithRolesData = usersData?.map(user => {
-        const userRoles = userRolesData?.filter(ur => ur.user_id === user.id).map(ur => ur.role as AppRole) || [];
-        return {
-          ...user,
-          roles: userRoles
-        };
-      }) || [];
-
-      setUsersWithRoles(usersWithRolesData);
-
-      // Fetch role permissions
-      const { data: rolePermsData, error: rolePermsError } = await supabase
-        .from('role_permissions')
-        .select('role, permission');
-
-      if (rolePermsError) throw rolePermsError;
       setRolePermissions((rolePermsData || []) as RolePermission[]);
-
       setUsers(usersData || []);
 
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
         title: "Erro",
-        description: "Erro ao carregar dados de permissões",
+        description: "Erro ao carregar dados",
         variant: "destructive"
       });
     } finally {
@@ -179,7 +227,6 @@ export function PermissionsControl() {
         description: "Permissão concedida com sucesso"
       });
 
-      // Reset form
       setSelectedUser('');
       setSelectedPermission('view_own_unit_tickets');
       setHasExpiry(false);
@@ -229,7 +276,6 @@ export function PermissionsControl() {
       return;
     }
 
-    // Verificar se o usuário tem permissão para atribuir cargos
     if (!isAdmin && !hasRole('diretoria')) {
       console.log('❌ Usuário sem permissão', { isAdmin, hasDiretoria: hasRole('diretoria') });
       toast({
@@ -263,7 +309,6 @@ export function PermissionsControl() {
         description: "Cargo atribuído com sucesso"
       });
 
-      // Reset form
       setSelectedUserForRole('');
       setSelectedRole('colaborador');
       
@@ -280,7 +325,6 @@ export function PermissionsControl() {
   };
 
   const revokeUserRole = async (userId: string, role: AppRole) => {
-    // Verificar se o usuário tem permissão para revogar cargos
     if (!isAdmin && !hasRole('diretoria')) {
       toast({
         title: "Acesso Negado",
@@ -298,6 +342,14 @@ export function PermissionsControl() {
         .eq('role', role as any);
 
       if (error) throw error;
+
+      await logSystemAction({
+        tipo_log: 'acao_humana' as any,
+        entidade_afetada: 'user_roles',
+        entidade_id: userId,
+        acao_realizada: `Role ${role} revogado`,
+        dados_anteriores: { userId, role }
+      });
 
       toast({
         title: "Sucesso",
@@ -329,6 +381,27 @@ export function PermissionsControl() {
     }
   };
 
+  const getActivityStatus = (lastActivity: string) => {
+    const activityDate = new Date(lastActivity);
+    const now = new Date();
+    const hoursDiff = (now.getTime() - activityDate.getTime()) / (1000 * 60 * 60);
+
+    if (hoursDiff < 1) return { status: 'online', color: 'success' };
+    if (hoursDiff < 24) return { status: 'recente', color: 'warning' };
+    if (hoursDiff < 168) return { status: 'semanal', color: 'secondary' };
+    return { status: 'inativo', color: 'muted' };
+  };
+
+  const isUserOnline = (userId: string) => {
+    return onlineUsers.some(user => user.userId === userId);
+  };
+
+  const filteredUsers = usersWithRoles.filter(user => 
+    user.nome_completo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.roles?.some(role => role.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -337,7 +410,6 @@ export function PermissionsControl() {
     );
   }
 
-  // Verificar se o usuário tem permissão para ver esta seção
   if (!isAdmin && !hasRole('diretoria')) {
     return (
       <Card className="liquid-glass-card">
@@ -345,7 +417,7 @@ export function PermissionsControl() {
           <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-foreground mb-2">Acesso Restrito</h3>
           <p className="text-muted-foreground">
-            Apenas administradores e diretoria podem acessar o controle de permissões.
+            Apenas administradores e diretoria podem acessar o controle de acessos e permissões.
           </p>
         </CardContent>
       </Card>
@@ -354,19 +426,115 @@ export function PermissionsControl() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2">
-        <Shield className="h-6 w-6" />
-        <h2 className="text-2xl font-bold">Controle de Permissões</h2>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-foreground">Controle de Acessos & Permissões</h2>
+          <p className="text-muted-foreground">Gerenciamento completo de usuários, cargos e permissões</p>
+        </div>
+        <Button
+          onClick={fetchData}
+          disabled={loading}
+          className="liquid-glass-button"
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+          Atualizar
+        </Button>
       </div>
-      
-      <Tabs defaultValue="user-roles" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="user-roles">Cargos de Usuários</TabsTrigger>
-          <TabsTrigger value="user-permissions">Permissões Específicas</TabsTrigger>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="liquid-glass-card">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Total de Usuários</p>
+                <p className="text-2xl font-bold text-foreground">{usersWithRoles.length}</p>
+              </div>
+              <Users className="h-8 w-8 text-primary" />
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Perfis cadastrados
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="liquid-glass-card">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Usuários Online</p>
+                <p className="text-2xl font-bold text-success">{totalOnline}</p>
+              </div>
+              <UserCheck className="h-8 w-8 text-success" />
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Conectados agora
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="liquid-glass-card">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Administradores</p>
+                <p className="text-2xl font-bold text-critical">
+                  {usersWithRoles.filter(u => u.roles?.includes('admin')).length}
+                </p>
+              </div>
+              <Shield className="h-8 w-8 text-critical" />
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Acesso total
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="liquid-glass-card">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Inativos 7d</p>
+                <p className="text-2xl font-bold text-warning">
+                  {usersWithRoles.filter(u => {
+                    const hoursDiff = (new Date().getTime() - new Date(u.last_activity || u.created_at).getTime()) / (1000 * 60 * 60);
+                    return hoursDiff > 168;
+                  }).length}
+                </p>
+              </div>
+              <UserX className="h-8 w-8 text-warning" />
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Sem atividade
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Search */}
+      <Card className="liquid-glass-card">
+        <CardContent className="p-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nome, email ou cargo..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 liquid-glass-input"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Tabs defaultValue="users-management" className="space-y-6">
+        <TabsList className="liquid-glass-card p-2">
+          <TabsTrigger value="users-management">Gerenciar Usuários & Cargos</TabsTrigger>
+          <TabsTrigger value="specific-permissions">Permissões Específicas</TabsTrigger>
           <TabsTrigger value="role-permissions">Permissões por Cargo</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="user-roles" className="space-y-6">
+        <TabsContent value="users-management" className="space-y-6">
           {/* Grant Role Form */}
           <Card className="liquid-glass-card">
             <CardHeader>
@@ -425,10 +593,10 @@ export function PermissionsControl() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <UserCog className="h-5 w-5" />
-                Usuários e Cargos
+                Usuários, Cargos e Sessões
               </CardTitle>
               <CardDescription>
-                Gerencie os cargos atribuídos a cada usuário
+                {filteredUsers.length} usuário(s) encontrado(s)
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -437,55 +605,119 @@ export function PermissionsControl() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Usuário</TableHead>
-                      <TableHead>Email</TableHead>
+                      <TableHead>Status</TableHead>
                       <TableHead>Cargos</TableHead>
+                      <TableHead>Última Atividade</TableHead>
+                      <TableHead>Criado Em</TableHead>
                       <TableHead>Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {usersWithRoles.map((user) => (
-                      <TableRow key={user.id}>
-                        <TableCell className="font-medium">
-                          {user.nome_completo || 'Nome não informado'}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {user.email}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {user.roles && user.roles.length > 0 ? (
-                              user.roles.map((role) => (
-                                <div key={role} className="flex items-center space-x-1">
-                                  <Badge variant={getRoleBadgeVariant(role)}>
-                                    {role.replace(/_/g, ' ')}
-                                  </Badge>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-5 w-5 p-0 hover:bg-destructive/20"
-                                    onClick={() => revokeUserRole(user.id, role)}
-                                  >
-                                    <Trash2 className="h-3 w-3 text-destructive" />
-                                  </Button>
-                                </div>
-                              ))
-                            ) : (
-                              <Badge variant="outline">Sem cargos</Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setSelectedUserForRole(user.id)}
-                          >
-                            <Crown className="h-4 w-4 mr-1" />
-                            Atribuir Cargo
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {filteredUsers.map((user) => {
+                      const activityStatus = getActivityStatus(user.last_activity || user.created_at);
+                      const online = isUserOnline(user.id);
+                      
+                      return (
+                        <TableRow key={user.id}>
+                          <TableCell>
+                            <div className="flex items-center space-x-3">
+                              <div className={`w-3 h-3 rounded-full ${online ? 'bg-success animate-pulse' : 'bg-muted'}`}></div>
+                              <div>
+                                <p className="text-sm font-medium">{user.nome_completo || 'Nome não informado'}</p>
+                                <p className="text-xs text-muted-foreground">{user.email}</p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              <Badge variant={online ? "default" : activityStatus.color as any}>
+                                {online ? 'Online' : activityStatus.status}
+                              </Badge>
+                              {online && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <Eye className="h-3 w-3 text-success" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      Ativo na aplicação
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
+                            </div>
+                          </TableCell>
+                          
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {user.roles && user.roles.length > 0 ? (
+                                user.roles.map((role) => (
+                                  <div key={role} className="flex items-center space-x-1">
+                                    <Badge variant={getRoleBadgeVariant(role)}>
+                                      {role}
+                                    </Badge>
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="h-5 w-5 p-0 hover:bg-destructive/20"
+                                            onClick={() => revokeUserRole(user.id, role)}
+                                          >
+                                            <UserX className="h-3 w-3 text-destructive" />
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          Revogar cargo: {role}
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  </div>
+                                ))
+                              ) : (
+                                <Badge variant="outline">Sem cargos</Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              <Clock className="h-4 w-4 text-muted-foreground" />
+                              <div>
+                                <p className="text-sm">
+                                  {formatDistanceToNow(new Date(user.last_activity || user.created_at), { 
+                                    addSuffix: true, 
+                                    locale: ptBR 
+                                  })}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {new Date(user.last_activity || user.created_at).toLocaleDateString('pt-BR')}
+                                </p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          
+                          <TableCell>
+                            <p className="text-sm">
+                              {new Date(user.created_at).toLocaleDateString('pt-BR')}
+                            </p>
+                          </TableCell>
+                          
+                          <TableCell>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setSelectedUserForRole(user.id)}
+                            >
+                              <Crown className="h-4 w-4 mr-1" />
+                              Atribuir Cargo
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
@@ -493,7 +725,7 @@ export function PermissionsControl() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="user-permissions" className="space-y-6">
+        <TabsContent value="specific-permissions" className="space-y-6">
           {/* Grant Permission Form */}
           <Card className="liquid-glass-card">
             <CardHeader>
@@ -572,7 +804,7 @@ export function PermissionsControl() {
           <Card className="liquid-glass-card">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
+                <Key className="h-5 w-5" />
                 Permissões Específicas Ativas
               </CardTitle>
               <CardDescription>
@@ -643,6 +875,9 @@ export function PermissionsControl() {
                             {formatPermissionName(rp.permission)}
                           </Badge>
                         ))}
+                        {rolePerms.length === 0 && (
+                          <Badge variant="outline">Nenhuma permissão definida</Badge>
+                        )}
                       </div>
                       {role !== roles[roles.length - 1] && <Separator className="mt-4" />}
                     </div>
