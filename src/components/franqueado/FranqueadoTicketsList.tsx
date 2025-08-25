@@ -21,6 +21,9 @@ interface FranqueadoTicket {
   created_at: string;
   criado_por: string;
   reaberto_count: number;
+  equipes?: {
+    nome: string;
+  };
 }
 
 interface FranqueadoTicketsListProps {
@@ -60,7 +63,8 @@ export function FranqueadoTicketsList({ onTicketSelect, selectedTicketId, filter
             canal_origem,
             created_at,
             criado_por,
-            reaberto_count
+            reaberto_count,
+            equipes:equipe_responsavel_id(nome)
           `)
           .order('data_abertura', { ascending: false });
 
@@ -284,8 +288,16 @@ export function FranqueadoTicketsList({ onTicketSelect, selectedTicketId, filter
                   <MapPin className="h-3 w-3" />
                   <span>{getUnitInfo(ticket.unidade_id)}</span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <span>via {ticket.canal_origem}</span>
+                <div className="flex items-center gap-3">
+                  {ticket.equipes?.nome && (
+                    <div className="flex items-center gap-1">
+                      <User className="h-3 w-3" />
+                      <span>{ticket.equipes.nome}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-1">
+                    <span>via {ticket.canal_origem}</span>
+                  </div>
                 </div>
               </div>
             </div>
