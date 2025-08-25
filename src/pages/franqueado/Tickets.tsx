@@ -31,6 +31,11 @@ export default function FranqueadoTickets() {
     equipe_id: ''
   });
 
+  // Update the displayed values for the select components
+  const getSelectValue = (filterValue: string, defaultValue: string = "all") => {
+    return filterValue === "" ? defaultValue : filterValue;
+  };
+
   const [ticketStats, setTicketStats] = useState({ total: 0 });
 
   // Buscar estatísticas de tickets
@@ -119,12 +124,12 @@ export default function FranqueadoTickets() {
 
             <div>
               <Label htmlFor="unidade">Unidade</Label>
-              <Select value={filters.unidade_id} onValueChange={(value) => handleFilterChange('unidade_id', value)}>
+              <Select value={getSelectValue(filters.unidade_id)} onValueChange={(value) => handleFilterChange('unidade_id', value === "all" ? "" : value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todas as unidades" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas as unidades</SelectItem>
+                  <SelectItem value="all">Todas as unidades</SelectItem>
                   {units.map((unit) => (
                     <SelectItem key={unit.id} value={unit.id}>
                       {unit.grupo} - {unit.cidade}/{unit.uf}
@@ -136,12 +141,12 @@ export default function FranqueadoTickets() {
 
             <div>
               <Label htmlFor="status">Status</Label>
-              <Select value={filters.status} onValueChange={(value) => handleFilterChange('status', value)}>
+              <Select value={getSelectValue(filters.status)} onValueChange={(value) => handleFilterChange('status', value === "all" ? "" : value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todos os status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os status</SelectItem>
+                  <SelectItem value="all">Todos os status</SelectItem>
                   <SelectItem value="aberto">Aberto</SelectItem>
                   <SelectItem value="em_atendimento">Em Atendimento</SelectItem>
                   <SelectItem value="aguardando_cliente">Aguardando Cliente</SelectItem>
@@ -153,12 +158,12 @@ export default function FranqueadoTickets() {
 
             <div>
               <Label htmlFor="prioridade">Prioridade</Label>
-              <Select value={filters.prioridade} onValueChange={(value) => handleFilterChange('prioridade', value)}>
+              <Select value={getSelectValue(filters.prioridade)} onValueChange={(value) => handleFilterChange('prioridade', value === "all" ? "" : value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todas as prioridades" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas as prioridades</SelectItem>
+                  <SelectItem value="all">Todas as prioridades</SelectItem>
                   <SelectItem value="crise">Crise</SelectItem>
                   <SelectItem value="imediato">Imediato</SelectItem>
                   <SelectItem value="ate_1_hora">Até 1 hora</SelectItem>
