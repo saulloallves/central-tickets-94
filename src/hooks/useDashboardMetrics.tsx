@@ -84,8 +84,13 @@ export const useDashboardMetrics = () => {
 
       if (error) throw error;
 
-      setKpis(data as unknown as DashboardKPIs);
-      console.log('KPIs fetched:', data);
+      console.log('🎯 [KPIs] Raw data from Supabase:', data);
+      
+      // The RPC function returns JSONB, so we need to parse it correctly
+      const kpisData = typeof data === 'object' ? data : JSON.parse(String(data));
+      
+      setKpis(kpisData as DashboardKPIs);
+      console.log('✅ [KPIs] Processed KPIs:', kpisData);
     } catch (error) {
       console.error('Error fetching KPIs:', error);
       toast({
