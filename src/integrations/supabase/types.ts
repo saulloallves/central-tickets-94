@@ -2286,9 +2286,9 @@ export type Database = {
       }
       get_team_metrics: {
         Args: {
-          p_periodo_dias?: number
-          p_unidade_filter?: string
-          p_user_id?: string
+          p_periodo_dias: number
+          p_unidade_filter: string
+          p_user_id: string
         }
         Returns: {
           equipe_id: string
@@ -2315,19 +2315,19 @@ export type Database = {
       get_unit_metrics: {
         Args:
           | {
-              p_equipe_filter?: string
-              p_periodo_dias?: number
+              p_equipe_filter: string
+              p_periodo_dias: number
               p_user_id: string
             }
           | { p_periodo_dias?: number; p_user_id?: string }
         Returns: {
-          ia_bem_sucedida: number
           percentual_sla: number
           tempo_medio_resolucao: number
           tickets_abertos: number
           tickets_crise: number
           tickets_resolvidos: number
-          total_tickets_mes: number
+          tickets_sucesso: number
+          total_tickets: number
           unidade_id: string
           unidade_nome: string
         }[]
