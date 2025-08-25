@@ -32,11 +32,13 @@ export const NotificationButton = ({ isExpanded = false }: { isExpanded?: boolea
       case 'sla_half': return 'SLA 50%';
       case 'ia_escalation_crisis': return 'IA Escalou Crise';
       case 'critical_ai_response': return 'IA Resposta Crítica';
+      case 'internal_access_request': return 'Solicitação de Acesso';
       default: return type.replace('_', ' ');
     }
   };
 
-  const formatTicketCode = (ticketId: string) => {
+  const formatTicketCode = (ticketId: string | null) => {
+    if (!ticketId) return 'SISTEMA';
     return ticketId.slice(0, 8).toUpperCase();
   };
 
@@ -139,44 +141,58 @@ export const NotificationButton = ({ isExpanded = false }: { isExpanded?: boolea
                       </div>
                       
                       <div className="flex items-center gap-2 mt-2">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-6 text-xs"
-                          onClick={() => {
-                            console.log('Ver Ticket clicked! Alert:', alert);
-                            console.log('Ticket ID:', alert.ticket_id);
-                            setOpen(false);
-                            
-                            // Check if we're on the tickets page
-                            const currentPath = window.location.pathname;
-                            console.log('Current path:', currentPath);
-                            
-                            if (currentPath === '/admin/tickets') {
-                              // Dispatch event to open ticket modal on tickets page
-                              console.log('Dispatching openTicketModal event with ticketId:', alert.ticket_id);
-                              const event = new CustomEvent('openTicketModal', { 
-                                detail: { ticketId: alert.ticket_id }
-                              });
-                              window.dispatchEvent(event);
-                              console.log('Event dispatched!');
-                            } else if (currentPath === '/admin') {
-                              // Dispatch event to open ticket modal on dashboard
-                              console.log('Dispatching openTicketModal event on dashboard with ticketId:', alert.ticket_id);
-                              const event = new CustomEvent('openTicketModal', { 
-                                detail: { ticketId: alert.ticket_id }
-                              });
-                              window.dispatchEvent(event);
-                              console.log('Event dispatched!');
-                            } else {
-                              // Navigate to tickets page with ticket parameter
-                              console.log('Navigating to tickets page with ticket:', alert.ticket_id);
-                              window.location.href = `/admin/tickets?ticket=${alert.ticket_id}`;
-                            }
-                          }}
-                        >
-                          Ver Ticket
-                        </Button>
+                        {alert.ticket_id ? (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-6 text-xs"
+                            onClick={() => {
+                              console.log('Ver Ticket clicked! Alert:', alert);
+                              console.log('Ticket ID:', alert.ticket_id);
+                              setOpen(false);
+                              
+                              // Check if we're on the tickets page
+                              const currentPath = window.location.pathname;
+                              console.log('Current path:', currentPath);
+                              
+                              if (currentPath === '/admin/tickets') {
+                                // Dispatch event to open ticket modal on tickets page
+                                console.log('Dispatching openTicketModal event with ticketId:', alert.ticket_id);
+                                const event = new CustomEvent('openTicketModal', { 
+                                  detail: { ticketId: alert.ticket_id }
+                                });
+                                window.dispatchEvent(event);
+                                console.log('Event dispatched!');
+                              } else if (currentPath === '/admin') {
+                                // Dispatch event to open ticket modal on dashboard
+                                console.log('Dispatching openTicketModal event on dashboard with ticketId:', alert.ticket_id);
+                                const event = new CustomEvent('openTicketModal', { 
+                                  detail: { ticketId: alert.ticket_id }
+                                });
+                                window.dispatchEvent(event);
+                                console.log('Event dispatched!');
+                              } else {
+                                // Navigate to tickets page with ticket parameter
+                                console.log('Navigating to tickets page with ticket:', alert.ticket_id);
+                                window.location.href = `/admin/tickets?ticket=${alert.ticket_id}`;
+                              }
+                            }}
+                          >
+                            Ver Ticket
+                          </Button>
+                        ) : (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-6 text-xs"
+                            onClick={() => {
+                              setOpen(false);
+                              navigate('/admin');
+                            }}
+                          >
+                            Ver Painel
+                          </Button>
+                        )}
                         <Button 
                           variant="ghost" 
                           size="sm" 
