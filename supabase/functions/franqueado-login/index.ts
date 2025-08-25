@@ -87,14 +87,18 @@ serve(async (req) => {
     // Verificar se já existe usuário Auth com este email
     let authUser;
     try {
-      const { data: existingUser } = await supabaseAdmin.auth.admin.getUserByEmail(finalEmail);
-      authUser = existingUser.user;
+      const { data: existingUser, error: getUserError } = await supabaseAdmin.auth.admin.getUserByEmail(finalEmail);
+      if (!getUserError && existingUser?.user) {
+        authUser = existingUser.user;
+        console.log('Usuário já existe no Auth:', authUser.id);
+      }
     } catch (error) {
-      console.log('Usuário não existe no Auth, será criado');
+      console.log('Erro ao buscar usuário existente:', error);
     }
 
     // Se não existe, criar usuário no Auth
     if (!authUser) {
+      console.log('Usuário não existe no Auth, será criado');
       const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
         email: finalEmail,
         password: password.toString(),
@@ -117,11 +121,17 @@ serve(async (req) => {
       }
 
       authUser = newUser.user;
+      console.log('Usuário criado com sucesso:', authUser.id);
     } else {
-      // Sincronizar senha se necessário
-      await supabaseAdmin.auth.admin.updateUserById(authUser.id, {
-        password: password.toString()
-      });
+      // Usuário já existe, apenas sincronizar senha se necessário
+      console.log('Sincronizando senha para usuário existente');
+      try {
+        await supabaseAdmin.auth.admin.updateUserById(authUser.id, {
+          password: password.toString()
+        });
+      } catch (updateError) {
+        console.error('Erro ao atualizar senha:', updateError);
+      }
     }
 
     // Garantir perfil na tabela profiles
