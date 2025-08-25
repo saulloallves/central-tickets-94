@@ -11,14 +11,32 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 interface Unidade {
   id: string;
   grupo: string;
-  cidade: string;
-  estado: string;
-  endereco: string;
-  email: string;
-  telefone: number;
-  modelo_loja: string;
-  fase_loja: string;
+  codigo_grupo?: number;
+  cidade?: string;
+  estado?: string;
+  uf?: string;
+  endereco?: string;
+  numero?: string;
+  complemento?: string;
+  bairro?: string;
+  cep?: string;
+  email?: string;
+  telefone?: number;
+  modelo_loja?: string;
+  fase_loja?: string;
+  etapa_loja?: string;
+  func_seg_sex?: string;
+  func_sab?: string;
+  func_dom?: string;
+  instagram?: string;
+  has_parking?: any;
+  parking_spots?: any;
+  has_partner_parking?: any;
+  partner_parking_address?: string;
+  purchases_active?: any;
+  sales_active?: any;
   created_at: string;
+  updated_at?: string;
 }
 
 const Unidades = () => {
@@ -48,9 +66,9 @@ const Unidades = () => {
         .order('created_at', { ascending: false })
         .range(from, to);
 
-      // Se há busca, aplicar filtros
+      // Se há busca, aplicar filtros  
       if (searchTerm.trim()) {
-        query = query.or(`grupo.ilike.%${searchTerm}%,cidade.ilike.%${searchTerm}%,estado.ilike.%${searchTerm}%`);
+        query = query.or(`grupo.ilike.%${searchTerm}%,cidade.ilike.%${searchTerm}%,estado.ilike.%${searchTerm}%,uf.ilike.%${searchTerm}%`);
       }
 
       const { data, error, count } = await query;
@@ -196,7 +214,7 @@ const Unidades = () => {
                                 {unidade.grupo || 'Unidade'}
                               </CardTitle>
                               <p className="text-[10px] md:text-xs text-muted-foreground line-clamp-1">
-                                {unidade.cidade || 'N/A'}, {unidade.estado || 'N/A'}
+                                {unidade.cidade || unidade.grupo?.split(' / ')[1] || 'N/A'}, {unidade.estado || unidade.uf || unidade.grupo?.split(' / ')[2] || 'N/A'}
                               </p>
                             </div>
                             
@@ -265,11 +283,11 @@ const Unidades = () => {
                               <div className="space-y-2 text-sm">
                                 <div className="flex justify-between">
                                   <span className="text-muted-foreground">Cidade:</span>
-                                  <span>{unidade.cidade || 'N/A'}</span>
+                                  <span>{unidade.cidade || unidade.grupo?.split(' / ')[1] || 'N/A'}</span>
                                 </div>
                                 <div className="flex justify-between">
                                   <span className="text-muted-foreground">Estado:</span>
-                                  <span>{unidade.estado || 'N/A'}</span>
+                                  <span>{unidade.estado || unidade.uf || unidade.grupo?.split(' / ')[2] || 'N/A'}</span>
                                 </div>
                                 <div className="flex justify-between">
                                   <span className="text-muted-foreground">Endereço:</span>
