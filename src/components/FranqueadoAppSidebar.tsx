@@ -2,9 +2,6 @@ import {
   LogOut,
   User,
   ChevronDown,
-  Home,
-  Building2,
-  Ticket
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,15 +13,10 @@ import { useProfile } from "@/hooks/useProfile";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { SystemLogo } from "@/components/SystemLogo";
+import { franqueadoNavigationItems } from "@/constants/franqueadoNavigation";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-const franqueadoNavigationItems = [
-  { title: "Dashboard", url: "/franqueado", icon: Home },
-  { title: "Tickets", url: "/franqueado/tickets", icon: Ticket },
-  { title: "Minhas Unidades", url: "/franqueado/unidades", icon: Building2 },
-];
-
-export function FranqueadoSidebar() {
+export function FranqueadoAppSidebar() {
   const { signOut, user } = useAuth();
   const { profile } = useProfile();
   const location = useLocation();
@@ -38,20 +30,22 @@ export function FranqueadoSidebar() {
 
   const handleMouseEnter = () => {
     setIsExpanded(true);
+    // Ajustar margin do conteúdo principal apenas no desktop
     if (!isMobile) {
       const mainContent = document.querySelector('[data-main-content]') as HTMLElement;
       if (mainContent) {
-        mainContent.style.marginLeft = '224px';
+        mainContent.style.marginLeft = '240px';
       }
     }
   };
 
   const handleMouseLeave = () => {
     setIsExpanded(false);
+    // Restaurar margin original apenas no desktop
     if (!isMobile) {
       const mainContent = document.querySelector('[data-main-content]') as HTMLElement;
       if (mainContent) {
-        mainContent.style.marginLeft = '64px';
+        mainContent.style.marginLeft = '80px';
       }
     }
   };
@@ -59,23 +53,30 @@ export function FranqueadoSidebar() {
   return (
     <div
       className={cn(
-        "fixed left-0 top-0 z-40 transition-all duration-300 h-full",
+        "fixed left-4 top-1/2 -translate-y-1/2 z-40 transition-all duration-300",
+        // No desktop: sempre vertical, altura menor
+        "h-[calc(100vh-16rem)]",
         isExpanded ? "w-56" : "w-16"
       )}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <div className="relative h-full bg-gradient-to-b from-primary via-primary/95 to-primary/90 overflow-hidden shadow-xl border-r border-white/10">
-        <div className="absolute inset-0 bg-white/5 backdrop-blur-sm"></div>
+      {/* Modern liquid glass sidebar container */}
+      <div className="relative h-full bg-gradient-to-b from-primary via-primary/95 to-primary/90 rounded-3xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.1)] border border-white/10">
+        {/* Liquid glass overlay effect */}
+        <div className="absolute inset-0 liquid-glass-sidebar rounded-3xl"></div>
         
+        {/* Content wrapper - sempre vertical no desktop */}
         <div className={cn(
           "relative z-20 h-full flex flex-col overflow-hidden",
           isExpanded ? "py-6 px-4" : "py-4 px-2"
         )}>
+          {/* System Logo Section */}
           <div className="flex justify-center mb-4">
             <SystemLogo />
           </div>
 
+          {/* Navigation Icons - sempre vertical */}
           <div className="flex-1 flex flex-col space-y-1 overflow-y-auto scrollbar-hide py-2">
             {franqueadoNavigationItems.map((item) => (
               <TooltipProvider key={item.title} delayDuration={0}>
@@ -155,7 +156,9 @@ export function FranqueadoSidebar() {
             ))}
           </div>
 
+          {/* Bottom Section - sempre vertical */}
           <div className="flex flex-col space-y-2 mt-auto">
+            {/* User Profile Section */}
             <div className="flex justify-center">
             {isExpanded ? (
               <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen} modal={false}>
@@ -170,12 +173,12 @@ export function FranqueadoSidebar() {
                           <AvatarFallback className="bg-white/20 text-white text-sm">
                             {profile?.nome_completo?.charAt(0)?.toUpperCase() ||
                              user?.user_metadata?.display_name?.charAt(0)?.toUpperCase() || 
-                             user?.email?.charAt(0)?.toUpperCase() || 'F'}
+                             user?.email?.charAt(0)?.toUpperCase() || 'U'}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex flex-col items-start min-w-0 flex-1">
                           <span className="text-sm font-medium truncate w-full drop-shadow-md">
-                            {profile?.nome_completo || user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'Franqueado'}
+                            {profile?.nome_completo || user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'Usuário'}
                           </span>
                          <div className="flex items-center space-x-1">
                            <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_4px_rgba(34,197,94,0.6)]"></div>
@@ -219,9 +222,10 @@ export function FranqueadoSidebar() {
                           <AvatarFallback className="bg-white/20 text-white text-sm">
                             {profile?.nome_completo?.charAt(0)?.toUpperCase() ||
                              user?.user_metadata?.display_name?.charAt(0)?.toUpperCase() || 
-                             user?.email?.charAt(0)?.toUpperCase() || 'F'}
+                             user?.email?.charAt(0)?.toUpperCase() || 'U'}
                           </AvatarFallback>
                         </Avatar>
+                        {/* Online status indicator */}
                         <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-white/50 shadow-[0_0_4px_rgba(34,197,94,0.6)]"></div>
                       </div>
                    </TooltipTrigger>
@@ -229,7 +233,7 @@ export function FranqueadoSidebar() {
                      side="right" 
                      className="liquid-glass-card text-white ml-2"
                    >
-                     {profile?.nome_completo || user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'Franqueado'} • Online
+                     {profile?.nome_completo || user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'Usuário'} • Online
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>

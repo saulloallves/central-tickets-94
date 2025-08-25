@@ -25,6 +25,7 @@ import FranqueadoLayout from "./pages/FranqueadoLayout";
 import FranqueadoDashboard from "./pages/franqueado/Dashboard";
 import FranqueadoTickets from "./pages/franqueado/Tickets";
 import FranqueadoUnidades from "./pages/franqueado/Unidades";
+import FranqueadoProfile from "./pages/franqueado/Profile";
 import { ProtectedRoute } from "./components/ProtectedRouteSimple";
 
 const queryClient = new QueryClient();
@@ -111,7 +112,7 @@ const App = () => (
             } />
             
             {/* Rotas do Franqueado */}
-            <Route path="/franqueado" element={
+            <Route path="/franqueado/dashboard" element={
               <ProtectedRoute requiredRole="franqueado">
                 <FranqueadoLayout>
                   <FranqueadoDashboard />
@@ -129,6 +130,13 @@ const App = () => (
               <ProtectedRoute requiredRole="franqueado">
                 <FranqueadoLayout>
                   <FranqueadoUnidades />
+                </FranqueadoLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/franqueado/profile" element={
+              <ProtectedRoute requiredRole="franqueado">
+                <FranqueadoLayout>
+                  <FranqueadoProfile />
                 </FranqueadoLayout>
               </ProtectedRoute>
             } />

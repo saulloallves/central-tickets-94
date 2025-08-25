@@ -1,34 +1,69 @@
-import { ReactNode } from 'react';
-import { SidebarProvider } from '@/components/ui/sidebar';
-import { FranqueadoSidebar } from '@/components/FranqueadoSidebar';
-import { MobileBottomNav } from '@/components/MobileBottomNav';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { FranqueadoAppSidebar } from "@/components/FranqueadoAppSidebar";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
+import { Toaster } from "@/components/ui/toaster";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 interface FranqueadoLayoutProps {
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
 export default function FranqueadoLayout({ children }: FranqueadoLayoutProps) {
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
 
-  return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gradient-subtle">
-        {!isMobile && <FranqueadoSidebar />}
-        
-        <main 
-          className="flex-1 transition-all duration-300 overflow-hidden"
-          data-main-content
-          style={{ 
-            marginLeft: isMobile ? '0' : '64px',
-            paddingBottom: isMobile ? '80px' : '0'
-          }}
-        >
-          {children}
-        </main>
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/auth');
+    }
+  }, [user, authLoading, navigate]);
 
-        {isMobile && <MobileBottomNav />}
+  // Show loading spinner while checking authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-subtle">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-2 border-primary border-t-transparent mx-auto"></div>
+          <p className="mt-4 text-muted-foreground font-medium">Carregando sistema...</p>
+        </div>
       </div>
-    </SidebarProvider>
+    );
+  }
+
+  // Don't render content if not authenticated
+  if (!user) {
+    return null;
+  }
+
+  return (
+    <div className="min-h-screen flex w-full bg-gradient-subtle">
+      {/* Desktop sidebar */}
+      {!isMobile && <FranqueadoAppSidebar />}
+      
+      <div 
+        className={cn(
+          "flex-1 flex flex-col transition-all duration-200", 
+          isMobile ? "pb-20" : ""
+        )} 
+        data-main-content 
+        style={{ marginLeft: isMobile ? '0' : '80px' }}
+      >
+        {/* Main content area with optimized spacing */}
+        <main className={cn("flex-1", isMobile ? "p-4" : "p-6")}>
+          <div className="w-full animate-fade-in space-y-6">
+            {children}
+          </div>
+        </main>
+      </div>
+      
+      {/* Mobile bottom navigation */}
+      {isMobile && <MobileBottomNav />}
+      <Toaster />
+    </div>
   );
 }
