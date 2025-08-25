@@ -14,30 +14,60 @@ import {
   BarChart3,
   Target
 } from "lucide-react";
-import { useTickets } from "@/hooks/useTickets";
 import { useSystemLogs } from "@/hooks/useSystemLogs";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
+import { supabase } from "@/integrations/supabase/client";
 
 export function BottleneckDetection() {
-  const { tickets, loading, refetch } = useTickets({
-    search: '',
-    status: '',
-    categoria: '',
-    prioridade: '',
-    unidade_id: '',
-    status_sla: '',
-    equipe_id: ''
-  });
+  const [tickets, setTickets] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const { logSystemAction } = useSystemLogs();
   const [threshold, setThreshold] = useState<number>(24); // horas
   const [teamThreshold, setTeamThreshold] = useState<number>(10); // número de tickets
 
+  const fetchTicketsDirectly = async () => {
+    setLoading(true);
+    try {
+      console.log('🎯 [BOTTLENECK] Fetching tickets for bottleneck analysis...');
+      
+      // Simple query to avoid RLS recursion issues
+      const { data, error } = await supabase
+        .from('tickets')
+        .select(`
+          id,
+          codigo_ticket,
+          data_abertura,
+          status,
+          prioridade,
+          equipe_responsavel_id,
+          colaborador_id,
+          resolvido_em,
+          categoria
+        `)
+        .order('data_abertura', { ascending: false });
+
+      if (error) {
+        console.error('❌ [BOTTLENECK] Error fetching tickets:', error);
+        setTickets([]);
+        return;
+      }
+
+      console.log('✅ [BOTTLENECK] Tickets fetched successfully:', data?.length || 0);
+      setTickets(data || []);
+    } catch (error) {
+      console.error('💥 [BOTTLENECK] Failed to fetch tickets:', error);
+      setTickets([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    refetch();
-  }, [refetch]);
+    fetchTicketsDirectly();
+  }, []);
 
   // Calcular métricas de gargalos
   const bottleneckMetrics = useMemo(() => {
@@ -197,7 +227,7 @@ export function BottleneckDetection() {
             Criar Alertas
           </Button>
           <Button
-            onClick={refetch}
+            onClick={fetchTicketsDirectly}
             disabled={loading}
             className="liquid-glass-button"
           >
