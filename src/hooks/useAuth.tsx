@@ -91,18 +91,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    
-    // Limpar dados do localStorage
-    localStorage.removeItem('last_login_origin');
-    
-    toast({
-      title: "Logout realizado",
-      description: "Você foi desconectado do sistema"
-    });
-    
-    // Redirecionar para página de login
-    window.location.href = '/auth';
+    try {
+      // Limpar estado imediatamente
+      setUser(null);
+      setSession(null);
+      
+      // Limpar dados do localStorage
+      localStorage.removeItem('last_login_origin');
+      localStorage.clear(); // Limpar todo o localStorage para garantir
+      
+      // Executar signOut do Supabase
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('Erro no logout:', error);
+      }
+      
+      toast({
+        title: "Logout realizado",
+        description: "Você foi desconectado do sistema"
+      });
+      
+    } catch (error) {
+      console.error('Erro durante logout:', error);
+    } finally {
+      // Garantir redirecionamento mesmo com erro
+      setTimeout(() => {
+        window.location.href = '/auth';
+      }, 100);
+    }
   };
 
   return (
