@@ -50,7 +50,7 @@ export const useInternalAlerts = () => {
         .from('notifications_queue')
         .select(`
           *,
-          tickets!left (
+          tickets!notifications_queue_ticket_id_fkey (
             id,
             titulo,
             descricao_problema,
