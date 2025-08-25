@@ -56,8 +56,8 @@ export function AppSidebar() {
     <div
       className={cn(
         "fixed left-4 top-1/2 -translate-y-1/2 z-40 transition-all duration-300",
-        // No desktop: sempre vertical, largura variável
-        "h-[calc(100vh-4rem)]",
+        // No desktop: sempre vertical, altura menor
+        "h-[calc(100vh-16rem)]",
         isExpanded ? "w-56" : "w-16"
       )}
       onMouseEnter={handleMouseEnter}
