@@ -10,7 +10,7 @@ import { useInternalAlerts } from '@/hooks/useInternalAlerts';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-export const NotificationButton = () => {
+export const NotificationButton = ({ isExpanded = false }: { isExpanded?: boolean }) => {
   const navigate = useNavigate();
   const { alerts, loading, markAlertAsProcessed } = useInternalAlerts();
   const [open, setOpen] = useState(false);
@@ -42,8 +42,14 @@ export const NotificationButton = () => {
 
   if (loading) {
     return (
-      <Button variant="ghost" size="sm" disabled>
+      <Button 
+        variant="outline" 
+        size="sm" 
+        disabled 
+        className="bg-white text-primary border-white/20 hover:bg-white/90"
+      >
         <Bell className="h-4 w-4" />
+        {isExpanded && <span className="ml-2 text-sm">Notificações</span>}
       </Button>
     );
   }
@@ -51,8 +57,13 @@ export const NotificationButton = () => {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="sm" className="relative">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="relative bg-white text-primary border-white/20 hover:bg-white/90"
+        >
           <Bell className="h-4 w-4" />
+          {isExpanded && <span className="ml-2 text-sm">Notificações</span>}
           {alerts.length > 0 && (
             <Badge 
               variant="destructive" 

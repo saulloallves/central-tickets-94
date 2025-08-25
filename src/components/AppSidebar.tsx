@@ -190,7 +190,7 @@ export function AppSidebar() {
 
           {/* Notifications Section */}
           <div className="flex justify-center mb-2">
-            <NotificationButton />
+            <NotificationButton isExpanded={isExpanded} />
           </div>
 
           {/* User Profile Section */}
