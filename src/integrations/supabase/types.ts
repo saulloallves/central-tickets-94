@@ -2265,6 +2265,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      fix_missing_colaborador_roles: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      fix_missing_franqueado_roles: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       get_realtime_kpis: {
         Args:
           | {
