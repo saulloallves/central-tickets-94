@@ -86,31 +86,98 @@ serve(async (req) => {
 
     // Verificar se já existe usuário Auth com este email
     let authUser;
-    try {
-      const { data: existingUser, error: getUserError } = await supabaseAdmin.auth.admin.getUserByEmail(finalEmail);
-      if (!getUserError && existingUser?.user) {
-        authUser = existingUser.user;
-        console.log('Usuário já existe no Auth:', authUser.id);
+    
+    // Primeiro tenta buscar por profiles.email
+    const { data: profileData } = await supabaseAdmin
+      .from('profiles')
+      .select('id')
+      .eq('email', finalEmail)
+      .single();
+    
+    if (profileData?.id) {
+      // Se existe profile, busca o usuário no auth
+      try {
+        const { data: existingUser } = await supabaseAdmin.auth.admin.getUserById(profileData.id);
+        if (existingUser?.user) {
+          authUser = existingUser.user;
+          console.log('Usuário encontrado via profile:', authUser.id);
+        }
+      } catch (error) {
+        console.log('Erro ao buscar usuário por ID:', error);
       }
-    } catch (error) {
-      console.log('Erro ao buscar usuário existente:', error);
+    }
+    
+    // Fallback: busca na lista de usuários por email
+    if (!authUser) {
+      try {
+        const { data: usersList } = await supabaseAdmin.auth.admin.listUsers();
+        authUser = usersList.users?.find(u => u.email === finalEmail);
+        if (authUser) {
+          console.log('Usuário encontrado via listUsers:', authUser.id);
+        }
+      } catch (error) {
+        console.log('Erro ao listar usuários:', error);
+      }
     }
 
     // Se não existe, criar usuário no Auth
     if (!authUser) {
       console.log('Usuário não existe no Auth, será criado');
-      const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-        email: finalEmail,
-        password: password.toString(),
-        email_confirm: true,
-        user_metadata: {
-          nome_completo: franqueado.name,
-          telefone: franqueado.phone
-        }
-      });
+      try {
+        const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+          email: finalEmail,
+          password: password.toString(),
+          email_confirm: true,
+          user_metadata: {
+            nome_completo: franqueado.name,
+            telefone: franqueado.phone
+          }
+        });
 
-      if (createError) {
-        console.error('Erro ao criar usuário:', createError);
+        if (createError) {
+          console.error('Erro ao criar usuário:', createError);
+          
+          // Se o erro for de email já existente, tenta buscar novamente
+          if (createError.message?.includes('email_exists') || createError.message?.includes('already registered')) {
+            console.log('Email já existe, tentando buscar usuário novamente...');
+            try {
+              const { data: usersList } = await supabaseAdmin.auth.admin.listUsers();
+              authUser = usersList.users?.find(u => u.email === finalEmail);
+              
+              if (authUser) {
+                console.log('Usuário encontrado após erro de email_exists:', authUser.id);
+                // Atualiza a senha do usuário existente
+                await supabaseAdmin.auth.admin.updateUserById(authUser.id, {
+                  password: password.toString()
+                });
+              } else {
+                throw new Error('Usuário não encontrado após email_exists');
+              }
+            } catch (retryError) {
+              console.error('Erro ao buscar usuário após email_exists:', retryError);
+              return new Response(
+                JSON.stringify({ error: 'Erro interno do servidor' }),
+                { 
+                  status: 500, 
+                  headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+                }
+              );
+            }
+          } else {
+            return new Response(
+              JSON.stringify({ error: 'Erro interno do servidor' }),
+              { 
+                status: 500, 
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+              }
+            );
+          }
+        } else {
+          authUser = newUser.user;
+          console.log('Usuário criado com sucesso:', authUser.id);
+        }
+      } catch (error) {
+        console.error('Erro inesperado ao criar usuário:', error);
         return new Response(
           JSON.stringify({ error: 'Erro interno do servidor' }),
           { 
@@ -119,18 +186,17 @@ serve(async (req) => {
           }
         );
       }
-
-      authUser = newUser.user;
-      console.log('Usuário criado com sucesso:', authUser.id);
     } else {
-      // Usuário já existe, apenas sincronizar senha se necessário
+      // Usuário já existe, apenas sincronizar senha
       console.log('Sincronizando senha para usuário existente');
       try {
         await supabaseAdmin.auth.admin.updateUserById(authUser.id, {
           password: password.toString()
         });
+        console.log('Senha atualizada com sucesso');
       } catch (updateError) {
         console.error('Erro ao atualizar senha:', updateError);
+        // Não retorna erro aqui, apenas loga
       }
     }
 
