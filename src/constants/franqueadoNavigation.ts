@@ -1,8 +1,7 @@
 import { 
   LayoutDashboard,
   Ticket,
-  Building2,
-  UserCog
+  Building2
 } from "lucide-react";
 
 export const franqueadoNavigationItems = [
@@ -20,10 +19,5 @@ export const franqueadoNavigationItems = [
     title: "Unidades",
     url: "/franqueado/unidades",
     icon: Building2,
-  },
-  {
-    title: "Perfil",
-    url: "/franqueado/profile",
-    icon: UserCog,
   },
 ];
