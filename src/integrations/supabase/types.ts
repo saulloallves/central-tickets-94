@@ -2512,6 +2512,7 @@ export type Database = {
         | "colaborador"
         | "juridico"
         | "diretoria"
+        | "franqueado"
       canal_origem: "typebot" | "whatsapp_zapi" | "web"
       canal_resposta: "web" | "whatsapp" | "typebot" | "interno"
       cargo:
@@ -2710,6 +2711,7 @@ export const Constants = {
         "colaborador",
         "juridico",
         "diretoria",
+        "franqueado",
       ],
       canal_origem: ["typebot", "whatsapp_zapi", "web"],
       canal_resposta: ["web", "whatsapp", "typebot", "interno"],
