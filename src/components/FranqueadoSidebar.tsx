@@ -4,9 +4,7 @@ import {
   ChevronDown,
   Home,
   Building2,
-  BarChart3,
-  Settings,
-  DollarSign
+  Ticket
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -22,10 +20,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 const franqueadoNavigationItems = [
   { title: "Dashboard", url: "/franqueado", icon: Home },
+  { title: "Tickets", url: "/franqueado/tickets", icon: Ticket },
   { title: "Minhas Unidades", url: "/franqueado/unidades", icon: Building2 },
-  { title: "Relatórios", url: "/franqueado/relatorios", icon: BarChart3 },
-  { title: "Financeiro", url: "/franqueado/financeiro", icon: DollarSign },
-  { title: "Configurações", url: "/franqueado/configuracoes", icon: Settings },
 ];
 
 export function FranqueadoSidebar() {

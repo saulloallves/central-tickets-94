@@ -70,10 +70,24 @@ serve(async (req) => {
 
     console.log('Franqueado encontrado:', { id: franqueado.id, email: franqueado.email });
 
+    // Verificar se tem email, senão sintetizar um
+    let finalEmail = franqueado.email;
+    if (!finalEmail) {
+      finalEmail = `55${normalizedPhone}@franqueados.local`;
+      
+      // Atualizar o email do franqueado na tabela
+      await supabaseAdmin
+        .from('franqueados')
+        .update({ email: finalEmail })
+        .eq('id', franqueado.id);
+      
+      console.log('Email sintetizado para franqueado:', finalEmail);
+    }
+
     // Verificar se já existe usuário Auth com este email
     let authUser;
     try {
-      const { data: existingUser } = await supabaseAdmin.auth.admin.getUserByEmail(franqueado.email);
+      const { data: existingUser } = await supabaseAdmin.auth.admin.getUserByEmail(finalEmail);
       authUser = existingUser.user;
     } catch (error) {
       console.log('Usuário não existe no Auth, será criado');
@@ -82,7 +96,7 @@ serve(async (req) => {
     // Se não existe, criar usuário no Auth
     if (!authUser) {
       const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-        email: franqueado.email,
+        email: finalEmail,
         password: password.toString(),
         email_confirm: true,
         user_metadata: {
@@ -115,7 +129,7 @@ serve(async (req) => {
       .from('profiles')
       .upsert({
         id: authUser.id,
-        email: franqueado.email,
+        email: finalEmail,
         nome_completo: franqueado.name,
         telefone: franqueado.phone
       }, {
@@ -126,12 +140,24 @@ serve(async (req) => {
       console.error('Erro ao criar/atualizar perfil:', profileError);
     }
 
-    // Atribuir role de franqueado
+    // Verificar se tem email, senão sintetizar um
+    let finalEmail = franqueado.email;
+    if (!finalEmail) {
+      finalEmail = `55${normalizedPhone}@franqueados.local`;
+      
+      // Atualizar o email do franqueado na tabela
+      await supabaseAdmin
+        .from('franqueados')
+        .update({ email: finalEmail })
+        .eq('id', franqueado.id);
+    }
+
+    // Atribuir role de gerente (usado pelas RLS para controle de acesso)
     const { error: roleError } = await supabaseAdmin
       .from('user_roles')
       .upsert({
         user_id: authUser.id,
-        role: 'franqueado'
+        role: 'gerente'
       }, {
         onConflict: 'user_id,role'
       });
@@ -158,7 +184,7 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({ 
-        email: franqueado.email,
+        email: finalEmail,
         message: 'Login realizado com sucesso' 
       }),
       { 

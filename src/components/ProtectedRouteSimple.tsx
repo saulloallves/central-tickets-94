@@ -5,9 +5,10 @@ import { Navigate, useLocation } from 'react-router-dom';
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requiredRole?: AppRole;
+  requiredRoles?: AppRole[];
 }
 
-export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
+export const ProtectedRoute = ({ children, requiredRole, requiredRoles }: ProtectedRouteProps) => {
   const { user, loading } = useAuth();
   const { hasRole, loading: roleLoading } = useRole();
   const location = useLocation();
@@ -28,6 +29,10 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
   }
 
   if (requiredRole && !hasRole(requiredRole)) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  if (requiredRoles && !requiredRoles.some(role => hasRole(role))) {
     return <Navigate to="/auth" replace />;
   }
 

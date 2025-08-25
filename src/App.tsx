@@ -23,6 +23,8 @@ import Profile from "./pages/admin/Profile";
 import Governanca from "./pages/admin/Governanca";
 import FranqueadoLayout from "./pages/FranqueadoLayout";
 import FranqueadoDashboard from "./pages/franqueado/Dashboard";
+import FranqueadoTickets from "./pages/franqueado/Tickets";
+import FranqueadoUnidades from "./pages/franqueado/Unidades";
 import { ProtectedRoute } from "./components/ProtectedRouteSimple";
 
 const queryClient = new QueryClient();
@@ -110,9 +112,23 @@ const App = () => (
             
             {/* Rotas do Franqueado */}
             <Route path="/franqueado" element={
-              <ProtectedRoute requiredRole="franqueado">
+              <ProtectedRoute requiredRoles={['franqueado', 'gerente']}>
                 <FranqueadoLayout>
                   <FranqueadoDashboard />
+                </FranqueadoLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/franqueado/tickets" element={
+              <ProtectedRoute requiredRoles={['franqueado', 'gerente']}>
+                <FranqueadoLayout>
+                  <FranqueadoTickets />
+                </FranqueadoLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/franqueado/unidades" element={
+              <ProtectedRoute requiredRoles={['franqueado', 'gerente']}>
+                <FranqueadoLayout>
+                  <FranqueadoUnidades />
                 </FranqueadoLayout>
               </ProtectedRoute>
             } />

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
 
-export type AppRole = 'admin' | 'supervisor' | 'diretor' | 'colaborador' | 'diretoria' | 'gestor_equipe' | 'gestor_unidade' | 'franqueado' | 'auditor_juridico';
+export type AppRole = 'admin' | 'supervisor' | 'diretor' | 'colaborador' | 'diretoria' | 'gestor_equipe' | 'gestor_unidade' | 'franqueado' | 'auditor_juridico' | 'gerente';
 
 export const useRole = () => {
   const { user } = useAuth();
@@ -48,7 +48,8 @@ export const useRole = () => {
   const isSupervisor = (): boolean => hasRole('supervisor');
   const isDiretor = (): boolean => hasRole('diretor');
   const isColaborador = (): boolean => hasRole('colaborador');
-  const isFranqueado = (): boolean => hasRole('franqueado');
+  const isFranqueado = (): boolean => hasRole('franqueado') || hasRole('gerente');
+  const isGerente = (): boolean => hasRole('gerente');
 
   return {
     roles,
@@ -58,6 +59,7 @@ export const useRole = () => {
     isDiretor,
     isColaborador,
     isFranqueado,
+    isGerente,
     loading
   };
 };
