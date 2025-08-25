@@ -51,8 +51,10 @@ export function AppSidebar() {
   return (
     <div
       className={cn(
-        "h-[calc(100vh-12rem)] fixed left-4 top-1/2 -translate-y-1/2 z-40 transition-all duration-150",
-        isExpanded ? "w-48" : "w-16"
+        "fixed left-4 top-1/2 -translate-y-1/2 z-40 transition-all duration-150",
+        isExpanded 
+          ? "h-[calc(100vh-12rem)] w-48" 
+          : "h-16 w-[calc(100vw-8rem)] max-w-[600px]"
       )}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -62,15 +64,28 @@ export function AppSidebar() {
         {/* Liquid glass overlay effect */}
         <div className="absolute inset-0 liquid-glass-sidebar rounded-full"></div>
         
-        {/* Content wrapper with symmetric padding and scroll */}
-        <div className="relative z-20 h-full flex flex-col py-6 px-4 overflow-hidden">
+        {/* Content wrapper with symmetric padding */}
+        <div className={cn(
+          "relative z-20 h-full flex overflow-hidden",
+          isExpanded 
+            ? "flex-col py-6 px-4" 
+            : "flex-row py-4 px-6 items-center"
+        )}>
           {/* System Logo Section */}
-          <div className="flex justify-center mb-4">
+          <div className={cn(
+            "flex",
+            isExpanded ? "justify-center mb-4" : "justify-start mr-4 flex-shrink-0"
+          )}>
             <SystemLogo />
           </div>
 
           {/* Navigation Icons with scroll */}
-          <div className="flex-1 flex flex-col space-y-3 overflow-y-auto scrollbar-hide py-2">
+          <div className={cn(
+            "flex-1 flex py-2",
+            isExpanded 
+              ? "flex-col space-y-3 overflow-y-auto scrollbar-hide" 
+              : "flex-row space-x-2 overflow-x-auto scrollbar-hide items-center"
+          )}>
             {navigationItems.map((item) => (
               <PermissionGuard key={item.title} requiredPermission={item.permission}>
                 {isExpanded ? (
@@ -115,7 +130,7 @@ export function AppSidebar() {
                     </NavLink>
                   </TooltipProvider>
                 ) : (
-                  // Collapsed view with tooltips
+                  // Collapsed view with tooltips - horizontal layout
                   <TooltipProvider delayDuration={0}>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -123,7 +138,7 @@ export function AppSidebar() {
                           to={item.url}
                           end
                           className={({ isActive }) => cn(
-                            "group relative flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-450 mx-auto",
+                            "group relative flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-450 flex-shrink-0",
                             isActive 
                               ? "bg-white/10 backdrop-blur-sm text-white" 
                               : "hover:bg-white/5 hover:backdrop-blur-sm hover:text-white/95"
@@ -160,13 +175,19 @@ export function AppSidebar() {
             ))}
           </div>
 
-          {/* Notifications Section */}
-          <div className="flex justify-center mb-4 flex-shrink-0">
-            <NotificationButton isExpanded={isExpanded} />
-          </div>
-
-          {/* User Profile Section */}
-          <div className="mt-6 space-y-3 flex-shrink-0">
+          {/* Notifications and Profile Section - horizontal layout when collapsed */}
+          <div className={cn(
+            "flex flex-shrink-0",
+            isExpanded 
+              ? "flex-col space-y-3" 
+              : "flex-row space-x-2 items-center"
+          )}>
+            {/* Notifications Section */}
+            <div className="flex-shrink-0">
+              <NotificationButton isExpanded={isExpanded} />
+            </div>
+            {/* User Profile Section */}
+            <div className="flex-shrink-0">
             {isExpanded ? (
               <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen} modal={false}>
                 <DropdownMenuTrigger asChild>
@@ -245,6 +266,7 @@ export function AppSidebar() {
                 </Tooltip>
               </TooltipProvider>
             )}
+            </div>
           </div>
         </div>
       </div>
