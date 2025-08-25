@@ -41,12 +41,19 @@ export function UsageReports() {
   const [isChangingFilters, setIsChangingFilters] = useState(false);
 
   useEffect(() => {
-    if (isInitialLoad) {
-      console.log('🔄 UsageReports: Initial data load');
-      refetch();
-      setIsInitialLoad(false);
+    console.log('🔄 UsageReports: Initial data load');
+    refetch();
+    setIsInitialLoad(false);
+  }, []); // Removed dependencies to force initial load
+
+  // Add better error handling and logging
+  useEffect(() => {
+    if (tickets && tickets.length > 0) {
+      console.log('✅ UsageReports: Tickets loaded successfully:', tickets.length);
+    } else if (!loading && (!tickets || tickets.length === 0)) {
+      console.warn('⚠️ UsageReports: No tickets found - this could be normal or an RLS issue');
     }
-  }, [refetch, isInitialLoad]);
+  }, [tickets, loading]);
 
   // Processar dados para gráficos
   const chartData = useMemo(() => {
@@ -407,6 +414,25 @@ export function UsageReports() {
             {(loading || isChangingFilters) ? (
               <div className="h-[300px] flex items-center justify-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : chartData.channelData.length === 0 ? (
+              <div className="h-[300px] flex flex-col items-center justify-center text-center">
+                <Activity className="h-12 w-12 text-muted-foreground mb-4" />
+                <h4 className="text-lg font-semibold text-foreground mb-2">
+                  Sem dados de canais
+                </h4>
+                <p className="text-sm text-muted-foreground">
+                  Não foi possível carregar os tickets para análise de canais de origem.
+                </p>
+                <Button 
+                  onClick={refetch} 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-4"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Tentar novamente
+                </Button>
               </div>
             ) : (
               <ResponsiveContainer width="100%" height={300}>
