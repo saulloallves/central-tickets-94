@@ -48,7 +48,8 @@ export const AlertsPanel = () => {
     }
   };
 
-  const formatTicketCode = (ticketId: string) => {
+  const formatTicketCode = (ticketId: string | null) => {
+    if (!ticketId) return 'N/A';
     return ticketId.slice(0, 8).toUpperCase();
   };
 
