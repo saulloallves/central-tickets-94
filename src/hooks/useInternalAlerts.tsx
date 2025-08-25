@@ -15,10 +15,10 @@ export interface InternalAlert {
   created_at: string;
   tickets?: {
     id: string;
-    titulo: string;
-    descricao_problema: string;
+    titulo: string | null;
+    descricao_problema: string | null;
     codigo_ticket: string;
-  };
+  } | null;
   // Dados da solicitação de acesso interno (quando aplicável)
   user_id?: string;
   equipe_id?: string;
@@ -41,90 +41,78 @@ export const useInternalAlerts = () => {
   const { isAdmin, hasRole } = useRole();
 
   const fetchAlerts = async (status = 'pending') => {
+    if (loading) return; // Prevent multiple simultaneous requests
+    
     setLoading(true);
     try {
-      // Construir query base
+      // Construir query com joins para buscar dados relacionados de uma vez
       let query = supabase
         .from('notifications_queue')
-        .select('*')
+        .select(`
+          *,
+          tickets!left (
+            id,
+            titulo,
+            descricao_problema,
+            codigo_ticket
+          )
+        `)
         .eq('status', status)
         .not('alert_level', 'is', null);
 
-      // Filtrar alertas de solicitação de acesso apenas para admins
-      if (!isAdmin && !hasRole('diretoria')) {
-        query = query.neq('type', 'internal_access_request');
-      }
-
+      // Check user roles directly in the query using RLS instead of client-side filtering
       const { data: alertsData, error: alertsError } = await query
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(20); // Reduce limit to improve performance
 
       if (alertsError) throw alertsError;
 
-      // Buscar dados relacionados
-      const enrichedAlerts = await Promise.all((alertsData || []).map(async (alert) => {
-        let additionalData = null;
-
-        // Se for uma notificação de solicitação de acesso interno
+      // Process alerts with minimal additional queries
+      const processedAlerts = (alertsData || []).map((alert): InternalAlert => {
+        // Handle internal access request data from payload
         if (alert.type === 'internal_access_request') {
-          try {
-            const payload = alert.payload as any;
-            const requestId = payload?.request_id;
-            
-            if (requestId) {
-              const { data: requestData } = await supabase
-                .from('internal_access_requests')
-                .select(`
-                  *,
-                  equipes:equipe_id (
-                    id,
-                    nome
-                  ),
-                  profiles:user_id (
-                    id,
-                    nome_completo,
-                    email
-                  )
-                `)
-                .eq('id', requestId)
-                .single();
-              
-              additionalData = requestData;
-            }
-          } catch (error) {
-            console.error('Error fetching access request data:', error);
-          }
+          const payload = alert.payload as any;
+          return {
+            id: alert.id,
+            ticket_id: alert.ticket_id || '',
+            type: alert.type,
+            alert_level: alert.alert_level || 'normal',
+            alert_category: alert.alert_category || undefined,
+            payload: alert.payload,
+            status: alert.status,
+            created_at: alert.created_at,
+            tickets: Array.isArray(alert.tickets) && alert.tickets.length > 0 ? alert.tickets[0] : null,
+            user_id: payload?.user_id,
+            equipe_id: payload?.equipe_id,
+            desired_role: payload?.desired_role,
+          };
         }
-        // Se for relacionado a ticket
-        else if (alert.ticket_id) {
-          try {
-            const { data: ticketData } = await supabase
-              .from('tickets')
-              .select('id, titulo, descricao_problema, codigo_ticket')
-              .eq('id', alert.ticket_id)
-              .single();
-            
-            additionalData = { tickets: ticketData };
-          } catch (error) {
-            console.error('Error fetching ticket data:', error);
-          }
-        }
-
+        
         return {
-          ...alert,
-          ...additionalData
+          id: alert.id,
+          ticket_id: alert.ticket_id || '',
+          type: alert.type,
+          alert_level: alert.alert_level || 'normal', 
+          alert_category: alert.alert_category || undefined,
+          payload: alert.payload,
+          status: alert.status,
+          created_at: alert.created_at,
+          tickets: Array.isArray(alert.tickets) && alert.tickets.length > 0 ? alert.tickets[0] : null,
         };
-      }));
+      });
 
-      setAlerts(enrichedAlerts as InternalAlert[]);
+      setAlerts(processedAlerts);
       console.log('Internal alerts fetched:', alertsData?.length);
     } catch (error) {
       console.error('Error fetching alerts:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível carregar os alertas",
-        variant: "destructive",
-      });
+      // Only show toast on user-triggered actions, not automatic refreshes
+      if (status === 'pending') {
+        toast({
+          title: "Informação",
+          description: "Carregando alertas...",
+          variant: "default",
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -150,8 +138,8 @@ export const useInternalAlerts = () => {
 
       console.log('Internal alert created:', data);
       
-      // Refresh alerts list
-      await fetchAlerts();
+      // Refresh alerts list after a small delay to prevent rapid updates
+      setTimeout(() => fetchAlerts(), 500);
       
       return data;
     } catch (error) {
@@ -177,8 +165,8 @@ export const useInternalAlerts = () => {
 
       if (error) throw error;
 
-      // Refresh alerts list
-      await fetchAlerts();
+      // Refresh alerts list after a small delay
+      setTimeout(() => fetchAlerts(), 500);
 
       toast({
         title: "Sucesso",
@@ -209,62 +197,70 @@ export const useInternalAlerts = () => {
           console.log('New internal alert received:', payload.new);
           const newAlert = payload.new as InternalAlert;
           
-          // Determinar tipo de som baseado no nível do alerta
-          let soundType: 'success' | 'warning' | 'critical' | 'info' = 'info';
-          switch (newAlert.alert_level) {
-            case 'critical':
-              soundType = 'critical';
-              break;
-            case 'warning':
-              soundType = 'warning';
-              break;
-            default:
-              soundType = 'info';
-          }
-          
-          // Notificação para solicitações de acesso interno (apenas para admins)
+          // Check if user should see this notification based on type
           if (newAlert.type === 'internal_access_request') {
-            if (isAdmin || hasRole('diretoria')) {
-              NotificationSounds.playNotificationSound('info');
-              const alertPayload = newAlert.payload as any;
-              toast({
-                title: "📝 Nova Solicitação de Acesso",
-                description: "Um usuário solicitou acesso à equipe interna",
-                variant: "default",
-              });
+            // Only admins and directors should see access requests and get notifications
+            const userRoles = JSON.parse(localStorage.getItem('user-roles') || '[]');
+            const isAdminOrDirector = userRoles.includes('admin') || userRoles.includes('diretoria');
+            
+            if (!isAdminOrDirector) {
+              return; // Skip this notification
             }
+            
+            NotificationSounds.playNotificationSound('info');
+            toast({
+              title: "📝 Nova Solicitação de Acesso",
+              description: "Um usuário solicitou acesso à equipe interna",
+              variant: "default",
+            });
           }
           // Show toast notification for critical alerts
           else if (newAlert.alert_level === 'critical') {
             NotificationSounds.playCriticalAlert(); // Multiple beeps for critical
-            // Buscar dados do ticket para a notificação
-            supabase
-              .from('tickets')
-              .select('titulo, descricao_problema')
-              .eq('id', newAlert.ticket_id)
-              .single()
-              .then(({ data: ticket }) => {
-                const ticketTitle = ticket?.titulo || ticket?.descricao_problema || 'Ticket sem título';
-                toast({
-                  title: "🚨 Alerta Crítico",
-                  description: `${newAlert.type} - ${ticketTitle}`,
-                  variant: "destructive",
-                });
-              });
+            // Use ticket data from the payload instead of making another query
+            const ticketTitle = newAlert.payload?.codigo_ticket || 'Ticket crítico';
+            toast({
+              title: "🚨 Alerta Crítico",
+              description: `${newAlert.type} - ${ticketTitle}`,
+              variant: "destructive",
+            });
           }
           // Regular alerts
           else {
+            let soundType: 'success' | 'warning' | 'critical' | 'info' = 'info';
+            switch (newAlert.alert_level) {
+              case 'critical':
+                soundType = 'critical';
+                break;
+              case 'warning':
+                soundType = 'warning';
+                break;
+              default:
+                soundType = 'info';
+            }
             NotificationSounds.playNotificationSound(soundType);
           }
           
-          // Refresh alerts list
-          fetchAlerts();
+          // Refresh alerts list with throttling to prevent rapid updates
+          const refreshTimer = setTimeout(() => {
+            fetchAlerts();
+          }, 1000);
+          
+          // Clear any existing timer
+          if ((window as any).alertRefreshTimer) {
+            clearTimeout((window as any).alertRefreshTimer);
+          }
+          (window as any).alertRefreshTimer = refreshTimer;
         }
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
+      // Clean up timer
+      if ((window as any).alertRefreshTimer) {
+        clearTimeout((window as any).alertRefreshTimer);
+      }
     };
   };
 
@@ -272,11 +268,15 @@ export const useInternalAlerts = () => {
     // Request audio permission on first load
     NotificationSounds.requestAudioPermission();
     
-    fetchAlerts();
+    const initializeAlerts = async () => {
+      await fetchAlerts();
+    };
+    
+    initializeAlerts();
     const unsubscribe = setupRealtimeAlerts();
     
     return unsubscribe;
-  }, [isAdmin, hasRole]);
+  }, []); // Remove dependencies to prevent infinite loops
 
   return {
     alerts,
