@@ -2315,11 +2315,6 @@ export type Database = {
       get_unit_metrics: {
         Args:
           | {
-              p_equipe_filter: string
-              p_periodo_dias: number
-              p_user_id: string
-            }
-          | {
               p_equipe_filter?: string
               p_periodo_dias?: number
               p_user_id?: string
