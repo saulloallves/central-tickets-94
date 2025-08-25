@@ -7,11 +7,14 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ClipboardList, Sparkles, Shield, Zap } from 'lucide-react';
+import { ClipboardList, Sparkles, Shield, Zap, Phone } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const Auth = () => {
   const { user, signIn, signUp, loading } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form states
@@ -24,11 +27,27 @@ const Auth = () => {
     telefone: '',
     role: ''
   });
+  const [franqueadoData, setFranqueadoData] = useState({ phone: '', password: '' });
 
   // Redirect if already authenticated
   useEffect(() => {
     if (user && !loading) {
-      navigate('/admin');
+      // Verificar se é franqueado para redirecionar corretamente
+      const checkUserRole = async () => {
+        const { data: roles } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id);
+        
+        const userRoles = roles?.map(r => r.role) || [];
+        if (userRoles.includes('franqueado' as any)) {
+          navigate('/franqueado');
+        } else {
+          navigate('/admin');
+        }
+      };
+      
+      checkUserRole();
     }
   }, [user, loading, navigate]);
 
@@ -72,6 +91,45 @@ const Auth = () => {
         nomeCompleto: '',
         telefone: '',
         role: ''
+      });
+    }
+
+    setIsSubmitting(false);
+  };
+
+  const handleFranqueadoLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      // Chamar a Edge Function para validar franqueado
+      const { data, error } = await supabase.functions.invoke('franqueado-login', {
+        body: {
+          phone: franqueadoData.phone,
+          password: franqueadoData.password
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.email) {
+        // Fazer login normal com o email retornado
+        const { error: loginError } = await signIn(data.email, franqueadoData.password);
+        if (!loginError) {
+          toast({
+            title: "Login realizado",
+            description: "Bem-vindo ao sistema de franqueados!"
+          });
+          navigate('/franqueado');
+        }
+      }
+    } catch (error: any) {
+      toast({
+        title: "Erro no login",
+        description: error.message || 'Telefone ou senha incorretos',
+        variant: "destructive"
       });
     }
 
@@ -153,12 +211,15 @@ const Auth = () => {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="login" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsList className="grid w-full grid-cols-3 mb-6">
                 <TabsTrigger value="login" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-white">
                   Entrar
                 </TabsTrigger>
                 <TabsTrigger value="signup" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-white">
                   Cadastrar
+                </TabsTrigger>
+                <TabsTrigger value="franqueado" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-white">
+                  Franqueado
                 </TabsTrigger>
               </TabsList>
 
@@ -280,6 +341,46 @@ const Auth = () => {
                   </div>
                   <Button type="submit" className="w-full h-11 bg-gradient-primary hover:opacity-90 shadow-glow" disabled={isSubmitting}>
                     {isSubmitting ? 'Cadastrando...' : 'Criar Conta'}
+                  </Button>
+                </form>
+              </TabsContent>
+
+              <TabsContent value="franqueado" className="space-y-4">
+                <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <p className="text-sm text-blue-700 dark:text-blue-300">
+                    <strong>Área Franqueados:</strong> Use seu telefone e senha do sistema para acessar.
+                  </p>
+                </div>
+                <form onSubmit={handleFranqueadoLogin} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="franqueado-phone">Telefone</Label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="franqueado-phone"
+                        type="tel"
+                        placeholder="(11) 99999-9999"
+                        value={franqueadoData.phone}
+                        onChange={(e) => setFranqueadoData({ ...franqueadoData, phone: e.target.value })}
+                        className="h-11 pl-10"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="franqueado-password">Senha do Sistema</Label>
+                    <Input
+                      id="franqueado-password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={franqueadoData.password}
+                      onChange={(e) => setFranqueadoData({ ...franqueadoData, password: e.target.value })}
+                      className="h-11"
+                      required
+                    />
+                  </div>
+                  <Button type="submit" className="w-full h-11 bg-gradient-primary hover:opacity-90 shadow-glow" disabled={isSubmitting}>
+                    {isSubmitting ? 'Entrando...' : 'Acessar Área do Franqueado'}
                   </Button>
                 </form>
               </TabsContent>

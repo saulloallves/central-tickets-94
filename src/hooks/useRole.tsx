@@ -48,6 +48,7 @@ export const useRole = () => {
   const isSupervisor = (): boolean => hasRole('supervisor');
   const isDiretor = (): boolean => hasRole('diretor');
   const isColaborador = (): boolean => hasRole('colaborador');
+  const isFranqueado = (): boolean => hasRole('franqueado');
 
   return {
     roles,
@@ -56,6 +57,7 @@ export const useRole = () => {
     isSupervisor,
     isDiretor,
     isColaborador,
+    isFranqueado,
     loading
   };
 };
