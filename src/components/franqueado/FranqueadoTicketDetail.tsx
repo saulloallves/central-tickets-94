@@ -74,9 +74,7 @@ export function FranqueadoTicketDetail({ ticketId, onClose }: FranqueadoTicketDe
           .from('tickets')
           .select(`
             *,
-            equipes:equipe_responsavel_id(
-              nome
-            )
+            equipes!equipe_responsavel_id(nome)
           `)
           .eq('id', ticketId)
           .single();

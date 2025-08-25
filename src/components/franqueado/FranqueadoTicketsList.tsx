@@ -65,7 +65,7 @@ export function FranqueadoTicketsList({ onTicketSelect, selectedTicketId, filter
             criado_por,
             reaberto_count,
             equipe_responsavel_id,
-            equipes:equipe_responsavel_id(nome)
+            equipes!equipe_responsavel_id(nome)
           `)
           .order('data_abertura', { ascending: false });
 
