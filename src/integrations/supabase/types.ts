@@ -2207,6 +2207,10 @@ export type Database = {
         Args: { p_request_id: string }
         Returns: undefined
       }
+      assign_basic_user_roles: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       broadcast_crise_message: {
         Args: {
           p_by?: string
