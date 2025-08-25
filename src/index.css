@@ -71,9 +71,9 @@ All colors MUST be HSL.
     --sidebar-foreground: 0 0% 100%;
     --sidebar-primary: 0 0% 100%;
     --sidebar-primary-foreground: 201 70% 30%;
-    --sidebar-accent: 0 0% 100% / 0.15;
+    --sidebar-accent: 0 0% 100% / 0.08;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 0 0% 100% / 0.2;
+    --sidebar-border: 0 0% 100% / 0.05;
     --sidebar-ring: 0 0% 100%;
 
     /* Smooth modern transitions */
