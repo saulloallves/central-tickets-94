@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useRole } from '@/hooks/useRole';
+import { NotificationSounds } from '@/lib/notification-sounds';
 
 export interface InternalAlert {
   id: string;
@@ -36,16 +38,24 @@ export const useInternalAlerts = () => {
   const [alerts, setAlerts] = useState<InternalAlert[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { isAdmin, hasRole } = useRole();
 
   const fetchAlerts = async (status = 'pending') => {
     setLoading(true);
     try {
-      // Buscar alertas
-      const { data: alertsData, error: alertsError } = await supabase
+      // Construir query base
+      let query = supabase
         .from('notifications_queue')
         .select('*')
         .eq('status', status)
-        .not('alert_level', 'is', null)
+        .not('alert_level', 'is', null);
+
+      // Filtrar alertas de solicitação de acesso apenas para admins
+      if (!isAdmin && !hasRole('diretoria')) {
+        query = query.neq('type', 'internal_access_request');
+      }
+
+      const { data: alertsData, error: alertsError } = await query
         .order('created_at', { ascending: false })
         .limit(50);
 
@@ -199,17 +209,34 @@ export const useInternalAlerts = () => {
           console.log('New internal alert received:', payload.new);
           const newAlert = payload.new as InternalAlert;
           
-          // Notificação para solicitações de acesso interno
+          // Determinar tipo de som baseado no nível do alerta
+          let soundType: 'success' | 'warning' | 'critical' | 'info' = 'info';
+          switch (newAlert.alert_level) {
+            case 'critical':
+              soundType = 'critical';
+              break;
+            case 'warning':
+              soundType = 'warning';
+              break;
+            default:
+              soundType = 'info';
+          }
+          
+          // Notificação para solicitações de acesso interno (apenas para admins)
           if (newAlert.type === 'internal_access_request') {
-            const alertPayload = newAlert.payload as any;
-            toast({
-              title: "📝 Nova Solicitação de Acesso",
-              description: "Um usuário solicitou acesso à equipe interna",
-              variant: "default",
-            });
+            if (isAdmin || hasRole('diretoria')) {
+              NotificationSounds.playNotificationSound('info');
+              const alertPayload = newAlert.payload as any;
+              toast({
+                title: "📝 Nova Solicitação de Acesso",
+                description: "Um usuário solicitou acesso à equipe interna",
+                variant: "default",
+              });
+            }
           }
           // Show toast notification for critical alerts
           else if (newAlert.alert_level === 'critical') {
+            NotificationSounds.playCriticalAlert(); // Multiple beeps for critical
             // Buscar dados do ticket para a notificação
             supabase
               .from('tickets')
@@ -225,6 +252,10 @@ export const useInternalAlerts = () => {
                 });
               });
           }
+          // Regular alerts
+          else {
+            NotificationSounds.playNotificationSound(soundType);
+          }
           
           // Refresh alerts list
           fetchAlerts();
@@ -238,11 +269,14 @@ export const useInternalAlerts = () => {
   };
 
   useEffect(() => {
+    // Request audio permission on first load
+    NotificationSounds.requestAudioPermission();
+    
     fetchAlerts();
     const unsubscribe = setupRealtimeAlerts();
     
     return unsubscribe;
-  }, []);
+  }, [isAdmin, hasRole]);
 
   return {
     alerts,
