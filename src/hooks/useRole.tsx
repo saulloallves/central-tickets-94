@@ -48,7 +48,7 @@ export const useRole = () => {
   const isSupervisor = (): boolean => hasRole('supervisor');
   const isDiretor = (): boolean => hasRole('diretor');
   const isColaborador = (): boolean => hasRole('colaborador');
-  const isFranqueado = (): boolean => hasRole('franqueado') || hasRole('gerente');
+  const isFranqueado = (): boolean => hasRole('franqueado');
   const isGerente = (): boolean => hasRole('gerente');
 
   return {

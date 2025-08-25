@@ -112,21 +112,21 @@ const App = () => (
             
             {/* Rotas do Franqueado */}
             <Route path="/franqueado" element={
-              <ProtectedRoute requiredRoles={['franqueado', 'gerente']}>
+              <ProtectedRoute requiredRole="franqueado">
                 <FranqueadoLayout>
                   <FranqueadoDashboard />
                 </FranqueadoLayout>
               </ProtectedRoute>
             } />
             <Route path="/franqueado/tickets" element={
-              <ProtectedRoute requiredRoles={['franqueado', 'gerente']}>
+              <ProtectedRoute requiredRole="franqueado">
                 <FranqueadoLayout>
                   <FranqueadoTickets />
                 </FranqueadoLayout>
               </ProtectedRoute>
             } />
             <Route path="/franqueado/unidades" element={
-              <ProtectedRoute requiredRoles={['franqueado', 'gerente']}>
+              <ProtectedRoute requiredRole="franqueado">
                 <FranqueadoLayout>
                   <FranqueadoUnidades />
                 </FranqueadoLayout>

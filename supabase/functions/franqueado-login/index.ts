@@ -140,24 +140,13 @@ serve(async (req) => {
       console.error('Erro ao criar/atualizar perfil:', profileError);
     }
 
-    // Verificar se tem email, senão sintetizar um
-    let finalEmail = franqueado.email;
-    if (!finalEmail) {
-      finalEmail = `55${normalizedPhone}@franqueados.local`;
-      
-      // Atualizar o email do franqueado na tabela
-      await supabaseAdmin
-        .from('franqueados')
-        .update({ email: finalEmail })
-        .eq('id', franqueado.id);
-    }
 
-    // Atribuir role de gerente (usado pelas RLS para controle de acesso)
+    // Atribuir role de franqueado (usado pelas RLS para controle de acesso)
     const { error: roleError } = await supabaseAdmin
       .from('user_roles')
       .upsert({
         user_id: authUser.id,
-        role: 'gerente'
+        role: 'franqueado'
       }, {
         onConflict: 'user_id,role'
       });

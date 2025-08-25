@@ -40,7 +40,7 @@ const Auth = () => {
           .eq('user_id', user.id);
         
         const userRoles = roles?.map(r => r.role) || [];
-        if (userRoles.includes('franqueado' as any) || userRoles.includes('gerente' as any)) {
+        if (userRoles.includes('franqueado' as any)) {
           navigate('/franqueado');
         } else {
           navigate('/admin');
