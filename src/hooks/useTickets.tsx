@@ -102,30 +102,10 @@ export const useTickets = (filters: TicketFilters) => {
     try {
       setLoading(true);
       
+      // Use simple query without joins to avoid RLS recursion
       let query = supabase
         .from('tickets')
-        .select(`
-          *,
-          unidades:unidade_id (
-            id,
-            grupo,
-            cidade,
-            uf
-          ),
-          equipes:equipe_responsavel_id (
-            id,
-            nome
-          ),
-          atendimento_iniciado_por_profile:atendimento_iniciado_por (
-            nome_completo
-          ),
-          colaboradores (
-            nome_completo
-          ),
-          created_by_profile:criado_por (
-            nome_completo
-          )
-        `)
+        .select('*')
         .order('status', { ascending: true })
         .order('position', { ascending: true });
 
