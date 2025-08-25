@@ -62,10 +62,10 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="w-full space-y-6 pt-6">
+    <div className="w-full space-y-4 md:space-y-6 pt-3 md:pt-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-xl md:text-3xl font-bold tracking-tight">Dashboard</h1>
+        <p className="text-sm md:text-base text-muted-foreground">
           Visão geral do sistema de tickets e gestão de crises
         </p>
       </div>
@@ -74,58 +74,58 @@ const Dashboard = () => {
       <CrisisPanel />
 
       {/* KPI Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">
         <KPICard
           title="Total de Tickets"
           value={kpis?.total_tickets?.toString() || "0"}
           description="Tickets de hoje"
-          icon={<TicketIcon className="h-4 w-4 text-info" />}
+          icon={<TicketIcon className="h-3 w-3 md:h-4 md:w-4 text-info" />}
         />
         <KPICard
           title="Tickets Resolvidos"
           value={kpis?.tickets_resolvidos?.toString() || "0"}
           description={`${kpis?.percentual_resolucao || 0}% de resolução`}
-          icon={<CheckCircleIcon className="h-4 w-4 text-success" />}
+          icon={<CheckCircleIcon className="h-3 w-3 md:h-4 md:w-4 text-success" />}
         />
         <KPICard
           title="SLA Vencido"
           value={kpis?.tickets_sla_vencido?.toString() || "0"}
           description="Tickets fora do prazo"
-          icon={<AlertTriangleIcon className="h-4 w-4 text-critical" />}
+          icon={<AlertTriangleIcon className="h-3 w-3 md:h-4 md:w-4 text-critical" />}
         />
         <KPICard
           title="Tempo Médio"
           value={`${kpis?.tempo_medio_resolucao?.toFixed(1) || "0"}h`}
           description="Resolução média"
-          icon={<ClockIcon className="h-4 w-4 text-warning" />}
+          icon={<ClockIcon className="h-3 w-3 md:h-4 md:w-4 text-warning" />}
         />
       </div>
 
       {/* Additional KPIs */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">
         <KPICard
           title="Tickets em Aberto"
           value={kpis?.tickets_abertos?.toString() || "0"}
           description="Aguardando atendimento"
-          icon={<TrendingUpIcon className="h-4 w-4 text-warning" />}
+          icon={<TrendingUpIcon className="h-3 w-3 md:h-4 md:w-4 text-warning" />}
         />
         <KPICard
           title="Tickets de Crise"
           value={kpis?.tickets_crise?.toString() || "0"}
           description="Prioridade máxima"
-          icon={<AlertTriangleIcon className="h-4 w-4 text-critical" />}
+          icon={<AlertTriangleIcon className="h-3 w-3 md:h-4 md:w-4 text-critical" />}
         />
         <KPICard
           title="Equipes Ativas"
           value={kpis?.equipes_ativas?.toString() || "0"}
           description="Equipes em operação"
-          icon={<UsersIcon className="h-4 w-4 text-info" />}
+          icon={<UsersIcon className="h-3 w-3 md:h-4 md:w-4 text-info" />}
         />
         <KPICard
           title="IA Bem-Sucedida"
           value={`${kpis?.percentual_ia_sucesso || 0}%`}
           description="Taxa de sucesso da IA"
-          icon={<CheckCircleIcon className="h-4 w-4 text-success" />}
+          icon={<CheckCircleIcon className="h-3 w-3 md:h-4 md:w-4 text-success" />}
         />
       </div>
 

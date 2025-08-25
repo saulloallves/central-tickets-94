@@ -123,17 +123,19 @@ export default function Equipes() {
 
   return (
     <ProtectedRoute requiredPermission="view_all_tickets">
-      <div className="w-full space-y-6 pt-6">
-        <div className="flex items-center justify-between">
+      <div className="w-full space-y-4 md:space-y-6 pt-3 md:pt-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">Equipes</h2>
-            <p className="text-muted-foreground">
+            <h2 className="text-xl md:text-3xl font-bold tracking-tight">Equipes</h2>
+            <p className="text-sm md:text-base text-muted-foreground">
               Gerencie as equipes e seus membros no sistema.
             </p>
           </div>
           
           {canCreateEquipe && (
-            <CreateEquipeDialog onSuccess={fetchEquipes} />
+            <div className="w-full md:w-auto">
+              <CreateEquipeDialog onSuccess={fetchEquipes} />
+            </div>
           )}
         </div>
 
@@ -179,7 +181,7 @@ export default function Equipes() {
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
                 {filteredEquipes.map((equipe) => (
                   <EquipeCard
                     key={equipe.id}

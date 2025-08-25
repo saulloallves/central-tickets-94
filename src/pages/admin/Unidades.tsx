@@ -129,31 +129,31 @@ const Unidades = () => {
 
   return (
     <ProtectedRoute requiredPermission="view_all_tickets">
-      <div className="w-full space-y-6 pt-6">
+      <div className="w-full space-y-4 md:space-y-6 pt-3 md:pt-6">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Unidades</h2>
-          <p className="text-muted-foreground">
+          <h2 className="text-xl md:text-3xl font-bold tracking-tight">Unidades</h2>
+          <p className="text-sm md:text-base text-muted-foreground">
             Gerencie todas as unidades da rede
           </p>
         </div>
 
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
+        <div className="space-y-3 md:space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <div className="flex items-center space-x-2">
               <Search className="w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar por nome, cidade ou estado..."
                 value={searchTerm}
                 onChange={(e) => handleSearch(e.target.value)}
-                className="max-w-sm"
+                className="w-full md:max-w-sm"
               />
             </div>
             
             {/* Info de paginação */}
-            <div className="text-sm text-muted-foreground">
+            <div className="text-xs md:text-sm text-muted-foreground">
               {totalCount > 0 && (
                 <>
-                  Página {currentPage} de {totalPages} • {totalCount} unidades
+                  Pág {currentPage}/{totalPages} • {totalCount} unidades
                 </>
               )}
             </div>
@@ -175,38 +175,38 @@ const Unidades = () => {
             </Card>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
                 {unidades.map((unidade) => (
                   <Dialog key={unidade.id}>
                     <DialogTrigger asChild>
                       <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border bg-white dark:bg-card relative overflow-hidden">
-                        <CardHeader className="pb-2 pt-3 px-4">
-                          <div className="flex items-start justify-between mb-2">
+                        <CardHeader className="pb-2 pt-2 md:pt-3 px-3 md:px-4">
+                          <div className="flex items-start justify-between mb-1 md:mb-2">
                             <div className="p-1 bg-blue-50 dark:bg-blue-900/20 rounded-md">
-                              <Building className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                              <Building className="w-3 h-3 md:w-3.5 md:h-3.5 text-blue-600 dark:text-blue-400" />
                             </div>
-                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                              <Search className="w-3 h-3 text-muted-foreground" />
+                            <Button variant="ghost" size="sm" className="h-5 w-5 md:h-6 md:w-6 p-0">
+                              <Search className="w-2.5 h-2.5 md:w-3 md:h-3 text-muted-foreground" />
                             </Button>
                           </div>
                           
                           <div className="space-y-1">
                             <div>
-                              <CardTitle className="text-sm font-semibold leading-tight">
+                              <CardTitle className="text-xs md:text-sm font-semibold leading-tight line-clamp-1">
                                 {unidade.grupo || 'Unidade'}
                               </CardTitle>
-                              <p className="text-xs text-muted-foreground">
+                              <p className="text-[10px] md:text-xs text-muted-foreground line-clamp-1">
                                 {unidade.cidade || 'N/A'}, {unidade.estado || 'N/A'}
                               </p>
                             </div>
                             
-                            <div className="text-xs text-muted-foreground">
-                              <div>#{unidade.id.substring(0, 6)} • {unidade.modelo_loja || 'N/A'}</div>
+                            <div className="text-[10px] md:text-xs text-muted-foreground">
+                              <div className="line-clamp-1">#{unidade.id.substring(0, 6)} • {unidade.modelo_loja || 'N/A'}</div>
                             </div>
                           </div>
                         </CardHeader>
                         
-                        <CardContent className="pt-0 pb-3 px-4">
+                        <CardContent className="pt-0 pb-2 md:pb-3 px-3 md:px-4">
                           <Badge 
                             className={`${
                               unidade.fase_loja?.toLowerCase() === 'ativa' || unidade.fase_loja?.toLowerCase() === 'operação' || unidade.fase_loja?.toLowerCase() === 'operacao'
@@ -216,14 +216,14 @@ const Unidades = () => {
                                 : unidade.fase_loja?.toLowerCase() === 'planejamento'
                                 ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400'
                                 : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
-                            } border-0 font-medium uppercase text-xs tracking-wide py-1 px-2`}
+                            } border-0 font-medium uppercase text-[9px] md:text-xs tracking-wide py-0.5 md:py-1 px-1.5 md:px-2`}
                           >
                             {unidade.fase_loja || 'N/A'}
                           </Badge>
                         </CardContent>
                       </Card>
                     </DialogTrigger>
-                    <DialogContent className="max-w-2xl">
+                    <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
                       <DialogHeader>
                         <DialogTitle className="flex items-center gap-3">
                           <Building className="w-5 h-5" />
@@ -308,21 +308,23 @@ const Unidades = () => {
 
               {/* Controles de paginação */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-center space-x-2 pt-8 pb-6">
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-6 md:pt-8 pb-4 md:pb-6">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                     disabled={currentPage === 1 || searchLoading}
+                    className="w-full sm:w-auto"
                   >
                     <ChevronLeft className="h-4 w-4" />
-                    Anterior
+                    <span className="hidden md:inline">Anterior</span>
+                    <span className="md:hidden">Ant</span>
                   </Button>
                   
                   <div className="flex items-center space-x-1">
                     {/* Mostrar algumas páginas ao redor da atual */}
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      const pageNum = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
+                    {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
+                      const pageNum = Math.max(1, Math.min(totalPages - 2, currentPage - 1)) + i;
                       if (pageNum > totalPages) return null;
                       
                       return (
@@ -332,7 +334,7 @@ const Unidades = () => {
                           size="sm"
                           onClick={() => setCurrentPage(pageNum)}
                           disabled={searchLoading}
-                          className="w-10"
+                          className="w-8 h-8 md:w-10 md:h-10 text-xs md:text-sm"
                         >
                           {pageNum}
                         </Button>
@@ -345,8 +347,10 @@ const Unidades = () => {
                     size="sm"
                     onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                     disabled={currentPage === totalPages || searchLoading}
+                    className="w-full sm:w-auto"
                   >
-                    Próxima
+                    <span className="hidden md:inline">Próxima</span>
+                    <span className="md:hidden">Prox</span>
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>

@@ -103,49 +103,50 @@ const Colaboradores = () => {
 
   return (
     <ProtectedRoute requiredPermission="view_all_tickets">
-      <div className="w-full space-y-6 pt-6">
-        <div className="flex justify-between items-center">
+      <div className="w-full space-y-4 md:space-y-6 pt-3 md:pt-6">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">Colaboradores</h2>
-            <p className="text-muted-foreground">
+            <h2 className="text-xl md:text-3xl font-bold tracking-tight">Colaboradores</h2>
+            <p className="text-sm md:text-base text-muted-foreground">
               Gerencie todos os colaboradores da empresa
             </p>
           </div>
-          <Button>
+          <Button className="w-full md:w-auto">
             <Plus className="w-4 h-4 mr-2" />
-            Novo Colaborador
+            <span className="hidden md:inline">Novo Colaborador</span>
+            <span className="md:hidden">Novo</span>
           </Button>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Lista de Colaboradores</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-base md:text-lg">Lista de Colaboradores</CardTitle>
+            <CardDescription className="text-xs md:text-sm">
               {filteredColaboradores.length} colaboradores encontrados
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center space-x-2 mb-4">
+            <div className="flex items-center space-x-2 mb-3 md:mb-4">
               <Search className="w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar por nome, email ou cargo..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="max-w-sm"
+                className="w-full md:max-w-sm text-xs md:text-sm"
               />
             </div>
 
-            <div className="border rounded-md">
+            <div className="border rounded-md overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Colaborador</TableHead>
-                    <TableHead>Cargo</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Unidade</TableHead>
-                    <TableHead>Remuneração</TableHead>
-                    <TableHead>Contato</TableHead>
-                    <TableHead>Ações</TableHead>
+                    <TableHead className="text-xs md:text-sm min-w-[140px]">Colaborador</TableHead>
+                    <TableHead className="text-xs md:text-sm min-w-[80px]">Cargo</TableHead>
+                    <TableHead className="text-xs md:text-sm min-w-[70px]">Status</TableHead>
+                    <TableHead className="text-xs md:text-sm min-w-[80px] hidden sm:table-cell">Unidade</TableHead>
+                    <TableHead className="text-xs md:text-sm min-w-[100px] hidden md:table-cell">Remuneração</TableHead>
+                    <TableHead className="text-xs md:text-sm min-w-[120px] hidden lg:table-cell">Contato</TableHead>
+                    <TableHead className="text-xs md:text-sm w-12">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -153,55 +154,55 @@ const Colaboradores = () => {
                     <TableRow key={colaborador.id}>
                       <TableCell className="font-medium">
                         <div>
-                          <div className="font-semibold">{colaborador.nome_completo}</div>
-                          <div className="text-sm text-muted-foreground">
+                          <div className="font-semibold text-xs md:text-sm line-clamp-1">{colaborador.nome_completo}</div>
+                          <div className="text-[10px] md:text-xs text-muted-foreground line-clamp-1">
                             CPF: {colaborador.cpf}
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline">
+                        <Badge variant="outline" className="text-[9px] md:text-xs px-1 py-0.5">
                           {getCargoDisplay(colaborador.cargo)}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 md:gap-2">
                           <div 
-                            className={`w-2 h-2 rounded-full ${getStatusColor(colaborador.status)}`}
+                            className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-full ${getStatusColor(colaborador.status)}`}
                           ></div>
-                          {colaborador.status}
+                          <span className="text-xs md:text-sm">{colaborador.status}</span>
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">
+                      <TableCell className="hidden sm:table-cell">
+                        <Badge variant="secondary" className="text-[9px] md:text-xs px-1 py-0.5">
                           {colaborador.unidade_id || 'N/A'}
                         </Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell text-xs md:text-sm">
                         {colaborador.remuneracao 
                           ? `R$ ${colaborador.remuneracao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` 
                           : 'N/A'
                         }
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden lg:table-cell">
                         <div>
-                          <div className="text-sm">{colaborador.email}</div>
-                          <div className="text-sm text-muted-foreground">
+                          <div className="text-xs line-clamp-1">{colaborador.email}</div>
+                          <div className="text-[10px] text-muted-foreground line-clamp-1">
                             {colaborador.telefone || 'N/A'}
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="sm">
-                          <Eye className="w-4 h-4" />
+                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                          <Eye className="w-3 h-3 md:w-4 md:h-4" />
                         </Button>
                       </TableCell>
                     </TableRow>
                   ))}
                   {filteredColaboradores.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8">
-                        <div className="text-muted-foreground">
+                      <TableCell colSpan={7} className="text-center py-6 md:py-8">
+                        <div className="text-xs md:text-sm text-muted-foreground">
                           {searchTerm ? 'Nenhum colaborador encontrado com os filtros aplicados.' : 'Nenhum colaborador cadastrado.'}
                         </div>
                       </TableCell>

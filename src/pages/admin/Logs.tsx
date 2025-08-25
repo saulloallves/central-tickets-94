@@ -61,18 +61,19 @@ const LogsPage = () => {
   };
 
   return (
-    <div className="w-full space-y-6 pt-6">
+    <div className="w-full space-y-4 md:space-y-6 pt-3 md:pt-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Logs do Sistema</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-xl md:text-3xl font-bold tracking-tight">Logs do Sistema</h1>
+          <p className="text-sm md:text-base text-muted-foreground">
             Auditoria completa de todas as ações realizadas no sistema
           </p>
         </div>
-        <Button onClick={() => exportLogs(filters)} className="gap-2">
+        <Button onClick={() => exportLogs(filters)} className="gap-2 w-full md:w-auto">
           <Download className="h-4 w-4" />
-          Exportar Logs
+          <span className="hidden md:inline">Exportar Logs</span>
+          <span className="md:hidden">Exportar</span>
         </Button>
       </div>
 
@@ -84,11 +85,11 @@ const LogsPage = () => {
             Filtros
           </CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           <div>
-            <label className="text-sm font-medium mb-2 block">Tipo de Log</label>
+            <label className="text-xs md:text-sm font-medium mb-1 md:mb-2 block">Tipo de Log</label>
             <Select onValueChange={(value) => handleFilterChange('tipo_log', value)}>
-              <SelectTrigger>
+              <SelectTrigger className="text-xs md:text-sm">
                 <SelectValue placeholder="Todos os tipos" />
               </SelectTrigger>
               <SelectContent>
@@ -104,9 +105,9 @@ const LogsPage = () => {
           </div>
 
           <div>
-            <label className="text-sm font-medium mb-2 block">Entidade</label>
+            <label className="text-xs md:text-sm font-medium mb-1 md:mb-2 block">Entidade</label>
             <Select onValueChange={(value) => handleFilterChange('entidade_afetada', value)}>
-              <SelectTrigger>
+              <SelectTrigger className="text-xs md:text-sm">
                 <SelectValue placeholder="Todas as entidades" />
               </SelectTrigger>
               <SelectContent>
@@ -121,17 +122,19 @@ const LogsPage = () => {
           </div>
 
           <div>
-            <label className="text-sm font-medium mb-2 block">Data Início</label>
+            <label className="text-xs md:text-sm font-medium mb-1 md:mb-2 block">Data Início</label>
             <Input
               type="date"
+              className="text-xs md:text-sm"
               onChange={(e) => handleFilterChange('data_inicio', e.target.value)}
             />
           </div>
 
           <div>
-            <label className="text-sm font-medium mb-2 block">Data Fim</label>
+            <label className="text-xs md:text-sm font-medium mb-1 md:mb-2 block">Data Fim</label>
             <Input
               type="date"
+              className="text-xs md:text-sm"
               onChange={(e) => handleFilterChange('data_fim', e.target.value)}
             />
           </div>
@@ -157,46 +160,46 @@ const LogsPage = () => {
               Nenhum log encontrado com os filtros aplicados
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3 md:space-y-4">
               {logs.map((log) => (
-                <div key={log.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
+                <div key={log.id} className="border rounded-lg p-3 md:p-4 hover:bg-muted/50 transition-colors">
                   <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-3 flex-1">
+                    <div className="flex items-start gap-2 md:gap-3 flex-1 min-w-0">
                       <div className="mt-0.5">
                         {getLogTypeIcon(log.tipo_log)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex flex-wrap items-center gap-1 md:gap-2 mb-1">
                           {getLogTypeBadge(log.tipo_log)}
-                          <span className="text-sm text-muted-foreground">
+                          <span className="text-xs md:text-sm text-muted-foreground line-clamp-1">
                             {log.entidade_afetada}
                           </span>
                           {log.ia_modelo && (
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline" className="text-[9px] md:text-xs px-1 py-0.5">
                               {log.ia_modelo}
                             </Badge>
                           )}
                         </div>
-                        <p className="font-medium text-sm">{log.acao_realizada}</p>
-                        <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                          <span>ID: {log.entidade_id.slice(0, 8)}...</span>
-                          <span>
+                        <p className="font-medium text-xs md:text-sm line-clamp-2">{log.acao_realizada}</p>
+                        <div className="flex flex-wrap items-center gap-2 md:gap-4 mt-1 md:mt-2 text-[10px] md:text-xs text-muted-foreground">
+                          <span>ID: {log.entidade_id.slice(0, 6)}...</span>
+                          <span className="line-clamp-1">
                             {formatDistanceToNow(new Date(log.timestamp), {
                               addSuffix: true,
                               locale: ptBR
                             })}
                           </span>
-                          {log.canal && <span>Canal: {log.canal}</span>}
+                          {log.canal && <span className="hidden md:inline">Canal: {log.canal}</span>}
                         </div>
                       </div>
                     </div>
                     <Dialog>
                       <DialogTrigger asChild>
-                        <Button variant="ghost" size="sm" onClick={() => setSelectedLog(log)}>
-                          <Eye className="h-4 w-4" />
+                        <Button variant="ghost" size="sm" onClick={() => setSelectedLog(log)} className="h-6 w-6 md:h-8 md:w-8 p-0">
+                          <Eye className="h-3 w-3 md:h-4 md:w-4" />
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                      <DialogContent className="w-[95vw] max-w-4xl max-h-[80vh] overflow-y-auto">
                         <DialogHeader>
                           <DialogTitle>Detalhes do Log</DialogTitle>
                           <DialogDescription>
