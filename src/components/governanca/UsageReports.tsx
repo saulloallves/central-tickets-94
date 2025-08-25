@@ -43,51 +43,36 @@ export function UsageReports() {
     if (!user) return;
     
     setLoading(true);
-    console.log('🔄 [USAGE REPORTS] Fetching tickets directly...');
+    console.log('🔄 [USAGE REPORTS] Fetching real tickets from database...');
     
     try {
-      // Simple query without complex relations to avoid RLS issues
+      // Get real tickets from database
       const { data, error } = await supabase
         .from('tickets')
-        .select('*')
+        .select(`
+          id,
+          codigo_ticket,
+          data_abertura,
+          canal_origem,
+          categoria,
+          unidade_id,
+          status,
+          prioridade,
+          created_at
+        `)
         .order('data_abertura', { ascending: false });
 
       if (error) {
         console.error('❌ [USAGE REPORTS] Error fetching tickets:', error);
-        throw error;
+        setTickets([]);
+        return;
       }
 
-      console.log('✅ [USAGE REPORTS] Tickets fetched successfully:', data?.length || 0);
+      console.log('✅ [USAGE REPORTS] Real tickets fetched successfully:', data?.length || 0);
       setTickets(data || []);
     } catch (error) {
       console.error('💥 [USAGE REPORTS] Failed to fetch tickets:', error);
-      // Try fallback with limited scope
-      try {
-        console.log('🔄 [USAGE REPORTS] Trying fallback query...');
-        const fallbackResult = await supabase.rpc('get_realtime_kpis', {
-          p_user_id: user.id,
-          p_periodo_dias: timeRange
-        });
-        
-        if (fallbackResult.data) {
-          console.log('✅ [USAGE REPORTS] Fallback data received:', fallbackResult.data);
-          // Parse the data properly since it's JSON
-          const kpiData = typeof fallbackResult.data === 'object' ? fallbackResult.data : JSON.parse(String(fallbackResult.data));
-          // Create mock tickets from KPI data for basic metrics
-          const mockTickets = Array.from({ length: Number((kpiData as any).total_tickets) || 0 }, (_, i) => ({
-            id: `mock-${i}`,
-            data_abertura: new Date(Date.now() - Math.random() * timeRange * 24 * 60 * 60 * 1000).toISOString(),
-            canal_origem: ['typebot', 'whatsapp_zapi', 'web'][Math.floor(Math.random() * 3)],
-            categoria: ['sistema', 'juridico', 'financeiro', 'outro'][Math.floor(Math.random() * 4)],
-            unidade_id: `unidade-${Math.floor(Math.random() * 5) + 1}`,
-            status: Math.random() > 0.5 ? 'concluido' : 'aberto'
-          }));
-          setTickets(mockTickets);
-        }
-      } catch (fallbackError) {
-        console.error('💥 [USAGE REPORTS] Fallback also failed:', fallbackError);
-        setTickets([]);
-      }
+      setTickets([]);
     } finally {
       setLoading(false);
     }
