@@ -242,27 +242,36 @@ export const useTickets = (filters: TicketFilters) => {
 
   const calculateStatsFromTickets = (ticketsList: Ticket[]) => {
     const today = new Date().toISOString().split('T')[0];
+    
+    // Filtrar apenas tickets de hoje para as métricas
+    const todaysTickets = ticketsList.filter(t => {
+      const ticketDate = new Date(t.data_abertura).toISOString().split('T')[0];
+      return ticketDate === today;
+    });
+    
     const stats: TicketStats = {
-      total: ticketsList.length,
-      novos: ticketsList.filter(t => t.created_at.startsWith(today)).length,
-      sla_vencido: ticketsList.filter(t => t.status_sla === 'vencido').length,
-      em_atendimento: ticketsList.filter(t => t.status === 'em_atendimento').length,
+      total: todaysTickets.length,
+      novos: todaysTickets.length, // Todos os tickets de hoje são "novos" para esta métrica
+      sla_vencido: todaysTickets.filter(t => t.status_sla === 'vencido').length,
+      em_atendimento: todaysTickets.filter(t => t.status === 'em_atendimento').length,
       tempo_medio: 0
     };
 
-    // Calculate average resolution time
-    const resolvedTickets = ticketsList.filter(t => t.resolvido_em);
-    if (resolvedTickets.length > 0) {
-      const totalHours = resolvedTickets.reduce((acc, ticket) => {
+    // Calculate average resolution time apenas para tickets de hoje
+    const resolvedTodayTickets = todaysTickets.filter(t => t.resolvido_em);
+    if (resolvedTodayTickets.length > 0) {
+      const totalHours = resolvedTodayTickets.reduce((acc, ticket) => {
         const opened = new Date(ticket.data_abertura);
         const resolved = new Date(ticket.resolvido_em!);
         const hours = (resolved.getTime() - opened.getTime()) / (1000 * 60 * 60);
         return acc + hours;
       }, 0);
-      stats.tempo_medio = totalHours / resolvedTickets.length;
+      stats.tempo_medio = totalHours / resolvedTodayTickets.length;
     }
 
-    console.log('📊 Stats calculated from visible tickets:', stats);
+    console.log('📊 Stats calculated from TODAY tickets only:', stats);
+    console.log('📅 Today date filter:', today);
+    console.log('🎫 Today tickets found:', todaysTickets.length);
     setTicketStats(stats);
   };
 
