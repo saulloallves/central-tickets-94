@@ -46,19 +46,32 @@ export const useFranqueadoUnits = () => {
         return;
       }
 
-      // Extrair IDs das unidades do unit_code (jsonb)
-      const unitIds = Object.keys(franqueadoData.unit_code);
+      // Extrair códigos de grupo das unidades do unit_code (jsonb)
+      const unitCode = franqueadoData.unit_code;
+      let groupCodes: number[] = [];
       
-      if (unitIds.length === 0) {
-        console.log('Nenhuma unidade encontrada para o franqueado');
+      // Handle different formats of unit_code
+      if (Array.isArray(unitCode)) {
+        groupCodes = unitCode.map(code => Number(code)).filter(code => !isNaN(code));
+      } else if (typeof unitCode === 'object' && unitCode !== null) {
+        groupCodes = Object.keys(unitCode).map(code => Number(code)).filter(code => !isNaN(code));
+      } else {
+        console.log('Formato de unit_code não reconhecido:', unitCode);
+        return;
+      }
+      
+      if (groupCodes.length === 0) {
+        console.log('Nenhum código de grupo encontrado para o franqueado');
         return;
       }
 
-      // Buscar detalhes das unidades
+      console.log('Códigos de grupo encontrados:', groupCodes);
+
+      // Buscar detalhes das unidades por codigo_grupo
       const { data: unidadesData, error } = await supabase
         .from('unidades')
-        .select('id, grupo, cidade, uf')
-        .in('id', unitIds);
+        .select('id, grupo, cidade, uf, codigo_grupo')
+        .in('codigo_grupo', groupCodes);
 
       if (error) {
         console.error('Erro ao buscar unidades:', error);
