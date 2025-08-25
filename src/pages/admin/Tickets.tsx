@@ -22,6 +22,7 @@ import { useTickets } from '@/hooks/useTickets';
 import { useUserEquipes } from '@/hooks/useUserEquipes';
 import { useTicketsRealtime } from '@/hooks/useTicketsRealtime';
 import { supabase } from '@/integrations/supabase/client';
+import { cn } from '@/lib/utils';
 
 interface Equipe {
   id: string;
@@ -132,43 +133,47 @@ const Tickets = () => {
       {/* New Crisis Alert Banner */}
       <NewCrisisAlertBanner />
       
-      <div className="w-full p-6 space-y-4" style={{ paddingTop: '2rem' }}>
-        <div className="flex items-center justify-between">
+      <div className="w-full p-3 md:p-6 space-y-3 md:space-y-4" style={{ paddingTop: '1rem' }}>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Tickets de Suporte</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-xl md:text-3xl font-bold tracking-tight">Tickets de Suporte</h1>
+            <p className="text-sm md:text-base text-muted-foreground">
               Gerencie tickets de suporte e acompanhe SLAs
             </p>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-1 md:gap-2">
             <NotificationButton />
             <RefreshButton onRefresh={() => {
               console.log('🔄 Manual refresh triggered');
               refetch();
             }} />
-            <Button variant="outline" onClick={() => {
+            <Button variant="outline" size="sm" className="hidden md:flex" onClick={() => {
               console.log('🔄 Force refresh all data');
               window.location.reload();
             }}>
               ↻ Refresh Completo
             </Button>
-            <Button variant="outline" onClick={testNotificationSound}>
+            <Button variant="outline" size="sm" className="hidden md:flex" onClick={testNotificationSound}>
               🔊 Testar Som
             </Button>
             <Button 
               variant="outline" 
+              size="sm"
               onClick={() => setShowCrisisPanel(!showCrisisPanel)}
-              className={showCrisisPanel ? "bg-red-50 border-red-200" : ""}
+              className={cn(
+                "flex-1 md:flex-none",
+                showCrisisPanel ? "bg-red-50 border-red-200" : ""
+              )}
               data-crisis-panel-trigger
             >
-              <AlertTriangle className="h-4 w-4 mr-2" />
-              Painel de Crises
+              <AlertTriangle className="h-4 w-4 md:mr-2" />
+              <span className="hidden md:inline">Painel de Crises</span>
             </Button>
             <TestAIButton />
-            <Button onClick={() => setCreateDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Ticket
+            <Button size="sm" onClick={() => setCreateDialogOpen(true)} className="flex-1 md:flex-none">
+              <Plus className="h-4 w-4 md:mr-2" />
+              <span className="hidden md:inline">Novo Ticket</span>
             </Button>
           </div>
         </div>
@@ -179,36 +184,36 @@ const Tickets = () => {
         )}
 
         {/* Stats Cards - Simplified */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Tickets Hoje</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+        <div className="grid grid-cols-3 md:grid-cols-3 gap-2 md:gap-4">
+          <Card className="p-2 md:p-0">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 md:pb-2 p-2 md:p-6">
+              <CardTitle className="text-xs md:text-sm font-medium">Tickets Hoje</CardTitle>
+              <Users className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{ticketStats?.total || 0}</div>
+            <CardContent className="p-2 md:p-6 pt-0">
+              <div className="text-lg md:text-2xl font-bold">{ticketStats?.total || 0}</div>
             </CardContent>
           </Card>
           
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">SLA Vencido</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-destructive" />
+          <Card className="p-2 md:p-0">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 md:pb-2 p-2 md:p-6">
+              <CardTitle className="text-xs md:text-sm font-medium">SLA Vencido</CardTitle>
+              <AlertTriangle className="h-3 w-3 md:h-4 md:w-4 text-destructive" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-destructive">
+            <CardContent className="p-2 md:p-6 pt-0">
+              <div className="text-lg md:text-2xl font-bold text-destructive">
                 {ticketStats?.sla_vencido || 0}
               </div>
             </CardContent>
           </Card>
           
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Em Atendimento</CardTitle>
-              <Clock className="h-4 w-4 text-primary" />
+          <Card className="p-2 md:p-0">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 md:pb-2 p-2 md:p-6">
+              <CardTitle className="text-xs md:text-sm font-medium">Em Atendimento</CardTitle>
+              <Clock className="h-3 w-3 md:h-4 md:w-4 text-primary" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{ticketStats?.em_atendimento || 0}</div>
+            <CardContent className="p-2 md:p-6 pt-0">
+              <div className="text-lg md:text-2xl font-bold">{ticketStats?.em_atendimento || 0}</div>
             </CardContent>
           </Card>
         </div>

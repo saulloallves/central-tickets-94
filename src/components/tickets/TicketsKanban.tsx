@@ -232,9 +232,9 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
         }
       }}
     >
-      <CardContent className="p-4 space-y-3 pointer-events-none">
+      <CardContent className="p-3 md:p-4 space-y-2 md:space-y-3 pointer-events-none">
         {/* Título sem balão */}
-        <h3 className="font-medium text-foreground text-base line-clamp-2 leading-tight transition-colors">
+        <h3 className="font-medium text-foreground text-sm md:text-base line-clamp-2 leading-tight transition-colors">
           {(() => {
             const title = ticket.titulo || ticket.descricao_problema || "Sem título";
             const words = title.trim().split(/\s+/);
@@ -249,11 +249,11 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
             const colors = getEquipeColor(ticket.equipes.nome);
             return (
               <div className={cn(
-                "inline-flex items-center gap-1.5 px-2 py-1 rounded-full transition-all",
+                "inline-flex items-center gap-1 md:gap-1.5 px-1.5 md:px-2 py-0.5 md:py-1 rounded-full transition-all",
                 colors.bg, colors.border, "border"
               )}>
-                <div className={cn("w-1.5 h-1.5 rounded-full", colors.dot)}></div>
-                <span className={cn("text-xs font-medium truncate max-w-20", colors.text)}>
+                <div className={cn("w-1 h-1 md:w-1.5 md:h-1.5 rounded-full", colors.dot)}></div>
+                <span className={cn("text-[10px] md:text-xs font-medium truncate max-w-12 md:max-w-20", colors.text)}>
                   {ticket.equipes.nome}
                 </span>
               </div>
@@ -262,7 +262,7 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
 
           {/* Prioridade - Menor */}
           <div className={cn(
-            "px-2 py-1 rounded-full text-xs font-medium transition-colors",
+            "px-1.5 md:px-2 py-0.5 md:py-1 rounded-full text-[10px] md:text-xs font-medium transition-colors",
             ticket.status === 'concluido' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
             ticket.prioridade === 'crise' ? 'bg-red-50 text-red-700 border border-red-200' :
             ticket.prioridade === 'imediato' ? 'bg-red-50 text-red-700 border border-red-200' :
@@ -270,7 +270,7 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
             ticket.prioridade === 'ainda_hoje' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
             'bg-slate-50 text-slate-700 border border-slate-200'
           )}>
-            {ticket.status === 'concluido' ? 'Resolvido' : getPriorityLabel(ticket.prioridade)}
+            {ticket.status === 'concluido' ? 'OK' : getPriorityLabel(ticket.prioridade)}
           </div>
         </div>
 
@@ -278,9 +278,9 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
         {ticket.status === 'concluido' ? (
           /* Mostrar quando foi resolvido */
           ticket.resolvido_em && (
-            <div className="space-y-1 text-xs">
+            <div className="space-y-1 text-[10px] md:text-xs">
               <div className="flex items-center gap-1 text-success">
-                <CheckCircle className="h-3 w-3" />
+                <CheckCircle className="h-2.5 w-2.5 md:h-3 md:w-3" />
                 <span className="font-mono">
                   Resolvido: {formatDistanceToNowInSaoPaulo(ticket.resolvido_em)}
                 </span>
@@ -290,13 +290,13 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
         ) : (
           /* SLA countdown para tickets não concluídos */
           ticket.data_limite_sla && (
-            <div className="space-y-1 text-xs">
+            <div className="space-y-1 text-[10px] md:text-xs">
               {/* SLA countdown */}
               {(() => {
                 const slaTime = getSLATime(ticket);
                 return slaTime && (
                   <div className={cn("flex items-center gap-1", slaTime.color)}>
-                    <Clock className="h-3 w-3" />
+                    <Clock className="h-2.5 w-2.5 md:h-3 md:w-3" />
                     <span className="font-mono">{slaTime.text}</span>
                   </div>
                 );
@@ -345,15 +345,15 @@ const KanbanColumn = ({ status, individualTickets, selectedTicketId, onTicketSel
       )}
     >
       {/* Header da coluna com Liquid Glass */}
-      <div className="liquid-glass-header liquid-glass-hover flex items-center justify-between p-4 m-2 mb-0">
-        <div className="relative flex items-center gap-3 z-10">
+      <div className="liquid-glass-header liquid-glass-hover flex items-center justify-between p-2 md:p-4 m-1 md:m-2 mb-0">
+        <div className="relative flex items-center gap-2 md:gap-3 z-10">
           {(() => {
             const IconComponent = COLUMN_ICONS[status];
             const iconColor = COLUMN_ICON_COLORS[status];
-            return <IconComponent className={`h-5 w-5 ${iconColor}`} />;
+            return <IconComponent className={`h-4 w-4 md:h-5 md:w-5 ${iconColor}`} />;
           })()}
           <h3 
-            className="font-bold text-base tracking-tight"
+            className="font-bold text-sm md:text-base tracking-tight"
             style={{ color: 'rgba(0, 0, 0, 0.7)' }}
           >
             {COLUMN_STATUS[status]}
@@ -361,7 +361,7 @@ const KanbanColumn = ({ status, individualTickets, selectedTicketId, onTicketSel
         </div>
         <Badge 
           variant="secondary" 
-          className="relative z-10 text-xs backdrop-blur-sm rounded-full font-semibold"
+          className="relative z-10 text-[10px] md:text-xs backdrop-blur-sm rounded-full font-semibold px-1.5 py-0.5"
           style={{
             background: 'rgba(255, 255, 255, 0.3)',
             border: '1px solid rgba(255, 255, 255, 0.4)',
@@ -373,7 +373,7 @@ const KanbanColumn = ({ status, individualTickets, selectedTicketId, onTicketSel
       </div>
       
       {/* Área de drop elegante com scroll limitado */}
-      <div className="flex-1 p-5 relative max-h-[calc(100vh-300px)] overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+      <div className="flex-1 p-2 md:p-5 relative max-h-[calc(100vh-300px)] overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
         {/* Drop zone visual elegante */}
         {isOver && (
           <div className="absolute inset-3 border-2 border-dashed border-primary/40 rounded-xl bg-gradient-to-br from-primary/5 via-transparent to-primary/10 flex items-center justify-center z-10 animate-fade-in backdrop-blur-sm">
@@ -384,7 +384,7 @@ const KanbanColumn = ({ status, individualTickets, selectedTicketId, onTicketSel
           </div>
         )}
         <SortableContext items={ticketsToShow.map(t => t.id)} strategy={verticalListSortingStrategy}>
-          <div className="space-y-4 pb-6">
+          <div className="space-y-2 md:space-y-4 pb-3 md:pb-6">
             {/* Individual Tickets */}
             {ticketsToShow.map((ticket) => (
               <KanbanTicketCard
