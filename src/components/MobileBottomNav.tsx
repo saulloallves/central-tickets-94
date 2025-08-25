@@ -8,12 +8,12 @@ export function MobileBottomNav() {
   return (
     <div className="fixed bottom-4 left-4 right-4 z-50 md:hidden">
       {/* Mobile bottom navigation with liquid glass effect */}
-      <div className="relative bg-gradient-to-r from-primary via-primary/95 to-primary/90 rounded-[24px] overflow-hidden">
+      <div className="relative bg-gradient-to-r from-primary via-primary/95 to-primary/90 rounded-full overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.1)]">
         {/* Liquid glass overlay effect */}
         <div className="absolute inset-0 liquid-glass-sidebar"></div>
         
         {/* Navigation container */}
-        <div className="relative z-20 px-2 py-3">
+        <div className="relative z-20 px-4 py-4">
           <div className="flex items-center justify-between">
             {/* Navigation items - show max 4 most important ones on mobile */}
             <div className="flex items-center space-x-1 flex-1">

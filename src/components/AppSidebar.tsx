@@ -58,17 +58,14 @@ export function AppSidebar() {
       onMouseLeave={handleMouseLeave}
     >
       {/* Modern liquid glass sidebar container */}
-      <div className="relative h-full bg-gradient-to-b from-primary via-primary/95 to-primary/90 rounded-[32px] overflow-hidden">
+      <div className="relative h-full bg-gradient-to-b from-primary via-primary/95 to-primary/90 rounded-full overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.1)]">
         {/* Liquid glass overlay effect */}
         <div className="absolute inset-0 liquid-glass-sidebar"></div>
         
-        {/* Curved right edge effect */}
-        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-6 h-3/4 z-10">
-          <div className="w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent rounded-l-full"></div>
-        </div>
+        {/* Curved edge effect - removed for perfect symmetry */}
         
-        {/* Content wrapper with padding for curves */}
-        <div className="relative z-20 h-full flex flex-col py-4 px-2">
+        {/* Content wrapper with symmetric padding */}
+        <div className="relative z-20 h-full flex flex-col py-6 px-4">
           {/* System Logo Section */}
           <div className="flex justify-center mb-4">
             <SystemLogo />
