@@ -71,21 +71,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         {/* Desktop sidebar */}
         {!isMobile && <AppSidebar />}
         
-        <div 
-          className={cn(
-            "flex-1 flex flex-col transition-all duration-200", 
-            isMobile ? "pb-20" : ""
-          )} 
-          data-main-content 
-          style={{ marginLeft: isMobile ? '0' : '80px' }}
-        >
-          {/* Main content area with optimized spacing */}
-          <main className={cn("flex-1", isMobile ? "p-4" : "p-6")}>
-            <div className="w-full animate-fade-in space-y-6">
-              {children}
-            </div>
-          </main>
-        </div>
+        {/* Main content area */}
+        <main className={cn(
+          "flex-1 transition-all duration-200",
+          isMobile ? "p-4 pb-20" : "p-6"
+        )}>
+          <div className="w-full animate-fade-in space-y-6">
+            {children}
+          </div>
+        </main>
         
         {/* Mobile bottom navigation */}
         {isMobile && <MobileBottomNav />}
