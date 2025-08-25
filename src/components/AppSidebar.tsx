@@ -58,21 +58,19 @@ export function AppSidebar() {
       onMouseLeave={handleMouseLeave}
     >
       {/* Modern liquid glass sidebar container */}
-      <div className="relative h-full bg-gradient-to-b from-primary via-primary/95 to-primary/90 rounded-full overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.1)]">
+      <div className="relative h-full bg-gradient-to-b from-primary via-primary/95 to-primary/90 rounded-full overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.1)] border border-white/10">
         {/* Liquid glass overlay effect */}
-        <div className="absolute inset-0 liquid-glass-sidebar"></div>
+        <div className="absolute inset-0 liquid-glass-sidebar rounded-full"></div>
         
-        {/* Curved edge effect - removed for perfect symmetry */}
-        
-        {/* Content wrapper with symmetric padding */}
-        <div className="relative z-20 h-full flex flex-col py-6 px-4">
+        {/* Content wrapper with symmetric padding and scroll */}
+        <div className="relative z-20 h-full flex flex-col py-6 px-4 overflow-hidden">
           {/* System Logo Section */}
           <div className="flex justify-center mb-4">
             <SystemLogo />
           </div>
 
-          {/* Navigation Icons */}
-          <div className="flex-1 flex flex-col space-y-2">
+          {/* Navigation Icons with scroll */}
+          <div className="flex-1 flex flex-col space-y-3 overflow-y-auto scrollbar-hide py-2">
             {navigationItems.map((item) => (
               <PermissionGuard key={item.title} requiredPermission={item.permission}>
                 {isExpanded ? (
@@ -82,7 +80,7 @@ export function AppSidebar() {
                       to={item.url}
                       end
                       className={({ isActive }) => cn(
-                        "group flex items-center px-3 py-2 rounded-xl transition-all duration-450",
+                        "group flex items-center px-4 py-3 rounded-xl transition-all duration-450",
                         "hover:scale-[1.02]",
                         isActive 
                           ? "bg-white/10 backdrop-blur-sm text-white border border-white/20" 
@@ -91,10 +89,10 @@ export function AppSidebar() {
                     >
                       {({ isActive }) => (
                         <>
-                          <div className="relative flex items-center justify-center w-6 h-6 mr-2">
+                          <div className="relative flex items-center justify-center w-8 h-8 mr-3">
                             <item.icon 
                                className={cn(
-                                 "h-4 w-4 text-white transition-all duration-450 drop-shadow-md",
+                                 "h-5 w-5 text-white transition-all duration-450 drop-shadow-md",
                                  isActive ? "drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" : "opacity-90"
                                )}
                               strokeWidth={1.5}
@@ -102,12 +100,12 @@ export function AppSidebar() {
                             
                             {/* Active indicator - white glow dot */}
                             {isActive && (
-                              <div className="absolute -right-0.5 -top-2 w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)] animate-pulse"></div>
+                              <div className="absolute -right-1 -top-2 w-2 h-2 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)] animate-pulse"></div>
                             )}
                           </div>
                           
                            <span className={cn(
-                             "text-white text-sm font-medium transition-all duration-450 drop-shadow-md",
+                             "text-white text-base font-medium transition-all duration-450 drop-shadow-md",
                              isActive ? "opacity-100" : "opacity-90"
                            )}>
                             {item.title}
@@ -125,7 +123,7 @@ export function AppSidebar() {
                           to={item.url}
                           end
                           className={({ isActive }) => cn(
-                            "group relative flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl transition-all duration-450 mx-auto",
+                            "group relative flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-450 mx-auto",
                             isActive 
                               ? "bg-white/10 backdrop-blur-sm text-white" 
                               : "hover:bg-white/5 hover:backdrop-blur-sm hover:text-white/95"
@@ -135,7 +133,7 @@ export function AppSidebar() {
                             <>
                               <item.icon 
                                  className={cn(
-                                   "h-3 w-3 sm:h-4 sm:w-4 text-white transition-all duration-450 drop-shadow-md",
+                                   "h-6 w-6 text-white transition-all duration-450 drop-shadow-md",
                                    isActive ? "drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" : "opacity-90"
                                  )}
                                 strokeWidth={1.5}
@@ -143,7 +141,7 @@ export function AppSidebar() {
                               
                               {/* Active indicator - white glow dot */}
                               {isActive && (
-                                <div className="absolute -top-1 -right-0.5 w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)] animate-pulse"></div>
+                                <div className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)] animate-pulse"></div>
                               )}
                             </>
                           )}
@@ -163,39 +161,39 @@ export function AppSidebar() {
           </div>
 
           {/* Notifications Section */}
-          <div className="flex justify-center mb-2">
+          <div className="flex justify-center mb-4 flex-shrink-0">
             <NotificationButton isExpanded={isExpanded} />
           </div>
 
           {/* User Profile Section */}
-          <div className="mt-4 space-y-2 flex-shrink-0">
+          <div className="mt-6 space-y-3 flex-shrink-0">
             {isExpanded ? (
               <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen} modal={false}>
                 <DropdownMenuTrigger asChild>
                   <Button 
                     variant="ghost" 
-                    className="group w-full flex items-center justify-between px-2 sm:px-3 py-1.5 sm:py-2 text-white hover:bg-white/5 transition-all duration-450 rounded-lg sm:rounded-xl"
+                    className="group w-full flex items-center justify-between px-4 py-3 text-white hover:bg-white/5 transition-all duration-450 rounded-xl"
                   >
-                     <div className="flex items-center space-x-1.5 sm:space-x-2 min-w-0">
-                       <Avatar className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0">
+                     <div className="flex items-center space-x-3 min-w-0">
+                       <Avatar className="h-8 w-8 flex-shrink-0">
                          <AvatarImage src={profile?.avatar_url || user?.user_metadata?.avatar_url} />
-                         <AvatarFallback className="bg-white/20 text-white text-[10px] sm:text-xs">
-                           {profile?.nome_completo?.charAt(0)?.toUpperCase() ||
-                            user?.user_metadata?.display_name?.charAt(0)?.toUpperCase() || 
-                            user?.email?.charAt(0)?.toUpperCase() || 'U'}
-                         </AvatarFallback>
-                       </Avatar>
-                       <div className="flex flex-col items-start min-w-0 flex-1">
-                         <span className="text-[10px] sm:text-xs font-medium truncate w-full drop-shadow-md">
-                           {profile?.nome_completo || user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'Usuário'}
-                         </span>
-                        <div className="flex items-center space-x-1">
-                          <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-green-400 shadow-[0_0_4px_rgba(34,197,94,0.6)]"></div>
-                          <span className="text-[8px] sm:text-[10px] opacity-70 drop-shadow-sm">Online</span>
-                        </div>
+                          <AvatarFallback className="bg-white/20 text-white text-sm">
+                            {profile?.nome_completo?.charAt(0)?.toUpperCase() ||
+                             user?.user_metadata?.display_name?.charAt(0)?.toUpperCase() || 
+                             user?.email?.charAt(0)?.toUpperCase() || 'U'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col items-start min-w-0 flex-1">
+                          <span className="text-sm font-medium truncate w-full drop-shadow-md">
+                            {profile?.nome_completo || user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'Usuário'}
+                          </span>
+                         <div className="flex items-center space-x-1">
+                           <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_4px_rgba(34,197,94,0.6)]"></div>
+                           <span className="text-xs opacity-70 drop-shadow-sm">Online</span>
+                         </div>
                       </div>
                     </div>
-                    <ChevronDown className="h-2.5 w-2.5 sm:h-3 sm:w-3 opacity-60 flex-shrink-0" />
+                    <ChevronDown className="h-4 w-4 opacity-60 flex-shrink-0" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent 
@@ -225,18 +223,18 @@ export function AppSidebar() {
               <TooltipProvider delayDuration={0}>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="relative">
-                       <Avatar className="h-6 w-6 sm:h-8 sm:w-8 mx-auto cursor-pointer hover:scale-[1.02] transition-all duration-450">
-                         <AvatarImage src={profile?.avatar_url || user?.user_metadata?.avatar_url} />
-                         <AvatarFallback className="bg-white/20 text-white text-[10px] sm:text-xs">
-                           {profile?.nome_completo?.charAt(0)?.toUpperCase() ||
-                            user?.user_metadata?.display_name?.charAt(0)?.toUpperCase() || 
-                            user?.email?.charAt(0)?.toUpperCase() || 'U'}
-                         </AvatarFallback>
-                       </Avatar>
-                       {/* Online status indicator */}
-                       <div className="absolute -bottom-0.5 -right-0.5 w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-green-400 border border-white/50 shadow-[0_0_4px_rgba(34,197,94,0.6)]"></div>
-                     </div>
+                     <div className="relative">
+                        <Avatar className="h-12 w-12 mx-auto cursor-pointer hover:scale-[1.02] transition-all duration-450">
+                          <AvatarImage src={profile?.avatar_url || user?.user_metadata?.avatar_url} />
+                          <AvatarFallback className="bg-white/20 text-white text-sm">
+                            {profile?.nome_completo?.charAt(0)?.toUpperCase() ||
+                             user?.user_metadata?.display_name?.charAt(0)?.toUpperCase() || 
+                             user?.email?.charAt(0)?.toUpperCase() || 'U'}
+                          </AvatarFallback>
+                        </Avatar>
+                        {/* Online status indicator */}
+                        <div className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full bg-green-400 border-2 border-white/50 shadow-[0_0_4px_rgba(34,197,94,0.6)]"></div>
+                      </div>
                    </TooltipTrigger>
                    <TooltipContent 
                      side="right" 
