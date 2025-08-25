@@ -15,15 +15,15 @@ export function MobileBottomNav() {
         {/* Navigation container */}
         <div className="relative z-20 px-4 py-4">
           <div className="flex items-center justify-between space-x-2">
-            {/* Navigation items - show max 4 most important ones on mobile */}
-            <div className="flex items-center space-x-2 flex-1 justify-center">
-              {navigationItems.slice(0, 4).map((item) => (
+            {/* Navigation items - ALL items with horizontal scroll */}
+            <div className="flex items-center space-x-2 flex-1 overflow-x-auto scrollbar-hide px-2">
+              {navigationItems.map((item) => (
                 <PermissionGuard key={item.title} requiredPermission={item.permission}>
                   <NavLink
                     to={item.url}
                     end
                     className={({ isActive }) => cn(
-                      "relative flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-all duration-300",
+                      "relative flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-all duration-300 flex-shrink-0",
                       isActive 
                         ? "bg-white/10 backdrop-blur-sm text-white" 
                         : "hover:bg-white/5 hover:backdrop-blur-sm hover:text-white/95"
@@ -46,10 +46,10 @@ export function MobileBottomNav() {
                         
                         {/* Small label */}
                         <span className={cn(
-                          "text-[10px] text-white font-medium mt-1 drop-shadow-md",
+                          "text-[10px] text-white font-medium mt-1 drop-shadow-md text-center",
                           isActive ? "opacity-100" : "opacity-70"
                         )}>
-                          {item.title.length > 5 ? item.title.substring(0, 5) + '.' : item.title}
+                          {item.title.length > 4 ? item.title.substring(0, 4) + '.' : item.title}
                         </span>
                       </>
                     )}
@@ -62,26 +62,6 @@ export function MobileBottomNav() {
             <div className="flex-shrink-0">
               <NotificationButton isExpanded={false} />
             </div>
-            
-            {/* More menu for additional items */}
-            {navigationItems.length > 4 && (
-              <div className="flex-shrink-0">
-                <NavLink
-                  to="/admin/configuracoes"
-                  className="relative flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-all duration-300 hover:bg-white/5"
-                >
-                  <div className="flex items-center justify-center w-6 h-6">
-                    <div className="grid grid-cols-2 gap-1">
-                      <div className="w-1.5 h-1.5 rounded-full bg-white/90"></div>
-                      <div className="w-1.5 h-1.5 rounded-full bg-white/90"></div>
-                      <div className="w-1.5 h-1.5 rounded-full bg-white/90"></div>
-                      <div className="w-1.5 h-1.5 rounded-full bg-white/90"></div>
-                    </div>
-                  </div>
-                  <span className="text-[10px] text-white font-medium mt-1 opacity-70">Mais</span>
-                </NavLink>
-              </div>
-            )}
           </div>
         </div>
       </div>
