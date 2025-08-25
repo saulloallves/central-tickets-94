@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { LogoUpload } from "@/components/LogoUpload";
 import { SystemLogo } from "@/components/SystemLogo";
+import { NotificationButton } from "@/components/notifications/NotificationButton";
 
 const navigationItems = [
   { title: "Dashboard", url: "/admin", icon: Home, permission: 'access_dashboards' as const },
@@ -185,6 +186,11 @@ export function AppSidebar() {
                 )}
               </PermissionGuard>
             ))}
+          </div>
+
+          {/* Notifications Section */}
+          <div className="flex justify-center mb-2">
+            <NotificationButton />
           </div>
 
           {/* User Profile Section */}
