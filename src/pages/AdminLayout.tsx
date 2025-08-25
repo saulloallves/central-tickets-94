@@ -6,7 +6,6 @@ import { useRole } from "@/hooks/useRole";
 import { useUserEquipes } from "@/hooks/useUserEquipes";
 import { useInternalAccessRequests } from "@/hooks/useInternalAccessRequests";
 import { InternalAccessRequest } from "@/components/InternalAccessRequest";
-import { SidebarProvider } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/AppSidebar"
 import { MobileBottomNav } from "@/components/MobileBottomNav"
 import { Toaster } from "@/components/ui/toaster"
@@ -66,25 +65,29 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   // User has access - render normal admin layout
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gradient-subtle">
-        {/* Desktop sidebar */}
-        {!isMobile && <AppSidebar />}
-        
-        {/* Main content area */}
-        <main className={cn(
-          "flex-1 transition-all duration-200",
-          isMobile ? "p-4 pb-20" : "p-6"
-        )}>
+    <div className="min-h-screen flex w-full bg-gradient-subtle">
+      {/* Desktop sidebar */}
+      {!isMobile && <AppSidebar />}
+      
+      <div 
+        className={cn(
+          "flex-1 flex flex-col transition-all duration-200", 
+          isMobile ? "pb-20" : ""
+        )} 
+        data-main-content 
+        style={{ marginLeft: isMobile ? '0' : '80px' }}
+      >
+        {/* Main content area with optimized spacing */}
+        <main className={cn("flex-1", isMobile ? "p-4" : "p-6")}>
           <div className="w-full animate-fade-in space-y-6">
             {children}
           </div>
         </main>
-        
-        {/* Mobile bottom navigation */}
-        {isMobile && <MobileBottomNav />}
       </div>
+      
+      {/* Mobile bottom navigation */}
+      {isMobile && <MobileBottomNav />}
       <Toaster />
-    </SidebarProvider>
+    </div>
   )
 }
