@@ -365,25 +365,56 @@ export function EquipeMembersDialog({ equipeId, equipeNome, open, onOpenChange }
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Switch
-                            checked={member.is_primary}
-                            onCheckedChange={() => handleTogglePrimary(member.id, member.is_primary)}
-                            title="Definir como primário"
-                          />
-                          <Switch
-                            checked={member.ativo}
-                            onCheckedChange={() => handleToggleActive(member.id, member.ativo)}
-                            title="Ativar/Desativar"
-                          />
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleRemoveMember(member.id)}
-                            title="Remover da equipe"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                        <div className="flex items-center gap-3">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex items-center gap-2">
+                                <Switch
+                                  checked={member.is_primary}
+                                  onCheckedChange={() => handleTogglePrimary(member.id, member.is_primary)}
+                                />
+                                <span className="text-xs font-medium text-muted-foreground">
+                                  Primário
+                                </span>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Define este membro como primário da equipe</p>
+                            </TooltipContent>
+                          </Tooltip>
+
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex items-center gap-2">
+                                <Switch
+                                  checked={member.ativo}
+                                  onCheckedChange={() => handleToggleActive(member.id, member.ativo)}
+                                />
+                                <span className="text-xs font-medium text-muted-foreground">
+                                  Ativo
+                                </span>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Ativar ou desativar membro da equipe</p>
+                            </TooltipContent>
+                          </Tooltip>
+
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleRemoveMember(member.id)}
+                                className="text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Remover membro da equipe</p>
+                            </TooltipContent>
+                          </Tooltip>
                         </div>
                       </TableCell>
                     </TableRow>
