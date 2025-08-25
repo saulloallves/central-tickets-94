@@ -1386,7 +1386,7 @@ export type Database = {
           processed_at: string | null
           scheduled_at: string
           status: string
-          ticket_id: string
+          ticket_id: string | null
           type: string
         }
         Insert: {
@@ -1399,7 +1399,7 @@ export type Database = {
           processed_at?: string | null
           scheduled_at?: string
           status?: string
-          ticket_id: string
+          ticket_id?: string | null
           type: string
         }
         Update: {
@@ -1412,7 +1412,7 @@ export type Database = {
           processed_at?: string | null
           scheduled_at?: string
           status?: string
-          ticket_id?: string
+          ticket_id?: string | null
           type?: string
         }
         Relationships: [
