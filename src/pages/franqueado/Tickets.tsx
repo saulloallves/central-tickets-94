@@ -55,6 +55,39 @@ export default function FranqueadoTickets() {
     fetchStats();
   }, [units]);
 
+  // Real-time subscription for ticket stats
+  useEffect(() => {
+    if (units.length === 0) return;
+
+    const unitIds = units.map(u => u.id);
+    
+    const channel = supabase
+      .channel('franqueado-tickets-stats')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tickets',
+          filter: `unidade_id=in.(${unitIds.join(',')})`
+        },
+        async () => {
+          // Refetch stats when tickets change
+          const { data } = await supabase
+            .from('tickets')
+            .select('id')
+            .in('unidade_id', unitIds);
+
+          setTicketStats({ total: data?.length || 0 });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [units]);
+
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
   };

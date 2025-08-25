@@ -107,6 +107,67 @@ export function FranqueadoTicketDetail({ ticketId, onClose }: FranqueadoTicketDe
     scrollToBottom();
   }, [messages]);
 
+  // Real-time subscription for ticket messages
+  useEffect(() => {
+    const channel = supabase
+      .channel(`franqueado-ticket-messages-${ticketId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'ticket_mensagens',
+          filter: `ticket_id=eq.${ticketId}`
+        },
+        (payload) => {
+          console.log('Message change:', payload);
+          
+          if (payload.eventType === 'INSERT') {
+            const newMessage = payload.new as TicketMessage;
+            setMessages(prev => [...prev, newMessage]);
+          } else if (payload.eventType === 'UPDATE') {
+            const updatedMessage = payload.new as TicketMessage;
+            setMessages(prev => prev.map(msg => 
+              msg.id === updatedMessage.id ? updatedMessage : msg
+            ));
+          } else if (payload.eventType === 'DELETE') {
+            const deletedId = payload.old.id;
+            setMessages(prev => prev.filter(msg => msg.id !== deletedId));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [ticketId]);
+
+  // Real-time subscription for ticket updates
+  useEffect(() => {
+    const channel = supabase
+      .channel(`franqueado-ticket-${ticketId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'tickets',
+          filter: `id=eq.${ticketId}`
+        },
+        (payload) => {
+          console.log('Ticket update:', payload);
+          const updatedTicket = payload.new as TicketData;
+          setTicket(updatedTicket);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [ticketId]);
+
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !user) return;
 

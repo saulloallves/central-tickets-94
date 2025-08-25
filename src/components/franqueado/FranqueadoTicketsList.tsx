@@ -105,6 +105,46 @@ export function FranqueadoTicketsList({ onTicketSelect, selectedTicketId, filter
     fetchTickets();
   }, [units, filters]);
 
+  // Real-time subscription for tickets
+  useEffect(() => {
+    if (units.length === 0) return;
+
+    const unitIds = units.map(u => u.id);
+    
+    const channel = supabase
+      .channel('franqueado-tickets-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tickets',
+          filter: `unidade_id=in.(${unitIds.join(',')})`
+        },
+        (payload) => {
+          console.log('Ticket change:', payload);
+          
+          if (payload.eventType === 'INSERT') {
+            const newTicket = payload.new as FranqueadoTicket;
+            setTickets(prev => [newTicket, ...prev]);
+          } else if (payload.eventType === 'UPDATE') {
+            const updatedTicket = payload.new as FranqueadoTicket;
+            setTickets(prev => prev.map(ticket => 
+              ticket.id === updatedTicket.id ? updatedTicket : ticket
+            ));
+          } else if (payload.eventType === 'DELETE') {
+            const deletedId = payload.old.id;
+            setTickets(prev => prev.filter(ticket => ticket.id !== deletedId));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [units]);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'aberto': return 'bg-blue-100 text-blue-800';
