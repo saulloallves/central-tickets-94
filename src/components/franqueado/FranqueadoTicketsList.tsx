@@ -99,6 +99,7 @@ export function FranqueadoTicketsList({ onTicketSelect, selectedTicketId, filter
           return;
         }
 
+        console.log('Dados dos tickets com equipes:', data);
         setTickets(data || []);
       } catch (error) {
         console.error('Erro ao buscar tickets:', error);
@@ -295,16 +296,8 @@ export function FranqueadoTicketsList({ onTicketSelect, selectedTicketId, filter
                   <MapPin className="h-3 w-3" />
                   <span>{getUnitInfo(ticket.unidade_id)}</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  {ticket.equipes?.nome && (
-                    <div className="flex items-center gap-1">
-                      <User className="h-3 w-3" />
-                      <span>{ticket.equipes.nome}</span>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-1">
-                    <span>via {ticket.canal_origem}</span>
-                  </div>
+                <div className="flex items-center gap-1">
+                  <span>via {ticket.canal_origem}</span>
                 </div>
               </div>
             </div>
