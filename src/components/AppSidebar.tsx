@@ -37,7 +37,6 @@ const navigationItems = [
   { title: "Franqueados", url: "/admin/franqueados", icon: Users, permission: 'view_all_tickets' as const },
   { title: "Colaboradores", url: "/admin/colaboradores", icon: UserCheck, permission: 'view_all_tickets' as const },
   { title: "Equipes", url: "/admin/equipes", icon: Users2, permission: 'view_all_tickets' as const },
-  { title: "Permissões", url: "/admin/permissions", icon: Shield, permission: 'configure_ai_models' as const },
   { title: "Configurações", url: "/admin/configuracoes", icon: Settings, permission: 'configure_ai_models' as const },
   { title: "Governança", url: "/admin/governanca", icon: BarChart3, permission: 'view_audit_logs' as const },
 ];
