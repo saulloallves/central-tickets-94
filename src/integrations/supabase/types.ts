@@ -2338,6 +2338,10 @@ export type Database = {
           permission: Database["public"]["Enums"]["app_permission"]
         }[]
       }
+      get_user_role: {
+        Args: { user_id?: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
       group_similar_tickets_to_crisis: {
         Args: { p_crisis_id: string }
         Returns: number
