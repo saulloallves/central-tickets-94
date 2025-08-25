@@ -31,7 +31,7 @@ export const CreateTicketDialog = ({ open, onOpenChange }: CreateTicketDialogPro
     search: '', status: '', categoria: '', prioridade: '', unidade_id: '', status_sla: '', equipe_id: ''
   });
   const { user } = useAuth();
-  const { isAdmin, isGerente } = useRole();
+  const { isAdmin, isSupervisor } = useRole();
   const { getSuggestion, logFAQInteraction, loading: faqLoading } = useFAQSuggestion();
   const [submitting, setSubmitting] = useState(false);
   const [unidades, setUnidades] = useState<Unidade[]>([]);
@@ -123,8 +123,8 @@ export const CreateTicketDialog = ({ open, onOpenChange }: CreateTicketDialogPro
         
         // If not admin, filter by user's units
         if (!isAdmin) {
-          if (isGerente) {
-            // Gerente can see their franchised units
+          if (isSupervisor) {
+            // Supervisor can see their franchised units
             const { data: userData } = await supabase
               .from('profiles')
               .select('email')
@@ -186,7 +186,7 @@ export const CreateTicketDialog = ({ open, onOpenChange }: CreateTicketDialogPro
       fetchUnidades();
       fetchEquipes();
     }
-  }, [open, isAdmin, isGerente, user?.id]);
+  }, [open, isAdmin, isSupervisor, user?.id]);
 
   // Fetch available teams
   const fetchEquipes = async () => {

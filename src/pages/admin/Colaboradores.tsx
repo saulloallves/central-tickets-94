@@ -68,7 +68,7 @@ const Colaboradores = () => {
       'avaliador': 'Avaliador',
       'midia': 'Mídia',
       'rh': 'RH',
-      'gerente': 'Gerente',
+      'supervisor': 'Supervisor',
       'diretor': 'Diretor',
       'admin': 'Administrador'
     };

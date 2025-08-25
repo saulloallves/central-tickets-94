@@ -103,7 +103,7 @@ export function AccessPermissionsControl() {
   const roles: AppRole[] = [
     'admin',
     'diretor',
-    'gerente', 
+    'supervisor', 
     'colaborador',
     'diretoria',
     'gestor_equipe',
@@ -375,7 +375,7 @@ export function AccessPermissionsControl() {
     switch (role) {
       case 'admin': return 'destructive';
       case 'diretoria': return 'destructive';
-      case 'gerente': return 'default';
+      case 'supervisor': return 'default';
       case 'colaborador': return 'secondary';
       default: return 'outline';
     }

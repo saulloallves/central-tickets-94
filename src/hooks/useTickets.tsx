@@ -76,7 +76,7 @@ export interface TicketStats {
 
 export const useTickets = (filters: TicketFilters) => {
   const { user } = useAuth();
-  const { isAdmin, isGerente, loading: roleLoading } = useRole();
+  const { isAdmin, isSupervisor, loading: roleLoading } = useRole();
   const { userEquipes, getPrimaryEquipe } = useUserEquipes();
   const { toast } = useToast();
   const [tickets, setTickets] = useState<Ticket[]>([]);

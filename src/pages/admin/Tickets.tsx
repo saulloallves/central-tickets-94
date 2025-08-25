@@ -30,7 +30,7 @@ interface Equipe {
 }
 
 const Tickets = () => {
-  const { isAdmin, isGerente } = useRole();
+  const { isAdmin, isSupervisor } = useRole();
   const { userEquipes } = useUserEquipes();
   
   // Inicializar notificações sonoras
@@ -256,7 +256,7 @@ const Tickets = () => {
                   </SelectContent>
                 </Select>
 
-                {(isAdmin || isGerente) && (
+                {(isAdmin || isSupervisor) && (
                   <Select value={filters.unidade_id} onValueChange={(value) => setFilters(prev => ({ ...prev, unidade_id: value }))}>
                     <SelectTrigger className="w-40">
                       <SelectValue placeholder="Unidade" />
