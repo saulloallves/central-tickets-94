@@ -102,10 +102,15 @@ export const useTickets = (filters: TicketFilters) => {
     try {
       setLoading(true);
       
-      // Use simple query without joins to avoid RLS recursion
+      // Enhanced query with equipe join
       let query = supabase
         .from('tickets')
-        .select('*')
+        .select(`
+          *,
+          equipes!equipe_responsavel_id(nome),
+          unidades(id, grupo, cidade, uf),
+          colaboradores(nome_completo)
+        `)
         .order('status', { ascending: true })
         .order('position', { ascending: true });
 
@@ -205,6 +210,7 @@ export const useTickets = (filters: TicketFilters) => {
       }
 
       console.log('Tickets fetched successfully:', data?.length || 0);
+      console.log('Dados dos tickets com equipes (hook):', data);
       setTickets((data as any) || []);
     } catch (error) {
       console.error('Error fetching tickets:', error);
