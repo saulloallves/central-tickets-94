@@ -16,11 +16,13 @@ import { useState } from "react";
 import { SystemLogo } from "@/components/SystemLogo";
 import { NotificationButton } from "@/components/notifications/NotificationButton";
 import { navigationItems } from "@/constants/navigation";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function AppSidebar() {
   const { signOut, user } = useAuth();
   const { profile } = useProfile();
   const location = useLocation();
+  const isMobile = useIsMobile();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -30,113 +32,100 @@ export function AppSidebar() {
 
   const handleMouseEnter = () => {
     setIsExpanded(true);
-    // Ajustar margin do conteúdo principal
-    const mainContent = document.querySelector('[data-main-content]') as HTMLElement;
-    if (mainContent) {
-      mainContent.style.marginLeft = '208px'; // Fixo para simplicidade
+    // Ajustar margin do conteúdo principal apenas no desktop
+    if (!isMobile) {
+      const mainContent = document.querySelector('[data-main-content]') as HTMLElement;
+      if (mainContent) {
+        mainContent.style.marginLeft = '240px';
+      }
     }
   };
 
   const handleMouseLeave = () => {
     setIsExpanded(false);
-    // Restaurar margin original
-    const mainContent = document.querySelector('[data-main-content]') as HTMLElement;
-    if (mainContent) {
-      mainContent.style.marginLeft = '80px'; // Fixo para simplicidade
+    // Restaurar margin original apenas no desktop
+    if (!isMobile) {
+      const mainContent = document.querySelector('[data-main-content]') as HTMLElement;
+      if (mainContent) {
+        mainContent.style.marginLeft = '80px';
+      }
     }
   };
 
   return (
     <div
       className={cn(
-        "fixed left-4 top-1/2 -translate-y-1/2 z-40 transition-all duration-150",
-        isExpanded 
-          ? "h-[calc(100vh-12rem)] w-48" 
-          : "h-16 w-[calc(100vw-8rem)] max-w-[600px]"
+        "fixed left-4 top-1/2 -translate-y-1/2 z-40 transition-all duration-300",
+        // No desktop: sempre vertical, largura variável
+        "h-[calc(100vh-4rem)]",
+        isExpanded ? "w-56" : "w-16"
       )}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
       {/* Modern liquid glass sidebar container */}
-      <div className="relative h-full bg-gradient-to-b from-primary via-primary/95 to-primary/90 rounded-full overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.1)] border border-white/10">
+      <div className="relative h-full bg-gradient-to-b from-primary via-primary/95 to-primary/90 rounded-2xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.1)] border border-white/10">
         {/* Liquid glass overlay effect */}
-        <div className="absolute inset-0 liquid-glass-sidebar rounded-full"></div>
+        <div className="absolute inset-0 liquid-glass-sidebar rounded-2xl"></div>
         
-        {/* Content wrapper with symmetric padding */}
+        {/* Content wrapper - sempre vertical no desktop */}
         <div className={cn(
-          "relative z-20 h-full flex overflow-hidden",
-          isExpanded 
-            ? "flex-col py-6 px-4" 
-            : "flex-row py-4 px-6 items-center"
+          "relative z-20 h-full flex flex-col overflow-hidden",
+          isExpanded ? "py-6 px-4" : "py-4 px-2"
         )}>
           {/* System Logo Section */}
-          <div className={cn(
-            "flex",
-            isExpanded ? "justify-center mb-4" : "justify-start mr-4 flex-shrink-0"
-          )}>
+          <div className="flex justify-center mb-4">
             <SystemLogo />
           </div>
 
-          {/* Navigation Icons with scroll */}
-          <div className={cn(
-            "flex-1 flex py-2",
-            isExpanded 
-              ? "flex-col space-y-3 overflow-y-auto scrollbar-hide" 
-              : "flex-row space-x-2 overflow-x-auto scrollbar-hide items-center"
-          )}>
+          {/* Navigation Icons - sempre vertical */}
+          <div className="flex-1 flex flex-col space-y-2 overflow-y-auto scrollbar-hide py-2">
             {navigationItems.map((item) => (
               <PermissionGuard key={item.title} requiredPermission={item.permission}>
-                {isExpanded ? (
-                  // Expanded view with labels
-                  <TooltipProvider delayDuration={0}>
+                <TooltipProvider delayDuration={0}>
+                  {isExpanded ? (
                     <NavLink
                       to={item.url}
                       end
                       className={({ isActive }) => cn(
-                        "group flex items-center px-4 py-3 rounded-xl transition-all duration-450",
+                        "group flex items-center px-3 py-3 rounded-xl transition-all duration-300",
                         "hover:scale-[1.02]",
                         isActive 
                           ? "bg-white/10 backdrop-blur-sm text-white border border-white/20" 
-                          : "hover:bg-white/5 hover:backdrop-blur-sm hover:text-white/95 hover:border hover:border-white/10"
+                          : "hover:bg-white/5 hover:backdrop-blur-sm hover:text-white/95"
                       )}
                     >
                       {({ isActive }) => (
                         <>
-                          <div className="relative flex items-center justify-center w-8 h-8 mr-3">
+                          <div className="relative flex items-center justify-center w-6 h-6 mr-3">
                             <item.icon 
                                className={cn(
-                                 "h-5 w-5 text-white transition-all duration-450 drop-shadow-md",
+                                 "h-5 w-5 text-white transition-all duration-300 drop-shadow-md",
                                  isActive ? "drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" : "opacity-90"
                                )}
                               strokeWidth={1.5}
                             />
-                            
-                            {/* Active indicator - white glow dot */}
                             {isActive && (
-                              <div className="absolute -right-1 -top-2 w-2 h-2 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)] animate-pulse"></div>
+                              <div className="absolute -right-1 -top-1 w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_4px_rgba(255,255,255,0.8)] animate-pulse"></div>
                             )}
                           </div>
-                          
-                           <span className={cn(
-                             "text-white text-base font-medium transition-all duration-450 drop-shadow-md",
-                             isActive ? "opacity-100" : "opacity-90"
-                           )}>
+                          <span className={cn(
+                            "text-white text-sm font-medium transition-all duration-300 drop-shadow-md",
+                            isActive ? "opacity-100" : "opacity-90"
+                          )}>
                             {item.title}
                           </span>
                         </>
                       )}
                     </NavLink>
-                  </TooltipProvider>
-                ) : (
-                  // Collapsed view with tooltips - horizontal layout
-                  <TooltipProvider delayDuration={0}>
+                  ) : (
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <NavLink
                           to={item.url}
                           end
                           className={({ isActive }) => cn(
-                            "group relative flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-450 flex-shrink-0",
+                            "group relative flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-300 mx-auto",
                             isActive 
                               ? "bg-white/10 backdrop-blur-sm text-white" 
                               : "hover:bg-white/5 hover:backdrop-blur-sm hover:text-white/95"
@@ -146,15 +135,13 @@ export function AppSidebar() {
                             <>
                               <item.icon 
                                  className={cn(
-                                   "h-6 w-6 text-white transition-all duration-450 drop-shadow-md",
+                                   "h-5 w-5 text-white transition-all duration-300 drop-shadow-md",
                                    isActive ? "drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" : "opacity-90"
                                  )}
                                 strokeWidth={1.5}
                               />
-                              
-                              {/* Active indicator - white glow dot */}
                               {isActive && (
-                                <div className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)] animate-pulse"></div>
+                                <div className="absolute -top-1 -right-1 w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_4px_rgba(255,255,255,0.8)] animate-pulse"></div>
                               )}
                             </>
                           )}
@@ -167,25 +154,20 @@ export function AppSidebar() {
                         {item.title}
                       </TooltipContent>
                     </Tooltip>
-                  </TooltipProvider>
-                )}
+                  )}
+                </TooltipProvider>
               </PermissionGuard>
             ))}
           </div>
 
-          {/* Notifications and Profile Section - horizontal layout when collapsed */}
-          <div className={cn(
-            "flex flex-shrink-0",
-            isExpanded 
-              ? "flex-col space-y-3" 
-              : "flex-row space-x-2 items-center"
-          )}>
+          {/* Bottom Section - sempre vertical */}
+          <div className="flex flex-col space-y-3 mt-auto">
             {/* Notifications Section */}
-            <div className="flex-shrink-0">
+            <div className="flex justify-center">
               <NotificationButton isExpanded={isExpanded} />
             </div>
             {/* User Profile Section */}
-            <div className="flex-shrink-0">
+            <div className="flex justify-center">
             {isExpanded ? (
               <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen} modal={false}>
                 <DropdownMenuTrigger asChild>
