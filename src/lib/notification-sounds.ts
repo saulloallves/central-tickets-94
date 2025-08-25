@@ -26,41 +26,46 @@ export class NotificationSounds {
       oscillator.connect(gainNode);
       gainNode.connect(audioContext.destination);
       
-      // Different frequencies for different alert types
-      let frequency1: number, frequency2: number, duration: number;
+      // Different frequencies for different alert types - som mais moderno
+      let frequency1: number, frequency2: number, frequency3: number, duration: number;
       
       switch (type) {
         case 'critical':
-          frequency1 = 880; // A5
-          frequency2 = 1108; // C#6
-          duration = 0.8;
+          frequency1 = 987; // B5
+          frequency2 = 1318; // E6
+          frequency3 = 1568; // G6
+          duration = 1.2;
           break;
         case 'warning':
-          frequency1 = 659; // E5
-          frequency2 = 784; // G5
-          duration = 0.6;
+          frequency1 = 783; // G5
+          frequency2 = 987; // B5
+          frequency3 = 1174; // D6
+          duration = 0.8;
           break;
         case 'success':
-          frequency1 = 523; // C5
-          frequency2 = 659; // E5
-          duration = 0.4;
+          frequency1 = 659; // E5
+          frequency2 = 830; // G#5
+          frequency3 = 987; // B5
+          duration = 0.6;
           break;
         default: // info
-          frequency1 = 440; // A4
-          frequency2 = 523; // C5
-          duration = 0.3;
+          frequency1 = 523; // C5
+          frequency2 = 659; // E5
+          frequency3 = 783; // G5
+          duration = 0.5;
       }
       
-      // Set oscillator properties
-      oscillator.type = 'sine';
+      // Set oscillator properties - som mais rico
+      oscillator.type = 'square'; // Mudança para onda quadrada - som mais distintivo
       oscillator.frequency.setValueAtTime(frequency1, audioContext.currentTime);
-      oscillator.frequency.exponentialRampToValueAtTime(frequency2, audioContext.currentTime + duration / 2);
+      oscillator.frequency.exponentialRampToValueAtTime(frequency2, audioContext.currentTime + duration / 3);
+      oscillator.frequency.exponentialRampToValueAtTime(frequency3, audioContext.currentTime + duration * 2/3);
       oscillator.frequency.exponentialRampToValueAtTime(frequency1, audioContext.currentTime + duration);
       
-      // Set gain (volume) envelope
+      // Set gain (volume) envelope - VOLUME AUMENTADO
       gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-      gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.01);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+      gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.02); // Volume aumentado de 0.1 para 0.3
+      gainNode.gain.exponentialRampToValueAtTime(0.05, audioContext.currentTime + duration);
       
       // Start and stop the sound
       oscillator.start(audioContext.currentTime);
