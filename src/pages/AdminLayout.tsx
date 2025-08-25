@@ -8,7 +8,10 @@ import { useInternalAccessRequests } from "@/hooks/useInternalAccessRequests";
 import { InternalAccessRequest } from "@/components/InternalAccessRequest";
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/AppSidebar"
+import { MobileBottomNav } from "@/components/MobileBottomNav"
 import { Toaster } from "@/components/ui/toaster"
+import { useIsMobile } from "@/hooks/use-mobile"
+import { cn } from "@/lib/utils"
 
 interface AdminLayoutProps {
   children: React.ReactNode
@@ -20,6 +23,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const { userEquipes, loading: equipeLoading } = useUserEquipes();
   const { userRequest, loading: requestLoading } = useInternalAccessRequests();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -64,16 +68,27 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gradient-subtle">
-        <AppSidebar />
-        <div className="flex-1 flex flex-col transition-all duration-200" data-main-content style={{ marginLeft: '80px' }}>
-          
+        {/* Desktop sidebar */}
+        {!isMobile && <AppSidebar />}
+        
+        <div 
+          className={cn(
+            "flex-1 flex flex-col transition-all duration-200", 
+            isMobile ? "pb-20" : ""
+          )} 
+          data-main-content 
+          style={{ marginLeft: isMobile ? '0' : '80px' }}
+        >
           {/* Main content area with optimized spacing */}
-          <main className="flex-1 p-6">
+          <main className={cn("flex-1", isMobile ? "p-4" : "p-6")}>
             <div className="w-full animate-fade-in space-y-6">
               {children}
             </div>
           </main>
         </div>
+        
+        {/* Mobile bottom navigation */}
+        {isMobile && <MobileBottomNav />}
       </div>
       <Toaster />
     </SidebarProvider>

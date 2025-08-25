@@ -1,19 +1,8 @@
 import { 
-  Users, 
-  Building2, 
-  UserCheck, 
-  Ticket,
-  Settings, 
   LogOut,
-  Home,
-  Users2,
-  Activity,
-  Shield,
   ChevronRight,
   User,
   ChevronDown,
-  Eye,
-  BarChart3
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -26,20 +15,9 @@ import { ProfileSettingsDialog } from "@/components/profile/ProfileSettingsDialo
 import { useProfile } from "@/hooks/useProfile";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
-import { LogoUpload } from "@/components/LogoUpload";
 import { SystemLogo } from "@/components/SystemLogo";
 import { NotificationButton } from "@/components/notifications/NotificationButton";
-
-const navigationItems = [
-  { title: "Dashboard", url: "/admin", icon: Home, permission: 'access_dashboards' as const },
-  { title: "Tickets", url: "/admin/tickets", icon: Ticket, permission: 'view_own_unit_tickets' as const },
-  { title: "Unidades", url: "/admin/unidades", icon: Building2, permission: 'view_all_tickets' as const },
-  { title: "Franqueados", url: "/admin/franqueados", icon: Users, permission: 'view_all_tickets' as const },
-  { title: "Colaboradores", url: "/admin/colaboradores", icon: UserCheck, permission: 'view_all_tickets' as const },
-  { title: "Equipes", url: "/admin/equipes", icon: Users2, permission: 'view_all_tickets' as const },
-  { title: "Configurações", url: "/admin/configuracoes", icon: Settings, permission: 'configure_ai_models' as const },
-  { title: "Governança", url: "/admin/governanca", icon: BarChart3, permission: 'view_audit_logs' as const },
-];
+import { navigationItems } from "@/constants/navigation";
 
 export function AppSidebar() {
   const { signOut, user } = useAuth();
