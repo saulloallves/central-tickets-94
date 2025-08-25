@@ -78,7 +78,7 @@ const Dashboard = () => {
         <KPICard
           title="Total de Tickets"
           value={kpis?.total_tickets?.toString() || "0"}
-          description="Todos os tickets no sistema"
+          description="Tickets de hoje"
           icon={<TicketIcon className="h-4 w-4 text-info" />}
         />
         <KPICard

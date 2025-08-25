@@ -185,7 +185,7 @@ export function RealtimeDashboard() {
             </div>
             <div className="mt-2 flex items-center text-xs text-muted-foreground">
               <TrendingUp className="h-3 w-3 mr-1" />
-              Últimos 30 dias
+              Hoje
             </div>
           </CardContent>
         </Card>
