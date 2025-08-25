@@ -2286,8 +2286,8 @@ export type Database = {
       }
       get_team_metrics: {
         Args: {
-          p_periodo_dias: number
-          p_unidade_filter: string
+          p_periodo_dias?: number
+          p_unidade_filter?: string
           p_user_id: string
         }
         Returns: {
