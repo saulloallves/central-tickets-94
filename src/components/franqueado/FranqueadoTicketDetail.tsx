@@ -69,12 +69,14 @@ export function FranqueadoTicketDetail({ ticketId, onClose }: FranqueadoTicketDe
       setLoading(true);
       
       try {
-        // Buscar dados do ticket
+        // Buscar dados do ticket com informações da equipe
         const { data: ticketData, error: ticketError } = await supabase
           .from('tickets')
           .select(`
             *,
-            equipes:equipe_responsavel_id(nome)
+            equipes:equipe_responsavel_id(
+              nome
+            )
           `)
           .eq('id', ticketId)
           .single();
@@ -84,6 +86,7 @@ export function FranqueadoTicketDetail({ ticketId, onClose }: FranqueadoTicketDe
           return;
         }
 
+        console.log('Ticket data with team:', ticketData);
         setTicket(ticketData as any);
 
         // Buscar mensagens do ticket
