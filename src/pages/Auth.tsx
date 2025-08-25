@@ -34,16 +34,41 @@ const Auth = () => {
     if (user && !loading) {
       // Verificar se é franqueado para redirecionar corretamente
       const checkUserRole = async () => {
-        const { data: roles } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id);
-        
-        const userRoles = roles?.map(r => r.role) || [];
-        if (userRoles.includes('franqueado' as any)) {
-          navigate('/franqueado');
-        } else {
-          navigate('/admin');
+        try {
+          const { data: roles, error } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', user.id);
+          
+          if (error) throw error;
+          
+          const userRoles = roles?.map(r => r.role) || [];
+          
+          // Se não tem roles, usar fallback do localStorage
+          if (userRoles.length === 0) {
+            const lastLoginOrigin = localStorage.getItem('last_login_origin');
+            if (lastLoginOrigin === 'franqueado') {
+              navigate('/franqueado/dashboard');
+            } else {
+              navigate('/admin');
+            }
+            return;
+          }
+          
+          if (userRoles.includes('franqueado' as any)) {
+            navigate('/franqueado/dashboard');
+          } else {
+            navigate('/admin');
+          }
+        } catch (error) {
+          console.error('Error checking roles:', error);
+          // Fallback usando localStorage
+          const lastLoginOrigin = localStorage.getItem('last_login_origin');
+          if (lastLoginOrigin === 'franqueado') {
+            navigate('/franqueado/dashboard');
+          } else {
+            navigate('/admin');
+          }
         }
       };
       
@@ -54,6 +79,9 @@ const Auth = () => {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+
+    // Marcar como login interno
+    localStorage.setItem('last_login_origin', 'interno');
 
     const { error } = await signIn(loginData.email, loginData.password);
     if (!error) {
@@ -115,6 +143,9 @@ const Auth = () => {
       }
 
       if (data?.email) {
+        // Marcar como login de franqueado
+        localStorage.setItem('last_login_origin', 'franqueado');
+        
         // Fazer login normal com o email retornado
         const { error: loginError } = await signIn(data.email, franqueadoData.password);
         if (!loginError) {
@@ -122,7 +153,7 @@ const Auth = () => {
             title: "Login realizado",
             description: "Bem-vindo ao sistema de franqueados!"
           });
-          navigate('/franqueado');
+          navigate('/franqueado/dashboard');
         }
       }
     } catch (error: any) {

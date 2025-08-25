@@ -27,7 +27,22 @@ export const useRole = () => {
           console.error('Error fetching roles:', error);
           setRoles([]);
         } else {
-          setRoles(data?.map(r => r.role as AppRole) || []);
+          let userRoles = data?.map(r => r.role as AppRole) || [];
+          
+          // Se não tem roles e tem email, verificar se é franqueado
+          if (userRoles.length === 0 && user.email) {
+            const { data: franqueadoData } = await supabase
+              .from('franqueados')
+              .select('id')
+              .eq('email', user.email)
+              .single();
+            
+            if (franqueadoData) {
+              userRoles = ['franqueado'];
+            }
+          }
+          
+          setRoles(userRoles);
         }
       } catch (error) {
         console.error('Error fetching roles:', error);
