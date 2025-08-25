@@ -64,9 +64,9 @@ export function AppSidebar() {
       onMouseLeave={handleMouseLeave}
     >
       {/* Modern liquid glass sidebar container */}
-      <div className="relative h-full bg-gradient-to-b from-primary via-primary/95 to-primary/90 rounded-2xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.1)] border border-white/10">
+      <div className="relative h-full bg-gradient-to-b from-primary via-primary/95 to-primary/90 rounded-3xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.1)] border border-white/10">
         {/* Liquid glass overlay effect */}
-        <div className="absolute inset-0 liquid-glass-sidebar rounded-2xl"></div>
+        <div className="absolute inset-0 liquid-glass-sidebar rounded-3xl"></div>
         
         {/* Content wrapper - sempre vertical no desktop */}
         <div className={cn(
