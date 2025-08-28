@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -5,12 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { X, Send, Clock, MapPin, User, Phone, MessageSquare, AlertTriangle } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { X, Send, Clock, MapPin, User, Phone, MessageSquare, AlertTriangle, History } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useFranqueadoUnits } from '@/hooks/useFranqueadoUnits';
+import { TicketConversaTimeline } from '@/components/tickets/TicketConversaTimeline';
 
 interface TicketMessage {
   id: string;
@@ -39,6 +41,7 @@ interface TicketData {
   cliente_telefone: string;
   cliente_email: string;
   reaberto_count: number;
+  conversa: any[];
   equipes?: {
     nome: string;
   };
@@ -69,7 +72,7 @@ export function FranqueadoTicketDetail({ ticketId, onClose }: FranqueadoTicketDe
       setLoading(true);
       
       try {
-        // Buscar dados do ticket com informações da equipe
+        // Buscar dados do ticket com informações da equipe e conversa JSON
         const { data: ticketData, error: ticketError } = await supabase
           .from('tickets')
           .select(`
@@ -84,10 +87,10 @@ export function FranqueadoTicketDetail({ ticketId, onClose }: FranqueadoTicketDe
           return;
         }
 
-        console.log('Ticket data with team:', ticketData);
+        console.log('✅ Ticket carregado (franqueado):', ticketData);
         setTicket(ticketData as any);
 
-        // Buscar mensagens do ticket
+        // Buscar mensagens legacy do ticket (para compatibilidade)
         const { data: messagesData, error: messagesError } = await supabase
           .from('ticket_mensagens')
           .select('*')
@@ -114,7 +117,7 @@ export function FranqueadoTicketDetail({ ticketId, onClose }: FranqueadoTicketDe
     scrollToBottom();
   }, [messages]);
 
-  // Real-time subscription for ticket messages
+  // Real-time subscription for ticket messages (legacy system)
   useEffect(() => {
     const channel = supabase
       .channel(`franqueado-ticket-messages-${ticketId}`)
@@ -150,7 +153,7 @@ export function FranqueadoTicketDetail({ ticketId, onClose }: FranqueadoTicketDe
     };
   }, [ticketId]);
 
-  // Real-time subscription for ticket updates
+  // Real-time subscription for ticket updates (including conversa JSON)
   useEffect(() => {
     const channel = supabase
       .channel(`franqueado-ticket-${ticketId}`)
@@ -163,9 +166,9 @@ export function FranqueadoTicketDetail({ ticketId, onClose }: FranqueadoTicketDe
           filter: `id=eq.${ticketId}`
         },
         (payload) => {
-          console.log('Ticket update:', payload);
+          console.log('Ticket update (franqueado):', payload);
           const updatedTicket = payload.new as TicketData;
-          setTicket(updatedTicket);
+          setTicket(prev => prev ? { ...prev, ...updatedTicket } : updatedTicket);
         }
       )
       .subscribe();
@@ -181,15 +184,14 @@ export function FranqueadoTicketDetail({ ticketId, onClose }: FranqueadoTicketDe
     setSending(true);
     
     try {
-      const { error } = await supabase
-        .from('ticket_mensagens')
-        .insert({
-          ticket_id: ticketId,
-          mensagem: newMessage,
-          direcao: 'saida',
-          canal: 'web',
-          usuario_id: user.id
-        });
+      // Use the new RPC function to send message as franqueado
+      const { data, error } = await supabase.rpc('append_to_ticket_conversa', {
+        p_ticket_id: ticketId,
+        p_autor: 'franqueado',
+        p_texto: newMessage.trim(),
+        p_canal: 'web',
+        p_usuario_id: user.id
+      });
 
       if (error) {
         console.error('Erro ao enviar mensagem:', error);
@@ -203,14 +205,10 @@ export function FranqueadoTicketDetail({ ticketId, onClose }: FranqueadoTicketDe
 
       setNewMessage('');
       
-      // Atualizar mensagens
-      const { data: messagesData } = await supabase
-        .from('ticket_mensagens')
-        .select('*')
-        .eq('ticket_id', ticketId)
-        .order('created_at', { ascending: true });
-
-      setMessages(messagesData as any || []);
+      // Update ticket conversa if returned
+      if (ticket && Array.isArray(data)) {
+        setTicket(prev => prev ? { ...prev, conversa: data } : prev);
+      }
 
       toast({
         title: "Sucesso",
@@ -227,7 +225,6 @@ export function FranqueadoTicketDetail({ ticketId, onClose }: FranqueadoTicketDe
       setSending(false);
     }
   };
-
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -254,6 +251,11 @@ export function FranqueadoTicketDetail({ ticketId, onClose }: FranqueadoTicketDe
   const getUnitInfo = (unidadeId: string) => {
     const unit = units.find(u => u.id === unidadeId);
     return unit ? `${unit.grupo} - ${unit.cidade}/${unit.uf}` : unidadeId;
+  };
+
+  const handleNewMessage = (message: any) => {
+    console.log('📨 Nova mensagem na timeline:', message);
+    // Timeline component handles updates via real-time subscription
   };
 
   if (loading) {
@@ -291,106 +293,149 @@ export function FranqueadoTicketDetail({ ticketId, onClose }: FranqueadoTicketDe
         </Button>
       </div>
 
-      {/* Ticket Info */}
-      <div className="p-4 border-b space-y-3">
-        <div className="flex flex-wrap gap-2">
-          <Badge variant={getPriorityColor(ticket.prioridade)}>
-            {ticket.prioridade}
-          </Badge>
-          <Badge className={getStatusColor(ticket.status)} variant="outline">
-            {ticket.status}
-          </Badge>
-          <Badge variant="outline" className="gap-1">
-            <Clock className="h-3 w-3" />
-            SLA: {ticket.status_sla}
-          </Badge>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <div className="flex items-center gap-1 text-muted-foreground">
-              <MapPin className="h-3 w-3" />
-              <span>Unidade:</span>
-            </div>
-            <p>{getUnitInfo(ticket.unidade_id)}</p>
+      {/* Content with Tabs */}
+      <div className="flex-1 overflow-hidden">
+        <Tabs defaultValue="timeline" className="h-full flex flex-col">
+          <div className="px-4 pt-2">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="timeline" className="flex items-center gap-2">
+                <MessageSquare className="h-4 w-4" />
+                Timeline
+              </TabsTrigger>
+              <TabsTrigger value="details" className="flex items-center gap-2">
+                <User className="h-4 w-4" />
+                Detalhes  
+              </TabsTrigger>
+              <TabsTrigger value="legacy" className="flex items-center gap-2">
+                <History className="h-4 w-4" />
+                Legacy
+              </TabsTrigger>
+            </TabsList>
           </div>
-          <div>
-            <div className="flex items-center gap-1 text-muted-foreground">
-              <User className="h-3 w-3" />
-              <span>Equipe:</span>
-            </div>
-            <p>{ticket.equipes?.nome || 'Não atribuída'}</p>
-          </div>
-          <div>
-            <div className="flex items-center gap-1 text-muted-foreground">
-              <Phone className="h-3 w-3" />
-              <span>Telefone:</span>
-            </div>
-            <p>{ticket.cliente_telefone || 'Não informado'}</p>
-          </div>
-          <div>
-            <span className="text-muted-foreground">Categoria:</span>
-            <p>{ticket.categoria || 'Não definida'}</p>
-          </div>
-        </div>
 
-        <div>
-          <span className="text-muted-foreground text-sm">Problema:</span>
-          <p className="text-sm">{ticket.descricao_problema}</p>
-        </div>
-      </div>
+          {/* Timeline Tab - NEW */}
+          <TabsContent value="timeline" className="flex-1 px-4 pb-4 mt-4">
+            <TicketConversaTimeline
+              ticketId={ticketId}
+              initialConversa={ticket.conversa || []}
+              onNewMessage={handleNewMessage}
+            />
+          </TabsContent>
 
+          {/* Details Tab */}
+          <TabsContent value="details" className="flex-1 px-4 pb-4 mt-4 overflow-y-auto">
+            {/* Ticket Info */}
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                <Badge variant={getPriorityColor(ticket.prioridade)}>
+                  {ticket.prioridade}
+                </Badge>
+                <Badge className={getStatusColor(ticket.status)} variant="outline">
+                  {ticket.status}
+                </Badge>
+                <Badge variant="outline" className="gap-1">
+                  <Clock className="h-3 w-3" />
+                  SLA: {ticket.status_sla}
+                </Badge>
+              </div>
 
-      {/* Messages */}
-      <ScrollArea className="flex-1 p-4">
-        <div className="space-y-4">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex ${message.direcao === 'saida' ? 'justify-end' : 'justify-start'}`}
-            >
-              <div
-                className={`max-w-[80%] rounded-lg p-3 ${
-                  message.direcao === 'saida'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted'
-                }`}
-              >
-                <p className="text-sm whitespace-pre-wrap">{message.mensagem}</p>
-                <p className="text-xs mt-1 opacity-70">
-                  {new Date(message.created_at).toLocaleString('pt-BR')} - {message.canal}
-                </p>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <div className="flex items-center gap-1 text-muted-foreground">
+                    <MapPin className="h-3 w-3" />
+                    <span>Unidade:</span>
+                  </div>
+                  <p>{getUnitInfo(ticket.unidade_id)}</p>
+                </div>
+                <div>
+                  <div className="flex items-center gap-1 text-muted-foreground">
+                    <User className="h-3 w-3" />
+                    <span>Equipe:</span>
+                  </div>
+                  <p>{ticket.equipes?.nome || 'Não atribuída'}</p>
+                </div>
+                <div>
+                  <div className="flex items-center gap-1 text-muted-foreground">
+                    <Phone className="h-3 w-3" />
+                    <span>Telefone:</span>
+                  </div>
+                  <p>{ticket.cliente_telefone || 'Não informado'}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Categoria:</span>
+                  <p>{ticket.categoria || 'Não definida'}</p>
+                </div>
+              </div>
+
+              <div>
+                <span className="text-muted-foreground text-sm">Problema:</span>
+                <p className="text-sm">{ticket.descricao_problema}</p>
               </div>
             </div>
-          ))}
-          <div ref={messagesEndRef} />
-        </div>
-      </ScrollArea>
+          </TabsContent>
 
-      {/* Message Input */}
-      <div className="p-4 border-t">
-        <div className="flex gap-2">
-          <Textarea
-            placeholder="Digite sua resposta..."
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSendMessage();
-              }
-            }}
-            rows={3}
-            className="resize-none"
-          />
-          <Button 
-            onClick={handleSendMessage}
-            disabled={!newMessage.trim() || sending}
-            size="sm"
-          >
-            <Send className="h-4 w-4" />
-          </Button>
-        </div>
+          {/* Legacy Messages Tab */}
+          <TabsContent value="legacy" className="flex-1 px-4 pb-4 mt-4">
+            <Card className="h-full flex flex-col">
+              <CardHeader>
+                <CardTitle className="text-base">Mensagens Legacy</CardTitle>
+              </CardHeader>
+              <CardContent className="flex-1 flex flex-col p-0">
+                {/* Messages */}
+                <ScrollArea className="flex-1 px-4 max-h-64">
+                  <div className="space-y-4">
+                    {messages.map((message) => (
+                      <div
+                        key={message.id}
+                        className={`flex ${message.direcao === 'saida' ? 'justify-end' : 'justify-start'}`}
+                      >
+                        <div
+                          className={`max-w-[80%] rounded-lg p-3 ${
+                            message.direcao === 'saida'
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted'
+                          }`}
+                        >
+                          <p className="text-sm whitespace-pre-wrap">{message.mensagem}</p>
+                          <p className="text-xs mt-1 opacity-70">
+                            {new Date(message.created_at).toLocaleString('pt-BR')} - {message.canal}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                    <div ref={messagesEndRef} />
+                  </div>
+                </ScrollArea>
+
+                {/* Message Input */}
+                <div className="p-4 border-t">
+                  <div className="flex gap-2">
+                    <Textarea
+                      placeholder="Digite sua resposta..."
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                      rows={3}
+                      className="resize-none"
+                    />
+                    <Button 
+                      onClick={handleSendMessage}
+                      disabled={!newMessage.trim() || sending}
+                      size="sm"
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
