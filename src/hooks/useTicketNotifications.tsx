@@ -13,106 +13,103 @@ export const useTicketNotifications = () => {
     NotificationSounds.requestAudioPermission();
   }, []);
 
-  // Listen for new tickets in realtime
+  // Simple realtime subscription with direct client instance
   useEffect(() => {
     if (!user) return;
 
-    console.log('🔔 Setting up ticket notifications for user:', user.id);
-
-    // Simpler channel name to avoid conflicts
-    const channelName = `tickets-notifications-${Date.now()}`;
+    console.log('🔔 Setting up UNIFIED ticket notifications for user:', user.id);
     
     const channel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'tickets'
-        },
-        (payload) => {
-          console.log('🎫 New ticket INSERT event:', payload);
-          const newTicket = payload.new as any;
-          
-          // Play sound for all new tickets except those created by current user
-          if (newTicket.criado_por !== user.id) {
-            console.log('🔊 Playing notification sound for new ticket:', newTicket.codigo_ticket);
-            
-            // Determine sound type based on priority
-            let soundType: 'info' | 'warning' | 'critical' = 'info';
-            if (newTicket.prioridade === 'crise') {
-              soundType = 'critical';
-            } else if (newTicket.prioridade === 'imediato') {
-              soundType = 'warning';
-            }
-            
-            // Play the sound
-            NotificationSounds.playNotificationSound(soundType);
-
-            // Show toast notification
-            toast({
-              title: "🎫 Novo Ticket Recebido",
-              description: `${newTicket.titulo || newTicket.descricao_problema || 'Sem título'} - ${newTicket.codigo_ticket}`,
-              duration: 5000,
-            });
-          } else {
-            console.log('👤 Skipping notification - ticket created by current user');
-          }
+      .channel('unified-tickets-realtime', {
+        config: {
+          presence: { key: user.id }
         }
-      )
+      })
       .on(
         'postgres_changes',
         {
-          event: 'UPDATE',
+          event: '*',
           schema: 'public',
           table: 'tickets'
         },
         (payload) => {
-          console.log('📝 Ticket UPDATE event:', payload);
-          const updatedTicket = payload.new as any;
-          const oldTicket = payload.old as any;
+          console.log('🔄 UNIFIED Ticket realtime event:', payload.eventType, payload);
           
-          // Don't notify for own updates
-          if (updatedTicket.criado_por === user.id) {
-            console.log('👤 Skipping update notification - updated by current user');
-            return;
-          }
+          if (payload.eventType === 'INSERT') {
+            const newTicket = payload.new as any;
+            console.log('➕ NEW TICKET DETECTED:', newTicket.codigo_ticket);
+            
+            // Play sound for all new tickets except those created by current user
+            if (newTicket.criado_por !== user.id) {
+              console.log('🔊 Playing notification sound for new ticket:', newTicket.codigo_ticket);
+              
+              // Determine sound type based on priority
+              let soundType: 'info' | 'warning' | 'critical' = 'info';
+              if (newTicket.prioridade === 'crise') {
+                soundType = 'critical';
+              } else if (newTicket.prioridade === 'imediato') {
+                soundType = 'warning';
+              }
+              
+              // Play the sound
+              NotificationSounds.playNotificationSound(soundType);
 
-          // Check for priority escalation
-          if (updatedTicket.prioridade === 'crise' && oldTicket?.prioridade !== 'crise') {
-            console.log('🚨 Playing CRISIS alert for ticket:', updatedTicket.codigo_ticket);
-            NotificationSounds.playCriticalAlert();
-            toast({
-              title: "🚨 CRISE DETECTADA",
-              description: `Ticket ${updatedTicket.codigo_ticket} escalado para CRISE`,
-              duration: 8000,
-              variant: "destructive"
-            });
-          } else if (updatedTicket.prioridade === 'imediato' && 
-                    oldTicket?.prioridade !== 'imediato' && 
-                    oldTicket?.prioridade !== 'crise') {
-            console.log('⚠️ Playing WARNING alert for priority escalation:', updatedTicket.codigo_ticket);
-            NotificationSounds.playNotificationSound('warning');
-            toast({
-              title: "⚠️ Prioridade Escalada",
-              description: `Ticket ${updatedTicket.codigo_ticket} agora é IMEDIATO`,
-              duration: 4000,
-            });
+              // Show toast notification
+              toast({
+                title: "🎫 Novo Ticket Recebido",
+                description: `${newTicket.titulo || newTicket.descricao_problema || 'Sem título'} - ${newTicket.codigo_ticket}`,
+                duration: 5000,
+              });
+            } else {
+              console.log('👤 Skipping notification - ticket created by current user');
+            }
+          }
+          
+          if (payload.eventType === 'UPDATE') {
+            const updatedTicket = payload.new as any;
+            const oldTicket = payload.old as any;
+            
+            // Don't notify for own updates
+            if (updatedTicket.criado_por === user.id) {
+              console.log('👤 Skipping update notification - updated by current user');
+              return;
+            }
+
+            // Check for priority escalation
+            if (updatedTicket.prioridade === 'crise' && oldTicket?.prioridade !== 'crise') {
+              console.log('🚨 Playing CRISIS alert for ticket:', updatedTicket.codigo_ticket);
+              NotificationSounds.playCriticalAlert();
+              toast({
+                title: "🚨 CRISE DETECTADA",
+                description: `Ticket ${updatedTicket.codigo_ticket} escalado para CRISE`,
+                duration: 8000,
+                variant: "destructive"
+              });
+            } else if (updatedTicket.prioridade === 'imediato' && 
+                      oldTicket?.prioridade !== 'imediato' && 
+                      oldTicket?.prioridade !== 'crise') {
+              console.log('⚠️ Playing WARNING alert for priority escalation:', updatedTicket.codigo_ticket);
+              NotificationSounds.playNotificationSound('warning');
+              toast({
+                title: "⚠️ Prioridade Escalada",
+                description: `Ticket ${updatedTicket.codigo_ticket} agora é IMEDIATO`,
+                duration: 4000,
+              });
+            }
           }
         }
       )
       .subscribe((status) => {
-        console.log('🔔 Notification subscription status:', status);
+        console.log('🔔 UNIFIED Notification subscription status:', status);
         if (status === 'SUBSCRIBED') {
-          console.log('✅ Notification system connected successfully');
+          console.log('✅ UNIFIED Notification system connected successfully');
         } else if (status === 'CHANNEL_ERROR') {
-          console.error('❌ Notification subscription error');
+          console.error('❌ UNIFIED Notification subscription error');
         }
       });
 
     return () => {
-      console.log('🔌 Cleaning up notification subscription');
+      console.log('🔌 Cleaning up UNIFIED notification subscription');
       supabase.removeChannel(channel);
     };
   }, [user, toast]);

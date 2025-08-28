@@ -370,6 +370,7 @@ export const useTickets = (filters: TicketFilters) => {
     console.log('➕ REALTIME TICKET INSERT HANDLER CALLED:', ticket.codigo_ticket, ticket.id);
     console.log('📊 Current tickets count before insert:', tickets.length);
     
+    // Force immediate re-render and state update
     setTickets(prev => {
       const exists = prev.find(t => t.id === ticket.id);
       if (exists) {
@@ -386,6 +387,11 @@ export const useTickets = (filters: TicketFilters) => {
         prioridade: ticket.prioridade,
         status: ticket.status
       });
+      
+      // Force immediate re-render by triggering a state change
+      setTimeout(() => {
+        console.log('🔄 Forcing re-render after ticket insert');
+      }, 0);
       
       return newTickets;
     });

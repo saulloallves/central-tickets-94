@@ -20,7 +20,7 @@ import { NewCrisisAlertBanner } from '@/components/crisis/NewCrisisAlertBanner';
 import { NewCrisisPanel } from '@/components/crisis/NewCrisisPanel';
 import { useTickets } from '@/hooks/useTickets';
 import { useUserEquipes } from '@/hooks/useUserEquipes';
-import { useTicketsRealtime } from '@/hooks/useTicketsRealtime';
+import { useUnifiedTicketRealtime } from '@/hooks/useUnifiedTicketRealtime';
 
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -101,16 +101,11 @@ const Tickets = () => {
     fetchEquipes();
   }, []);
 
-  // Realtime para atualização automática dos tickets no kanban
-  useTicketsRealtime({
-    onTicketUpdate: handleTicketUpdate,
+  // Unified realtime para atualização automática dos tickets no kanban
+  useUnifiedTicketRealtime({
     onTicketInsert: handleTicketInsert,
-    onTicketDelete: handleTicketDelete,
-    filters: {
-      unidade_id: filters.unidade_id !== 'all' ? filters.unidade_id : undefined,
-      equipe_id: filters.equipe_id !== 'all' ? filters.equipe_id : undefined,
-      status: filters.status !== 'all' ? [filters.status] : undefined,
-    }
+    onTicketUpdate: handleTicketUpdate,
+    onTicketDelete: handleTicketDelete
   });
 
   const handleTicketSelect = (ticketId: string) => {
