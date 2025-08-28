@@ -4,9 +4,10 @@ import { useTickets, useTicketMessages } from '@/hooks/useTickets';
 
 interface TicketDetailProps {
   ticketId: string;
+  onClose?: () => void;
 }
 
-export const TicketDetail: React.FC<TicketDetailProps> = ({ ticketId }) => {
+export const TicketDetail: React.FC<TicketDetailProps> = ({ ticketId, onClose }) => {
   const { tickets } = useTickets({
     search: '',
     status: '',
@@ -43,6 +44,13 @@ export const TicketDetail: React.FC<TicketDetailProps> = ({ ticketId }) => {
           <p className="mt-1">{ticket.descricao_problema}</p>
         </div>
       </div>
+      {onClose && (
+        <div className="mt-6">
+          <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded">
+            Fechar
+          </button>
+        </div>
+      )}
     </div>
   );
 };

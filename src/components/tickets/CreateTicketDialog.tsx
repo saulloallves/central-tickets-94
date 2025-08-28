@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -36,7 +35,7 @@ const formSchema = yup.object().shape({
   prioridade: yup.string().oneOf(['crise', 'imediato', 'ate_1_hora', 'ainda_hoje', 'posso_esperar']).required('Prioridade é obrigatória'),
   categoria: yup.string().oneOf(['midia', 'rh', 'juridico', 'sistema', 'operacoes', 'financeiro', 'outro']).required('Categoria é obrigatória'),
   equipe_id: yup.string().required('Equipe é obrigatória'),
-});
+}) as yup.ObjectSchema<FormData>;
 
 export function CreateTicketDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const { user } = useAuth();
@@ -60,7 +59,6 @@ export function CreateTicketDialog({ open, onOpenChange }: { open: boolean; onOp
     register,
     handleSubmit,
     reset,
-    control,
     formState: { errors },
   } = useForm<FormData>({
     resolver: yupResolver(formSchema),
@@ -78,8 +76,8 @@ export function CreateTicketDialog({ open, onOpenChange }: { open: boolean; onOp
       try {
         const { data, error } = await supabase
           .from('unidades')
-          .select('id, nome_unidade')
-          .order('nome_unidade');
+          .select('id, grupo, cidade, uf')
+          .order('grupo');
 
         if (error) {
           console.error('Erro ao buscar unidades:', error);
@@ -94,7 +92,7 @@ export function CreateTicketDialog({ open, onOpenChange }: { open: boolean; onOp
         if (data) {
           const transformedData = data.map(item => ({
             id: item.id,
-            nome: item.nome_unidade
+            nome: `${item.grupo} - ${item.cidade}/${item.uf}`
           }));
           setUnidades(transformedData);
         }
