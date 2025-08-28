@@ -531,6 +531,7 @@ export type Database = {
         Row: {
           allowed_categories: string[] | null
           api_base_url: string | null
+          api_key: string | null
           api_provider: string | null
           ativo: boolean
           auto_classificacao: boolean | null
@@ -580,6 +581,7 @@ export type Database = {
         Insert: {
           allowed_categories?: string[] | null
           api_base_url?: string | null
+          api_key?: string | null
           api_provider?: string | null
           ativo?: boolean
           auto_classificacao?: boolean | null
@@ -629,6 +631,7 @@ export type Database = {
         Update: {
           allowed_categories?: string[] | null
           api_base_url?: string | null
+          api_key?: string | null
           api_provider?: string | null
           ativo?: boolean
           auto_classificacao?: boolean | null
