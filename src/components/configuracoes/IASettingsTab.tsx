@@ -302,6 +302,38 @@ export function IASettingsTab() {
     }));
   };
 
+  // Auto-save function for model changes
+  const autoSaveModel = async (newSettings: AISettings) => {
+    if (!newSettings.id) return; // Only auto-save if we have an existing record
+    
+    try {
+      const saveData = {
+        ...newSettings,
+        ativo: true,
+        updated_at: new Date().toISOString()
+      };
+
+      // Remove id from saveData for update
+      const { id, ...dataToSave } = saveData;
+
+      const { error } = await supabase
+        .from('faq_ai_settings')
+        .update(dataToSave)
+        .eq('id', newSettings.id);
+
+      if (error) {
+        console.error('Auto-save error:', error);
+        return;
+      }
+      
+      // Update originalSettings to prevent "unsaved changes" warnings
+      setOriginalSettings({ ...newSettings });
+      
+    } catch (error) {
+      console.error('Error auto-saving model:', error);
+    }
+  };
+
   const fetchSettings = async () => {
     setLoading(true);
     try {
@@ -679,7 +711,11 @@ export function IASettingsTab() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="modelo_sugestao">🔮 Modelo Sugestões</Label>
-              <Select value={settings.modelo_sugestao || ''} onValueChange={(value) => setSettings(prev => ({...prev, modelo_sugestao: value}))}>
+              <Select value={settings.modelo_sugestao || ''} onValueChange={(value) => {
+                const newSettings = {...settings, modelo_sugestao: value};
+                setSettings(newSettings);
+                autoSaveModel(newSettings);
+              }}>
                <SelectTrigger className="bg-background border border-border">
                  <SelectValue placeholder="Selecione um modelo">
                    {settings.modelo_sugestao || 'Selecione um modelo'}
@@ -702,7 +738,11 @@ export function IASettingsTab() {
 
             <div className="space-y-2">
               <Label htmlFor="modelo_chat">💬 Modelo Chat com IA</Label>
-              <Select value={settings.modelo_chat || ''} onValueChange={(value) => setSettings(prev => ({...prev, modelo_chat: value}))}>
+              <Select value={settings.modelo_chat || ''} onValueChange={(value) => {
+                const newSettings = {...settings, modelo_chat: value};
+                setSettings(newSettings);
+                autoSaveModel(newSettings);
+              }}>
                <SelectTrigger className="bg-background border border-border">
                  <SelectValue placeholder="Selecione um modelo">
                    {settings.modelo_chat || 'Selecione um modelo'}
@@ -725,7 +765,11 @@ export function IASettingsTab() {
 
             <div className="space-y-2">
               <Label htmlFor="modelo_classificacao">🏷️ Modelo Classificação</Label>
-              <Select value={settings.modelo_classificacao || ''} onValueChange={(value) => setSettings(prev => ({...prev, modelo_classificacao: value}))}>
+              <Select value={settings.modelo_classificacao || ''} onValueChange={(value) => {
+                const newSettings = {...settings, modelo_classificacao: value};
+                setSettings(newSettings);
+                autoSaveModel(newSettings);
+              }}>
                <SelectTrigger className="bg-background border border-border">
                  <SelectValue placeholder="Selecione um modelo">
                    {settings.modelo_classificacao || 'Selecione um modelo'}
