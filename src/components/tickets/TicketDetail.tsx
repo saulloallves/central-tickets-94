@@ -95,7 +95,7 @@ export function TicketDetail({ ticketId, onClose }: TicketDetailProps) {
         (payload) => {
           console.log('🔄 Ticket atualizado:', payload);
           const updatedTicket = payload.new as any;
-          setTicket(prev => ({ ...prev, ...updatedTicket }));
+          setTicket(updatedTicket);
           
           // Update conversa if changed
           if (updatedTicket.conversa) {
