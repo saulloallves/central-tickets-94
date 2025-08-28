@@ -153,7 +153,8 @@ export const useEnhancedTicketRealtime = (options: EnhancedRealtimeOptions) => {
   return {
     isConnected: connectionStatus === 'SUBSCRIBED',
     isDegraded: connectionStatus === 'ERROR' || connectionStatus === 'DEGRADED',
-    status: connectionStatus
+    status: connectionStatus,
+    retryCount: retryAttemptRef.current
   };
 };
 

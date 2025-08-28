@@ -21,6 +21,7 @@ import { NewCrisisPanel } from '@/components/crisis/NewCrisisPanel';
 import { useTickets } from '@/hooks/useTickets';
 import { useUserEquipes } from '@/hooks/useUserEquipes';
 import { useEnhancedTicketRealtime } from '@/hooks/useEnhancedTicketRealtime';
+import { useTicketFallbackPolling } from '@/hooks/useTicketFallbackPolling';
 
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -102,10 +103,27 @@ const Tickets = () => {
   }, []);
 
   // Real-time updates using ROBUST enhanced hook
-  const { isConnected, isDegraded, status } = useEnhancedTicketRealtime({
+  const { isConnected, isDegraded, status, retryCount } = useEnhancedTicketRealtime({
     onTicketInsert: handleTicketInsert,
     onTicketUpdate: handleTicketUpdate,
     onTicketDelete: handleTicketDelete,
+    filters: {
+      unidade_id: filters.unidade_id !== 'all' ? filters.unidade_id : undefined,
+      equipe_id: filters.equipe_id !== 'all' ? filters.equipe_id : undefined,
+      status: filters.status !== 'all' ? [filters.status] : undefined,
+    }
+  });
+
+  // Fallback polling when realtime is degraded
+  const { isPolling } = useTicketFallbackPolling({
+    onNewTickets: (newTickets) => {
+      console.log('🔄 FALLBACK: Processing new tickets from polling:', newTickets.length);
+      newTickets.forEach(ticket => {
+        handleTicketInsert(ticket);
+      });
+    },
+    enabled: isDegraded,
+    intervalMs: 5000,
     filters: {
       unidade_id: filters.unidade_id !== 'all' ? filters.unidade_id : undefined,
       equipe_id: filters.equipe_id !== 'all' ? filters.equipe_id : undefined,
@@ -175,6 +193,23 @@ const Tickets = () => {
               <span className="hidden md:inline">Painel de Crises</span>
             </Button>
             <TestAIButton />
+            
+            {/* Connection Status Indicator */}
+            <div className={`flex items-center gap-1 text-xs px-2 py-1 rounded ${
+              isConnected ? 'bg-green-100 text-green-700' : 
+              isDegraded ? 'bg-yellow-100 text-yellow-700' : 
+              'bg-red-100 text-red-700'
+            }`}>
+              <div className={`w-2 h-2 rounded-full ${
+                isConnected ? 'bg-green-500 animate-pulse' : 
+                isDegraded ? 'bg-yellow-500' : 
+                'bg-red-500'
+              }`} />
+              {isConnected ? 'Tempo Real' : 
+               isDegraded && isPolling ? 'Modo Compatível' : 
+               isDegraded ? 'Reconectando...' : 'Desconectado'}
+              {retryCount > 0 && ` (${retryCount})`}
+            </div>
             <Button size="sm" onClick={() => setCreateDialogOpen(true)} className="flex-1 md:flex-none">
               <Plus className="h-4 w-4 md:mr-2" />
               <span className="hidden md:inline">Novo Ticket</span>
