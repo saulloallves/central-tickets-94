@@ -55,7 +55,7 @@ export default function FranqueadoLayout({ children }: FranqueadoLayoutProps) {
       >
         {/* Main content area with optimized spacing */}
         <main className={cn("flex-1", isMobile ? "p-4" : "p-6")}>
-          <div className="w-full animate-fade-in space-y-6">
+          <div className="w-full space-y-6 animate-page-enter">
             {children}
           </div>
         </main>
