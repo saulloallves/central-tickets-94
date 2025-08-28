@@ -137,14 +137,31 @@ export function IASettingsTab() {
     if (settings.api_provider === 'lambda') {
       if (lambdaModels.length > 0) {
         console.log('Lambda models available:', lambdaModels);
-        return lambdaModels.map(model => ({ 
-          value: model.value || model.id, 
-          label: `${model.label || model.value || model.id} ${(model.value || model.id) === settings.modelo_sugestao || (model.value || model.id) === settings.modelo_chat || (model.value || model.id) === settings.modelo_classificacao ? '(Em uso)' : ''}` 
-        }));
+        return lambdaModels.map(model => {
+          const modelId = model.value || model.id;
+          const isInUse = modelId === settings.modelo_sugestao || 
+                         modelId === settings.modelo_chat || 
+                         modelId === settings.modelo_classificacao;
+          return { 
+            value: modelId, 
+            label: `${model.label || modelId}${isInUse ? ' (Em uso)' : ''}` 
+          };
+        });
       }
       return [{ value: '', label: testingConnection ? 'Conectando...' : 'Clique em "Salvar e Carregar Modelos"' }];
     }
-    return modelsByProvider[settings.api_provider as keyof typeof modelsByProvider] || modelsByProvider.openai;
+    
+    // For other providers, show which models are in use
+    const providerModels = modelsByProvider[settings.api_provider as keyof typeof modelsByProvider] || modelsByProvider.openai;
+    return providerModels.map(model => {
+      const isInUse = model.value === settings.modelo_sugestao || 
+                     model.value === settings.modelo_chat || 
+                     model.value === settings.modelo_classificacao;
+      return {
+        value: model.value,
+        label: `${model.label}${isInUse ? ' (Em uso)' : ''}`
+      };
+    });
   };
 
   // Test Lambda connection and fetch models
@@ -432,21 +449,21 @@ export function IASettingsTab() {
         }
       }
 
-      // After saving, update originalSettings and keep models loaded if Lambda
-      setOriginalSettings({ ...settings });
+      // After saving, update originalSettings and force re-render of model options
+      const newSettings = { ...settings };
+      setOriginalSettings(newSettings);
       
-      // Ensure Lambda models stay loaded after save
+      // Force update of model displays by clearing and reloading Lambda models if needed
       if (settings.api_provider === 'lambda' && 
           settings.api_key?.trim() && 
-          settings.api_base_url?.trim() && 
-          lambdaModels.length === 0) {
-        console.log('Reloading Lambda models after save...');
-        setTimeout(() => testLambdaConnection(true), 800);  // true = isAutoLoad
+          settings.api_base_url?.trim()) {
+        console.log('Reloading Lambda models after save to update display...');
+        setTimeout(() => testLambdaConnection(true), 500);  // true = isAutoLoad
       }
       
       toast({
         title: "✅ Configurações Salvas",
-        description: `Provedor: ${settings.api_provider.toUpperCase()}, Modelo Sugestão: ${settings.modelo_sugestao}, Modelo Chat: ${settings.modelo_chat}, Modelo Classificação: ${settings.modelo_classificacao}`,
+        description: `Modelos atualizados: Sugestão (${settings.modelo_sugestao}), Chat (${settings.modelo_chat}), Classificação (${settings.modelo_classificacao})`,
       });
     } catch (error) {
       console.error('Erro ao salvar configurações:', error);
@@ -658,8 +675,10 @@ export function IASettingsTab() {
               <Label htmlFor="modelo_sugestao">🔮 Modelo Sugestões</Label>
               <Select value={settings.modelo_sugestao} onValueChange={(value) => setSettings(prev => ({...prev, modelo_sugestao: value}))}>
                <SelectTrigger className="bg-background border border-border">
-                 <SelectValue placeholder="Selecione um modelo" />
-               </SelectTrigger>
+                 <SelectValue placeholder="Selecione um modelo">
+                   {settings.modelo_sugestao ? `${settings.modelo_sugestao}` : 'Selecione um modelo'}
+                 </SelectValue>
+                </SelectTrigger>
                   <SelectContent className="bg-background border border-border shadow-lg z-50 max-h-60 overflow-y-auto">
                    {getCurrentModels().filter(option => option.value !== '').map(option => (
                      <SelectItem key={option.value} value={option.value}>
@@ -679,8 +698,10 @@ export function IASettingsTab() {
               <Label htmlFor="modelo_chat">💬 Modelo Chat com IA</Label>
               <Select value={settings.modelo_chat} onValueChange={(value) => setSettings(prev => ({...prev, modelo_chat: value}))}>
                <SelectTrigger className="bg-background border border-border">
-                 <SelectValue placeholder="Selecione um modelo" />
-               </SelectTrigger>
+                 <SelectValue placeholder="Selecione um modelo">
+                   {settings.modelo_chat ? `${settings.modelo_chat}` : 'Selecione um modelo'}
+                 </SelectValue>
+                </SelectTrigger>
                  <SelectContent className="bg-background border border-border shadow-lg z-50 max-h-60 overflow-y-auto">
                    {getCurrentModels().filter(option => option.value !== '').map(option => (
                      <SelectItem key={option.value} value={option.value}>
@@ -700,8 +721,10 @@ export function IASettingsTab() {
               <Label htmlFor="modelo_classificacao">🏷️ Modelo Classificação</Label>
               <Select value={settings.modelo_classificacao} onValueChange={(value) => setSettings(prev => ({...prev, modelo_classificacao: value}))}>
                <SelectTrigger className="bg-background border border-border">
-                 <SelectValue placeholder="Selecione um modelo" />
-               </SelectTrigger>
+                 <SelectValue placeholder="Selecione um modelo">
+                   {settings.modelo_classificacao ? `${settings.modelo_classificacao}` : 'Selecione um modelo'}
+                 </SelectValue>
+                </SelectTrigger>
                  <SelectContent className="bg-background border border-border shadow-lg z-50 max-h-60 overflow-y-auto">
                    {getCurrentModels().filter(option => option.value !== '').map(option => (
                      <SelectItem key={option.value} value={option.value}>
