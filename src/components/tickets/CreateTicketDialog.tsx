@@ -33,8 +33,8 @@ interface FormData {
 const formSchema = yup.object().shape({
   titulo: yup.string().required('Título é obrigatório'),
   descricao: yup.string().required('Descrição é obrigatória'),
-  prioridade: yup.string().required('Prioridade é obrigatória'),
-  categoria: yup.string().required('Categoria é obrigatória'),
+  prioridade: yup.string().oneOf(['crise', 'imediato', 'ate_1_hora', 'ainda_hoje', 'posso_esperar']).required('Prioridade é obrigatória'),
+  categoria: yup.string().oneOf(['midia', 'rh', 'juridico', 'sistema', 'operacoes', 'financeiro', 'outro']).required('Categoria é obrigatória'),
   equipe_id: yup.string().required('Equipe é obrigatória'),
 });
 
@@ -78,7 +78,7 @@ export function CreateTicketDialog({ open, onOpenChange }: { open: boolean; onOp
       try {
         const { data, error } = await supabase
           .from('unidades')
-          .select('id, nome_unidade as nome')
+          .select('id, nome_unidade')
           .order('nome_unidade');
 
         if (error) {
@@ -92,7 +92,11 @@ export function CreateTicketDialog({ open, onOpenChange }: { open: boolean; onOp
         }
 
         if (data) {
-          setUnidades(data);
+          const transformedData = data.map(item => ({
+            id: item.id,
+            nome: item.nome_unidade
+          }));
+          setUnidades(transformedData);
         }
       } catch (error) {
         console.error('Erro ao buscar unidades:', error);
