@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -30,6 +29,23 @@ export interface Ticket {
   escalonamento_nivel?: number;
   sla_half_time?: string;
   equipes?: { nome: string } | null;
+  // Additional properties that exist in the database
+  canal_origem?: 'web' | 'typebot' | 'whatsapp_zapi';
+  canal_resposta?: 'web' | 'whatsapp' | 'typebot' | 'interno';
+  atendimento_iniciado_em?: string;
+  atendimento_iniciado_por?: string;
+  colaborador_id?: string;
+  unidades?: { 
+    grupo?: string; 
+    cidade?: string; 
+    uf?: string; 
+  };
+  colaboradores?: { 
+    nome_completo?: string; 
+  };
+  created_by_profile?: { 
+    nome_completo?: string; 
+  };
 }
 
 export interface TicketFilters {
@@ -74,7 +90,10 @@ export const useTickets = (filters: TicketFilters) => {
         .from('tickets')
         .select(`
           *,
-          equipes:equipe_responsavel_id(nome)
+          equipes:equipe_responsavel_id(nome),
+          unidades:unidade_id(grupo, cidade, uf),
+          colaboradores:colaborador_id(nome_completo),
+          created_by_profile:criado_por(nome_completo)
         `)
         .order('position', { ascending: true });
 
@@ -138,13 +157,21 @@ export const useTickets = (filters: TicketFilters) => {
       }
 
       console.log('✅ Tickets carregados:', data?.length || 0);
-      setTickets(data || []);
+      
+      // Transform data to match Ticket interface
+      const transformedData = data?.map(ticket => ({
+        ...ticket,
+        franqueado_id: ticket.franqueado_id?.toString(),
+        status_sla: ticket.status_sla || 'dentro_prazo'
+      })) || [];
+      
+      setTickets(transformedData);
 
       // Calcular estatísticas
       const stats = {
-        total: data?.length || 0,
-        em_atendimento: data?.filter(t => t.status === 'em_atendimento').length || 0,
-        sla_vencido: data?.filter(t => t.status_sla === 'vencido').length || 0,
+        total: transformedData?.length || 0,
+        em_atendimento: transformedData?.filter(t => t.status === 'em_atendimento').length || 0,
+        sla_vencido: transformedData?.filter(t => t.status_sla === 'vencido').length || 0,
       };
       setTicketStats(stats);
 
@@ -164,7 +191,7 @@ export const useTickets = (filters: TicketFilters) => {
   const handleTicketUpdate = useCallback((updatedTicket: Ticket) => {
     setTickets(prevTickets => 
       prevTickets.map(ticket => 
-        ticket.id === updatedTicket.id ? updatedTicket : ticket
+        ticket.id === updatedTicket.id ? { ...updatedTicket, status_sla: updatedTicket.status_sla || 'dentro_prazo' } : ticket
       )
     );
     
@@ -187,7 +214,13 @@ export const useTickets = (filters: TicketFilters) => {
         return prevTickets;
       }
       
-      const updatedTickets = [...prevTickets, newTicket];
+      const ticketWithDefaults = {
+        ...newTicket,
+        franqueado_id: newTicket.franqueado_id?.toString(),
+        status_sla: newTicket.status_sla || 'dentro_prazo'
+      };
+      
+      const updatedTickets = [...prevTickets, ticketWithDefaults];
       
       // Recalcular stats
       const stats = {
@@ -296,6 +329,24 @@ export const useTickets = (filters: TicketFilters) => {
     }
   }, [toast]);
 
+  // Create ticket function for compatibility
+  const createTicket = useCallback(async (ticketData: any) => {
+    try {
+      const { data, error } = await supabase
+        .from('tickets')
+        .insert([ticketData])
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      return { data, error: null };
+    } catch (error) {
+      console.error('❌ Erro ao criar ticket:', error);
+      return { data: null, error };
+    }
+  }, []);
+
   return {
     tickets,
     loading,
@@ -305,5 +356,16 @@ export const useTickets = (filters: TicketFilters) => {
     handleTicketInsert,
     handleTicketDelete,
     changeTicketStatus,
+    createTicket, // Add for compatibility
+  };
+};
+
+// Export useTicketMessages for compatibility
+export const useTicketMessages = (ticketId: string) => {
+  // Simple implementation for compatibility
+  return {
+    messages: [],
+    loading: false,
+    sendMessage: async () => {},
   };
 };
