@@ -14,7 +14,11 @@ export const useTicketNotifications = () => {
     NotificationSounds.requestAudioPermission().then(setAudioEnabled);
   }, []);
 
-  // Simple realtime subscription with direct client instance
+  // Disable the realtime subscription since we're handling it centrally in Tickets.tsx
+  // This hook now only provides the test functions
+  
+  /*
+  // DISABLED: Realtime subscription moved to useEnhancedTicketRealtime + polling fallback
   useEffect(() => {
     if (!user) return;
 
@@ -101,7 +105,7 @@ export const useTicketNotifications = () => {
         if (status === 'SUBSCRIBED') {
           console.log('✅ UNIFIED Notification system connected successfully');
         } else if (status === 'CHANNEL_ERROR') {
-          console.error('❌ UNIFIED Notification subscription error');
+          console.log('❌ UNIFIED Notification subscription error');
         }
       });
 
@@ -110,6 +114,7 @@ export const useTicketNotifications = () => {
       supabase.removeChannel(channel);
     };
   }, [user, toast]);
+  */
 
   // Function to test notification sound manually
   const testNotificationSound = async () => {

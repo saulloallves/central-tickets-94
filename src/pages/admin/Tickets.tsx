@@ -40,7 +40,7 @@ const Tickets = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   
-  // Initialize notification system
+  // Initialize notification system but disable its realtime (we'll handle it ourselves)
   const { testNotificationSound, testCriticalSound } = useTicketNotifications();
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [ticketModalOpen, setTicketModalOpen] = useState(false);
@@ -119,15 +119,28 @@ const Tickets = () => {
   });
 
   // Fallback polling when realtime is degraded - but we'll call it "optimized mode"
+  // Keep track of processed tickets to avoid duplicate sounds
+  const [processedTicketIds] = useState(new Set<string>());
+  
   const { isPolling } = useTicketFallbackPolling({
     onNewTickets: (newTickets) => {
       console.log('🔄 OPTIMIZED: Processing new tickets from enhanced polling:', newTickets.length);
       newTickets.forEach(ticket => {
         handleTicketInsert(ticket);
         
-        // Trigger notification sound manually for optimized polling
-        if (ticket.criado_por !== user?.id) {
-          console.log('🔊 OPTIMIZED: Triggering notification sound for:', ticket.codigo_ticket);
+        // Only trigger sound if we haven't processed this ticket before
+        if (ticket.criado_por !== user?.id && !processedTicketIds.has(ticket.id)) {
+          console.log('🔊 OPTIMIZED: Triggering notification sound for NEW ticket:', ticket.codigo_ticket);
+          
+          // Mark this ticket as processed to avoid duplicate sounds
+          processedTicketIds.add(ticket.id);
+          
+          // Clean up old IDs periodically to prevent memory leak (keep last 100)
+          if (processedTicketIds.size > 100) {
+            const idsArray = Array.from(processedTicketIds);
+            const toRemove = idsArray.slice(0, idsArray.length - 50); // Remove oldest 50
+            toRemove.forEach(id => processedTicketIds.delete(id));
+          }
           
           // Import and trigger sound based on priority
           import('@/lib/notification-sounds').then(({ NotificationSounds }) => {
@@ -146,6 +159,8 @@ const Tickets = () => {
             description: `${ticket.titulo || ticket.descricao_problema || 'Sem título'} - ${ticket.codigo_ticket}`,
             duration: 5000,
           });
+        } else if (processedTicketIds.has(ticket.id)) {
+          console.log('🔇 OPTIMIZED: Skipping sound for already processed ticket:', ticket.codigo_ticket);
         }
       });
     },
