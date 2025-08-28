@@ -216,7 +216,9 @@ All colors MUST be HSL.
   }
 
   .liquid-glass-hover {
-    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transform: translateZ(0); /* Hardware acceleration */
+    will-change: transform, background, border-color, box-shadow;
   }
 
   .liquid-glass-hover:hover {
@@ -228,7 +230,7 @@ All colors MUST be HSL.
       0 16px 64px rgba(0, 0, 0, 0.2),
       inset 0 4px 8px rgba(255, 255, 255, 0.8),
       inset 0 -2px 4px rgba(0, 0, 0, 0.15);
-    transform: translateY(-2px) scale(1.01);
+    transform: translateY(-2px) scale(1.01) translateZ(0);
   }
 
   .liquid-glass-card {
@@ -398,6 +400,93 @@ All colors MUST be HSL.
   .dark .liquid-glass-button {
     background: rgba(255, 255, 255, 0.06);
     border-color: rgba(255, 255, 255, 0.2);
+  }
+  }
+
+  /* ========== OPTIMIZED ANIMATIONS ========== */
+  /* Animações otimizadas para performance fluida */
+  
+  /* Dialog animations with hardware acceleration */
+  [data-state="open"][data-radix-dialog-content] {
+    animation: dialog-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    transform: translateZ(0); /* Hardware acceleration */
+    will-change: transform, opacity;
+  }
+  
+  [data-state="closed"][data-radix-dialog-content] {
+    animation: dialog-out 0.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  
+  [data-state="open"][data-radix-dialog-overlay] {
+    animation: overlay-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  
+  [data-state="closed"][data-radix-dialog-overlay] {
+    animation: overlay-out 0.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  
+  @keyframes dialog-in {
+    from {
+      opacity: 0;
+      transform: translate3d(-50%, -48%, 0) scale(0.96) translateZ(0);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(-50%, -50%, 0) scale(1) translateZ(0);
+    }
+  }
+  
+  @keyframes dialog-out {
+    from {
+      opacity: 1;
+      transform: translate3d(-50%, -50%, 0) scale(1) translateZ(0);
+    }
+    to {
+      opacity: 0;
+      transform: translate3d(-50%, -48%, 0) scale(0.96) translateZ(0);
+    }
+  }
+  
+  @keyframes overlay-in {
+    from {
+      opacity: 0;
+      backdrop-filter: blur(0px);
+      -webkit-backdrop-filter: blur(0px);
+    }
+    to {
+      opacity: 1;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+  }
+  
+  @keyframes overlay-out {
+    from {
+      opacity: 1;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    to {
+      opacity: 0;
+      backdrop-filter: blur(0px);
+      -webkit-backdrop-filter: blur(0px);
+    }
+  }
+  
+  /* Enhanced transitions for cards and hover effects */
+  .liquid-glass-card,
+  .liquid-glass-hover,
+  .liquid-glass-button {
+    transform: translateZ(0); /* Hardware acceleration */
+    will-change: transform, background, border-color, box-shadow;
+  }
+  
+  /* Optimize transition performance */
+  * {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
   }
 }
 
