@@ -98,14 +98,14 @@ const styleOptions = [
 ];
 
 const defaultSettings: AISettings = {
-  api_provider: 'openai',
+  api_provider: 'lambda',
   knowledge_mode: 'auto',
   api_base_url: '',
   api_key: '',
   custom_headers: {},
-  modelo_sugestao: 'gpt-5-2025-08-07',
-  modelo_chat: 'gpt-5-2025-08-07',
-  modelo_classificacao: 'gpt-5-2025-08-07',
+  modelo_sugestao: 'qwen3-32b-fp8',
+  modelo_chat: 'qwen3-32b-fp8',
+  modelo_classificacao: 'qwen3-32b-fp8',
   estilo_resposta: 'Direto',
   prompt_sugestao: 'Você é um assistente especializado em suporte técnico. Ajude o atendente com sugestões baseadas na base de conhecimento da Cresci & Perdi.',
   prompt_chat: 'Você é um assistente de IA da Cresci & Perdi. Ajude o atendente a resolver o ticket do cliente baseado nos manuais e procedimentos da empresa.',
@@ -358,6 +358,7 @@ export function IASettingsTab() {
           max_tokens_classificacao: data.max_tokens_classificacao || defaultSettings.max_tokens_classificacao,
           ativo: data.ativo ?? defaultSettings.ativo
         };
+        console.log('Loaded settings from DB:', fetchedSettings);
         setSettings(fetchedSettings);
         setOriginalSettings(fetchedSettings);
         
@@ -369,6 +370,11 @@ export function IASettingsTab() {
           setTimeout(() => {
             testLambdaConnection(true);  // true = isAutoLoad
           }, 1500);  // Increased delay to ensure UI is ready
+        } else {
+          // Force re-render for non-Lambda providers
+          setTimeout(() => {
+            setSettings({ ...fetchedSettings });
+          }, 100);
         }
       } else {
         setOriginalSettings(defaultSettings);
@@ -673,10 +679,10 @@ export function IASettingsTab() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="modelo_sugestao">🔮 Modelo Sugestões</Label>
-              <Select value={settings.modelo_sugestao} onValueChange={(value) => setSettings(prev => ({...prev, modelo_sugestao: value}))}>
+              <Select value={settings.modelo_sugestao || ''} onValueChange={(value) => setSettings(prev => ({...prev, modelo_sugestao: value}))}>
                <SelectTrigger className="bg-background border border-border">
                  <SelectValue placeholder="Selecione um modelo">
-                   {settings.modelo_sugestao ? `${settings.modelo_sugestao}` : 'Selecione um modelo'}
+                   {settings.modelo_sugestao || 'Selecione um modelo'}
                  </SelectValue>
                 </SelectTrigger>
                   <SelectContent className="bg-background border border-border shadow-lg z-50 max-h-60 overflow-y-auto">
@@ -696,10 +702,10 @@ export function IASettingsTab() {
 
             <div className="space-y-2">
               <Label htmlFor="modelo_chat">💬 Modelo Chat com IA</Label>
-              <Select value={settings.modelo_chat} onValueChange={(value) => setSettings(prev => ({...prev, modelo_chat: value}))}>
+              <Select value={settings.modelo_chat || ''} onValueChange={(value) => setSettings(prev => ({...prev, modelo_chat: value}))}>
                <SelectTrigger className="bg-background border border-border">
                  <SelectValue placeholder="Selecione um modelo">
-                   {settings.modelo_chat ? `${settings.modelo_chat}` : 'Selecione um modelo'}
+                   {settings.modelo_chat || 'Selecione um modelo'}
                  </SelectValue>
                 </SelectTrigger>
                  <SelectContent className="bg-background border border-border shadow-lg z-50 max-h-60 overflow-y-auto">
@@ -719,10 +725,10 @@ export function IASettingsTab() {
 
             <div className="space-y-2">
               <Label htmlFor="modelo_classificacao">🏷️ Modelo Classificação</Label>
-              <Select value={settings.modelo_classificacao} onValueChange={(value) => setSettings(prev => ({...prev, modelo_classificacao: value}))}>
+              <Select value={settings.modelo_classificacao || ''} onValueChange={(value) => setSettings(prev => ({...prev, modelo_classificacao: value}))}>
                <SelectTrigger className="bg-background border border-border">
                  <SelectValue placeholder="Selecione um modelo">
-                   {settings.modelo_classificacao ? `${settings.modelo_classificacao}` : 'Selecione um modelo'}
+                   {settings.modelo_classificacao || 'Selecione um modelo'}
                  </SelectValue>
                 </SelectTrigger>
                  <SelectContent className="bg-background border border-border shadow-lg z-50 max-h-60 overflow-y-auto">
