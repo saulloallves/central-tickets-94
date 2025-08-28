@@ -26,15 +26,20 @@ export const useEnhancedTicketRealtime = (options: EnhancedRealtimeOptions) => {
   const setupRealtime = useCallback(() => {
     if (!user) return;
 
-    console.log('🔄 Setting up ROBUST realtime subscription for user:', user.id);
+    console.log('🔄 Setting up ENHANCED realtime subscription for user:', user.id);
     console.log('🔄 Filters:', filters);
-    console.log('🔄 Retry attempt:', retryAttemptRef.current);
     
     // Initialize audio for notifications
     NotificationSounds.requestAudioPermission();
 
-    // Use a unique channel name with timestamp to avoid conflicts
-    const channelName = `robust-tickets-${user.id}-${Date.now()}`;
+    // Use a simpler, more reliable channel setup
+    const channelName = `tickets-${user.id}`;
+    
+    // Clean up any existing subscription first
+    if (subscriptionRef.current) {
+      supabase.removeChannel(subscriptionRef.current);
+      subscriptionRef.current = null;
+    }
     
     const channel = supabase
       .channel(channelName)
@@ -105,22 +110,19 @@ export const useEnhancedTicketRealtime = (options: EnhancedRealtimeOptions) => {
         }
       )
       .subscribe((status) => {
-        console.log('📡 ROBUST realtime status:', status);
+        console.log('📡 ENHANCED realtime status:', status);
         setConnectionStatus(status as any);
         
         if (status === 'SUBSCRIBED') {
-          console.log('✅ ROBUST realtime subscription active');
+          console.log('✅ ENHANCED realtime subscription active');
           retryAttemptRef.current = 0; // Reset retry count on success
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          console.error('❌ ROBUST realtime subscription error/timeout:', status);
+          console.error('❌ ENHANCED realtime subscription error/timeout:', status);
           setConnectionStatus('ERROR');
           
-          // Limit retry attempts to prevent infinite loops
-          if (retryAttemptRef.current < 3) {
-            const retryDelays = [2000, 5000, 10000]; // 2s, 5s, 10s
-            const delay = retryDelays[retryAttemptRef.current] || 10000;
-            
-            console.log(`🔄 ROBUST: Retrying in ${delay}ms (attempt ${retryAttemptRef.current + 1}/3)`);
+          // More aggressive retry strategy - try once more then go to polling
+          if (retryAttemptRef.current < 1) {
+            console.log(`🔄 ENHANCED: Quick retry attempt ${retryAttemptRef.current + 1}/1`);
             
             if (retryTimeoutRef.current) {
               clearTimeout(retryTimeoutRef.current);
@@ -129,16 +131,16 @@ export const useEnhancedTicketRealtime = (options: EnhancedRealtimeOptions) => {
             retryTimeoutRef.current = setTimeout(() => {
               retryAttemptRef.current++;
               setupRealtime(); // Retry connection
-            }, delay);
+            }, 1000); // Quick 1s retry
           } else {
-            console.log('🚫 ROBUST: Max retry attempts reached, switching to degraded mode');
+            console.log('🚫 ENHANCED: Switching to polling mode after 1 retry');
             setConnectionStatus('DEGRADED');
-            // Reset retry count after 5 minutes
+            // Try again after 2 minutes
             retryTimeoutRef.current = setTimeout(() => {
-              console.log('🔄 ROBUST: Resetting retry count after cooldown');
+              console.log('🔄 ENHANCED: Attempting realtime reconnection after cooldown');
               retryAttemptRef.current = 0;
               setupRealtime();
-            }, 300000); // 5 minutes
+            }, 120000); // 2 minutes
           }
         }
       });
@@ -150,7 +152,7 @@ export const useEnhancedTicketRealtime = (options: EnhancedRealtimeOptions) => {
     setupRealtime();
 
     return () => {
-      console.log('🔌 Disconnecting ROBUST realtime');
+      console.log('🔌 Disconnecting ENHANCED realtime');
       if (retryTimeoutRef.current) {
         clearTimeout(retryTimeoutRef.current);
       }
