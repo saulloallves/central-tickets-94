@@ -132,13 +132,16 @@ export function IASettingsTab() {
   const { toast } = useToast();
 
   // Get models for current provider
-  const getCurrentModels = () => {
-    if (settings.api_provider === 'lambda' && lambdaModels.length > 0) {
-      return lambdaModels.map(model => ({
-        value: model.id || model.value,
-        label: model.id || model.label || model.value,
-        description: model.description || `Modelo ${model.id || model.value}`
-      }));
+  const getCurrentModels = (): Array<{ value: string; label: string }> => {
+    if (settings.api_provider === 'lambda') {
+      if (lambdaModels.length > 0) {
+        console.log('Lambda models available:', lambdaModels);
+        return lambdaModels.map(model => ({ 
+          value: model.id, 
+          label: `${model.id} ${model.id === settings.modelo_sugestao || model.id === settings.modelo_chat || model.id === settings.modelo_classificacao ? '(Em uso)' : ''}` 
+        }));
+      }
+      return [{ value: '', label: testingConnection ? 'Conectando...' : 'Clique em "Salvar e Carregar Modelos"' }];
     }
     return modelsByProvider[settings.api_provider as keyof typeof modelsByProvider] || modelsByProvider.openai;
   };
@@ -413,10 +416,18 @@ export function IASettingsTab() {
         }
       }
 
+      // After saving, update originalSettings and keep models loaded if Lambda
       setOriginalSettings({ ...settings });
+      
+      // Ensure Lambda models stay loaded after save
+      if (settings.api_provider === 'lambda' && settings.api_key && settings.api_base_url && lambdaModels.length === 0) {
+        console.log('Reloading Lambda models after save...');
+        testLambdaConnection();
+      }
+      
       toast({
         title: "✅ Configurações Salvas",
-        description: "Todas as configurações da IA foram atualizadas com sucesso",
+        description: `Provedor: ${settings.api_provider.toUpperCase()}, Modelo Sugestão: ${settings.modelo_sugestao}, Modelo Chat: ${settings.modelo_chat}, Modelo Classificação: ${settings.modelo_classificacao}`,
       });
     } catch (error) {
       console.error('Erro ao salvar configurações:', error);
@@ -444,6 +455,14 @@ export function IASettingsTab() {
   useEffect(() => {
     fetchSettings();
   }, []);
+
+  // Load Lambda models when provider changes to Lambda and has API key
+  useEffect(() => {
+    if (settings.api_provider === 'lambda' && settings.api_key && settings.api_base_url) {
+      console.log('Auto-loading Lambda models...');
+      testLambdaConnection();
+    }
+  }, [settings.api_provider, settings.api_key, settings.api_base_url]);
 
   if (loading) {
     return (
@@ -612,16 +631,13 @@ export function IASettingsTab() {
             <div className="space-y-2">
               <Label htmlFor="modelo_sugestao">🔮 Modelo Sugestões</Label>
               <Select value={settings.modelo_sugestao} onValueChange={(value) => setSettings(prev => ({...prev, modelo_sugestao: value}))}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
+               <SelectTrigger className="bg-background border border-border">
+                 <SelectValue placeholder="Selecione um modelo" />
+               </SelectTrigger>
+                 <SelectContent className="bg-background border border-border shadow-lg z-50 max-h-60 overflow-y-auto">
                   {getCurrentModels().map(option => (
                     <SelectItem key={option.value} value={option.value}>
-                      <div>
-                        <div className="font-medium">{option.label}</div>
-                        <div className="text-xs text-muted-foreground">{option.description}</div>
-                      </div>
+                      <div className="font-medium">{option.label}</div>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -631,16 +647,13 @@ export function IASettingsTab() {
             <div className="space-y-2">
               <Label htmlFor="modelo_chat">💬 Modelo Chat com IA</Label>
               <Select value={settings.modelo_chat} onValueChange={(value) => setSettings(prev => ({...prev, modelo_chat: value}))}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
+               <SelectTrigger className="bg-background border border-border">
+                 <SelectValue placeholder="Selecione um modelo" />
+               </SelectTrigger>
+                <SelectContent className="bg-background border border-border shadow-lg z-50 max-h-60 overflow-y-auto">
                   {getCurrentModels().map(option => (
                     <SelectItem key={option.value} value={option.value}>
-                      <div>
-                        <div className="font-medium">{option.label}</div>
-                        <div className="text-xs text-muted-foreground">{option.description}</div>
-                      </div>
+                      <div className="font-medium">{option.label}</div>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -650,16 +663,13 @@ export function IASettingsTab() {
             <div className="space-y-2">
               <Label htmlFor="modelo_classificacao">🏷️ Modelo Classificação</Label>
               <Select value={settings.modelo_classificacao} onValueChange={(value) => setSettings(prev => ({...prev, modelo_classificacao: value}))}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
+               <SelectTrigger className="bg-background border border-border">
+                 <SelectValue placeholder="Selecione um modelo" />
+               </SelectTrigger>
+                <SelectContent className="bg-background border border-border shadow-lg z-50 max-h-60 overflow-y-auto">
                   {getCurrentModels().map(option => (
                     <SelectItem key={option.value} value={option.value}>
-                      <div>
-                        <div className="font-medium">{option.label}</div>
-                        <div className="text-xs text-muted-foreground">{option.description}</div>
-                      </div>
+                      <div className="font-medium">{option.label}</div>
                     </SelectItem>
                   ))}
                 </SelectContent>
