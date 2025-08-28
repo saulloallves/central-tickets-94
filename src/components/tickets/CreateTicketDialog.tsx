@@ -16,9 +16,12 @@ import { useFAQSuggestion } from '@/hooks/useFAQSuggestion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle, CheckCircle, Lightbulb, MessageSquare } from 'lucide-react';
 
+import { Ticket } from '@/hooks/useTicketsEdgeFunctions';
+
 interface CreateTicketDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onCreateTicket: (ticketData: Partial<Ticket>) => Promise<Ticket | null>;
 }
 
 interface Unidade {
@@ -26,10 +29,7 @@ interface Unidade {
   grupo: string;
 }
 
-export const CreateTicketDialog = ({ open, onOpenChange }: CreateTicketDialogProps) => {
-  const { createTicket } = useTickets({
-    search: '', status: '', categoria: '', prioridade: '', unidade_id: '', status_sla: '', equipe_id: ''
-  });
+export const CreateTicketDialog = ({ open, onOpenChange, onCreateTicket }: CreateTicketDialogProps) => {
   const { user } = useAuth();
   const { isAdmin, isSupervisor, isFranqueado } = useRole();
   const { getSuggestion, logFAQInteraction, loading: faqLoading } = useFAQSuggestion();
@@ -292,7 +292,7 @@ export const CreateTicketDialog = ({ open, onOpenChange }: CreateTicketDialogPro
       console.log('  - Contains legacy value check: checking if any legacy value is present');
       console.log('==================================');
       
-      const ticket = await createTicket({
+      const ticket = await onCreateTicket({
         unidade_id: formData.unidade_id,
         descricao_problema: formData.descricao_problema.trim(),
         equipe_responsavel_id: formData.equipe_responsavel_id === 'none' ? undefined : formData.equipe_responsavel_id || undefined,
