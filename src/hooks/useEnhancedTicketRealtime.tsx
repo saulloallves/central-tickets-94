@@ -20,11 +20,15 @@ export const useEnhancedTicketRealtime = (options: EnhancedRealtimeOptions) => {
   const { onTicketUpdate, onTicketInsert, onTicketDelete, filters } = options;
   const subscriptionRef = useRef<any>(null);
   const [connectionStatus, setConnectionStatus] = useState<'CONNECTING' | 'SUBSCRIBED' | 'DEGRADED' | 'ERROR'>('CONNECTING');
+  const [realtimeAttempted, setRealtimeAttempted] = useState(false);
   const retryAttemptRef = useRef(0);
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const setupRealtime = useCallback(() => {
     if (!user) return;
+
+    // Mark that we attempted realtime
+    setRealtimeAttempted(true);
 
     console.log('🔄 Setting up ENHANCED realtime subscription for user:', user.id);
     console.log('🔄 Filters:', filters);
@@ -40,6 +44,15 @@ export const useEnhancedTicketRealtime = (options: EnhancedRealtimeOptions) => {
       supabase.removeChannel(subscriptionRef.current);
       subscriptionRef.current = null;
     }
+    
+    // In Lovable environment, realtime often fails, so set a shorter timeout
+    // If realtime doesn't work quickly, we'll simulate success with polling
+    const fallbackTimer = setTimeout(() => {
+      if (connectionStatus !== 'SUBSCRIBED') {
+        console.log('🔄 ENHANCED: Realtime taking too long, switching to optimized polling mode');
+        setConnectionStatus('DEGRADED');
+      }
+    }, 3000); // Only wait 3 seconds
     
     const channel = supabase
       .channel(channelName)
@@ -111,6 +124,10 @@ export const useEnhancedTicketRealtime = (options: EnhancedRealtimeOptions) => {
       )
       .subscribe((status) => {
         console.log('📡 ENHANCED realtime status:', status);
+        
+        // Clear fallback timer if we get a proper status
+        clearTimeout(fallbackTimer);
+        
         setConnectionStatus(status as any);
         
         if (status === 'SUBSCRIBED') {
@@ -118,38 +135,22 @@ export const useEnhancedTicketRealtime = (options: EnhancedRealtimeOptions) => {
           retryAttemptRef.current = 0; // Reset retry count on success
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
           console.error('❌ ENHANCED realtime subscription error/timeout:', status);
-          setConnectionStatus('ERROR');
           
-          // More aggressive retry strategy - try once more then go to polling
-          if (retryAttemptRef.current < 1) {
-            console.log(`🔄 ENHANCED: Quick retry attempt ${retryAttemptRef.current + 1}/1`);
-            
-            if (retryTimeoutRef.current) {
-              clearTimeout(retryTimeoutRef.current);
-            }
-            
-            retryTimeoutRef.current = setTimeout(() => {
-              retryAttemptRef.current++;
-              setupRealtime(); // Retry connection
-            }, 1000); // Quick 1s retry
-          } else {
-            console.log('🚫 ENHANCED: Switching to polling mode after 1 retry');
-            setConnectionStatus('DEGRADED');
-            // Try again after 2 minutes
-            retryTimeoutRef.current = setTimeout(() => {
-              console.log('🔄 ENHANCED: Attempting realtime reconnection after cooldown');
-              retryAttemptRef.current = 0;
-              setupRealtime();
-            }, 120000); // 2 minutes
-          }
+          // In Lovable, realtime often doesn't work, so just go to degraded mode immediately
+          console.log('🚫 ENHANCED: Realtime not supported in this environment, using polling');
+          setConnectionStatus('DEGRADED');
         }
       });
 
     subscriptionRef.current = channel;
-  }, [user, onTicketUpdate, onTicketInsert, onTicketDelete, filters]);
+    
+    return () => {
+      clearTimeout(fallbackTimer);
+    };
+  }, [user, onTicketUpdate, onTicketInsert, onTicketDelete, filters, connectionStatus]);
 
   useEffect(() => {
-    setupRealtime();
+    const cleanup = setupRealtime();
 
     return () => {
       console.log('🔌 Disconnecting ENHANCED realtime');
@@ -160,14 +161,16 @@ export const useEnhancedTicketRealtime = (options: EnhancedRealtimeOptions) => {
         supabase.removeChannel(subscriptionRef.current);
         subscriptionRef.current = null;
       }
+      if (cleanup) cleanup();
     };
   }, [setupRealtime]);
 
   return {
     isConnected: connectionStatus === 'SUBSCRIBED',
-    isDegraded: connectionStatus === 'ERROR' || connectionStatus === 'DEGRADED',
+    isDegraded: connectionStatus === 'DEGRADED',
     status: connectionStatus,
-    retryCount: retryAttemptRef.current
+    retryCount: retryAttemptRef.current,
+    realtimeAttempted
   };
 };
 
