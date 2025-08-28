@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { Ticket } from './useTickets';
@@ -19,18 +19,22 @@ export const useEnhancedTicketRealtime = (options: EnhancedRealtimeOptions) => {
   const { user } = useAuth();
   const { onTicketUpdate, onTicketInsert, onTicketDelete, filters } = options;
   const subscriptionRef = useRef<any>(null);
+  const [connectionStatus, setConnectionStatus] = useState<'CONNECTING' | 'SUBSCRIBED' | 'DEGRADED' | 'ERROR'>('CONNECTING');
+  const retryAttemptRef = useRef(0);
+  const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
+  const setupRealtime = useCallback(() => {
     if (!user) return;
 
-    console.log('🔄 Setting up enhanced realtime subscription for user:', user.id);
+    console.log('🔄 Setting up ROBUST realtime subscription for user:', user.id);
     console.log('🔄 Filters:', filters);
+    console.log('🔄 Retry attempt:', retryAttemptRef.current);
     
     // Initialize audio for notifications
     NotificationSounds.requestAudioPermission();
 
     // Use a unique channel name with timestamp to avoid conflicts
-    const channelName = `enhanced-tickets-${user.id}-${Date.now()}`;
+    const channelName = `robust-tickets-${user.id}-${Date.now()}`;
     
     const channel = supabase
       .channel(channelName)
@@ -42,7 +46,7 @@ export const useEnhancedTicketRealtime = (options: EnhancedRealtimeOptions) => {
           table: 'tickets',
         },
         (payload) => {
-          console.log('🔄 REALTIME TICKET EVENT:', payload.eventType, payload);
+          console.log('🔄 ROBUST REALTIME EVENT:', payload.eventType, payload);
           
           const ticket = payload.new as Ticket;
           const oldTicket = payload.old as Ticket;
@@ -59,7 +63,7 @@ export const useEnhancedTicketRealtime = (options: EnhancedRealtimeOptions) => {
           // SEMPRE processar eventos INSERT para garantir que novos tickets apareçam
           if (payload.eventType === 'INSERT') {
             shouldProcess = true;
-            console.log('🎯 FORÇANDO processamento de INSERT para garantir que ticket apareça');
+            console.log('🎯 FORÇANDO processamento de INSERT');
           }
           
           if (!shouldProcess) {
@@ -71,67 +75,85 @@ export const useEnhancedTicketRealtime = (options: EnhancedRealtimeOptions) => {
 
            switch (payload.eventType) {
              case 'INSERT':
-               console.log('➕ PROCESSANDO NOVO TICKET:', ticket.codigo_ticket, 'ID:', ticket.id);
-               console.log('🎯 Chamando onTicketInsert callback...');
-               
-               // Não tocar som aqui - delegado para useTicketNotifications
-               // para evitar duplicação
+               console.log('➕ ROBUST: PROCESSANDO NOVO TICKET:', ticket.codigo_ticket, 'ID:', ticket.id);
+               console.log('🎯 ROBUST: Chamando onTicketInsert callback...');
                
                onTicketInsert(ticket);
-               console.log('✅ onTicketInsert executado');
+               console.log('✅ ROBUST: onTicketInsert executado');
                break;
               
             case 'UPDATE':
-              console.log('📝 Ticket updated:', ticket.codigo_ticket, {
+              console.log('📝 ROBUST: Ticket updated:', ticket.codigo_ticket, {
                 oldStatus: oldTicket?.status,
                 newStatus: ticket.status,
                 oldPriority: oldTicket?.prioridade,
                 newPriority: ticket.prioridade
               });
               
-              // Play sound if priority escalated or became crisis
-              if (ticket.prioridade === 'crise' && oldTicket?.prioridade !== 'crise') {
-                NotificationSounds.playCriticalAlert();
-              } else if (ticket.prioridade === 'imediato' && oldTicket?.prioridade !== 'imediato' && oldTicket?.prioridade !== 'crise') {
-                NotificationSounds.playNotificationSound('warning');
-              }
-              
               onTicketUpdate(ticket);
               break;
               
             case 'DELETE':
-              console.log('🗑️ Ticket deleted:', oldTicket.id);
+              console.log('🗑️ ROBUST: Ticket deleted:', oldTicket.id);
               onTicketDelete(oldTicket.id);
               break;
           }
 
           // Log performance
           const eventEnd = performance.now();
-          console.log(`⚡ Event processing time: ${(eventEnd - eventStart).toFixed(2)}ms`);
+          console.log(`⚡ ROBUST: Event processing time: ${(eventEnd - eventStart).toFixed(2)}ms`);
         }
       )
       .subscribe((status) => {
-        console.log('📡 Enhanced realtime status:', status);
+        console.log('📡 ROBUST realtime status:', status);
+        setConnectionStatus(status as any);
+        
         if (status === 'SUBSCRIBED') {
-          console.log('✅ Enhanced realtime subscription active');
-        } else if (status === 'CHANNEL_ERROR') {
-          console.error('❌ Enhanced realtime subscription error');
+          console.log('✅ ROBUST realtime subscription active');
+          retryAttemptRef.current = 0; // Reset retry count on success
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.error('❌ ROBUST realtime subscription error/timeout:', status);
+          setConnectionStatus('ERROR');
+          
+          // Implement retry with exponential backoff
+          const retryDelays = [1000, 2000, 5000, 10000]; // 1s, 2s, 5s, 10s max
+          const delay = retryDelays[Math.min(retryAttemptRef.current, retryDelays.length - 1)];
+          
+          console.log(`🔄 ROBUST: Retrying in ${delay}ms (attempt ${retryAttemptRef.current + 1})`);
+          
+          if (retryTimeoutRef.current) {
+            clearTimeout(retryTimeoutRef.current);
+          }
+          
+          retryTimeoutRef.current = setTimeout(() => {
+            retryAttemptRef.current++;
+            setupRealtime(); // Retry connection
+          }, delay);
         }
       });
 
     subscriptionRef.current = channel;
+  }, [user, onTicketUpdate, onTicketInsert, onTicketDelete, filters]);
+
+  useEffect(() => {
+    setupRealtime();
 
     return () => {
-      console.log('🔌 Disconnecting enhanced realtime');
+      console.log('🔌 Disconnecting ROBUST realtime');
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+      }
       if (subscriptionRef.current) {
         supabase.removeChannel(subscriptionRef.current);
         subscriptionRef.current = null;
       }
     };
-  }, [user, onTicketUpdate, onTicketInsert, onTicketDelete, filters]);
+  }, [setupRealtime]);
 
   return {
-    isConnected: !!subscriptionRef.current
+    isConnected: connectionStatus === 'SUBSCRIBED',
+    isDegraded: connectionStatus === 'ERROR' || connectionStatus === 'DEGRADED',
+    status: connectionStatus
   };
 };
 

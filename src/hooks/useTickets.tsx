@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useRole } from './useRole';
@@ -366,21 +366,21 @@ export const useTickets = (filters: TicketFilters) => {
     fetchTicketStats();
   };
 
-  const handleTicketInsert = (ticket: Ticket) => {
-    console.log('➕ REALTIME TICKET INSERT HANDLER CALLED:', ticket.codigo_ticket, ticket.id);
-    console.log('📊 Current tickets count before insert:', tickets.length);
+  const handleTicketInsert = useCallback((ticket: Ticket) => {
+    console.log('🎯 OPTIMIZED: handleTicketInsert called with ticket:', ticket.codigo_ticket, 'ID:', ticket.id);
+    console.log('📊 OPTIMIZED: Current tickets count before insert:', tickets.length);
     
     // Force immediate re-render and state update
     setTickets(prev => {
       const exists = prev.find(t => t.id === ticket.id);
       if (exists) {
-        console.log('⚠️ Ticket already exists, skipping insert');
+        console.log('⚠️ OPTIMIZED: Ticket already exists, skipping insert');
         return prev;
       }
       
       const newTickets = [ticket, ...prev];
-      console.log('✅ Ticket added to state, new count:', newTickets.length);
-      console.log('🎫 New ticket details:', {
+      console.log('✅ OPTIMIZED: Ticket added to state, new count:', newTickets.length);
+      console.log('🎫 OPTIMIZED: New ticket details:', {
         id: ticket.id,
         codigo: ticket.codigo_ticket,
         categoria: ticket.categoria,
@@ -388,17 +388,12 @@ export const useTickets = (filters: TicketFilters) => {
         status: ticket.status
       });
       
-      // Force immediate re-render by triggering a state change
-      setTimeout(() => {
-        console.log('🔄 Forcing re-render after ticket insert');
-      }, 0);
-      
       return newTickets;
     });
     
     fetchTicketStats();
-    console.log('📈 Stats refresh triggered');
-  };
+    console.log('📈 OPTIMIZED: Stats refresh triggered');
+  }, [fetchTicketStats]);
 
   const handleTicketDelete = (ticketId: string) => {
     console.log('🗑️ Realtime ticket delete received:', ticketId);

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
@@ -7,24 +7,21 @@ import { NotificationSounds } from '@/lib/notification-sounds';
 export const useTicketNotifications = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [audioEnabled, setAudioEnabled] = useState(false);
 
-  // Initialize notification sounds
+  // Initialize notification sounds on mount
   useEffect(() => {
-    NotificationSounds.requestAudioPermission();
+    NotificationSounds.requestAudioPermission().then(setAudioEnabled);
   }, []);
 
   // Simple realtime subscription with direct client instance
   useEffect(() => {
     if (!user) return;
 
-    console.log('🔔 Setting up UNIFIED ticket notifications for user:', user.id);
+    console.log('🔔 Setting up SIMPLE notification system for user:', user.id);
     
     const channel = supabase
-      .channel('unified-tickets-realtime', {
-        config: {
-          presence: { key: user.id }
-        }
-      })
+      .channel(`simple-notifications-${user.id}-${Date.now()}`)
       .on(
         'postgres_changes',
         {
@@ -125,6 +122,7 @@ export const useTicketNotifications = () => {
 
   return {
     testNotificationSound,
-    testCriticalSound
+    testCriticalSound,
+    audioEnabled
   };
 };
