@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -12,12 +13,12 @@ export interface Ticket {
   descricao_problema?: string;
   status: 'aberto' | 'em_atendimento' | 'escalonado' | 'concluido';
   prioridade: 'crise' | 'imediato' | 'ate_1_hora' | 'ainda_hoje' | 'posso_esperar';
-  categoria?: string;
+  categoria?: 'midia' | 'rh' | 'juridico' | 'sistema' | 'operacoes' | 'financeiro' | 'outro';
   unidade_id: string;
   equipe_responsavel_id?: string;
   franqueado_id?: string;
   criado_por?: string;
-  status_sla?: string;
+  status_sla: 'dentro_prazo' | 'alerta' | 'vencido';
   data_abertura: string;
   data_limite_sla?: string;
   resolvido_em?: string;
@@ -35,6 +36,7 @@ export interface Ticket {
   atendimento_iniciado_em?: string;
   atendimento_iniciado_por?: string;
   colaborador_id?: string;
+  arquivos?: any;
   unidades?: { 
     grupo?: string; 
     cidade?: string; 
@@ -93,7 +95,7 @@ export const useTickets = (filters: TicketFilters) => {
           equipes:equipe_responsavel_id(nome),
           unidades:unidade_id(grupo, cidade, uf),
           colaboradores:colaborador_id(nome_completo),
-          created_by_profile:criado_por(nome_completo)
+          created_by_profile:profiles!tickets_criado_por_fkey(nome_completo)
         `)
         .order('position', { ascending: true });
 
@@ -329,7 +331,7 @@ export const useTickets = (filters: TicketFilters) => {
     }
   }, [toast]);
 
-  // Create ticket function for compatibility
+  // Create ticket function
   const createTicket = useCallback(async (ticketData: any) => {
     try {
       const { data, error } = await supabase
@@ -356,12 +358,12 @@ export const useTickets = (filters: TicketFilters) => {
     handleTicketInsert,
     handleTicketDelete,
     changeTicketStatus,
-    createTicket, // Add for compatibility
+    createTicket,
   };
 };
 
 // Export useTicketMessages for compatibility
-export const useTicketMessages = (ticketId: string) => {
+export const useTicketMessages = (ticketId?: string) => {
   // Simple implementation for compatibility
   return {
     messages: [],

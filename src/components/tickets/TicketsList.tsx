@@ -1,233 +1,137 @@
-
-import { Clock, AlertTriangle, CheckCircle, User, Building } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import React from 'react';
+import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useTickets, type TicketFilters } from '@/hooks/useTickets';
-import { TicketActions } from './TicketActions';
-import { formatDistanceToNowInSaoPaulo } from '@/lib/date-utils';
 import { cn } from '@/lib/utils';
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { Ticket } from '@/hooks/useTickets';
 
 interface TicketsListProps {
-  filters: TicketFilters;
+  tickets: Ticket[];
+  loading: boolean;
   onTicketSelect: (ticketId: string) => void;
   selectedTicketId: string | null;
+  showFilters: boolean;
+  onToggleFilters: () => void;
 }
 
-export const TicketsList = ({ filters, onTicketSelect, selectedTicketId }: TicketsListProps) => {
-  const { tickets, loading } = useTickets(filters);
-  const [equipes, setEquipes] = useState<Array<{ id: string; nome: string }>>([]);
-
-  // Fetch equipes for the action buttons
-  useEffect(() => {
-    const fetchEquipes = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('equipes')
-          .select('id, nome')
-          .eq('ativo', true)
-          .order('nome');
-
-        if (!error && data) {
-          setEquipes(data);
-        }
-      } catch (error) {
-        console.error('Error fetching equipes:', error);
-      }
-    };
-
-    fetchEquipes();
-  }, []);
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'aberto': return 'bg-blue-500';
-      case 'em_atendimento': return 'bg-yellow-500';
-      case 'escalonado': return 'bg-orange-500';
-      case 'concluido': return 'bg-green-500';
-      default: return 'bg-gray-500';
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'aberto': return 'Aberto';
-      case 'em_atendimento': return 'Em Atendimento';
-      case 'escalonado': return 'Escalonado';
-      case 'concluido': return 'Concluído';
-      default: return status;
-    }
-  };
-
-  const getPriorityColor = (prioridade: string) => {
-    switch (prioridade) {
-      case 'crise': return 'destructive';
-      case 'imediato': return 'destructive';
-      case 'ate_1_hora': return 'outline';
-      case 'ainda_hoje': return 'secondary';
-      case 'posso_esperar': return 'secondary';
-      default: return 'secondary';
-    }
-  };
-
-  const getPriorityLabel = (prioridade: string) => {
-    switch (prioridade) {
-      case 'crise': return 'Crise';
-      case 'imediato': return 'Imediato';
-      case 'ate_1_hora': return 'Até 1h';
-      case 'ainda_hoje': return 'Ainda Hoje';
-      case 'posso_esperar': return 'Posso Esperar';
-      default: return prioridade;
-    }
-  };
-
-  const getSLAIcon = (status_sla: string) => {
-    switch (status_sla) {
-      case 'vencido': return <AlertTriangle className="h-4 w-4 text-destructive" />;
-      case 'alerta': return <Clock className="h-4 w-4 text-yellow-500" />;
-      case 'dentro_prazo': return <CheckCircle className="h-4 w-4 text-green-500" />;
-      default: return null;
-    }
-  };
-
-  const getTicketDisplayTitle = (ticket: any) => {
-    if (ticket.titulo) {
-      return ticket.titulo;
-    }
-    // Fallback: primeiro 50 chars da descrição
-    return ticket.descricao_problema.length > 50 
-      ? ticket.descricao_problema.substring(0, 50) + '...'
-      : ticket.descricao_problema;
-  };
-
-  if (loading) {
-    return (
-      <div className="space-y-4">
-        {[...Array(5)].map((_, i) => (
-          <Card key={i}>
-            <CardContent className="p-4">
-              <Skeleton className="h-4 w-32 mb-2" />
-              <Skeleton className="h-8 w-full mb-2" />
-              <div className="flex gap-2">
-                <Skeleton className="h-6 w-16" />
-                <Skeleton className="h-6 w-20" />
-                <Skeleton className="h-6 w-24" />
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    );
+const getPriorityVariant = (priority: string) => {
+  switch (priority) {
+    case 'crise': return 'critical';
+    case 'imediato': return 'destructive';
+    case 'ate_1_hora': return 'warning';
+    case 'ainda_hoje': return 'info';
+    case 'posso_esperar': return 'success';
+    default: return 'default';
   }
+};
 
-  if (tickets.length === 0) {
-    return (
-      <Card>
-        <CardContent className="p-6 text-center text-muted-foreground">
-          <p>Nenhum ticket encontrado com os filtros aplicados</p>
-        </CardContent>
-      </Card>
-    );
+const getPriorityLabel = (priority: string) => {
+  switch (priority) {
+    case 'crise': return 'Crise';
+    case 'imediato': return 'Imediato';
+    case 'ate_1_hora': return 'Em 1h';
+    case 'ainda_hoje': return 'Hoje';
+    case 'posso_esperar': return 'Aguardar';
+    default: return 'Normal';
   }
+};
+
+const getStatusVariant = (status: string) => {
+  switch (status) {
+    case 'aberto': return 'secondary';
+    case 'em_atendimento': return 'primary';
+    case 'escalonado': return 'warning';
+    case 'concluido': return 'success';
+    default: return 'default';
+  }
+};
+
+const getStatusLabel = (status: string) => {
+  switch (status) {
+    case 'aberto': return 'Aberto';
+    case 'em_atendimento': return 'Em Atendimento';
+    case 'escalonado': return 'Escalonado';
+    case 'concluido': return 'Concluído';
+    default: return 'Desconhecido';
+  }
+};
+
+export const TicketsList: React.FC<TicketsListProps> = ({
+  tickets,
+  loading,
+  onTicketSelect,
+  selectedTicketId,
+  showFilters,
+  onToggleFilters,
+}) => {
+  const filteredTickets = tickets || [];
 
   return (
-    <div className="space-y-4">
-      {tickets.map((ticket) => (
-        <Card 
-          key={ticket.id}
-          className={cn(
-            "cursor-pointer transition-all hover:shadow-md",
-            selectedTicketId === ticket.id && "ring-2 ring-primary"
-          )}
-        >
-          <CardContent className="p-4">
-            <div className="flex items-start justify-between mb-3">
-              <div className="space-y-1 flex-1" onClick={() => onTicketSelect(ticket.id)}>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {loading ? (
+        <div className="col-span-full text-center">Carregando tickets...</div>
+      ) : filteredTickets.length === 0 ? (
+        <div className="col-span-full text-center">Nenhum ticket encontrado.</div>
+      ) : (
+          filteredTickets.map((ticket) => (
+            <Card
+              key={ticket.id}
+              className={cn(
+                "p-4 cursor-pointer transition-all duration-200 hover:shadow-card hover:-translate-y-1",
+                ticket.id === selectedTicketId && "ring-2 ring-primary"
+              )}
+              onClick={() => onTicketSelect(ticket.id)}
+            >
+              <div className="flex items-start justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-xs text-muted-foreground">
-                    {ticket.codigo_ticket}
-                  </span>
-                  {getSLAIcon(ticket.status_sla)}
-                  {ticket.reaberto_count > 0 && (
-                    <Badge variant="outline" className="text-xs">
-                      Reaberto {ticket.reaberto_count}x
-                    </Badge>
-                  )}
-                </div>
-                <div className="glass-badge p-3 rounded-lg">
-                  <h3 className="font-medium text-sm line-clamp-2 text-foreground">
-                    {(() => {
-                      const title = getTicketDisplayTitle(ticket);
-                      const words = title.trim().split(/\s+/);
-                      return words.length > 3 ? words.slice(0, 3).join(' ') : title;
-                    })()}
-                  </h3>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {formatDistanceToNowInSaoPaulo(ticket.created_at, { addSuffix: true })}
-                </p>
-              </div>
-              
-              <div className="flex flex-col items-end gap-2 ml-4">
-                <div className="flex gap-2">
-                  <Badge variant={getPriorityColor(ticket.prioridade)}>
+                  <Badge 
+                    variant={getPriorityVariant(ticket.prioridade)}
+                    className="text-xs"
+                  >
                     {getPriorityLabel(ticket.prioridade)}
                   </Badge>
-                  <div className="flex items-center gap-1">
-                    <div className={cn("w-2 h-2 rounded-full", getStatusColor(ticket.status))} />
-                    <span className="text-xs">{getStatusLabel(ticket.status)}</span>
-                  </div>
-                </div>
-                
-                <TicketActions ticket={ticket} equipes={equipes} size="sm" />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between text-xs text-muted-foreground" onClick={() => onTicketSelect(ticket.id)}>
-              <div className="flex items-center gap-4">
-                {ticket.equipes?.nome && (
-                  <Badge variant="secondary" className="text-xs">
-                    {ticket.equipes.nome}
+                  <Badge 
+                    variant={getStatusVariant(ticket.status)}
+                    className="text-xs"
+                  >
+                    {getStatusLabel(ticket.status)}
                   </Badge>
-                )}
-                
-                <div className="flex items-center gap-1">
-                  <Building className="h-3 w-3" />
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  {ticket.unidades?.grupo || 'N/A'}
+                </span>
+              </div>
+              
+              <h3 className="font-semibold mb-1 text-sm line-clamp-1">
+                {ticket.codigo_ticket} - {ticket.titulo || 'Sem título'}
+              </h3>
+              
+              <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                {ticket.descricao_problema || 'Sem descrição'}
+              </p>
+              
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <div className="flex items-center gap-2">
                   <span>
-                    {(() => {
-                      const unidade = ticket.unidades;
-                      if (unidade?.cidade && unidade?.uf && unidade.cidade !== '-' && unidade.uf !== '-') {
-                        return `${unidade.cidade} - ${unidade.uf}`;
-                      }
-                      if (unidade?.grupo) {
-                        return unidade.grupo;
-                      }
-                      return ticket.unidade_id || 'Sem unidade';
-                    })()}
+                    {ticket.colaboradores?.nome_completo || ticket.created_by_profile?.nome_completo || 'Sistema'}
                   </span>
                 </div>
-
-                {/* Mostrar solicitante */}
-                <div className="flex items-center gap-1">
-                  <User className="h-3 w-3" />
-                  <span>
-                    {ticket.colaboradores?.nome_completo || 
-                     ticket.created_by_profile?.nome_completo || 
-                     (ticket.franqueado_id ? "Franqueado" : "Sistema")}
-                  </span>
+                <div className="flex items-center gap-2">
+                  {ticket.canal_origem && (
+                    <Badge variant="outline" className="text-xs">
+                      {ticket.canal_origem}
+                    </Badge>
+                  )}
+                  <Badge 
+                    variant={ticket.status_sla === 'vencido' ? 'destructive' : ticket.status_sla === 'alerta' ? 'warning' : 'success'}
+                    className="text-xs"
+                  >
+                    SLA {ticket.status_sla || 'dentro_prazo'}
+                  </Badge>
                 </div>
               </div>
-
-              <div className="flex items-center gap-1">
-                <span className="capitalize">{ticket.canal_origem}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+            </Card>
+          ))
+      )}
     </div>
   );
 };
