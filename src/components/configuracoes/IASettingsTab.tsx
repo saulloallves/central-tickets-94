@@ -175,39 +175,61 @@ export function IASettingsTab() {
         headers['Authorization'] = `Bearer ${settings.api_key}`;
       }
 
+      console.log('Testando conexão Lambda:', {
+        url: `${settings.api_base_url}/models`,
+        headers: Object.keys(headers),
+      });
+
       const response = await fetch(`${settings.api_base_url}/models`, {
         method: 'GET',
         headers,
+        mode: 'cors', // Explicitly set CORS mode
       });
 
+      console.log('Resposta da API:', response.status, response.statusText);
+
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        const errorText = await response.text().catch(() => 'Sem resposta do servidor');
+        throw new Error(`HTTP ${response.status}: ${response.statusText}\n${errorText}`);
       }
 
       const data = await response.json();
+      console.log('Dados recebidos:', data);
       
-      // Process models list (assuming standard OpenAI-like format)
-      const models = data.data || data.models || [];
+      // Process models list (try different response formats)
+      let models = [];
+      if (data.data && Array.isArray(data.data)) {
+        models = data.data;
+      } else if (data.models && Array.isArray(data.models)) {
+        models = data.models;
+      } else if (Array.isArray(data)) {
+        models = data;
+      } else {
+        throw new Error('Formato de resposta não reconhecido. Esperado: {data: []} ou {models: []} ou []');
+      }
+
       const formattedModels = models.map((model: any) => ({
-        value: model.id || model.model,
-        label: model.id || model.model,
-        description: model.description || 'Modelo customizado da API Lambda'
+        value: model.id || model.model || model.name || String(model),
+        label: model.id || model.model || model.name || String(model),
+        description: model.description || model.desc || 'Modelo customizado da API Lambda'
       }));
+
+      if (formattedModels.length === 0) {
+        throw new Error('Nenhum modelo encontrado na resposta da API');
+      }
 
       setLambdaModels(formattedModels);
       setConnectionStatus('success');
       setOriginalSettings({ ...settings });
 
       // Update models to use the first available Lambda model
-      if (formattedModels.length > 0) {
-        const defaultModel = formattedModels[0].value;
-        setSettings(prev => ({
-          ...prev,
-          modelo_sugestao: defaultModel,
-          modelo_chat: defaultModel,
-          modelo_classificacao: defaultModel,
-        }));
-      }
+      const defaultModel = formattedModels[0].value;
+      setSettings(prev => ({
+        ...prev,
+        modelo_sugestao: defaultModel,
+        modelo_chat: defaultModel,
+        modelo_classificacao: defaultModel,
+      }));
 
       toast({
         title: "✅ Conexão Realizada!",
@@ -216,9 +238,17 @@ export function IASettingsTab() {
     } catch (error) {
       console.error('Erro ao testar conexão Lambda:', error);
       setConnectionStatus('error');
+      
+      let errorMessage = 'Erro desconhecido';
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        errorMessage = 'Falha na conexão: Verifique se a URL está correta e se o servidor está acessível. Possível problema de CORS.';
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
       toast({
         title: "Erro na Conexão",
-        description: error instanceof Error ? error.message : "Não foi possível conectar à API Lambda",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
