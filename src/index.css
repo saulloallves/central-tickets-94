@@ -488,7 +488,6 @@ All colors MUST be HSL.
     -webkit-transform: translateZ(0);
     transform: translateZ(0);
   }
-}
 
 /* Custom scrollbar styles */
 .scrollbar-hide {
