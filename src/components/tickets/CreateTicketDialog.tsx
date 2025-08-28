@@ -30,13 +30,13 @@ interface FormData {
   equipe_id: string;
 }
 
-const formSchema: yup.Schema<FormData> = yup.object({
+const formSchema = yup.object({
   titulo: yup.string().required('Título é obrigatório'),
   descricao: yup.string().required('Descrição é obrigatória'),
-  prioridade: yup.string().oneOf(['crise', 'imediato', 'ate_1_hora', 'ainda_hoje', 'posso_esperar']).required('Prioridade é obrigatória'),
-  categoria: yup.string().oneOf(['midia', 'rh', 'juridico', 'sistema', 'operacoes', 'financeiro', 'outro']).required('Categoria é obrigatória'),
+  prioridade: yup.mixed<'crise' | 'imediato' | 'ate_1_hora' | 'ainda_hoje' | 'posso_esperar'>().oneOf(['crise', 'imediato', 'ate_1_hora', 'ainda_hoje', 'posso_esperar']).required('Prioridade é obrigatória'),
+  categoria: yup.mixed<'midia' | 'rh' | 'juridico' | 'sistema' | 'operacoes' | 'financeiro' | 'outro'>().oneOf(['midia', 'rh', 'juridico', 'sistema', 'operacoes', 'financeiro', 'outro']).required('Categoria é obrigatória'),
   equipe_id: yup.string().required('Equipe é obrigatória'),
-}).required();
+});
 
 export function CreateTicketDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const { user } = useAuth();
@@ -61,13 +61,13 @@ export function CreateTicketDialog({ open, onOpenChange }: { open: boolean; onOp
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<FormData>({
+  } = useForm({
     resolver: yupResolver(formSchema),
     defaultValues: {
       titulo: '',
       descricao: '',
-      prioridade: 'posso_esperar',
-      categoria: 'outro',
+      prioridade: 'posso_esperar' as const,
+      categoria: 'outro' as const,
       equipe_id: '',
     },
   });
@@ -141,7 +141,7 @@ export function CreateTicketDialog({ open, onOpenChange }: { open: boolean; onOp
     fetchEquipes();
   }, [toast]);
 
-  const onSubmit: SubmitHandler<FormData> = async (data) => {
+  const onSubmit = async (data: any) => {
     try {
       setSubmitting(true);
       console.log('📝 Creating ticket with data:', data);
