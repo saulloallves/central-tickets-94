@@ -23,13 +23,14 @@ export const useEnhancedTicketRealtime = (options: EnhancedRealtimeOptions) => {
   useEffect(() => {
     if (!user) return;
 
-    console.log('🔄 Setting up enhanced realtime subscription...');
+    console.log('🔄 Setting up enhanced realtime subscription for user:', user.id);
+    console.log('🔄 Filters:', filters);
     
     // Initialize audio for notifications
     NotificationSounds.requestAudioPermission();
 
-    // Enhanced realtime subscription with focused filtering
-    const channelName = `enhanced-tickets-${user.id}`;
+    // Use a unique channel name with timestamp to avoid conflicts
+    const channelName = `enhanced-tickets-${user.id}-${Date.now()}`;
     
     const channel = supabase
       .channel(channelName)
@@ -41,36 +42,49 @@ export const useEnhancedTicketRealtime = (options: EnhancedRealtimeOptions) => {
           table: 'tickets',
         },
         (payload) => {
-          console.log('🔄 Realtime ticket event:', payload.eventType, payload.new || payload.old);
+          console.log('🔄 REALTIME TICKET EVENT:', payload.eventType, payload);
           
           const ticket = payload.new as Ticket;
           const oldTicket = payload.old as Ticket;
 
           // Apply client-side filtering to reduce noise
+          let shouldProcess = true;
           if (filters) {
-            const shouldProcess = filterTicketEvent(ticket || oldTicket, filters);
+            shouldProcess = filterTicketEvent(ticket || oldTicket, filters);
             if (!shouldProcess) {
-              console.log('🔇 Event filtered out:', payload.eventType);
-              return;
+              console.log('🔇 Event filtered out:', payload.eventType, 'ticket:', ticket?.codigo_ticket || oldTicket?.codigo_ticket);
             }
+          }
+          
+          // SEMPRE processar eventos INSERT para garantir que novos tickets apareçam
+          if (payload.eventType === 'INSERT') {
+            shouldProcess = true;
+            console.log('🎯 FORÇANDO processamento de INSERT para garantir que ticket apareça');
+          }
+          
+          if (!shouldProcess) {
+            return;
           }
 
           // Performance timing
           const eventStart = performance.now();
 
-          switch (payload.eventType) {
-            case 'INSERT':
-              console.log('➕ New ticket created:', ticket.codigo_ticket);
-              
-              // Play notification sound if not created by current user
-              if (ticket.criado_por !== user.id) {
-                const soundType = ticket.prioridade === 'crise' ? 'critical' : 
-                                ticket.prioridade === 'imediato' ? 'warning' : 'info';
-                NotificationSounds.playNotificationSound(soundType);
-              }
-              
-              onTicketInsert(ticket);
-              break;
+           switch (payload.eventType) {
+             case 'INSERT':
+               console.log('➕ PROCESSANDO NOVO TICKET:', ticket.codigo_ticket, 'ID:', ticket.id);
+               console.log('🎯 Chamando onTicketInsert callback...');
+               
+               // Play notification sound if not created by current user
+               if (ticket.criado_por !== user.id) {
+                 const soundType = ticket.prioridade === 'crise' ? 'critical' : 
+                                 ticket.prioridade === 'imediato' ? 'warning' : 'info';
+                 NotificationSounds.playNotificationSound(soundType);
+                 console.log('🔊 Som de notificação tocado:', soundType);
+               }
+               
+               onTicketInsert(ticket);
+               console.log('✅ onTicketInsert executado');
+               break;
               
             case 'UPDATE':
               console.log('📝 Ticket updated:', ticket.codigo_ticket, {
