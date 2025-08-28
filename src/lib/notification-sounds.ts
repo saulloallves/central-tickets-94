@@ -49,10 +49,10 @@ export class NotificationSounds {
           duration = 0.6;
           break;
         default: // info
-          frequency1 = 523; // C5
-          frequency2 = 659; // E5
-          frequency3 = 783; // G5
-          duration = 0.5;
+          frequency1 = 440; // A4
+          frequency2 = 554; // C#5
+          frequency3 = 659; // E5
+          duration = 0.7;
       }
       
       // Set oscillator properties - som mais rico
