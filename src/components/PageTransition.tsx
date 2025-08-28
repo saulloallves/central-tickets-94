@@ -8,7 +8,7 @@ interface PageTransitionProps {
 
 const PageTransition: React.FC<PageTransitionProps> = ({ children, className }) => {
   return (
-    <div className={cn("animate-page-enter", className)}>
+    <div className={cn("animate__animated animate__fadeIn animate-fast", className)}>
       {children}
     </div>
   );

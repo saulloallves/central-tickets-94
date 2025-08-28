@@ -411,3 +411,29 @@ All colors MUST be HSL.
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* Animate.css customizations */
+.animate-fast {
+  --animate-duration: 200ms;
+}
+
+/* Modal animations with data-state */
+.animate-portal[data-state="open"] {
+  animation-name: fadeIn;
+  --animate-duration: 200ms;
+}
+
+.animate-portal[data-state="closed"] {
+  animation-name: fadeOut;
+  --animate-duration: 200ms;
+}
+
+.animate-modal[data-state="open"] {
+  animation-name: fadeIn;
+  --animate-duration: 200ms;
+}
+
+.animate-modal[data-state="closed"] {
+  animation-name: fadeOut;
+  --animate-duration: 200ms;
+}
