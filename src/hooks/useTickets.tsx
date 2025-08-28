@@ -358,12 +358,34 @@ export const useTickets = (filters: TicketFilters) => {
     console.log('🔄 Realtime ticket update received:', ticket.codigo_ticket, 'status:', ticket.status);
     
     setTickets(prev => {
-      // Check if ticket still matches current filters
-      const shouldShow = (
-        (filters.status === 'all' || ticket.status === filters.status) &&
-        (filters.unidade_id === 'all' || ticket.unidade_id === filters.unidade_id) &&
-        (filters.equipe_id === 'all' || ticket.equipe_responsavel_id === filters.equipe_id)
-      );
+      // Check if ticket still matches current filters (with proper "minhas_equipes" handling)
+      let shouldShow = true;
+      
+      // Status filter: for Kanban we show all statuses (it has 4 columns)
+      // Only filter status if it's not 'all' and we're not in Kanban view
+      if (filters.status !== 'all' && filters.status !== ticket.status) {
+        // Let Kanban handle its own status visualization
+        shouldShow = true; // Don't filter by status for Kanban sync
+      }
+      
+      // Unit filter
+      if (filters.unidade_id !== 'all' && ticket.unidade_id !== filters.unidade_id) {
+        shouldShow = false;
+      }
+      
+      // Team filter with proper "minhas_equipes" handling
+      if (filters.equipe_id !== 'all') {
+        if (filters.equipe_id === 'minhas_equipes') {
+          // Check if ticket's team is in user's teams
+          const userEquipeIds = userEquipes.map(ue => ue.equipe_id);
+          const isUserTeam = userEquipeIds.includes(ticket.equipe_responsavel_id || '');
+          if (!isUserTeam) {
+            shouldShow = false;
+          }
+        } else if (ticket.equipe_responsavel_id !== filters.equipe_id) {
+          shouldShow = false;
+        }
+      }
 
       const existingIndex = prev.findIndex(t => t.id === ticket.id);
       
@@ -380,7 +402,7 @@ export const useTickets = (filters: TicketFilters) => {
           return prev.filter(t => t.id !== ticket.id);
         }
       } else if (shouldShow) {
-        // Add ticket if it now matches filters (shouldn't happen often with UPDATEs)
+        // Add ticket if it now matches filters (rare for UPDATEs)
         console.log('➕ Adding updated ticket to view');
         return [ticket as Ticket, ...prev];
       }

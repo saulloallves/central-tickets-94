@@ -164,13 +164,13 @@ const Tickets = () => {
   
   const { isPolling } = useTicketFallbackPolling({
     onNewTickets: (newTickets) => {
-      console.log('🔄 OPTIMIZED: Processing new tickets from enhanced polling:', newTickets.length);
+      console.log('🔄 FALLBACK: Processing new tickets from enhanced polling:', newTickets.length);
       newTickets.forEach(ticket => {
         handleTicketInsert(ticket);
         
         // Only trigger sound if we haven't processed this ticket before
         if (ticket.criado_por !== user?.id && !processedTicketIds.has(ticket.id)) {
-          console.log('🔊 OPTIMIZED: Triggering notification sound for NEW ticket:', ticket.codigo_ticket);
+          console.log('🔊 FALLBACK: Triggering notification sound for NEW ticket:', ticket.codigo_ticket);
           
           // Mark this ticket as processed to avoid duplicate sounds
           processedTicketIds.add(ticket.id);
@@ -204,6 +204,12 @@ const Tickets = () => {
         } else if (processedTicketIds.has(ticket.id)) {
           console.log('🔇 OPTIMIZED: Skipping sound for already processed ticket:', ticket.codigo_ticket);
         }
+      });
+    },
+    onUpdatedTickets: (updatedTickets) => {
+      console.log('🔄 FALLBACK: Processing updated tickets:', updatedTickets.length);
+      updatedTickets.forEach(ticket => {
+        handleTicketUpdate(ticket);
       });
     },
     enabled: isDegraded,
