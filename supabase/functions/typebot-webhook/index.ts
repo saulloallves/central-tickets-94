@@ -251,27 +251,77 @@ serve(async (req) => {
     let modelToUse = 'gpt-4.1-2025-04-14'; // Updated to newer model
     let apiProvider = 'openai'; // Default fallback
 
-    // Análise por IA se temos OpenAI e equipes
+    // Sistema de classificação simplificado e robusto
+    let classificationResult = {
+      categoria: 'outro',
+      prioridade: 'posso_esperar',
+      subcategoria: null,
+      is_crise: false,
+      motivo_crise: null,
+      sla_sugerido_horas: 24,
+      equipe_responsavel: null
+    };
+
+    // Fallback inteligente por palavras-chave
+    const messageWords = message.toLowerCase();
+    
+    // Detectar categoria automaticamente
+    if (messageWords.includes('sistema') || messageWords.includes('app') || messageWords.includes('erro') || messageWords.includes('travou') || messageWords.includes('bug')) {
+      classificationResult.categoria = 'sistema';
+    } else if (messageWords.includes('midia') || messageWords.includes('marketing') || messageWords.includes('propaganda') || messageWords.includes('divulgacao')) {
+      classificationResult.categoria = 'midia';
+    } else if (messageWords.includes('juridico') || messageWords.includes('contrato') || messageWords.includes('legal') || messageWords.includes('advogado')) {
+      classificationResult.categoria = 'juridico';
+    } else if (messageWords.includes('rh') || messageWords.includes('funcionario') || messageWords.includes('folha') || messageWords.includes('contratacao')) {
+      classificationResult.categoria = 'rh';
+    } else if (messageWords.includes('financeiro') || messageWords.includes('pagamento') || messageWords.includes('dinheiro') || messageWords.includes('cobranca')) {
+      classificationResult.categoria = 'financeiro';
+    } else if (messageWords.includes('operacao') || messageWords.includes('processo') || messageWords.includes('funcionamento')) {
+      classificationResult.categoria = 'operacoes';
+    }
+
+    // Detectar prioridade automaticamente
+    if (messageWords.includes('urgente') || messageWords.includes('critico') || messageWords.includes('parou') || messageWords.includes('travou tudo')) {
+      classificationResult.prioridade = 'imediato';
+    } else if (messageWords.includes('rapido') || messageWords.includes('hoje') || messageWords.includes('precisa resolver')) {
+      classificationResult.prioridade = 'ainda_hoje';
+    } else if (messageWords.includes('quando possivel') || messageWords.includes('sem pressa') || messageWords.includes('duvida')) {
+      classificationResult.prioridade = 'posso_esperar';
+    }
+
+    // Buscar equipe compatível automaticamente
+    if (equipes && equipes.length > 0) {
+      let equipeEncontrada = equipes.find(eq => 
+        eq.nome.toLowerCase().includes(classificationResult.categoria) || 
+        (eq.introducao && eq.introducao.toLowerCase().includes(classificationResult.categoria)) ||
+        (eq.descricao && eq.descricao.toLowerCase().includes(classificationResult.categoria))
+      );
+      
+      // Se não encontrou por categoria, usar a primeira equipe disponível
+      if (!equipeEncontrada) {
+        equipeEncontrada = equipes[0];
+      }
+      
+      if (equipeEncontrada) {
+        equipeResponsavelId = equipeEncontrada.id;
+        classificationResult.equipe_responsavel = equipeEncontrada.nome;
+        console.log('Equipe automaticamente selecionada:', equipeEncontrada.nome, 'para categoria:', classificationResult.categoria);
+      }
+    }
+
+    // Tentar IA apenas se temos tudo configurado
     if (openaiApiKey && equipes && equipes.length > 0) {
       try {
-        console.log('Starting AI classification...');
-        console.log('Available teams:', equipes.map(eq => `${eq.nome} (${eq.id})`));
+        console.log('Tentando classificação por IA...');
         
-        const equipesInfo = equipes.map(eq => 
-          `- ID: ${eq.id} | Nome: ${eq.nome} | Descrição: ${eq.introducao} - ${eq.descricao}`
-        ).join('\n');
-
-        // Get AI settings for classification  
         const { data: aiSettings } = await supabase
           .from('faq_ai_settings')
           .select('*')
           .eq('ativo', true)
           .maybeSingle();
 
-        modelToUse = aiSettings?.modelo_classificacao || 'gpt-4.1-2025-04-14';
+        modelToUse = aiSettings?.modelo_classificacao || 'gpt-4o-mini';
         apiProvider = aiSettings?.api_provider || 'openai';
-        
-        console.log('Using model:', modelToUse, 'Provider:', apiProvider);
         
         let apiUrl = 'https://api.openai.com/v1/chat/completions';
         let authToken = openaiApiKey;
@@ -279,85 +329,9 @@ serve(async (req) => {
         if (apiProvider === 'lambda' && aiSettings?.api_base_url) {
           apiUrl = `${aiSettings.api_base_url}/chat/completions`;
           authToken = aiSettings.api_key || openaiApiKey;
-          console.log('Using Lambda API:', apiUrl);
-        } else {
-          console.log('Using OpenAI API:', apiUrl);
         }
 
-        const requestBody = {
-          model: modelToUse,
-          messages: [
-            {
-              role: 'system',
-              content: `Você é um classificador especializado em tickets de suporte de franquia. Sua única função é analisar a mensagem e retornar APENAS um JSON válido seguindo EXATAMENTE este formato:
-
-{
-  "prioridade": "imediato|ate_1_hora|ainda_hoje|posso_esperar",
-  "categoria": "juridico|sistema|midia|operacoes|rh|financeiro|outro",
-  "subcategoria": "string ou null",
-  "is_crise": boolean,
-  "motivo_crise": "string ou null",
-  "sla_sugerido_horas": number,
-  "equipe_responsavel": "nome_da_equipe"
-}
-
-REGRAS OBRIGATÓRIAS:
-- RETORNE APENAS O JSON, sem texto adicional
-- NUNCA deixe categoria como null - sempre escolha uma das opções disponíveis
-- NUNCA deixe equipe_responsavel como null - sempre escolha uma equipe da lista
-- Se não souber a categoria exata, use "outro"
-- Se não souber a equipe exata, use a primeira da lista
-- prioridade IMEDIATO: problemas críticos que impedem funcionamento (15min)
-- prioridade ATE_1_HORA: problemas urgentes que afetam produtividade (1h) 
-- prioridade AINDA_HOJE: problemas importantes mas não bloqueiam trabalho (até 18h)
-- prioridade POSSO_ESPERAR: dúvidas, solicitações, problemas menores (24h)
-- is_crise = true APENAS para casos EXTREMAMENTE críticos que paralisam operação
-- motivo_crise APENAS se is_crise = true
-- equipe_responsavel deve ser o NOME EXATO de uma das equipes disponíveis
-
-CATEGORIAS VÁLIDAS:
-- juridico: questões legais, contratos, processos, documentação legal
-- sistema: problemas técnicos, travamentos, erros de sistema, apps
-- midia: marketing, redes sociais, materiais promocionais, comunicação
-- operacoes: processos operacionais, logística, funcionamento da franquia
-- rh: recursos humanos, contratação, folha de pagamento, benefícios
-- financeiro: questões financeiras, pagamentos, cobrança, contabilidade
-- outro: quando não se encaixa nas categorias acima
-
-EQUIPES DISPONÍVEIS:
-${equipesInfo}
-
-EXEMPLO DE RESPOSTA VÁLIDA:
-{
-  "prioridade": "posso_esperar",
-  "categoria": "midia",
-  "subcategoria": "material promocional",
-  "is_crise": false,
-  "motivo_crise": null,
-  "sla_sugerido_horas": 24,
-  "equipe_responsavel": "Mídia"
-}
-
-Analise o conteúdo e classifique adequadamente:`
-            },
-            {
-              role: 'user',
-              content: `Mensagem: ${message}\nCategoria sugerida: ${category_hint || 'não informada'}`
-            }
-          ]
-        };
-
-        // Add appropriate parameters based on model type
-        if (modelToUse.includes('gpt-4.1') || modelToUse.includes('gpt-5') || modelToUse.includes('o3') || modelToUse.includes('o4')) {
-          // Newer models use max_completion_tokens and don't support temperature
-          requestBody.max_completion_tokens = 300;
-        } else {
-          // Legacy models use max_tokens and support temperature
-          requestBody.max_tokens = 300;
-          requestBody.temperature = 0.1;
-        }
-
-        console.log('Sending request to AI with body:', JSON.stringify(requestBody, null, 2));
+        const equipesNomes = equipes.map(eq => eq.nome).join(', ');
 
         const response = await fetch(apiUrl, {
           method: 'POST',
@@ -365,71 +339,93 @@ Analise o conteúdo e classifique adequadamente:`
             'Authorization': `Bearer ${authToken}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(requestBody),
+          body: JSON.stringify({
+            model: modelToUse,
+            messages: [
+              {
+                role: 'system',
+                content: `Classifique este ticket. Retorne APENAS JSON válido:
+{
+  "categoria": "sistema|midia|juridico|rh|financeiro|operacoes|outro",
+  "prioridade": "imediato|ate_1_hora|ainda_hoje|posso_esperar", 
+  "equipe_responsavel": "nome_equipe"
+}
+
+Equipes disponíveis: ${equipesNomes}
+
+Se não souber, use: categoria="outro", prioridade="posso_esperar", equipe_responsavel="${equipes[0]?.nome}"`
+              },
+              {
+                role: 'user',
+                content: `Ticket: ${message}`
+              }
+            ],
+            max_tokens: 200,
+            temperature: 0.1,
+          }),
         });
 
-        console.log('AI API Response status:', response.status);
-        console.log('AI API Response headers:', Object.fromEntries(response.headers.entries()));
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('AI API Error:', errorText);
-          throw new Error(`AI API Error: ${response.status} - ${errorText}`);
-        }
-
-        const aiResponse = await response.json();
-        console.log('Raw AI response:', JSON.stringify(aiResponse, null, 2));
-        
-        const analysis = aiResponse.choices?.[0]?.message?.content;
-        console.log('AI analysis content:', analysis);
-        
-        if (analysis) {
-          try {
-            // Clean response - remove markdown backticks if present
-            let cleanedAnalysis = analysis.trim();
-            if (analysis.includes('```json')) {
-              cleanedAnalysis = analysis.replace(/```json\s*/g, '').replace(/```\s*$/g, '').trim();
-            } else if (analysis.includes('```')) {
-              cleanedAnalysis = analysis.replace(/```\s*/g, '').trim();
-            }
-            
-            console.log('Cleaned analysis for parsing:', cleanedAnalysis);
-            analysisResult = JSON.parse(cleanedAnalysis);
-            console.log('Parsed AI analysis result:', JSON.stringify(analysisResult, null, 2));
-            
-            // Encontrar equipe por nome
-            if (analysisResult.equipe_responsavel) {
-              console.log('Looking for team with name:', analysisResult.equipe_responsavel);
-              const equipeEncontrada = equipes.find(eq => 
-                eq.nome.toLowerCase().trim() === analysisResult.equipe_responsavel.toLowerCase().trim()
-              );
-              if (equipeEncontrada) {
-                equipeResponsavelId = equipeEncontrada.id;
-                console.log('Team matched:', equipeEncontrada.nome, '-> ID:', equipeResponsavelId);
-              } else {
-                console.log('Team not found:', analysisResult.equipe_responsavel);
-                console.log('Available teams:', equipes.map(eq => eq.nome));
+        if (response.ok) {
+          const aiResponse = await response.json();
+          const analysis = aiResponse.choices?.[0]?.message?.content;
+          
+          if (analysis) {
+            try {
+              let cleanedAnalysis = analysis.trim();
+              if (analysis.includes('```json')) {
+                cleanedAnalysis = analysis.replace(/```json\s*/g, '').replace(/```\s*$/g, '').trim();
+              } else if (analysis.includes('```')) {
+                cleanedAnalysis = analysis.replace(/```\s*/g, '').trim();
               }
-            } else {
-              console.log('No team specified in AI response');
+              
+              const aiResult = JSON.parse(cleanedAnalysis);
+              console.log('IA retornou:', aiResult);
+              
+              // Aplicar resultado da IA se válido
+              if (aiResult.categoria) {
+                classificationResult.categoria = aiResult.categoria;
+              }
+              if (aiResult.prioridade) {
+                classificationResult.prioridade = aiResult.prioridade;
+              }
+              if (aiResult.equipe_responsavel) {
+                const equipeEncontrada = equipes.find(eq => 
+                  eq.nome.toLowerCase().includes(aiResult.equipe_responsavel.toLowerCase())
+                );
+                if (equipeEncontrada) {
+                  equipeResponsavelId = equipeEncontrada.id;
+                  classificationResult.equipe_responsavel = equipeEncontrada.nome;
+                }
+              }
+              
+              analysisResult = classificationResult;
+              console.log('Classificação final da IA:', analysisResult);
+              
+            } catch (parseError) {
+              console.error('Erro ao parsear resposta da IA:', parseError);
+              // Manter classificação automática
             }
-          } catch (parseError) {
-            console.error('Error parsing AI response:', parseError);
-            console.log('Raw AI response that failed to parse:', analysis);
           }
         } else {
-          console.error('No analysis content returned from AI');
+          console.error('Erro na API da IA:', response.status, await response.text());
         }
       } catch (error) {
-        console.error('Error in AI classification:', error);
+        console.error('Erro na classificação por IA:', error);
+        // Manter classificação automática
       }
-    } else {
-      console.log('Skipping AI analysis - missing requirements:', {
-        hasOpenAI: !!openaiApiKey,
-        hasEquipes: !!(equipes && equipes.length > 0),
-        equipesCount: equipes?.length || 0
-      });
     }
+
+    // Se não temos analysisResult da IA, usar nossa classificação automática
+    if (!analysisResult) {
+      analysisResult = classificationResult;
+    }
+
+    console.log('Resultado final da classificação:', {
+      categoria: analysisResult.categoria,
+      prioridade: analysisResult.prioridade,
+      equipe_id: equipeResponsavelId,
+      equipe_nome: analysisResult.equipe_responsavel
+    });
 
     // Aplicar fallbacks se a análise falhou ou retornou null
     if (!analysisResult || !analysisResult.categoria || !analysisResult.equipe_responsavel) {
