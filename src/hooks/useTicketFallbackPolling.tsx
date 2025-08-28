@@ -30,9 +30,15 @@ export const useTicketFallbackPolling = ({
     try {
       console.log('🔄 FALLBACK: Polling for new tickets...');
       
+      // Enhanced query with equipe join to match main query
       let query = supabase
         .from('tickets')
-        .select('*')
+        .select(`
+          *,
+          equipes!equipe_responsavel_id(nome),
+          unidades(id, grupo, cidade, uf),
+          colaboradores(nome_completo)
+        `)
         .order('data_abertura', { ascending: false });
 
       // Apply timestamp filter if we have a last seen timestamp
@@ -69,7 +75,7 @@ export const useTicketFallbackPolling = ({
         lastSeenTimestampRef.current = newTickets[0].data_abertura;
         
         // Call the handler with new tickets
-        onNewTickets(newTickets as Ticket[]);
+        onNewTickets(newTickets as any);
       } else {
         console.log('📭 FALLBACK: No new tickets found');
       }

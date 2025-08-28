@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useRole } from '@/hooks/useRole';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 import { TicketsKanban } from '@/components/tickets/TicketsKanban';
 import { CreateTicketDialog } from '@/components/tickets/CreateTicketDialog';
 import { TicketDetail } from '@/components/tickets/TicketDetail';
@@ -35,6 +37,8 @@ interface Equipe {
 const Tickets = () => {
   const { isAdmin, isSupervisor } = useRole();
   const { userEquipes } = useUserEquipes();
+  const { user } = useAuth();
+  const { toast } = useToast();
   
   // Initialize notification system
   const { testNotificationSound, testCriticalSound } = useTicketNotifications();
@@ -120,6 +124,29 @@ const Tickets = () => {
       console.log('🔄 FALLBACK: Processing new tickets from polling:', newTickets.length);
       newTickets.forEach(ticket => {
         handleTicketInsert(ticket);
+        
+        // Trigger notification sound manually for fallback polling
+        if (ticket.criado_por !== user?.id) {
+          console.log('🔊 FALLBACK: Triggering notification sound for:', ticket.codigo_ticket);
+          
+          // Import and trigger sound based on priority
+          import('@/lib/notification-sounds').then(({ NotificationSounds }) => {
+            let soundType: 'info' | 'warning' | 'critical' = 'info';
+            if (ticket.prioridade === 'crise') {
+              soundType = 'critical';
+            } else if (ticket.prioridade === 'imediato') {
+              soundType = 'warning';
+            }
+            NotificationSounds.playNotificationSound(soundType);
+          });
+          
+          // Show toast notification
+          toast({
+            title: "🎫 Novo Ticket Recebido",
+            description: `${ticket.titulo || ticket.descricao_problema || 'Sem título'} - ${ticket.codigo_ticket}`,
+            duration: 5000,
+          });
+        }
       });
     },
     enabled: isDegraded,
