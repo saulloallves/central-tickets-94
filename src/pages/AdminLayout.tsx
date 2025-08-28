@@ -11,6 +11,7 @@ import { MobileBottomNav } from "@/components/MobileBottomNav"
 import { Toaster } from "@/components/ui/toaster"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
+import PageTransition from "@/components/PageTransition";
 
 interface AdminLayoutProps {
   children: React.ReactNode
@@ -79,9 +80,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       >
         {/* Main content area - SCROLLÁVEL */}
         <main className={cn("flex-1 overflow-y-auto", isMobile ? "p-4" : "p-6")}>
-          <div className="w-full space-y-6 animate__animated animate__fadeIn animate-fast">
-            {children}
-          </div>
+          <PageTransition>
+            <div className="w-full space-y-6">
+              {children}
+            </div>
+          </PageTransition>
         </main>
       </div>
       

@@ -6,6 +6,7 @@ import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { Toaster } from "@/components/ui/toaster";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import PageTransition from "@/components/PageTransition";
 
 interface FranqueadoLayoutProps {
   children: React.ReactNode;
@@ -55,9 +56,11 @@ export default function FranqueadoLayout({ children }: FranqueadoLayoutProps) {
       >
         {/* Main content area with optimized spacing */}
         <main className={cn("flex-1", isMobile ? "p-4" : "p-6")}>
-          <div className="w-full space-y-6 animate__animated animate__fadeIn animate-fast">
-            {children}
-          </div>
+          <PageTransition>
+            <div className="w-full space-y-6">
+              {children}
+            </div>
+          </PageTransition>
         </main>
       </div>
       
