@@ -42,6 +42,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTickets, type TicketFilters, type Ticket } from '@/hooks/useTickets';
+import { useTicketsEdgeFunctions } from '@/hooks/useTicketsEdgeFunctions';
 import { useSimpleTicketDragDrop } from '@/hooks/useSimpleTicketDragDrop';
 import { TicketDetail } from './TicketDetail';
 import { TicketActions } from './TicketActions';
@@ -477,6 +478,16 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
   const [pendingMoves, setPendingMoves] = useState<Set<string>>(new Set());
   
   const { activeCrises } = useNewCrisisManagement();
+  
+  const { setDragStatus } = useTicketsEdgeFunctions({
+    search: '',
+    status: 'all',
+    categoria: 'all',
+    prioridade: 'all',
+    unidade_id: 'all',
+    status_sla: 'all',
+    equipe_id: 'all'
+  });
 
   // Use optimistic tickets se existirem, senão use os tickets normais
   const displayTickets = optimisticTickets.length > 0 ? optimisticTickets : tickets;
@@ -516,6 +527,7 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
     const ticket = active.data.current?.ticket;
     setActiveTicket(ticket);
     setDraggedOverColumn(null);
+    setDragStatus(true);
   };
 
   const handleDragOver = (event: DragOverEvent) => {
@@ -532,6 +544,7 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
     const { active, over } = event;
     setActiveTicket(null);
     setDraggedOverColumn(null);
+    setDragStatus(false);
 
     console.log('🎯 Drag end event:', {
       over: over?.id,

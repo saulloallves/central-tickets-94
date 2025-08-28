@@ -71,6 +71,9 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
   const [loading, setLoading] = useState(true);
   const fetchedRef = useRef(false);
   const realtimeChannelRef = useRef<any>(null);
+  const isDragging = useRef<boolean>(false);
+  const realtimeDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  const backupPollingRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch tickets using regular supabase query (read-only)
   const fetchTickets = useCallback(async () => {
@@ -205,9 +208,21 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
             old: payload.old ? { id: (payload.old as any)?.id, codigo_ticket: (payload.old as any)?.codigo_ticket } : null
           });
           
-          // Refetch tickets on any change to ensure consistency with server state
-          console.log('🔄 Triggering ticket refetch due to realtime event');
-          fetchTickets();
+          // Skip refetch if we're in the middle of a drag operation
+          if (isDragging.current) {
+            console.log('🚫 Skipping realtime refetch during drag operation');
+            return;
+          }
+          
+          // Debounce realtime refetches to prevent excessive updates
+          if (realtimeDebounceRef.current) {
+            clearTimeout(realtimeDebounceRef.current);
+          }
+          
+          realtimeDebounceRef.current = setTimeout(() => {
+            console.log('🔄 Triggering ticket refetch due to realtime event');
+            fetchTickets();
+          }, 1000); // Increased debounce time
         }
       )
       .subscribe((status) => {
@@ -431,9 +446,8 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
         description: data.message || "Ticket movido com sucesso",
       });
       
-      // Force immediate refetch to ensure UI consistency
-      console.log('🔄 Force refetching tickets after move');
-      await fetchTickets();
+      // Skip immediate refetch - realtime will handle it
+      console.log('⏭️ Skipping immediate refetch - letting realtime handle updates');
       return data.ticket;
     } catch (error) {
       console.error('Error moving ticket:', error);
@@ -455,5 +469,6 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
     updateTicket,
     deleteTicket,
     moveTicket,
+    setDragStatus: (dragging: boolean) => { isDragging.current = dragging; },
   };
 };
