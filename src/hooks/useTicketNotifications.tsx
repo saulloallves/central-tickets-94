@@ -17,10 +17,13 @@ export const useTicketNotifications = () => {
   useEffect(() => {
     if (!user) return;
 
-    console.log('🔔 Setting up ticket notifications...');
+    console.log('🔔 Setting up ticket notifications for user:', user.id);
 
+    // Simpler channel name to avoid conflicts
+    const channelName = `tickets-notifications-${Date.now()}`;
+    
     const channel = supabase
-      .channel('ticket-notifications')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -29,27 +32,33 @@ export const useTicketNotifications = () => {
           table: 'tickets'
         },
         (payload) => {
-          console.log('🎫 New ticket event:', payload);
+          console.log('🎫 New ticket INSERT event:', payload);
           const newTicket = payload.new as any;
           
-          // Don't show notification if ticket was created by current user
-          if (newTicket.criado_por === user.id) {
-            console.log('👤 Skipping notification - created by current user');
-            return;
+          // Play sound for all new tickets except those created by current user
+          if (newTicket.criado_por !== user.id) {
+            console.log('🔊 Playing notification sound for new ticket:', newTicket.codigo_ticket);
+            
+            // Determine sound type based on priority
+            let soundType: 'info' | 'warning' | 'critical' = 'info';
+            if (newTicket.prioridade === 'crise') {
+              soundType = 'critical';
+            } else if (newTicket.prioridade === 'imediato') {
+              soundType = 'warning';
+            }
+            
+            // Play the sound
+            NotificationSounds.playNotificationSound(soundType);
+
+            // Show toast notification
+            toast({
+              title: "🎫 Novo Ticket Recebido",
+              description: `${newTicket.titulo || newTicket.descricao_problema || 'Sem título'} - ${newTicket.codigo_ticket}`,
+              duration: 5000,
+            });
+          } else {
+            console.log('👤 Skipping notification - ticket created by current user');
           }
-
-          console.log('🔊 Playing notification sound for new ticket');
-          // Play notification sound based on priority
-          const soundType = newTicket.prioridade === 'crise' ? 'critical' : 
-                          newTicket.prioridade === 'imediato' ? 'warning' : 'info';
-          NotificationSounds.playNotificationSound(soundType);
-
-          // Show toast notification
-          toast({
-            title: "🎫 Novo Ticket Recebido",
-            description: `${newTicket.titulo || newTicket.descricao_problema || 'Sem título'} - ${newTicket.codigo_ticket}`,
-            duration: 5000,
-          });
         }
       )
       .on(
@@ -60,7 +69,7 @@ export const useTicketNotifications = () => {
           table: 'tickets'
         },
         (payload) => {
-          console.log('📝 Ticket update event:', payload);
+          console.log('📝 Ticket UPDATE event:', payload);
           const updatedTicket = payload.new as any;
           const oldTicket = payload.old as any;
           
@@ -70,9 +79,9 @@ export const useTicketNotifications = () => {
             return;
           }
 
-          // Notify when ticket becomes crisis or escalates priority
+          // Check for priority escalation
           if (updatedTicket.prioridade === 'crise' && oldTicket?.prioridade !== 'crise') {
-            console.log('🚨 Playing CRISIS alert');
+            console.log('🚨 Playing CRISIS alert for ticket:', updatedTicket.codigo_ticket);
             NotificationSounds.playCriticalAlert();
             toast({
               title: "🚨 CRISE DETECTADA",
@@ -83,7 +92,7 @@ export const useTicketNotifications = () => {
           } else if (updatedTicket.prioridade === 'imediato' && 
                     oldTicket?.prioridade !== 'imediato' && 
                     oldTicket?.prioridade !== 'crise') {
-            console.log('⚠️ Playing WARNING alert');
+            console.log('⚠️ Playing WARNING alert for priority escalation:', updatedTicket.codigo_ticket);
             NotificationSounds.playNotificationSound('warning');
             toast({
               title: "⚠️ Prioridade Escalada",
@@ -95,6 +104,11 @@ export const useTicketNotifications = () => {
       )
       .subscribe((status) => {
         console.log('🔔 Notification subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Notification system connected successfully');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('❌ Notification subscription error');
+        }
       });
 
     return () => {

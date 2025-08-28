@@ -131,7 +131,10 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Typebot webhook called');
+    console.log('🚀 === TYPEBOT WEBHOOK CALLED ===');
+    console.log('📨 Method:', req.method);
+    console.log('📨 Headers:', Object.fromEntries(req.headers.entries()));
+    console.log('📨 URL:', req.url);
     
     // Validar token via header X-Webhook-Token
     if (webhookToken) {
@@ -544,10 +547,16 @@ Se não souber, use: categoria="outro", prioridade="posso_esperar", equipe_respo
 
     const finalTicket = updatedTicket || ticket;
 
-    console.log('Ticket created successfully:', finalTicket.codigo_ticket);
+    console.log('✅ Ticket criado com sucesso:', {
+      codigo: finalTicket.codigo_ticket,
+      categoria: finalTicket.categoria,
+      prioridade: finalTicket.prioridade,
+      equipe_id: finalTicket.equipe_responsavel_id,
+      ia_analysis: !!finalTicket.log_ia
+    });
 
     // Resposta de sucesso com análise da IA
-    return new Response(JSON.stringify({
+    const responseData = {
       statusCode: 200,
       data: {
         action: 'ticket_created',
@@ -568,7 +577,11 @@ Se não souber, use: categoria="outro", prioridade="posso_esperar", equipe_respo
           analysis_model: modelToUse
         }
       }
-    }), {
+    };
+    
+    console.log('📤 Enviando resposta:', JSON.stringify(responseData, null, 2));
+    
+    return new Response(JSON.stringify(responseData), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
