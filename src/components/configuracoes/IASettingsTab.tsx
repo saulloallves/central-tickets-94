@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Save, RotateCcw, Info, Zap, MessageCircle, Sparkles, Settings, Brain } from "lucide-react";
+import { Save, RotateCcw, Info, Zap, MessageCircle, Sparkles, Settings, Brain, RefreshCw, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -126,17 +126,114 @@ export function IASettingsTab() {
   const [originalSettings, setOriginalSettings] = useState<AISettings | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [testingConnection, setTestingConnection] = useState(false);
+  const [lambdaModels, setLambdaModels] = useState<any[]>([]);
+  const [connectionStatus, setConnectionStatus] = useState<'none' | 'success' | 'error'>('none');
   const { toast } = useToast();
 
   // Get models for current provider
   const getCurrentModels = () => {
+    if (settings.api_provider === 'lambda' && lambdaModels.length > 0) {
+      return lambdaModels;
+    }
     return modelsByProvider[settings.api_provider as keyof typeof modelsByProvider] || modelsByProvider.openai;
+  };
+
+  // Test Lambda connection and fetch models
+  const testLambdaConnection = async () => {
+    if (!settings.api_key || !settings.api_base_url) {
+      toast({
+        title: "Erro",
+        description: "Preencha a chave API e a URL base antes de testar a conexão",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setTestingConnection(true);
+    setConnectionStatus('none');
+
+    try {
+      // First save the current settings
+      const { error: saveError } = await supabase
+        .from('faq_ai_settings')
+        .upsert({
+          id: settings.id,
+          ...settings,
+          updated_at: new Date().toISOString()
+        });
+
+      if (saveError) throw saveError;
+
+      // Test connection by trying to fetch models from Lambda API
+      const headers: any = {
+        'Content-Type': 'application/json',
+        ...settings.custom_headers,
+      };
+      
+      if (settings.api_key) {
+        headers['Authorization'] = `Bearer ${settings.api_key}`;
+      }
+
+      const response = await fetch(`${settings.api_base_url}/models`, {
+        method: 'GET',
+        headers,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      // Process models list (assuming standard OpenAI-like format)
+      const models = data.data || data.models || [];
+      const formattedModels = models.map((model: any) => ({
+        value: model.id || model.model,
+        label: model.id || model.model,
+        description: model.description || 'Modelo customizado da API Lambda'
+      }));
+
+      setLambdaModels(formattedModels);
+      setConnectionStatus('success');
+      setOriginalSettings({ ...settings });
+
+      // Update models to use the first available Lambda model
+      if (formattedModels.length > 0) {
+        const defaultModel = formattedModels[0].value;
+        setSettings(prev => ({
+          ...prev,
+          modelo_sugestao: defaultModel,
+          modelo_chat: defaultModel,
+          modelo_classificacao: defaultModel,
+        }));
+      }
+
+      toast({
+        title: "✅ Conexão Realizada!",
+        description: `Encontrados ${formattedModels.length} modelos na API Lambda`,
+      });
+    } catch (error) {
+      console.error('Erro ao testar conexão Lambda:', error);
+      setConnectionStatus('error');
+      toast({
+        title: "Erro na Conexão",
+        description: error instanceof Error ? error.message : "Não foi possível conectar à API Lambda",
+        variant: "destructive",
+      });
+    } finally {
+      setTestingConnection(false);
+    }
   };
 
   // Update models when provider changes
   const handleProviderChange = (newProvider: string) => {
     const newModels = modelsByProvider[newProvider as keyof typeof modelsByProvider] || modelsByProvider.openai;
     const defaultModel = newModels[0]?.value || 'gpt-5-2025-08-07';
+    
+    // Reset connection status when changing providers
+    setConnectionStatus('none');
+    setLambdaModels([]);
     
     setSettings(prev => ({
       ...prev,
@@ -360,6 +457,38 @@ export function IASettingsTab() {
                     rows={3}
                     placeholder='{"Authorization": "Bearer your-token"}'
                   />
+                </div>
+                
+                {/* Botão de teste de conexão */}
+                <div className="flex items-center gap-3 pt-4 border-t border-amber-200">
+                  <Button
+                    onClick={testLambdaConnection}
+                    disabled={testingConnection || !settings.api_key || !settings.api_base_url}
+                    variant="default"
+                    size="sm"
+                    className="flex items-center gap-2"
+                  >
+                    {testingConnection ? (
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                    ) : connectionStatus === 'success' ? (
+                      <CheckCircle className="h-4 w-4" />
+                    ) : (
+                      <Zap className="h-4 w-4" />
+                    )}
+                    {testingConnection ? "Conectando..." : "Salvar e Carregar Modelos"}
+                  </Button>
+                  
+                  {connectionStatus === 'success' && (
+                    <Badge variant="default" className="bg-green-500">
+                      ✅ {lambdaModels.length} modelos encontrados
+                    </Badge>
+                  )}
+                  
+                  {connectionStatus === 'error' && (
+                    <Badge variant="destructive">
+                      ❌ Erro na conexão
+                    </Badge>
+                  )}
                 </div>
               </div>
             </div>
