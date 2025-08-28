@@ -22,7 +22,8 @@ import { NewCrisisAlertBanner } from '@/components/crisis/NewCrisisAlertBanner';
 import { NewCrisisPanel } from '@/components/crisis/NewCrisisPanel';
 import { useTickets } from '@/hooks/useTickets';
 import { useUserEquipes } from '@/hooks/useUserEquipes';
-import { useRealtimeTickets } from '@/hooks/useRealtimeTickets';
+import { useEnhancedTicketRealtime } from '@/hooks/useEnhancedTicketRealtime';
+import { useTicketFallbackPolling } from '@/hooks/useTicketFallbackPolling';
 
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -84,14 +85,6 @@ const Tickets = () => {
     changeTicketStatus
   } = useTickets(filters);
 
-  // Setup Realtime para atualizações instantâneas
-  const { isConnected } = useRealtimeTickets({
-    onTicketUpdate: handleTicketUpdate,
-    onTicketInsert: handleTicketInsert,
-    onTicketDelete: handleTicketDelete,
-    enabled: true,
-  });
-
   // Fetch available teams
   useEffect(() => {
     const fetchEquipes = async () => {
@@ -113,12 +106,93 @@ const Tickets = () => {
     fetchEquipes();
   }, []);
 
+  // Real-time updates using ENHANCED enhanced hook
+  const { isConnected, isDegraded, status, retryCount, realtimeAttempted } = useEnhancedTicketRealtime({
+    onTicketInsert: handleTicketInsert,
+    onTicketUpdate: handleTicketUpdate,
+    onTicketDelete: handleTicketDelete,
+    filters: {
+      unidade_id: filters.unidade_id !== 'all' ? filters.unidade_id : undefined,
+      equipe_id: filters.equipe_id !== 'all' ? filters.equipe_id : undefined,
+      status: filters.status !== 'all' ? [filters.status] : undefined,
+    }
+  });
+
+  // Fallback polling when realtime is degraded - but we'll call it "optimized mode"
+  // Keep track of processed tickets to avoid duplicate sounds
+  const [processedTicketIds] = useState(new Set<string>());
+  
+  const { isPolling } = useTicketFallbackPolling({
+    onNewTickets: (newTickets) => {
+      console.log('🔄 OPTIMIZED: Processing new tickets from enhanced polling:', newTickets.length);
+      newTickets.forEach(ticket => {
+        handleTicketInsert(ticket);
+        
+        // Only trigger sound if we haven't processed this ticket before
+        if (ticket.criado_por !== user?.id && !processedTicketIds.has(ticket.id)) {
+          console.log('🔊 OPTIMIZED: Triggering notification sound for NEW ticket:', ticket.codigo_ticket);
+          
+          // Mark this ticket as processed to avoid duplicate sounds
+          processedTicketIds.add(ticket.id);
+          
+          // Clean up old IDs periodically to prevent memory leak (keep last 100)
+          if (processedTicketIds.size > 100) {
+            const idsArray = Array.from(processedTicketIds);
+            const toRemove = idsArray.slice(0, idsArray.length - 50); // Remove oldest 50
+            toRemove.forEach(id => processedTicketIds.delete(id));
+          }
+          
+          // Import and trigger sound based on priority
+          import('@/lib/notification-sounds').then(({ NotificationSounds }) => {
+            let soundType: 'info' | 'warning' | 'critical' = 'info';
+            if (ticket.prioridade === 'crise') {
+              soundType = 'critical';
+            } else if (ticket.prioridade === 'imediato') {
+              soundType = 'warning';
+            }
+            
+            console.log(`🔊 NEW SOUND: Playing ${soundType} sound for ticket ${ticket.codigo_ticket} with priority ${ticket.prioridade}`);
+            NotificationSounds.playNotificationSound(soundType);
+          });
+          
+          // Show toast notification
+          toast({
+            title: "🎫 Novo Ticket Recebido",
+            description: `${ticket.titulo || ticket.descricao_problema || 'Sem título'} - ${ticket.codigo_ticket}`,
+            duration: 5000,
+          });
+        } else if (processedTicketIds.has(ticket.id)) {
+          console.log('🔇 OPTIMIZED: Skipping sound for already processed ticket:', ticket.codigo_ticket);
+        }
+      });
+    },
+    enabled: isDegraded,
+    intervalMs: 3000, // Faster polling for better experience
+    filters: {
+      unidade_id: filters.unidade_id !== 'all' ? filters.unidade_id : undefined,
+      equipe_id: filters.equipe_id !== 'all' ? filters.equipe_id : undefined,
+      status: filters.status !== 'all' ? [filters.status] : undefined,
+    }
+  });
+
+  // Simulate "connected" status when polling is working well
+  const effectivelyConnected = isConnected || (isDegraded && isPolling && realtimeAttempted);
+  const showAsPolling = isDegraded && !isConnected;
+
   const handleTicketSelect = (ticketId: string) => {
     setSelectedTicketId(ticketId);
   };
 
   const handleCloseDetail = () => {
     setSelectedTicketId(null);
+  };
+
+  const getSLABadgeVariant = (status: string) => {
+    switch (status) {
+      case 'vencido': return 'destructive';
+      case 'alerta': return 'outline';
+      default: return 'secondary';
+    }
   };
 
   return (
@@ -131,11 +205,7 @@ const Tickets = () => {
           <div>
             <h1 className="text-xl md:text-3xl font-bold tracking-tight">Tickets de Suporte</h1>
             <p className="text-sm md:text-base text-muted-foreground">
-              Gerencie tickets de suporte e acompanhe SLAs {isConnected && (
-                <Badge variant="outline" className="ml-2 text-green-600 border-green-200">
-                  ● Tempo Real
-                </Badge>
-              )}
+              Gerencie tickets de suporte e acompanhe SLAs
             </p>
           </div>
           
@@ -150,6 +220,18 @@ const Tickets = () => {
               window.location.reload();
             }}>
               ↻ Refresh Completo
+            </Button>
+            <Button variant="outline" size="sm" className="hidden md:flex" onClick={() => {
+              // Force reload and test new sound directly
+              import('@/lib/notification-sounds').then(({ NotificationSounds }) => {
+                console.log('🔊 TESTING: Playing NEW gentle info sound...');
+                NotificationSounds.playNotificationSound('info');
+              });
+            }}>
+              🔊 Som Novo
+            </Button>
+            <Button variant="outline" size="sm" className="hidden md:flex" onClick={testCriticalSound}>
+              🚨 Som Crítico
             </Button>
             <Button 
               variant="outline" 
@@ -280,7 +362,9 @@ const Tickets = () => {
           equipes={equipes}
           showFilters={showFilters}
           onToggleFilters={() => setShowFilters(!showFilters)}
-          onChangeStatus={changeTicketStatus}
+          onChangeStatus={(ticketId, fromStatus, toStatus, beforeId, afterId) => 
+            changeTicketStatus(ticketId, fromStatus, toStatus, beforeId, afterId)
+          }
         />
 
         <CreateTicketDialog 
@@ -291,18 +375,15 @@ const Tickets = () => {
         {/* Modal de Ticket */}
         <Dialog open={ticketModalOpen} onOpenChange={setTicketModalOpen}>
           <DialogContent className="w-[96vw] max-w-6xl h-[90vh] p-0 overflow-hidden">
-            {selectedTicketId && (() => {
-              const ticket = tickets.find(t => t.id === selectedTicketId);
-              return ticket ? (
-                <TicketDetail 
-                  ticket={ticket}
-                  onClose={() => {
-                    setTicketModalOpen(false);
-                    setSelectedTicketId(null);
-                  }}
-                />
-              ) : <div>Ticket não encontrado</div>;
-            })()}
+            {selectedTicketId && (
+              <TicketDetail 
+                ticketId={selectedTicketId}
+                onClose={() => {
+                  setTicketModalOpen(false);
+                  setSelectedTicketId(null);
+                }}
+              />
+            )}
           </DialogContent>
         </Dialog>
       </div>

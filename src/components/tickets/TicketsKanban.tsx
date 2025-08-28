@@ -747,15 +747,12 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
       {/* Detail Modal simples */}
       <Dialog open={detailModalOpen} onOpenChange={setDetailModalOpen}>
         <DialogContent className="w-[96vw] max-w-6xl h-[90vh] p-0 overflow-hidden">
-          {selectedTicketId && (() => {
-            const ticket = tickets.find(t => t.id === selectedTicketId);
-            return ticket ? (
-              <TicketDetail 
-                ticket={ticket}
-                onClose={closeDetailModal}
-              />
-            ) : <div>Ticket não encontrado</div>;
-          })()}
+          {selectedTicketId && (
+            <TicketDetail 
+              ticketId={selectedTicketId}
+              onClose={closeDetailModal}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </DndContext>
