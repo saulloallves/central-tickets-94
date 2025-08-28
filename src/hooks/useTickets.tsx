@@ -355,14 +355,40 @@ export const useTickets = (filters: TicketFilters) => {
 
   // Enhanced realtime subscription with handlers
   const handleTicketUpdate = (ticket: Ticket) => {
-    console.log('🔄 Realtime ticket update received:', ticket.codigo_ticket);
-    setTickets(prev => 
-      prev.map(existingTicket => 
-        existingTicket.id === ticket.id 
-          ? { ...existingTicket, ...ticket } as Ticket
-          : existingTicket
-      )
-    );
+    console.log('🔄 Realtime ticket update received:', ticket.codigo_ticket, 'status:', ticket.status);
+    
+    setTickets(prev => {
+      // Check if ticket still matches current filters
+      const shouldShow = (
+        (filters.status === 'all' || ticket.status === filters.status) &&
+        (filters.unidade_id === 'all' || ticket.unidade_id === filters.unidade_id) &&
+        (filters.equipe_id === 'all' || ticket.equipe_responsavel_id === filters.equipe_id)
+      );
+
+      const existingIndex = prev.findIndex(t => t.id === ticket.id);
+      
+      if (existingIndex >= 0) {
+        if (shouldShow) {
+          // Update existing ticket
+          console.log('🔄 Updating existing ticket in view');
+          const updated = [...prev];
+          updated[existingIndex] = { ...updated[existingIndex], ...ticket } as Ticket;
+          return updated;
+        } else {
+          // Remove ticket that no longer matches filters
+          console.log('🚫 Removing ticket from view (no longer matches filters)');
+          return prev.filter(t => t.id !== ticket.id);
+        }
+      } else if (shouldShow) {
+        // Add ticket if it now matches filters (shouldn't happen often with UPDATEs)
+        console.log('➕ Adding updated ticket to view');
+        return [ticket as Ticket, ...prev];
+      }
+      
+      // No changes needed
+      return prev;
+    });
+    
     fetchTicketStats();
   };
 

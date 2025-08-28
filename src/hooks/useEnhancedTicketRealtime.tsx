@@ -84,6 +84,12 @@ export const useEnhancedTicketRealtime = (options: EnhancedRealtimeOptions) => {
             console.log('🎯 FORÇANDO processamento de INSERT');
           }
           
+          // SEMPRE processar eventos UPDATE de mudança de status para garantir Kanban sync
+          if (payload.eventType === 'UPDATE' && oldTicket && ticket && oldTicket.status !== ticket.status) {
+            shouldProcess = true;
+            console.log('🎯 FORÇANDO processamento de UPDATE de status:', oldTicket.status, '->', ticket.status);
+          }
+          
           if (!shouldProcess) {
             return;
           }
