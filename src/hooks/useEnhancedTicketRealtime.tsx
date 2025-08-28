@@ -115,20 +115,31 @@ export const useEnhancedTicketRealtime = (options: EnhancedRealtimeOptions) => {
           console.error('❌ ROBUST realtime subscription error/timeout:', status);
           setConnectionStatus('ERROR');
           
-          // Implement retry with exponential backoff
-          const retryDelays = [1000, 2000, 5000, 10000]; // 1s, 2s, 5s, 10s max
-          const delay = retryDelays[Math.min(retryAttemptRef.current, retryDelays.length - 1)];
-          
-          console.log(`🔄 ROBUST: Retrying in ${delay}ms (attempt ${retryAttemptRef.current + 1})`);
-          
-          if (retryTimeoutRef.current) {
-            clearTimeout(retryTimeoutRef.current);
+          // Limit retry attempts to prevent infinite loops
+          if (retryAttemptRef.current < 3) {
+            const retryDelays = [2000, 5000, 10000]; // 2s, 5s, 10s
+            const delay = retryDelays[retryAttemptRef.current] || 10000;
+            
+            console.log(`🔄 ROBUST: Retrying in ${delay}ms (attempt ${retryAttemptRef.current + 1}/3)`);
+            
+            if (retryTimeoutRef.current) {
+              clearTimeout(retryTimeoutRef.current);
+            }
+            
+            retryTimeoutRef.current = setTimeout(() => {
+              retryAttemptRef.current++;
+              setupRealtime(); // Retry connection
+            }, delay);
+          } else {
+            console.log('🚫 ROBUST: Max retry attempts reached, switching to degraded mode');
+            setConnectionStatus('DEGRADED');
+            // Reset retry count after 5 minutes
+            retryTimeoutRef.current = setTimeout(() => {
+              console.log('🔄 ROBUST: Resetting retry count after cooldown');
+              retryAttemptRef.current = 0;
+              setupRealtime();
+            }, 300000); // 5 minutes
           }
-          
-          retryTimeoutRef.current = setTimeout(() => {
-            retryAttemptRef.current++;
-            setupRealtime(); // Retry connection
-          }, delay);
         }
       });
 

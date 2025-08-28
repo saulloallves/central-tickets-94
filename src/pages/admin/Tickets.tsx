@@ -197,18 +197,18 @@ const Tickets = () => {
             {/* Connection Status Indicator */}
             <div className={`flex items-center gap-1 text-xs px-2 py-1 rounded ${
               isConnected ? 'bg-green-100 text-green-700' : 
-              isDegraded ? 'bg-yellow-100 text-yellow-700' : 
-              'bg-red-100 text-red-700'
+              isDegraded ? 'bg-blue-100 text-blue-700' : 
+              'bg-yellow-100 text-yellow-700'
             }`}>
               <div className={`w-2 h-2 rounded-full ${
                 isConnected ? 'bg-green-500 animate-pulse' : 
-                isDegraded ? 'bg-yellow-500' : 
-                'bg-red-500'
+                isDegraded ? 'bg-blue-500' : 
+                'bg-yellow-500 animate-spin'
               }`} />
               {isConnected ? 'Tempo Real' : 
-               isDegraded && isPolling ? 'Modo Compatível' : 
-               isDegraded ? 'Reconectando...' : 'Desconectado'}
-              {retryCount > 0 && ` (${retryCount})`}
+               isDegraded ? 'Modo Polling' : 
+               retryCount >= 3 ? 'Modo Polling (Fallback)' :
+               `Reconectando... (${retryCount})`}
             </div>
             <Button size="sm" onClick={() => setCreateDialogOpen(true)} className="flex-1 md:flex-none">
               <Plus className="h-4 w-4 md:mr-2" />

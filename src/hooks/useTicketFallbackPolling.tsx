@@ -39,9 +39,9 @@ export const useTicketFallbackPolling = ({
       if (lastSeenTimestampRef.current) {
         query = query.gt('data_abertura', lastSeenTimestampRef.current);
       } else {
-        // First time - only get tickets from last 5 minutes to avoid overwhelming
-        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-        query = query.gte('data_abertura', fiveMinutesAgo);
+        // First time - only get tickets from last 2 minutes to avoid overwhelming
+        const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+        query = query.gte('data_abertura', twoMinutesAgo);
       }
 
       // Apply filters
