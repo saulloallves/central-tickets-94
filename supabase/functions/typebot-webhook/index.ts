@@ -249,6 +249,8 @@ serve(async (req) => {
 
     let analysisResult = null;
     let equipeResponsavelId = null;
+    let modelToUse = 'gpt-4o-mini'; // Default fallback
+    let apiProvider = 'openai'; // Default fallback
 
     // Análise por IA se temos OpenAI e equipes
     if (openaiApiKey && equipes && equipes.length > 0) {
@@ -266,8 +268,8 @@ serve(async (req) => {
           .eq('ativo', true)
           .maybeSingle();
 
-        const modelToUse = aiSettings?.modelo_classificacao || 'gpt-4o-mini';
-        const apiProvider = aiSettings?.api_provider || 'openai';
+        modelToUse = aiSettings?.modelo_classificacao || 'gpt-4o-mini';
+        apiProvider = aiSettings?.api_provider || 'openai';
         
         let apiUrl = 'https://api.openai.com/v1/chat/completions';
         let authToken = openaiApiKey;
@@ -330,7 +332,15 @@ Analise o conteúdo e classifique adequadamente:`
         
         if (analysis) {
           try {
-            analysisResult = JSON.parse(analysis.trim());
+            // Clean response - remove markdown backticks if present
+            let cleanedAnalysis = analysis.trim();
+            if (analysis.includes('```json')) {
+              cleanedAnalysis = analysis.replace(/```json\s*/g, '').replace(/```\s*$/g, '').trim();
+            } else if (analysis.includes('```')) {
+              cleanedAnalysis = analysis.replace(/```\s*/g, '').trim();
+            }
+            
+            analysisResult = JSON.parse(cleanedAnalysis);
             console.log('AI analysis result:', analysisResult);
             
             // Encontrar equipe por nome
