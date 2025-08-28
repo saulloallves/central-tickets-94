@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -29,13 +30,13 @@ interface FormData {
   equipe_id: string;
 }
 
-const formSchema = yup.object().shape({
+const formSchema: yup.Schema<FormData> = yup.object({
   titulo: yup.string().required('Título é obrigatório'),
   descricao: yup.string().required('Descrição é obrigatória'),
   prioridade: yup.string().oneOf(['crise', 'imediato', 'ate_1_hora', 'ainda_hoje', 'posso_esperar']).required('Prioridade é obrigatória'),
   categoria: yup.string().oneOf(['midia', 'rh', 'juridico', 'sistema', 'operacoes', 'financeiro', 'outro']).required('Categoria é obrigatória'),
   equipe_id: yup.string().required('Equipe é obrigatória'),
-}) as yup.ObjectSchema<FormData>;
+}).required();
 
 export function CreateTicketDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const { user } = useAuth();
