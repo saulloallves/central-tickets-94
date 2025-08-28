@@ -426,6 +426,11 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
 
       console.log('✅ Ticket moved successfully via edge function:', data);
       
+      toast({
+        title: "Sucesso",
+        description: data.message || "Ticket movido com sucesso",
+      });
+      
       // Force immediate refetch to ensure UI consistency
       console.log('🔄 Force refetching tickets after move');
       await fetchTickets();
