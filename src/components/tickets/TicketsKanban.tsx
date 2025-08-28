@@ -249,7 +249,7 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
             const colors = getEquipeColor(ticket.equipes.nome);
             return (
               <div className={cn(
-                "inline-flex items-center gap-1 md:gap-1.5 px-1.5 md:px-2 py-0.5 md:py-1 rounded-full transition-all",
+                "inline-flex items-center gap-1 md:gap-1.5 px-1.5 md:px-2 py-0.5 md:py-1 rounded-full",
                 colors.bg, colors.border, "border"
               )}>
                 <div className={cn("w-1 h-1 md:w-1.5 md:h-1.5 rounded-full", colors.dot)}></div>
@@ -262,7 +262,7 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
 
           {/* Prioridade - Menor */}
           <div className={cn(
-            "px-1.5 md:px-2 py-0.5 md:py-1 rounded-full text-[10px] md:text-xs font-medium transition-colors",
+            "px-1.5 md:px-2 py-0.5 md:py-1 rounded-full text-[10px] md:text-xs font-medium",
             ticket.status === 'concluido' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
             ticket.prioridade === 'crise' ? 'bg-red-50 text-red-700 border border-red-200' :
             ticket.prioridade === 'imediato' ? 'bg-red-50 text-red-700 border border-red-200' :
@@ -337,7 +337,7 @@ const KanbanColumn = ({ status, individualTickets, selectedTicketId, onTicketSel
     <div 
       ref={setNodeRef}
       className={cn(
-        "flex flex-col h-full min-h-[600px] w-full rounded-xl border-2 transition-all duration-300 ease-in-out overflow-hidden",
+        "flex flex-col h-full min-h-[600px] w-full rounded-xl border-2 overflow-hidden",
         "bg-transparent shadow-lg shadow-gray-400/10",
         isOver ? 
           "border-primary bg-gradient-to-b from-primary/5 to-primary/10 shadow-xl scale-[1.02] border-solid shadow-primary/20" : 
@@ -376,7 +376,7 @@ const KanbanColumn = ({ status, individualTickets, selectedTicketId, onTicketSel
       <div className="flex-1 p-2 md:p-5 relative max-h-[calc(100vh-300px)] overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
         {/* Drop zone visual elegante */}
         {isOver && (
-          <div className="absolute inset-3 border-2 border-dashed border-primary/40 rounded-xl bg-gradient-to-br from-primary/5 via-transparent to-primary/10 flex items-center justify-center z-10 animate-fade-in backdrop-blur-sm">
+          <div className="absolute inset-3 border-2 border-dashed border-primary/40 rounded-xl bg-gradient-to-br from-primary/5 via-transparent to-primary/10 flex items-center justify-center z-10 backdrop-blur-sm">
             <div className="text-center p-6 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30">
               <div className="text-primary font-semibold text-lg mb-1">✓ Solte aqui</div>
               <div className="text-sm text-primary/80 font-medium">{COLUMN_STATUS[status]}</div>
@@ -721,7 +721,7 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
 
       <DragOverlay>
         {activeTicket && (
-          <Card className="rotate-3 shadow-2xl scale-105 transition-all duration-200 border-primary">
+          <Card className="rotate-3 shadow-2xl scale-105 border-primary">
             <CardContent className="p-3">
               <div className="text-xs font-mono mb-1 text-muted-foreground">
                 {activeTicket.codigo_ticket}

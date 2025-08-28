@@ -393,7 +393,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
         {/* Info Cards Grid - Sem linhas coloridas */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Unidade Card */}
-          <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50 hover:bg-card/70 transition-all">
+          <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50 hover:bg-card/70">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-500/10 border border-blue-500/20 rounded-lg">
@@ -410,7 +410,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
           </Card>
 
           {/* Solicitante Card */}
-          <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50 hover:bg-card/70 transition-all">
+          <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50 hover:bg-card/70">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-green-500/10 border border-green-500/20 rounded-lg">
@@ -429,7 +429,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
           </Card>
 
           {/* Prioridade/Equipe Card */}
-          <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50 hover:bg-card/70 transition-all">
+          <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50 hover:bg-card/70">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-purple-500/10 border border-purple-500/20 rounded-lg">
