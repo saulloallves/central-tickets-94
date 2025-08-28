@@ -367,13 +367,31 @@ export const useTickets = (filters: TicketFilters) => {
   };
 
   const handleTicketInsert = (ticket: Ticket) => {
-    console.log('➕ Realtime ticket insert received:', ticket.codigo_ticket);
+    console.log('➕ REALTIME TICKET INSERT HANDLER CALLED:', ticket.codigo_ticket, ticket.id);
+    console.log('📊 Current tickets count before insert:', tickets.length);
+    
     setTickets(prev => {
       const exists = prev.find(t => t.id === ticket.id);
-      if (exists) return prev;
-      return [ticket, ...prev];
+      if (exists) {
+        console.log('⚠️ Ticket already exists, skipping insert');
+        return prev;
+      }
+      
+      const newTickets = [ticket, ...prev];
+      console.log('✅ Ticket added to state, new count:', newTickets.length);
+      console.log('🎫 New ticket details:', {
+        id: ticket.id,
+        codigo: ticket.codigo_ticket,
+        categoria: ticket.categoria,
+        prioridade: ticket.prioridade,
+        status: ticket.status
+      });
+      
+      return newTickets;
     });
+    
     fetchTicketStats();
+    console.log('📈 Stats refresh triggered');
   };
 
   const handleTicketDelete = (ticketId: string) => {

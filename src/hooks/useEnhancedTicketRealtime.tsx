@@ -74,13 +74,8 @@ export const useEnhancedTicketRealtime = (options: EnhancedRealtimeOptions) => {
                console.log('➕ PROCESSANDO NOVO TICKET:', ticket.codigo_ticket, 'ID:', ticket.id);
                console.log('🎯 Chamando onTicketInsert callback...');
                
-               // Play notification sound if not created by current user
-               if (ticket.criado_por !== user.id) {
-                 const soundType = ticket.prioridade === 'crise' ? 'critical' : 
-                                 ticket.prioridade === 'imediato' ? 'warning' : 'info';
-                 NotificationSounds.playNotificationSound(soundType);
-                 console.log('🔊 Som de notificação tocado:', soundType);
-               }
+               // Não tocar som aqui - delegado para useTicketNotifications
+               // para evitar duplicação
                
                onTicketInsert(ticket);
                console.log('✅ onTicketInsert executado');
