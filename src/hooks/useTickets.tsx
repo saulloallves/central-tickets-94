@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useRole } from './useRole';
@@ -75,13 +75,24 @@ export const useTickets = (filters: TicketFilters) => {
     sla_vencido: 0,
   });
 
+  // Memoize filters to prevent unnecessary re-renders
+  const memoizedFilters = useMemo(() => filters, [
+    filters.search,
+    filters.status,
+    filters.categoria,
+    filters.prioridade,
+    filters.unidade_id,
+    filters.status_sla,
+    filters.equipe_id
+  ]);
+
   // Fetch inicial dos tickets
   const fetchTickets = useCallback(async () => {
     if (!user) return;
 
     try {
       setLoading(true);
-      console.log('🔍 Fetching tickets with filters:', filters);
+      console.log('🔍 Fetching tickets with filters:', memoizedFilters);
 
       let query = supabase
         .from('tickets')
@@ -107,36 +118,36 @@ export const useTickets = (filters: TicketFilters) => {
       }
 
       // Aplicar filtros de busca
-      if (filters.search) {
-        query = query.or(`codigo_ticket.ilike.%${filters.search}%,titulo.ilike.%${filters.search}%,descricao_problema.ilike.%${filters.search}%`);
+      if (memoizedFilters.search) {
+        query = query.or(`codigo_ticket.ilike.%${memoizedFilters.search}%,titulo.ilike.%${memoizedFilters.search}%,descricao_problema.ilike.%${memoizedFilters.search}%`);
       }
 
-      if (filters.status && filters.status !== 'all') {
-        query = query.eq('status', filters.status as any);
+      if (memoizedFilters.status && memoizedFilters.status !== 'all') {
+        query = query.eq('status', memoizedFilters.status as any);
       }
 
-      if (filters.prioridade && filters.prioridade !== 'all') {
-        query = query.eq('prioridade', filters.prioridade as any);
+      if (memoizedFilters.prioridade && memoizedFilters.prioridade !== 'all') {
+        query = query.eq('prioridade', memoizedFilters.prioridade as any);
       }
 
-      if (filters.unidade_id && filters.unidade_id !== 'all') {
-        query = query.eq('unidade_id', filters.unidade_id);
+      if (memoizedFilters.unidade_id && memoizedFilters.unidade_id !== 'all') {
+        query = query.eq('unidade_id', memoizedFilters.unidade_id);
       }
 
-      if (filters.categoria && filters.categoria !== 'all') {
-        query = query.eq('categoria', filters.categoria as any);
+      if (memoizedFilters.categoria && memoizedFilters.categoria !== 'all') {
+        query = query.eq('categoria', memoizedFilters.categoria as any);
       }
 
-      if (filters.status_sla && filters.status_sla !== 'all') {
-        query = query.eq('status_sla', filters.status_sla as any);
+      if (memoizedFilters.status_sla && memoizedFilters.status_sla !== 'all') {
+        query = query.eq('status_sla', memoizedFilters.status_sla as any);
       }
 
-      if (filters.equipe_id && filters.equipe_id !== 'all') {
-        if (filters.equipe_id === 'minhas_equipes' && userEquipes.length > 0) {
+      if (memoizedFilters.equipe_id && memoizedFilters.equipe_id !== 'all') {
+        if (memoizedFilters.equipe_id === 'minhas_equipes' && userEquipes.length > 0) {
           const userEquipeIds = userEquipes.map(eq => eq.id);
           query = query.in('equipe_responsavel_id', userEquipeIds);
-        } else if (filters.equipe_id !== 'minhas_equipes') {
-          query = query.eq('equipe_responsavel_id', filters.equipe_id);
+        } else if (memoizedFilters.equipe_id !== 'minhas_equipes') {
+          query = query.eq('equipe_responsavel_id', memoizedFilters.equipe_id);
         }
       }
 
@@ -176,7 +187,7 @@ export const useTickets = (filters: TicketFilters) => {
     } finally {
       setLoading(false);
     }
-  }, [user, filters, isAdmin, isSupervisor, userEquipes, toast]);
+  }, [user?.id, memoizedFilters, isAdmin, isSupervisor, userEquipes.length, toast]);
 
   // Executar fetch inicial
   useEffect(() => {
