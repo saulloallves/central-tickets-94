@@ -108,20 +108,53 @@ export default {
 			},
 			keyframes: {
 				'accordion-down': {
-					from: { height: '0' },
-					to: { height: 'var(--radix-accordion-content-height)' }
+					from: { height: '0', opacity: '0' },
+					to: { height: 'var(--radix-accordion-content-height)', opacity: '1' }
 				},
 				'accordion-up': {
-					from: { height: 'var(--radix-accordion-content-height)' },
-					to: { height: '0' }
+					from: { height: 'var(--radix-accordion-content-height)', opacity: '1' },
+					to: { height: '0', opacity: '0' }
 				},
-				'fade-in': {
-					'0%': { opacity: '0', transform: 'translateY(10px)' },
+				'modal-enter': {
+					'0%': { opacity: '0', transform: 'scale(0.96) translateY(-2px)' },
+					'100%': { opacity: '1', transform: 'scale(1) translateY(0)' }
+				},
+				'modal-exit': {
+					'0%': { opacity: '1', transform: 'scale(1) translateY(0)' },
+					'100%': { opacity: '0', transform: 'scale(0.96) translateY(-2px)' }
+				},
+				'overlay-enter': {
+					'0%': { opacity: '0' },
+					'100%': { opacity: '1' }
+				},
+				'overlay-exit': {
+					'0%': { opacity: '1' },
+					'100%': { opacity: '0' }
+				},
+				'drawer-enter': {
+					'0%': { transform: 'translateY(100%)' },
+					'100%': { transform: 'translateY(0)' }
+				},
+				'drawer-exit': {
+					'0%': { transform: 'translateY(0)' },
+					'100%': { transform: 'translateY(100%)' }
+				},
+				'popover-enter': {
+					'0%': { opacity: '0', transform: 'scale(0.95) translateY(-4px)' },
+					'100%': { opacity: '1', transform: 'scale(1) translateY(0)' }
+				},
+				'popover-exit': {
+					'0%': { opacity: '1', transform: 'scale(1) translateY(0)' },
+					'100%': { opacity: '0', transform: 'scale(0.95) translateY(-4px)' }
+				},
+				'button-press': {
+					'0%': { transform: 'scale(1)' },
+					'50%': { transform: 'scale(0.98)' },
+					'100%': { transform: 'scale(1)' }
+				},
+				'page-enter': {
+					'0%': { opacity: '0', transform: 'translateY(8px)' },
 					'100%': { opacity: '1', transform: 'translateY(0)' }
-				},
-				'scale-in': {
-					'0%': { transform: 'scale(0.95)', opacity: '0' },
-					'100%': { transform: 'scale(1)', opacity: '1' }
 				},
 				'slide-up': {
 					'0%': { transform: 'translateY(100%)', opacity: '0' },
@@ -129,11 +162,19 @@ export default {
 				}
 			},
 			animation: {
-				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out',
-				'fade-in': 'fade-in 0.5s ease-out',
-				'scale-in': 'scale-in 0.2s ease-out',
-				'slide-up': 'slide-up 0.4s ease-out'
+				'accordion-down': 'accordion-down 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+				'accordion-up': 'accordion-up 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+				'modal-enter': 'modal-enter 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+				'modal-exit': 'modal-exit 0.2s cubic-bezier(0.4, 0, 1, 1)',
+				'overlay-enter': 'overlay-enter 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+				'overlay-exit': 'overlay-exit 0.2s cubic-bezier(0.4, 0, 1, 1)',
+				'drawer-enter': 'drawer-enter 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+				'drawer-exit': 'drawer-exit 0.25s cubic-bezier(0.4, 0, 1, 1)',
+				'popover-enter': 'popover-enter 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+				'popover-exit': 'popover-exit 0.15s cubic-bezier(0.4, 0, 1, 1)',
+				'button-press': 'button-press 0.1s cubic-bezier(0.4, 0, 0.2, 1)',
+				'page-enter': 'page-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+				'slide-up': 'slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
 			}
 		}
 	},
