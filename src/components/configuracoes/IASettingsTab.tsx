@@ -243,17 +243,9 @@ export function IASettingsTab() {
       setConnectionStatus('success');
       setOriginalSettings({ ...settings });
 
-      // Update models to use the first available Lambda model
-      const defaultModel = data.models[0]?.value || data.models[0]?.id;
-      if (defaultModel) {
-        setSettings(prev => ({
-          ...prev,
-          modelo_sugestao: defaultModel,
-          modelo_chat: defaultModel,
-          modelo_classificacao: defaultModel,
-        }));
-      }
-
+      // NÃO alterar automaticamente os modelos - apenas carregar a lista disponível
+      // Os modelos selecionados devem permanecer como estão salvos no banco
+      
       // Só mostrar toast se não for auto-load
       if (!isAutoLoad) {
         toast({
