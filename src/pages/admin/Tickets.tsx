@@ -207,7 +207,6 @@ const Tickets = () => {
               }`} />
               {isConnected ? 'Tempo Real' : 
                isDegraded ? 'Modo Polling' : 
-               retryCount >= 3 ? 'Modo Polling (Fallback)' :
                `Reconectando... (${retryCount})`}
             </div>
             <Button size="sm" onClick={() => setCreateDialogOpen(true)} className="flex-1 md:flex-none">
