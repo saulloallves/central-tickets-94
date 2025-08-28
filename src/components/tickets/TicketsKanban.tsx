@@ -203,7 +203,7 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
       <Card
         ref={setNodeRef}
         style={style}
-        className="opacity-60 border-2 border-primary border-dashed bg-primary/5 transform rotate-1 shadow-xl scale-105 transition-none will-change-transform"
+        className="opacity-50 border-2 border-primary border-dashed bg-primary/5"
       >
         <CardContent className="p-3">
           <div className="h-16 flex items-center justify-center">
@@ -744,16 +744,14 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
         )}
       </DragOverlay>
 
-      {/* Detail Modal com animações otimizadas */}
+      {/* Detail Modal simples */}
       <Dialog open={detailModalOpen} onOpenChange={setDetailModalOpen}>
-        <DialogContent className="w-[96vw] max-w-6xl h-[90vh] p-0 overflow-hidden animate-in fade-in-0 zoom-in-95 duration-300 ease-out">
+        <DialogContent className="w-[96vw] max-w-6xl h-[90vh] p-0 overflow-hidden">
           {selectedTicketId && (
-            <div className="animate-in fade-in-0 duration-150 ease-out">
-              <TicketDetail 
-                ticketId={selectedTicketId}
-                onClose={closeDetailModal}
-              />
-            </div>
+            <TicketDetail 
+              ticketId={selectedTicketId}
+              onClose={closeDetailModal}
+            />
           )}
         </DialogContent>
       </Dialog>
