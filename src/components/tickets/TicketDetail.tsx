@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -291,7 +292,7 @@ export function TicketDetail({ ticketId, onClose }: TicketDetailProps) {
 
               {/* Actions */}
               <Separator />
-              <TicketActions ticketId={ticketId} ticket={ticket} />
+              <TicketActions ticket={ticket} />
             </div>
           </TabsContent>
 

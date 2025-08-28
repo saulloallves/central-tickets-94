@@ -8,6 +8,7 @@ import { Send, MessageSquare, User, Headphones, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import type { Json } from '@/integrations/supabase/types';
 
 interface ConversaMessage {
   autor: 'franqueado' | 'suporte' | 'interno';
@@ -21,6 +22,18 @@ interface TicketConversaTimelineProps {
   initialConversa?: ConversaMessage[];
   onNewMessage?: (message: ConversaMessage) => void;
 }
+
+// Helper function to safely convert Json to ConversaMessage[]
+const convertJsonToConversa = (jsonData: Json): ConversaMessage[] => {
+  if (!Array.isArray(jsonData)) return [];
+  
+  return jsonData.map(item => {
+    if (typeof item === 'object' && item !== null && 'autor' in item && 'texto' in item) {
+      return item as ConversaMessage;
+    }
+    return null;
+  }).filter((item): item is ConversaMessage => item !== null);
+};
 
 export function TicketConversaTimeline({ 
   ticketId, 
@@ -60,9 +73,9 @@ export function TicketConversaTimeline({
           return;
         }
 
-        const conversaData = data?.conversa || [];
+        const conversaData = convertJsonToConversa(data?.conversa || []);
         console.log('📖 Conversa carregada:', conversaData);
-        setConversa(Array.isArray(conversaData) ? conversaData : []);
+        setConversa(conversaData);
       } catch (error) {
         console.error('Erro ao buscar conversa:', error);
       } finally {
@@ -94,7 +107,7 @@ export function TicketConversaTimeline({
           console.log('🔄 Ticket atualizado (conversa):', payload);
           const updatedTicket = payload.new as any;
           if (updatedTicket.conversa) {
-            const newConversa = Array.isArray(updatedTicket.conversa) ? updatedTicket.conversa : [];
+            const newConversa = convertJsonToConversa(updatedTicket.conversa);
             setConversa(newConversa);
             
             // Notify parent about new message if there are more messages than before
@@ -142,8 +155,9 @@ export function TicketConversaTimeline({
       setNewMessage('');
       
       // Update local state with the returned conversa
-      if (Array.isArray(data)) {
-        setConversa(data);
+      if (data) {
+        const updatedConversa = convertJsonToConversa(data);
+        setConversa(updatedConversa);
       }
 
       toast({
