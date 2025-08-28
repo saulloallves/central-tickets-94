@@ -22,8 +22,7 @@ import { NewCrisisAlertBanner } from '@/components/crisis/NewCrisisAlertBanner';
 import { NewCrisisPanel } from '@/components/crisis/NewCrisisPanel';
 import { useTickets } from '@/hooks/useTickets';
 import { useUserEquipes } from '@/hooks/useUserEquipes';
-import { useEnhancedTicketRealtime } from '@/hooks/useEnhancedTicketRealtime';
-import { useTicketFallbackPolling } from '@/hooks/useTicketFallbackPolling';
+import { useSimpleTicketRealtime } from '@/hooks/useSimpleTicketRealtime';
 
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -106,29 +105,19 @@ const Tickets = () => {
     fetchEquipes();
   }, []);
 
-  // Real-time updates using ENHANCED enhanced hook
-  const { isConnected, isDegraded, status, retryCount, realtimeAttempted } = useEnhancedTicketRealtime({
+  // Estados para notificações
+  const [processedTicketIds] = useState(new Set<string>());
+
+  // Realtime simples e direto
+  useSimpleTicketRealtime({
     onTicketInsert: (ticket) => {
-      console.log('🎫 REALTIME: New ticket received:', ticket.codigo_ticket);
-      
-      // Insert the ticket in state immediately
+      console.log('🆕 SIMPLE: New ticket received:', ticket.codigo_ticket);
       handleTicketInsert(ticket);
       
-      // Only trigger notification if ticket wasn't created by current user
+      // Show notification and play sound
       if (ticket.criado_por !== user?.id && !processedTicketIds.has(ticket.id)) {
-        console.log('🔊 REALTIME: Triggering notification for NEW ticket:', ticket.codigo_ticket);
-        
-        // Mark as processed to avoid duplicates
         processedTicketIds.add(ticket.id);
         
-        // Clean up old IDs periodically
-        if (processedTicketIds.size > 100) {
-          const idsArray = Array.from(processedTicketIds);
-          const toRemove = idsArray.slice(0, idsArray.length - 50);
-          toRemove.forEach(id => processedTicketIds.delete(id));
-        }
-        
-        // Import and trigger sound based on priority
         import('@/lib/notification-sounds').then(({ NotificationSounds }) => {
           let soundType: 'info' | 'warning' | 'critical' = 'info';
           if (ticket.prioridade === 'crise') {
@@ -137,93 +126,26 @@ const Tickets = () => {
             soundType = 'warning';
           }
           
-          console.log(`🔊 REALTIME SOUND: Playing ${soundType} sound for ticket ${ticket.codigo_ticket}`);
           NotificationSounds.playNotificationSound(soundType);
         });
         
-        // Show toast notification
         toast({
-          title: "🎫 Novo Ticket (Tempo Real)",
-          description: `${ticket.titulo || ticket.descricao_problema || 'Sem título'} - ${ticket.codigo_ticket}`,
+          title: "🎫 Novo Ticket",
+          description: `${ticket.codigo_ticket} - ${ticket.titulo || ticket.descricao_problema}`,
           duration: 5000,
         });
       }
     },
-    onTicketUpdate: handleTicketUpdate,
-    onTicketDelete: handleTicketDelete,
-    filters: {
-      unidade_id: filters.unidade_id !== 'all' ? filters.unidade_id : undefined,
-      equipe_id: filters.equipe_id !== 'all' ? filters.equipe_id : undefined,
-      status: filters.status !== 'all' ? [filters.status] : undefined,
-    }
-  });
-
-  // Fallback polling when realtime is degraded - but we'll call it "optimized mode"
-  // Keep track of processed tickets to avoid duplicate sounds
-  const [processedTicketIds] = useState(new Set<string>());
-  
-  const { isPolling } = useTicketFallbackPolling({
-    onNewTickets: (newTickets) => {
-      console.log('🔄 FALLBACK: Processing new tickets from enhanced polling:', newTickets.length);
-      newTickets.forEach(ticket => {
-        handleTicketInsert(ticket);
-        
-        // Only trigger sound if we haven't processed this ticket before
-        if (ticket.criado_por !== user?.id && !processedTicketIds.has(ticket.id)) {
-          console.log('🔊 FALLBACK: Triggering notification sound for NEW ticket:', ticket.codigo_ticket);
-          
-          // Mark this ticket as processed to avoid duplicate sounds
-          processedTicketIds.add(ticket.id);
-          
-          // Clean up old IDs periodically to prevent memory leak (keep last 100)
-          if (processedTicketIds.size > 100) {
-            const idsArray = Array.from(processedTicketIds);
-            const toRemove = idsArray.slice(0, idsArray.length - 50); // Remove oldest 50
-            toRemove.forEach(id => processedTicketIds.delete(id));
-          }
-          
-          // Import and trigger sound based on priority
-          import('@/lib/notification-sounds').then(({ NotificationSounds }) => {
-            let soundType: 'info' | 'warning' | 'critical' = 'info';
-            if (ticket.prioridade === 'crise') {
-              soundType = 'critical';
-            } else if (ticket.prioridade === 'imediato') {
-              soundType = 'warning';
-            }
-            
-            console.log(`🔊 NEW SOUND: Playing ${soundType} sound for ticket ${ticket.codigo_ticket} with priority ${ticket.prioridade}`);
-            NotificationSounds.playNotificationSound(soundType);
-          });
-          
-          // Show toast notification
-          toast({
-            title: "🎫 Novo Ticket Recebido",
-            description: `${ticket.titulo || ticket.descricao_problema || 'Sem título'} - ${ticket.codigo_ticket}`,
-            duration: 5000,
-          });
-        } else if (processedTicketIds.has(ticket.id)) {
-          console.log('🔇 OPTIMIZED: Skipping sound for already processed ticket:', ticket.codigo_ticket);
-        }
-      });
+    onTicketUpdate: (ticket) => {
+      console.log('🔄 SIMPLE: Ticket updated:', ticket.codigo_ticket, 'status:', ticket.status);
+      handleTicketUpdate(ticket);
     },
-    onUpdatedTickets: (updatedTickets) => {
-      console.log('🔄 FALLBACK: Processing updated tickets:', updatedTickets.length);
-      updatedTickets.forEach(ticket => {
-        handleTicketUpdate(ticket);
-      });
+    onTicketDelete: (ticketId) => {
+      console.log('🗑️ SIMPLE: Ticket deleted:', ticketId);
+      handleTicketDelete(ticketId);
     },
-    enabled: isDegraded,
-    intervalMs: 3000, // Faster polling for better experience
-    filters: {
-      unidade_id: filters.unidade_id !== 'all' ? filters.unidade_id : undefined,
-      equipe_id: filters.equipe_id !== 'all' ? filters.equipe_id : undefined,
-      status: filters.status !== 'all' ? [filters.status] : undefined,
-    }
+    enabled: true
   });
-
-  // Simulate "connected" status when polling is working well
-  const effectivelyConnected = isConnected || (isDegraded && isPolling && realtimeAttempted);
-  const showAsPolling = isDegraded && !isConnected;
 
   const handleTicketSelect = (ticketId: string) => {
     setSelectedTicketId(ticketId);
@@ -231,14 +153,6 @@ const Tickets = () => {
 
   const handleCloseDetail = () => {
     setSelectedTicketId(null);
-  };
-
-  const getSLABadgeVariant = (status: string) => {
-    switch (status) {
-      case 'vencido': return 'destructive';
-      case 'alerta': return 'outline';
-      default: return 'secondary';
-    }
   };
 
   return (
