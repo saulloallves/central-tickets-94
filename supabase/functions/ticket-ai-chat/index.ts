@@ -9,7 +9,6 @@ const corsHeaders = {
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const openaiApiKey = Deno.env.get('OPENAI_API_KEY')!;
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -51,6 +50,7 @@ serve(async (req) => {
     }
 
     console.log('AI Settings loaded:', {
+      api_provider: aiSettings.api_provider,
       modelo_chat: aiSettings.modelo_chat,
       use_only_approved: aiSettings.use_only_approved,
       allowed_categories: aiSettings.allowed_categories,
@@ -293,7 +293,8 @@ ${allKBArticles.map(a => `**${a.titulo}** (${a.categoria})\n${a.conteudo.substri
     };
 
     // 7. Build AI prompt - AI helps the support agent, not the customer directly
-    const basePrompt = `Você é o assistente de IA da Cresci & Perdi, especializado em AJUDAR ATENDENTES de suporte.
+    const basePrompt = aiSettings.prompt_chat || 
+      `Você é o assistente de IA da Cresci & Perdi, especializado em AJUDAR ATENDENTES de suporte.
 Você conhece todos os processos, manuais e procedimentos da empresa.
 
 IMPORTANTE: Você está conversando com um ATENDENTE/SUPORTE, não com o cliente final (franqueado).
@@ -342,10 +343,44 @@ ${mensagem}
 
 Ajude o atendente com informações da base de conhecimento da Cresci & Perdi.`;
 
+    // 8. Determine API endpoint and model based on provider
+    let apiUrl: string;
+    let apiKey: string;
+    let apiHeaders: Record<string, string>;
+    let model: string;
 
-    // 8. Call OpenAI using configured model and parameters
-    const model = aiSettings.modelo_chat || 'gpt-5-2025-08-07';
-    const isNewerModel = model.includes('gpt-4.1') || model.includes('gpt-5') || model.includes('o3') || model.includes('o4');
+    if (aiSettings.api_provider === 'lambda') {
+      apiUrl = `${aiSettings.api_base_url}/chat/completions`;
+      apiKey = Deno.env.get('LAMBDA_API_KEY')!;
+      model = aiSettings.modelo_chat || 'llama-4-maverick-17b-128e-instruct-fp8';
+      
+      apiHeaders = {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      };
+
+      // Add custom headers if configured
+      if (aiSettings.custom_headers && typeof aiSettings.custom_headers === 'object') {
+        Object.assign(apiHeaders, aiSettings.custom_headers);
+      }
+    } else {
+      // OpenAI or other providers
+      apiUrl = 'https://api.openai.com/v1/chat/completions';
+      apiKey = Deno.env.get('OPENAI_API_KEY')!;
+      model = aiSettings.modelo_chat || 'gpt-5-2025-08-07';
+      
+      apiHeaders = {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      };
+    }
+
+    if (!apiKey) {
+      throw new Error(`${aiSettings.api_provider.toUpperCase()} API key not configured`);
+    }
+
+    // Build request payload based on model and provider
+    const isNewerOpenAIModel = model.includes('gpt-4.1') || model.includes('gpt-5') || model.includes('o3') || model.includes('o4');
     
     const requestBody: any = {
       model,
@@ -355,12 +390,21 @@ Ajude o atendente com informações da base de conhecimento da Cresci & Perdi.`;
       ],
     };
 
-    // Use configured parameters from AI settings
-    if (isNewerModel) {
+    // Set parameters based on provider and model
+    if (aiSettings.api_provider === 'lambda') {
+      // Lambda API supports temperature and max_tokens
+      requestBody.temperature = aiSettings.temperatura_chat || 0.3;
+      requestBody.max_tokens = aiSettings.max_tokens_chat || 800;
+      requestBody.top_p = 1.0;
+      requestBody.frequency_penalty = 0;
+      requestBody.presence_penalty = 0;
+    } else if (isNewerOpenAIModel) {
+      // Newer OpenAI models use max_completion_tokens and don't support temperature
       requestBody.max_completion_tokens = aiSettings.max_tokens_chat || 800;
       requestBody.frequency_penalty = 0;
       requestBody.presence_penalty = 0;
     } else {
+      // Legacy OpenAI models
       requestBody.max_tokens = aiSettings.max_tokens_chat || 800;
       requestBody.temperature = aiSettings.temperatura_chat || 0.3;
       requestBody.top_p = 1.0;
@@ -368,24 +412,21 @@ Ajude o atendente com informações da base de conhecimento da Cresci & Perdi.`;
       requestBody.presence_penalty = 0;
     }
 
-    console.log('Calling OpenAI for chat with model:', model);
+    console.log('Calling AI API with model:', model, 'Provider:', aiSettings.api_provider);
 
-    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+    const apiResponse = await fetch(apiUrl, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openaiApiKey}`,
-        'Content-Type': 'application/json',
-      },
+      headers: apiHeaders,
       body: JSON.stringify(requestBody),
     });
 
-    if (!openaiResponse.ok) {
-      const errorText = await openaiResponse.text();
-      throw new Error(`OpenAI API error: ${errorText}`);
+    if (!apiResponse.ok) {
+      const errorText = await apiResponse.text();
+      throw new Error(`AI API error: ${errorText}`);
     }
 
-    const openaiData = await openaiResponse.json();
-    const rawResponse = openaiData.choices[0].message.content;
+    const apiData = await apiResponse.json();
+    const rawResponse = apiData.choices[0].message.content;
     
     // Sanitize the AI output
     const { sanitized, removed_greeting, removed_signoff } = sanitizeOutput(rawResponse);
@@ -404,6 +445,7 @@ Ajude o atendente com informações da base de conhecimento da Cresci & Perdi.`;
         log: {
           prompt: userPrompt,
           system_prompt: systemPrompt,
+          api_provider: aiSettings.api_provider,
           context_sections: contextSections.length,
           search_terms: searchTerms,
           rag_hits: ragDocuments.length,
@@ -415,7 +457,7 @@ Ajude o atendente com informações da base de conhecimento da Cresci & Perdi.`;
           removed_signoff,
           original_length: rawResponse.length,
           sanitized_length: sanitized.length,
-          openai_response: openaiData
+          api_response: apiData
         }
       })
       .select()

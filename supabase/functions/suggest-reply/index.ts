@@ -9,7 +9,6 @@ const corsHeaders = {
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const openaiApiKey = Deno.env.get('OPENAI_API_KEY')!;
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -45,6 +44,7 @@ serve(async (req) => {
     }
 
     console.log('AI Settings loaded:', {
+      api_provider: aiSettings.api_provider,
       modelo_sugestao: aiSettings.modelo_sugestao,
       use_only_approved: aiSettings.use_only_approved,
       allowed_categories: aiSettings.allowed_categories,
@@ -72,7 +72,6 @@ serve(async (req) => {
       console.error('Ticket not found with ID:', ticketId);
       throw new Error('Ticket not found');
     }
-
 
     // Hybrid RAG Retrieval: Search relevant documents
     console.log('Searching for relevant documents for suggestion:', ticket.descricao_problema);
@@ -128,7 +127,7 @@ serve(async (req) => {
       kbBaseQuery = kbBaseQuery.in('categoria', aiSettings.allowed_categories);
     }
 
-    // Create more comprehensive search for KB articles - prioritize content search
+    // Create more comprehensive search for KB articles
     const kbPromises = [
       // Search by exact description match prioritizing content
       supabase
@@ -282,7 +281,7 @@ ${allKBArticles.map(a => `**${a.titulo}** (${a.categoria})\n${a.conteudo}\nTags:
     };
 
     // 7. Build AI prompt with strict brevity rules and style
-    const basePrompt = aiSettings.base_conhecimento_prompt || 
+    const basePrompt = aiSettings.prompt_sugestao || 
       `Você é um assistente especializado em suporte técnico para atendentes de uma franquia.`;
     
     const stylePrompt = aiSettings.estilo_resposta === 'formal' ? 
@@ -313,9 +312,44 @@ ${context}
 SUGESTAO DE RESPOSTA:
 Gere uma resposta concisa e útil para o atendente.`;
 
-    // 8. Call OpenAI using configured model and parameters
-    const model = aiSettings.modelo_sugestao || 'gpt-5-2025-08-07';
-    const isNewerModel = model.includes('gpt-4.1') || model.includes('gpt-5') || model.includes('o3') || model.includes('o4');
+    // 8. Determine API endpoint and model based on provider
+    let apiUrl: string;
+    let apiKey: string;
+    let apiHeaders: Record<string, string>;
+    let model: string;
+
+    if (aiSettings.api_provider === 'lambda') {
+      apiUrl = `${aiSettings.api_base_url}/chat/completions`;
+      apiKey = Deno.env.get('LAMBDA_API_KEY')!;
+      model = aiSettings.modelo_sugestao || 'llama-4-maverick-17b-128e-instruct-fp8';
+      
+      apiHeaders = {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      };
+
+      // Add custom headers if configured
+      if (aiSettings.custom_headers && typeof aiSettings.custom_headers === 'object') {
+        Object.assign(apiHeaders, aiSettings.custom_headers);
+      }
+    } else {
+      // OpenAI or other providers
+      apiUrl = 'https://api.openai.com/v1/chat/completions';
+      apiKey = Deno.env.get('OPENAI_API_KEY')!;
+      model = aiSettings.modelo_sugestao || 'gpt-5-2025-08-07';
+      
+      apiHeaders = {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      };
+    }
+
+    if (!apiKey) {
+      throw new Error(`${aiSettings.api_provider.toUpperCase()} API key not configured`);
+    }
+
+    // Build request payload based on model and provider
+    const isNewerOpenAIModel = model.includes('gpt-4.1') || model.includes('gpt-5') || model.includes('o3') || model.includes('o4');
     
     const requestBody: any = {
       model,
@@ -325,12 +359,21 @@ Gere uma resposta concisa e útil para o atendente.`;
       ],
     };
 
-    // Use configured parameters from AI settings
-    if (isNewerModel) {
+    // Set parameters based on provider and model
+    if (aiSettings.api_provider === 'lambda') {
+      // Lambda API supports temperature and max_tokens
+      requestBody.temperature = aiSettings.temperatura_sugestao || 0.7;
+      requestBody.max_tokens = aiSettings.max_tokens_sugestao || 1000;
+      requestBody.top_p = 1.0;
+      requestBody.frequency_penalty = 0;
+      requestBody.presence_penalty = 0;
+    } else if (isNewerOpenAIModel) {
+      // Newer OpenAI models use max_completion_tokens and don't support temperature
       requestBody.max_completion_tokens = aiSettings.max_tokens_sugestao || 1000;
       requestBody.frequency_penalty = 0;
       requestBody.presence_penalty = 0;
     } else {
+      // Legacy OpenAI models
       requestBody.max_tokens = aiSettings.max_tokens_sugestao || 1000;
       requestBody.temperature = aiSettings.temperatura_sugestao || 0.7;
       requestBody.top_p = 1.0;
@@ -338,24 +381,21 @@ Gere uma resposta concisa e útil para o atendente.`;
       requestBody.presence_penalty = 0;
     }
 
-    console.log('Calling OpenAI for suggestion with model:', model);
+    console.log('Calling AI API with model:', model, 'Provider:', aiSettings.api_provider);
 
-    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+    const apiResponse = await fetch(apiUrl, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openaiApiKey}`,
-        'Content-Type': 'application/json',
-      },
+      headers: apiHeaders,
       body: JSON.stringify(requestBody),
     });
 
-    if (!openaiResponse.ok) {
-      const errorText = await openaiResponse.text();
-      throw new Error(`OpenAI API error: ${errorText}`);
+    if (!apiResponse.ok) {
+      const errorText = await apiResponse.text();
+      throw new Error(`AI API error: ${errorText}`);
     }
 
-    const openaiData = await openaiResponse.json();
-    const rawResponse = openaiData.choices[0].message.content;
+    const apiData = await apiResponse.json();
+    const rawResponse = apiData.choices[0].message.content;
     
     // Sanitize the AI output
     const { sanitized, removed_greeting, removed_signoff } = sanitizeOutput(rawResponse);
@@ -372,6 +412,7 @@ Gere uma resposta concisa e útil para o atendente.`;
         log: {
           prompt: userPrompt,
           system_prompt: systemPrompt,
+          api_provider: aiSettings.api_provider,
           context_sections: contextSections.length,
           search_terms: searchTerms,
           rag_hits: ragDocuments.length,
@@ -383,7 +424,7 @@ Gere uma resposta concisa e útil para o atendente.`;
           removed_signoff,
           original_length: rawResponse.length,
           sanitized_length: sanitized.length,
-          openai_response: openaiData
+          api_response: apiData
         }
       })
       .select()

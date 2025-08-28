@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -20,11 +19,6 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const openaiApiKey = Deno.env.get('OPENAI_API_KEY')
-    if (!openaiApiKey) {
-      throw new Error('OpenAI API key not found')
-    }
-
     // 1. Fetch AI settings FIRST to get configured model
     const { data: aiSettings, error: settingsError } = await supabase
       .from('faq_ai_settings')
@@ -39,6 +33,7 @@ serve(async (req) => {
 
     // Use default if no settings found
     const defaultSettings = {
+      api_provider: 'openai',
       modelo_classificacao: 'gpt-5-2025-08-07',
       temperatura_classificacao: 0.1,
       max_tokens_classificacao: 500
@@ -47,15 +42,51 @@ serve(async (req) => {
     const settings = aiSettings || defaultSettings;
 
     console.log('AI Settings loaded for classification:', {
+      api_provider: settings.api_provider,
       modelo_classificacao: settings.modelo_classificacao,
       temperatura_classificacao: settings.temperatura_classificacao,
       max_tokens_classificacao: settings.max_tokens_classificacao
     });
 
+    // Determine API endpoint and model based on provider
+    let apiUrl: string;
+    let apiKey: string;
+    let apiHeaders: Record<string, string>;
+    let model: string;
+
+    if (settings.api_provider === 'lambda') {
+      apiUrl = `${settings.api_base_url}/chat/completions`;
+      apiKey = Deno.env.get('LAMBDA_API_KEY')!;
+      model = settings.modelo_classificacao || 'llama-4-maverick-17b-128e-instruct-fp8';
+      
+      apiHeaders = {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      };
+
+      // Add custom headers if configured
+      if (settings.custom_headers && typeof settings.custom_headers === 'object') {
+        Object.assign(apiHeaders, settings.custom_headers);
+      }
+    } else {
+      // OpenAI or other providers
+      apiUrl = 'https://api.openai.com/v1/chat/completions';
+      apiKey = Deno.env.get('OPENAI_API_KEY')!;
+      model = settings.modelo_classificacao || 'gpt-5-2025-08-07';
+      
+      apiHeaders = {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      };
+    }
+
+    if (!apiKey) {
+      throw new Error(`${settings.api_provider.toUpperCase()} API key not found`);
+    }
+
     // Helper function to build analysis request with correct model
-    const buildAnalysisRequest = async (prompt: string) => {
-      const model = settings.modelo_classificacao || 'gpt-5-2025-08-07';
-      const isNewerModel = model.includes('gpt-4.1') || model.includes('gpt-5') || model.includes('o3') || model.includes('o4');
+    const buildAnalysisRequest = (prompt: string) => {
+      const isNewerOpenAIModel = model.includes('gpt-4.1') || model.includes('gpt-5') || model.includes('o3') || model.includes('o4');
       
       const requestBody: any = {
         model,
@@ -71,12 +102,21 @@ serve(async (req) => {
         ]
       };
 
-      // Use configured parameters from AI settings
-      if (isNewerModel) {
+      // Set parameters based on provider and model
+      if (settings.api_provider === 'lambda') {
+        // Lambda API supports temperature and max_tokens
+        requestBody.temperature = settings.temperatura_classificacao || 0.1;
+        requestBody.max_tokens = settings.max_tokens_classificacao || 500;
+        requestBody.top_p = 1.0;
+        requestBody.frequency_penalty = 0;
+        requestBody.presence_penalty = 0;
+      } else if (isNewerOpenAIModel) {
+        // Newer OpenAI models use max_completion_tokens and don't support temperature
         requestBody.max_completion_tokens = settings.max_tokens_classificacao || 500;
         requestBody.frequency_penalty = 0;
         requestBody.presence_penalty = 0;
       } else {
+        // Legacy OpenAI models
         requestBody.max_tokens = settings.max_tokens_classificacao || 500;
         requestBody.temperature = settings.temperatura_classificacao || 0.1;
         requestBody.top_p = 1.0;
@@ -135,26 +175,24 @@ Responda APENAS em formato JSON válido:
 CRÍTICO: Use APENAS estas 4 prioridades: imediato, ate_1_hora, ainda_hoje, posso_esperar
 `
 
-    console.log('Calling OpenAI for ticket analysis...')
+    console.log('Calling AI API for ticket analysis with provider:', settings.api_provider, 'model:', model)
     
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch(apiUrl, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openaiApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(await buildAnalysisRequest(analysisPrompt)),
+      headers: apiHeaders,
+      body: JSON.stringify(buildAnalysisRequest(analysisPrompt)),
     })
 
     if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status}`)
+      const errorText = await response.text();
+      throw new Error(`AI API error: ${response.status} - ${errorText}`)
     }
 
-    const openaiData = await response.json()
-    const aiResponse = openaiData.choices[0]?.message?.content
+    const apiData = await response.json()
+    const aiResponse = apiData.choices[0]?.message?.content
 
-    console.log('OpenAI response:', aiResponse)
-    console.log('OpenAI full response data:', JSON.stringify(openaiData, null, 2))
+    console.log('AI response:', aiResponse)
+    console.log('AI full response data:', JSON.stringify(apiData, null, 2))
 
     // Função para garantir máximo 3 palavras no título e melhorar qualidade
     const limitTitleToThreeWords = (title: string): string => {
@@ -266,7 +304,8 @@ CRÍTICO: Use APENAS estas 4 prioridades: imediato, ate_1_hora, ainda_hoje, poss
       log_ia: {
         analysis_timestamp: new Date().toISOString(),
         ai_response: aiResponse,
-        model: settings.modelo_classificacao || 'gpt-5-2025-08-07',
+        api_provider: settings.api_provider,
+        model: model,
         categoria_sugerida: analysis.categoria,
         prioridade_sugerida: analysis.prioridade,
         equipe_sugerida: analysis.equipe_sugerida,

@@ -9,7 +9,6 @@ const corsHeaders = {
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const openaiApiKey = Deno.env.get('OPENAI_API_KEY')!;
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -51,6 +50,8 @@ serve(async (req) => {
         }
       );
     }
+
+    console.log('Using API provider:', settings.api_provider);
 
     // Hybrid RAG Retrieval: Search relevant documents
     console.log('Searching for relevant documents for:', pergunta);
@@ -171,7 +172,7 @@ serve(async (req) => {
       knowledgeBase = 'NENHUM DOCUMENTO RELEVANTE ENCONTRADO PARA ESTA PERGUNTA.\nSugira ao usuário abrir um ticket para atendimento especializado.';
     }
 
-    // Prepare OpenAI prompt with style
+    // Prepare AI prompt with style
     const basePrompt = settings.base_conhecimento_prompt || 
       `Você é um assistente especializado em FAQ para franquias.`;
     
@@ -190,10 +191,41 @@ ${knowledgeBase}
 
 Responda de forma clara e objetiva. Se não houver informação suficiente na base de conhecimento, informe que é necessário abrir um ticket.`;
 
-    const openAIApiKey = openaiApiKey;
-    if (!openAIApiKey) {
+    // Determine API endpoint and model based on provider
+    let apiUrl: string;
+    let apiKey: string;
+    let apiHeaders: Record<string, string>;
+    let model: string;
+
+    if (settings.api_provider === 'lambda') {
+      apiUrl = `${settings.api_base_url}/chat/completions`;
+      apiKey = Deno.env.get('LAMBDA_API_KEY')!;
+      model = settings.modelo_sugestao || 'llama-4-maverick-17b-128e-instruct-fp8';
+      
+      apiHeaders = {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      };
+
+      // Add custom headers if configured
+      if (settings.custom_headers && typeof settings.custom_headers === 'object') {
+        Object.assign(apiHeaders, settings.custom_headers);
+      }
+    } else {
+      // OpenAI or other providers
+      apiUrl = 'https://api.openai.com/v1/chat/completions';
+      apiKey = Deno.env.get('OPENAI_API_KEY')!;
+      model = settings.modelo_sugestao || 'gpt-5-2025-08-07';
+      
+      apiHeaders = {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      };
+    }
+
+    if (!apiKey) {
       return new Response(
-        JSON.stringify({ error: 'OpenAI API key não configurada' }),
+        JSON.stringify({ error: `${settings.api_provider.toUpperCase()} API key não configurada` }),
         { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -201,11 +233,10 @@ Responda de forma clara e objetiva. Se não houver informação suficiente na ba
       );
     }
 
-    // Call OpenAI API using configured model and parameters
-    const model = settings.modelo_sugestao || 'gpt-5-2025-08-07';
-    const isNewerModel = model.includes('gpt-4.1') || model.includes('gpt-5') || model.includes('o3') || model.includes('o4');
+    // Build request payload based on model and provider
+    const isNewerOpenAIModel = model.includes('gpt-4.1') || model.includes('gpt-5') || model.includes('o3') || model.includes('o4');
     
-    const openAIPayload: any = {
+    const apiPayload: any = {
       model,
       messages: [
         { role: 'system', content: systemPrompt },
@@ -213,33 +244,39 @@ Responda de forma clara e objetiva. Se não houver informação suficiente na ba
       ]
     };
 
-    // Use configured parameters from AI settings
-    if (isNewerModel) {
-      openAIPayload.max_completion_tokens = settings.max_tokens_sugestao || 1000;
-      openAIPayload.frequency_penalty = 0;
-      openAIPayload.presence_penalty = 0;
+    // Set parameters based on provider and model
+    if (settings.api_provider === 'lambda') {
+      // Lambda API supports temperature and max_tokens
+      apiPayload.temperature = settings.temperatura_sugestao || 0.7;
+      apiPayload.max_tokens = settings.max_tokens_sugestao || 1000;
+      apiPayload.top_p = 1.0;
+      apiPayload.frequency_penalty = 0;
+      apiPayload.presence_penalty = 0;
+    } else if (isNewerOpenAIModel) {
+      // Newer OpenAI models use max_completion_tokens and don't support temperature
+      apiPayload.max_completion_tokens = settings.max_tokens_sugestao || 1000;
+      apiPayload.frequency_penalty = 0;
+      apiPayload.presence_penalty = 0;
     } else {
-      openAIPayload.max_tokens = settings.max_tokens_sugestao || 1000;
-      openAIPayload.temperature = settings.temperatura_sugestao || 0.7;
-      openAIPayload.top_p = 1.0;
-      openAIPayload.frequency_penalty = 0;
-      openAIPayload.presence_penalty = 0;
+      // Legacy OpenAI models
+      apiPayload.max_tokens = settings.max_tokens_sugestao || 1000;
+      apiPayload.temperature = settings.temperatura_sugestao || 0.7;
+      apiPayload.top_p = 1.0;
+      apiPayload.frequency_penalty = 0;
+      apiPayload.presence_penalty = 0;
     }
 
-    console.log('Calling OpenAI with model:', model);
+    console.log('Calling AI API with model:', model, 'Provider:', settings.api_provider);
 
-    const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+    const apiResponse = await fetch(apiUrl, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(openAIPayload),
+      headers: apiHeaders,
+      body: JSON.stringify(apiPayload),
     });
 
-    if (!openAIResponse.ok) {
-      const errorText = await openAIResponse.text();
-      console.error('OpenAI API error:', errorText);
+    if (!apiResponse.ok) {
+      const errorText = await apiResponse.text();
+      console.error('AI API error:', errorText);
       return new Response(
         JSON.stringify({ error: 'Erro na IA de sugestões' }),
         { 
@@ -249,16 +286,17 @@ Responda de forma clara e objetiva. Se não houver informação suficiente na ba
       );
     }
 
-    const openAIData = await openAIResponse.json();
-    const resposta = openAIData.choices[0].message.content;
+    const apiData = await apiResponse.json();
+    const resposta = apiData.choices[0].message.content;
 
-    console.log('OpenAI response generated successfully');
+    console.log('AI response generated successfully');
 
     // Log the interaction (will be saved when user decides)
     const logPromptFaq = {
       system_prompt: systemPrompt,
       user_question: pergunta,
       ai_response: resposta,
+      api_provider: settings.api_provider,
       model: model,
       temperature: settings.temperatura_sugestao,
       max_tokens: settings.max_tokens_sugestao,
