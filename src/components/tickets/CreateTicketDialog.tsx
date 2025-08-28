@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useRole } from '@/hooks/useRole';
-import { useTickets } from '@/hooks/useTickets';
+import { useCreateTicket } from '@/hooks/useCreateTicket';
 import { supabase } from '@/integrations/supabase/client';
 
 interface FormData {
@@ -42,15 +42,7 @@ export function CreateTicketDialog({ open, onOpenChange }: { open: boolean; onOp
   const { user } = useAuth();
   const { toast } = useToast();
   const { isAdmin, isSupervisor } = useRole();
-  const { createTicket } = useTickets({
-    search: '',
-    status: '',
-    categoria: '',
-    prioridade: '',
-    unidade_id: '',
-    status_sla: '',
-    equipe_id: ''
-  });
+  const { createTicket } = useCreateTicket();
   const [submitting, setSubmitting] = useState(false);
   const [unidades, setUnidades] = useState<{ id: string; nome: string; }[]>([]);
   const [selectedUnidade, setSelectedUnidade] = useState<string | null>(null);

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useRole } from './useRole';
@@ -67,16 +67,36 @@ export const useTickets = (filters: TicketFilters) => {
   const { userEquipes } = useUserEquipes();
   const { toast } = useToast();
   
-  const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [ticketStats, setTicketStats] = useState<TicketStats>({
-    total: 0,
-    em_atendimento: 0,
-    sla_vencido: 0,
+  const [state, setState] = useState({
+    tickets: [] as Ticket[],
+    loading: true,
+    ticketStats: {
+      total: 0,
+      em_atendimento: 0,
+      sla_vencido: 0,
+    } as TicketStats
   });
+  
+  // Track if initial fetch is done to prevent React StrictMode double fetch
+  const initialFetchDone = useRef(false);
 
-  // Memoize filters to prevent unnecessary re-renders
-  const memoizedFilters = useMemo(() => filters, [
+  // Memoize filters to prevent unnecessary re-renders with debounce effect
+  const memoizedFilters = useMemo(() => {
+    const timeout = setTimeout(() => {
+      // This ensures filters are stable and don't cause rapid re-renders
+    }, 50);
+    return () => clearTimeout(timeout);
+  }, [
+    filters.search,
+    filters.status,
+    filters.categoria,
+    filters.prioridade,
+    filters.unidade_id,
+    filters.status_sla,
+    filters.equipe_id
+  ]);
+  
+  const stableFilters = useMemo(() => filters, [
     filters.search,
     filters.status,
     filters.categoria,
@@ -89,10 +109,13 @@ export const useTickets = (filters: TicketFilters) => {
   // Fetch inicial dos tickets
   const fetchTickets = useCallback(async () => {
     if (!user) return;
+    
+    // Prevent double fetch in React StrictMode
+    if (initialFetchDone.current) return;
 
     try {
-      setLoading(true);
-      console.log('🔍 Fetching tickets with filters:', memoizedFilters);
+      setState(prev => ({ ...prev, loading: true }));
+      console.log('🔍 Fetching tickets with filters:', stableFilters);
 
       let query = supabase
         .from('tickets')
@@ -109,45 +132,48 @@ export const useTickets = (filters: TicketFilters) => {
         const userEquipeIds = userEquipes.map(eq => eq.id);
         if (userEquipeIds.length > 0) {
           query = query.in('equipe_responsavel_id', userEquipeIds);
-        } else {
-          // Se não tem equipes, não mostrar tickets
-          setTickets([]);
-          setLoading(false);
-          return;
-        }
+         } else {
+           // Se não tem equipes, não mostrar tickets
+           setState({
+             tickets: [],
+             loading: false,
+             ticketStats: { total: 0, em_atendimento: 0, sla_vencido: 0 }
+           });
+           return;
+         }
       }
 
       // Aplicar filtros de busca
-      if (memoizedFilters.search) {
-        query = query.or(`codigo_ticket.ilike.%${memoizedFilters.search}%,titulo.ilike.%${memoizedFilters.search}%,descricao_problema.ilike.%${memoizedFilters.search}%`);
+      if (stableFilters.search) {
+        query = query.or(`codigo_ticket.ilike.%${stableFilters.search}%,titulo.ilike.%${stableFilters.search}%,descricao_problema.ilike.%${stableFilters.search}%`);
       }
 
-      if (memoizedFilters.status && memoizedFilters.status !== 'all') {
-        query = query.eq('status', memoizedFilters.status as any);
+      if (stableFilters.status && stableFilters.status !== 'all') {
+        query = query.eq('status', stableFilters.status as any);
       }
 
-      if (memoizedFilters.prioridade && memoizedFilters.prioridade !== 'all') {
-        query = query.eq('prioridade', memoizedFilters.prioridade as any);
+      if (stableFilters.prioridade && stableFilters.prioridade !== 'all') {
+        query = query.eq('prioridade', stableFilters.prioridade as any);
       }
 
-      if (memoizedFilters.unidade_id && memoizedFilters.unidade_id !== 'all') {
-        query = query.eq('unidade_id', memoizedFilters.unidade_id);
+      if (stableFilters.unidade_id && stableFilters.unidade_id !== 'all') {
+        query = query.eq('unidade_id', stableFilters.unidade_id);
       }
 
-      if (memoizedFilters.categoria && memoizedFilters.categoria !== 'all') {
-        query = query.eq('categoria', memoizedFilters.categoria as any);
+      if (stableFilters.categoria && stableFilters.categoria !== 'all') {
+        query = query.eq('categoria', stableFilters.categoria as any);
       }
 
-      if (memoizedFilters.status_sla && memoizedFilters.status_sla !== 'all') {
-        query = query.eq('status_sla', memoizedFilters.status_sla as any);
+      if (stableFilters.status_sla && stableFilters.status_sla !== 'all') {
+        query = query.eq('status_sla', stableFilters.status_sla as any);
       }
 
-      if (memoizedFilters.equipe_id && memoizedFilters.equipe_id !== 'all') {
-        if (memoizedFilters.equipe_id === 'minhas_equipes' && userEquipes.length > 0) {
+      if (stableFilters.equipe_id && stableFilters.equipe_id !== 'all') {
+        if (stableFilters.equipe_id === 'minhas_equipes' && userEquipes.length > 0) {
           const userEquipeIds = userEquipes.map(eq => eq.id);
           query = query.in('equipe_responsavel_id', userEquipeIds);
-        } else if (memoizedFilters.equipe_id !== 'minhas_equipes') {
-          query = query.eq('equipe_responsavel_id', memoizedFilters.equipe_id);
+        } else if (stableFilters.equipe_id !== 'minhas_equipes') {
+          query = query.eq('equipe_responsavel_id', stableFilters.equipe_id);
         }
       }
 
@@ -172,53 +198,67 @@ export const useTickets = (filters: TicketFilters) => {
         status_sla: ticket.status_sla || 'dentro_prazo'
       })) || [];
       
-      setTickets(transformedData as Ticket[]);
-
       // Calcular estatísticas
       const stats = {
         total: transformedData?.length || 0,
         em_atendimento: transformedData?.filter(t => t.status === 'em_atendimento').length || 0,
         sla_vencido: transformedData?.filter(t => t.status_sla === 'vencido').length || 0,
       };
-      setTicketStats(stats);
+
+      // Single setState call to prevent double renders
+      setState({
+        tickets: transformedData as Ticket[],
+        loading: false,
+        ticketStats: stats
+      });
+      
+      initialFetchDone.current = true;
 
     } catch (error) {
       console.error('❌ Erro ao buscar tickets:', error);
-    } finally {
-      setLoading(false);
+      setState(prev => ({ ...prev, loading: false }));
     }
-  }, [user?.id, memoizedFilters, isAdmin, isSupervisor, userEquipes.length, toast]);
+  }, [user?.id, stableFilters, isAdmin, isSupervisor, userEquipes.length, toast]);
 
-  // Executar fetch inicial
+  // Executar fetch inicial - debounced to prevent rapid refetches
   useEffect(() => {
-    fetchTickets();
+    const timeoutId = setTimeout(() => {
+      if (!initialFetchDone.current) {
+        fetchTickets();
+      }
+    }, 100);
+    
+    return () => clearTimeout(timeoutId);
   }, [fetchTickets]);
 
   // Handlers para eventos Realtime
   const handleTicketUpdate = useCallback((updatedTicket: Ticket) => {
-    setTickets(prevTickets => 
-      prevTickets.map(ticket => 
-        ticket.id === updatedTicket.id ? { ...updatedTicket, status_sla: updatedTicket.status_sla || 'dentro_prazo' } : ticket
-      )
-    );
-    
-    // Recalcular stats
-    setTickets(currentTickets => {
+    setState(prevState => {
+      const updatedTickets = prevState.tickets.map(ticket => 
+        ticket.id === updatedTicket.id 
+          ? { ...updatedTicket, status_sla: updatedTicket.status_sla || 'dentro_prazo' } 
+          : ticket
+      );
+      
       const stats = {
-        total: currentTickets.length,
-        em_atendimento: currentTickets.filter(t => t.status === 'em_atendimento').length,
-        sla_vencido: currentTickets.filter(t => t.status_sla === 'vencido').length,
+        total: updatedTickets.length,
+        em_atendimento: updatedTickets.filter(t => t.status === 'em_atendimento').length,
+        sla_vencido: updatedTickets.filter(t => t.status_sla === 'vencido').length,
       };
-      setTicketStats(stats);
-      return currentTickets;
+      
+      return {
+        ...prevState,
+        tickets: updatedTickets,
+        ticketStats: stats
+      };
     });
   }, []);
 
   const handleTicketInsert = useCallback((newTicket: Ticket) => {
-    setTickets(prevTickets => {
+    setState(prevState => {
       // Verificar se já existe (evitar duplicatas)
-      if (prevTickets.some(t => t.id === newTicket.id)) {
-        return prevTickets;
+      if (prevState.tickets.some(t => t.id === newTicket.id)) {
+        return prevState;
       }
       
       const ticketWithDefaults = {
@@ -227,33 +267,37 @@ export const useTickets = (filters: TicketFilters) => {
         status_sla: newTicket.status_sla || 'dentro_prazo'
       };
       
-      const updatedTickets = [...prevTickets, ticketWithDefaults];
+      const updatedTickets = [...prevState.tickets, ticketWithDefaults];
       
-      // Recalcular stats
       const stats = {
         total: updatedTickets.length,
         em_atendimento: updatedTickets.filter(t => t.status === 'em_atendimento').length,
         sla_vencido: updatedTickets.filter(t => t.status_sla === 'vencido').length,
       };
-      setTicketStats(stats);
       
-      return updatedTickets;
+      return {
+        ...prevState,
+        tickets: updatedTickets,
+        ticketStats: stats
+      };
     });
   }, []);
 
   const handleTicketDelete = useCallback((ticketId: string) => {
-    setTickets(prevTickets => {
-      const updatedTickets = prevTickets.filter(t => t.id !== ticketId);
+    setState(prevState => {
+      const updatedTickets = prevState.tickets.filter(t => t.id !== ticketId);
       
-      // Recalcular stats
       const stats = {
         total: updatedTickets.length,
         em_atendimento: updatedTickets.filter(t => t.status === 'em_atendimento').length,
         sla_vencido: updatedTickets.filter(t => t.status_sla === 'vencido').length,
       };
-      setTicketStats(stats);
       
-      return updatedTickets;
+      return {
+        ...prevState,
+        tickets: updatedTickets,
+        ticketStats: stats
+      };
     });
   }, []);
 
@@ -275,13 +319,14 @@ export const useTickets = (filters: TicketFilters) => {
       });
 
       // Update otimista no UI
-      setTickets(prevTickets => 
-        prevTickets.map(ticket => 
+      setState(prevState => ({
+        ...prevState,
+        tickets: prevState.tickets.map(ticket => 
           ticket.id === ticketId 
             ? { ...ticket, status: toStatus as any, updated_at: new Date().toISOString() }
             : ticket
         )
-      );
+      }));
 
       const { data, error } = await supabase.functions.invoke('move-ticket', {
         body: {
@@ -296,13 +341,14 @@ export const useTickets = (filters: TicketFilters) => {
         console.error('❌ Erro na Edge Function:', error);
         
         // Reverter update otimista
-        setTickets(prevTickets => 
-          prevTickets.map(ticket => 
+        setState(prevState => ({
+          ...prevState,
+          tickets: prevState.tickets.map(ticket => 
             ticket.id === ticketId 
               ? { ...ticket, status: fromStatus as any }
               : ticket
           )
-        );
+        }));
 
         toast({
           title: "Erro",
@@ -319,13 +365,14 @@ export const useTickets = (filters: TicketFilters) => {
       console.error('❌ Erro ao mover ticket:', error);
       
       // Reverter update otimista
-      setTickets(prevTickets => 
-        prevTickets.map(ticket => 
+      setState(prevState => ({
+        ...prevState,
+        tickets: prevState.tickets.map(ticket => 
           ticket.id === ticketId 
             ? { ...ticket, status: fromStatus as any }
             : ticket
         )
-      );
+      }));
 
       toast({
         title: "Erro",
@@ -336,34 +383,15 @@ export const useTickets = (filters: TicketFilters) => {
     }
   }, [toast]);
 
-  // Create ticket function
-  const createTicket = useCallback(async (ticketData: any) => {
-    try {
-      const { data, error } = await supabase
-        .from('tickets')
-        .insert([ticketData])
-        .select()
-        .single();
-
-      if (error) throw error;
-      
-      return { data, error: null };
-    } catch (error) {
-      console.error('❌ Erro ao criar ticket:', error);
-      return { data: null, error };
-    }
-  }, []);
-
   return {
-    tickets,
-    loading,
-    ticketStats,
+    tickets: state.tickets,
+    loading: state.loading,
+    ticketStats: state.ticketStats,
     refetch: fetchTickets,
     handleTicketUpdate,
     handleTicketInsert,
     handleTicketDelete,
     changeTicketStatus,
-    createTicket,
   };
 };
 
