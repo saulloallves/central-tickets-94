@@ -136,10 +136,19 @@ const Dashboard = () => {
       <Dialog open={!!selectedTicketId} onOpenChange={() => setSelectedTicketId(null)}>
         <DialogContent className="w-[96vw] max-w-6xl h-[90vh] p-0 overflow-hidden">
           {selectedTicketId && (
-            <TicketDetail 
-              ticketId={selectedTicketId}
-              onClose={() => setSelectedTicketId(null)}
-            />
+            <div className="p-6">
+              <h3 className="text-lg font-semibold mb-4">Detalhes do Ticket</h3>
+              <p>Ticket ID: {selectedTicketId}</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Para ver os detalhes completos, acesse a página de Tickets.
+              </p>
+              <button 
+                onClick={() => setSelectedTicketId(null)}
+                className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded"
+              >
+                Fechar
+              </button>
+            </div>
           )}
         </DialogContent>
       </Dialog>

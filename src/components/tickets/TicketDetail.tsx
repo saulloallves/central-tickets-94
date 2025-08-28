@@ -1,30 +1,13 @@
 
 import React from 'react';
-import { useTickets, useTicketMessages } from '@/hooks/useTickets';
+import { Ticket } from '@/hooks/useTickets';
 
 interface TicketDetailProps {
-  ticketId: string;
+  ticket: Ticket;
   onClose?: () => void;
 }
 
-export const TicketDetail: React.FC<TicketDetailProps> = ({ ticketId, onClose }) => {
-  const { tickets } = useTickets({
-    search: '',
-    status: '',
-    categoria: '',
-    prioridade: '',
-    unidade_id: '',
-    status_sla: '',
-    equipe_id: ''
-  });
-  const { messages, loading, sendMessage } = useTicketMessages();
-
-  const ticket = tickets.find(t => t.id === ticketId);
-
-  if (!ticket) {
-    return <div>Ticket não encontrado</div>;
-  }
-
+export const TicketDetail: React.FC<TicketDetailProps> = ({ ticket, onClose }) => {
   return (
     <div className="p-4">
       <h2 className="text-xl font-semibold mb-4">

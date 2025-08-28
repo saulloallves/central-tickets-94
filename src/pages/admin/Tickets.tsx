@@ -291,15 +291,18 @@ const Tickets = () => {
         {/* Modal de Ticket */}
         <Dialog open={ticketModalOpen} onOpenChange={setTicketModalOpen}>
           <DialogContent className="w-[96vw] max-w-6xl h-[90vh] p-0 overflow-hidden">
-            {selectedTicketId && (
-              <TicketDetail 
-                ticketId={selectedTicketId}
-                onClose={() => {
-                  setTicketModalOpen(false);
-                  setSelectedTicketId(null);
-                }}
-              />
-            )}
+            {selectedTicketId && (() => {
+              const ticket = tickets.find(t => t.id === selectedTicketId);
+              return ticket ? (
+                <TicketDetail 
+                  ticket={ticket}
+                  onClose={() => {
+                    setTicketModalOpen(false);
+                    setSelectedTicketId(null);
+                  }}
+                />
+              ) : <div>Ticket não encontrado</div>;
+            })()}
           </DialogContent>
         </Dialog>
       </div>
