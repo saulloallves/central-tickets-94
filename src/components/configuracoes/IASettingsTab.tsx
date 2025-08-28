@@ -129,6 +129,7 @@ export function IASettingsTab() {
   const [testingConnection, setTestingConnection] = useState(false);
   const [lambdaModels, setLambdaModels] = useState<any[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<'none' | 'success' | 'error'>('none');
+  const [isAutoLoading, setIsAutoLoading] = useState(false);
   const { toast } = useToast();
 
   // Get models for current provider
@@ -147,17 +148,23 @@ export function IASettingsTab() {
   };
 
   // Test Lambda connection and fetch models
-  const testLambdaConnection = async () => {
+  const testLambdaConnection = async (isAutoLoad = false) => {
     if (!settings.api_key?.trim() || !settings.api_base_url?.trim()) {
-      toast({
-        title: "Erro",
-        description: "Preencha a chave API e a URL base antes de testar a conexão",
-        variant: "destructive",
-      });
+      if (!isAutoLoad) {
+        toast({
+          title: "Erro",
+          description: "Preencha a chave API e a URL base antes de testar a conexão",
+          variant: "destructive",
+        });
+      }
       return;
     }
 
+    // Evitar múltiplas chamadas simultâneas
+    if (testingConnection || isAutoLoading) return;
+
     setTestingConnection(true);
+    if (isAutoLoad) setIsAutoLoading(true);
     setConnectionStatus('none');
 
     try {
@@ -230,10 +237,13 @@ export function IASettingsTab() {
         }));
       }
 
-      toast({
-        title: "✅ Conexão Realizada!",
-        description: `Encontrados ${data.count} modelos na API Lambda`,
-      });
+      // Só mostrar toast se não for auto-load
+      if (!isAutoLoad) {
+        toast({
+          title: "✅ Conexão Realizada!",
+          description: `Encontrados ${data.count} modelos na API Lambda`,
+        });
+      }
     } catch (error) {
       console.error('Erro ao testar conexão Lambda:', error);
       setConnectionStatus('error');
@@ -243,13 +253,17 @@ export function IASettingsTab() {
         errorMessage = error.message;
       }
 
-      toast({
-        title: "Erro na Conexão",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      // Só mostrar toast de erro se não for auto-load
+      if (!isAutoLoad) {
+        toast({
+          title: "Erro na Conexão",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
     } finally {
       setTestingConnection(false);
+      if (isAutoLoad) setIsAutoLoading(false);
     }
   };
 
@@ -336,8 +350,8 @@ export function IASettingsTab() {
             fetchedSettings.api_base_url?.trim()) {
           // Auto-load Lambda models to show current selection
           setTimeout(() => {
-            testLambdaConnection();
-          }, 1000);  // Increased delay to ensure UI is ready
+            testLambdaConnection(true);  // true = isAutoLoad
+          }, 1500);  // Increased delay to ensure UI is ready
         }
       } else {
         setOriginalSettings(defaultSettings);
@@ -427,7 +441,7 @@ export function IASettingsTab() {
           settings.api_base_url?.trim() && 
           lambdaModels.length === 0) {
         console.log('Reloading Lambda models after save...');
-        setTimeout(() => testLambdaConnection(), 500);
+        setTimeout(() => testLambdaConnection(true), 800);  // true = isAutoLoad
       }
       
       toast({
@@ -468,11 +482,13 @@ export function IASettingsTab() {
         settings.api_key?.trim() && 
         settings.api_base_url?.trim() && 
         !loading &&  // Don't run during initial load
-        originalSettings) {  // Only run after settings are loaded
+        originalSettings &&  // Only run after settings are loaded
+        !isAutoLoading &&  // Prevent multiple simultaneous calls
+        lambdaModels.length === 0) {  // Only if models not already loaded
       console.log('Auto-loading Lambda models...');
-      testLambdaConnection();
+      setTimeout(() => testLambdaConnection(true), 2000);  // true = isAutoLoad, longer delay
     }
-  }, [settings.api_provider, settings.api_key, settings.api_base_url, loading, originalSettings]);
+  }, [settings.api_provider, settings.api_key, settings.api_base_url, loading, originalSettings, isAutoLoading]);
 
   if (loading) {
     return (
@@ -594,7 +610,7 @@ export function IASettingsTab() {
                 {/* Botão de teste de conexão */}
                 <div className="flex items-center gap-3 pt-4 border-t border-amber-200">
                   <Button
-                    onClick={testLambdaConnection}
+                    onClick={() => testLambdaConnection()}
                     disabled={testingConnection || !settings.api_key || !settings.api_base_url}
                     variant="default"
                     size="sm"
