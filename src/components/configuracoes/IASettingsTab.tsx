@@ -148,7 +148,7 @@ export function IASettingsTab() {
 
   // Test Lambda connection and fetch models
   const testLambdaConnection = async () => {
-    if (!settings.api_key || !settings.api_base_url) {
+    if (!settings.api_key?.trim() || !settings.api_base_url?.trim()) {
       toast({
         title: "Erro",
         description: "Preencha a chave API e a URL base antes de testar a conexão",
@@ -331,11 +331,13 @@ export function IASettingsTab() {
         setOriginalSettings(fetchedSettings);
         
         // If it's a Lambda provider, try to load the models to show the correct values
-        if (fetchedSettings.api_provider === 'lambda' && fetchedSettings.api_key && fetchedSettings.api_base_url) {
+        if (fetchedSettings.api_provider === 'lambda' && 
+            fetchedSettings.api_key?.trim() && 
+            fetchedSettings.api_base_url?.trim()) {
           // Auto-load Lambda models to show current selection
           setTimeout(() => {
             testLambdaConnection();
-          }, 500);
+          }, 1000);  // Increased delay to ensure UI is ready
         }
       } else {
         setOriginalSettings(defaultSettings);
@@ -420,9 +422,12 @@ export function IASettingsTab() {
       setOriginalSettings({ ...settings });
       
       // Ensure Lambda models stay loaded after save
-      if (settings.api_provider === 'lambda' && settings.api_key && settings.api_base_url && lambdaModels.length === 0) {
+      if (settings.api_provider === 'lambda' && 
+          settings.api_key?.trim() && 
+          settings.api_base_url?.trim() && 
+          lambdaModels.length === 0) {
         console.log('Reloading Lambda models after save...');
-        testLambdaConnection();
+        setTimeout(() => testLambdaConnection(), 500);
       }
       
       toast({
@@ -458,11 +463,16 @@ export function IASettingsTab() {
 
   // Load Lambda models when provider changes to Lambda and has API key
   useEffect(() => {
-    if (settings.api_provider === 'lambda' && settings.api_key && settings.api_base_url) {
+    // Only auto-load if we have both settings and they're not empty strings
+    if (settings.api_provider === 'lambda' && 
+        settings.api_key?.trim() && 
+        settings.api_base_url?.trim() && 
+        !loading &&  // Don't run during initial load
+        originalSettings) {  // Only run after settings are loaded
       console.log('Auto-loading Lambda models...');
       testLambdaConnection();
     }
-  }, [settings.api_provider, settings.api_key, settings.api_base_url]);
+  }, [settings.api_provider, settings.api_key, settings.api_base_url, loading, originalSettings]);
 
   if (loading) {
     return (
