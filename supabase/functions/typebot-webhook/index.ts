@@ -255,6 +255,7 @@ serve(async (req) => {
     if (openaiApiKey && equipes && equipes.length > 0) {
       try {
         console.log('Starting AI classification...');
+        console.log('Available teams:', equipes.map(eq => `${eq.nome} (${eq.id})`));
         
         const equipesInfo = equipes.map(eq => 
           `- ID: ${eq.id} | Nome: ${eq.nome} | Descrição: ${eq.introducao} - ${eq.descricao}`
@@ -270,26 +271,25 @@ serve(async (req) => {
         modelToUse = aiSettings?.modelo_classificacao || 'gpt-4.1-2025-04-14';
         apiProvider = aiSettings?.api_provider || 'openai';
         
+        console.log('Using model:', modelToUse, 'Provider:', apiProvider);
+        
         let apiUrl = 'https://api.openai.com/v1/chat/completions';
         let authToken = openaiApiKey;
         
         if (apiProvider === 'lambda' && aiSettings?.api_base_url) {
           apiUrl = `${aiSettings.api_base_url}/chat/completions`;
           authToken = aiSettings.api_key || openaiApiKey;
+          console.log('Using Lambda API:', apiUrl);
+        } else {
+          console.log('Using OpenAI API:', apiUrl);
         }
 
-        const response = await fetch(apiUrl, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${authToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: modelToUse,
-            messages: [
-              {
-                role: 'system',
-                content: `Você é um classificador especializado em tickets de suporte de franquia. Sua única função é analisar a mensagem e retornar APENAS um JSON válido seguindo EXATAMENTE este formato:
+        const requestBody = {
+          model: modelToUse,
+          messages: [
+            {
+              role: 'system',
+              content: `Você é um classificador especializado em tickets de suporte de franquia. Sua única função é analisar a mensagem e retornar APENAS um JSON válido seguindo EXATAMENTE este formato:
 
 {
   "prioridade": "imediato|ate_1_hora|ainda_hoje|posso_esperar",
@@ -339,18 +339,49 @@ EXEMPLO DE RESPOSTA VÁLIDA:
 }
 
 Analise o conteúdo e classifique adequadamente:`
-              },
-              {
-                role: 'user',
-                content: `Mensagem: ${message}\nCategoria sugerida: ${category_hint || 'não informada'}`
-              }
-            ],
-            max_completion_tokens: 300,
-          }),
+            },
+            {
+              role: 'user',
+              content: `Mensagem: ${message}\nCategoria sugerida: ${category_hint || 'não informada'}`
+            }
+          ]
+        };
+
+        // Add appropriate parameters based on model type
+        if (modelToUse.includes('gpt-4.1') || modelToUse.includes('gpt-5') || modelToUse.includes('o3') || modelToUse.includes('o4')) {
+          // Newer models use max_completion_tokens and don't support temperature
+          requestBody.max_completion_tokens = 300;
+        } else {
+          // Legacy models use max_tokens and support temperature
+          requestBody.max_tokens = 300;
+          requestBody.temperature = 0.1;
+        }
+
+        console.log('Sending request to AI with body:', JSON.stringify(requestBody, null, 2));
+
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
         });
 
+        console.log('AI API Response status:', response.status);
+        console.log('AI API Response headers:', Object.fromEntries(response.headers.entries()));
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('AI API Error:', errorText);
+          throw new Error(`AI API Error: ${response.status} - ${errorText}`);
+        }
+
         const aiResponse = await response.json();
+        console.log('Raw AI response:', JSON.stringify(aiResponse, null, 2));
+        
         const analysis = aiResponse.choices?.[0]?.message?.content;
+        console.log('AI analysis content:', analysis);
         
         if (analysis) {
           try {
@@ -362,11 +393,13 @@ Analise o conteúdo e classifique adequadamente:`
               cleanedAnalysis = analysis.replace(/```\s*/g, '').trim();
             }
             
+            console.log('Cleaned analysis for parsing:', cleanedAnalysis);
             analysisResult = JSON.parse(cleanedAnalysis);
-            console.log('AI analysis result:', analysisResult);
+            console.log('Parsed AI analysis result:', JSON.stringify(analysisResult, null, 2));
             
             // Encontrar equipe por nome
             if (analysisResult.equipe_responsavel) {
+              console.log('Looking for team with name:', analysisResult.equipe_responsavel);
               const equipeEncontrada = equipes.find(eq => 
                 eq.nome.toLowerCase().trim() === analysisResult.equipe_responsavel.toLowerCase().trim()
               );
@@ -375,16 +408,27 @@ Analise o conteúdo e classifique adequadamente:`
                 console.log('Team matched:', equipeEncontrada.nome, '-> ID:', equipeResponsavelId);
               } else {
                 console.log('Team not found:', analysisResult.equipe_responsavel);
+                console.log('Available teams:', equipes.map(eq => eq.nome));
               }
+            } else {
+              console.log('No team specified in AI response');
             }
           } catch (parseError) {
             console.error('Error parsing AI response:', parseError);
-            console.log('Raw AI response:', analysis);
+            console.log('Raw AI response that failed to parse:', analysis);
           }
+        } else {
+          console.error('No analysis content returned from AI');
         }
       } catch (error) {
         console.error('Error in AI classification:', error);
       }
+    } else {
+      console.log('Skipping AI analysis - missing requirements:', {
+        hasOpenAI: !!openaiApiKey,
+        hasEquipes: !!(equipes && equipes.length > 0),
+        equipesCount: equipes?.length || 0
+      });
     }
 
     // Aplicar fallbacks se a análise falhou ou retornou null
