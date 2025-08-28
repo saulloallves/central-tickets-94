@@ -20,62 +20,76 @@ export class NotificationSounds {
         audioContext.resume();
       }
 
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      
-      // Different frequencies for different alert types - som mais moderno
-      let frequency1: number, frequency2: number, frequency3: number, duration: number;
-      
-      switch (type) {
-        case 'critical':
-          frequency1 = 987; // B5
-          frequency2 = 1318; // E6
-          frequency3 = 1568; // G6
-          duration = 1.2;
-          break;
-        case 'warning':
-          frequency1 = 783; // G5
-          frequency2 = 987; // B5
-          frequency3 = 1174; // D6
-          duration = 0.8;
-          break;
-        case 'success':
-          frequency1 = 659; // E5
-          frequency2 = 830; // G#5
-          frequency3 = 987; // B5
-          duration = 0.6;
-          break;
-        default: // info
-          frequency1 = 440; // A4
-          frequency2 = 554; // C#5
-          frequency3 = 659; // E5
-          duration = 0.7;
-      }
-      
-      // Set oscillator properties - som mais rico
-      oscillator.type = 'square'; // Mudança para onda quadrada - som mais distintivo
-      oscillator.frequency.setValueAtTime(frequency1, audioContext.currentTime);
-      oscillator.frequency.exponentialRampToValueAtTime(frequency2, audioContext.currentTime + duration / 3);
-      oscillator.frequency.exponentialRampToValueAtTime(frequency3, audioContext.currentTime + duration * 2/3);
-      oscillator.frequency.exponentialRampToValueAtTime(frequency1, audioContext.currentTime + duration);
-      
-      // Set gain (volume) envelope - VOLUME AUMENTADO
-      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-      gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.02); // Volume aumentado de 0.1 para 0.3
-      gainNode.gain.exponentialRampToValueAtTime(0.05, audioContext.currentTime + duration);
-      
-      // Start and stop the sound
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + duration);
+      // Create a gentle notification sound instead of harsh tones
+      this.createGentleNotification(audioContext, type);
       
     } catch (error) {
       console.warn('Could not play notification sound:', error);
       // Fallback to system notification sound
       this.playSystemSound();
     }
+  }
+
+  // Create a gentle, pleasant notification sound
+  private static createGentleNotification(audioContext: AudioContext, type: string) {
+    const startTime = audioContext.currentTime;
+    
+    // Different pleasant tones for different types
+    let notes: number[], rhythm: number[], volume: number;
+    
+    switch (type) {
+      case 'critical':
+        notes = [880, 1046, 880]; // A5, C6, A5 - urgent but not harsh
+        rhythm = [0.15, 0.15, 0.3];
+        volume = 0.25;
+        break;
+      case 'warning':
+        notes = [659, 783]; // E5, G5 - pleasant two-tone
+        rhythm = [0.2, 0.3];
+        volume = 0.2;
+        break;
+      case 'success':
+        notes = [523, 659, 783]; // C5, E5, G5 - pleasant ascending
+        rhythm = [0.15, 0.15, 0.25];
+        volume = 0.18;
+        break;
+      default: // info - som mais suave para novo ticket
+        notes = [440, 554]; // A4, C#5 - pleasant gentle tone
+        rhythm = [0.25, 0.35];
+        volume = 0.15;
+    }
+    
+    let currentTime = startTime;
+    
+    notes.forEach((frequency, index) => {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      const filterNode = audioContext.createBiquadFilter();
+      
+      // Connect the nodes: oscillator -> filter -> gain -> destination
+      oscillator.connect(filterNode);
+      filterNode.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      // Use sine wave for gentle sound
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(frequency, currentTime);
+      
+      // Add low-pass filter for softer sound
+      filterNode.type = 'lowpass';
+      filterNode.frequency.setValueAtTime(frequency * 2, currentTime);
+      filterNode.Q.setValueAtTime(1, currentTime);
+      
+      // Create a smooth envelope
+      gainNode.gain.setValueAtTime(0, currentTime);
+      gainNode.gain.linearRampToValueAtTime(volume, currentTime + 0.02);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, currentTime + rhythm[index]);
+      
+      oscillator.start(currentTime);
+      oscillator.stop(currentTime + rhythm[index]);
+      
+      currentTime += rhythm[index] * 0.7; // Slight overlap for smoother transitions
+    });
   }
 
   // Fallback system sound
@@ -100,11 +114,10 @@ export class NotificationSounds {
     }
   }
 
-  // Play multiple beeps for critical alerts
+  // Play gentle critical alert sequence
   static playCriticalAlert() {
     this.playNotificationSound('critical');
-    setTimeout(() => this.playNotificationSound('critical'), 400);
-    setTimeout(() => this.playNotificationSound('critical'), 800);
+    setTimeout(() => this.playNotificationSound('critical'), 600);
   }
 
   // Request permission for audio (for autoplay policies)
