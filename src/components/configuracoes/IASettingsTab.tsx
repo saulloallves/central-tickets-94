@@ -134,7 +134,11 @@ export function IASettingsTab() {
   // Get models for current provider
   const getCurrentModels = () => {
     if (settings.api_provider === 'lambda' && lambdaModels.length > 0) {
-      return lambdaModels;
+      return lambdaModels.map(model => ({
+        value: model.id || model.value,
+        label: model.id || model.label || model.value,
+        description: model.description || `Modelo ${model.id || model.value}`
+      }));
     }
     return modelsByProvider[settings.api_provider as keyof typeof modelsByProvider] || modelsByProvider.openai;
   };
@@ -322,6 +326,14 @@ export function IASettingsTab() {
         };
         setSettings(fetchedSettings);
         setOriginalSettings(fetchedSettings);
+        
+        // If it's a Lambda provider, try to load the models to show the correct values
+        if (fetchedSettings.api_provider === 'lambda' && fetchedSettings.api_key && fetchedSettings.api_base_url) {
+          // Auto-load Lambda models to show current selection
+          setTimeout(() => {
+            testLambdaConnection();
+          }, 500);
+        }
       } else {
         setOriginalSettings(defaultSettings);
       }
