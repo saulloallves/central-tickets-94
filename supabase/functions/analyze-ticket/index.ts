@@ -56,8 +56,8 @@ serve(async (req) => {
 
     if (settings.api_provider === 'lambda') {
       apiUrl = `${settings.api_base_url}/chat/completions`;
-      apiKey = Deno.env.get('LAMBDA_API_KEY')!;
-      model = settings.modelo_classificacao || 'llama-4-maverick-17b-128e-instruct-fp8';
+      apiKey = settings.api_key || Deno.env.get('LAMBDA_API_KEY')!;
+      model = settings.modelo_classificacao || settings.modelo_analise || 'llama-4-maverick-17b-128e-instruct-fp8';
       
       apiHeaders = {
         'Authorization': `Bearer ${apiKey}`,

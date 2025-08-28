@@ -63,14 +63,32 @@ async function searchKnowledgeBase(message: string) {
       .join('\n\n---\n\n');
 
     try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      // Get AI settings for knowledge base query
+      const { data: aiSettings } = await supabase
+        .from('faq_ai_settings')
+        .select('*')
+        .eq('ativo', true)
+        .maybeSingle();
+
+      const modelToUse = aiSettings?.modelo_chat || 'gpt-4o-mini';
+      const apiProvider = aiSettings?.api_provider || 'openai';
+      
+      let apiUrl = 'https://api.openai.com/v1/chat/completions';
+      let authToken = openaiApiKey;
+      
+      if (apiProvider === 'lambda' && aiSettings?.api_base_url) {
+        apiUrl = `${aiSettings.api_base_url}/chat/completions`;
+        authToken = aiSettings.api_key || openaiApiKey;
+      }
+
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${openaiApiKey}`,
+          'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
+          model: modelToUse,
           messages: [
             {
               role: 'system',
@@ -241,14 +259,32 @@ serve(async (req) => {
           `- ID: ${eq.id} | Nome: ${eq.nome} | Descrição: ${eq.introducao} - ${eq.descricao}`
         ).join('\n');
 
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        // Get AI settings for classification  
+        const { data: aiSettings } = await supabase
+          .from('faq_ai_settings')
+          .select('*')
+          .eq('ativo', true)
+          .maybeSingle();
+
+        const modelToUse = aiSettings?.modelo_classificacao || 'gpt-4o-mini';
+        const apiProvider = aiSettings?.api_provider || 'openai';
+        
+        let apiUrl = 'https://api.openai.com/v1/chat/completions';
+        let authToken = openaiApiKey;
+        
+        if (apiProvider === 'lambda' && aiSettings?.api_base_url) {
+          apiUrl = `${aiSettings.api_base_url}/chat/completions`;
+          authToken = aiSettings.api_key || openaiApiKey;
+        }
+
+        const response = await fetch(apiUrl, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${openaiApiKey}`,
+            'Authorization': `Bearer ${authToken}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: 'gpt-4o-mini',
+            model: modelToUse,
             messages: [
               {
                 role: 'system',
@@ -337,7 +373,8 @@ Analise o conteúdo e classifique adequadamente:`
         arquivos: attachments || [],
         log_ia: analysisResult ? {
           analysis: analysisResult,
-          model: 'gpt-4o-mini',
+          model: modelToUse,
+          api_provider: apiProvider,
           timestamp: new Date().toISOString()
         } : {}
       })
@@ -403,7 +440,7 @@ Analise o conteúdo e classifique adequadamente:`
           equipe_responsavel_id: finalTicket.equipe_responsavel_id,
           is_crise: finalTicket.log_ia?.analysis?.is_crise || false,
           sla_sugerido_horas: finalTicket.log_ia?.analysis?.sla_sugerido_horas || 24,
-          analysis_model: 'gpt-4o-mini'
+          analysis_model: modelToUse
         }
       }
     }), {

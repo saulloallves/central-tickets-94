@@ -266,14 +266,32 @@ serve(async (req) => {
       console.log('Document Organizer prompt length:', DOCUMENT_ORGANIZER_PROMPT.length);
       console.log('Content length:', content.length);
 
-      const organizerResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+      // Get AI settings for knowledge base processing
+      const { data: aiSettings } = await supabase
+        .from('faq_ai_settings')
+        .select('*')
+        .eq('ativo', true)
+        .maybeSingle();
+
+      const modelToUse = aiSettings?.modelo_resumo || 'gpt-4o-mini';
+      const apiProvider = aiSettings?.api_provider || 'openai';
+      
+      let apiUrl = 'https://api.openai.com/v1/chat/completions';
+      let authToken = openAIApiKey;
+      
+      if (apiProvider === 'lambda' && aiSettings?.api_base_url) {
+        apiUrl = `${aiSettings.api_base_url}/chat/completions`;
+        authToken = aiSettings.api_key || openAIApiKey;
+      }
+
+      const organizerResponse = await fetch(apiUrl, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
+          'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
+          model: modelToUse,
           messages: [
             { role: 'system', content: DOCUMENT_ORGANIZER_PROMPT },
             { role: 'user', content: content }
@@ -308,14 +326,14 @@ serve(async (req) => {
       console.log('Classifier prompt length:', MANUAL_CLASSIFIER_PROMPT.length);
       console.log('Classifier user message length:', classifierUserMessage.length);
 
-      const classifierResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+      const classifierResponse = await fetch(apiUrl, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
+          'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
+          model: modelToUse,
           messages: [
             { role: 'system', content: MANUAL_CLASSIFIER_PROMPT + '\n\nIMPORTANTE: No campo content_full, inclua o texto completo organizado recebido. Retorne apenas o JSON sem texto adicional.' },
             { role: 'user', content: classifierUserMessage }
@@ -346,14 +364,14 @@ serve(async (req) => {
       console.log('Diretrizes prompt length:', DIRETRIZES_PROMPT.length);
       console.log('Content length:', content.length);
 
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
+          'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
+          model: modelToUse,
           messages: [
             { role: 'system', content: DIRETRIZES_PROMPT },
             { role: 'user', content: content }
