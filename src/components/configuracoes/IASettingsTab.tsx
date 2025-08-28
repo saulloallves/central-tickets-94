@@ -137,8 +137,8 @@ export function IASettingsTab() {
       if (lambdaModels.length > 0) {
         console.log('Lambda models available:', lambdaModels);
         return lambdaModels.map(model => ({ 
-          value: model.id, 
-          label: `${model.id} ${model.id === settings.modelo_sugestao || model.id === settings.modelo_chat || model.id === settings.modelo_classificacao ? '(Em uso)' : ''}` 
+          value: model.value || model.id, 
+          label: `${model.label || model.value || model.id} ${(model.value || model.id) === settings.modelo_sugestao || (model.value || model.id) === settings.modelo_chat || (model.value || model.id) === settings.modelo_classificacao ? '(Em uso)' : ''}` 
         }));
       }
       return [{ value: '', label: testingConnection ? 'Conectando...' : 'Clique em "Salvar e Carregar Modelos"' }];
