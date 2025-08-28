@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,8 +27,21 @@ const convertJsonToConversa = (jsonData: Json): ConversaMessage[] => {
   if (!Array.isArray(jsonData)) return [];
   
   return jsonData.map(item => {
-    if (typeof item === 'object' && item !== null && 'autor' in item && 'texto' in item) {
-      return item as ConversaMessage;
+    // Check if item is an object and has the required properties
+    if (
+      typeof item === 'object' && 
+      item !== null && 
+      'autor' in item && 
+      'texto' in item && 
+      'timestamp' in item
+    ) {
+      const obj = item as { [key: string]: Json };
+      return {
+        autor: (obj.autor as string) || 'franqueado',
+        texto: (obj.texto as string) || '',
+        timestamp: (obj.timestamp as string) || new Date().toISOString(),
+        canal: (obj.canal as string) || 'web'
+      } as ConversaMessage;
     }
     return null;
   }).filter((item): item is ConversaMessage => item !== null);
