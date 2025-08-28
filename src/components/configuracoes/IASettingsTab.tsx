@@ -259,7 +259,7 @@ export function IASettingsTab() {
         <Info className="h-4 w-4" />
         <AlertDescription>
           <strong>Controle Total da IA:</strong> Configure todos os aspectos da inteligência artificial do sistema: 
-          sugestões, chat e classificação automática.
+          provedor, modelos, sugestões, chat e classificação automática.
         </AlertDescription>
       </Alert>
 
@@ -443,7 +443,7 @@ export function IASettingsTab() {
         </CardContent>
       </Card>
 
-      {/* Seção 2: Parâmetros de Geração */}
+      {/* Seção 3: Parâmetros de Geração */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base font-medium">Parâmetros de Geração</CardTitle>
@@ -540,7 +540,7 @@ export function IASettingsTab() {
         </CardContent>
       </Card>
 
-      {/* Seção 3: Comportamento da IA */}
+      {/* Seção 4: Comportamento da IA */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base font-medium">Comportamento da IA</CardTitle>
@@ -587,16 +587,12 @@ export function IASettingsTab() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-medium text-muted-foreground">Sugestões:</span>
-                  <Badge variant="secondary">{settings.modelo_sugestao.split('-')[0]}</Badge>
+                  <span className="font-medium text-muted-foreground">Provedor:</span>
+                  <Badge variant="secondary">{providerOptions.find(p => p.value === settings.api_provider)?.label}</Badge>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="font-medium text-muted-foreground">Chat:</span>
-                  <Badge variant="secondary">{settings.modelo_chat.split('-')[0]}</Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-muted-foreground">Classificação:</span>
-                  <Badge variant="secondary">{settings.modelo_classificacao.split('-')[0]}</Badge>
+                  <span className="font-medium text-muted-foreground">Base de Conhecimento:</span>
+                  <Badge variant="outline">{knowledgeModeOptions.find(k => k.value === settings.knowledge_mode)?.label}</Badge>
                 </div>
               </div>
               <div className="space-y-2">
@@ -630,7 +626,7 @@ export function IASettingsTab() {
         </CardContent>
       </Card>
 
-      {/* Seção 4: Configuração de Prompts */}
+      {/* Seção 5: Configuração de Prompts */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base font-medium">Configuração de Prompts</CardTitle>
