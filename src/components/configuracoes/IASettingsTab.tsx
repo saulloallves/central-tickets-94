@@ -634,13 +634,18 @@ export function IASettingsTab() {
                <SelectTrigger className="bg-background border border-border">
                  <SelectValue placeholder="Selecione um modelo" />
                </SelectTrigger>
-                 <SelectContent className="bg-background border border-border shadow-lg z-50 max-h-60 overflow-y-auto">
-                  {getCurrentModels().map(option => (
-                    <SelectItem key={option.value} value={option.value}>
-                      <div className="font-medium">{option.label}</div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
+                  <SelectContent className="bg-background border border-border shadow-lg z-50 max-h-60 overflow-y-auto">
+                   {getCurrentModels().filter(option => option.value !== '').map(option => (
+                     <SelectItem key={option.value} value={option.value}>
+                       <div className="font-medium">{option.label}</div>
+                     </SelectItem>
+                   ))}
+                   {getCurrentModels().filter(option => option.value === '').map(option => (
+                     <div key="placeholder" className="px-2 py-2 text-sm text-muted-foreground">
+                       {option.label}
+                     </div>
+                   ))}
+                 </SelectContent>
               </Select>
             </div>
 
@@ -650,13 +655,18 @@ export function IASettingsTab() {
                <SelectTrigger className="bg-background border border-border">
                  <SelectValue placeholder="Selecione um modelo" />
                </SelectTrigger>
-                <SelectContent className="bg-background border border-border shadow-lg z-50 max-h-60 overflow-y-auto">
-                  {getCurrentModels().map(option => (
-                    <SelectItem key={option.value} value={option.value}>
-                      <div className="font-medium">{option.label}</div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
+                 <SelectContent className="bg-background border border-border shadow-lg z-50 max-h-60 overflow-y-auto">
+                   {getCurrentModels().filter(option => option.value !== '').map(option => (
+                     <SelectItem key={option.value} value={option.value}>
+                       <div className="font-medium">{option.label}</div>
+                     </SelectItem>
+                   ))}
+                   {getCurrentModels().filter(option => option.value === '').map(option => (
+                     <div key="placeholder" className="px-2 py-2 text-sm text-muted-foreground">
+                       {option.label}
+                     </div>
+                   ))}
+                 </SelectContent>
               </Select>
             </div>
 
@@ -666,13 +676,18 @@ export function IASettingsTab() {
                <SelectTrigger className="bg-background border border-border">
                  <SelectValue placeholder="Selecione um modelo" />
                </SelectTrigger>
-                <SelectContent className="bg-background border border-border shadow-lg z-50 max-h-60 overflow-y-auto">
-                  {getCurrentModels().map(option => (
-                    <SelectItem key={option.value} value={option.value}>
-                      <div className="font-medium">{option.label}</div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
+                 <SelectContent className="bg-background border border-border shadow-lg z-50 max-h-60 overflow-y-auto">
+                   {getCurrentModels().filter(option => option.value !== '').map(option => (
+                     <SelectItem key={option.value} value={option.value}>
+                       <div className="font-medium">{option.label}</div>
+                     </SelectItem>
+                   ))}
+                   {getCurrentModels().filter(option => option.value === '').map(option => (
+                     <div key="placeholder" className="px-2 py-2 text-sm text-muted-foreground">
+                       {option.label}
+                     </div>
+                   ))}
+                 </SelectContent>
               </Select>
             </div>
           </div>
