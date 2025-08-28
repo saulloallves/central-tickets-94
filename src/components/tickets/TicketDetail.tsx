@@ -32,16 +32,17 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
   const [isSendingToFranqueado, setIsSendingToFranqueado] = useState(false);
   
   const { messages, sendMessage, loading: messagesLoading } = useTicketMessages(ticketId);
+  const [conversa, setConversa] = useState<any[]>([]);
   const { suggestion, loading: suggestionLoading, generateSuggestion, markSuggestionUsed } = useAISuggestion(ticketId);
   const { chatHistory, loading: chatLoading, askAI } = useAIChat(ticketId);
   const { toast } = useToast();
 
   const fetchTicketDetails = async () => {
     try {
-      // Fetch ticket first
+      // Fetch ticket first with conversa
       const { data: ticketData, error: ticketError } = await supabase
         .from('tickets')
-        .select('*')
+        .select('*, conversa')
         .eq('id', ticketId)
         .single();
 
@@ -87,6 +88,15 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
       };
 
       setTicket(combinedData);
+      
+      // Set conversa from ticket data (prioritize over messages)
+      if (ticketData.conversa && Array.isArray(ticketData.conversa) && ticketData.conversa.length > 0) {
+        console.log('📋 Using tickets.conversa for messages display');
+        setConversa(ticketData.conversa);
+      } else {
+        console.log('📋 Fallback to ticket_mensagens for messages display');
+        setConversa([]);
+      }
     } catch (error) {
       console.error('Error fetching ticket details:', error);
       toast({

@@ -108,7 +108,47 @@ const Tickets = () => {
 
   // Real-time updates using ENHANCED enhanced hook
   const { isConnected, isDegraded, status, retryCount, realtimeAttempted } = useEnhancedTicketRealtime({
-    onTicketInsert: handleTicketInsert,
+    onTicketInsert: (ticket) => {
+      console.log('🎫 REALTIME: New ticket received:', ticket.codigo_ticket);
+      
+      // Insert the ticket in state immediately
+      handleTicketInsert(ticket);
+      
+      // Only trigger notification if ticket wasn't created by current user
+      if (ticket.criado_por !== user?.id && !processedTicketIds.has(ticket.id)) {
+        console.log('🔊 REALTIME: Triggering notification for NEW ticket:', ticket.codigo_ticket);
+        
+        // Mark as processed to avoid duplicates
+        processedTicketIds.add(ticket.id);
+        
+        // Clean up old IDs periodically
+        if (processedTicketIds.size > 100) {
+          const idsArray = Array.from(processedTicketIds);
+          const toRemove = idsArray.slice(0, idsArray.length - 50);
+          toRemove.forEach(id => processedTicketIds.delete(id));
+        }
+        
+        // Import and trigger sound based on priority
+        import('@/lib/notification-sounds').then(({ NotificationSounds }) => {
+          let soundType: 'info' | 'warning' | 'critical' = 'info';
+          if (ticket.prioridade === 'crise') {
+            soundType = 'critical';
+          } else if (ticket.prioridade === 'imediato') {
+            soundType = 'warning';
+          }
+          
+          console.log(`🔊 REALTIME SOUND: Playing ${soundType} sound for ticket ${ticket.codigo_ticket}`);
+          NotificationSounds.playNotificationSound(soundType);
+        });
+        
+        // Show toast notification
+        toast({
+          title: "🎫 Novo Ticket (Tempo Real)",
+          description: `${ticket.titulo || ticket.descricao_problema || 'Sem título'} - ${ticket.codigo_ticket}`,
+          duration: 5000,
+        });
+      }
+    },
     onTicketUpdate: handleTicketUpdate,
     onTicketDelete: handleTicketDelete,
     filters: {
