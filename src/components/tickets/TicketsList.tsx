@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -38,7 +39,7 @@ const getPriorityLabel = (priority: string) => {
 const getStatusVariant = (status: string) => {
   switch (status) {
     case 'aberto': return 'secondary';
-    case 'em_atendimento': return 'primary';
+    case 'em_atendimento': return 'info';
     case 'escalonado': return 'warning';
     case 'concluido': return 'success';
     default: return 'default';

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -41,7 +42,15 @@ export function CreateTicketDialog({ open, onOpenChange }: { open: boolean; onOp
   const { user } = useAuth();
   const { toast } = useToast();
   const { isAdmin, isSupervisor } = useRole();
-  const { createTicket } = useTickets({});
+  const { createTicket } = useTickets({
+    search: '',
+    status: '',
+    categoria: '',
+    prioridade: '',
+    unidade_id: '',
+    status_sla: '',
+    equipe_id: ''
+  });
   const [submitting, setSubmitting] = useState(false);
   const [unidades, setUnidades] = useState<{ id: string; nome: string; }[]>([]);
   const [selectedUnidade, setSelectedUnidade] = useState<string | null>(null);
@@ -69,8 +78,8 @@ export function CreateTicketDialog({ open, onOpenChange }: { open: boolean; onOp
       try {
         const { data, error } = await supabase
           .from('unidades')
-          .select('id, nome')
-          .order('nome');
+          .select('id, nome_unidade as nome')
+          .order('nome_unidade');
 
         if (error) {
           console.error('Erro ao buscar unidades:', error);
