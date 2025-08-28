@@ -150,6 +150,8 @@ const Tickets = () => {
             } else if (ticket.prioridade === 'imediato') {
               soundType = 'warning';
             }
+            
+            console.log(`🔊 NEW SOUND: Playing ${soundType} sound for ticket ${ticket.codigo_ticket} with priority ${ticket.prioridade}`);
             NotificationSounds.playNotificationSound(soundType);
           });
           
@@ -219,8 +221,14 @@ const Tickets = () => {
             }}>
               ↻ Refresh Completo
             </Button>
-            <Button variant="outline" size="sm" className="hidden md:flex" onClick={testNotificationSound}>
-              🔊 Som Normal
+            <Button variant="outline" size="sm" className="hidden md:flex" onClick={() => {
+              // Force reload and test new sound directly
+              import('@/lib/notification-sounds').then(({ NotificationSounds }) => {
+                console.log('🔊 TESTING: Playing NEW gentle info sound...');
+                NotificationSounds.playNotificationSound('info');
+              });
+            }}>
+              🔊 Som Novo
             </Button>
             <Button variant="outline" size="sm" className="hidden md:flex" onClick={testCriticalSound}>
               🚨 Som Crítico
