@@ -1730,6 +1730,7 @@ export type Database = {
           categoria: Database["public"]["Enums"]["ticket_categoria"] | null
           codigo_ticket: string
           colaborador_id: string | null
+          conversa: Json
           created_at: string
           criado_por: string | null
           data_abertura: string
@@ -1763,6 +1764,7 @@ export type Database = {
           categoria?: Database["public"]["Enums"]["ticket_categoria"] | null
           codigo_ticket: string
           colaborador_id?: string | null
+          conversa?: Json
           created_at?: string
           criado_por?: string | null
           data_abertura?: string
@@ -1796,6 +1798,7 @@ export type Database = {
           categoria?: Database["public"]["Enums"]["ticket_categoria"] | null
           codigo_ticket?: string
           colaborador_id?: string | null
+          conversa?: Json
           created_at?: string
           criado_por?: string | null
           data_abertura?: string
@@ -2221,6 +2224,16 @@ export type Database = {
         Args: { p_by?: string; p_crise_id: string; p_ticket_ids: string[] }
         Returns: undefined
       }
+      append_to_ticket_conversa: {
+        Args: {
+          p_autor: string
+          p_canal?: Database["public"]["Enums"]["canal_resposta"]
+          p_texto: string
+          p_ticket_id: string
+          p_usuario_id?: string
+        }
+        Returns: Json
+      }
       approve_internal_access: {
         Args: { p_request_id: string }
         Returns: undefined
@@ -2319,6 +2332,10 @@ export type Database = {
           total_tickets: number
           unidades_atendidas: number
         }[]
+      }
+      get_ticket_conversa: {
+        Args: { p_ticket_id: string }
+        Returns: Json
       }
       get_ticket_trends: {
         Args: { p_dias?: number; p_unidade_filter?: string; p_user_id?: string }

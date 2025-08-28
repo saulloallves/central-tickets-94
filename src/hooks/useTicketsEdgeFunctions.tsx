@@ -170,19 +170,25 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
     setTicketStats(stats);
   }, []);
 
-  // Setup realtime subscription
+  // Setup realtime subscription with better error handling
   const setupRealtime = useCallback(() => {
     if (!user) return;
 
-    console.log('🔄 Setting up realtime subscription for tickets');
+    console.log('🔄 Setting up ROBUST realtime subscription for tickets');
     
     // Clean up existing subscription
     if (realtimeChannelRef.current) {
       supabase.removeChannel(realtimeChannelRef.current);
     }
 
+    const channelName = `tickets-realtime-${user.id}`;
     const channel = supabase
-      .channel('tickets-realtime')
+      .channel(channelName, {
+        config: {
+          broadcast: { self: true },
+          presence: { key: user.id }
+        }
+      })
       .on(
         'postgres_changes',
         {
@@ -191,36 +197,73 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
           table: 'tickets',
         },
         (payload) => {
-          console.log('🔄 Realtime event received:', payload.eventType, payload);
+          console.log('🔄 REALTIME EVENT RECEIVED:', {
+            event: payload.eventType,
+            table: payload.table,
+            schema: payload.schema,
+            new: payload.new ? { id: (payload.new as any)?.id, codigo_ticket: (payload.new as any)?.codigo_ticket } : null,
+            old: payload.old ? { id: (payload.old as any)?.id, codigo_ticket: (payload.old as any)?.codigo_ticket } : null
+          });
           
-          // Refetch tickets on any change to ensure consistency
+          // Refetch tickets on any change to ensure consistency with server state
+          console.log('🔄 Triggering ticket refetch due to realtime event');
           fetchTickets();
         }
       )
       .subscribe((status) => {
-        console.log('📡 Realtime status:', status);
+        console.log('📡 Realtime subscription status:', status);
+        
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Successfully subscribed to tickets realtime');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('❌ Channel error in realtime subscription');
+        } else if (status === 'TIMED_OUT') {
+          console.error('❌ Realtime subscription timed out');
+        } else if (status === 'CLOSED') {
+          console.warn('⚠️ Realtime subscription closed');
+        }
       });
 
     realtimeChannelRef.current = channel;
+    
+    // Set up periodic polling as backup if realtime fails
+    const pollInterval = setInterval(() => {
+      console.log('🔄 Backup polling triggered');
+      fetchTickets();
+    }, 30000); // Poll every 30 seconds as backup
+
+    return () => {
+      clearInterval(pollInterval);
+    };
   }, [user, fetchTickets]);
 
-  // Initial fetch
+  // Initial setup with better lifecycle management
   useEffect(() => {
     if (user && !roleLoading && !fetchedRef.current) {
+      console.log('🚀 Initializing tickets system for user:', user.id);
       fetchedRef.current = true;
       fetchTickets();
-      setupRealtime();
+      
+      // Set up realtime after initial fetch
+      const cleanup = setupRealtime();
+      
+      return cleanup;
     }
   }, [user, roleLoading, fetchTickets, setupRealtime]);
 
-  // Filter-based refetch with debounce
+  // Filter-based refetch with improved debouncing
   useEffect(() => {
     if (user && !roleLoading && fetchedRef.current) {
+      console.log('🔍 Filters changed, debouncing refetch:', filters);
       const timeoutId = setTimeout(() => {
+        console.log('🔍 Executing filter-based refetch');
         fetchTickets();
       }, 300);
       
-      return () => clearTimeout(timeoutId);
+      return () => {
+        console.log('🔍 Cancelling debounced refetch');
+        clearTimeout(timeoutId);
+      };
     }
   }, [filters, user, roleLoading, fetchTickets]);
 
@@ -229,11 +272,13 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
     calculateStats(tickets);
   }, [tickets, calculateStats]);
 
-  // Cleanup
+  // Enhanced cleanup
   useEffect(() => {
     return () => {
+      console.log('🧹 Cleaning up tickets realtime subscription');
       if (realtimeChannelRef.current) {
         supabase.removeChannel(realtimeChannelRef.current);
+        realtimeChannelRef.current = null;
       }
     };
   }, []);
@@ -250,12 +295,14 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
     }
 
     try {
+      console.log('📤 Creating ticket via edge function:', ticketData);
+      
       const { data, error } = await supabase.functions.invoke('create-ticket', {
         body: ticketData,
       });
 
       if (error) {
-        console.error('Error creating ticket:', error);
+        console.error('❌ Edge function error creating ticket:', error);
         toast({
           title: "Erro",
           description: error.message || "Erro ao criar ticket",
@@ -264,12 +311,14 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
         return null;
       }
 
+      console.log('✅ Ticket created successfully via edge function:', data);
       toast({
-        title: "Sucesso",
+        title: "Sucesso", 
         description: data.message || "Ticket criado com sucesso",
       });
 
-      // Refresh tickets after creation
+      // Force immediate refetch to ensure UI consistency
+      console.log('🔄 Force refetching tickets after creation');
       await fetchTickets();
       return data.ticket;
     } catch (error) {
@@ -285,12 +334,14 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
 
   const updateTicket = async (ticketId: string, updates: Partial<Ticket>) => {
     try {
+      console.log('📤 Updating ticket via edge function:', ticketId, updates);
+      
       const { data, error } = await supabase.functions.invoke('update-ticket', {
         body: { ticketId, updates },
       });
 
       if (error) {
-        console.error('Error updating ticket:', error);
+        console.error('❌ Edge function error updating ticket:', error);
         toast({
           title: "Erro",
           description: error.message || "Erro ao atualizar ticket",
@@ -299,7 +350,10 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
         return null;
       }
 
-      // Refresh tickets after update
+      console.log('✅ Ticket updated successfully via edge function:', data);
+      
+      // Force immediate refetch to ensure UI consistency
+      console.log('🔄 Force refetching tickets after update');
       await fetchTickets();
       return data.ticket;
     } catch (error) {
@@ -315,12 +369,14 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
 
   const deleteTicket = async (ticketId: string) => {
     try {
+      console.log('📤 Deleting ticket via edge function:', ticketId);
+      
       const { data, error } = await supabase.functions.invoke('delete-ticket', {
         body: { ticketId },
       });
 
       if (error) {
-        console.error('Error deleting ticket:', error);
+        console.error('❌ Edge function error deleting ticket:', error);
         toast({
           title: "Erro",
           description: error.message || "Erro ao deletar ticket",
@@ -329,12 +385,14 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
         return false;
       }
 
+      console.log('✅ Ticket deleted successfully via edge function:', data);
       toast({
         title: "Sucesso",
         description: data.message || "Ticket deletado com sucesso",
       });
 
-      // Refresh tickets after deletion
+      // Force immediate refetch to ensure UI consistency
+      console.log('🔄 Force refetching tickets after deletion');
       await fetchTickets();
       return true;
     } catch (error) {
@@ -350,12 +408,14 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
 
   const moveTicket = async (ticketId: string, toStatus: string, beforeId?: string, afterId?: string) => {
     try {
+      console.log('📤 Moving ticket via edge function:', { ticketId, toStatus, beforeId, afterId });
+      
       const { data, error } = await supabase.functions.invoke('move-ticket', {
         body: { ticketId, toStatus, beforeId, afterId },
       });
 
       if (error) {
-        console.error('Error moving ticket:', error);
+        console.error('❌ Edge function error moving ticket:', error);
         toast({
           title: "Erro",
           description: error.message || "Erro ao mover ticket",
@@ -364,7 +424,10 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
         return null;
       }
 
-      // Refresh tickets after move
+      console.log('✅ Ticket moved successfully via edge function:', data);
+      
+      // Force immediate refetch to ensure UI consistency
+      console.log('🔄 Force refetching tickets after move');
       await fetchTickets();
       return data.ticket;
     } catch (error) {
