@@ -354,17 +354,19 @@ export const useTickets = (filters: TicketFilters) => {
   }, [tickets]);
 
   // Enhanced realtime subscription with handlers
-  const handleTicketUpdate = (ticket: Ticket) => {
+  const handleTicketUpdate = useCallback((ticket: Ticket) => {
     console.log('🔄 Realtime ticket update received:', ticket.codigo_ticket);
-    setTickets(prev => 
-      prev.map(existingTicket => 
+    setTickets(prev => {
+      const updated = prev.map(existingTicket => 
         existingTicket.id === ticket.id 
           ? { ...existingTicket, ...ticket } as Ticket
           : existingTicket
-      )
-    );
+      );
+      console.log('🔄 Updated tickets array length:', updated.length);
+      return updated;
+    });
     fetchTicketStats();
-  };
+  }, [fetchTicketStats]);
 
   const handleTicketInsert = useCallback((ticket: Ticket) => {
     console.log('🎯 OPTIMIZED: handleTicketInsert called with ticket:', ticket.codigo_ticket, 'ID:', ticket.id);
