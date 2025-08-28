@@ -2513,6 +2513,7 @@ export type Database = {
         | "juridico"
         | "diretoria"
         | "franqueado"
+        | "gerente"
       canal_origem: "typebot" | "whatsapp_zapi" | "web"
       canal_resposta: "web" | "whatsapp" | "typebot" | "interno"
       cargo:
@@ -2712,6 +2713,7 @@ export const Constants = {
         "juridico",
         "diretoria",
         "franqueado",
+        "gerente",
       ],
       canal_origem: ["typebot", "whatsapp_zapi", "web"],
       canal_resposta: ["web", "whatsapp", "typebot", "interno"],
