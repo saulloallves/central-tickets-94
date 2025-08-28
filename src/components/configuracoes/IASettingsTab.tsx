@@ -360,6 +360,8 @@ export function IASettingsTab() {
 
       // Remove id from saveData for upsert to work properly
       const { id, ...dataToSave } = saveData;
+      
+      console.log('Saving settings:', saveData);
 
       if (settings.id) {
         // Update existing record and deactivate others
@@ -368,19 +370,30 @@ export function IASettingsTab() {
           .update(dataToSave)
           .eq('id', settings.id);
 
-        if (updateError) throw updateError;
+        if (updateError) {
+          console.error('Update error:', updateError);
+          throw updateError;
+        }
 
         // Deactivate all other configs
-        await supabase
+        const { error: deactivateError } = await supabase
           .from('faq_ai_settings')
           .update({ ativo: false })
           .neq('id', settings.id);
+
+        if (deactivateError) {
+          console.error('Deactivate error:', deactivateError);
+        }
       } else {
         // Deactivate all existing configs first
-        await supabase
+        const { error: deactivateAllError } = await supabase
           .from('faq_ai_settings')
           .update({ ativo: false })
           .eq('ativo', true);
+
+        if (deactivateAllError) {
+          console.error('Deactivate all error:', deactivateAllError);
+        }
 
         // Insert new record
         const { data, error: insertError } = await supabase
@@ -389,9 +402,13 @@ export function IASettingsTab() {
           .select('id')
           .single();
 
-        if (insertError) throw insertError;
+        if (insertError) {
+          console.error('Insert error:', insertError);
+          throw insertError;
+        }
         
         if (data) {
+          console.log('New record created with ID:', data.id);
           setSettings(prev => ({ ...prev, id: data.id }));
         }
       }
