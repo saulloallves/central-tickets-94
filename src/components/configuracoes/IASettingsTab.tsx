@@ -20,6 +20,7 @@ interface AISettings {
   api_provider: string;
   knowledge_mode: string;
   api_base_url?: string;
+  api_key?: string;
   custom_headers?: any;
   
   // Modelos principais
@@ -100,6 +101,7 @@ const defaultSettings: AISettings = {
   api_provider: 'openai',
   knowledge_mode: 'auto',
   api_base_url: '',
+  api_key: '',
   custom_headers: {},
   modelo_sugestao: 'gpt-5-2025-08-07',
   modelo_chat: 'gpt-5-2025-08-07',
@@ -162,6 +164,7 @@ export function IASettingsTab() {
           api_provider: data.api_provider || defaultSettings.api_provider,
           knowledge_mode: data.knowledge_mode || defaultSettings.knowledge_mode,
           api_base_url: data.api_base_url || defaultSettings.api_base_url,
+          api_key: data.api_key || defaultSettings.api_key,
           custom_headers: data.custom_headers || defaultSettings.custom_headers,
           modelo_sugestao: data.modelo_sugestao || defaultSettings.modelo_sugestao,
           modelo_chat: data.modelo_chat || defaultSettings.modelo_chat,
@@ -324,6 +327,16 @@ export function IASettingsTab() {
             <div className="space-y-4 p-4 border border-amber-200 bg-amber-50 rounded-lg">
               <h4 className="font-semibold text-sm">⚙️ Configuração Lambda</h4>
               <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label htmlFor="api_key">🔑 Chave da API</Label>
+                  <Input
+                    id="api_key"
+                    type="password"
+                    value={settings.api_key || ''}
+                    onChange={(e) => setSettings(prev => ({...prev, api_key: e.target.value}))}
+                    placeholder="Insira a chave da API Lambda"
+                  />
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="api_base_url">Base URL da API</Label>
                   <Input
