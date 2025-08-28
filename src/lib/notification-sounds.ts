@@ -41,22 +41,22 @@ export class NotificationSounds {
       case 'critical':
         notes = [880, 1046, 880]; // A5, C6, A5 - urgent but not harsh
         rhythm = [0.15, 0.15, 0.3];
-        volume = 0.25;
+        volume = 0.4; // Aumentado de 0.25 para 0.4
         break;
       case 'warning':
         notes = [659, 783]; // E5, G5 - pleasant two-tone
         rhythm = [0.2, 0.3];
-        volume = 0.2;
+        volume = 0.35; // Aumentado de 0.2 para 0.35
         break;
       case 'success':
         notes = [523, 659, 783]; // C5, E5, G5 - pleasant ascending
         rhythm = [0.15, 0.15, 0.25];
-        volume = 0.18;
+        volume = 0.3; // Aumentado de 0.18 para 0.3
         break;
-      default: // info - som mais suave para novo ticket
+      default: // info - som mais audível para novo ticket
         notes = [440, 554]; // A4, C#5 - pleasant gentle tone
         rhythm = [0.25, 0.35];
-        volume = 0.15;
+        volume = 0.3; // Aumentado de 0.15 para 0.3
     }
     
     let currentTime = startTime;
