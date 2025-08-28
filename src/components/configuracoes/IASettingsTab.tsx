@@ -16,6 +16,12 @@ import { useToast } from "@/hooks/use-toast";
 
 interface AISettings {
   id?: string;
+  // Provedor e API
+  api_provider: string;
+  knowledge_mode: string;
+  api_base_url?: string;
+  custom_headers?: any;
+  
   // Modelos principais
   modelo_sugestao: string;
   modelo_chat: string;
@@ -44,15 +50,44 @@ interface AISettings {
   ativo: boolean;
 }
 
-const modelOptions = [
-  { value: 'gpt-5-2025-08-07', label: 'GPT-5 (Flagship)', description: 'Modelo mais avançado e inteligente' },
-  { value: 'gpt-5-mini-2025-08-07', label: 'GPT-5 Mini', description: 'Rápido e eficiente, ótimo custo-benefício' },
-  { value: 'gpt-5-nano-2025-08-07', label: 'GPT-5 Nano', description: 'Ultra rápido para tarefas simples' },
-  { value: 'gpt-4.1-2025-04-14', label: 'GPT-4.1', description: 'Resultados confiáveis e consistentes' },
-  { value: 'o3-2025-04-16', label: 'O3 (Reasoning)', description: 'Raciocínio avançado para problemas complexos' },
-  { value: 'o4-mini-2025-04-16', label: 'O4 Mini (Reasoning)', description: 'Raciocínio rápido e eficiente' },
-  { value: 'gpt-4o-mini', label: 'GPT-4o Mini (Legacy)', description: 'Econômico para tarefas básicas' },
+const providerOptions = [
+  { value: 'openai', label: 'OpenAI', description: 'GPT-5, GPT-4, O3/O4 (Reasoning)' },
+  { value: 'anthropic', label: 'Anthropic', description: 'Claude 4 Opus/Sonnet, Claude 3.5 Haiku' },
+  { value: 'perplexity', label: 'Perplexity', description: 'Llama 3.1 Sonar (Online)' },
+  { value: 'lambda', label: 'Lambda', description: 'API customizada (Lambda Labs)' },
 ];
+
+const knowledgeModeOptions = [
+  { value: 'auto', label: 'Automática', description: 'Documentos + Artigos (Recomendado)' },
+  { value: 'artigos', label: 'Somente Artigos', description: 'Base de conhecimento curada' },
+  { value: 'documentos', label: 'Somente Documentos', description: 'RAG automático de documentos' },
+  { value: 'sem_rag', label: 'Desativada', description: 'Sem consulta à base de conhecimento' },
+];
+
+const modelsByProvider = {
+  openai: [
+    { value: 'gpt-5-2025-08-07', label: 'GPT-5 (Flagship)', description: 'Modelo mais avançado e inteligente' },
+    { value: 'gpt-5-mini-2025-08-07', label: 'GPT-5 Mini', description: 'Rápido e eficiente, ótimo custo-benefício' },
+    { value: 'gpt-5-nano-2025-08-07', label: 'GPT-5 Nano', description: 'Ultra rápido para tarefas simples' },
+    { value: 'gpt-4.1-2025-04-14', label: 'GPT-4.1', description: 'Resultados confiáveis e consistentes' },
+    { value: 'o3-2025-04-16', label: 'O3 (Reasoning)', description: 'Raciocínio avançado para problemas complexos' },
+    { value: 'o4-mini-2025-04-16', label: 'O4 Mini (Reasoning)', description: 'Raciocínio rápido e eficiente' },
+    { value: 'gpt-4o-mini', label: 'GPT-4o Mini (Legacy)', description: 'Econômico para tarefas básicas' },
+  ],
+  anthropic: [
+    { value: 'claude-opus-4-20250514', label: 'Claude 4 Opus', description: 'Mais capaz e inteligente' },
+    { value: 'claude-sonnet-4-20250514', label: 'Claude 4 Sonnet', description: 'Alto desempenho e eficiência' },
+    { value: 'claude-3-5-haiku-20241022', label: 'Claude 3.5 Haiku', description: 'Mais rápido para respostas ágeis' },
+  ],
+  perplexity: [
+    { value: 'llama-3.1-sonar-small-128k-online', label: 'Sonar Small (Online)', description: '8B - Rápido e econômico' },
+    { value: 'llama-3.1-sonar-large-128k-online', label: 'Sonar Large (Online)', description: '70B - Equilibrado' },
+    { value: 'llama-3.1-sonar-huge-128k-online', label: 'Sonar Huge (Online)', description: '405B - Máxima capacidade' },
+  ],
+  lambda: [
+    { value: 'custom-model', label: 'Modelo Customizado', description: 'Configurar via API Base URL' },
+  ],
+};
 
 const styleOptions = [
   { value: 'Direto', label: 'Direto', description: 'Respostas objetivas e concisas' },
@@ -62,6 +97,10 @@ const styleOptions = [
 ];
 
 const defaultSettings: AISettings = {
+  api_provider: 'openai',
+  knowledge_mode: 'auto',
+  api_base_url: '',
+  custom_headers: {},
   modelo_sugestao: 'gpt-5-2025-08-07',
   modelo_chat: 'gpt-5-2025-08-07',
   modelo_classificacao: 'gpt-5-2025-08-07',
@@ -87,6 +126,25 @@ export function IASettingsTab() {
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
+  // Get models for current provider
+  const getCurrentModels = () => {
+    return modelsByProvider[settings.api_provider as keyof typeof modelsByProvider] || modelsByProvider.openai;
+  };
+
+  // Update models when provider changes
+  const handleProviderChange = (newProvider: string) => {
+    const newModels = modelsByProvider[newProvider as keyof typeof modelsByProvider] || modelsByProvider.openai;
+    const defaultModel = newModels[0]?.value || 'gpt-5-2025-08-07';
+    
+    setSettings(prev => ({
+      ...prev,
+      api_provider: newProvider,
+      modelo_sugestao: defaultModel,
+      modelo_chat: defaultModel,
+      modelo_classificacao: defaultModel,
+    }));
+  };
+
   const fetchSettings = async () => {
     setLoading(true);
     try {
@@ -101,6 +159,10 @@ export function IASettingsTab() {
       if (data) {
         const fetchedSettings: AISettings = {
           id: data.id,
+          api_provider: data.api_provider || defaultSettings.api_provider,
+          knowledge_mode: data.knowledge_mode || defaultSettings.knowledge_mode,
+          api_base_url: data.api_base_url || defaultSettings.api_base_url,
+          custom_headers: data.custom_headers || defaultSettings.custom_headers,
           modelo_sugestao: data.modelo_sugestao || defaultSettings.modelo_sugestao,
           modelo_chat: data.modelo_chat || defaultSettings.modelo_chat,
           modelo_classificacao: data.modelo_classificacao || defaultSettings.modelo_classificacao,
@@ -201,12 +263,103 @@ export function IASettingsTab() {
         </AlertDescription>
       </Alert>
 
-      {/* Seção 1: Modelos de IA */}
+      {/* Seção 1: Provedor de API */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base font-medium">Provedor de API</CardTitle>
+          <CardDescription className="text-sm">
+            Configure qual provedor de IA utilizar e sua base de conhecimento
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="api_provider">🔌 Provedor de IA</Label>
+              <Select value={settings.api_provider} onValueChange={handleProviderChange}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {providerOptions.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      <div>
+                        <div className="font-medium">{option.label}</div>
+                        <div className="text-xs text-muted-foreground">{option.description}</div>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {settings.api_provider !== 'openai' && (
+                <Alert className="mt-2">
+                  <Info className="h-4 w-4" />
+                  <AlertDescription className="text-xs">
+                    Configure a chave API do {providerOptions.find(p => p.value === settings.api_provider)?.label} nas <strong>configurações de segredos do Supabase</strong>.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="knowledge_mode">📚 Base de Conhecimento (RAG)</Label>
+              <Select value={settings.knowledge_mode} onValueChange={(value) => setSettings(prev => ({...prev, knowledge_mode: value}))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {knowledgeModeOptions.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      <div>
+                        <div className="font-medium">{option.label}</div>
+                        <div className="text-xs text-muted-foreground">{option.description}</div>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {settings.api_provider === 'lambda' && (
+            <div className="space-y-4 p-4 border border-amber-200 bg-amber-50 rounded-lg">
+              <h4 className="font-semibold text-sm">⚙️ Configuração Lambda</h4>
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label htmlFor="api_base_url">Base URL da API</Label>
+                  <Input
+                    id="api_base_url"
+                    value={settings.api_base_url || ''}
+                    onChange={(e) => setSettings(prev => ({...prev, api_base_url: e.target.value}))}
+                    placeholder="https://sua-api-lambda.com/v1"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="custom_headers">Headers Customizados (JSON)</Label>
+                  <Textarea
+                    id="custom_headers"
+                    value={JSON.stringify(settings.custom_headers || {}, null, 2)}
+                    onChange={(e) => {
+                      try {
+                        const headers = JSON.parse(e.target.value);
+                        setSettings(prev => ({...prev, custom_headers: headers}));
+                      } catch {}
+                    }}
+                    rows={3}
+                    placeholder='{"Authorization": "Bearer your-token"}'
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Seção 2: Modelos de IA */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base font-medium">Modelos de IA</CardTitle>
           <CardDescription className="text-sm">
-            Configure modelos específicos para cada funcionalidade da IA
+            Configure modelos específicos para cada funcionalidade da IA - {providerOptions.find(p => p.value === settings.api_provider)?.label}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -218,7 +371,7 @@ export function IASettingsTab() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {modelOptions.map(option => (
+                  {getCurrentModels().map(option => (
                     <SelectItem key={option.value} value={option.value}>
                       <div>
                         <div className="font-medium">{option.label}</div>
@@ -237,7 +390,7 @@ export function IASettingsTab() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {modelOptions.map(option => (
+                  {getCurrentModels().map(option => (
                     <SelectItem key={option.value} value={option.value}>
                       <div>
                         <div className="font-medium">{option.label}</div>
@@ -256,7 +409,7 @@ export function IASettingsTab() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {modelOptions.map(option => (
+                  {getCurrentModels().map(option => (
                     <SelectItem key={option.value} value={option.value}>
                       <div>
                         <div className="font-medium">{option.label}</div>

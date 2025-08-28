@@ -530,6 +530,8 @@ export type Database = {
       faq_ai_settings: {
         Row: {
           allowed_categories: string[] | null
+          api_base_url: string | null
+          api_provider: string | null
           ativo: boolean
           auto_classificacao: boolean | null
           auto_equipe: boolean | null
@@ -538,11 +540,13 @@ export type Database = {
           blocked_tags: string[] | null
           categorias_preferidas: string[] | null
           created_at: string
+          custom_headers: Json | null
           estilo_resposta: string | null
           filtrar_por_categoria: boolean | null
           forced_article_ids: string[] | null
           frequency_penalty: number
           id: string
+          knowledge_mode: string | null
           limite_tokens_contexto: number | null
           log_detalhado: boolean | null
           max_tokens: number
@@ -575,6 +579,8 @@ export type Database = {
         }
         Insert: {
           allowed_categories?: string[] | null
+          api_base_url?: string | null
+          api_provider?: string | null
           ativo?: boolean
           auto_classificacao?: boolean | null
           auto_equipe?: boolean | null
@@ -583,11 +589,13 @@ export type Database = {
           blocked_tags?: string[] | null
           categorias_preferidas?: string[] | null
           created_at?: string
+          custom_headers?: Json | null
           estilo_resposta?: string | null
           filtrar_por_categoria?: boolean | null
           forced_article_ids?: string[] | null
           frequency_penalty?: number
           id?: string
+          knowledge_mode?: string | null
           limite_tokens_contexto?: number | null
           log_detalhado?: boolean | null
           max_tokens?: number
@@ -620,6 +628,8 @@ export type Database = {
         }
         Update: {
           allowed_categories?: string[] | null
+          api_base_url?: string | null
+          api_provider?: string | null
           ativo?: boolean
           auto_classificacao?: boolean | null
           auto_equipe?: boolean | null
@@ -628,11 +638,13 @@ export type Database = {
           blocked_tags?: string[] | null
           categorias_preferidas?: string[] | null
           created_at?: string
+          custom_headers?: Json | null
           estilo_resposta?: string | null
           filtrar_por_categoria?: boolean | null
           forced_article_ids?: string[] | null
           frequency_penalty?: number
           id?: string
+          knowledge_mode?: string | null
           limite_tokens_contexto?: number | null
           log_detalhado?: boolean | null
           max_tokens?: number
