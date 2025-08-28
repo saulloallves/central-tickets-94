@@ -2,80 +2,23 @@ import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
-
-// Extend Window interface for browser compatibility
-declare global {
-  interface Window {
-    webkitAudioContext?: typeof AudioContext;
-  }
-}
-
-interface NotificationSound {
-  play: () => Promise<void>;
-}
+import { NotificationSounds } from '@/lib/notification-sounds';
 
 export const useTicketNotifications = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const audioRef = useRef<NotificationSound | null>(null);
 
-  // Inicializar o som de notificação
+  // Initialize notification sounds
   useEffect(() => {
-    // Criar um som de notificação simples usando AudioContext
-    const createNotificationSound = () => {
-      return {
-        play: async () => {
-          try {
-            // Verificar se o browser suporta AudioContext
-            if (!window.AudioContext && !window.webkitAudioContext) {
-              console.warn('AudioContext não suportado');
-              return;
-            }
-
-            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-            const audioContext = new AudioContextClass();
-            
-            // Criar uma sequência de notas mais musical
-            const playNote = (frequency: number, duration: number, delay: number = 0, volume: number = 0.15) => {
-              setTimeout(() => {
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                
-                oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
-                oscillator.type = 'sine';
-                
-                gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
-                
-                oscillator.start();
-                oscillator.stop(audioContext.currentTime + duration);
-              }, delay);
-            };
-            
-            // Tocar uma sequência melódica ascendente (C-E-G - acorde de Dó maior)
-            playNote(523.25, 0.15, 0, 0.12);     // C5
-            playNote(659.25, 0.15, 150, 0.12);   // E5
-            playNote(783.99, 0.2, 300, 0.15);    // G5
-            
-          } catch (error) {
-            console.warn('Erro ao reproduzir som de notificação:', error);
-          }
-        }
-      };
-    };
-
-    audioRef.current = createNotificationSound();
+    NotificationSounds.requestAudioPermission();
   }, []);
 
-  // Escutar novos tickets em tempo real
+  // Listen for new tickets in realtime
   useEffect(() => {
     if (!user) return;
 
     const channel = supabase
-      .channel('tickets-notifications')
+      .channel('ticket-notifications-main')
       .on(
         'postgres_changes',
         {
@@ -86,39 +29,81 @@ export const useTicketNotifications = () => {
         (payload) => {
           const newTicket = payload.new as any;
           
-          // Não tocar som se o ticket foi criado pelo próprio usuário
+          // Don't show notification if ticket was created by current user
           if (newTicket.criado_por === user.id) {
             return;
           }
 
-          // Tocar som de notificação
-          if (audioRef.current) {
-            audioRef.current.play();
-          }
+          // Play notification sound based on priority
+          const soundType = newTicket.prioridade === 'crise' ? 'critical' : 
+                          newTicket.prioridade === 'imediato' ? 'warning' : 'info';
+          NotificationSounds.playNotificationSound(soundType);
 
-          // Mostrar toast de notificação
+          // Show toast notification
           toast({
-            title: "Novo Ticket Recebido",
-            description: newTicket.titulo || newTicket.descricao_problema || `Equipe: ${newTicket.equipe_responsavel_id || 'Não atribuída'}`,
+            title: "🎫 Novo Ticket Recebido",
+            description: `${newTicket.titulo || newTicket.descricao_problema || 'Sem título'} - ${newTicket.codigo_ticket}`,
             duration: 5000,
           });
         }
       )
-      .subscribe();
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'tickets'
+        },
+        (payload) => {
+          const updatedTicket = payload.new as any;
+          const oldTicket = payload.old as any;
+          
+          // Don't notify for own updates
+          if (updatedTicket.criado_por === user.id) {
+            return;
+          }
+
+          // Notify when ticket becomes crisis or escalates priority
+          if (updatedTicket.prioridade === 'crise' && oldTicket?.prioridade !== 'crise') {
+            NotificationSounds.playCriticalAlert();
+            toast({
+              title: "🚨 CRISE DETECTADA",
+              description: `Ticket ${updatedTicket.codigo_ticket} escalado para CRISE`,
+              duration: 8000,
+              variant: "destructive"
+            });
+          } else if (updatedTicket.prioridade === 'imediato' && 
+                    oldTicket?.prioridade !== 'imediato' && 
+                    oldTicket?.prioridade !== 'crise') {
+            NotificationSounds.playNotificationSound('warning');
+            toast({
+              title: "⚠️ Prioridade Escalada",
+              description: `Ticket ${updatedTicket.codigo_ticket} agora é IMEDIATO`,
+              duration: 4000,
+            });
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('🔔 Notification channel status:', status);
+      });
 
     return () => {
       supabase.removeChannel(channel);
     };
   }, [user, toast]);
 
-  // Função para testar o som manualmente
+  // Function to test notification sound manually
   const testNotificationSound = async () => {
-    if (audioRef.current) {
-      await audioRef.current.play();
-    }
+    await NotificationSounds.playNotificationSound('info');
+  };
+
+  const testCriticalSound = async () => {
+    NotificationSounds.playCriticalAlert();
   };
 
   return {
-    testNotificationSound
+    testNotificationSound,
+    testCriticalSound
   };
 };

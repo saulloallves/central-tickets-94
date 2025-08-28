@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { Ticket } from './useTickets';
+import { NotificationSounds } from '@/lib/notification-sounds';
 
 interface EnhancedRealtimeOptions {
   onTicketUpdate: (ticket: Ticket) => void;
@@ -23,9 +24,12 @@ export const useEnhancedTicketRealtime = (options: EnhancedRealtimeOptions) => {
     if (!user) return;
 
     console.log('🔄 Setting up enhanced realtime subscription...');
+    
+    // Initialize audio for notifications
+    NotificationSounds.requestAudioPermission();
 
     // Enhanced realtime subscription with focused filtering
-    const channelName = `tickets-enhanced-${user.id}-${Date.now()}`;
+    const channelName = `enhanced-tickets-${user.id}`;
     
     const channel = supabase
       .channel(channelName)
@@ -57,14 +61,32 @@ export const useEnhancedTicketRealtime = (options: EnhancedRealtimeOptions) => {
           switch (payload.eventType) {
             case 'INSERT':
               console.log('➕ New ticket created:', ticket.codigo_ticket);
+              
+              // Play notification sound if not created by current user
+              if (ticket.criado_por !== user.id) {
+                const soundType = ticket.prioridade === 'crise' ? 'critical' : 
+                                ticket.prioridade === 'imediato' ? 'warning' : 'info';
+                NotificationSounds.playNotificationSound(soundType);
+              }
+              
               onTicketInsert(ticket);
               break;
               
             case 'UPDATE':
               console.log('📝 Ticket updated:', ticket.codigo_ticket, {
                 oldStatus: oldTicket?.status,
-                newStatus: ticket.status
+                newStatus: ticket.status,
+                oldPriority: oldTicket?.prioridade,
+                newPriority: ticket.prioridade
               });
+              
+              // Play sound if priority escalated or became crisis
+              if (ticket.prioridade === 'crise' && oldTicket?.prioridade !== 'crise') {
+                NotificationSounds.playCriticalAlert();
+              } else if (ticket.prioridade === 'imediato' && oldTicket?.prioridade !== 'imediato' && oldTicket?.prioridade !== 'crise') {
+                NotificationSounds.playNotificationSound('warning');
+              }
+              
               onTicketUpdate(ticket);
               break;
               

@@ -34,8 +34,8 @@ const Tickets = () => {
   const { isAdmin, isSupervisor } = useRole();
   const { userEquipes } = useUserEquipes();
   
-  // Inicializar notificações sonoras
-  const { testNotificationSound } = useTicketNotifications();
+  // Initialize notification system
+  const { testNotificationSound, testCriticalSound } = useTicketNotifications();
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [ticketModalOpen, setTicketModalOpen] = useState(false);
   
@@ -155,7 +155,10 @@ const Tickets = () => {
               ↻ Refresh Completo
             </Button>
             <Button variant="outline" size="sm" className="hidden md:flex" onClick={testNotificationSound}>
-              🔊 Testar Som
+              🔊 Som Normal
+            </Button>
+            <Button variant="outline" size="sm" className="hidden md:flex" onClick={testCriticalSound}>
+              🚨 Som Crítico
             </Button>
             <Button 
               variant="outline" 
