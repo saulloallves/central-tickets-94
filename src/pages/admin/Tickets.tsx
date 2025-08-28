@@ -22,7 +22,7 @@ import { NewCrisisAlertBanner } from '@/components/crisis/NewCrisisAlertBanner';
 import { NewCrisisPanel } from '@/components/crisis/NewCrisisPanel';
 import { useTickets } from '@/hooks/useTickets';
 import { useUserEquipes } from '@/hooks/useUserEquipes';
-import { useKanbanAutoRefresh } from '@/hooks/useKanbanAutoRefresh';
+import { useRealtimeTickets } from '@/hooks/useRealtimeTickets';
 
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -84,6 +84,14 @@ const Tickets = () => {
     changeTicketStatus
   } = useTickets(filters);
 
+  // Setup Realtime para atualizações instantâneas
+  const { isConnected } = useRealtimeTickets({
+    onTicketUpdate: handleTicketUpdate,
+    onTicketInsert: handleTicketInsert,
+    onTicketDelete: handleTicketDelete,
+    enabled: true,
+  });
+
   // Fetch available teams
   useEffect(() => {
     const fetchEquipes = async () => {
@@ -105,24 +113,6 @@ const Tickets = () => {
     fetchEquipes();
   }, []);
 
-  // Auto-refresh do Kanban - garante atualizações automáticas
-  useKanbanAutoRefresh({
-    onRefresh: () => {
-      console.log('🔄 KANBAN: Auto-refreshing tickets...');
-      refetch();
-    },
-    onNewTickets: (count) => {
-      console.log(`🆕 KANBAN: ${count} new tickets detected`);
-      toast({
-        title: "🎫 Novos Tickets",
-        description: `${count} ticket(s) atualizado(s)`,
-        duration: 3000,
-      });
-    },
-    enabled: true,
-    intervalMs: 3000 // Verifica a cada 3 segundos
-  });
-
   const handleTicketSelect = (ticketId: string) => {
     setSelectedTicketId(ticketId);
   };
@@ -141,7 +131,11 @@ const Tickets = () => {
           <div>
             <h1 className="text-xl md:text-3xl font-bold tracking-tight">Tickets de Suporte</h1>
             <p className="text-sm md:text-base text-muted-foreground">
-              Gerencie tickets de suporte e acompanhe SLAs
+              Gerencie tickets de suporte e acompanhe SLAs {isConnected && (
+                <Badge variant="outline" className="ml-2 text-green-600 border-green-200">
+                  ● Tempo Real
+                </Badge>
+              )}
             </p>
           </div>
           
@@ -156,18 +150,6 @@ const Tickets = () => {
               window.location.reload();
             }}>
               ↻ Refresh Completo
-            </Button>
-            <Button variant="outline" size="sm" className="hidden md:flex" onClick={() => {
-              // Force reload and test new sound directly
-              import('@/lib/notification-sounds').then(({ NotificationSounds }) => {
-                console.log('🔊 TESTING: Playing NEW gentle info sound...');
-                NotificationSounds.playNotificationSound('info');
-              });
-            }}>
-              🔊 Som Novo
-            </Button>
-            <Button variant="outline" size="sm" className="hidden md:flex" onClick={testCriticalSound}>
-              🚨 Som Crítico
             </Button>
             <Button 
               variant="outline" 
@@ -298,9 +280,7 @@ const Tickets = () => {
           equipes={equipes}
           showFilters={showFilters}
           onToggleFilters={() => setShowFilters(!showFilters)}
-          onChangeStatus={(ticketId, fromStatus, toStatus, beforeId, afterId) => 
-            changeTicketStatus(ticketId, fromStatus, toStatus, beforeId, afterId)
-          }
+          onChangeStatus={changeTicketStatus}
         />
 
         <CreateTicketDialog 
