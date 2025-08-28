@@ -22,7 +22,7 @@ import { NewCrisisAlertBanner } from '@/components/crisis/NewCrisisAlertBanner';
 import { NewCrisisPanel } from '@/components/crisis/NewCrisisPanel';
 import { useTickets } from '@/hooks/useTickets';
 import { useUserEquipes } from '@/hooks/useUserEquipes';
-import { useSimpleTicketRealtime } from '@/hooks/useSimpleTicketRealtime';
+import { useKanbanAutoRefresh } from '@/hooks/useKanbanAutoRefresh';
 
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -105,46 +105,22 @@ const Tickets = () => {
     fetchEquipes();
   }, []);
 
-  // Estados para notificações
-  const [processedTicketIds] = useState(new Set<string>());
-
-  // Realtime simples e direto
-  useSimpleTicketRealtime({
-    onTicketInsert: (ticket) => {
-      console.log('🆕 SIMPLE: New ticket received:', ticket.codigo_ticket);
-      handleTicketInsert(ticket);
-      
-      // Show notification and play sound
-      if (ticket.criado_por !== user?.id && !processedTicketIds.has(ticket.id)) {
-        processedTicketIds.add(ticket.id);
-        
-        import('@/lib/notification-sounds').then(({ NotificationSounds }) => {
-          let soundType: 'info' | 'warning' | 'critical' = 'info';
-          if (ticket.prioridade === 'crise') {
-            soundType = 'critical';
-          } else if (ticket.prioridade === 'imediato') {
-            soundType = 'warning';
-          }
-          
-          NotificationSounds.playNotificationSound(soundType);
-        });
-        
-        toast({
-          title: "🎫 Novo Ticket",
-          description: `${ticket.codigo_ticket} - ${ticket.titulo || ticket.descricao_problema}`,
-          duration: 5000,
-        });
-      }
+  // Auto-refresh do Kanban - garante atualizações automáticas
+  useKanbanAutoRefresh({
+    onRefresh: () => {
+      console.log('🔄 KANBAN: Auto-refreshing tickets...');
+      refetch();
     },
-    onTicketUpdate: (ticket) => {
-      console.log('🔄 SIMPLE: Ticket updated:', ticket.codigo_ticket, 'status:', ticket.status);
-      handleTicketUpdate(ticket);
+    onNewTickets: (count) => {
+      console.log(`🆕 KANBAN: ${count} new tickets detected`);
+      toast({
+        title: "🎫 Novos Tickets",
+        description: `${count} ticket(s) atualizado(s)`,
+        duration: 3000,
+      });
     },
-    onTicketDelete: (ticketId) => {
-      console.log('🗑️ SIMPLE: Ticket deleted:', ticketId);
-      handleTicketDelete(ticketId);
-    },
-    enabled: true
+    enabled: true,
+    intervalMs: 3000 // Verifica a cada 3 segundos
   });
 
   const handleTicketSelect = (ticketId: string) => {
