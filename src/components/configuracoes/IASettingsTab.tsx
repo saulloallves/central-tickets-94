@@ -155,15 +155,43 @@ export function IASettingsTab() {
 
     try {
       // First save the current settings
-      const { error: saveError } = await supabase
-        .from('faq_ai_settings')
-        .upsert({
-          id: settings.id,
-          ...settings,
-          updated_at: new Date().toISOString()
-        });
+      console.log('Testando conexão Lambda com configurações:', {
+        api_provider: settings.api_provider,
+        api_key: settings.api_key?.substring(0, 10) + '...',
+        api_base_url: settings.api_base_url,
+        id: settings.id
+      });
 
-      if (saveError) throw saveError;
+      // Save settings first using the same logic as saveSettings
+      if (settings.id) {
+        const { error: updateError } = await supabase
+          .from('faq_ai_settings')
+          .update({
+            ...settings,
+            ativo: true,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', settings.id);
+        
+        if (updateError) throw updateError;
+      } else {
+        // Should not happen in testLambdaConnection, but handle anyway
+        const { data, error: insertError } = await supabase
+          .from('faq_ai_settings')
+          .insert({
+            ...settings,
+            ativo: true,
+            updated_at: new Date().toISOString()
+          })
+          .select('id')
+          .single();
+
+        if (insertError) throw insertError;
+        
+        if (data) {
+          setSettings(prev => ({ ...prev, id: data.id }));
+        }
+      }
 
       // Use edge function to test Lambda connection (avoids CORS issues)
       const { data, error } = await supabase.functions.invoke('lambda-models', {
@@ -185,13 +213,15 @@ export function IASettingsTab() {
       setOriginalSettings({ ...settings });
 
       // Update models to use the first available Lambda model
-      const defaultModel = data.models[0].value;
-      setSettings(prev => ({
-        ...prev,
-        modelo_sugestao: defaultModel,
-        modelo_chat: defaultModel,
-        modelo_classificacao: defaultModel,
-      }));
+      const defaultModel = data.models[0]?.value || data.models[0]?.id;
+      if (defaultModel) {
+        setSettings(prev => ({
+          ...prev,
+          modelo_sugestao: defaultModel,
+          modelo_chat: defaultModel,
+          modelo_classificacao: defaultModel,
+        }));
+      }
 
       toast({
         title: "✅ Conexão Realizada!",
@@ -310,38 +340,49 @@ export function IASettingsTab() {
   const saveSettings = async () => {
     setSaving(true);
     try {
-      // First, deactivate all existing configs
-      await supabase
-        .from('faq_ai_settings')
-        .update({ ativo: false })
-        .neq('id', '00000000-0000-0000-0000-000000000000'); // Update all records
-
-      // Then save the new configuration as the only active one
       const saveData = {
         ...settings,
         ativo: true,
         updated_at: new Date().toISOString()
       };
 
-      // If we have an ID, update; otherwise insert
-      const { error } = settings.id ? 
-        await supabase
-          .from('faq_ai_settings')
-          .update(saveData)
-          .eq('id', settings.id) :
-        await supabase
-          .from('faq_ai_settings')
-          .insert(saveData)
-          .select()
-          .single()
-          .then(result => {
-            if (!result.error && result.data) {
-              setSettings(prev => ({ ...prev, id: result.data.id }));
-            }
-            return result;
-          });
+      // Remove id from saveData for upsert to work properly
+      const { id, ...dataToSave } = saveData;
 
-      if (error) throw error;
+      if (settings.id) {
+        // Update existing record and deactivate others
+        const { error: updateError } = await supabase
+          .from('faq_ai_settings')
+          .update(dataToSave)
+          .eq('id', settings.id);
+
+        if (updateError) throw updateError;
+
+        // Deactivate all other configs
+        await supabase
+          .from('faq_ai_settings')
+          .update({ ativo: false })
+          .neq('id', settings.id);
+      } else {
+        // Deactivate all existing configs first
+        await supabase
+          .from('faq_ai_settings')
+          .update({ ativo: false })
+          .eq('ativo', true);
+
+        // Insert new record
+        const { data, error: insertError } = await supabase
+          .from('faq_ai_settings')
+          .insert(dataToSave)
+          .select('id')
+          .single();
+
+        if (insertError) throw insertError;
+        
+        if (data) {
+          setSettings(prev => ({ ...prev, id: data.id }));
+        }
+      }
 
       setOriginalSettings({ ...settings });
       toast({
