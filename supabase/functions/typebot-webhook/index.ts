@@ -70,7 +70,7 @@ async function searchKnowledgeBase(message: string) {
         .eq('ativo', true)
         .maybeSingle();
 
-      const modelToUse = aiSettings?.modelo_chat || 'gpt-4o-mini';
+      const modelToUse = aiSettings?.modelo_chat || 'gpt-4.1-2025-04-14';
       const apiProvider = aiSettings?.api_provider || 'openai';
       
       let apiUrl = 'https://api.openai.com/v1/chat/completions';
@@ -102,8 +102,7 @@ ${knowledgeContext}`
               content: message
             }
           ],
-          max_tokens: 500,
-          temperature: 0.3,
+          max_completion_tokens: 500,
         }),
       });
 
@@ -249,7 +248,7 @@ serve(async (req) => {
 
     let analysisResult = null;
     let equipeResponsavelId = null;
-    let modelToUse = 'gpt-4o-mini'; // Default fallback
+    let modelToUse = 'gpt-4.1-2025-04-14'; // Updated to newer model
     let apiProvider = 'openai'; // Default fallback
 
     // Análise por IA se temos OpenAI e equipes
@@ -268,7 +267,7 @@ serve(async (req) => {
           .eq('ativo', true)
           .maybeSingle();
 
-        modelToUse = aiSettings?.modelo_classificacao || 'gpt-4o-mini';
+        modelToUse = aiSettings?.modelo_classificacao || 'gpt-4.1-2025-04-14';
         apiProvider = aiSettings?.api_provider || 'openai';
         
         let apiUrl = 'https://api.openai.com/v1/chat/completions';
@@ -322,8 +321,7 @@ Analise o conteúdo e classifique adequadamente:`
                 content: `Mensagem: ${message}\nCategoria sugerida: ${category_hint || 'não informada'}`
               }
             ],
-            max_tokens: 300,
-            temperature: 0.1,
+            max_completion_tokens: 300,
           }),
         });
 
