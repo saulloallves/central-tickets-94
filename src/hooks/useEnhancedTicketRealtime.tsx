@@ -147,7 +147,7 @@ export const useEnhancedTicketRealtime = (options: EnhancedRealtimeOptions) => {
     return () => {
       clearTimeout(fallbackTimer);
     };
-  }, [user, onTicketUpdate, onTicketInsert, onTicketDelete, filters, connectionStatus]);
+  }, [user, onTicketUpdate, onTicketInsert, onTicketDelete, filters]); // Removido connectionStatus para evitar loop infinito
 
   useEffect(() => {
     const cleanup = setupRealtime();
