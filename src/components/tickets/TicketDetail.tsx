@@ -39,12 +39,22 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
 
   const fetchTicketDetails = async () => {
     try {
-      // Fetch ticket first with conversa
-      const { data: ticketData, error: ticketError } = await supabase
-        .from('tickets')
-        .select('*, conversa')
-        .eq('id', ticketId)
-        .single();
+      // Try to fetch ticket with conversa column first
+      let ticketQuery = supabase.from('tickets').select('*, conversa').eq('id', ticketId);
+      let { data: ticketData, error: ticketError } = await ticketQuery.single();
+      
+      // If conversa column doesn't exist, retry without it
+      if (ticketError?.message?.includes("column 'conversa' does not exist")) {
+        console.log('📋 Column conversa not found, retrying without it');
+        const fallbackQuery = await supabase
+          .from('tickets')
+          .select('*')
+          .eq('id', ticketId)
+          .single();
+        
+        ticketData = fallbackQuery.data;
+        ticketError = fallbackQuery.error;
+      }
 
       if (ticketError || !ticketData) {
         console.error('Error fetching ticket:', ticketError);
@@ -89,8 +99,8 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
 
       setTicket(combinedData);
       
-      // Set conversa from ticket data (prioritize over messages)
-      if (ticketData.conversa && Array.isArray(ticketData.conversa) && ticketData.conversa.length > 0) {
+      // Set conversa from ticket data (prioritize over messages) if column exists
+      if ('conversa' in ticketData && ticketData.conversa && Array.isArray(ticketData.conversa) && ticketData.conversa.length > 0) {
         console.log('📋 Using tickets.conversa for messages display');
         setConversa(ticketData.conversa);
       } else {
