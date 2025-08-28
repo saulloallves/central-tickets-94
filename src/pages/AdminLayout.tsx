@@ -65,27 +65,27 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   // User has access - render normal admin layout
   return (
-    <div className="min-h-screen flex w-full bg-gradient-subtle">
-      {/* Desktop sidebar */}
+    <div className="h-screen flex w-full bg-gradient-subtle overflow-hidden">
+      {/* Desktop sidebar - FIXA */}
       {!isMobile && <AppSidebar />}
       
       <div 
         className={cn(
-          "flex-1 flex flex-col transition-all duration-200", 
+          "flex-1 flex flex-col h-full", 
           isMobile ? "pb-20" : ""
         )} 
         data-main-content 
         style={{ marginLeft: isMobile ? '0' : '80px' }}
       >
-        {/* Main content area with optimized spacing */}
-        <main className={cn("flex-1", isMobile ? "p-4" : "p-6")}>
-          <div className="w-full animate-fade-in space-y-6">
+        {/* Main content area - SCROLLÁVEL */}
+        <main className={cn("flex-1 overflow-y-auto", isMobile ? "p-4" : "p-6")}>
+          <div className="w-full space-y-6">
             {children}
           </div>
         </main>
       </div>
       
-      {/* Mobile bottom navigation */}
+      {/* Mobile bottom navigation - FIXA */}
       {isMobile && <MobileBottomNav />}
       <Toaster />
     </div>
