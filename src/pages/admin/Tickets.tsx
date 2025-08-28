@@ -248,18 +248,6 @@ const Tickets = () => {
             </Button>
             <TestAIButton />
             
-            {/* Connection Status Indicator - Enhanced */}
-            <div className={`flex items-center gap-1 text-xs px-2 py-1 rounded ${
-              effectivelyConnected ? 'bg-green-100 text-green-700' : 
-              'bg-yellow-100 text-yellow-700'
-            }`}>
-              <div className={`w-2 h-2 rounded-full ${
-                effectivelyConnected ? 'bg-green-500 animate-pulse' : 
-                'bg-yellow-500 animate-spin'
-              }`} />
-              {effectivelyConnected ? 'Tempo Real' : 
-               `Conectando... (${retryCount + 1})`}
-            </div>
             <Button size="sm" onClick={() => setCreateDialogOpen(true)} className="flex-1 md:flex-none">
               <Plus className="h-4 w-4 md:mr-2" />
               <span className="hidden md:inline">Novo Ticket</span>
