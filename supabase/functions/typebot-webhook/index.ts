@@ -303,16 +303,40 @@ serve(async (req) => {
 
 REGRAS OBRIGATÓRIAS:
 - RETORNE APENAS O JSON, sem texto adicional
+- NUNCA deixe categoria como null - sempre escolha uma das opções disponíveis
+- NUNCA deixe equipe_responsavel como null - sempre escolha uma equipe da lista
+- Se não souber a categoria exata, use "outro"
+- Se não souber a equipe exata, use a primeira da lista
 - prioridade IMEDIATO: problemas críticos que impedem funcionamento (15min)
 - prioridade ATE_1_HORA: problemas urgentes que afetam produtividade (1h) 
 - prioridade AINDA_HOJE: problemas importantes mas não bloqueiam trabalho (até 18h)
 - prioridade POSSO_ESPERAR: dúvidas, solicitações, problemas menores (24h)
 - is_crise = true APENAS para casos EXTREMAMENTE críticos que paralisam operação
 - motivo_crise APENAS se is_crise = true
-- equipe_responsavel deve ser o NOME EXATO de uma das equipes disponíveis:
+- equipe_responsavel deve ser o NOME EXATO de uma das equipes disponíveis
+
+CATEGORIAS VÁLIDAS:
+- juridico: questões legais, contratos, processos, documentação legal
+- sistema: problemas técnicos, travamentos, erros de sistema, apps
+- midia: marketing, redes sociais, materiais promocionais, comunicação
+- operacoes: processos operacionais, logística, funcionamento da franquia
+- rh: recursos humanos, contratação, folha de pagamento, benefícios
+- financeiro: questões financeiras, pagamentos, cobrança, contabilidade
+- outro: quando não se encaixa nas categorias acima
 
 EQUIPES DISPONÍVEIS:
 ${equipesInfo}
+
+EXEMPLO DE RESPOSTA VÁLIDA:
+{
+  "prioridade": "posso_esperar",
+  "categoria": "midia",
+  "subcategoria": "material promocional",
+  "is_crise": false,
+  "motivo_crise": null,
+  "sla_sugerido_horas": 24,
+  "equipe_responsavel": "Mídia"
+}
 
 Analise o conteúdo e classifique adequadamente:`
               },
@@ -363,6 +387,59 @@ Analise o conteúdo e classifique adequadamente:`
       }
     }
 
+    // Aplicar fallbacks se a análise falhou ou retornou null
+    if (!analysisResult || !analysisResult.categoria || !analysisResult.equipe_responsavel) {
+      console.log('AI analysis incomplete, applying fallbacks...');
+      
+      // Fallback inteligente baseado na mensagem
+      const messageWords = message.toLowerCase();
+      let fallbackCategoria = 'outro';
+      let fallbackEquipeId = equipes?.[0]?.id || null;
+      
+      // Detecção de categoria por palavras-chave
+      if (messageWords.includes('sistema') || messageWords.includes('app') || messageWords.includes('erro') || messageWords.includes('travou')) {
+        fallbackCategoria = 'sistema';
+      } else if (messageWords.includes('midia') || messageWords.includes('marketing') || messageWords.includes('propaganda')) {
+        fallbackCategoria = 'midia';
+      } else if (messageWords.includes('juridico') || messageWords.includes('contrato') || messageWords.includes('legal')) {
+        fallbackCategoria = 'juridico';
+      } else if (messageWords.includes('rh') || messageWords.includes('funcionario') || messageWords.includes('folha')) {
+        fallbackCategoria = 'rh';
+      } else if (messageWords.includes('financeiro') || messageWords.includes('pagamento') || messageWords.includes('dinheiro')) {
+        fallbackCategoria = 'financeiro';
+      }
+      
+      // Buscar equipe compatível com a categoria
+      const equipeCompativel = equipes?.find(eq => 
+        eq.nome.toLowerCase().includes(fallbackCategoria) || 
+        eq.introducao?.toLowerCase().includes(fallbackCategoria) ||
+        eq.descricao?.toLowerCase().includes(fallbackCategoria)
+      );
+      
+      if (equipeCompativel) {
+        fallbackEquipeId = equipeCompativel.id;
+      }
+      
+      // Aplicar fallbacks no resultado da análise
+      if (!analysisResult) {
+        analysisResult = {};
+      }
+      analysisResult.categoria = analysisResult.categoria || fallbackCategoria;
+      analysisResult.prioridade = analysisResult.prioridade || 'posso_esperar';
+      analysisResult.sla_sugerido_horas = analysisResult.sla_sugerido_horas || 24;
+      analysisResult.is_crise = analysisResult.is_crise || false;
+      
+      if (!equipeResponsavelId) {
+        equipeResponsavelId = fallbackEquipeId;
+      }
+      
+      console.log('Applied fallbacks:', {
+        categoria: analysisResult.categoria,
+        equipe_id: equipeResponsavelId,
+        prioridade: analysisResult.prioridade
+      });
+    }
+
     // Criar ticket com dados da análise ou defaults
     const { data: ticket, error: ticketError } = await supabase
       .from('tickets')
@@ -370,10 +447,10 @@ Analise o conteúdo e classifique adequadamente:`
         unidade_id: unidade.id,
         franqueado_id: franqueadoId,
         descricao_problema: message,
-        categoria: analysisResult?.categoria || null,
+        categoria: analysisResult?.categoria || 'outro',
         subcategoria: analysisResult?.subcategoria || null,
         prioridade: analysisResult?.prioridade || 'posso_esperar',
-        equipe_responsavel_id: equipeResponsavelId,
+        equipe_responsavel_id: equipeResponsavelId || equipes?.[0]?.id,
         canal_origem: 'typebot',
         status: analysisResult?.is_crise ? 'escalonado' : 'aberto',
         escalonamento_nivel: analysisResult?.is_crise ? 5 : 0,
