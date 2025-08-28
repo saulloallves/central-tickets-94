@@ -113,7 +113,7 @@ export const TicketsList: React.FC<TicketsListProps> = ({
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <span>
-                    {ticket.colaboradores?.nome_completo || ticket.created_by_profile?.nome_completo || 'Sistema'}
+                    {ticket.colaboradores?.nome_completo || 'Sistema'}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">

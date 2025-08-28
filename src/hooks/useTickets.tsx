@@ -43,9 +43,6 @@ export interface Ticket {
   colaboradores?: { 
     nome_completo?: string; 
   };
-  created_by_profile?: { 
-    nome_completo?: string; 
-  };
 }
 
 export interface TicketFilters {
@@ -92,8 +89,7 @@ export const useTickets = (filters: TicketFilters) => {
           *,
           equipes:equipe_responsavel_id(nome),
           unidades:unidade_id(grupo, cidade, uf),
-          colaboradores:colaborador_id(nome_completo),
-          created_by_profile:profiles!tickets_criado_por_fkey(nome_completo)
+          colaboradores:colaborador_id(nome_completo)
         `)
         .order('position', { ascending: true });
 
@@ -162,10 +158,7 @@ export const useTickets = (filters: TicketFilters) => {
       const transformedData = data?.map(ticket => ({
         ...ticket,
         franqueado_id: ticket.franqueado_id?.toString(),
-        status_sla: ticket.status_sla || 'dentro_prazo',
-        created_by_profile: Array.isArray(ticket.created_by_profile) 
-          ? ticket.created_by_profile[0] 
-          : ticket.created_by_profile
+        status_sla: ticket.status_sla || 'dentro_prazo'
       })) || [];
       
       setTickets(transformedData as Ticket[]);
@@ -355,10 +348,10 @@ export const useTickets = (filters: TicketFilters) => {
     loading,
     ticketStats,
     refetch: fetchTickets,
-    handleTicketUpdate: () => {},
-    handleTicketInsert: () => {},
-    handleTicketDelete: () => {},
-    changeTicketStatus: async () => false,
+    handleTicketUpdate,
+    handleTicketInsert,
+    handleTicketDelete,
+    changeTicketStatus,
     createTicket,
   };
 };
