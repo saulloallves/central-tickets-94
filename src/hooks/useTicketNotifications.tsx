@@ -17,8 +17,10 @@ export const useTicketNotifications = () => {
   useEffect(() => {
     if (!user) return;
 
+    console.log('🔔 Setting up ticket notifications...');
+
     const channel = supabase
-      .channel('ticket-notifications-main')
+      .channel('ticket-notifications')
       .on(
         'postgres_changes',
         {
@@ -27,13 +29,16 @@ export const useTicketNotifications = () => {
           table: 'tickets'
         },
         (payload) => {
+          console.log('🎫 New ticket event:', payload);
           const newTicket = payload.new as any;
           
           // Don't show notification if ticket was created by current user
           if (newTicket.criado_por === user.id) {
+            console.log('👤 Skipping notification - created by current user');
             return;
           }
 
+          console.log('🔊 Playing notification sound for new ticket');
           // Play notification sound based on priority
           const soundType = newTicket.prioridade === 'crise' ? 'critical' : 
                           newTicket.prioridade === 'imediato' ? 'warning' : 'info';
@@ -55,16 +60,19 @@ export const useTicketNotifications = () => {
           table: 'tickets'
         },
         (payload) => {
+          console.log('📝 Ticket update event:', payload);
           const updatedTicket = payload.new as any;
           const oldTicket = payload.old as any;
           
           // Don't notify for own updates
           if (updatedTicket.criado_por === user.id) {
+            console.log('👤 Skipping update notification - updated by current user');
             return;
           }
 
           // Notify when ticket becomes crisis or escalates priority
           if (updatedTicket.prioridade === 'crise' && oldTicket?.prioridade !== 'crise') {
+            console.log('🚨 Playing CRISIS alert');
             NotificationSounds.playCriticalAlert();
             toast({
               title: "🚨 CRISE DETECTADA",
@@ -75,6 +83,7 @@ export const useTicketNotifications = () => {
           } else if (updatedTicket.prioridade === 'imediato' && 
                     oldTicket?.prioridade !== 'imediato' && 
                     oldTicket?.prioridade !== 'crise') {
+            console.log('⚠️ Playing WARNING alert');
             NotificationSounds.playNotificationSound('warning');
             toast({
               title: "⚠️ Prioridade Escalada",
@@ -85,10 +94,11 @@ export const useTicketNotifications = () => {
         }
       )
       .subscribe((status) => {
-        console.log('🔔 Notification channel status:', status);
+        console.log('🔔 Notification subscription status:', status);
       });
 
     return () => {
+      console.log('🔌 Cleaning up notification subscription');
       supabase.removeChannel(channel);
     };
   }, [user, toast]);

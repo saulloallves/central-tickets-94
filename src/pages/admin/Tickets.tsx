@@ -20,7 +20,7 @@ import { NewCrisisAlertBanner } from '@/components/crisis/NewCrisisAlertBanner';
 import { NewCrisisPanel } from '@/components/crisis/NewCrisisPanel';
 import { useTickets } from '@/hooks/useTickets';
 import { useUserEquipes } from '@/hooks/useUserEquipes';
-import { useTicketsRealtime } from '@/hooks/useTicketsRealtime';
+
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 
@@ -100,17 +100,7 @@ const Tickets = () => {
     fetchEquipes();
   }, []);
 
-  // Setup realtime subscription with optimized filtering
-  useTicketsRealtime({
-    onTicketUpdate: handleTicketUpdate,
-    onTicketInsert: handleTicketInsert,
-    onTicketDelete: handleTicketDelete,
-    filters: {
-      unidade_id: filters.unidade_id !== 'all' ? filters.unidade_id : undefined,
-      equipe_id: filters.equipe_id !== 'all' ? filters.equipe_id : undefined,
-      status: filters.status !== 'all' ? [filters.status] : undefined,
-    }
-  });
+  // Realtime notifications are handled by useTicketNotifications hook
 
   const handleTicketSelect = (ticketId: string) => {
     setSelectedTicketId(ticketId);
