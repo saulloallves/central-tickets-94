@@ -472,7 +472,21 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
   const [draggedOverColumn, setDraggedOverColumn] = useState<string | null>(null);
   const [showArchivedTickets, setShowArchivedTickets] = useState(false);
   
+  // Estado otimista para drag and drop
+  const [optimisticTickets, setOptimisticTickets] = useState<Ticket[]>([]);
+  const [pendingMoves, setPendingMoves] = useState<Set<string>>(new Set());
+  
   const { activeCrises } = useNewCrisisManagement();
+
+  // Use optimistic tickets se existirem, senão use os tickets normais
+  const displayTickets = optimisticTickets.length > 0 ? optimisticTickets : tickets;
+
+  // Reset optimistic state quando tickets mudam
+  useEffect(() => {
+    if (tickets.length > 0 && pendingMoves.size === 0) {
+      setOptimisticTickets([]);
+    }
+  }, [tickets, pendingMoves]);
 
   // Update timestamp when tickets change
   useEffect(() => {
@@ -583,6 +597,19 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
       to: newStatus
     });
 
+    // Atualização otimista - mover card imediatamente
+    const optimisticTicketsCopy = [...(optimisticTickets.length > 0 ? optimisticTickets : tickets)];
+    const ticketIndex = optimisticTicketsCopy.findIndex(t => t.id === ticketId);
+    
+    if (ticketIndex !== -1) {
+      optimisticTicketsCopy[ticketIndex] = {
+        ...optimisticTicketsCopy[ticketIndex],
+        status: newStatus as any
+      };
+      setOptimisticTickets(optimisticTicketsCopy);
+      setPendingMoves(prev => new Set([...prev, ticketId]));
+    }
+
     // Enhanced move with position support
     const success = await onChangeStatus(
       ticketId, 
@@ -592,15 +619,25 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
       undefined  // afterId - to be implemented with sortable ordering
     );
     
+    // Remove do pending moves
+    setPendingMoves(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(ticketId);
+      return newSet;
+    });
+    
     if (success) {
       console.log('✅ Drag-drop completed successfully');
+      // O realtime vai atualizar os tickets
     } else {
-      console.log('❌ Drag-drop failed');
+      console.log('❌ Drag-drop failed - reverting optimistic update');
+      // Reverter atualização otimista em caso de erro
+      setOptimisticTickets([]);
     }
   };
 
   const getTicketsByStatus = (status: keyof typeof COLUMN_STATUS) => {
-    let filteredTickets = tickets.filter(ticket => ticket.status === status);
+    let filteredTickets = displayTickets.filter(ticket => ticket.status === status);
     
     // For completed tickets, filter out old ones unless showing archived
     if (status === 'concluido' && !showArchivedTickets) {
