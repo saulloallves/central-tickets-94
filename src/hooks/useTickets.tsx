@@ -184,12 +184,40 @@ export const useTickets = (filters: TicketFilters) => {
         
         if (!error && fallbackData) {
           console.log('✅ Fallback query successful, tickets loaded without relations');
-          // Transform data to match expected interface (add missing optional relations)
+          
+          // Get unique equipe IDs to fetch names separately
+          const uniqueEquipeIds = [...new Set(
+            fallbackData
+              .map(ticket => ticket.equipe_responsavel_id)
+              .filter(Boolean)
+          )];
+          
+          let equipesMap: Record<string, { nome: string }> = {};
+          
+          if (uniqueEquipeIds.length > 0) {
+            try {
+              const { data: equipesData } = await supabase
+                .from('equipes')
+                .select('id, nome')
+                .in('id', uniqueEquipeIds);
+              
+              if (equipesData) {
+                equipesMap = equipesData.reduce((acc, equipe) => ({
+                  ...acc,
+                  [equipe.id]: { nome: equipe.nome }
+                }), {});
+              }
+            } catch (equipesError) {
+              console.warn('Could not fetch equipes in fallback:', equipesError);
+            }
+          }
+          
+          // Transform data to match expected interface with equipe names
           data = fallbackData.map(ticket => ({
             ...ticket,
             unidades: undefined,
             colaboradores: undefined,
-            equipes: undefined,
+            equipes: ticket.equipe_responsavel_id ? equipesMap[ticket.equipe_responsavel_id] : undefined,
             atendimento_iniciado_por_profile: undefined,
             created_by_profile: undefined
           })) as any;

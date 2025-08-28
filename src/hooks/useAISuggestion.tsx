@@ -49,15 +49,23 @@ export const useAISuggestion = (ticketId: string) => {
     try {
       console.log('Generating AI suggestion for ticket:', ticketId);
       
-      const { data, error } = await supabase.functions.invoke('suggest-reply', {
+      // Create timeout promise
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Timeout: A requisição demorou mais que 30 segundos')), 30000)
+      );
+      
+      // Race between function call and timeout
+      const suggestionPromise = supabase.functions.invoke('suggest-reply', {
         body: { ticketId }
       });
+      
+      const { data, error } = await Promise.race([suggestionPromise, timeoutPromise]) as any;
 
       if (error) {
         console.error('Suggestion error:', error);
         toast({
           title: "Erro na Sugestão IA",
-          description: "Não foi possível gerar sugestão automaticamente",
+          description: error.message || "Não foi possível gerar sugestão automaticamente",
           variant: "destructive",
         });
         return null;
@@ -65,8 +73,41 @@ export const useAISuggestion = (ticketId: string) => {
 
       console.log('AI suggestion generated:', data);
       
-      // Refresh suggestion after generation
-      await getLatestSuggestion();
+      // Polling to wait for suggestion to appear in database
+      let attempts = 0;
+      const maxAttempts = 3;
+      
+      while (attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1s
+        await getLatestSuggestion();
+        
+        // Check if suggestion was loaded
+        const currentSuggestion = await new Promise<AISuggestion | null>((resolve) => {
+          const checkSuggestion = async () => {
+            try {
+              const { data: checkData } = await supabase
+                .from('ticket_ai_interactions')
+                .select('id, resposta, foi_usada, resposta_final, created_at, log')
+                .eq('ticket_id', ticketId)
+                .eq('kind', 'suggestion')
+                .order('created_at', { ascending: false })
+                .limit(1);
+              
+              resolve(checkData && checkData.length > 0 ? checkData[0] as AISuggestion : null);
+            } catch {
+              resolve(null);
+            }
+          };
+          checkSuggestion();
+        });
+        
+        if (currentSuggestion && currentSuggestion.created_at > new Date(Date.now() - 60000).toISOString()) {
+          // Found recent suggestion, break polling
+          break;
+        }
+        
+        attempts++;
+      }
       
       toast({
         title: "✨ Sugestão IA Gerada",
@@ -76,9 +117,12 @@ export const useAISuggestion = (ticketId: string) => {
       return data;
     } catch (error) {
       console.error('Error generating suggestion:', error);
+      const isTimeout = error instanceof Error && error.message.includes('Timeout');
       toast({
-        title: "Erro",
-        description: "Erro inesperado ao gerar sugestão",
+        title: isTimeout ? "Tempo Esgotado" : "Erro",
+        description: isTimeout 
+          ? "A geração da sugestão está demorando. Tente novamente em alguns segundos."
+          : "Erro inesperado ao gerar sugestão",
         variant: "destructive",
       });
       return null;

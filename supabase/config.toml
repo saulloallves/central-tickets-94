@@ -34,6 +34,12 @@ verify_jwt = false
 [functions.franqueado-login]
 verify_jwt = false
 
+[functions.suggest-reply]
+verify_jwt = false
+
+[functions.ticket-ai-chat]
+verify_jwt = false
+
 [db]
 port = 54322
 shadow_port = 54320

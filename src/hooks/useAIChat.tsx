@@ -59,21 +59,40 @@ export const useAIChat = (ticketId: string) => {
       
       const { data: userData } = await supabase.auth.getUser();
       
-      const { data, error } = await supabase.functions.invoke('ticket-ai-chat', {
+      // Create timeout promise
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Timeout: A requisição demorou mais que 30 segundos')), 30000)
+      );
+      
+      // Race between function call and timeout
+      const chatPromise = supabase.functions.invoke('ticket-ai-chat', {
         body: { 
           ticketId, 
           mensagem: mensagem.trim(),
           userId: userData.user?.id
         }
       });
+      
+      const { data, error } = await Promise.race([chatPromise, timeoutPromise]) as any;
 
       if (error) {
         console.error('AI chat error:', error);
         // Remove the temporary message on error
         setChatHistory(prev => prev.filter(msg => msg.id !== userMessage.id));
+        
+        // Add error message to chat
+        const errorMessage: AIChatMessage = {
+          id: `error-${Date.now()}`,
+          mensagem: mensagem.trim(),
+          resposta: `❌ Erro: ${error.message || 'Não foi possível processar sua pergunta'}`,
+          created_at: new Date().toISOString(),
+          user_id: userData.user?.id
+        };
+        setChatHistory(prev => [...prev, errorMessage]);
+        
         toast({
           title: "Erro no Chat IA",
-          description: "Não foi possível processar sua pergunta",
+          description: error.message || "Não foi possível processar sua pergunta",
           variant: "destructive",
         });
         return null;
@@ -83,16 +102,40 @@ export const useAIChat = (ticketId: string) => {
       
       // Remove temporary message and refresh with real data
       setChatHistory(prev => prev.filter(msg => msg.id !== userMessage.id));
-      await fetchChatHistory();
+      
+      // Polling to wait for response to appear in database
+      let attempts = 0;
+      const maxAttempts = 3;
+      
+      while (attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1s
+        await fetchChatHistory();
+        attempts++;
+      }
       
       return data;
     } catch (error) {
       console.error('Error in AI chat:', error);
       // Remove the temporary message on error
       setChatHistory(prev => prev.filter(msg => msg.id !== userMessage.id));
+      
+      const isTimeout = error instanceof Error && error.message.includes('Timeout');
+      const errorMessage: AIChatMessage = {
+        id: `error-${Date.now()}`,
+        mensagem: mensagem.trim(),
+        resposta: isTimeout 
+          ? '⏰ Tempo esgotado. A IA está demorando para responder. Tente novamente em alguns segundos.'
+          : '❌ Erro inesperado no chat com IA',
+        created_at: new Date().toISOString(),
+        user_id: undefined
+      };
+      setChatHistory(prev => [...prev, errorMessage]);
+      
       toast({
-        title: "Erro",
-        description: "Erro inesperado no chat com IA",
+        title: isTimeout ? "Tempo Esgotado" : "Erro",
+        description: isTimeout 
+          ? "A IA está demorando para responder. Tente novamente em alguns segundos."
+          : "Erro inesperado no chat com IA",
         variant: "destructive",
       });
       return null;
