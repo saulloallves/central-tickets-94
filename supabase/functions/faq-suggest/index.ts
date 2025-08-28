@@ -201,28 +201,32 @@ Responda de forma clara e objetiva. Se não houver informação suficiente na ba
       );
     }
 
-    // Call OpenAI API
+    // Call OpenAI API using configured model and parameters
+    const model = settings.modelo_sugestao || 'gpt-5-2025-08-07';
+    const isNewerModel = model.includes('gpt-4.1') || model.includes('gpt-5') || model.includes('o3') || model.includes('o4');
+    
     const openAIPayload: any = {
-      model: settings.modelo,
+      model,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: pergunta }
-      ],
-      top_p: settings.top_p,
-      frequency_penalty: settings.frequency_penalty,
-      presence_penalty: settings.presence_penalty
+      ]
     };
 
-    // Add model-specific parameters
-    if (['gpt-4o', 'gpt-4o-mini'].includes(settings.modelo)) {
-      openAIPayload.max_tokens = settings.max_tokens;
-      openAIPayload.temperature = settings.temperatura;
+    // Use configured parameters from AI settings
+    if (isNewerModel) {
+      openAIPayload.max_completion_tokens = settings.max_tokens_sugestao || 1000;
+      openAIPayload.frequency_penalty = 0;
+      openAIPayload.presence_penalty = 0;
     } else {
-      openAIPayload.max_completion_tokens = settings.max_tokens;
-      // Don't add temperature for newer models
+      openAIPayload.max_tokens = settings.max_tokens_sugestao || 1000;
+      openAIPayload.temperature = settings.temperatura_sugestao || 0.7;
+      openAIPayload.top_p = 1.0;
+      openAIPayload.frequency_penalty = 0;
+      openAIPayload.presence_penalty = 0;
     }
 
-    console.log('Calling OpenAI with model:', settings.modelo);
+    console.log('Calling OpenAI with model:', model);
 
     const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -255,9 +259,9 @@ Responda de forma clara e objetiva. Se não houver informação suficiente na ba
       system_prompt: systemPrompt,
       user_question: pergunta,
       ai_response: resposta,
-      model: settings.modelo,
-      temperature: settings.temperatura,
-      max_tokens: settings.max_tokens,
+      model: model,
+      temperature: settings.temperatura_sugestao,
+      max_tokens: settings.max_tokens_sugestao,
       search_terms: searchTerms,
       rag_hits: ragDocuments.length,
       kb_hits: kbArticles.length,

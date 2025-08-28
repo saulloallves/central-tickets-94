@@ -343,8 +343,8 @@ ${mensagem}
 Ajude o atendente com informações da base de conhecimento da Cresci & Perdi.`;
 
 
-    // 8. Call OpenAI
-    const model = aiSettings.modelo_chat || 'gpt-4o-mini';
+    // 8. Call OpenAI using configured model and parameters
+    const model = aiSettings.modelo_chat || 'gpt-5-2025-08-07';
     const isNewerModel = model.includes('gpt-4.1') || model.includes('gpt-5') || model.includes('o3') || model.includes('o4');
     
     const requestBody: any = {
@@ -355,16 +355,17 @@ Ajude o atendente com informações da base de conhecimento da Cresci & Perdi.`;
       ],
     };
 
+    // Use configured parameters from AI settings
     if (isNewerModel) {
-      requestBody.max_completion_tokens = aiSettings.max_tokens || 800;
-      requestBody.frequency_penalty = aiSettings.frequency_penalty || 0;
-      requestBody.presence_penalty = aiSettings.presence_penalty || 0;
+      requestBody.max_completion_tokens = aiSettings.max_tokens_chat || 800;
+      requestBody.frequency_penalty = 0;
+      requestBody.presence_penalty = 0;
     } else {
-      requestBody.max_tokens = aiSettings.max_tokens || 800;
-      requestBody.temperature = aiSettings.temperatura || 0.3;
-      requestBody.top_p = aiSettings.top_p || 1.0;
-      requestBody.frequency_penalty = aiSettings.frequency_penalty || 0;
-      requestBody.presence_penalty = aiSettings.presence_penalty || 0;
+      requestBody.max_tokens = aiSettings.max_tokens_chat || 800;
+      requestBody.temperature = aiSettings.temperatura_chat || 0.3;
+      requestBody.top_p = 1.0;
+      requestBody.frequency_penalty = 0;
+      requestBody.presence_penalty = 0;
     }
 
     console.log('Calling OpenAI for chat with model:', model);

@@ -25,6 +25,68 @@ serve(async (req) => {
       throw new Error('OpenAI API key not found')
     }
 
+    // 1. Fetch AI settings FIRST to get configured model
+    const { data: aiSettings, error: settingsError } = await supabase
+      .from('faq_ai_settings')
+      .select('*')
+      .eq('ativo', true)
+      .maybeSingle();
+
+    if (settingsError) {
+      console.error('Error fetching AI settings:', settingsError);
+      throw new Error(`AI settings error: ${settingsError.message}`);
+    }
+
+    // Use default if no settings found
+    const defaultSettings = {
+      modelo_classificacao: 'gpt-5-2025-08-07',
+      temperatura_classificacao: 0.1,
+      max_tokens_classificacao: 500
+    };
+
+    const settings = aiSettings || defaultSettings;
+
+    console.log('AI Settings loaded for classification:', {
+      modelo_classificacao: settings.modelo_classificacao,
+      temperatura_classificacao: settings.temperatura_classificacao,
+      max_tokens_classificacao: settings.max_tokens_classificacao
+    });
+
+    // Helper function to build analysis request with correct model
+    const buildAnalysisRequest = async (prompt: string) => {
+      const model = settings.modelo_classificacao || 'gpt-5-2025-08-07';
+      const isNewerModel = model.includes('gpt-4.1') || model.includes('gpt-5') || model.includes('o3') || model.includes('o4');
+      
+      const requestBody: any = {
+        model,
+        messages: [
+          {
+            role: 'system',
+            content: 'Você é um especialista em classificação de tickets de suporte técnico. Analise sempre em português brasileiro e seja preciso nas classificações.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ]
+      };
+
+      // Use configured parameters from AI settings
+      if (isNewerModel) {
+        requestBody.max_completion_tokens = settings.max_tokens_classificacao || 500;
+        requestBody.frequency_penalty = 0;
+        requestBody.presence_penalty = 0;
+      } else {
+        requestBody.max_tokens = settings.max_tokens_classificacao || 500;
+        requestBody.temperature = settings.temperatura_classificacao || 0.1;
+        requestBody.top_p = 1.0;
+        requestBody.frequency_penalty = 0;
+        requestBody.presence_penalty = 0;
+      }
+
+      return requestBody;
+    };
+
     // Buscar todas as equipes ativas
     const { data: equipesAtivas } = await supabase
       .from('equipes')
@@ -81,21 +143,7 @@ CRÍTICO: Use APENAS estas 4 prioridades: imediato, ate_1_hora, ainda_hoje, poss
         'Authorization': `Bearer ${openaiApiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: 'Você é um especialista em classificação de tickets de suporte técnico. Analise sempre em português brasileiro e seja preciso nas classificações.'
-          },
-          {
-            role: 'user',
-            content: analysisPrompt
-          }
-        ],
-        temperature: 0.3,
-        max_tokens: 500
-      }),
+      body: JSON.stringify(await buildAnalysisRequest(analysisPrompt)),
     })
 
     if (!response.ok) {
@@ -218,7 +266,7 @@ CRÍTICO: Use APENAS estas 4 prioridades: imediato, ate_1_hora, ainda_hoje, poss
       log_ia: {
         analysis_timestamp: new Date().toISOString(),
         ai_response: aiResponse,
-        model: 'gpt-4o-mini',
+        model: settings.modelo_classificacao || 'gpt-5-2025-08-07',
         categoria_sugerida: analysis.categoria,
         prioridade_sugerida: analysis.prioridade,
         equipe_sugerida: analysis.equipe_sugerida,

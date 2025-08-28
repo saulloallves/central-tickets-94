@@ -237,14 +237,34 @@ export function IASettingsTab() {
   const fetchSettings = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // First, ensure only one active configuration exists
+      const { data: allSettings, error: allError } = await supabase
         .from('faq_ai_settings')
         .select('*')
         .eq('ativo', true)
-        .single();
+        .order('updated_at', { ascending: false });
 
-      if (error && error.code !== 'PGRST116') throw error;
+      if (allError) throw allError;
 
+      let data = null;
+
+      // If multiple active configs exist, deactivate all but the most recent
+      if (allSettings && allSettings.length > 1) {
+        const [latest, ...older] = allSettings;
+        
+        // Deactivate older configs
+        if (older.length > 0) {
+          await supabase
+            .from('faq_ai_settings')
+            .update({ ativo: false })
+            .in('id', older.map(s => s.id));
+        }
+        
+        data = latest;
+      } else if (allSettings && allSettings.length === 1) {
+        data = allSettings[0];
+      }
+        
       if (data) {
         const fetchedSettings: AISettings = {
           id: data.id,
@@ -290,13 +310,36 @@ export function IASettingsTab() {
   const saveSettings = async () => {
     setSaving(true);
     try {
-      const { error } = await supabase
+      // First, deactivate all existing configs
+      await supabase
         .from('faq_ai_settings')
-        .upsert({
-          id: settings.id,
-          ...settings,
-          updated_at: new Date().toISOString()
-        });
+        .update({ ativo: false })
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Update all records
+
+      // Then save the new configuration as the only active one
+      const saveData = {
+        ...settings,
+        ativo: true,
+        updated_at: new Date().toISOString()
+      };
+
+      // If we have an ID, update; otherwise insert
+      const { error } = settings.id ? 
+        await supabase
+          .from('faq_ai_settings')
+          .update(saveData)
+          .eq('id', settings.id) :
+        await supabase
+          .from('faq_ai_settings')
+          .insert(saveData)
+          .select()
+          .single()
+          .then(result => {
+            if (!result.error && result.data) {
+              setSettings(prev => ({ ...prev, id: result.data.id }));
+            }
+            return result;
+          });
 
       if (error) throw error;
 
