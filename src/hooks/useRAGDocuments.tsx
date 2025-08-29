@@ -42,15 +42,17 @@ export const useRAGDocuments = () => {
   const fetchDocuments = async (filters?: DocumentFilters) => {
     setLoading(true);
     try {
-      // Use RPC function to get documents
-      const { data, error } = await supabase.rpc('get_documentos_list', {
-        status_filter: filters?.status || null,
-        tipo_filter: filters?.tipo || null,
-        search_term: filters?.search || null
+      // Use Edge Function to get documents
+      const { data, error } = await supabase.functions.invoke('get-documentos-list', {
+        body: {
+          status_filter: filters?.status || null,
+          tipo_filter: filters?.tipo || null,
+          search_term: filters?.search || null
+        }
       });
 
       if (error) throw error;
-      setDocuments(data || []);
+      setDocuments((data as RAGDocument[]) || []);
     } catch (error) {
       console.error('Error fetching documents:', error);
       toast({
