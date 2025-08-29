@@ -57,18 +57,22 @@ Deno.serve(async (req) => {
 
     console.log('typebot-ticket-message: Ticket encontrado:', ticket.codigo_ticket);
 
-    // Call the append_to_ticket_conversa function
-    const { data: conversaResult, error: conversaError } = await supabase
-      .rpc('append_to_ticket_conversa', {
-        p_ticket_id: ticketId,
-        p_autor: autor,
-        p_texto: texto,
-        p_canal: canal,
-        p_usuario_id: usuarioId
-      });
+    // Insert message directly into ticket_mensagens table
+    const { data: mensagemResult, error: mensagemError } = await supabase
+      .from('ticket_mensagens')
+      .insert({
+        ticket_id: ticketId,
+        usuario_id: usuarioId,
+        mensagem: texto,
+        direcao: 'entrada', // Messages from typebot are always incoming
+        canal: canal,
+        anexos: []
+      })
+      .select()
+      .single();
 
-    if (conversaError) {
-      console.error('typebot-ticket-message: Erro ao adicionar mensagem:', conversaError);
+    if (mensagemError) {
+      console.error('typebot-ticket-message: Erro ao adicionar mensagem:', mensagemError);
       return new Response(
         JSON.stringify({ error: 'Erro ao adicionar mensagem ao ticket' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -77,26 +81,13 @@ Deno.serve(async (req) => {
 
     console.log('typebot-ticket-message: Mensagem adicionada com sucesso');
 
-    // Get the updated conversation to return the last added message
-    const { data: updatedTicket, error: fetchError } = await supabase
-      .from('tickets')
-      .select('conversa')
-      .eq('id', ticketId)
-      .single();
-
-    if (fetchError) {
-      console.error('typebot-ticket-message: Erro ao buscar conversa atualizada:', fetchError);
-    }
-
-    const conversa = updatedTicket?.conversa || [];
-    const lastMessage = Array.isArray(conversa) && conversa.length > 0 ? conversa[conversa.length - 1] : null;
+    const lastMessage = mensagemResult;
 
     const response = {
       ok: true,
       ticketId: ticketId,
       codigo_ticket: ticket.codigo_ticket,
-      added: lastMessage,
-      conversa: conversa
+      added: lastMessage
     };
 
     console.log('typebot-ticket-message: Resposta enviada com sucesso');
