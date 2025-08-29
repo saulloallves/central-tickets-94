@@ -496,7 +496,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
           </Card>
 
           {/* Botão Iniciar Atendimento */}
-          <Card className="bg-gradient-to-br from-blue-500/5 to-green-500/5 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-border/40">
+          <Card className="bg-gradient-to-br from-primary/5 to-secondary/5 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-border/40">
             <CardContent className="p-4 text-center">
               <div className="mb-3">
                 <h3 className="text-base font-semibold text-foreground mb-1">Pronto para Atender?</h3>
@@ -507,7 +507,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
               <Button 
                 onClick={handleStartAttendance}
                 size="sm"
-                className="px-6 py-2 text-sm font-semibold bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700"
+                className="px-6 py-2 text-sm font-semibold bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 <User className="h-4 w-4 mr-2" />
                 Iniciar Atendimento
