@@ -378,7 +378,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
   // Se o ticket está aberto, mostra versão simplificada
   if (ticket.status === 'aberto') {
     return (
-      <div className="w-full max-w-2xl mx-auto flex flex-col overflow-hidden">
+      <div className="w-full h-full flex flex-col overflow-hidden">
         {/* Header compacto */}
         <div className="flex-shrink-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border/40 p-4">
           <div className="space-y-2">
