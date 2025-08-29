@@ -74,6 +74,7 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
   const isDragging = useRef<boolean>(false);
   const realtimeDebounceRef = useRef<NodeJS.Timeout | null>(null);
   const backupPollingRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingMovesRef = useRef<Set<string>>(new Set());
 
   // Fetch tickets using regular supabase query (read-only)
   const fetchTickets = useCallback(async () => {
@@ -208,21 +209,48 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
             old: payload.old ? { id: (payload.old as any)?.id, codigo_ticket: (payload.old as any)?.codigo_ticket } : null
           });
           
-          // Skip refetch if we're in the middle of a drag operation
-          if (isDragging.current) {
-            console.log('🚫 Skipping realtime refetch during drag operation');
+          // PATCH REALTIME UPDATES WITHOUT REFETCH - eliminates flicker
+          if (payload.eventType === 'INSERT' && payload.new) {
+            const newTicket = payload.new as Ticket;
+            console.log('➕ REALTIME INSERT - Patching new ticket:', newTicket.codigo_ticket);
+            setTickets(prev => {
+              const exists = prev.find(t => t.id === newTicket.id);
+              if (!exists) {
+                return [...prev, newTicket].sort((a, b) => {
+                  if (a.status !== b.status) {
+                    const statusOrder = ['aberto', 'em_atendimento', 'escalonado', 'concluido'];
+                    return statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status);
+                  }
+                  return (a.position || 0) - (b.position || 0);
+                });
+              }
+              return prev;
+            });
             return;
           }
           
-          // Debounce realtime refetches to prevent excessive updates
-          if (realtimeDebounceRef.current) {
-            clearTimeout(realtimeDebounceRef.current);
+          if (payload.eventType === 'UPDATE' && payload.new) {
+            const updatedTicket = payload.new as Ticket;
+            
+            // Skip if this is a pending optimistic move to prevent conflicts
+            if (pendingMovesRef.current.has(updatedTicket.id)) {
+              console.log('🚫 Skipping realtime update for pending optimistic move:', updatedTicket.codigo_ticket);
+              return;
+            }
+            
+            console.log('🔄 REALTIME UPDATE - Patching ticket:', updatedTicket.codigo_ticket);
+            setTickets(prev => prev.map(ticket => 
+              ticket.id === updatedTicket.id ? updatedTicket : ticket
+            ));
+            return;
           }
           
-          realtimeDebounceRef.current = setTimeout(() => {
-            console.log('🔄 Triggering ticket refetch due to realtime event');
-            fetchTickets();
-          }, 1000); // Increased debounce time
+          if (payload.eventType === 'DELETE' && payload.old) {
+            const deletedTicket = payload.old as Ticket;
+            console.log('🗑️ REALTIME DELETE - Removing ticket:', deletedTicket.codigo_ticket);
+            setTickets(prev => prev.filter(ticket => ticket.id !== deletedTicket.id));
+            return;
+          }
         }
       )
       .subscribe((status) => {
@@ -421,42 +449,39 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
     }
   };
 
-  const moveTicket = async (ticketId: string, toStatus: string, beforeId?: string, afterId?: string) => {
+  const moveTicket = async (ticketId: string, toStatus: string, beforeId?: string, afterId?: string): Promise<boolean> => {
     try {
       console.log('📤 Moving ticket via edge function:', { ticketId, toStatus, beforeId, afterId });
+      
+      // Add to pending moves to prevent realtime conflicts
+      pendingMovesRef.current.add(ticketId);
       
       const { data, error } = await supabase.functions.invoke('move-ticket', {
         body: { ticketId, toStatus, beforeId, afterId },
       });
 
+      // Remove from pending regardless of success/failure
+      pendingMovesRef.current.delete(ticketId);
+
       if (error) {
         console.error('❌ Edge function error moving ticket:', error);
-        toast({
-          title: "Erro",
-          description: error.message || "Erro ao mover ticket",
-          variant: "destructive",
-        });
-        return null;
+        return false;
       }
 
       console.log('✅ Ticket moved successfully via edge function:', data);
       
       toast({
         title: "Sucesso",
-        description: data.message || "Ticket movido com sucesso",
+        description: "Ticket movido com sucesso",
       });
       
-      // Skip immediate refetch - realtime will handle it
-      console.log('⏭️ Skipping immediate refetch - letting realtime handle updates');
-      return data.ticket;
+      // No refetch needed - realtime patches will handle it
+      return true;
     } catch (error) {
       console.error('Error moving ticket:', error);
-      toast({
-        title: "Erro",
-        description: "Erro inesperado ao mover ticket",
-        variant: "destructive",
-      });
-      return null;
+      // Remove from pending on error
+      pendingMovesRef.current.delete(ticketId);
+      return false;
     }
   };
 

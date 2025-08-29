@@ -648,9 +648,10 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
       });
       
       if (success) {
-        // 4. TRATAMENTO DE SUCESSO - Manter card na nova posição
+        // 4. TRATAMENTO DE SUCESSO - Confirmar card na nova posição
         console.log('✅ Ticket movido com sucesso! Card permanece na nova posição.');
-        // A mensagem de sucesso já é exibida pelo hook useTicketsEdgeFunctions
+        // Reset optimistic state - realtime will maintain the correct state
+        setOptimisticTickets([]);
       } else {
         // 5. TRATAMENTO DE FALHA - Reverter para posição original
         console.log('❌ Falha ao mover ticket - revertendo para posição original');

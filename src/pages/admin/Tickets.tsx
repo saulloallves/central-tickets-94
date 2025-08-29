@@ -289,9 +289,10 @@ const Tickets = () => {
           equipes={equipes}
           showFilters={showFilters}
           onToggleFilters={() => setShowFilters(!showFilters)}
-          onChangeStatus={(ticketId, fromStatus, toStatus, beforeId, afterId) => 
-            moveTicket(ticketId, toStatus, beforeId, afterId)
-          }
+          onChangeStatus={async (ticketId, fromStatus, toStatus, beforeId, afterId) => {
+            const success = await moveTicket(ticketId, toStatus, beforeId, afterId);
+            return success;
+          }}
         />
 
         <CreateTicketDialog 
