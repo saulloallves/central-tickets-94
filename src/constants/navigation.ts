@@ -17,5 +17,5 @@ export const navigationItems = [
   { title: "Colaboradores", url: "/admin/colaboradores", icon: UserCheck, permission: 'view_all_tickets' as const },
   { title: "Equipes", url: "/admin/equipes", icon: Users2, permission: 'view_all_tickets' as const },
   { title: "Configurações", url: "/admin/configuracoes", icon: Settings, permission: 'configure_ai_models' as const },
-  { title: "Governança", url: "/admin/governanca", icon: BarChart3, permission: 'view_audit_logs' as const },
+  { title: "Central de Controle", url: "/admin/governanca", icon: BarChart3, permission: 'view_audit_logs' as const },
 ];

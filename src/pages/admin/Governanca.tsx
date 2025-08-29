@@ -85,7 +85,7 @@ export default function Governanca() {
                 <BarChart3 className="h-8 w-8 text-primary" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-foreground">Monitoramento & Governança</h1>
+                <h1 className="text-3xl font-bold text-foreground">Central de Controle</h1>
                 <p className="text-muted-foreground">Central de controle e análise estratégica do sistema</p>
               </div>
               <Badge variant="secondary">
