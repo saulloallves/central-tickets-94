@@ -90,7 +90,7 @@ const KnowledgeHubTab = () => {
 
   const filteredDocuments = documents.filter(doc => {
     const matchesSearch = doc.titulo.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = !statusFilter || doc.status === statusFilter;
+    const matchesStatus = !statusFilter || statusFilter === 'all' || doc.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
@@ -297,7 +297,7 @@ const KnowledgeHubTab = () => {
                 <SelectValue placeholder="Filtrar por status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos os status</SelectItem>
+                <SelectItem value="all">Todos os status</SelectItem>
                 <SelectItem value="ativo">Ativos</SelectItem>
                 <SelectItem value="vencido">Vencidos</SelectItem>
                 <SelectItem value="em_revisao">Em revisão</SelectItem>
