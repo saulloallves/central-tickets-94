@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Clock, User, Building, Tag, AlertTriangle, MessageSquare, Send, Paperclip, Zap, Sparkles, Copy, Bot, Phone, Users, FileText, Settings, Play, Check, ExternalLink } from 'lucide-react';
+import { X, Clock, User, Building, Tag, AlertTriangle, MessageSquare, Send, Paperclip, Zap, Sparkles, Copy, Bot, Phone, Users, FileText, Settings, Play, Check, ExternalLink, Image, Video, File, Download } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,6 +30,8 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
   const [editedSuggestion, setEditedSuggestion] = useState('');
   const [activeTab, setActiveTab] = useState<'chat' | 'detalhes'>('chat');
   const [isSendingToFranqueado, setIsSendingToFranqueado] = useState(false);
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const [isUploadingAttachments, setIsUploadingAttachments] = useState(false);
   
   const { messages, sendMessage, loading: messagesLoading } = useTicketMessages(ticketId);
   const { suggestion, loading: suggestionLoading, generateSuggestion, markSuggestionUsed } = useAISuggestion(ticketId);
@@ -122,12 +124,139 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
     }
   };
 
-  const handleSendMessage = async () => {
-    if (!newMessage.trim()) return;
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    const validFiles = files.filter(file => {
+      // Limit file size to 16MB
+      if (file.size > 16 * 1024 * 1024) {
+        toast({
+          title: "Arquivo muito grande",
+          description: `${file.name} excede o limite de 16MB`,
+          variant: "destructive"
+        });
+        return false;
+      }
+      return true;
+    });
+    
+    setAttachments(prev => [...prev, ...validFiles]);
+    // Reset the input
+    event.target.value = '';
+  };
 
-    const success = await sendMessage(newMessage);
-    if (success) {
-      setNewMessage('');
+  const removeAttachment = (index: number) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadAttachments = async (files: File[]) => {
+    const uploadedFiles = [];
+    
+    for (const file of files) {
+      const fileName = `${Date.now()}-${file.name}`;
+      const { data, error } = await supabase.storage
+        .from('ticket-attachments')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) {
+        console.error('Error uploading file:', error);
+        throw new Error(`Erro ao fazer upload de ${file.name}`);
+      }
+
+      const { data: publicUrlData } = supabase.storage
+        .from('ticket-attachments')
+        .getPublicUrl(data.path);
+
+      uploadedFiles.push({
+        url: publicUrlData.publicUrl,
+        type: file.type,
+        name: file.name,
+        size: file.size,
+        caption: file.name
+      });
+    }
+
+    return uploadedFiles;
+  };
+
+  const sendAttachments = async (attachmentData: any[]) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('zapi-send-media', {
+        body: {
+          ticketId: ticketId,
+          attachments: attachmentData
+        }
+      });
+
+      if (error) throw error;
+
+      console.log('Attachments sent via Z-API:', data);
+      
+      if (data.failed > 0) {
+        toast({
+          title: "Alguns anexos falharam",
+          description: `${data.sent} enviados, ${data.failed} falharam`,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Anexos enviados",
+          description: `${data.sent} arquivo(s) enviado(s) via WhatsApp`,
+        });
+      }
+    } catch (error) {
+      console.error('Error sending attachments:', error);
+      toast({
+        title: "Erro ao enviar anexos",
+        description: "Falha ao enviar anexos via WhatsApp",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() && attachments.length === 0) return;
+
+    setIsUploadingAttachments(true);
+    
+    try {
+      let uploadedAttachments = [];
+      
+      // Upload attachments if any
+      if (attachments.length > 0) {
+        uploadedAttachments = await uploadAttachments(attachments);
+      }
+
+      // Send text message with attachments metadata
+      const success = await sendMessage(newMessage || 'Anexo(s) enviado(s)', uploadedAttachments);
+      
+      if (success) {
+        // Send attachments via Z-API if any
+        if (uploadedAttachments.length > 0) {
+          await sendAttachments(uploadedAttachments);
+        }
+
+        setNewMessage('');
+        setAttachments([]);
+        
+        toast({
+          title: "Sucesso",
+          description: uploadedAttachments.length > 0 
+            ? `Mensagem e ${uploadedAttachments.length} anexo(s) enviados`
+            : "Mensagem enviada",
+        });
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao enviar mensagem",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUploadingAttachments(false);
     }
   };
 
@@ -812,9 +941,66 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                                   {formatDistanceToNowInSaoPaulo(message.created_at)}
                                 </span>
                               </div>
-                              <p className="text-sm text-muted-foreground break-words">
-                                {message.mensagem}
-                              </p>
+                               <p className="text-sm text-muted-foreground break-words">
+                                 {message.mensagem}
+                               </p>
+                               
+                               {/* Render attachments */}
+                               {message.anexos && Array.isArray(message.anexos) && message.anexos.length > 0 && (
+                                 <div className="mt-2 space-y-2">
+                                   {message.anexos.map((attachment: any, idx: number) => (
+                                     <div key={idx} className="flex items-center gap-2 p-2 bg-background/50 rounded border">
+                                       {attachment.type?.startsWith('image/') ? (
+                                         <div className="flex items-center gap-2">
+                                           <Image className="h-4 w-4 text-green-600" />
+                                           <img 
+                                             src={attachment.url} 
+                                             alt={attachment.name}
+                                             className="max-w-32 max-h-32 rounded object-cover cursor-pointer"
+                                             onClick={() => window.open(attachment.url, '_blank')}
+                                           />
+                                           <span className="text-xs text-muted-foreground">{attachment.name}</span>
+                                         </div>
+                                       ) : attachment.type?.startsWith('video/') ? (
+                                         <div className="flex items-center gap-2">
+                                           <Video className="h-4 w-4 text-blue-600" />
+                                           <video 
+                                             controls 
+                                             className="max-w-32 max-h-32 rounded"
+                                             src={attachment.url}
+                                           />
+                                           <span className="text-xs text-muted-foreground">{attachment.name}</span>
+                                         </div>
+                                       ) : attachment.type?.startsWith('audio/') ? (
+                                         <div className="flex items-center gap-2">
+                                           <Play className="h-4 w-4 text-purple-600" />
+                                           <audio controls className="max-w-48">
+                                             <source src={attachment.url} type={attachment.type} />
+                                           </audio>
+                                           <span className="text-xs text-muted-foreground">{attachment.name}</span>
+                                         </div>
+                                       ) : (
+                                         <div className="flex items-center gap-2">
+                                           <File className="h-4 w-4 text-gray-600" />
+                                           <a 
+                                             href={attachment.url} 
+                                             target="_blank" 
+                                             rel="noopener noreferrer"
+                                             className="text-xs text-primary hover:underline"
+                                           >
+                                             {attachment.name}
+                                           </a>
+                                           <Button size="sm" variant="ghost" asChild>
+                                             <a href={attachment.url} download>
+                                               <Download className="h-3 w-3" />
+                                             </a>
+                                           </Button>
+                                         </div>
+                                       )}
+                                     </div>
+                                   ))}
+                                 </div>
+                               )}
                             </div>
                           </div>
                         );
@@ -824,6 +1010,41 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
 
                   {/* Send Message Form */}
                   <div className="mt-4 pt-4 border-t">
+                    {/* Attachment previews */}
+                    {attachments.length > 0 && (
+                      <div className="mb-3 p-3 bg-muted/20 rounded-lg border">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Paperclip className="h-4 w-4" />
+                          <span className="text-sm font-medium">{attachments.length} arquivo(s) selecionado(s)</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          {attachments.map((file, index) => (
+                            <div key={index} className="flex items-center gap-2 p-2 bg-background rounded border">
+                              {file.type.startsWith('image/') ? (
+                                <Image className="h-4 w-4 text-green-600" />
+                              ) : file.type.startsWith('video/') ? (
+                                <Video className="h-4 w-4 text-blue-600" />
+                              ) : (
+                                <File className="h-4 w-4 text-gray-600" />
+                              )}
+                              <span className="text-xs truncate flex-1">{file.name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {(file.size / 1024).toFixed(1)}KB
+                              </span>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => removeAttachment(index)}
+                                className="h-6 w-6 p-0"
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
                     <div className="flex gap-3">
                       <Textarea
                         placeholder="Digite sua mensagem..."
@@ -831,20 +1052,43 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                         onChange={(e) => setNewMessage(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSendMessage())}
                         className="flex-1 min-h-[60px] resize-none"
-                        disabled={messagesLoading}
+                        disabled={messagesLoading || isUploadingAttachments}
                       />
                       <div className="flex flex-col gap-2">
+                        <input
+                          type="file"
+                          multiple
+                          accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+                          onChange={handleFileSelect}
+                          className="hidden"
+                          id="attachment-input"
+                        />
+                        <Button 
+                          size="icon"
+                          variant="outline"
+                          asChild
+                          className="h-10 w-10 shrink-0"
+                          disabled={messagesLoading || isUploadingAttachments}
+                        >
+                          <label htmlFor="attachment-input" className="cursor-pointer">
+                            <Paperclip className="h-4 w-4" />
+                          </label>
+                        </Button>
                         <Button 
                           onClick={handleSendMessage}
-                          disabled={!newMessage.trim() || messagesLoading}
+                          disabled={(!newMessage.trim() && attachments.length === 0) || messagesLoading || isUploadingAttachments}
                           size="icon"
                           className="h-10 w-10 shrink-0"
                         >
-                          <Send className="h-4 w-4" />
+                          {isUploadingAttachments ? (
+                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                          ) : (
+                            <Send className="h-4 w-4" />
+                          )}
                         </Button>
                         <Button 
                           onClick={handleSendToFranqueado}
-                          disabled={!newMessage.trim() || isSendingToFranqueado}
+                          disabled={!newMessage.trim() || isSendingToFranqueado || isUploadingAttachments}
                           size="sm"
                           variant="outline"
                           className="text-xs h-8 w-16"
