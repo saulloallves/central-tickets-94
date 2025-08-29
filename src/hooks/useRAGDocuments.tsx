@@ -26,6 +26,14 @@ interface DocumentFilters {
   search?: string;
 }
 
+interface SimilarDocument {
+  id: string;
+  titulo: string;
+  conteudo: any;
+  versao: number;
+  similaridade: number;
+}
+
 export const useRAGDocuments = () => {
   const [documents, setDocuments] = useState<RAGDocument[]>([]);
   const [loading, setLoading] = useState(false);
@@ -34,22 +42,12 @@ export const useRAGDocuments = () => {
   const fetchDocuments = async (filters?: DocumentFilters) => {
     setLoading(true);
     try {
-      let query = supabase
-        .from('documentos')
-        .select('*')
-        .order('criado_em', { ascending: false });
-
-      if (filters?.status) {
-        query = query.eq('status', filters.status);
-      }
-      if (filters?.tipo) {
-        query = query.eq('tipo', filters.tipo);
-      }
-      if (filters?.search) {
-        query = query.ilike('titulo', `%${filters.search}%`);
-      }
-
-      const { data, error } = await query;
+      // Use RPC function to get documents
+      const { data, error } = await supabase.rpc('get_documentos_list', {
+        status_filter: filters?.status || null,
+        tipo_filter: filters?.tipo || null,
+        search_term: filters?.search || null
+      });
 
       if (error) throw error;
       setDocuments(data || []);
@@ -60,6 +58,7 @@ export const useRAGDocuments = () => {
         description: "Não foi possível carregar os documentos",
         variant: "destructive",
       });
+      setDocuments([]);
     } finally {
       setLoading(false);
     }
@@ -88,7 +87,7 @@ export const useRAGDocuments = () => {
           return {
             success: false,
             warning: 'duplicate_found',
-            similar_documents: errorData.similar_documents,
+            similar_documents: errorData.similar_documents as SimilarDocument[],
             message: errorData.message
           };
         }
@@ -102,7 +101,7 @@ export const useRAGDocuments = () => {
 
       await fetchDocuments();
       return { success: true, document: data.document };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating document:', error);
       toast({
         title: "Erro",
@@ -117,7 +116,8 @@ export const useRAGDocuments = () => {
 
   const updateDocumentStatus = async (id: string, status: string) => {
     try {
-      const { error } = await supabase
+      // Use direct query with type assertion since we know the table exists
+      const { error } = await (supabase as any)
         .from('documentos')
         .update({ status })
         .eq('id', id);
@@ -167,6 +167,21 @@ export const useRAGDocuments = () => {
     }
   };
 
+  // Search documents by similarity
+  const searchSimilar = async (query: string, threshold: number = 0.75, limit: number = 5) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('kb-search', {
+        body: { query, threshold, limit }
+      });
+
+      if (error) throw error;
+      return data.documents as SimilarDocument[];
+    } catch (error) {
+      console.error('Error searching documents:', error);
+      return [];
+    }
+  };
+
   useEffect(() => {
     fetchDocuments();
   }, []);
@@ -177,6 +192,7 @@ export const useRAGDocuments = () => {
     fetchDocuments,
     createDocument,
     updateDocumentStatus,
-    runAudit
+    runAudit,
+    searchSimilar
   };
 };
