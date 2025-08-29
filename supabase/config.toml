@@ -31,6 +31,9 @@ verify_jwt = false
 [functions.typebot-webhook]
 verify_jwt = false
 
+[functions.typebot-ticket-message]
+verify_jwt = false
+
 [functions.franqueado-login]
 verify_jwt = false
 
