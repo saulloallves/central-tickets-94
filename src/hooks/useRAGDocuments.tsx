@@ -19,6 +19,10 @@ interface RAGDocument {
   criado_por: string;
   criado_em: string;
   embedding?: number[];
+  estilo?: 'manual' | 'diretriz';
+  classificacao?: any;
+  processado_por_ia?: boolean;
+  ia_modelo?: string;
 }
 
 interface DocumentFilters {
@@ -26,6 +30,7 @@ interface DocumentFilters {
   tipo?: string;
   categoria?: string;
   search?: string;
+  estilo?: string;
 }
 
 interface SimilarDocument {
@@ -44,13 +49,13 @@ export const useRAGDocuments = () => {
   const fetchDocuments = async (filters?: DocumentFilters) => {
     setLoading(true);
     try {
-      // Use Edge Function to get documents
       const { data, error } = await supabase.functions.invoke('get-documentos-list', {
         body: {
           status_filter: filters?.status || null,
           tipo_filter: filters?.tipo || null,
           categoria_filter: filters?.categoria || null,
-          search_term: filters?.search || null
+          search_term: filters?.search || null,
+          estilo_filter: filters?.estilo || null
         }
       });
 
@@ -78,6 +83,8 @@ export const useRAGDocuments = () => {
     tags?: string[];
     justificativa: string;
     artigo_id?: string;
+    estilo?: 'manual' | 'diretriz';
+    process_with_ai?: boolean;
   }) => {
     try {
       setLoading(true);

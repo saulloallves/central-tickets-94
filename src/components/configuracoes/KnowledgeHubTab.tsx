@@ -10,13 +10,15 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Plus, Search, FileText, AlertTriangle, Database, TrendingUp, Shield, CheckCircle } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Plus, Search, FileText, AlertTriangle, Database, TrendingUp, Shield, CheckCircle, Bot, Sparkles } from 'lucide-react';
 import { useRAGDocuments } from '@/hooks/useRAGDocuments';
 
 const KnowledgeHubTab = () => {
   const { documents, loading, fetchDocuments, createDocument, updateDocumentStatus, runAudit } = useRAGDocuments();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [estiloFilter, setEstiloFilter] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [auditResults, setAuditResults] = useState(null);
   const [duplicateDialog, setDuplicateDialog] = useState(null);
@@ -27,13 +29,17 @@ const KnowledgeHubTab = () => {
     tipo: 'permanente' as 'permanente' | 'temporario',
     valido_ate: '',
     tags: '',
-    justificativa: ''
+    justificativa: '',
+    estilo: '' as '' | 'manual' | 'diretriz',
+    process_with_ai: false
   });
 
   const handleCreateDocument = async () => {
     const documentData = {
       ...newDocument,
-      tags: newDocument.tags.split(',').map(t => t.trim()).filter(Boolean)
+      tags: newDocument.tags.split(',').map(t => t.trim()).filter(Boolean),
+      estilo: newDocument.estilo || undefined,
+      process_with_ai: newDocument.process_with_ai && !!newDocument.estilo
     };
 
     const result = await createDocument(documentData);
@@ -55,7 +61,9 @@ const KnowledgeHubTab = () => {
         tipo: 'permanente',
         valido_ate: '',
         tags: '',
-        justificativa: ''
+        justificativa: '',
+        estilo: '',
+        process_with_ai: false
       });
     }
   };
@@ -76,7 +84,9 @@ const KnowledgeHubTab = () => {
         tipo: 'permanente',
         valido_ate: '',
         tags: '',
-        justificativa: ''
+        justificativa: '',
+        estilo: '',
+        process_with_ai: false
       });
     }
   };
@@ -91,7 +101,8 @@ const KnowledgeHubTab = () => {
   const filteredDocuments = documents.filter(doc => {
     const matchesSearch = doc.titulo.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = !statusFilter || statusFilter === 'all' || doc.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesEstilo = !estiloFilter || estiloFilter === 'all' || doc.estilo === estiloFilter;
+    return matchesSearch && matchesStatus && matchesEstilo;
   });
 
   const statusColors = {
@@ -102,13 +113,19 @@ const KnowledgeHubTab = () => {
     substituido: 'bg-blue-500'
   };
 
+  const estiloColors = {
+    manual: 'bg-blue-100 text-blue-800',
+    diretriz: 'bg-purple-100 text-purple-800'
+  };
+
   const getStats = () => {
     const total = documents.length;
     const ativos = documents.filter(d => d.status === 'ativo').length;
     const temporarios = documents.filter(d => d.tipo === 'temporario').length;
     const vencidos = documents.filter(d => d.status === 'vencido').length;
+    const processadosIA = documents.filter(d => d.processado_por_ia).length;
 
-    return { total, ativos, temporarios, vencidos };
+    return { total, ativos, temporarios, vencidos, processadosIA };
   };
 
   const stats = getStats();
@@ -116,7 +133,7 @@ const KnowledgeHubTab = () => {
   return (
     <div className="space-y-6">
       {/* Header com estatísticas RAG */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total RAG</CardTitle>
@@ -160,6 +177,17 @@ const KnowledgeHubTab = () => {
             <p className="text-xs text-muted-foreground">requerem atenção</p>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Processados IA</CardTitle>
+            <Bot className="h-4 w-4 text-purple-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.processadosIA}</div>
+            <p className="text-xs text-muted-foreground">formatados com IA</p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Controles */}
@@ -172,7 +200,7 @@ const KnowledgeHubTab = () => {
                 Hub de Conhecimento RAG
               </CardTitle>
               <CardDescription>
-                Governança completa com embeddings vetoriais (3072D) e auditoria automática
+                Governança completa com embeddings vetoriais (1536D) e processamento IA opcional
               </CardDescription>
             </div>
             <div className="flex gap-2">
@@ -186,11 +214,11 @@ const KnowledgeHubTab = () => {
                     Novo Documento
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-2xl">
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>Criar Documento RAG</DialogTitle>
                     <DialogDescription>
-                      O sistema verificará duplicatas automaticamente usando busca vetorial
+                      Adicionar documento à base de conhecimento. Use processamento IA para formatação automática.
                     </DialogDescription>
                   </DialogHeader>
 
@@ -214,6 +242,56 @@ const KnowledgeHubTab = () => {
                         placeholder="Digite o conteúdo completo..."
                         className="min-h-[120px]"
                       />
+                    </div>
+
+                    {/* Processamento com IA */}
+                    <div className="border rounded-lg p-4 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="h-4 w-4 text-purple-500" />
+                          <Label htmlFor="process_with_ai" className="font-medium">Processar com IA</Label>
+                        </div>
+                        <Switch
+                          id="process_with_ai"
+                          checked={newDocument.process_with_ai}
+                          onCheckedChange={(checked) => {
+                            setNewDocument({...newDocument, process_with_ai: checked});
+                            if (!checked) {
+                              setNewDocument(prev => ({...prev, estilo: ''}));
+                            }
+                          }}
+                        />
+                      </div>
+                      
+                      {newDocument.process_with_ai && (
+                        <div className="grid gap-2">
+                          <Label htmlFor="estilo">Estilo de Processamento *</Label>
+                          <Select value={newDocument.estilo} onValueChange={(value: '' | 'manual' | 'diretriz') => setNewDocument({...newDocument, estilo: value})}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione o estilo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="manual">📋 Manual - Organiza e classifica documentação técnica</SelectItem>
+                              <SelectItem value="diretriz">⚖️ Diretriz - Categoriza regras e infrações institucionais</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          
+                          {newDocument.estilo && (
+                            <div className="text-sm text-muted-foreground p-2 bg-muted rounded">
+                              {newDocument.estilo === 'manual' && (
+                                <div>
+                                  <strong>Manual:</strong> Organiza o conteúdo bruto, remove informações sensíveis/temporárias e classifica segundo padrões documentais (ISO 15489).
+                                </div>
+                              )}
+                              {newDocument.estilo === 'diretriz' && (
+                                <div>
+                                  <strong>Diretriz:</strong> Analisa regras e infrações, categorizando em: Comunicação Visual, Conduta Comercial, Precificação, Produção de Conteúdo, Avaliações, e Regras Institucionais.
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -269,8 +347,15 @@ const KnowledgeHubTab = () => {
                     <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                       Cancelar
                     </Button>
-                    <Button onClick={handleCreateDocument} disabled={loading}>
-                      {loading ? 'Processando...' : 'Criar Documento'}
+                    <Button 
+                      onClick={handleCreateDocument} 
+                      disabled={loading || (newDocument.process_with_ai && !newDocument.estilo)}
+                    >
+                      {loading ? (
+                        newDocument.process_with_ai ? 'Processando com IA...' : 'Criando...'
+                      ) : (
+                        'Criar Documento'
+                      )}
                     </Button>
                   </div>
                 </DialogContent>
@@ -304,6 +389,16 @@ const KnowledgeHubTab = () => {
                 <SelectItem value="arquivado">Arquivados</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={estiloFilter} onValueChange={setEstiloFilter}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Filtrar por estilo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os estilos</SelectItem>
+                <SelectItem value="manual">Manual</SelectItem>
+                <SelectItem value="diretriz">Diretriz</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-4">
@@ -327,6 +422,17 @@ const KnowledgeHubTab = () => {
                           </Badge>
                           <Badge variant="outline">{doc.tipo}</Badge>
                           <Badge variant="secondary">v{doc.versao}</Badge>
+                          {doc.estilo && (
+                            <Badge className={estiloColors[doc.estilo]}>
+                              {doc.estilo}
+                            </Badge>
+                          )}
+                          {doc.processado_por_ia && (
+                            <Badge variant="outline" className="text-purple-600">
+                              <Bot className="h-3 w-3 mr-1" />
+                              IA
+                            </Badge>
+                          )}
                         </div>
                         
                         {doc.tags.length > 0 && (
@@ -351,6 +457,9 @@ const KnowledgeHubTab = () => {
                           Justificativa: {doc.justificativa.substring(0, 50)}...
                           {doc.valido_ate && (
                             <> | Válido até: {new Date(doc.valido_ate).toLocaleDateString()}</>
+                          )}
+                          {doc.ia_modelo && (
+                            <> | IA: {doc.ia_modelo}</>
                           )}
                         </div>
                       </div>

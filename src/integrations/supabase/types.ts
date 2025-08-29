@@ -341,13 +341,17 @@ export type Database = {
         Row: {
           artigo_id: string
           categoria: string | null
+          classificacao: Json | null
           conteudo: Json | null
           criado_em: string
           criado_por: string
           embedding: string | null
+          estilo: Database["public"]["Enums"]["article_estilo"] | null
+          ia_modelo: string | null
           id: string
           justificativa: string
           parent_id: string | null
+          processado_por_ia: boolean | null
           status: Database["public"]["Enums"]["article_status"]
           tags: string[] | null
           tipo: Database["public"]["Enums"]["article_type"]
@@ -358,13 +362,17 @@ export type Database = {
         Insert: {
           artigo_id: string
           categoria?: string | null
+          classificacao?: Json | null
           conteudo?: Json | null
           criado_em?: string
           criado_por: string
           embedding?: string | null
+          estilo?: Database["public"]["Enums"]["article_estilo"] | null
+          ia_modelo?: string | null
           id?: string
           justificativa: string
           parent_id?: string | null
+          processado_por_ia?: boolean | null
           status?: Database["public"]["Enums"]["article_status"]
           tags?: string[] | null
           tipo?: Database["public"]["Enums"]["article_type"]
@@ -375,13 +383,17 @@ export type Database = {
         Update: {
           artigo_id?: string
           categoria?: string | null
+          classificacao?: Json | null
           conteudo?: Json | null
           criado_em?: string
           criado_por?: string
           embedding?: string | null
+          estilo?: Database["public"]["Enums"]["article_estilo"] | null
+          ia_modelo?: string | null
           id?: string
           justificativa?: string
           parent_id?: string | null
+          processado_por_ia?: boolean | null
           status?: Database["public"]["Enums"]["article_status"]
           tags?: string[] | null
           tipo?: Database["public"]["Enums"]["article_type"]
@@ -2715,6 +2727,7 @@ export type Database = {
         | "diretoria"
         | "franqueado"
         | "gerente"
+      article_estilo: "manual" | "diretriz"
       article_status:
         | "ativo"
         | "vencido"
@@ -2923,6 +2936,7 @@ export const Constants = {
         "franqueado",
         "gerente",
       ],
+      article_estilo: ["manual", "diretriz"],
       article_status: [
         "ativo",
         "vencido",

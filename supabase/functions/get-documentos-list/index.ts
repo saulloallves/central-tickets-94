@@ -18,7 +18,7 @@ serve(async (req) => {
   }
 
   try {
-    const { status_filter, tipo_filter, categoria_filter, search_term } = await req.json();
+    const { status_filter, tipo_filter, categoria_filter, search_term, estilo_filter } = await req.json();
     
     let query = supabase
       .from('documentos')
@@ -33,6 +33,9 @@ serve(async (req) => {
     }
     if (categoria_filter) {
       query = query.eq('categoria', categoria_filter);
+    }
+    if (estilo_filter) {
+      query = query.eq('estilo', estilo_filter);
     }
     if (search_term) {
       query = query.ilike('titulo', `%${search_term}%`);
