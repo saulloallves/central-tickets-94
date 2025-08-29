@@ -379,90 +379,74 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
   if (ticket.status === 'aberto') {
     return (
       <div className="w-full max-w-2xl mx-auto flex flex-col overflow-hidden">
-        {/* Header simplificado */}
+        {/* Header compacto */}
         <div className="flex-shrink-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border/40 p-4">
-          <div className="flex items-start justify-between gap-4 mb-2">
-            <div className="flex-1 min-w-0">
-              <h2 className="text-lg line-clamp-2 mb-2 font-bold text-foreground">
-                {getTicketDisplayTitle(ticket)}
-              </h2>
-              <div className="flex items-center gap-3 flex-wrap">
-                <Badge variant="outline" className="font-mono text-xs bg-muted/50">
-                  {ticket.codigo_ticket}
-                </Badge>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-blue-500" />
-                  <span className="text-xs text-muted-foreground capitalize font-medium">Aguardando Atendimento</span>
-                </div>
+          <div className="space-y-2">
+            <h2 className="text-lg font-bold text-foreground line-clamp-2">
+              {getTicketDisplayTitle(ticket)}
+            </h2>
+            <div className="flex items-center gap-3 flex-wrap">
+              <Badge variant="outline" className="font-mono text-xs bg-muted/50">
+                {ticket.codigo_ticket}
+              </Badge>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-blue-500" />
+                <span className="text-xs text-muted-foreground font-medium">Aguardando Atendimento</span>
               </div>
             </div>
-          </div>
-          
-          {/* SLA Status Row */}
-          {slaStatus && (
-            <div className="flex items-center gap-3 pt-2">
-              <Badge variant="outline" className={`${slaStatus.color} flex items-center gap-1 bg-background/50`}>
+            {/* SLA inline */}
+            {slaStatus && (
+              <Badge variant="outline" className={`${slaStatus.color} flex items-center gap-1 bg-background/50 w-fit`}>
                 {slaStatus.icon}
                 <span className="text-xs font-medium">{slaStatus.text}</span>
               </Badge>
-              {ticket.data_limite_sla && (
-                <span className="text-xs text-muted-foreground">
-                  Vence em {new Date(ticket.data_limite_sla).toLocaleString('pt-BR')}
-                </span>
-              )}
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
-        {/* Content simplificado */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {/* Info Cards Grid - Mais compacto */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {/* Unidade Card */}
-            <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50">
-              <CardContent className="p-3">
+        {/* Content unificado */}
+        <div className="flex-1 overflow-y-auto p-4">
+          <div className="space-y-3">
+            {/* Grid de informações - layout mais compacto */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border border-border/50 rounded-lg p-3">
                 <div className="flex items-center gap-2">
-                  <div className="p-1.5 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                  <div className="p-1.5 bg-blue-500/10 border border-blue-500/20 rounded-md">
                     <Building className="h-3 w-3 text-blue-600" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-muted-foreground mb-0.5">Unidade</p>
-                    <p className="font-semibold text-xs truncate">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs text-muted-foreground">Unidade</p>
+                    <p className="font-medium text-sm truncate">
                       {ticket.unidades?.grupo || ticket.unidade_id}
                     </p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
 
-            {/* Solicitante Card */}
-            <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50">
-              <CardContent className="p-3">
+              <div className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border border-border/50 rounded-lg p-3">
                 <div className="flex items-center gap-2">
-                  <div className="p-1.5 bg-green-500/10 border border-green-500/20 rounded-lg">
+                  <div className="p-1.5 bg-green-500/10 border border-green-500/20 rounded-md">
                     <User className="h-3 w-3 text-green-600" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-muted-foreground mb-0.5">Solicitante</p>
-                    <p className="font-semibold text-xs truncate">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs text-muted-foreground">Solicitante</p>
+                    <p className="font-medium text-sm truncate">
                       {ticket.colaboradores?.nome_completo || 
                        ticket.profiles?.nome_completo || 
                        (ticket.franqueado_id ? (ticket.franqueados?.name || "Franqueado") : "Sistema")}
                     </p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </div>
 
-          {/* Equipe Responsável */}
-          <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50">
-            <CardContent className="p-3">
+            {/* Equipe Responsável - compacto */}
+            <div className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border border-border/50 rounded-lg p-3">
               <div className="flex items-center gap-2 mb-2">
-                <div className="p-1.5 bg-purple-500/10 border border-purple-500/20 rounded-lg">
+                <div className="p-1.5 bg-purple-500/10 border border-purple-500/20 rounded-md">
                   <Users className="h-3 w-3 text-purple-600" />
                 </div>
-                <h4 className="font-semibold text-sm text-foreground">Equipe Responsável</h4>
+                <p className="font-medium text-sm">Equipe Responsável</p>
               </div>
               <Select
                 value={ticket.equipe_responsavel_id || "none"}
@@ -480,24 +464,20 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                   ))}
                 </SelectContent>
               </Select>
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* Problem Description */}
-          <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50">
-            <CardContent className="p-3">
-              <h4 className="font-semibold text-sm mb-2">Descrição do Problema</h4>
-              <div className="p-3 bg-muted/30 rounded-lg border border-primary/20">
+            {/* Descrição do problema - compacto */}
+            <div className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border border-border/50 rounded-lg p-3">
+              <h4 className="font-medium text-sm mb-2">Descrição do Problema</h4>
+              <div className="p-3 bg-muted/30 rounded-md border border-primary/20">
                 <p className="text-xs leading-relaxed text-foreground">
                   {ticket.descricao_problema}
                 </p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* Botão Iniciar Atendimento */}
-          <Card className="bg-gradient-to-br from-primary/5 to-secondary/5 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-border/40">
-            <CardContent className="p-4 text-center">
+            {/* Botão de ação - integrado */}
+            <div className="bg-gradient-to-br from-primary/5 to-secondary/5 backdrop-blur supports-[backdrop-filter]:bg-background/60 border border-border/40 rounded-lg p-4 text-center">
               <div className="mb-3">
                 <h3 className="text-base font-semibold text-foreground mb-1">Pronto para Atender?</h3>
                 <p className="text-xs text-muted-foreground">
@@ -512,8 +492,8 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                 <User className="h-4 w-4 mr-2" />
                 Iniciar Atendimento
               </Button>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </div>
     );
