@@ -270,6 +270,7 @@ serve(async (req) => {
     }
 
     console.log('Processando documento:', titulo, 'estilo:', estilo, 'process_with_ai:', process_with_ai);
+    console.log('Dados recebidos completos:', JSON.stringify({ titulo, conteudo: conteudo?.substring(0, 100) + '...', categoria, justificativa: justificativa?.substring(0, 50) + '...' }));
 
     let finalTitulo = titulo;
     let finalConteudo = conteudo;
@@ -551,8 +552,14 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Erro na função kb-upsert-document:', error);
+    console.error('Stack trace:', error.stack);
+    console.error('Erro detalhado:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        details: error.stack,
+        type: error.name
+      }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
