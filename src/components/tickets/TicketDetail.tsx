@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTicketMessages } from '@/hooks/useTickets';
 import { useAISuggestion } from '@/hooks/useAISuggestion';
-import { useAIChat } from '@/hooks/useAIChat';
+
 import { CrisisButton } from './CrisisButton';
 import { TicketActions } from './TicketActions';
 import { supabase } from '@/integrations/supabase/client';
@@ -27,13 +27,12 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
   const [equipes, setEquipes] = useState<Array<{ id: string; nome: string }>>([]);
   const [newMessage, setNewMessage] = useState('');
   const [editedSuggestion, setEditedSuggestion] = useState('');
-  const [aiQuestion, setAiQuestion] = useState('');
-  const [activeTab, setActiveTab] = useState<'chat' | 'suggestion' | 'messages'>('messages');
+  const [activeTab, setActiveTab] = useState<'suggestion' | 'messages'>('messages');
   const [isSendingToFranqueado, setIsSendingToFranqueado] = useState(false);
   
   const { messages, sendMessage, loading: messagesLoading } = useTicketMessages(ticketId);
   const { suggestion, loading: suggestionLoading, generateSuggestion, markSuggestionUsed } = useAISuggestion(ticketId);
-  const { chatHistory, loading: chatLoading, askAI } = useAIChat(ticketId);
+  
   const { toast } = useToast();
 
   const fetchTicketDetails = async () => {
@@ -156,13 +155,6 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
     }
   };
 
-  const handleAskAI = async () => {
-    if (!aiQuestion.trim()) return;
-    
-    const question = aiQuestion.trim();
-    setAiQuestion(''); // Clear input immediately for better UX
-    await askAI(question);
-  };
 
   const handleSendToFranqueado = async () => {
     if (!newMessage.trim()) {
@@ -704,18 +696,6 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                 )}
               </Button>
               <Button
-                variant={activeTab === 'chat' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setActiveTab('chat')}
-                className="flex-1 h-10"
-              >
-                <Bot className="h-4 w-4 mr-2" />
-                Chat com IA
-                {chatHistory.length > 0 && (
-                  <Badge variant="secondary" className="ml-2 text-xs h-5">{chatHistory.length}</Badge>
-                )}
-              </Button>
-              <Button
                 variant={activeTab === 'messages' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setActiveTab('messages')}
@@ -800,90 +780,6 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                         {suggestionLoading ? 'Gerando...' : 'Regenerar Sugestão'}
                       </Button>
                     )}
-                  </div>
-                )}
-
-                {activeTab === 'chat' && (
-                  <div className="flex flex-col h-[400px]">
-                    {/* Chat Messages Area */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-muted/10 backdrop-blur supports-[backdrop-filter]:bg-muted/20 rounded-lg border border-border/30">
-                      {chatHistory.length === 0 ? (
-                        <div className="text-center py-8">
-                          <Bot className="h-12 w-12 mx-auto text-muted-foreground/50 mb-2" />
-                          <p className="text-sm text-muted-foreground">
-                            Nenhuma conversa ainda. Faça uma pergunta à IA!
-                          </p>
-                        </div>
-                      ) : (
-                        <>
-                          {chatHistory.map((chat) => (
-                            <div key={chat.id} className="space-y-3">
-                              {/* User Message */}
-                              <div className="flex justify-end">
-                                <div className="max-w-[80%] bg-primary text-primary-foreground rounded-2xl rounded-br-md px-4 py-3">
-                                  <p className="text-sm leading-relaxed">{chat.mensagem}</p>
-                                </div>
-                              </div>
-                              
-                              {/* AI Response */}
-                              <div className="flex justify-start">
-                                <div className="max-w-[80%] bg-card border rounded-2xl rounded-bl-md px-4 py-3 shadow-sm">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <Bot className="h-4 w-4 text-primary" />
-                                    <span className="text-xs text-muted-foreground font-medium">Assistente IA</span>
-                                    {chat.log?.rag_hits !== undefined && chat.log?.kb_hits !== undefined && (
-                                      <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                                        {(chat.log.rag_hits + chat.log.kb_hits)} docs
-                                      </span>
-                                    )}
-                                  </div>
-                                  <p className="text-sm leading-relaxed text-foreground">{chat.resposta}</p>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                          
-                          {/* Loading Indicator */}
-                          {chatLoading && (
-                            <div className="flex justify-start">
-                              <div className="max-w-[80%] bg-card border rounded-2xl rounded-bl-md px-4 py-3 shadow-sm">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <Bot className="h-4 w-4 text-primary" />
-                                  <span className="text-xs text-muted-foreground font-medium">Assistente IA</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <div className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                                  <div className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                                  <div className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce"></div>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </>
-                      )}
-                    </div>
-                    
-                    {/* Input Area */}
-                    <div className="border-t bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/80 p-4 rounded-b-lg">
-                      <div className="flex gap-3">
-                        <Input
-                          placeholder="Digite sua mensagem..."
-                          value={aiQuestion}
-                          onChange={(e) => setAiQuestion(e.target.value)}
-                          onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleAskAI())}
-                          className="flex-1 h-10"
-                          disabled={chatLoading}
-                        />
-                        <Button 
-                          onClick={handleAskAI}
-                          disabled={!aiQuestion.trim() || chatLoading}
-                          size="icon"
-                          className="h-10 w-10 shrink-0"
-                        >
-                          <Send className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
                   </div>
                 )}
 
