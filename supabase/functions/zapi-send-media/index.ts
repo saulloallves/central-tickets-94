@@ -248,30 +248,40 @@ function getZApiEndpoint(fileType: string, config: ZApiConfig): string {
 }
 
 function buildZApiPayload(attachment: AttachmentFile, phone: string): any {
-  const basePayload = { phone };
+  console.log(`=== BUILDING Z-API PAYLOAD ===`);
+  console.log(`Phone: ${phone}`);
+  console.log(`Attachment Type: ${attachment.type}`);
+  console.log(`Attachment URL: ${attachment.url}`);
+  console.log(`Attachment Name: ${attachment.name}`);
 
   if (attachment.type.startsWith('image/')) {
-    return {
-      ...basePayload,
+    const payload = {
+      phone: phone,
       image: attachment.url,
       caption: attachment.caption || attachment.name,
       viewOnce: false
     };
+    console.log(`Image payload:`, JSON.stringify(payload, null, 2));
+    return payload;
   } else if (attachment.type.startsWith('video/')) {
-    return {
-      ...basePayload,
+    const payload = {
+      phone: phone,
       video: attachment.url,
       caption: attachment.caption || attachment.name,
       viewOnce: false
     };
+    console.log(`Video payload:`, JSON.stringify(payload, null, 2));
+    return payload;
   } else {
     // Documents and audio
-    return {
-      ...basePayload,
+    const payload = {
+      phone: phone,
       document: attachment.url,
       fileName: attachment.name,
       caption: attachment.caption
     };
+    console.log(`Document payload:`, JSON.stringify(payload, null, 2));
+    return payload;
   }
 }
 
