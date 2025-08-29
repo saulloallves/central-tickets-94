@@ -215,7 +215,14 @@ export const KnowledgeHubTab = () => {
 
   const handlePublishArticle = async () => {
     try {
-      const articleData = await createArticle(approvalData);
+      // Automaticamente marca como usado pela IA e aprovado quando publica
+      const articleDataWithAI = {
+        ...approvalData,
+        usado_pela_ia: true,
+        aprovado: true
+      };
+      
+      const articleData = await createArticle(articleDataWithAI);
       
       if (articleData && selectedSuggestion) {
         const { data: userData } = await supabase.auth.getUser();
@@ -231,7 +238,7 @@ export const KnowledgeHubTab = () => {
       setSelectedSuggestion(null);
       toast({
         title: "✅ Artigo Publicado",
-        description: "Sugestão aprovada e convertida em artigo da base de conhecimento",
+        description: "Sugestão aprovada, convertida em artigo e automaticamente ativada para uso da IA",
       });
     } catch (error) {
       console.error('Error publishing article:', error);
@@ -439,7 +446,8 @@ export const KnowledgeHubTab = () => {
     try {
       const finalApprovalData = {
         ...approvalData,
-        usado_pela_ia: true
+        usado_pela_ia: true,
+        aprovado: true
       };
       
       await createArticle(finalApprovalData);
@@ -449,7 +457,7 @@ export const KnowledgeHubTab = () => {
       
       toast({
         title: "✅ Documento Importado",
-        description: "Documento RAG convertido em artigo da base de conhecimento",
+        description: "Documento RAG convertido em artigo, aprovado e ativado para IA automaticamente",
       });
     } catch (error) {
       console.error('Error importing RAG document:', error);
