@@ -43,9 +43,12 @@ export const useNewCrisisManagement = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  const fetchActiveCrises = async () => {
+  const fetchActiveCrises = async (isRefetch = false) => {
     try {
-      setLoading(true);
+      // Only set loading on initial fetch, not on refetches
+      if (!isRefetch) {
+        setLoading(true);
+      }
       
       // Buscar apenas da tabela crises (novo sistema unificado)
       const { data: crisesData, error: crisesError } = await supabase
@@ -127,7 +130,7 @@ export const useNewCrisisManagement = () => {
         variant: "destructive",
       });
 
-      await fetchActiveCrises();
+      await fetchActiveCrises(true);
       return data;
     } catch (error) {
       console.error('Error creating crisis:', error);
@@ -162,7 +165,7 @@ export const useNewCrisisManagement = () => {
         description: "Tickets foram vinculados à crise com sucesso",
       });
 
-      await fetchActiveCrises();
+      await fetchActiveCrises(true);
       return true;
     } catch (error) {
       console.error('Error adding tickets to crisis:', error);
@@ -197,7 +200,7 @@ export const useNewCrisisManagement = () => {
         description: `Crise marcada como ${status}`,
       });
 
-      await fetchActiveCrises();
+      await fetchActiveCrises(true);
       return true;
     } catch (error) {
       console.error('Error updating crisis status:', error);
@@ -227,7 +230,7 @@ export const useNewCrisisManagement = () => {
         description: "Mensagem foi enviada para todos os tickets da crise",
       });
 
-      await fetchActiveCrises();
+      await fetchActiveCrises(true);
       return true;
     } catch (error) {
       console.error('Error broadcasting message:', error);
@@ -262,7 +265,7 @@ export const useNewCrisisManagement = () => {
         description: "A crise foi encerrada e todos os tickets foram atualizados",
       });
 
-      await fetchActiveCrises();
+      await fetchActiveCrises(true);
       return true;
     } catch (error) {
       console.error('Error resolving crisis:', error);
@@ -292,7 +295,7 @@ export const useNewCrisisManagement = () => {
         description: "O ticket foi desvinculado da crise com sucesso",
       });
 
-      await fetchActiveCrises();
+      await fetchActiveCrises(true);
       return true;
     } catch (error) {
       console.error('Error unlinking ticket from crisis:', error);
@@ -315,7 +318,7 @@ export const useNewCrisisManagement = () => {
         },
         (payload) => {
           console.log('🚨 Realtime crisis change:', payload);
-          setTimeout(() => fetchActiveCrises(), 100);
+          setTimeout(() => fetchActiveCrises(true), 100);
         }
       )
       .on(
@@ -327,7 +330,7 @@ export const useNewCrisisManagement = () => {
         },
         (payload) => {
           console.log('🔗 Realtime crisis-ticket link change:', payload);
-          setTimeout(() => fetchActiveCrises(), 100);
+          setTimeout(() => fetchActiveCrises(true), 100);
         }
       )
       .on(
@@ -339,7 +342,7 @@ export const useNewCrisisManagement = () => {
         },
         (payload) => {
           console.log('📝 Realtime crisis update change:', payload);
-          setTimeout(() => fetchActiveCrises(), 100);
+          setTimeout(() => fetchActiveCrises(true), 100);
         }
       )
       .subscribe();
@@ -347,7 +350,7 @@ export const useNewCrisisManagement = () => {
     // Auto-refresh every 60 seconds to ensure data consistency (reduced frequency)
     const autoRefresh = setInterval(() => {
       console.log('🔄 Auto-refreshing crisis data...');
-      fetchActiveCrises();
+      fetchActiveCrises(true); // Mark as refetch to avoid loading state
     }, 60000);
 
     return () => {
@@ -365,6 +368,6 @@ export const useNewCrisisManagement = () => {
     broadcastMessage,
     resolveCrisisAndCloseTickets,
     unlinkTicketFromCrisis,
-    refetch: fetchActiveCrises
+    refetch: () => fetchActiveCrises(true)
   };
 };

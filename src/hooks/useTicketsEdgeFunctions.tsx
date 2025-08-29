@@ -75,11 +75,14 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
   const backupPollingRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch tickets using regular supabase query (read-only)
-  const fetchTickets = useCallback(async () => {
+  const fetchTickets = useCallback(async (isRefetch = false) => {
     if (!user || roleLoading) return;
     
     try {
-      setLoading(true);
+      // Only set loading on initial fetch, not on refetches
+      if (!isRefetch) {
+        setLoading(true);
+      }
       
       let query = supabase
         .from('tickets')
@@ -213,7 +216,7 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
           
           realtimeDebounceRef.current = setTimeout(() => {
             console.log('🔄 Triggering ticket refetch due to realtime event');
-            fetchTickets();
+            fetchTickets(true); // Mark as refetch to avoid loading state
           }, 300); // Reduced debounce time for better responsiveness
         }
       )
@@ -236,7 +239,7 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
     // Set up periodic polling as backup if realtime fails
     const pollInterval = setInterval(() => {
       console.log('🔄 Backup polling triggered');
-      fetchTickets();
+      fetchTickets(true); // Mark as refetch to avoid loading state
     }, 30000); // Poll every 30 seconds as backup
 
     return () => {
@@ -264,7 +267,7 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
       console.log('🔍 Filters changed, debouncing refetch:', filters);
       const timeoutId = setTimeout(() => {
         console.log('🔍 Executing filter-based refetch');
-        fetchTickets();
+        fetchTickets(true); // Mark as refetch to avoid loading state
       }, 300);
       
       return () => {
@@ -326,7 +329,7 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
 
       // Force immediate refetch to ensure UI consistency
       console.log('🔄 Force refetching tickets after creation');
-      await fetchTickets();
+      await fetchTickets(true);
       return data.ticket;
     } catch (error) {
       console.error('Error creating ticket:', error);
@@ -361,7 +364,7 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
       
       // Force immediate refetch to ensure UI consistency
       console.log('🔄 Force refetching tickets after update');
-      await fetchTickets();
+      await fetchTickets(true);
       return data.ticket;
     } catch (error) {
       console.error('Error updating ticket:', error);
@@ -400,7 +403,7 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
 
       // Force immediate refetch to ensure UI consistency
       console.log('🔄 Force refetching tickets after deletion');
-      await fetchTickets();
+      await fetchTickets(true);
       return true;
     } catch (error) {
       console.error('Error deleting ticket:', error);
@@ -444,7 +447,7 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
     tickets,
     loading,
     ticketStats,
-    refetch: fetchTickets,
+    refetch: () => fetchTickets(true),
     createTicket,
     updateTicket,
     deleteTicket,

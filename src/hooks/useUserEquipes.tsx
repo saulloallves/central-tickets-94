@@ -23,7 +23,7 @@ export const useUserEquipes = () => {
   const [userEquipes, setUserEquipes] = useState<UserEquipe[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchUserEquipes = async () => {
+  const fetchUserEquipes = async (isRefetch = false) => {
     if (!user) {
       setUserEquipes([]);
       setLoading(false);
@@ -31,7 +31,10 @@ export const useUserEquipes = () => {
     }
 
     try {
-      setLoading(true);
+      // Only set loading on initial fetch, not on refetches
+      if (!isRefetch) {
+        setLoading(true);
+      }
       
       const { data, error } = await supabase
         .from('equipe_members')
@@ -90,7 +93,7 @@ export const useUserEquipes = () => {
         },
         (payload) => {
           console.log('Realtime equipe change:', payload);
-          fetchUserEquipes();
+          fetchUserEquipes(true); // Mark as refetch
         }
       )
       .subscribe();
@@ -112,6 +115,6 @@ export const useUserEquipes = () => {
     userEquipes,
     loading,
     getPrimaryEquipe,
-    refetch: fetchUserEquipes
+    refetch: () => fetchUserEquipes(true)
   };
 };

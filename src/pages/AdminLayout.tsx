@@ -24,6 +24,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const { userRequest, loading: requestLoading } = useInternalAccessRequests();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const [isFirstRender, setIsFirstRender] = useState(true);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -32,8 +33,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     }
   }, [user, authLoading, navigate]);
 
-  // Show loading spinner while checking authentication and permissions
-  if (authLoading || roleLoading || equipeLoading || requestLoading) {
+  // Mark as not first render after initial load
+  useEffect(() => {
+    if (!authLoading && !roleLoading && !equipeLoading && !requestLoading) {
+      setIsFirstRender(false);
+    }
+  }, [authLoading, roleLoading, equipeLoading, requestLoading]);
+
+  // Show loading spinner ONLY on first render or auth loading
+  if ((authLoading || roleLoading || equipeLoading || requestLoading) && isFirstRender) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-subtle">
         <div className="text-center">
