@@ -34,7 +34,7 @@ serve(async (req) => {
     // 1. Preparar texto para embedding
     const textoParaEmbedding = `Título: ${titulo}\nConteúdo: ${typeof conteudo === 'string' ? conteudo : JSON.stringify(conteudo)}`;
 
-    // 2. Gerar embedding usando text-embedding-3-large
+    // 2. Gerar embedding usando text-embedding-3-small (compatível com índices HNSW)
     const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
       method: 'POST',
       headers: {
@@ -42,7 +42,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'text-embedding-3-large',
+        model: 'text-embedding-3-small',
         input: textoParaEmbedding,
       }),
     });

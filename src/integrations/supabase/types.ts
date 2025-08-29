@@ -337,6 +337,65 @@ export type Database = {
           },
         ]
       }
+      documentos: {
+        Row: {
+          artigo_id: string
+          conteudo: Json | null
+          criado_em: string
+          criado_por: string
+          embedding: string | null
+          id: string
+          justificativa: string
+          parent_id: string | null
+          status: Database["public"]["Enums"]["article_status"]
+          tags: string[] | null
+          tipo: Database["public"]["Enums"]["article_type"]
+          titulo: string
+          valido_ate: string | null
+          versao: number
+        }
+        Insert: {
+          artigo_id: string
+          conteudo?: Json | null
+          criado_em?: string
+          criado_por: string
+          embedding?: string | null
+          id?: string
+          justificativa: string
+          parent_id?: string | null
+          status?: Database["public"]["Enums"]["article_status"]
+          tags?: string[] | null
+          tipo?: Database["public"]["Enums"]["article_type"]
+          titulo: string
+          valido_ate?: string | null
+          versao?: number
+        }
+        Update: {
+          artigo_id?: string
+          conteudo?: Json | null
+          criado_em?: string
+          criado_por?: string
+          embedding?: string | null
+          id?: string
+          justificativa?: string
+          parent_id?: string | null
+          status?: Database["public"]["Enums"]["article_status"]
+          tags?: string[] | null
+          tipo?: Database["public"]["Enums"]["article_type"]
+          titulo?: string
+          valido_ate?: string | null
+          versao?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documentos_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "documentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       equipe_members: {
         Row: {
           ativo: boolean
@@ -2242,6 +2301,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      binary_quantize: {
+        Args: { "": string } | { "": unknown }
+        Returns: unknown
+      }
       broadcast_crise_message: {
         Args: {
           p_by?: string
@@ -2401,6 +2464,22 @@ export type Database = {
         Args: { "": unknown }
         Returns: unknown
       }
+      halfvec_avg: {
+        Args: { "": number[] }
+        Returns: unknown
+      }
+      halfvec_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      halfvec_send: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      halfvec_typmod_in: {
+        Args: { "": unknown[] }
+        Returns: number
+      }
       has_permission: {
         Args: {
           _permission: Database["public"]["Enums"]["app_permission"]
@@ -2415,9 +2494,45 @@ export type Database = {
         }
         Returns: boolean
       }
+      hnsw_bit_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hnsw_halfvec_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hnsw_sparsevec_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hnswhandler: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
       is_active_member_of_equipe: {
         Args: { _equipe_id: string; _user_id: string }
         Returns: boolean
+      }
+      ivfflat_bit_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      ivfflat_halfvec_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      ivfflathandler: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      l2_norm: {
+        Args: { "": unknown } | { "": unknown }
+        Returns: number
+      }
+      l2_normalize: {
+        Args: { "": string } | { "": unknown } | { "": unknown }
+        Returns: string
       }
       log_crisis_action: {
         Args: {
@@ -2492,6 +2607,18 @@ export type Database = {
         Args: { "": string }
         Returns: string[]
       }
+      sparsevec_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      sparsevec_send: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      sparsevec_typmod_in: {
+        Args: { "": unknown[] }
+        Returns: number
+      }
       unlink_ticket_from_crisis: {
         Args: { p_by?: string; p_crise_id: string; p_ticket_id: string }
         Returns: undefined
@@ -2508,6 +2635,30 @@ export type Database = {
       user_can_view_unidade: {
         Args: { u_id: string }
         Returns: boolean
+      }
+      vector_avg: {
+        Args: { "": number[] }
+        Returns: string
+      }
+      vector_dims: {
+        Args: { "": string } | { "": unknown }
+        Returns: number
+      }
+      vector_norm: {
+        Args: { "": string }
+        Returns: number
+      }
+      vector_out: {
+        Args: { "": string }
+        Returns: unknown
+      }
+      vector_send: {
+        Args: { "": string }
+        Returns: string
+      }
+      vector_typmod_in: {
+        Args: { "": unknown[] }
+        Returns: number
       }
       vincular_tickets_existentes_a_crise: {
         Args: Record<PropertyKey, never>
@@ -2546,6 +2697,13 @@ export type Database = {
         | "diretoria"
         | "franqueado"
         | "gerente"
+      article_status:
+        | "ativo"
+        | "vencido"
+        | "em_revisao"
+        | "arquivado"
+        | "substituido"
+      article_type: "permanente" | "temporario"
       canal_origem: "typebot" | "whatsapp_zapi" | "web"
       canal_resposta: "web" | "whatsapp" | "typebot" | "interno"
       cargo:
@@ -2747,6 +2905,14 @@ export const Constants = {
         "franqueado",
         "gerente",
       ],
+      article_status: [
+        "ativo",
+        "vencido",
+        "em_revisao",
+        "arquivado",
+        "substituido",
+      ],
+      article_type: ["permanente", "temporario"],
       canal_origem: ["typebot", "whatsapp_zapi", "web"],
       canal_resposta: ["web", "whatsapp", "typebot", "interno"],
       cargo: [

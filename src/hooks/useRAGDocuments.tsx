@@ -118,11 +118,9 @@ export const useRAGDocuments = () => {
 
   const updateDocumentStatus = async (id: string, status: string) => {
     try {
-      // Use direct query with type assertion since we know the table exists
-      const { error } = await (supabase as any)
-        .from('documentos')
-        .update({ status })
-        .eq('id', id);
+      const { data, error } = await supabase.functions.invoke('kb-update-document', {
+        body: { id, status }
+      });
 
       if (error) throw error;
 

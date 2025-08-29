@@ -73,42 +73,51 @@ serve(async (req) => {
     }
 
     // 3. Artigos órfãos (sem versões ativas)
-    const { data: artigosOrfaos } = await supabase
+    const { data: todosDocumentos } = await supabase
       .from('documentos')
-      .select('artigo_id, titulo')
-      .neq('status', 'ativo')
-      .groupBy('artigo_id');
+      .select('artigo_id, titulo, status');
 
-    // Filtrar apenas artigos que não têm NENHUMA versão ativa
-    const artigosComVersaoAtiva = await supabase
-      .from('documentos')
-      .select('artigo_id')
-      .eq('status', 'ativo')
-      .groupBy('artigo_id');
+    // Agrupar manualmente artigos por status
+    const artigosComVersaoAtiva = new Set();
+    const artigosOrfaos = [];
+    
+    if (todosDocumentos) {
+      todosDocumentos.forEach(doc => {
+        if (doc.status === 'ativo') {
+          artigosComVersaoAtiva.add(doc.artigo_id);
+        }
+      });
+      
+      // Encontrar artigos únicos sem versão ativa
+      const artigosUnicos = new Map();
+      todosDocumentos.forEach(doc => {
+        if (!artigosComVersaoAtiva.has(doc.artigo_id) && !artigosUnicos.has(doc.artigo_id)) {
+          artigosUnicos.set(doc.artigo_id, { artigo_id: doc.artigo_id, titulo: doc.titulo });
+        }
+      });
+      
+      artigosOrfaos.push(...artigosUnicos.values());
+    }
 
-    const idsAtivos = new Set(artigosComVersaoAtiva?.data?.map(a => a.artigo_id) || []);
-    const orfsosReais = artigosOrfaos?.filter(artigo => !idsAtivos.has(artigo.artigo_id));
-
-    if (orfsosReais?.length > 0) {
+    if (artigosOrfaos?.length > 0) {
       inconsistencias.push({
         tipo: 'artigos_orfaos',
-        count: orfsosReais.length,
-        detalhes: orfsosReais,
+        count: artigosOrfaos.length,
+        detalhes: artigosOrfaos,
         acao_sugerida: 'Reativar versão ou arquivar definitivamente',
         criticidade: 'baixa'
       });
     }
 
-    // 4. Estatísticas gerais
-    const { data: stats } = await supabase
+    // 4. Estatísticas gerais - calcular manualmente
+    const { data: allDocs } = await supabase
       .from('documentos')
-      .select('status, tipo, count(*)')
-      .groupBy('status, tipo');
+      .select('status, tipo');
 
     const resumo = {
-      total_documentos: stats?.reduce((acc, item) => acc + (item.count || 0), 0) || 0,
-      documentos_ativos: stats?.find(s => s.status === 'ativo')?.count || 0,
-      documentos_temporarios: stats?.filter(s => s.tipo === 'temporario').reduce((acc, item) => acc + (item.count || 0), 0) || 0,
+      total_documentos: allDocs?.length || 0,
+      documentos_ativos: allDocs?.filter(d => d.status === 'ativo').length || 0,
+      documentos_temporarios: allDocs?.filter(d => d.tipo === 'temporario').length || 0,
       inconsistencias_encontradas: inconsistencias.length,
       ultima_auditoria: new Date().toISOString()
     };
