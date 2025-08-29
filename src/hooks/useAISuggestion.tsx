@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -9,8 +10,16 @@ interface AISuggestion {
   resposta_final?: string;
   created_at: string;
   log?: {
-    rag_hits?: number;
-    kb_hits?: number;
+    rag_pipeline?: string;
+    embedding_model?: string;
+    documentos_encontrados?: number;
+    relevancia_media?: number;
+    fontes_citadas?: Array<{
+      id: string;
+      titulo: string;
+      versao: number;
+      relevancia: number;
+    }>;
     [key: string]: any;
   };
 }
@@ -47,11 +56,11 @@ export const useAISuggestion = (ticketId: string) => {
   const generateSuggestion = async () => {
     setLoading(true);
     try {
-      console.log('Generating AI suggestion for ticket:', ticketId);
+      console.log('Generating RAG-powered AI suggestion for ticket:', ticketId);
       
       // Create timeout promise
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Timeout: A requisição demorou mais que 30 segundos')), 30000)
+        setTimeout(() => reject(new Error('Timeout: A requisição RAG demorou mais que 45 segundos')), 45000)
       );
       
       // Race between function call and timeout
@@ -62,23 +71,23 @@ export const useAISuggestion = (ticketId: string) => {
       const { data, error } = await Promise.race([suggestionPromise, timeoutPromise]) as any;
 
       if (error) {
-        console.error('Suggestion error:', error);
+        console.error('RAG Suggestion error:', error);
         toast({
-          title: "Erro na Sugestão IA",
-          description: error.message || "Não foi possível gerar sugestão automaticamente",
+          title: "Erro na Sugestão RAG",
+          description: error.message || "Não foi possível gerar sugestão com a base RAG",
           variant: "destructive",
         });
         return null;
       }
 
-      console.log('AI suggestion generated:', data);
+      console.log('RAG AI suggestion generated:', data);
       
       // Polling to wait for suggestion to appear in database
       let attempts = 0;
-      const maxAttempts = 3;
+      const maxAttempts = 5;
       
       while (attempts < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1s
+        await new Promise(resolve => setTimeout(resolve, 1500)); // Wait 1.5s
         await getLatestSuggestion();
         
         // Check if suggestion was loaded
@@ -101,7 +110,7 @@ export const useAISuggestion = (ticketId: string) => {
           checkSuggestion();
         });
         
-        if (currentSuggestion && currentSuggestion.created_at > new Date(Date.now() - 60000).toISOString()) {
+        if (currentSuggestion && currentSuggestion.created_at > new Date(Date.now() - 90000).toISOString()) {
           // Found recent suggestion, break polling
           break;
         }
@@ -109,20 +118,22 @@ export const useAISuggestion = (ticketId: string) => {
         attempts++;
       }
       
+      // Show enhanced RAG metrics in toast
+      const ragMetrics = data.rag_metrics || {};
       toast({
-        title: "✨ Sugestão IA Gerada",
-        description: "Nova sugestão de resposta disponível",
+        title: "✨ Sugestão RAG Gerada",
+        description: `${ragMetrics.documentos_encontrados || 0} documentos RAG | Relevância: ${ragMetrics.relevancia_media || '0%'}`,
       });
 
       return data;
     } catch (error) {
-      console.error('Error generating suggestion:', error);
+      console.error('Error generating RAG suggestion:', error);
       const isTimeout = error instanceof Error && error.message.includes('Timeout');
       toast({
-        title: isTimeout ? "Tempo Esgotado" : "Erro",
+        title: isTimeout ? "Tempo Esgotado RAG" : "Erro",
         description: isTimeout 
-          ? "A geração da sugestão está demorando. Tente novamente em alguns segundos."
-          : "Erro inesperado ao gerar sugestão",
+          ? "A busca RAG está demorando. A base pode estar indexando. Tente novamente."
+          : "Erro inesperado ao gerar sugestão RAG",
         variant: "destructive",
       });
       return null;
@@ -149,15 +160,15 @@ export const useAISuggestion = (ticketId: string) => {
       await getLatestSuggestion();
       
       toast({
-        title: "✅ Sugestão Utilizada",
-        description: "Uso da sugestão registrado",
+        title: "✅ Sugestão RAG Utilizada",
+        description: "Uso da sugestão RAG registrado para análise",
       });
 
     } catch (error) {
-      console.error('Error marking suggestion as used:', error);
+      console.error('Error marking RAG suggestion as used:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível registrar uso da sugestão",
+        description: "Não foi possível registrar uso da sugestão RAG",
         variant: "destructive",
       });
     }
@@ -166,7 +177,6 @@ export const useAISuggestion = (ticketId: string) => {
   useEffect(() => {
     getLatestSuggestion();
   }, [ticketId]);
-
 
   return {
     suggestion,

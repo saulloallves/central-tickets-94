@@ -1,797 +1,499 @@
-import { useState, useEffect } from 'react';
+
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useKnowledgeArticles } from '@/hooks/useKnowledgeArticles';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { CreateMemoryModal } from './CreateMemoryModal';
-import { Search, Check, Edit, Download, FileText, Plus, BookOpen, Brain, Trash2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Plus, Search, FileText, AlertTriangle, Database, TrendingUp, Shield, CheckCircle } from 'lucide-react';
+import { useRAGDocuments } from '@/hooks/useRAGDocuments';
 
-// Extended type for KnowledgeArticle with new fields
-interface ExtendedKnowledgeArticle {
-  id: string;
-  titulo: string;
-  conteudo: string;
-  categoria: string | null;
-  subcategoria?: string | null;
-  equipe_id: string | null;
-  tags: string[] | null;
-  tipo_midia: string;
-  aprovado: boolean;
-  usado_pela_ia: boolean;
-  feedback_positivo: number;
-  feedback_negativo: number;
-  created_at: string;
-  estilo?: string | null;
-  arquivo_path?: string | null;
-  classificacao?: any;
-}
-
-interface Equipe {
-  id: string;
-  nome: string;
-  ativo: boolean;
-}
-
-interface RAGDocument {
-  id: number;
-  content: string;
-  metadata: any;
-  embedding?: any;
-}
-
-export const KnowledgeHubTab = () => {
-  const [equipes, setEquipes] = useState<Equipe[]>([]);
-  const [ragDocuments, setRagDocuments] = useState<RAGDocument[]>([]);
-  const [selectedCategoria, setSelectedCategoria] = useState<string>('all');
-  const [categorias, setCategorias] = useState<string[]>([]);
+const KnowledgeHubTab = () => {
+  const { documents, loading, fetchDocuments, createDocument, updateDocumentStatus, runAudit } = useRAGDocuments();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedArticle, setSelectedArticle] = useState<any>(null);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [isCreateMemoryModalOpen, setIsCreateMemoryModalOpen] = useState(false);
-  const [selectedRAGDoc, setSelectedRAGDoc] = useState<RAGDocument | null>(null);
-  const [importProgress, setImportProgress] = useState({ current: 0, total: 0, importing: false });
-  const [editData, setEditData] = useState({
-    id: '',
+  const [statusFilter, setStatusFilter] = useState('');
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [auditResults, setAuditResults] = useState(null);
+  const [duplicateDialog, setDuplicateDialog] = useState(null);
+  
+  const [newDocument, setNewDocument] = useState({
     titulo: '',
     conteudo: '',
-    categoria: '',
-    tags: [] as string[],
-    tipo_midia: 'texto' as const,
-    aprovado: false,
-    usado_pela_ia: false
+    tipo: 'permanente',
+    valido_ate: '',
+    tags: '',
+    justificativa: ''
   });
 
-  const { articles, loading: loadingArticles, fetchArticles, createArticle, updateArticle } = useKnowledgeArticles();
-  const { toast } = useToast();
+  const handleCreateDocument = async () => {
+    const documentData = {
+      ...newDocument,
+      tags: newDocument.tags.split(',').map(t => t.trim()).filter(Boolean)
+    };
 
-  const deleteArticle = async (articleId: string) => {
-    try {
-      const { error } = await supabase
-        .from('knowledge_articles')
-        .delete()
-        .eq('id', articleId);
-
-      if (error) throw error;
-
-      toast({
-        title: "✅ Artigo Excluído",
-        description: "Artigo removido da base de conhecimento",
+    const result = await createDocument(documentData);
+    
+    if (result.warning === 'duplicate_found') {
+      setDuplicateDialog({
+        similar: result.similar_documents,
+        message: result.message,
+        documentData
       });
-      
-      fetchArticles();
-    } catch (error) {
-      console.error('Error deleting article:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível excluir o artigo",
-        variant: "destructive",
+      return;
+    }
+
+    if (result.success) {
+      setIsCreateDialogOpen(false);
+      setNewDocument({
+        titulo: '',
+        conteudo: '',
+        tipo: 'permanente',
+        valido_ate: '',
+        tags: '',
+        justificativa: ''
       });
     }
   };
 
-  const fetchCategorias = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('knowledge_articles')
-        .select('categoria')
-        .not('categoria', 'is', null)
-        .neq('categoria', '');
-
-      if (error) throw error;
-      
-      // Extrair categorias únicas
-      const uniqueCategorias = [...new Set(data.map(item => item.categoria))].filter(Boolean);
-      setCategorias(uniqueCategorias);
-    } catch (error) {
-      console.error('Error fetching categorias:', error);
-    }
-  };
-
-  useEffect(() => {
-    fetchEquipes();
-    fetchRAGDocuments();
-    fetchCategorias();
-  }, []);
-
-  useEffect(() => {
-    const filters: any = { ativo: true };
-    if (selectedCategoria && selectedCategoria !== 'all') {
-      filters.categoria = selectedCategoria;
-    }
-    
-    fetchArticles(filters);
-  }, [selectedCategoria]);
-
-  const fetchRAGDocuments = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('RAG DOCUMENTOS')
-        .select('*')
-        .order('id', { ascending: false });
-
-      if (error) throw error;
-      setRagDocuments(data || []);
-    } catch (error) {
-      console.error('Error fetching RAG documents:', error);
-    }
-  };
-
-  const fetchEquipes = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('equipes')
-        .select('id, nome, ativo')
-        .eq('ativo', true)
-        .order('nome');
-
-      if (error) throw error;
-      setEquipes(data || []);
-    } catch (error) {
-      console.error('Error fetching equipes:', error);
-    }
-  };
-
-  // Cast articles to extended type and separate by style  
-  const extendedArticles = articles as ExtendedKnowledgeArticle[];
-  const regularArticles = extendedArticles.filter(a => !a.estilo);
-  const memoryArticles = extendedArticles.filter(a => a.estilo);
-
-  const filteredArticles = regularArticles.filter(article =>
-    article.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    article.conteudo.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const filteredMemories = memoryArticles.filter(memory =>
-    memory.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    memory.conteudo.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-
-  const handleEditArticle = (article: any) => {
-    console.log('Artigo selecionado para edição:', article);
-    console.log('Classificação do artigo:', article.classificacao);
-    setSelectedArticle(article);
-    
-    // Extract content from classificacao - this is where the AI-generated content is
-    let contentToEdit = '';
-    console.log('Tipo de classificacao:', typeof article.classificacao);
-    console.log('Classificacao completa:', article.classificacao);
-    
-    if (article.classificacao && typeof article.classificacao === 'object') {
-      console.log('Tipo da classificacao:', article.classificacao.tipo);
-      
-      if (article.classificacao.tipo === 'manual') {
-        // Para manual: buscar content_full primeiro
-        contentToEdit = article.classificacao.content_full || 
-                       article.classificacao.conteudo_organizado || 
-                       article.classificacao.conteudo_original || 
-                       article.conteudo;
-        console.log('Manual - Conteúdo escolhido:', {
-          content_full: !!article.classificacao.content_full,
-          conteudo_organizado: !!article.classificacao.conteudo_organizado,
-          conteudo_original: !!article.classificacao.conteudo_original,
-          final: contentToEdit?.substring(0, 100) + '...'
-        });
-      } 
-      else if (article.classificacao.tipo === 'diretrizes') {
-        // Para diretrizes: buscar resultado_diretrizes
-        contentToEdit = article.classificacao.resultado_diretrizes || article.conteudo;
-        console.log('Diretrizes - Conteúdo escolhido:', {
-          resultado_diretrizes: !!article.classificacao.resultado_diretrizes,
-          final: contentToEdit?.substring(0, 100) + '...'
-        });
-      }
-      else {
-        // Fallback genérico
-        contentToEdit = article.conteudo;
-        console.log('Fallback - usando conteudo da coluna principal');
-      }
-    } else {
-      contentToEdit = article.conteudo;
-      console.log('Sem classificacao válida - usando conteudo da coluna principal');
-    }
-    
-    console.log('Conteúdo final extraído:', contentToEdit?.substring(0, 200));
-    
-    setEditData({
-      id: article.id,
-      titulo: article.titulo,
-      conteudo: contentToEdit,
-      categoria: article.categoria || '',
-      tags: article.tags || [],
-      tipo_midia: article.tipo_midia,
-      aprovado: article.aprovado,
-      usado_pela_ia: article.usado_pela_ia
+  const handleForceProceed = async () => {
+    // Forçar criação mesmo com duplicatas
+    const result = await createDocument({
+      ...duplicateDialog.documentData,
+      force: true
     });
-    setIsEditModalOpen(true);
-  };
-
-  const handleUpdateArticle = async () => {
-    try {
-      // Sempre salvar o conteúdo editado na coluna conteudo
-      // A classificacao mantém os dados originais de processamento
-      await updateArticle(editData.id, {
-        titulo: editData.titulo,
-        conteudo: editData.conteudo, // Conteúdo editado
-        categoria: editData.categoria,
-        tags: editData.tags,
-        aprovado: editData.aprovado,
-        usado_pela_ia: editData.usado_pela_ia,
-        tipo_midia: editData.tipo_midia
-      });
-      
-      setIsEditModalOpen(false);
-      setSelectedArticle(null);
-      toast({
-        title: "✅ Artigo Atualizado",
-        description: "Alterações salvas com sucesso",
-      });
-    } catch (error) {
-      console.error('Error updating article:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível atualizar o artigo",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleImportRAGDocument = async (ragDoc: RAGDocument) => {
-    try {
-      const title = ragDoc.metadata?.title || ragDoc.metadata?.source || `Documento ${ragDoc.id}`;
-      
-      await createArticle({
-        titulo: title,
-        conteudo: ragDoc.content,
-        categoria: '',
-        tags: ragDoc.metadata?.tags || [],
-        tipo_midia: 'texto'
-      });
-      
-      toast({
-        title: "✅ Documento Importado",
-        description: "Documento RAG convertido em artigo com sucesso",
-      });
-    } catch (error) {
-      console.error('Error importing RAG document:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível importar o documento",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleImportAllRAGDocuments = async () => {
-    if (ragDocuments.length === 0) return;
     
-    setImportProgress({ current: 0, total: ragDocuments.length, importing: true });
-    
-    try {
-      for (let i = 0; i < ragDocuments.length; i++) {
-        const ragDoc = ragDocuments[i];
-        const title = ragDoc.metadata?.title || ragDoc.metadata?.source || `Documento ${ragDoc.id}`;
-        
-        await createArticle({
-          titulo: title,
-          conteudo: ragDoc.content,
-          equipe_id: undefined, // Removido filtro de equipe
-          tags: ragDoc.metadata?.tags || [],
-          tipo_midia: 'texto',
-          usado_pela_ia: true
-        });
-        
-        setImportProgress(prev => ({ ...prev, current: i + 1 }));
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-      
-      toast({
-        title: "✅ Importação Concluída",
-        description: `${ragDocuments.length} documentos foram importados para a base de conhecimento`,
-      });
-      
-    } catch (error) {
-      console.error('Error importing RAG documents:', error);
-      toast({
-        title: "Erro na Importação",
-        description: "Alguns documentos podem não ter sido importados",
-        variant: "destructive",
-      });
-    } finally {
-      setImportProgress({ current: 0, total: 0, importing: false });
-    }
-  };
-
-  const handleActivateAllForAI = async () => {
-    if (filteredArticles.length === 0) return;
-    
-    try {
-      const updatePromises = filteredArticles.map(article => 
-        updateArticle(article.id, { usado_pela_ia: true })
-      );
-      
-      await Promise.all(updatePromises);
-      
-      toast({
-        title: "✅ Todos Ativados para IA",
-        description: `${filteredArticles.length} artigos foram ativados para uso pela IA`,
-      });
-      
-    } catch (error) {
-      console.error('Error activating all articles for AI:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível ativar todos os artigos",
-        variant: "destructive",
+    setDuplicateDialog(null);
+    if (result.success) {
+      setIsCreateDialogOpen(false);
+      setNewDocument({
+        titulo: '',
+        conteudo: '',
+        tipo: 'permanente',
+        valido_ate: '',
+        tags: '',
+        justificativa: ''
       });
     }
   };
 
-  const handleApproveAll = async () => {
-    if (filteredArticles.length === 0) return;
-    
-    try {
-      const updatePromises = filteredArticles.map(article => 
-        updateArticle(article.id, { aprovado: true })
-      );
-      
-      await Promise.all(updatePromises);
-      
-      toast({
-        title: "✅ Todos Aprovados",
-        description: `${filteredArticles.length} artigos foram aprovados`,
-      });
-      
-    } catch (error) {
-      console.error('Error approving all articles:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível aprovar todos os artigos",
-        variant: "destructive",
-      });
+  const handleRunAudit = async () => {
+    const results = await runAudit();
+    if (results) {
+      setAuditResults(results);
     }
   };
 
+  const filteredDocuments = documents.filter(doc => {
+    const matchesSearch = doc.titulo.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = !statusFilter || doc.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
-
-  const getEstiloBadge = (estilo?: string | null) => {
-    if (!estilo) return null;
-    
-    switch (estilo) {
-      case 'diretrizes':
-        return <Badge className="bg-purple-100 text-purple-700 border-purple-300">📋 Diretrizes</Badge>;
-      case 'manual':
-        return <Badge className="bg-blue-100 text-blue-700 border-blue-300">📚 Manual</Badge>;
-      default:
-        return null;
-    }
+  const statusColors = {
+    ativo: 'bg-green-500',
+    vencido: 'bg-red-500',
+    em_revisao: 'bg-yellow-500',
+    arquivado: 'bg-gray-500',
+    substituido: 'bg-blue-500'
   };
+
+  const getStats = () => {
+    const total = documents.length;
+    const ativos = documents.filter(d => d.status === 'ativo').length;
+    const temporarios = documents.filter(d => d.tipo === 'temporario').length;
+    const vencidos = documents.filter(d => d.status === 'vencido').length;
+
+    return { total, ativos, temporarios, vencidos };
+  };
+
+  const stats = getStats();
 
   return (
     <div className="space-y-6">
-      {/* Header with filters */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        
-        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          <Button
-            onClick={() => setIsCreateMemoryModalOpen(true)}
-            className="gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Novo Artigo
-          </Button>
-          
-          <div className="relative">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8 w-full sm:w-[200px]"
-            />
-          </div>
-          
-          <Select value={selectedCategoria} onValueChange={setSelectedCategoria}>
-            <SelectTrigger className="w-full sm:w-[200px]">
-              <SelectValue placeholder="Filtrar por categoria" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas as categorias</SelectItem>
-              {categorias.map((categoria) => (
-                <SelectItem key={categoria} value={categoria}>
-                  {categoria}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+      {/* Header com estatísticas RAG */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total RAG</CardTitle>
+            <Database className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.total}</div>
+            <p className="text-xs text-muted-foreground">documentos governados</p>
+          </CardContent>
+        </Card>
 
-      {/* Statistics */}
-      <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Artigos Publicados</CardTitle>
-            <Check className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Ativos</CardTitle>
+            <CheckCircle className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{regularArticles.filter(a => a.aprovado).length}</div>
+            <div className="text-2xl font-bold">{stats.ativos}</div>
+            <p className="text-xs text-muted-foreground">prontos para IA</p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Memórias Processadas</CardTitle>
-            <Brain className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Temporários</CardTitle>
+            <TrendingUp className="h-4 w-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{memoryArticles.length}</div>
+            <div className="text-2xl font-bold">{stats.temporarios}</div>
+            <p className="text-xs text-muted-foreground">com data limite</p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Documentos RAG</CardTitle>
-            <Download className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Vencidos</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{ragDocuments.length}</div>
+            <div className="text-2xl font-bold">{stats.vencidos}</div>
+            <p className="text-xs text-muted-foreground">requerem atenção</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Documentos RAG Disponíveis */}
-      {ragDocuments.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base font-medium flex items-center justify-between">
-              <span>
-                Documentos RAG Disponíveis
-                <Badge variant="secondary" className="ml-2">
-                  {ragDocuments.length}
-                </Badge>
-              </span>
-              <Button onClick={handleImportAllRAGDocuments} variant="outline" className="gap-2">
-                <Download className="h-4 w-4" />
-                Importar Todos
+      {/* Controles */}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                Hub de Conhecimento RAG
+              </CardTitle>
+              <CardDescription>
+                Governança completa com embeddings vetoriais (3072D) e auditoria automática
+              </CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={handleRunAudit} variant="outline">
+                🔍 Auditoria
               </Button>
-            </CardTitle>
-            <CardDescription className="text-sm">
-              Documentos disponíveis para importação da base RAG
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 max-h-64 overflow-y-auto">
-              {ragDocuments.slice(0, 5).map((ragDoc) => (
-                <Card key={ragDoc.id} className="border-dashed">
-                  <CardContent className="pt-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <h4 className="font-medium text-sm">
-                          {ragDoc.metadata?.title || ragDoc.metadata?.source || `Documento ${ragDoc.id}`}
-                        </h4>
-                        <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
-                          {ragDoc.content.substring(0, 150)}...
-                        </p>
+              <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Novo Documento
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Criar Documento RAG</DialogTitle>
+                    <DialogDescription>
+                      O sistema verificará duplicatas automaticamente usando busca vetorial
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <div className="grid gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="titulo">Título *</Label>
+                      <Input
+                        id="titulo"
+                        value={newDocument.titulo}
+                        onChange={(e) => setNewDocument({...newDocument, titulo: e.target.value})}
+                        placeholder="Digite o título do documento"
+                      />
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label htmlFor="conteudo">Conteúdo *</Label>
+                      <Textarea
+                        id="conteudo"
+                        value={newDocument.conteudo}
+                        onChange={(e) => setNewDocument({...newDocument, conteudo: e.target.value})}
+                        placeholder="Digite o conteúdo completo..."
+                        className="min-h-[120px]"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="tipo">Tipo</Label>
+                        <Select value={newDocument.tipo} onValueChange={(value) => setNewDocument({...newDocument, tipo: value})}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="permanente">Permanente</SelectItem>
+                            <SelectItem value="temporario">Temporário</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleImportRAGDocument(ragDoc)}
-                        className="gap-1 ml-4"
-                      >
-                        <Download className="h-3 w-3" />
-                        Importar
-                      </Button>
+
+                      {newDocument.tipo === 'temporario' && (
+                        <div className="grid gap-2">
+                          <Label htmlFor="valido_ate">Válido até</Label>
+                          <Input
+                            id="valido_ate"
+                            type="datetime-local"
+                            value={newDocument.valido_ate}
+                            onChange={(e) => setNewDocument({...newDocument, valido_ate: e.target.value})}
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label htmlFor="tags">Tags (separadas por vírgula)</Label>
+                      <Input
+                        id="tags"
+                        value={newDocument.tags}
+                        onChange={(e) => setNewDocument({...newDocument, tags: e.target.value})}
+                        placeholder="Ex: atendimento, sistema, login"
+                      />
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label htmlFor="justificativa">Justificativa *</Label>
+                      <Textarea
+                        id="justificativa"
+                        value={newDocument.justificativa}
+                        onChange={(e) => setNewDocument({...newDocument, justificativa: e.target.value})}
+                        placeholder="Justifique a criação deste documento..."
+                        className="min-h-[80px]"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                      Cancelar
+                    </Button>
+                    <Button onClick={handleCreateDocument} disabled={loading}>
+                      {loading ? 'Processando...' : 'Criar Documento'}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar documentos..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-8"
+                />
+              </div>
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Filtrar por status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Todos os status</SelectItem>
+                <SelectItem value="ativo">Ativos</SelectItem>
+                <SelectItem value="vencido">Vencidos</SelectItem>
+                <SelectItem value="em_revisao">Em revisão</SelectItem>
+                <SelectItem value="arquivado">Arquivados</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-4">
+            {loading ? (
+              <div className="text-center py-8">Carregando documentos RAG...</div>
+            ) : filteredDocuments.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                Nenhum documento encontrado
+              </div>
+            ) : (
+              filteredDocuments.map((doc) => (
+                <Card key={doc.id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-start gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <FileText className="h-4 w-4" />
+                          <h4 className="font-medium">{doc.titulo}</h4>
+                          <Badge className={`${statusColors[doc.status]} text-white`}>
+                            {doc.status}
+                          </Badge>
+                          <Badge variant="outline">{doc.tipo}</Badge>
+                          <Badge variant="secondary">v{doc.versao}</Badge>
+                        </div>
+                        
+                        {doc.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mb-2">
+                            {doc.tags.map((tag, index) => (
+                              <Badge key={index} variant="outline" className="text-xs">
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {typeof doc.conteudo === 'string' 
+                            ? doc.conteudo.substring(0, 200) + '...'
+                            : JSON.stringify(doc.conteudo).substring(0, 200) + '...'
+                          }
+                        </p>
+
+                        <div className="text-xs text-muted-foreground">
+                          Criado em: {new Date(doc.criado_em).toLocaleDateString()} | 
+                          Justificativa: {doc.justificativa.substring(0, 50)}...
+                          {doc.valido_ate && (
+                            <> | Válido até: {new Date(doc.valido_ate).toLocaleDateString()}</>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2">
+                        {doc.status !== 'ativo' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => updateDocumentStatus(doc.id, 'ativo')}
+                          >
+                            Reativar
+                          </Button>
+                        )}
+                        {doc.status === 'ativo' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => updateDocumentStatus(doc.id, 'arquivado')}
+                          >
+                            Arquivar
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Artigos Publicados */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base font-medium">
-            Artigos Publicados
-            <Badge variant="secondary" className="ml-2">
-              {filteredArticles.length + filteredMemories.length}
-            </Badge>
-          </CardTitle>
-          <CardDescription className="text-sm">
-            Artigos ativos na base de conhecimento
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loadingArticles ? (
-            <div className="text-center py-8">Carregando artigos...</div>
-          ) : (filteredArticles.length === 0 && filteredMemories.length === 0) ? (
-            <Card>
-              <CardContent className="py-8 text-center">
-                <p className="text-muted-foreground">Nenhum artigo encontrado</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-6">
-              {/* Artigos Regulares */}
-              {filteredArticles.length > 0 && (
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-semibold">Artigos Regulares ({filteredArticles.length})</h3>
-                    <div className="flex gap-2">
-                      <Button 
-                        onClick={handleApproveAll}
-                        variant="outline"
-                        className="gap-2"
-                      >
-                        <Check className="h-4 w-4" />
-                        Aprovar Todos
-                      </Button>
-                      <Button 
-                        onClick={handleActivateAllForAI}
-                        variant="outline"
-                        className="gap-2"
-                      >
-                        <Check className="h-4 w-4" />
-                        Ativar Todos para IA
-                      </Button>
-                    </div>
-                  </div>
-                  {filteredArticles.map((article) => (
-                    <Card key={article.id}>
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-lg">{article.titulo}</CardTitle>
-                           <div className="flex items-center gap-2">
-                             <Button
-                               size="sm"
-                               variant="outline"
-                               onClick={() => handleEditArticle(article)}
-                               className="gap-1"
-                             >
-                               <Edit className="h-3 w-3" />
-                               Editar
-                             </Button>
-                             <Button
-                               size="sm"
-                               variant="outline"
-                               onClick={() => deleteArticle(article.id)}
-                               className="gap-1 text-red-600 hover:text-red-700"
-                             >
-                               <Trash2 className="h-3 w-3" />
-                               Excluir
-                             </Button>
-                            {article.aprovado && (
-                              <Badge variant="outline" className="text-green-600 border-green-300">
-                                Aprovado
-                              </Badge>
-                            )}
-                            {article.usado_pela_ia && (
-                              <Badge variant="outline" className="text-blue-600 border-blue-300">
-                                Usado pela IA
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                        <CardDescription>
-                          Categoria: {article.categoria || 'Sem categoria'} • 
-                          Criado em {new Date(article.created_at).toLocaleDateString('pt-BR')}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-sm leading-relaxed line-clamp-2">
-                          {article.conteudo}
-                        </p>
-                        <div className="flex items-center gap-4 mt-4 text-xs text-muted-foreground">
-                          <span>👍 {article.feedback_positivo}</span>
-                          <span>👎 {article.feedback_negativo}</span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-
-              {/* Memórias/Artigos com Estilo */}
-              {filteredMemories.length > 0 && (
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-semibold">Memórias Processadas ({filteredMemories.length})</h3>
-                  </div>
-                  {filteredMemories.map((memory) => (
-                    <Card key={memory.id}>
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 flex-1">
-                            <CardTitle className="text-lg">{memory.titulo}</CardTitle>
-                            {getEstiloBadge(memory.estilo)}
-                          </div>
-                           <div className="flex items-center gap-2">
-                             <Button
-                               size="sm"
-                               variant="outline"
-                               onClick={() => handleEditArticle(memory)}
-                               className="gap-1"
-                             >
-                               <Edit className="h-3 w-3" />
-                               Editar
-                             </Button>
-                             <Button
-                               size="sm"
-                               variant="outline"
-                               onClick={() => deleteArticle(memory.id)}
-                               className="gap-1 text-red-600 hover:text-red-700"
-                             >
-                               <Trash2 className="h-3 w-3" />
-                               Excluir
-                             </Button>
-                            {memory.aprovado && (
-                              <Badge variant="outline" className="text-green-600 border-green-300">
-                                Aprovado
-                              </Badge>
-                            )}
-                            {memory.usado_pela_ia && (
-                              <Badge variant="outline" className="text-blue-600 border-blue-300">
-                                Usado pela IA
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                        <CardDescription className="flex items-center gap-2">
-                          <span>Categoria: {memory.categoria || 'Sem categoria'}</span>
-                          {memory.subcategoria && (
-                            <>
-                              <span>•</span>
-                              <span>Subcategoria: {memory.subcategoria}</span>
-                            </>
-                          )}
-                          <span>•</span>
-                          <span>Criado em {new Date(memory.created_at).toLocaleDateString('pt-BR')}</span>
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-sm leading-relaxed line-clamp-2">
-                          {memory.conteudo}
-                        </p>
-                        <div className="flex items-center gap-4 mt-4 text-xs text-muted-foreground">
-                          <span>👍 {memory.feedback_positivo}</span>
-                          <span>👎 {memory.feedback_negativo}</span>
-                          {memory.arquivo_path && (
-                            <span className="flex items-center gap-1">
-                              <FileText className="h-3 w-3" />
-                              Arquivo anexado
-                            </span>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+              ))
+            )}
+          </div>
         </CardContent>
       </Card>
 
-      {/* Create Memory Modal */}
-      <CreateMemoryModal
-        open={isCreateMemoryModalOpen}
-        onOpenChange={setIsCreateMemoryModalOpen}
-        onSuccess={() => {
-          fetchArticles();
-        }}
-      />
-
-
-      {/* Edit Article Modal */}
-      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Editar Artigo</DialogTitle>
-            <DialogDescription>
-              Faça as alterações necessárias no artigo
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="edit-titulo">Título do Artigo</Label>
-              <Input
-                id="edit-titulo"
-                value={editData.titulo}
-                onChange={(e) => setEditData({ ...editData, titulo: e.target.value })}
-                placeholder="Digite o título do artigo"
-              />
+      {/* Dialog de duplicatas */}
+      {duplicateDialog && (
+        <AlertDialog open={!!duplicateDialog} onOpenChange={() => setDuplicateDialog(null)}>
+          <AlertDialogContent className="max-w-2xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle>⚠️ Duplicatas Detectadas</AlertDialogTitle>
+              <AlertDialogDescription>
+                {duplicateDialog.message}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            
+            <div className="space-y-3 max-h-60 overflow-y-auto">
+              {duplicateDialog.similar.map((doc, index) => (
+                <Card key={doc.id} className="p-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h5 className="font-medium">{doc.titulo}</h5>
+                      <p className="text-sm text-muted-foreground">
+                        Similaridade: {(doc.similaridade * 100).toFixed(1)}% | Versão: {doc.versao}
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              ))}
             </div>
 
-            <div>
-              <Label htmlFor="edit-categoria">Categoria</Label>
-              <Input
-                id="edit-categoria"
-                value={editData.categoria}
-                onChange={(e) => setEditData({ ...editData, categoria: e.target.value })}
-                placeholder="Digite a categoria do artigo"
-              />
-            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={handleForceProceed}>
+                Prosseguir Mesmo Assim
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
 
-            <div>
-              <Label htmlFor="edit-conteudo">Conteúdo (da Classificação - usado pela IA)</Label>
-              <Textarea
-                id="edit-conteudo"
-                value={editData.conteudo}
-                onChange={(e) => setEditData({ ...editData, conteudo: e.target.value })}
-                rows={8}
-                placeholder="Digite o conteúdo do artigo"
-              />
-            </div>
+      {/* Resultados da auditoria */}
+      {auditResults && (
+        <Dialog open={!!auditResults} onOpenChange={() => setAuditResults(null)}>
+          <DialogContent className="max-w-4xl">
+            <DialogHeader>
+              <DialogTitle>🔍 Relatório de Auditoria RAG</DialogTitle>
+              <DialogDescription>
+                Análise completa da governança da base de conhecimento
+              </DialogDescription>
+            </DialogHeader>
 
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="edit-aprovado"
-                  checked={editData.aprovado}
-                  onChange={(e) => setEditData({ ...editData, aprovado: e.target.checked })}
-                  className="rounded"
-                />
-                <Label htmlFor="edit-aprovado">Artigo aprovado</Label>
-              </div>
+            <Tabs defaultValue="resumo">
+              <TabsList>
+                <TabsTrigger value="resumo">Resumo</TabsTrigger>
+                <TabsTrigger value="inconsistencias">Inconsistências</TabsTrigger>
+                <TabsTrigger value="recomendacoes">Recomendações</TabsTrigger>
+              </TabsList>
 
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="edit-usado-ia"
-                  checked={editData.usado_pela_ia}
-                  onChange={(e) => setEditData({ ...editData, usado_pela_ia: e.target.checked })}
-                  className="rounded"
-                />
-                <Label htmlFor="edit-usado-ia">Usado pela IA</Label>
-              </div>
-            </div>
-          </div>
+              <TabsContent value="resumo" className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="text-2xl font-bold">{auditResults.resumo.total_documentos}</div>
+                      <p className="text-sm text-muted-foreground">Total de documentos</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="text-2xl font-bold text-green-600">{auditResults.resumo.documentos_ativos}</div>
+                      <p className="text-sm text-muted-foreground">Documentos ativos</p>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleUpdateArticle}>
-              Salvar Alterações
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+              <TabsContent value="inconsistencias" className="space-y-4">
+                {auditResults.inconsistencias.map((inc, index) => (
+                  <Card key={index} className={`border-l-4 ${
+                    inc.criticidade === 'alta' ? 'border-l-red-500' :
+                    inc.criticidade === 'media' ? 'border-l-yellow-500' : 'border-l-blue-500'
+                  }`}>
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="font-medium capitalize">{inc.tipo.replace('_', ' ')}</h4>
+                          <p className="text-sm text-muted-foreground">{inc.acao_sugerida}</p>
+                        </div>
+                        <Badge className={
+                          inc.criticidade === 'alta' ? 'bg-red-500' :
+                          inc.criticidade === 'media' ? 'bg-yellow-500' : 'bg-blue-500'
+                        }>
+                          {inc.count} itens
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </TabsContent>
 
+              <TabsContent value="recomendacoes" className="space-y-4">
+                {auditResults.recomendacoes.map((rec, index) => (
+                  <Card key={index}>
+                    <CardContent className="p-4">
+                      <p>{rec}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </TabsContent>
+            </Tabs>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };
+
+export default KnowledgeHubTab;
