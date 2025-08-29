@@ -40,7 +40,8 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/admin" element={
+            <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+            <Route path="/admin/dashboard" element={
               <ProtectedRoute>
                 <AdminLayout>
                   <Dashboard />
@@ -114,28 +115,28 @@ const App = () => (
             {/* Rotas do Franqueado */}
             <Route path="/franqueado" element={<Navigate to="/franqueado/dashboard" replace />} />
             <Route path="/franqueado/dashboard" element={
-              <ProtectedRoute requiredRole="franqueado">
+              <ProtectedRoute requiredRole="gerente">
                 <FranqueadoLayout>
                   <FranqueadoDashboard />
                 </FranqueadoLayout>
               </ProtectedRoute>
             } />
             <Route path="/franqueado/tickets" element={
-              <ProtectedRoute requiredRole="franqueado">
+              <ProtectedRoute requiredRole="gerente">
                 <FranqueadoLayout>
                   <FranqueadoTickets />
                 </FranqueadoLayout>
               </ProtectedRoute>
             } />
             <Route path="/franqueado/unidades" element={
-              <ProtectedRoute requiredRole="franqueado">
+              <ProtectedRoute requiredRole="gerente">
                 <FranqueadoLayout>
                   <FranqueadoUnidades />
                 </FranqueadoLayout>
               </ProtectedRoute>
             } />
             <Route path="/franqueado/profile" element={
-              <ProtectedRoute requiredRole="franqueado">
+              <ProtectedRoute requiredRole="gerente">
                 <FranqueadoLayout>
                   <FranqueadoProfile />
                 </FranqueadoLayout>
