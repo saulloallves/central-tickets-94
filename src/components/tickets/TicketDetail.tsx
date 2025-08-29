@@ -340,6 +340,157 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
 
   const slaStatus = getSLAStatus();
 
+  const handleStartAttendance = async () => {
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      
+      const { error } = await supabase
+        .from('tickets')
+        .update({ 
+          status: 'em_atendimento',
+          atendimento_iniciado_por: userData.user?.id,
+          atendimento_iniciado_em: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', ticketId);
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Atendimento Iniciado",
+        description: "Status alterado para 'em atendimento'",
+      });
+
+      // Refresh ticket details to show updated view
+      fetchTicketDetails();
+    } catch (error) {
+      console.error('Error starting attendance:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao iniciar atendimento",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Se o ticket está aberto, mostra versão simplificada
+  if (ticket.status === 'aberto') {
+    return (
+      <div className="w-full h-full flex flex-col overflow-hidden">
+        {/* Header simplificado */}
+        <div className="flex-shrink-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border/40 p-6">
+          <div className="flex items-start justify-between gap-4 mb-3">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-xl line-clamp-2 mb-3 font-bold text-foreground">
+                {getTicketDisplayTitle(ticket)}
+              </h2>
+              <div className="flex items-center gap-3 flex-wrap">
+                <Badge variant="outline" className="font-mono text-sm bg-muted/50">
+                  {ticket.codigo_ticket}
+                </Badge>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-blue-500" />
+                  <span className="text-sm text-muted-foreground capitalize font-medium">Aguardando Atendimento</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* SLA Status Row */}
+          {slaStatus && (
+            <div className="flex items-center gap-3 pt-2">
+              <Badge variant="outline" className={`${slaStatus.color} flex items-center gap-1 bg-background/50`}>
+                {slaStatus.icon}
+                <span className="text-xs font-medium">{slaStatus.text}</span>
+              </Badge>
+              {ticket.data_limite_sla && (
+                <span className="text-xs text-muted-foreground">
+                  Vence em {new Date(ticket.data_limite_sla).toLocaleString('pt-BR')}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Content simplificado */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Info Cards Grid - Apenas essenciais */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Unidade Card */}
+            <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                    <Building className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-muted-foreground mb-1">Unidade</p>
+                    <p className="font-semibold text-sm truncate">
+                      {ticket.unidades?.grupo || ticket.unidade_id}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Solicitante Card */}
+            <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-500/10 border border-green-500/20 rounded-lg">
+                    <User className="h-4 w-4 text-green-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-muted-foreground mb-1">Solicitante</p>
+                    <p className="font-semibold text-sm truncate">
+                      {ticket.colaboradores?.nome_completo || 
+                       ticket.profiles?.nome_completo || 
+                       (ticket.franqueado_id ? (ticket.franqueados?.name || "Franqueado") : "Sistema")}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Problem Description */}
+          <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50">
+            <CardContent className="p-4">
+              <h4 className="font-semibold text-base mb-3">Descrição do Problema</h4>
+              <div className="p-4 bg-muted/30 rounded-lg border border-primary/20">
+                <p className="text-sm leading-relaxed text-foreground">
+                  {ticket.descricao_problema}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Botão Iniciar Atendimento */}
+          <Card className="bg-gradient-to-br from-blue-500/5 to-green-500/5 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-border/40">
+            <CardContent className="p-6 text-center">
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold text-foreground mb-2">Pronto para Atender?</h3>
+                <p className="text-sm text-muted-foreground">
+                  Clique no botão abaixo para iniciar o atendimento deste ticket
+                </p>
+              </div>
+              <Button 
+                onClick={handleStartAttendance}
+                size="lg"
+                className="px-8 py-3 text-base font-semibold bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700"
+              >
+                <User className="h-5 w-5 mr-2" />
+                Iniciar Atendimento
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full h-full flex flex-col overflow-hidden">
       {/* Header com Glass Effect */}
