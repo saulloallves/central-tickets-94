@@ -245,12 +245,27 @@ serve(async (req) => {
   }
 
   try {
-    const { titulo, conteudo, categoria, tipo, valido_ate, tags, justificativa, artigo_id, force, estilo, process_with_ai } = await req.json();
+    const bodyData = await req.json();
+    console.log('Dados recebidos:', JSON.stringify(bodyData));
+    
+    const { titulo, conteudo, categoria, tipo, valido_ate, tags, justificativa, artigo_id, force, estilo, process_with_ai } = bodyData;
     
     if (!titulo || !conteudo || !justificativa) {
+      console.error('Campos obrigatórios ausentes:', { titulo: !!titulo, conteudo: !!conteudo, justificativa: !!justificativa });
       return new Response(
-        JSON.stringify({ error: 'Título, conteúdo e justificativa são obrigatórios' }),
+        JSON.stringify({ 
+          error: 'Título, conteúdo e justificativa são obrigatórios',
+          received: { titulo: !!titulo, conteudo: !!conteudo, justificativa: !!justificativa }
+        }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!openAIApiKey) {
+      console.error('OPENAI_API_KEY não configurada');
+      return new Response(
+        JSON.stringify({ error: 'OpenAI API Key não configurada no servidor' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
