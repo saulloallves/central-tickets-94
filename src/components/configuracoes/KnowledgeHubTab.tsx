@@ -601,7 +601,7 @@ export const KnowledgeHubTab = () => {
                       <div className="flex items-center gap-2">
                         {getStatusBadge(suggestion.status)}
                         <span className="text-sm text-muted-foreground">
-                          {suggestion.modelo_provedor} • {new Date(suggestion.created_at).toLocaleDateString('pt-BR')}
+                          {suggestion.modelo_provedor === 'openai' ? 'Lambda' : suggestion.modelo_provedor} • {new Date(suggestion.created_at).toLocaleDateString('pt-BR')}
                         </span>
                       </div>
                       <div className="flex gap-2">

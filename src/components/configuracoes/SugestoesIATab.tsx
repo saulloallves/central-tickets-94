@@ -231,7 +231,7 @@ export function SugestoesIATab() {
                     </TableCell>
                     <TableCell>
                       <Badge variant="secondary">
-                        {suggestion.modelo_provedor}
+                        {suggestion.modelo_provedor === 'openai' ? 'Lambda' : suggestion.modelo_provedor}
                       </Badge>
                     </TableCell>
                     <TableCell>
