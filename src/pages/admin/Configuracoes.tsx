@@ -1,9 +1,10 @@
+
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Settings, Brain, BookOpen, TrendingUp, AlertTriangle, Image, Bell, Users } from "lucide-react";
 import { IASettingsTab } from "@/components/configuracoes/IASettingsTab";
-import { KnowledgeHubTab } from "@/components/configuracoes/KnowledgeHubTab";
+import KnowledgeHubTab from "@/components/configuracoes/KnowledgeHubTab";
 import { RelatoriosTab } from "@/components/configuracoes/RelatoriosTab";
 import { NotificacoesTab } from "@/components/configuracoes/NotificacoesTab";
 import { CrisisConfigTab } from "@/components/configuracoes/CrisisConfigTab";

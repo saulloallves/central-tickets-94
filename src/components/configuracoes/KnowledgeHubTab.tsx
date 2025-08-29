@@ -24,7 +24,7 @@ const KnowledgeHubTab = () => {
   const [newDocument, setNewDocument] = useState({
     titulo: '',
     conteudo: '',
-    tipo: 'permanente',
+    tipo: 'permanente' as 'permanente' | 'temporario',
     valido_ate: '',
     tags: '',
     justificativa: ''
@@ -219,7 +219,7 @@ const KnowledgeHubTab = () => {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="grid gap-2">
                         <Label htmlFor="tipo">Tipo</Label>
-                        <Select value={newDocument.tipo} onValueChange={(value) => setNewDocument({...newDocument, tipo: value})}>
+                        <Select value={newDocument.tipo} onValueChange={(value: 'permanente' | 'temporario') => setNewDocument({...newDocument, tipo: value})}>
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
