@@ -494,12 +494,13 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
   // Use optimistic tickets se existirem, senão use os tickets normais
   const displayTickets = optimisticTickets.length > 0 ? optimisticTickets : tickets;
 
-  // Reset optimistic state quando tickets mudam
+  // Reset optimistic state quando tickets mudam (apenas se não há pending moves)
   useEffect(() => {
-    if (tickets.length > 0 && pendingMoves.size === 0) {
+    if (tickets.length > 0 && pendingMoves.size === 0 && optimisticTickets.length > 0) {
+      console.log('🔄 Real-time atualizou tickets - limpando estado otimista');
       setOptimisticTickets([]);
     }
-  }, [tickets, pendingMoves]);
+  }, [tickets, pendingMoves, optimisticTickets.length]);
 
   // Update timestamp when tickets change
   useEffect(() => {
@@ -640,18 +641,21 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
         undefined  // afterId - to be implemented with sortable ordering
       );
       
-      // Remove do pending moves
-      setPendingMoves(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(ticketId);
-        return newSet;
-      });
       
       if (success) {
-        // 4. TRATAMENTO DE SUCESSO - Confirmar card na nova posição
-        console.log('✅ Ticket movido com sucesso! Card permanece na nova posição.');
-        // Reset optimistic state - realtime will maintain the correct state
-        setOptimisticTickets([]);
+        // 4. TRATAMENTO DE SUCESSO - Manter estado otimista até real-time confirmar
+        console.log('✅ Ticket movido com sucesso! Mantendo estado otimista.');
+        
+        // Remove apenas do pending moves, mas mantém o estado otimista
+        // até que o real-time confirme a mudança
+        setPendingMoves(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(ticketId);
+          return newSet;
+        });
+        
+        // O estado otimista será limpo quando o real-time atualizar os tickets
+        
       } else {
         // 5. TRATAMENTO DE FALHA - Reverter para posição original
         console.log('❌ Falha ao mover ticket - revertendo para posição original');
