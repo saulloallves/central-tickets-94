@@ -44,9 +44,15 @@ serve(async (req) => {
 
     // Get Z-API configuration from secrets
     const zapiInstanceId = Deno.env.get('ZAPI_INSTANCE_ID');
-    const zapiToken = Deno.env.get('ZAPI_TOKEN');
+    const zapiToken = Deno.env.get('ZAPI_TOKEN'); 
     const zapiClientToken = Deno.env.get('ZAPI_CLIENT_TOKEN');
     const zapiBaseUrl = Deno.env.get('ZAPI_BASE_URL') || 'https://api.z-api.io';
+
+    console.log('=== ENVIRONMENT VARIABLES CHECK ===');
+    console.log('All env vars:', Object.keys(Deno.env.toObject()).filter(k => k.startsWith('ZAPI')));
+    console.log('ZAPI_INSTANCE_ID:', zapiInstanceId ? `Found (${zapiInstanceId.substring(0, 8)}...)` : 'NOT FOUND');
+    console.log('ZAPI_TOKEN:', zapiToken ? `Found (${zapiToken.substring(0, 8)}...)` : 'NOT FOUND');
+    console.log('ZAPI_CLIENT_TOKEN:', zapiClientToken ? `Found (${zapiClientToken.substring(0, 8)}...)` : 'NOT FOUND');
 
     console.log('Z-API Configuration Check:', {
       hasInstanceId: !!zapiInstanceId,
