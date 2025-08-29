@@ -230,7 +230,8 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
       }
 
       // Send text message with attachments metadata
-      const success = await sendMessage(newMessage || 'Anexo(s) enviado(s)', uploadedAttachments);
+      const messageText = newMessage.trim() || (uploadedAttachments.length > 0 ? '' : 'Mensagem vazia');
+      const success = await sendMessage(messageText, uploadedAttachments);
       
       if (success) {
         // Send attachments via Z-API if any

@@ -69,7 +69,7 @@ serve(async (req) => {
       .select(`
         id,
         unidade_id,
-        franqueados!inner(phone, normalized_phone)
+        franqueado_id
       `)
       .eq('id', ticketId)
       .single();
@@ -82,8 +82,21 @@ serve(async (req) => {
       );
     }
 
-    // Determine destination phone number
-    const destinationPhone = ticket.franqueados?.normalized_phone || ticket.franqueados?.phone;
+    // Get franqueado details using the franqueado_id
+    let destinationPhone = null;
+    
+    if (ticket.franqueado_id) {
+      const { data: franqueado, error: franqueadoError } = await supabase
+        .from('franqueados')
+        .select('phone, normalized_phone')
+        .eq('id', ticket.franqueado_id)
+        .single();
+        
+      if (!franqueadoError && franqueado) {
+        destinationPhone = franqueado.normalized_phone || franqueado.phone;
+      }
+    }
+    
     if (!destinationPhone) {
       console.error('No phone number found for ticket');
       return new Response(

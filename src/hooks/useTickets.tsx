@@ -964,7 +964,7 @@ export const useTicketMessages = (ticketId: string) => {
   };
 
   const sendMessage = async (mensagem: string, anexos: any[] = []) => {
-    if (!ticketId || !mensagem.trim()) return;
+    if (!ticketId || (!mensagem.trim() && (!anexos || anexos.length === 0))) return false;
 
     try {
       const { data, error } = await supabase
@@ -987,7 +987,7 @@ export const useTicketMessages = (ticketId: string) => {
           description: "Não foi possível enviar a mensagem",
           variant: "destructive",
         });
-        return;
+        return false;
       }
 
       // Don't add optimistically - let realtime handle it
@@ -1015,6 +1015,7 @@ export const useTicketMessages = (ticketId: string) => {
         description: "Erro inesperado ao enviar mensagem",
         variant: "destructive",
       });
+      return false;
     }
   };
 
