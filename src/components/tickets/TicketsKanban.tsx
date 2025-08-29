@@ -480,27 +480,16 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
   const { toast } = useToast();
   
   const { activeCrises } = useNewCrisisManagement();
-  
-  const { setDragStatus } = useTicketsEdgeFunctions({
-    search: '',
-    status: 'all',
-    categoria: 'all',
-    prioridade: 'all',
-    unidade_id: 'all',
-    status_sla: 'all',
-    equipe_id: 'all'
-  });
 
   // Use optimistic tickets se existirem, senão use os tickets normais
   const displayTickets = optimisticTickets.length > 0 ? optimisticTickets : tickets;
 
-  // Reset optimistic state quando tickets mudam (apenas se não há pending moves)
+  // Limpar estado otimista quando realtime atualiza
   useEffect(() => {
-    if (tickets.length > 0 && pendingMoves.size === 0 && optimisticTickets.length > 0) {
-      console.log('🔄 Real-time atualizou tickets - limpando estado otimista');
+    if (tickets.length > 0 && pendingMoves.size === 0) {
       setOptimisticTickets([]);
     }
-  }, [tickets, pendingMoves, optimisticTickets.length]);
+  }, [tickets, pendingMoves]);
 
   // Update timestamp when tickets change
   useEffect(() => {
@@ -530,7 +519,6 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
     const ticket = active.data.current?.ticket;
     setActiveTicket(ticket);
     setDraggedOverColumn(null);
-    setDragStatus(true);
   };
 
   const handleDragOver = (event: DragOverEvent) => {
@@ -547,7 +535,6 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
     const { active, over } = event;
     setActiveTicket(null);
     setDraggedOverColumn(null);
-    setDragStatus(false);
 
     console.log('🎯 Drag end event:', {
       over: over?.id,
@@ -613,63 +600,57 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
       to: newStatus
     });
 
-    // 1. GUARDAR ESTADO ORIGINAL (para reversão em caso de erro)
+    // 1. ATUALIZAÇÃO OTIMISTA IMEDIATA - mover card visualmente
     const originalStatus = ticket.status;
-    const originalTicketsState = [...(optimisticTickets.length > 0 ? optimisticTickets : tickets)];
-
-    // 2. ATUALIZAÇÃO INSTANTÂNEA DA INTERFACE
-    const optimisticTicketsCopy = [...originalTicketsState];
-    const ticketIndex = optimisticTicketsCopy.findIndex(t => t.id === ticketId);
+    const updatedTickets = [...tickets];
+    const ticketIndex = updatedTickets.findIndex(t => t.id === ticketId);
     
     if (ticketIndex !== -1) {
-      optimisticTicketsCopy[ticketIndex] = {
-        ...optimisticTicketsCopy[ticketIndex],
+      updatedTickets[ticketIndex] = {
+        ...updatedTickets[ticketIndex],
         status: newStatus as any
       };
-      setOptimisticTickets(optimisticTicketsCopy);
+      setOptimisticTickets(updatedTickets);
       setPendingMoves(prev => new Set([...prev, ticketId]));
-      console.log('✨ Card movido instantaneamente para:', newStatus);
+      console.log('✨ Card movido visualmente para:', newStatus);
     }
 
-    // 3. EXECUÇÃO EM SEGUNDO PLANO DA EDGE FUNCTION
+    // 2. CHAMAR EDGE FUNCTION EM BACKGROUND
     try {
       const success = await onChangeStatus(
         ticketId, 
         originalStatus, 
         newStatus,
-        undefined, // beforeId - to be implemented with sortable ordering
-        undefined  // afterId - to be implemented with sortable ordering
+        undefined, 
+        undefined
       );
       
+      // Remove from pending moves
+      setPendingMoves(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(ticketId);
+        return newSet;
+      });
       
       if (success) {
-        // 4. TRATAMENTO DE SUCESSO - Manter estado otimista até real-time confirmar
-        console.log('✅ Ticket movido com sucesso! Mantendo estado otimista.');
-        
-        // Remove apenas do pending moves, mas mantém o estado otimista
-        // até que o real-time confirme a mudança
-        setPendingMoves(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(ticketId);
-          return newSet;
-        });
-        
-        // O estado otimista será limpo quando o real-time atualizar os tickets
-        
+        // 3. SUCESSO - Manter card na nova posição
+        console.log('✅ Ticket movido com sucesso!');
+        // Limpar estado otimista - o realtime vai assumir controle
+        setOptimisticTickets([]);
       } else {
-        // 5. TRATAMENTO DE FALHA - Reverter para posição original
-        console.log('❌ Falha ao mover ticket - revertendo para posição original');
-        setOptimisticTickets(originalTicketsState);
+        // 4. ERRO - Reverter card para posição original
+        console.log('❌ Falha ao mover ticket - revertendo');
+        setOptimisticTickets([]);
         
         toast({
-          title: "❌ Erro ao mover ticket",
-          description: "Ocorreu um erro ao mover o ticket. Tente novamente.",
+          title: "❌ Erro",
+          description: "Erro ao mover o ticket. Tente novamente.",
           variant: "destructive",
         });
       }
     } catch (error) {
-      // 5. TRATAMENTO DE ERRO - Reverter para posição original
-      console.error('❌ Erro na Edge Function - revertendo:', error);
+      // 4. ERRO - Reverter card para posição original
+      console.error('❌ Erro na Edge Function:', error);
       
       setPendingMoves(prev => {
         const newSet = new Set(prev);
@@ -677,11 +658,11 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
         return newSet;
       });
       
-      setOptimisticTickets(originalTicketsState);
+      setOptimisticTickets([]);
       
       toast({
-        title: "❌ Erro ao mover ticket",
-        description: "Ocorreu um erro ao mover o ticket. Tente novamente.",
+        title: "❌ Erro",
+        description: "Erro ao mover o ticket. Tente novamente.",
         variant: "destructive",
       });
     }
