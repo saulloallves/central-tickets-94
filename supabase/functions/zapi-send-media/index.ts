@@ -122,7 +122,11 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Sending ${attachments.length} attachments to ${destinationPhone} for ticket ${ticketId}`);
+    console.log(`=== SENDING ATTACHMENTS ===`);
+    console.log(`Ticket ID: ${ticketId}`);
+    console.log(`Destination Phone: ${destinationPhone}`);
+    console.log(`Number of attachments: ${attachments.length}`);
+    console.log(`Attachments details:`, JSON.stringify(attachments, null, 2));
 
     const results = [];
 
