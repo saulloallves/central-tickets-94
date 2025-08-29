@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { X, Clock, User, Building, Tag, AlertTriangle, MessageSquare, Send, Paperclip, Zap, Sparkles, Copy, Bot, Phone, Users } from 'lucide-react';
+import { X, Clock, User, Building, Tag, AlertTriangle, MessageSquare, Send, Paperclip, Zap, Sparkles, Copy, Bot, Phone, Users, FileText, Settings, Play, Check, ExternalLink } from 'lucide-react';
+import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -27,7 +28,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
   const [equipes, setEquipes] = useState<Array<{ id: string; nome: string }>>([]);
   const [newMessage, setNewMessage] = useState('');
   const [editedSuggestion, setEditedSuggestion] = useState('');
-  const [activeTab, setActiveTab] = useState<'suggestion' | 'messages'>('messages');
+  const [activeTab, setActiveTab] = useState<'chat' | 'detalhes'>('chat');
   const [isSendingToFranqueado, setIsSendingToFranqueado] = useState(false);
   
   const { messages, sendMessage, loading: messagesLoading } = useTicketMessages(ticketId);
@@ -143,7 +144,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
   const handleEditAndSend = () => {
     setEditedSuggestion(suggestion?.resposta || '');
     setNewMessage(suggestion?.resposta || '');
-    setActiveTab('messages'); // Muda para a aba Conversas para enviar
+    setActiveTab('chat'); // Muda para a aba Chat para enviar
   };
 
   const handleSendSuggestion = async (text: string) => {
@@ -367,6 +368,107 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
     }
   };
 
+  const handleStatusChange = async (newStatus: 'aberto' | 'em_atendimento' | 'escalonado' | 'concluido') => {
+    try {
+      const { error } = await supabase
+        .from('tickets')
+        .update({ 
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', ticketId);
+
+      if (error) {
+        throw error;
+      }
+
+      setTicket(prev => ({
+        ...prev,
+        status: newStatus
+      }));
+
+      toast({
+        title: "Status Atualizado",
+        description: `Status alterado para '${newStatus}'`,
+      });
+
+      fetchTicketDetails();
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar status",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleEquipeChange = async (equipeId: string) => {
+    try {
+      const { error } = await supabase
+        .from('tickets')
+        .update({ 
+          equipe_responsavel_id: equipeId || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', ticketId);
+
+      if (error) {
+        throw error;
+      }
+
+      setTicket(prev => ({
+        ...prev,
+        equipe_responsavel_id: equipeId || null,
+        equipes: equipes.find(e => e.id === equipeId) || null
+      }));
+
+      toast({
+        title: "Equipe Atualizada",
+        description: "Equipe responsável atualizada",
+      });
+
+      fetchTicketDetails();
+    } catch (error) {
+      console.error('Error updating team:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar equipe",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleResolveTicket = async () => {
+    try {
+      const { error } = await supabase
+        .from('tickets')
+        .update({ 
+          status: 'concluido',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', ticketId);
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Ticket Concluído",
+        description: "Ticket marcado como concluído",
+      });
+
+      fetchTicketDetails();
+    } catch (error) {
+      console.error('Error resolving ticket:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao concluir ticket",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Se o ticket está aberto, mostra versão simplificada
   if (ticket.status === 'aberto') {
     return (
@@ -540,322 +642,348 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
       </div>
 
       {/* Content - Scrollable */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
-        {/* Info Cards Grid - Sem linhas coloridas */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Unidade Card */}
-          <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50 hover:bg-card/70">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                  <Building className="h-4 w-4 text-blue-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-muted-foreground mb-1">Unidade</p>
-                  <p className="font-semibold text-sm truncate">
-                    {ticket.unidades?.grupo || ticket.unidade_id}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Solicitante Card */}
-          <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50 hover:bg-card/70">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-500/10 border border-green-500/20 rounded-lg">
-                  <User className="h-4 w-4 text-green-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-muted-foreground mb-1">Solicitante</p>
-                  <p className="font-semibold text-sm truncate">
-                    {ticket.colaboradores?.nome_completo || 
-                     ticket.profiles?.nome_completo || 
-                     (ticket.franqueado_id ? (ticket.franqueados?.name || "Franqueado") : "Sistema")}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Prioridade/Equipe Card */}
-          <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50 hover:bg-card/70">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-500/10 border border-purple-500/20 rounded-lg">
-                  <Tag className="h-4 w-4 text-purple-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <p className="text-xs text-muted-foreground">Prioridade</p>
-                    <Badge variant={getPriorityVariant(ticket.prioridade)} className="text-xs h-5">
-                      {ticket.prioridade === 'crise' && <Zap className="h-3 w-3 mr-1" />}
-                      {ticket.prioridade?.toUpperCase()}
-                    </Badge>
-                  </div>
-                  <p className="font-semibold text-sm truncate">
-                    {ticket.equipes?.nome || 'Aguardando designação'}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      <div className="flex-1 overflow-y-auto">
+        {/* Tab Navigation */}
+        <div className="px-6 pt-4 pb-2 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="flex gap-2">
+            <Button
+              variant={activeTab === 'chat' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setActiveTab('chat')}
+              className="flex-1 h-10"
+            >
+              <MessageSquare className="h-4 w-4 mr-2" />
+              Chat
+              <Badge variant="secondary" className="ml-2 text-xs h-5">{messages.length}</Badge>
+            </Button>
+            <Button
+              variant={activeTab === 'detalhes' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setActiveTab('detalhes')}
+              className="flex-1 h-10"
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              Detalhes
+            </Button>
+          </div>
         </div>
 
-        {/* Team Management */}
-        <Card className="bg-gradient-to-br from-blue-500/5 to-purple-500/5 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-border/40">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                <Users className="h-4 w-4 text-blue-600" />
-              </div>
-              <div>
-                <h4 className="font-semibold text-foreground">Equipe Responsável</h4>
-                <p className="text-xs text-muted-foreground">Altere a equipe responsável pelo atendimento</p>
-              </div>
-            </div>
-            <Select
-              value={ticket.equipe_responsavel_id || "none"}
-              onValueChange={(value) => handleTeamChange(value === "none" ? "" : value)}
-            >
-              <SelectTrigger className="w-full bg-background/50 border-border/40">
-                <SelectValue placeholder="Selecionar equipe..." />
-              </SelectTrigger>
-              <SelectContent className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border border-border shadow-lg z-[60]">
-                  <SelectItem value="none">Nenhuma equipe</SelectItem>
-                  {equipes.map((equipe) => (
-                    <SelectItem key={equipe.id} value={equipe.id}>
-                      {equipe.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </CardContent>
-          </Card>
-
-          {/* Atendimento Status */}
-          {ticket.atendimento_iniciado_por && ticket.atendimento_iniciado_profile?.nome_completo && (
-            <Card className="bg-gradient-to-br from-green-500/5 to-emerald-500/5 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-border/40">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-500/10 border border-green-500/20 rounded-lg">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+        {/* Tab Content */}
+        <div className="p-6">
+          {activeTab === 'chat' && (
+            <div className="space-y-6">
+              {/* Sugestão IA Section */}
+              <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Bot className="h-4 w-4" />
+                      Sugestão IA
+                    </CardTitle>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={generateSuggestion}
+                      disabled={suggestionLoading}
+                      className="h-8"
+                    >
+                      {suggestionLoading ? (
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                      ) : (
+                        <Zap className="h-4 w-4" />
+                      )}
+                      {suggestionLoading ? 'Gerando...' : 'Gerar'}
+                    </Button>
                   </div>
-                  <div className="flex-1">
-                    <div className="text-sm font-semibold text-foreground">
-                      Atendimento em andamento
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      <span className="font-medium">{ticket.atendimento_iniciado_profile.nome_completo}</span>
-                      {' • '}iniciado em {ticket.atendimento_iniciado_em 
-                        ? new Date(ticket.atendimento_iniciado_em).toLocaleString('pt-BR', {
-                            day: '2-digit',
-                            month: '2-digit', 
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })
-                        : 'Data não disponível'
-                      }
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Problem Description */}
-          <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50">
-            <CardContent className="p-4">
-              <h4 className="font-semibold text-base mb-3">Descrição do Problema</h4>
-              <div className="p-4 bg-muted/30 rounded-lg border border-primary/20">
-                <p className="text-sm leading-relaxed text-foreground">
-                  {ticket.descricao_problema}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Separator />
-
-          {/* Tab Navigation */}
-          <div className="space-y-4">
-            {/* Tab Buttons */}
-            <div className="flex gap-1 p-1 bg-muted/50 backdrop-blur supports-[backdrop-filter]:bg-muted/30 rounded-lg border border-border/40">
-              <Button
-                variant={activeTab === 'suggestion' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setActiveTab('suggestion')}
-                className="flex-1 h-10"
-              >
-                <Sparkles className="h-4 w-4 mr-2" />
-                IA Sugestão
-                {suggestion && !suggestion.foi_usada && (
-                  <Badge variant="secondary" className="ml-2 text-xs h-5">Nova</Badge>
-                )}
-              </Button>
-              <Button
-                variant={activeTab === 'messages' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setActiveTab('messages')}
-                className="flex-1 h-10"
-              >
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Conversas
-                <Badge variant="secondary" className="ml-2 text-xs h-5">{messages.length}</Badge>
-              </Button>
-            </div>
-
-            {/* Tab Content */}
-            <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50">
-              <CardContent className="p-6">
-                {activeTab === 'suggestion' && (
-                  <div className="space-y-4">
-                    {suggestion ? (
-                      <div className="space-y-4">
-                        <div className="p-4 bg-muted/30 rounded-lg border border-primary/20">
-                          <p className="text-sm leading-relaxed">{suggestion.resposta}</p>
-                          <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
-                            <div className="flex items-center gap-2">
-                              <span>Gerada em {formatDateTimeBR(suggestion.created_at)}</span>
-                              {suggestion.log?.rag_hits !== undefined && suggestion.log?.kb_hits !== undefined && (
-                                <span className="text-primary">
-                                  ({(suggestion.log.rag_hits + suggestion.log.kb_hits)} docs)
-                                </span>
-                              )}
-                            </div>
-                            {suggestion.foi_usada && (
-                              <Badge variant="secondary" className="text-xs">✓ Utilizada</Badge>
+                </CardHeader>
+                <CardContent>
+                  {suggestion ? (
+                    <div className="space-y-4">
+                      <div className="p-4 bg-muted/30 rounded-lg border border-primary/20">
+                        <p className="text-sm leading-relaxed">{suggestion.resposta}</p>
+                        <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-2">
+                            <span>Gerada em {formatDateTimeBR(suggestion.created_at)}</span>
+                            {suggestion.log?.rag_hits !== undefined && suggestion.log?.kb_hits !== undefined && (
+                              <span className="text-primary">
+                                ({(suggestion.log.rag_hits + suggestion.log.kb_hits)} docs)
+                              </span>
                             )}
                           </div>
-                        </div>
-                        {!suggestion.foi_usada && (
-                          <div className="flex gap-3">
-                            <Button size="sm" variant="outline" onClick={handleCopySuggestion} className="h-9">
-                              <Copy className="h-4 w-4 mr-2" />
-                              Copiar
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={handleEditAndSend} className="h-9">
-                              Editar e Enviar
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    ) : suggestionLoading ? (
-                      <div className="text-center py-8">
-                        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mb-3">
-                          <Bot className="h-4 w-4 animate-spin" />
-                          Gerando sugestão da IA...
-                        </div>
-                        <div className="w-full bg-muted rounded-full h-2">
-                          <div className="bg-primary h-2 rounded-full w-1/2 animate-pulse"></div>
+                          {suggestion.foi_usada && (
+                            <Badge variant="secondary" className="text-xs">✓ Utilizada</Badge>
+                          )}
                         </div>
                       </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <p className="text-sm text-muted-foreground mb-4">
-                          Nenhuma sugestão gerada ainda
-                        </p>
-                        <Button 
-                          onClick={generateSuggestion} 
-                          disabled={suggestionLoading}
-                          size="sm"
-                          className="h-9"
-                        >
-                          <Sparkles className="h-4 w-4 mr-2" />
-                          Gerar Sugestão
-                        </Button>
-                      </div>
-                    )}
-                    {suggestion && (
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={generateSuggestion} 
-                        disabled={suggestionLoading}
-                        className="w-full h-9"
-                      >
-                        <Sparkles className="h-4 w-4 mr-2" />
-                        {suggestionLoading ? 'Gerando...' : 'Regenerar Sugestão'}
-                      </Button>
-                    )}
-                  </div>
-                )}
-
-                {activeTab === 'messages' && (
-                  <div className="space-y-4">
-                    <div className="max-h-60 overflow-y-auto space-y-3 p-2">
-                      {messagesLoading ? (
-                        <p className="text-sm text-muted-foreground">Carregando mensagens...</p>
-                      ) : messages.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">Nenhuma mensagem ainda</p>
-                      ) : (
-                        messages.map((message) => (
-                          <div
-                            key={message.id}
-                            className={`p-3 rounded-lg text-sm ${
-                              message.direcao === 'saida' 
-                                ? 'bg-primary text-primary-foreground ml-8' 
-                                : 'bg-muted mr-8'
-                            }`}
-                          >
-                            <p>{message.mensagem}</p>
-                            <div className="flex items-center justify-between mt-2 text-xs opacity-70">
-                              <span>{message.profiles?.nome_completo || 'Sistema'}</span>
-                              <span title={formatDateTimeBR(message.created_at)}>
-                                {formatDistanceToNowInSaoPaulo(message.created_at, { addSuffix: true })}
-                              </span>
-                            </div>
-                          </div>
-                        ))
+                      {!suggestion.foi_usada && (
+                        <div className="flex gap-3">
+                          <Button size="sm" variant="outline" onClick={handleCopySuggestion} className="h-9">
+                            <Copy className="h-4 w-4 mr-2" />
+                            Copiar
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={handleEditAndSend} className="h-9">
+                            Editar e Enviar
+                          </Button>
+                        </div>
                       )}
                     </div>
+                  ) : suggestionLoading ? (
+                    <div className="text-center py-8">
+                      <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mb-3">
+                        <Bot className="h-4 w-4 animate-spin" />
+                        Gerando sugestão da IA...
+                      </div>
+                      <div className="h-2 bg-muted rounded-full overflow-hidden">
+                        <div className="h-full bg-primary/50 rounded-full animate-pulse" style={{width: '60%'}}></div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Bot className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Gere uma sugestão de resposta baseada no contexto do ticket
+                      </p>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={generateSuggestion}
+                        className="h-9"
+                      >
+                        <Zap className="h-4 w-4 mr-2" />
+                        Gerar Sugestão
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
-                    {/* Send Message */}
-                    <div className="space-y-4">
+              {/* Messages Section */}
+              <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4" />
+                    Conversas ({messages.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4 max-h-[300px] overflow-y-auto">
+                    {messages.length === 0 ? (
+                      <div className="text-center py-8">
+                        <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
+                        <p className="text-sm text-muted-foreground">Nenhuma mensagem ainda</p>
+                      </div>
+                    ) : (
+                      messages.map((message) => (
+                        <div key={message.id} className="flex gap-3 p-3 bg-muted/20 rounded-lg">
+                          <div className="p-2 bg-primary/10 rounded-full shrink-0">
+                            <User className="h-4 w-4 text-primary" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-sm font-medium">
+                                {message.profiles?.nome_completo || 'Sistema'}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {formatDistanceToNowInSaoPaulo(message.created_at)}
+                              </span>
+                            </div>
+                            <p className="text-sm text-muted-foreground break-words">
+                              {message.mensagem}
+                            </p>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  {/* Send Message Form */}
+                  <div className="mt-4 pt-4 border-t">
+                    <div className="flex gap-3">
                       <Textarea
                         placeholder="Digite sua mensagem..."
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
-                        rows={4}
-                        className="text-sm resize-none"
+                        onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSendMessage())}
+                        className="flex-1 min-h-[60px] resize-none"
+                        disabled={messagesLoading}
                       />
-                      <div className="flex justify-between items-center gap-3">
-                        <Button variant="outline" size="sm" className="h-10 px-4">
-                          <Paperclip className="h-4 w-4 mr-2" />
-                          Anexar
+                      <div className="flex flex-col gap-2">
+                        <Button 
+                          onClick={handleSendMessage}
+                          disabled={!newMessage.trim() || messagesLoading}
+                          size="icon"
+                          className="h-10 w-10 shrink-0"
+                        >
+                          <Send className="h-4 w-4" />
                         </Button>
-                        <div className="flex gap-3">
-                          <Button 
-                            size="sm" 
-                            onClick={handleSendMessage}
-                            disabled={!newMessage.trim()}
-                            className="h-10 px-6"
-                          >
-                            <Send className="h-4 w-4 mr-2" />
-                            Enviar
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={handleSendToFranqueado}
-                            disabled={!newMessage.trim() || isSendingToFranqueado || !ticket?.franqueado_id}
-                            title={!ticket?.franqueado_id ? 'Nenhum franqueado vinculado a este ticket' : ''}
-                            className="h-10 px-4"
-                          >
-                            <Phone className="h-4 w-4 mr-2" />
-                            {isSendingToFranqueado ? 'Enviando...' : 'Enviar para Franqueado'}
-                          </Button>
-                        </div>
+                        <Button 
+                          onClick={handleSendToFranqueado}
+                          disabled={!newMessage.trim() || isSendingToFranqueado}
+                          size="sm"
+                          variant="outline"
+                          className="text-xs h-8 w-16"
+                        >
+                          {isSendingToFranqueado ? (
+                            <div className="h-3 w-3 animate-spin rounded-full border border-primary border-t-transparent" />
+                          ) : (
+                            <ExternalLink className="h-3 w-3" />
+                          )}
+                        </Button>
                       </div>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {activeTab === 'detalhes' && (
+            <div className="space-y-6">
+              {/* Info Cards Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Unidade Card */}
+                <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50 hover:bg-card/70">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                        <Building className="h-4 w-4 text-blue-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-muted-foreground mb-1">Unidade</p>
+                        <p className="font-semibold text-sm truncate">
+                          {ticket.unidades?.grupo || ticket.unidade_id}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Solicitante Card */}
+                <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50 hover:bg-card/70">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-green-500/10 border border-green-500/20 rounded-lg">
+                        <User className="h-4 w-4 text-green-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-muted-foreground mb-1">Solicitante</p>
+                        <p className="font-semibold text-sm truncate">
+                          {ticket.colaboradores?.nome_completo || 
+                           ticket.profiles?.nome_completo || 
+                           (ticket.franqueado_id ? (ticket.franqueados?.name || "Franqueado") : "Sistema")}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Prioridade/Equipe Card */}
+                <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50 hover:bg-card/70">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-purple-500/10 border border-purple-500/20 rounded-lg">
+                        <Tag className="h-4 w-4 text-purple-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="text-xs text-muted-foreground">Prioridade</p>
+                          <Badge variant={getPriorityVariant(ticket.prioridade)} className="text-xs h-5">
+                            {ticket.prioridade === 'crise' && <Zap className="h-3 w-3 mr-1" />}
+                            {ticket.prioridade?.toUpperCase()}
+                          </Badge>
+                        </div>
+                        <p className="font-semibold text-sm truncate">
+                          {ticket.equipes?.nome || 'Aguardando designação'}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Description Card */}
+              <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Descrição do Problema
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                    {ticket.descricao_problema || 'Nenhuma descrição fornecida'}
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Status e Equipe Controls */}
+              <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Settings className="h-4 w-4" />
+                    Controles do Ticket
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Status Control */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Status</Label>
+                    <Select value={ticket.status} onValueChange={handleStatusChange}>
+                      <SelectTrigger className="h-9">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="aberto">Aberto</SelectItem>
+                        <SelectItem value="em_atendimento">Em Atendimento</SelectItem>
+                        <SelectItem value="escalonado">Escalonado</SelectItem>
+                        <SelectItem value="concluido">Concluído</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Equipe Control */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Equipe Responsável</Label>
+                    <Select value={ticket.equipe_responsavel_id || ''} onValueChange={handleEquipeChange}>
+                      <SelectTrigger className="h-9">
+                        <SelectValue placeholder="Selecionar equipe" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Nenhuma equipe</SelectItem>
+                        {equipes.map((equipe) => (
+                          <SelectItem key={equipe.id} value={equipe.id}>
+                            {equipe.nome}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                {ticket.status === 'aberto' && (
+                  <Button onClick={handleStartAttendance} className="flex-1">
+                    <Play className="h-4 w-4 mr-2" />
+                    Iniciar Atendimento
+                  </Button>
                 )}
-              </CardContent>
-            </Card>
-          </div>
+                
+                {ticket.status === 'em_atendimento' && (
+                  <Button onClick={handleResolveTicket} className="flex-1" variant="outline">
+                    <Check className="h-4 w-4 mr-2" />
+                    Concluir Ticket
+                  </Button>
+                )}
+
+                <CrisisButton ticketId={ticketId} currentPriority={ticket.prioridade} />
+                <TicketActions ticket={ticket} equipes={equipes} />
+              </div>
+            </div>
+          )}
         </div>
+      </div>
     </div>
   );
 };
