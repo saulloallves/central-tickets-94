@@ -440,6 +440,11 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
       console.log('🔄 Force refetching tickets after move');
       await fetchTickets(true);
       
+      toast({
+        title: "✅ Sucesso",
+        description: "Ticket movido com sucesso",
+      });
+      
       return true;
     } catch (error) {
       console.error('Error moving ticket:', error);
