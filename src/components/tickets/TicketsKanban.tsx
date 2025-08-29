@@ -44,6 +44,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useTickets, type TicketFilters, type Ticket } from '@/hooks/useTickets';
 import { useTicketsEdgeFunctions } from '@/hooks/useTicketsEdgeFunctions';
 import { useSimpleTicketDragDrop } from '@/hooks/useSimpleTicketDragDrop';
+import { useToast } from '@/hooks/use-toast';
 import { TicketDetail } from './TicketDetail';
 import { TicketActions } from './TicketActions';
 import { useNewCrisisManagement } from '@/hooks/useNewCrisisManagement';
@@ -476,6 +477,7 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
   // Estado otimista para drag and drop
   const [optimisticTickets, setOptimisticTickets] = useState<Ticket[]>([]);
   const [pendingMoves, setPendingMoves] = useState<Set<string>>(new Set());
+  const { toast } = useToast();
   
   const { activeCrises } = useNewCrisisManagement();
   
@@ -603,15 +605,19 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
       return;
     }
 
-    console.log('🎯 Starting drag-drop update:', {
+    console.log('🎯 Starting optimistic update:', {
       ticketId,
       ticketCode: ticket.codigo_ticket,
       from: ticket.status,
       to: newStatus
     });
 
-    // Atualização otimista - mover card imediatamente
-    const optimisticTicketsCopy = [...(optimisticTickets.length > 0 ? optimisticTickets : tickets)];
+    // 1. GUARDAR ESTADO ORIGINAL (para reversão em caso de erro)
+    const originalStatus = ticket.status;
+    const originalTicketsState = [...(optimisticTickets.length > 0 ? optimisticTickets : tickets)];
+
+    // 2. ATUALIZAÇÃO INSTANTÂNEA DA INTERFACE
+    const optimisticTicketsCopy = [...originalTicketsState];
     const ticketIndex = optimisticTicketsCopy.findIndex(t => t.id === ticketId);
     
     if (ticketIndex !== -1) {
@@ -621,31 +627,58 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
       };
       setOptimisticTickets(optimisticTicketsCopy);
       setPendingMoves(prev => new Set([...prev, ticketId]));
+      console.log('✨ Card movido instantaneamente para:', newStatus);
     }
 
-    // Enhanced move with position support
-    const success = await onChangeStatus(
-      ticketId, 
-      ticket.status, 
-      newStatus,
-      undefined, // beforeId - to be implemented with sortable ordering
-      undefined  // afterId - to be implemented with sortable ordering
-    );
-    
-    // Remove do pending moves
-    setPendingMoves(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(ticketId);
-      return newSet;
-    });
-    
-    if (success) {
-      console.log('✅ Drag-drop completed successfully');
-      // O realtime vai atualizar os tickets
-    } else {
-      console.log('❌ Drag-drop failed - reverting optimistic update');
-      // Reverter atualização otimista em caso de erro
-      setOptimisticTickets([]);
+    // 3. EXECUÇÃO EM SEGUNDO PLANO DA EDGE FUNCTION
+    try {
+      const success = await onChangeStatus(
+        ticketId, 
+        originalStatus, 
+        newStatus,
+        undefined, // beforeId - to be implemented with sortable ordering
+        undefined  // afterId - to be implemented with sortable ordering
+      );
+      
+      // Remove do pending moves
+      setPendingMoves(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(ticketId);
+        return newSet;
+      });
+      
+      if (success) {
+        // 4. TRATAMENTO DE SUCESSO - Manter card na nova posição
+        console.log('✅ Ticket movido com sucesso! Card permanece na nova posição.');
+        // A mensagem de sucesso já é exibida pelo hook useTicketsEdgeFunctions
+      } else {
+        // 5. TRATAMENTO DE FALHA - Reverter para posição original
+        console.log('❌ Falha ao mover ticket - revertendo para posição original');
+        setOptimisticTickets(originalTicketsState);
+        
+        toast({
+          title: "❌ Erro ao mover ticket",
+          description: "Ocorreu um erro ao mover o ticket. Tente novamente.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      // 5. TRATAMENTO DE ERRO - Reverter para posição original
+      console.error('❌ Erro na Edge Function - revertendo:', error);
+      
+      setPendingMoves(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(ticketId);
+        return newSet;
+      });
+      
+      setOptimisticTickets(originalTicketsState);
+      
+      toast({
+        title: "❌ Erro ao mover ticket",
+        description: "Ocorreu um erro ao mover o ticket. Tente novamente.",
+        variant: "destructive",
+      });
     }
   };
 
