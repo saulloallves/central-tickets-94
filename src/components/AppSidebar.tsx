@@ -110,7 +110,7 @@ export function AppSidebar() {
                             )}
                           </div>
                           <span className={cn(
-                            "text-white text-sm font-medium transition-all duration-300 drop-shadow-md",
+                            "text-white text-sm font-medium transition-all duration-300 drop-shadow-md whitespace-nowrap",
                             isActive ? "opacity-100" : "opacity-90"
                           )}>
                             {item.title}
