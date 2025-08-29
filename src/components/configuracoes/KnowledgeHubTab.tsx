@@ -7,13 +7,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-// Removed Tabs imports as they're no longer needed
-import { useKnowledgeSuggestions } from '@/hooks/useKnowledgeSuggestions';
 import { useKnowledgeArticles } from '@/hooks/useKnowledgeArticles';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { CreateMemoryModal } from './CreateMemoryModal';
-import { Search, Eye, Check, X, Edit, Users, Download, FileText, Plus, BookOpen, Brain, Trash2 } from 'lucide-react';
+import { Search, Check, Edit, Download, FileText, Plus, BookOpen, Brain, Trash2 } from 'lucide-react';
 
 // Extended type for KnowledgeArticle with new fields
 interface ExtendedKnowledgeArticle {
@@ -54,23 +52,12 @@ export const KnowledgeHubTab = () => {
   const [selectedCategoria, setSelectedCategoria] = useState<string>('all');
   const [categorias, setCategorias] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedSuggestion, setSelectedSuggestion] = useState<any>(null);
   const [selectedArticle, setSelectedArticle] = useState<any>(null);
-  const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isCreateMemoryModalOpen, setIsCreateMemoryModalOpen] = useState(false);
   const [selectedRAGDoc, setSelectedRAGDoc] = useState<RAGDocument | null>(null);
   const [importProgress, setImportProgress] = useState({ current: 0, total: 0, importing: false });
-  
-  const [approvalData, setApprovalData] = useState({
-    titulo: '',
-    conteudo: '',
-    categoria: '',
-    tags: [] as string[],
-    tipo_midia: 'texto' as const
-  });
-
   const [editData, setEditData] = useState({
     id: '',
     titulo: '',
@@ -82,7 +69,6 @@ export const KnowledgeHubTab = () => {
     usado_pela_ia: false
   });
 
-  const { suggestions, loading: loadingSuggestions, fetchSuggestions, updateSuggestionStatus } = useKnowledgeSuggestions();
   const { articles, loading: loadingArticles, fetchArticles, createArticle, updateArticle } = useKnowledgeArticles();
   const { toast } = useToast();
 
@@ -141,7 +127,6 @@ export const KnowledgeHubTab = () => {
       filters.categoria = selectedCategoria;
     }
     
-    fetchSuggestions();
     fetchArticles(filters);
   }, [selectedCategoria]);
 
@@ -174,17 +159,10 @@ export const KnowledgeHubTab = () => {
     }
   };
 
-  const pendingSuggestions = suggestions.filter(s => s.status === 'pending');
-  const approvedSuggestions = suggestions.filter(s => s.status === 'approved');
-
   // Cast articles to extended type and separate by style  
   const extendedArticles = articles as ExtendedKnowledgeArticle[];
   const regularArticles = extendedArticles.filter(a => !a.estilo);
   const memoryArticles = extendedArticles.filter(a => a.estilo);
-
-  const filteredSuggestions = pendingSuggestions.filter(suggestion =>
-    suggestion.texto_sugerido.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   const filteredArticles = regularArticles.filter(article =>
     article.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -196,59 +174,6 @@ export const KnowledgeHubTab = () => {
     memory.conteudo.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleApproveSuggestion = (suggestion: any) => {
-    setSelectedSuggestion(suggestion);
-    setApprovalData({
-      titulo: `Artigo baseado em sugestão #${suggestion.id.slice(0, 8)}`,
-      conteudo: suggestion.texto_sugerido,
-      categoria: '',
-      tags: [],
-      tipo_midia: 'texto'
-    });
-    setIsApprovalModalOpen(true);
-  };
-
-  const handleRejectSuggestion = async (suggestionId: string) => {
-    const { data: userData } = await supabase.auth.getUser();
-    await updateSuggestionStatus(suggestionId, 'rejected', userData.user?.id);
-  };
-
-  const handlePublishArticle = async () => {
-    try {
-      // Automaticamente marca como usado pela IA e aprovado quando publica
-      const articleDataWithAI = {
-        ...approvalData,
-        usado_pela_ia: true,
-        aprovado: true
-      };
-      
-      const articleData = await createArticle(articleDataWithAI);
-      
-      if (articleData && selectedSuggestion) {
-        const { data: userData } = await supabase.auth.getUser();
-        await supabase
-          .from('knowledge_suggestions')
-          .update({ article_id: articleData.id })
-          .eq('id', selectedSuggestion.id);
-
-        await updateSuggestionStatus(selectedSuggestion.id, 'approved', userData.user?.id);
-      }
-
-      setIsApprovalModalOpen(false);
-      setSelectedSuggestion(null);
-      toast({
-        title: "✅ Artigo Publicado",
-        description: "Sugestão aprovada, convertida em artigo e automaticamente ativada para uso da IA",
-      });
-    } catch (error) {
-      console.error('Error publishing article:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível publicar o artigo",
-        variant: "destructive",
-      });
-    }
-  };
 
   const handleEditArticle = (article: any) => {
     console.log('Artigo selecionado para edição:', article);
@@ -340,16 +265,29 @@ export const KnowledgeHubTab = () => {
   };
 
   const handleImportRAGDocument = async (ragDoc: RAGDocument) => {
-    setSelectedRAGDoc(ragDoc);
-    const title = ragDoc.metadata?.title || ragDoc.metadata?.source || `Documento ${ragDoc.id}`;
-    setApprovalData({
-      titulo: title,
-      conteudo: ragDoc.content,
-      categoria: '',
-      tags: ragDoc.metadata?.tags || [],
-      tipo_midia: 'texto'
-    });
-    setIsImportModalOpen(true);
+    try {
+      const title = ragDoc.metadata?.title || ragDoc.metadata?.source || `Documento ${ragDoc.id}`;
+      
+      await createArticle({
+        titulo: title,
+        conteudo: ragDoc.content,
+        categoria: '',
+        tags: ragDoc.metadata?.tags || [],
+        tipo_midia: 'texto'
+      });
+      
+      toast({
+        title: "✅ Documento Importado",
+        description: "Documento RAG convertido em artigo com sucesso",
+      });
+    } catch (error) {
+      console.error('Error importing RAG document:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível importar o documento",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleImportAllRAGDocuments = async () => {
@@ -442,45 +380,7 @@ export const KnowledgeHubTab = () => {
     }
   };
 
-  const handleConfirmImport = async () => {
-    try {
-      const finalApprovalData = {
-        ...approvalData,
-        usado_pela_ia: true,
-        aprovado: true
-      };
-      
-      await createArticle(finalApprovalData);
-      
-      setIsImportModalOpen(false);
-      setSelectedRAGDoc(null);
-      
-      toast({
-        title: "✅ Documento Importado",
-        description: "Documento RAG convertido em artigo, aprovado e ativado para IA automaticamente",
-      });
-    } catch (error) {
-      console.error('Error importing RAG document:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível importar o documento",
-        variant: "destructive",
-      });
-    }
-  };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return <Badge variant="outline" className="text-yellow-600 border-yellow-300">Pendente</Badge>;
-      case 'approved':
-        return <Badge variant="outline" className="text-green-600 border-green-300">Aprovada</Badge>;
-      case 'rejected':
-        return <Badge variant="outline" className="text-red-600 border-red-300">Rejeitada</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
-  };
 
   const getEstiloBadge = (estilo?: string | null) => {
     if (!estilo) return null;
@@ -536,17 +436,7 @@ export const KnowledgeHubTab = () => {
       </div>
 
       {/* Statistics */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Sugestões Pendentes</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{pendingSuggestions.length}</div>
-          </CardContent>
-        </Card>
-        
+      <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Artigos Publicados</CardTitle>
@@ -569,91 +459,68 @@ export const KnowledgeHubTab = () => {
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Sugestões Aprovadas</CardTitle>
-            <Eye className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Documentos RAG</CardTitle>
+            <Download className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{approvedSuggestions.length}</div>
+            <div className="text-2xl font-bold">{ragDocuments.length}</div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Seção 1: Sugestões Pendentes */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base font-medium">
-            Sugestões Pendentes
-            <Badge variant="secondary" className="ml-2">
-              {filteredSuggestions.length}
-            </Badge>
-          </CardTitle>
-          <CardDescription className="text-sm">
-            Sugestões da IA aguardando aprovação para se tornarem artigos
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loadingSuggestions ? (
-            <div className="text-center py-8">Carregando sugestões...</div>
-          ) : filteredSuggestions.length === 0 ? (
-            <Card>
-              <CardContent className="py-8 text-center">
-                <p className="text-muted-foreground">Nenhuma sugestão pendente encontrada</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-4">
-              {filteredSuggestions.map((suggestion) => (
-                <Card key={suggestion.id}>
-                  <CardHeader className="pb-3">
+      {/* Documentos RAG Disponíveis */}
+      {ragDocuments.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base font-medium flex items-center justify-between">
+              <span>
+                Documentos RAG Disponíveis
+                <Badge variant="secondary" className="ml-2">
+                  {ragDocuments.length}
+                </Badge>
+              </span>
+              <Button onClick={handleImportAllRAGDocuments} variant="outline" className="gap-2">
+                <Download className="h-4 w-4" />
+                Importar Todos
+              </Button>
+            </CardTitle>
+            <CardDescription className="text-sm">
+              Documentos disponíveis para importação da base RAG
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 max-h-64 overflow-y-auto">
+              {ragDocuments.slice(0, 5).map((ragDoc) => (
+                <Card key={ragDoc.id} className="border-dashed">
+                  <CardContent className="pt-4">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        {getStatusBadge(suggestion.status)}
-                        <span className="text-sm text-muted-foreground">
-                          {suggestion.modelo_provedor === 'openai' ? 'Lambda' : suggestion.modelo_provedor} • {new Date(suggestion.created_at).toLocaleDateString('pt-BR')}
-                        </span>
+                      <div className="flex-1">
+                        <h4 className="font-medium text-sm">
+                          {ragDoc.metadata?.title || ragDoc.metadata?.source || `Documento ${ragDoc.id}`}
+                        </h4>
+                        <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
+                          {ragDoc.content.substring(0, 150)}...
+                        </p>
                       </div>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleApproveSuggestion(suggestion)}
-                          className="gap-1"
-                        >
-                          <Check className="h-3 w-3" />
-                          Aprovar
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleRejectSuggestion(suggestion.id)}
-                          className="gap-1 text-red-600 hover:text-red-700"
-                        >
-                          <X className="h-3 w-3" />
-                          Rejeitar
-                        </Button>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <p className="text-sm leading-relaxed line-clamp-3">
-                        {suggestion.texto_sugerido}
-                      </p>
-                      {suggestion.tickets && (
-                        <div className="text-xs text-muted-foreground">
-                          Baseado no ticket: {suggestion.tickets.codigo_ticket}
-                        </div>
-                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleImportRAGDocument(ragDoc)}
+                        className="gap-1 ml-4"
+                      >
+                        <Download className="h-3 w-3" />
+                        Importar
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
               ))}
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Seção 2: Artigos Publicados */}
+      {/* Artigos Publicados */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base font-medium">
@@ -846,59 +713,6 @@ export const KnowledgeHubTab = () => {
         }}
       />
 
-      {/* Approval Modal */}
-      <Dialog open={isApprovalModalOpen} onOpenChange={setIsApprovalModalOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Aprovar e Publicar Artigo</DialogTitle>
-            <DialogDescription>
-              Revise e edite o conteúdo antes de publicar na base de conhecimento
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="titulo">Título do Artigo</Label>
-              <Input
-                id="titulo"
-                value={approvalData.titulo}
-                onChange={(e) => setApprovalData({ ...approvalData, titulo: e.target.value })}
-                placeholder="Digite o título do artigo"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="categoria">Categoria</Label>
-              <Input
-                id="categoria"
-                value={approvalData.categoria}
-                onChange={(e) => setApprovalData({ ...approvalData, categoria: e.target.value })}
-                placeholder="Digite a categoria do artigo"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="conteudo">Conteúdo</Label>
-              <Textarea
-                id="conteudo"
-                value={approvalData.conteudo}
-                onChange={(e) => setApprovalData({ ...approvalData, conteudo: e.target.value })}
-                rows={8}
-                placeholder="Digite o conteúdo do artigo"
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsApprovalModalOpen(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handlePublishArticle}>
-              Publicar Artigo
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Edit Article Modal */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
@@ -978,92 +792,6 @@ export const KnowledgeHubTab = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Import RAG Document Modal */}
-      <Dialog open={isImportModalOpen} onOpenChange={setIsImportModalOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Importar Documento RAG</DialogTitle>
-            <DialogDescription>
-              Revise as informações antes de importar para a base de conhecimento
-            </DialogDescription>
-          </DialogHeader>
-          
-          {selectedRAGDoc ? (
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="import-titulo">Título do Artigo</Label>
-                <Input
-                  id="import-titulo"
-                  value={approvalData.titulo}
-                  onChange={(e) => setApprovalData({ ...approvalData, titulo: e.target.value })}
-                  placeholder="Digite o título do artigo"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="import-categoria">Categoria</Label>
-                <Input
-                  id="import-categoria"
-                  value={approvalData.categoria}
-                  onChange={(e) => setApprovalData({ ...approvalData, categoria: e.target.value })}
-                  placeholder="Digite a categoria do artigo"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="import-conteudo">Conteúdo</Label>
-                <Textarea
-                  id="import-conteudo"
-                  value={approvalData.conteudo}
-                  onChange={(e) => setApprovalData({ ...approvalData, conteudo: e.target.value })}
-                  rows={8}
-                  placeholder="Conteúdo do documento"
-                />
-              </div>
-
-              <div className="bg-blue-50 p-3 rounded-lg">
-                <p className="text-sm text-blue-800">
-                  ✅ Este documento será automaticamente marcado como "Usado pela IA"
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <p>Selecione documentos RAG para importar:</p>
-              <div className="max-h-60 overflow-y-auto space-y-2">
-                {ragDocuments.map((ragDoc) => (
-                  <div 
-                    key={ragDoc.id} 
-                    className="p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
-                    onClick={() => setSelectedRAGDoc(ragDoc)}
-                  >
-                    <h4 className="font-medium">
-                      {ragDoc.metadata?.title || ragDoc.metadata?.source || `Documento ${ragDoc.id}`}
-                    </h4>
-                    <p className="text-sm text-gray-600 line-clamp-2">
-                      {ragDoc.content?.substring(0, 150)}...
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setIsImportModalOpen(false);
-              setSelectedRAGDoc(null);
-            }}>
-              Cancelar
-            </Button>
-            {selectedRAGDoc ? (
-              <Button onClick={handleConfirmImport}>
-                Importar Documento
-              </Button>
-            ) : null}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
