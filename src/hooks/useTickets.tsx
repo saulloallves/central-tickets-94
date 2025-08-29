@@ -990,22 +990,8 @@ export const useTicketMessages = (ticketId: string) => {
         return;
       }
 
-      // Adicionar mensagem otimisticamente na interface
-      const { data: user } = await supabase.auth.getUser();
-      const newMessage: TicketMessage = {
-        id: data.id,
-        ticket_id: data.ticket_id,
-        usuario_id: data.usuario_id,
-        mensagem: data.mensagem,
-        direcao: data.direcao,
-        anexos: data.anexos ? (Array.isArray(data.anexos) ? data.anexos : []) : [],
-        canal: data.canal,
-        created_at: data.created_at,
-        updated_at: data.updated_at,
-        profiles: user.user ? { nome_completo: user.user.user_metadata?.nome_completo || 'Você' } : undefined
-      };
-      
-      setMessages(prev => [...prev, newMessage]);
+      // Don't add optimistically - let realtime handle it
+      // The realtime subscription will trigger fetchMessages() and update the state
       
       // Enviar notificação WhatsApp para o grupo
       try {
