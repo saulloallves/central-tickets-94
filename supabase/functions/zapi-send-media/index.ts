@@ -48,6 +48,13 @@ serve(async (req) => {
     const zapiClientToken = Deno.env.get('ZAPI_CLIENT_TOKEN');
     const zapiBaseUrl = Deno.env.get('ZAPI_BASE_URL') || 'https://api.z-api.io';
 
+    console.log('Z-API Configuration Check:', {
+      hasInstanceId: !!zapiInstanceId,
+      hasToken: !!zapiToken,
+      hasClientToken: !!zapiClientToken,
+      baseUrl: zapiBaseUrl
+    });
+
     if (!zapiInstanceId || !zapiToken || !zapiClientToken) {
       console.error('Missing Z-API configuration');
       return new Response(
@@ -85,12 +92,22 @@ serve(async (req) => {
     // Get franqueado details using the franqueado_id
     let destinationPhone = null;
     
+    console.log('Ticket details:', { ticketId, franqueado_id: ticket.franqueado_id, unidade_id: ticket.unidade_id });
+    
     if (ticket.franqueado_id) {
       const { data: franqueado, error: franqueadoError } = await supabase
         .from('franqueados')
         .select('phone, normalized_phone')
         .eq('id', ticket.franqueado_id)
         .single();
+        
+      console.log('Franqueado lookup:', { 
+        franqueado_id: ticket.franqueado_id, 
+        found: !!franqueado,
+        error: franqueadoError,
+        phone: franqueado?.phone,
+        normalized_phone: franqueado?.normalized_phone
+      });
         
       if (!franqueadoError && franqueado) {
         destinationPhone = franqueado.normalized_phone || franqueado.phone;
@@ -117,7 +134,8 @@ serve(async (req) => {
 
         console.log(`Sending ${attachment.type} via ${endpoint}:`, { 
           name: attachment.name, 
-          size: attachment.size 
+          size: attachment.size,
+          payload: JSON.stringify(payload, null, 2)
         });
 
         const response = await fetch(endpoint, {
@@ -129,7 +147,20 @@ serve(async (req) => {
           body: JSON.stringify(payload)
         });
 
-        const responseData = await response.json();
+        const responseText = await response.text();
+        console.log(`Z-API Response for ${attachment.name}:`, {
+          status: response.status,
+          statusText: response.statusText,
+          headers: Object.fromEntries(response.headers.entries()),
+          body: responseText
+        });
+
+        let responseData;
+        try {
+          responseData = JSON.parse(responseText);
+        } catch (e) {
+          responseData = { error: `Invalid JSON response: ${responseText}` };
+        }
 
         if (response.ok) {
           console.log(`Successfully sent ${attachment.name}:`, responseData);
@@ -144,7 +175,7 @@ serve(async (req) => {
           results.push({
             file: attachment.name,
             success: false,
-            error: responseData.error || 'Unknown error'
+            error: responseData.error || responseText || 'Unknown error'
           });
         }
       } catch (error) {
