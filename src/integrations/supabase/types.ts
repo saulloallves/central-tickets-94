@@ -2573,6 +2573,21 @@ export type Database = {
         }
         Returns: undefined
       }
+      match_documentos: {
+        Args: {
+          match_count?: number
+          match_threshold?: number
+          query_embedding: string
+        }
+        Returns: {
+          categoria: string
+          conteudo: Json
+          id: string
+          similarity: number
+          titulo: string
+          versao: number
+        }[]
+      }
       next_ticket_code: {
         Args: { p_unidade_id: string }
         Returns: string
