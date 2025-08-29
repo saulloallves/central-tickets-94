@@ -944,12 +944,12 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                   {/* Equipe Control */}
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">Equipe Responsável</Label>
-                    <Select value={ticket.equipe_responsavel_id || ''} onValueChange={handleEquipeChange}>
+                    <Select value={ticket.equipe_responsavel_id || 'none'} onValueChange={(value) => handleEquipeChange(value === 'none' ? '' : value)}>
                       <SelectTrigger className="h-9">
                         <SelectValue placeholder="Selecionar equipe" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Nenhuma equipe</SelectItem>
+                        <SelectItem value="none">Nenhuma equipe</SelectItem>
                         {equipes.map((equipe) => (
                           <SelectItem key={equipe.id} value={equipe.id}>
                             {equipe.nome}
