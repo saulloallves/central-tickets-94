@@ -426,6 +426,11 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
 
       if (error) {
         console.error('❌ Edge function error moving ticket:', error);
+        toast({
+          title: "❌ Erro",
+          description: "Erro ao mover o ticket. Tente novamente.",
+          variant: "destructive",
+        });
         return false;
       }
 
@@ -438,6 +443,11 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
       return true;
     } catch (error) {
       console.error('Error moving ticket:', error);
+      toast({
+        title: "❌ Erro",
+        description: "Erro inesperado ao mover ticket. Tente novamente.",
+        variant: "destructive",
+      });
       return false;
     }
   };
