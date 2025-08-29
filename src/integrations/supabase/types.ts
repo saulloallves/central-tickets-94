@@ -340,6 +340,7 @@ export type Database = {
       documentos: {
         Row: {
           artigo_id: string
+          categoria: string | null
           conteudo: Json | null
           criado_em: string
           criado_por: string
@@ -356,6 +357,7 @@ export type Database = {
         }
         Insert: {
           artigo_id: string
+          categoria?: string | null
           conteudo?: Json | null
           criado_em?: string
           criado_por: string
@@ -372,6 +374,7 @@ export type Database = {
         }
         Update: {
           artigo_id?: string
+          categoria?: string | null
           conteudo?: Json | null
           criado_em?: string
           criado_por?: string

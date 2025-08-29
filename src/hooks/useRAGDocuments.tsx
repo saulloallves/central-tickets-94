@@ -8,6 +8,7 @@ interface RAGDocument {
   artigo_id: string;
   titulo: string;
   conteudo: any;
+  categoria: string;
   versao: number;
   parent_id?: string;
   tipo: 'permanente' | 'temporario';
@@ -23,6 +24,7 @@ interface RAGDocument {
 interface DocumentFilters {
   status?: string;
   tipo?: string;
+  categoria?: string;
   search?: string;
 }
 
@@ -47,6 +49,7 @@ export const useRAGDocuments = () => {
         body: {
           status_filter: filters?.status || null,
           tipo_filter: filters?.tipo || null,
+          categoria_filter: filters?.categoria || null,
           search_term: filters?.search || null
         }
       });
@@ -69,6 +72,7 @@ export const useRAGDocuments = () => {
   const createDocument = async (documentData: {
     titulo: string;
     conteudo: any;
+    categoria?: string;
     tipo?: 'permanente' | 'temporario';
     valido_ate?: string;
     tags?: string[];

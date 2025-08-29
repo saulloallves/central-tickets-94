@@ -20,7 +20,7 @@ serve(async (req) => {
   }
 
   try {
-    const { titulo, conteudo, tipo, valido_ate, tags, justificativa, artigo_id } = await req.json();
+    const { titulo, conteudo, categoria, tipo, valido_ate, tags, justificativa, artigo_id } = await req.json();
     
     if (!titulo || !conteudo || !justificativa) {
       return new Response(
@@ -85,6 +85,7 @@ serve(async (req) => {
     const documentData = {
       titulo,
       conteudo: typeof conteudo === 'string' ? { texto: conteudo } : conteudo,
+      categoria: categoria || 'geral',
       tipo: tipo || 'permanente',
       valido_ate,
       tags: tags || [],
