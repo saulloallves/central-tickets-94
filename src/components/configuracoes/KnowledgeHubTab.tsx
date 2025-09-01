@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { TesteRAGSemantico } from './TesteRAGSemantico';
+
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Switch } from '@/components/ui/switch';
 import { Plus, Search, FileText, AlertTriangle, Database, TrendingUp, Shield, CheckCircle, Bot, Sparkles, Settings, FileUp, FilePlus, X, Info, Eye } from 'lucide-react';
@@ -216,22 +216,6 @@ const KnowledgeHubTab = () => {
 
   return (
     <div className="space-y-6">
-      {/* Teste RAG Semântico */}
-      <Card className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            🧠 Teste RAG Semântico
-            <Badge variant="secondary">NOVO</Badge>
-          </CardTitle>
-          <CardDescription>
-            Teste como o sistema entende ASSUNTOS através de embeddings semânticos vs busca tradicional
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <TesteRAGSemantico />
-        </CardContent>
-      </Card>
-
       {/* Header com estatísticas RAG */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card>
