@@ -19,29 +19,29 @@ serve(async (req) => {
   }
 
   try {
-    const { query, assunto, categoria } = await req.json();
+    const { titulo, conteudo } = await req.json();
     
-    if (!query) {
-      throw new Error('Query é obrigatório');
+    if (!titulo && !conteudo) {
+      throw new Error('Título ou conteúdo é obrigatório');
     }
 
-    console.log('=== TESTE RAG SEMÂNTICO ===');
-    console.log('Query:', query);
-    console.log('Assunto:', assunto);
-    console.log('Categoria:', categoria);
+    // Combina título + conteúdo conforme a documentação
+    const textoCompleto = `Título: ${titulo || ''}\nConteúdo: ${conteudo || ''}`.trim();
+    
+    if (textoCompleto.length < 50) {
+      console.log("Texto muito curto para análise semântica");
+      return new Response(JSON.stringify({
+        documentos_relacionados: [],
+        recomendacao: "Texto muito curto para análise. Escreva mais conteúdo."
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
-    // 1. CRIAR EMBEDDING SEMÂNTICO RICO EM CONTEXTO
-    const queryContextual = `
-ASSUNTO/PROBLEMA: ${assunto || 'Análise geral'}
-CATEGORIA: ${categoria || 'Geral'}
-CONTEXTO: ${query}
-INTENT: Buscar documentos que tratam do mesmo tipo de problema/assunto
-FOCO: Compreensão semântica do problema, não apenas palavras
-    `.trim();
+    console.log('=== VERIFICAÇÃO DE ASSUNTOS RELACIONADOS ===');
+    console.log('Texto completo:', textoCompleto.substring(0, 200) + '...');
 
-    console.log('Query contextual para embedding:', queryContextual);
-
-    // 2. GERAR EMBEDDING COM MODELO MAIS AVANÇADO
+    // Gera o embedding conforme a documentação
     const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
       method: 'POST',
       headers: {
@@ -50,8 +50,7 @@ FOCO: Compreensão semântica do problema, não apenas palavras
       },
       body: JSON.stringify({
         model: 'text-embedding-3-large',
-        input: queryContextual,
-        dimensions: 1536
+        input: textoCompleto,
       }),
     });
 
@@ -63,95 +62,63 @@ FOCO: Compreensão semântica do problema, não apenas palavras
     const embeddingData = await embeddingResponse.json();
     const queryEmbedding = embeddingData.data[0].embedding;
 
-    console.log('Embedding gerado com dimensões:', queryEmbedding.length);
+    console.log('Embedding gerado');
 
-    // 3. BUSCA SEMÂNTICA AVANÇADA
-    const { data: resultadosSemanticos, error: semanticoError } = await supabase.rpc('match_documentos_semantico', {
+    // Configura busca conforme a documentação
+    const LIMIAR_DE_RELEVANCIA = 0.75; // Limiar mais baixo para pegar ideias relacionadas
+    const MAXIMO_DE_DOCUMENTOS = 5;    // Lista útil para análise
+
+    // Chama a função match_documentos conforme a documentação
+    const { data: documentosExistentes, error } = await supabase.rpc('match_documentos', {
       query_embedding: queryEmbedding,
-      query_text: query,
-      match_threshold: 0.60, // Threshold mais permissivo para teste
-      match_count: 10,
-      require_category_match: categoria ? true : false,
-      categoria_filtro: categoria
+      match_threshold: LIMIAR_DE_RELEVANCIA,
+      match_count: MAXIMO_DE_DOCUMENTOS
     });
 
-    if (semanticoError) {
-      console.error('Erro na busca semântica:', semanticoError);
-      throw semanticoError;
+    if (error) {
+      console.error("Erro ao verificar assuntos relacionados:", error);
+      throw new Error("Falha na consulta à base de conhecimento.");
     }
 
-    console.log(`Busca semântica encontrou ${resultadosSemanticos?.length || 0} documentos`);
+    const artigosRelacionados = documentosExistentes || [];
+    console.log(`Encontrados ${artigosRelacionados.length} documentos relacionados`);
 
-    // 4. BUSCA TRADICIONAL PARA COMPARAÇÃO
-    const { data: resultadosTradicionais, error: tradicionalError } = await supabase.rpc('match_documentos', {
-      query_embedding: queryEmbedding,
-      match_threshold: 0.60,
-      match_count: 10
-    });
+    // Formata resultado conforme esperado pela interface
+    if (artigosRelacionados.length > 0) {
+      const documentosFormatados = artigosRelacionados.map(doc => ({
+        id: doc.id,
+        titulo: doc.titulo,
+        versao: doc.versao || 1,
+        similaridade: Math.round(doc.similaridade * 100),
+        categoria: doc.categoria,
+        conteudo_preview: typeof doc.conteudo === 'string' ? 
+          doc.conteudo.substring(0, 200) + '...' : 
+          'Conteúdo estruturado'
+      }));
 
-    if (tradicionalError) {
-      console.error('Erro na busca tradicional:', tradicionalError);
+      return new Response(JSON.stringify({
+        documentos_relacionados: documentosFormatados,
+        recomendacao: "Atenção! Encontramos artigos que já falam sobre este assunto. Considere atualizar um desses artigos em vez de criar um novo.",
+        deve_criar_novo: false
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    } else {
+      return new Response(JSON.stringify({
+        documentos_relacionados: [],
+        recomendacao: "Ótimo! Nenhum artigo parecido encontrado. Este parece ser um conteúdo novo.",
+        deve_criar_novo: true
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
-
-    // 5. ANÁLISE COMPARATIVA DOS RESULTADOS
-    const analiseSemantica = resultadosSemanticos?.map(doc => ({
-      id: doc.id,
-      titulo: doc.titulo,
-      categoria: doc.categoria,
-      similaridade_vetorial: (doc.similaridade * 100).toFixed(1) + '%',
-      relevancia_semantica: ((doc.relevancia_semantica || 0) * 100).toFixed(1) + '%',
-      score_final: ((doc.score_final || doc.similaridade) * 100).toFixed(1) + '%',
-      conteudo_preview: typeof doc.conteudo === 'string' ? 
-        doc.conteudo.substring(0, 200) + '...' : 
-        JSON.stringify(doc.conteudo).substring(0, 200) + '...'
-    })) || [];
-
-    const analiseTradicional = resultadosTradicionais?.map(doc => ({
-      id: doc.id,
-      titulo: doc.titulo,
-      categoria: doc.categoria,
-      similaridade: (doc.similaridade * 100).toFixed(1) + '%',
-      conteudo_preview: typeof doc.conteudo === 'string' ? 
-        doc.conteudo.substring(0, 200) + '...' : 
-        JSON.stringify(doc.conteudo).substring(0, 200) + '...'
-    })) || [];
-
-    // 6. DEMONSTRAR DIFERENÇA SEMÂNTICA
-    console.log('=== RESULTADOS COMPARATIVOS ===');
-    console.log('Semântico:', analiseSemantica.length, 'docs');
-    console.log('Tradicional:', analiseTradicional.length, 'docs');
-
-    return new Response(JSON.stringify({
-      sucesso: true,
-      query_original: query,
-      query_contextual: queryContextual,
-      assunto_detectado: assunto,
-      categoria_filtro: categoria,
-      resultados: {
-        busca_semantica: {
-          total: analiseSemantica.length,
-          documentos: analiseSemantica,
-          metodo: 'Embedding contextual + Score semântico'
-        },
-        busca_tradicional: {
-          total: analiseTradicional.length,
-          documentos: analiseTradicional,
-          metodo: 'Embedding simples + Similaridade cosseno'
-        }
-      },
-      diferenca_semantic: {
-        melhor_contexto: analiseSemantica.length > 0 ? analiseSemantica[0] : null,
-        explicacao: 'A busca semântica combina similaridade vetorial com relevância contextual para entender o ASSUNTO, não apenas palavras'
-      }
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
 
   } catch (error) {
-    console.error('Erro no teste RAG semântico:', error);
+    console.error('Erro na verificação de assuntos relacionados:', error);
     return new Response(JSON.stringify({ 
       erro: error.message,
-      contexto: 'Teste de busca semântica avançada'
+      documentos_relacionados: [],
+      recomendacao: "Erro na análise. Tente novamente."
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
