@@ -41,8 +41,8 @@ interface SemanticAnalysisModalProps {
     similarDocuments: SimilarDocument[];
     recommendation: string;
   }) => void;
-  onCreateNew: () => void;
-  onUpdateExisting?: (documentId: string) => void;
+  onCreateNew: () => Promise<void>;
+  onUpdateExisting?: (documentId: string) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -64,6 +64,7 @@ export const SemanticAnalysisModal = ({
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [hasStartedAnalysis, setHasStartedAnalysis] = useState(false);
+  const [isCreatingDocument, setIsCreatingDocument] = useState(false);
 
   // Reset states when modal opens/closes
   useEffect(() => {
@@ -75,6 +76,7 @@ export const SemanticAnalysisModal = ({
       setAnalysisResult(null);
       setError(null);
       setHasStartedAnalysis(false);
+      setIsCreatingDocument(false);
     }
   }, [open]);
 
@@ -232,20 +234,58 @@ export const SemanticAnalysisModal = ({
     return String(content);
   };
 
+  const handleCreateNew = async () => {
+    setIsCreatingDocument(true);
+    try {
+      await onCreateNew();
+    } catch (error) {
+      console.error('Erro ao criar documento:', error);
+      setIsCreatingDocument(false);
+    }
+  };
+
+  const handleUpdateExisting = async (documentId: string) => {
+    if (!onUpdateExisting) return;
+    setIsCreatingDocument(true);
+    try {
+      await onUpdateExisting(documentId);
+    } catch (error) {
+      console.error('Erro ao atualizar documento:', error);
+      setIsCreatingDocument(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={() => {}}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Bot className="h-5 w-5 text-blue-500" />
-            Análise Semântica Inteligente
+            {isCreatingDocument ? 'Criando Documento...' : 'Análise Semântica Inteligente'}
           </DialogTitle>
           <DialogDescription>
-            Analisando o documento com IA para identificar possíveis duplicatas e conteúdo similar
+            {isCreatingDocument 
+              ? 'Aguarde enquanto o documento está sendo criado na base de conhecimento...'
+              : 'Analisando o documento com IA para identificar possíveis duplicatas e conteúdo similar'
+            }
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 p-6">
+        {isCreatingDocument ? (
+          <div className="space-y-6 p-6 flex flex-col items-center justify-center min-h-[300px]">
+            <div className="flex flex-col items-center space-y-4">
+              <Loader2 className="h-12 w-12 text-blue-500 animate-spin" />
+              <div className="text-center">
+                <h3 className="text-lg font-medium">Criando documento...</h3>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Processando o conteúdo e gerando embeddings para busca semântica
+                </p>
+              </div>
+              <Progress value={100} className="w-64 h-2" />
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-6 p-6">
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm">Progresso da Análise</CardTitle>
@@ -440,13 +480,14 @@ export const SemanticAnalysisModal = ({
                 </>
               )}
             </>
-          )}
-        </div>
+           )}
+          </div>
+        )}
 
-        {currentStep === 'complete' && (
+        {currentStep === 'complete' && !isCreatingDocument && (
           <DialogFooter className="flex-col sm:flex-row gap-2">
             <div className="flex flex-1 gap-2">
-              <Button variant="outline" onClick={onCancel} className="flex-1">
+              <Button variant="outline" onClick={onCancel} className="flex-1" disabled={isCreatingDocument}>
                 <XCircle className="h-4 w-4 mr-2" />
                 Cancelar
               </Button>
@@ -454,8 +495,9 @@ export const SemanticAnalysisModal = ({
               {selectedDocumentId && onUpdateExisting && (
                 <Button 
                   variant="secondary" 
-                  onClick={() => onUpdateExisting(selectedDocumentId)}
+                  onClick={() => handleUpdateExisting(selectedDocumentId)}
                   className="flex-1"
+                  disabled={isCreatingDocument}
                 >
                   <BookOpen className="h-4 w-4 mr-2" />
                   Atualizar Selecionado
@@ -463,9 +505,22 @@ export const SemanticAnalysisModal = ({
               )}
             </div>
             
-            <Button onClick={onCreateNew} className="flex-1 sm:flex-none">
-              <CheckCircle className="h-4 w-4 mr-2" />
-              {similarDocuments.length > 0 ? 'Criar Mesmo Assim' : 'Criar Documento'}
+            <Button 
+              onClick={handleCreateNew} 
+              className="flex-1 sm:flex-none"
+              disabled={isCreatingDocument}
+            >
+              {isCreatingDocument ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Criando...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  {similarDocuments.length > 0 ? 'Criar Mesmo Assim' : 'Criar Documento'}
+                </>
+              )}
             </Button>
           </DialogFooter>
         )}
