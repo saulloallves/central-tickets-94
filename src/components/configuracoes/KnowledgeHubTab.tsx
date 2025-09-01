@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Search, FileText, AlertTriangle, Database, TrendingUp, Shield, CheckCircle, Bot, Sparkles, Settings, FileUp, FilePlus, X, Info } from 'lucide-react';
+import { Plus, Search, FileText, AlertTriangle, Database, TrendingUp, Shield, CheckCircle, Bot, Sparkles, Settings, FileUp, FilePlus, X, Info, Eye } from 'lucide-react';
 import { useRAGDocuments } from '@/hooks/useRAGDocuments';
 
 const KnowledgeHubTab = () => {
@@ -572,6 +572,15 @@ const KnowledgeHubTab = () => {
                                   : JSON.stringify(doc.conteudo).substring(0, 150) + '...'
                                 }
                               </p>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="mt-2"
+                                onClick={() => setSelectedDocument(doc)}
+                              >
+                                <Eye className="w-4 h-4 mr-1" />
+                                Ver Conteúdo Completo
+                              </Button>
                             </div>
 
                             {doc.tags && doc.tags.length > 0 && (
