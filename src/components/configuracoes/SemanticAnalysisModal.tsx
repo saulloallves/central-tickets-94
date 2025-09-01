@@ -234,8 +234,8 @@ export const SemanticAnalysisModal = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 space-y-6 min-h-0">
-          {/* Progresso da análise */}
+        <ScrollArea className="flex-1 px-6">
+          <div className="space-y-6 pb-6">
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm">Progresso da Análise</CardTitle>
@@ -433,7 +433,8 @@ export const SemanticAnalysisModal = ({
               )}
             </>
           )}
-        </div>
+          </div>
+        </ScrollArea>
 
         {currentStep === 'complete' && (
           <DialogFooter className="flex-col sm:flex-row gap-2">
