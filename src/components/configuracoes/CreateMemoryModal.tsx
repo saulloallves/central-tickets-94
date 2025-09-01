@@ -242,11 +242,16 @@ export const CreateMemoryModal = ({ open, onOpenChange, onSuccess }: CreateMemor
 
           {/* Categoria */}
           <div className="space-y-2">
-            <Label htmlFor="categoria">Categoria</Label>
+            <Label htmlFor="categoria">
+              Categoria
+              <span className="text-sm text-muted-foreground ml-2">
+                (opcional - IA categoriza automaticamente se não selecionada)
+              </span>
+            </Label>
             <div className="flex gap-2">
               <Select value={categoria} onValueChange={setCategoria}>
                 <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Selecione ou digite uma categoria" />
+                  <SelectValue placeholder="Selecione uma categoria existente" />
                 </SelectTrigger>
                 <SelectContent>
                   {categorias.map((cat) => (
@@ -263,9 +268,12 @@ export const CreateMemoryModal = ({ open, onOpenChange, onSuccess }: CreateMemor
             <Input
               value={categoria}
               onChange={(e) => setCategoria(e.target.value)}
-              placeholder="Digite uma nova categoria (opcional - IA pode gerar automaticamente)"
+              placeholder="Digite uma nova categoria ou deixe vazio para IA categorizar"
               disabled={processingState !== 'idle'}
             />
+            <p className="text-xs text-muted-foreground">
+              💡 Deixe vazio para que a IA categorize automaticamente baseada no conteúdo
+            </p>
           </div>
 
           {/* Método de input */}
