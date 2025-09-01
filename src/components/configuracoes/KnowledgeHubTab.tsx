@@ -22,6 +22,7 @@ const KnowledgeHubTab = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [auditResults, setAuditResults] = useState(null);
   const [duplicateDialog, setDuplicateDialog] = useState(null);
+  const [selectedDocument, setSelectedDocument] = useState(null);
   
   const [newDocument, setNewDocument] = useState({
     titulo: '',
@@ -410,7 +411,11 @@ const KnowledgeHubTab = () => {
               </div>
             ) : (
               filteredDocuments.map((doc) => (
-                <Card key={doc.id} className="hover:shadow-md transition-shadow">
+                <Card 
+                  key={doc.id} 
+                  className="hover:shadow-md transition-shadow cursor-pointer" 
+                  onClick={() => setSelectedDocument(doc)}
+                >
                   <CardContent className="p-4">
                     <div className="flex justify-between items-start gap-4">
                       <div className="flex-1">
@@ -464,7 +469,7 @@ const KnowledgeHubTab = () => {
                         </div>
                       </div>
 
-                      <div className="flex gap-2">
+                      <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                         {doc.status !== 'ativo' && (
                           <Button
                             size="sm"
@@ -598,6 +603,166 @@ const KnowledgeHubTab = () => {
                 ))}
               </TabsContent>
             </Tabs>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Modal de visualização do documento */}
+      {selectedDocument && (
+        <Dialog open={!!selectedDocument} onOpenChange={() => setSelectedDocument(null)}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                {selectedDocument.titulo}
+              </DialogTitle>
+              <DialogDescription>
+                Visualização completa do documento RAG
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-6">
+              {/* Badges de informação */}
+              <div className="flex flex-wrap gap-2">
+                <Badge className={`${statusColors[selectedDocument.status]} text-white`}>
+                  {selectedDocument.status}
+                </Badge>
+                <Badge variant="outline">{selectedDocument.tipo}</Badge>
+                <Badge variant="secondary">Versão {selectedDocument.versao}</Badge>
+                {selectedDocument.estilo && (
+                  <Badge className={estiloColors[selectedDocument.estilo]}>
+                    {selectedDocument.estilo}
+                  </Badge>
+                )}
+                {selectedDocument.processado_por_ia && (
+                  <Badge variant="outline" className="text-purple-600">
+                    <Bot className="h-3 w-3 mr-1" />
+                    Processado por IA
+                  </Badge>
+                )}
+              </div>
+
+              {/* Metadados */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card>
+                  <CardContent className="p-4">
+                    <h4 className="font-medium mb-2">Informações Gerais</h4>
+                    <div className="space-y-2 text-sm">
+                      <div><strong>ID:</strong> {selectedDocument.id}</div>
+                      <div><strong>Artigo ID:</strong> {selectedDocument.artigo_id}</div>
+                      <div><strong>Criado em:</strong> {new Date(selectedDocument.criado_em).toLocaleDateString('pt-BR')}</div>
+                      <div><strong>Criado por:</strong> {selectedDocument.criado_por}</div>
+                      <div><strong>Categoria:</strong> {selectedDocument.categoria || 'Não definida'}</div>
+                      {selectedDocument.valido_ate && (
+                        <div><strong>Válido até:</strong> {new Date(selectedDocument.valido_ate).toLocaleDateString('pt-BR')}</div>
+                      )}
+                      {selectedDocument.ia_modelo && (
+                        <div><strong>Modelo IA:</strong> {selectedDocument.ia_modelo}</div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {selectedDocument.tags.length > 0 && (
+                  <Card>
+                    <CardContent className="p-4">
+                      <h4 className="font-medium mb-2">Tags</h4>
+                      <div className="flex flex-wrap gap-1">
+                        {selectedDocument.tags.map((tag, index) => (
+                          <Badge key={index} variant="outline" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+
+              {/* Justificativa */}
+              <Card>
+                <CardContent className="p-4">
+                  <h4 className="font-medium mb-2">Justificativa</h4>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedDocument.justificativa}
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Conteúdo */}
+              <Card>
+                <CardContent className="p-4">
+                  <h4 className="font-medium mb-2">Conteúdo</h4>
+                  <div className="text-sm bg-muted p-4 rounded-lg max-h-96 overflow-y-auto">
+                    {typeof selectedDocument.conteudo === 'string' ? (
+                      <pre className="whitespace-pre-wrap font-mono">{selectedDocument.conteudo}</pre>
+                    ) : (
+                      <pre className="whitespace-pre-wrap font-mono">
+                        {JSON.stringify(selectedDocument.conteudo, null, 2)}
+                      </pre>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Classificação IA (se existir) */}
+              {selectedDocument.classificacao && (
+                <Card>
+                  <CardContent className="p-4">
+                    <h4 className="font-medium mb-2">Classificação IA</h4>
+                    <div className="text-sm bg-muted p-4 rounded-lg">
+                      <pre className="whitespace-pre-wrap">
+                        {JSON.stringify(selectedDocument.classificacao, null, 2)}
+                      </pre>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Informações técnicas sobre embedding */}
+              {selectedDocument.embedding && (
+                <Card>
+                  <CardContent className="p-4">
+                    <h4 className="font-medium mb-2">Embedding Vetorial</h4>
+                    <div className="text-sm text-muted-foreground">
+                      <div><strong>Dimensões:</strong> 1536D (OpenAI)</div>
+                      <div><strong>Status:</strong> Processado e indexado</div>
+                      <div className="mt-2 text-xs bg-muted p-2 rounded">
+                        Embedding disponível para busca semântica e RAG
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setSelectedDocument(null)}>
+                Fechar
+              </Button>
+              <div onClick={(e) => e.stopPropagation()}>
+                {selectedDocument.status !== 'ativo' ? (
+                  <Button
+                    onClick={() => {
+                      updateDocumentStatus(selectedDocument.id, 'ativo');
+                      setSelectedDocument(null);
+                    }}
+                  >
+                    Reativar Documento
+                  </Button>
+                ) : (
+                  <Button
+                    variant="destructive"
+                    onClick={() => {
+                      updateDocumentStatus(selectedDocument.id, 'arquivado');
+                      setSelectedDocument(null);
+                    }}
+                  >
+                    Arquivar Documento
+                  </Button>
+                )}
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
       )}
