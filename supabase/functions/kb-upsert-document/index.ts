@@ -461,7 +461,19 @@ serve(async (req) => {
     console.log('=== GERANDO EMBEDDING ===');
     console.log('Texto para embedding (primeiros 200 chars):', textoParaEmbedding.substring(0, 200));
 
-    // Gerar embedding usando text-embedding-3-small
+    // Melhorar embedding para capturar melhor o contexto semântico
+    const embeddingEnriquecido = `
+ASSUNTO/CONTEXTO: ${finalClassificacao?.categoria || categoria || 'Geral'}
+TÍTULO: ${finalTitulo}
+TEMAS PRINCIPAIS: ${finalClassificacao?.temas || 'N/A'}
+CONTEÚDO ESTRUTURADO: ${typeof finalConteudo === 'string' ? finalConteudo : JSON.stringify(finalConteudo)}
+PALAVRAS-CHAVE: ${tags?.join(', ') || 'N/A'}
+CATEGORIA: ${categoria || 'Geral'}
+    `.trim();
+
+    console.log('Texto para embedding contextual (primeiros 300 chars):', embeddingEnriquecido.substring(0, 300));
+
+    // Gerar embedding usando text-embedding-3-large para melhor compreensão semântica
     const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
       method: 'POST',
       headers: {
@@ -469,8 +481,9 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'text-embedding-3-small',
-        input: textoParaEmbedding,
+        model: 'text-embedding-3-large',
+        input: embeddingEnriquecido,
+        dimensions: 1536 // Manter dimensão compatível
       }),
     });
 
@@ -491,10 +504,14 @@ serve(async (req) => {
     // Verificar duplicatas usando busca vetorial (apenas se não forçado)
     if (!artigo_id && !force) {
       console.log('Verificando duplicatas com threshold 0.85...');
-      const { data: similares, error: matchError } = await supabase.rpc('match_documentos', {
+      // Usar busca semântica melhorada para detectar duplicatas por assunto
+      const { data: similares, error: matchError } = await supabase.rpc('match_documentos_semantico', {
         query_embedding: embedding,
-        match_threshold: 0.85,
-        match_count: 3
+        query_text: `${finalTitulo} ${typeof finalConteudo === 'string' ? finalConteudo.substring(0, 200) : ''}`,
+        match_threshold: 0.80, // Threshold mais alto para duplicatas
+        match_count: 5,
+        require_category_match: categoria ? true : false,
+        categoria_filtro: categoria
       });
 
       console.log('Resultado da busca de similares:', { similares, matchError });

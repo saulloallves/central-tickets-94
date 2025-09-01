@@ -2607,6 +2607,26 @@ export type Database = {
           versao: number
         }[]
       }
+      match_documentos_semantico: {
+        Args: {
+          categoria_filtro?: string
+          match_count?: number
+          match_threshold?: number
+          query_embedding: string
+          query_text?: string
+          require_category_match?: boolean
+        }
+        Returns: {
+          categoria: string
+          conteudo: Json
+          id: string
+          relevancia_semantica: number
+          score_final: number
+          similaridade: number
+          titulo: string
+          versao: number
+        }[]
+      }
       next_ticket_code: {
         Args: { p_unidade_id: string }
         Returns: string

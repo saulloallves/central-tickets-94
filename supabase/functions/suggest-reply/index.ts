@@ -85,12 +85,17 @@ serve(async (req) => {
     const embeddingData = await embeddingResponse.json();
     const ticketEmbedding = embeddingData.data[0].embedding;
 
-    // 4. BUSCA SEGURA RAG: Usar a função match_documentos
-    console.log('Executando busca RAG na base de conhecimento...');
-    const { data: contextoDocs, error: ragError } = await supabase.rpc('match_documentos', {
+    // 4. BUSCA SEMÂNTICA RAG MELHORADA: Usar contexto do ticket
+    console.log('Executando busca RAG semântica na base de conhecimento...');
+    const queryTextForRAG = `${ticket.descricao_problema} ${ticket.categoria || ''} ${ticket.prioridade || ''}`.trim();
+    
+    const { data: contextoDocs, error: ragError } = await supabase.rpc('match_documentos_semantico', {
       query_embedding: ticketEmbedding,
-      match_threshold: 0.70, // Limiar de relevância
-      match_count: 5 // Top 5 documentos mais relevantes
+      query_text: queryTextForRAG,
+      match_threshold: 0.65, // Threshold mais baixo para capturar mais contexto
+      match_count: 8, // Mais documentos para melhor contexto
+      require_category_match: ticket.categoria ? true : false,
+      categoria_filtro: ticket.categoria
     });
 
     if (ragError) {
@@ -111,17 +116,25 @@ serve(async (req) => {
 - Status: ${ticket.status}
 - Descrição: ${ticket.descricao_problema}`);
 
-    // Adicionar documentos RAG com citações completas
+    // Adicionar documentos RAG com análise semântica avançada
     if (contextoDocs && contextoDocs.length > 0) {
-      const documentosFormatados = contextoDocs.map((doc, index) => {
-        return `**FONTE ${index + 1}** - ${doc.titulo} (v${doc.versao}) - Relevância: ${(doc.similaridade * 100).toFixed(1)}%
+      // Ordenar por score final (relevância semântica + similaridade)
+      const docsOrdenados = contextoDocs.sort((a, b) => (b.score_final || b.similaridade) - (a.score_final || a.similaridade));
+      
+      const documentosFormatados = docsOrdenados.map((doc, index) => {
+        const scoreDisplay = doc.score_final ? 
+          `Score: ${(doc.score_final * 100).toFixed(1)}% (Similaridade: ${(doc.similaridade * 100).toFixed(1)}% + Relevância: ${((doc.relevancia_semantica || 0) * 100).toFixed(1)}%)` :
+          `Relevância: ${(doc.similaridade * 100).toFixed(1)}%`;
+          
+        return `**FONTE ${index + 1}** - ${doc.titulo} (v${doc.versao}) - ${scoreDisplay}
+📂 Categoria: ${doc.categoria || 'N/A'}
 ${typeof doc.conteudo === 'object' ? JSON.stringify(doc.conteudo, null, 2) : doc.conteudo}`;
       }).join('\n\n---\n\n');
 
-      contextSections.push(`=== BASE DE CONHECIMENTO GOVERNADA ===
+      contextSections.push(`=== BASE DE CONHECIMENTO SEMÂNTICA (${docsOrdenados.length} documentos por assunto/contexto) ===
 ${documentosFormatados}`);
     } else {
-      contextSections.push('=== BASE DE CONHECIMENTO ===\nNenhum documento relevante encontrado na base governada.');
+      contextSections.push('=== BASE DE CONHECIMENTO ===\nNenhum documento relevante encontrado por contexto semântico.');
     }
 
     const contextoCompleto = contextSections.join('\n\n');
