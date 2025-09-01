@@ -65,6 +65,7 @@ export const SemanticAnalysisModal = ({
   const [error, setError] = useState<string | null>(null);
   const [hasStartedAnalysis, setHasStartedAnalysis] = useState(false);
   const [isCreatingDocument, setIsCreatingDocument] = useState(false);
+  const [viewingDocumentContent, setViewingDocumentContent] = useState<SimilarDocument | null>(null);
 
   // Reset states when modal opens/closes
   useEffect(() => {
@@ -77,6 +78,7 @@ export const SemanticAnalysisModal = ({
       setError(null);
       setHasStartedAnalysis(false);
       setIsCreatingDocument(false);
+      setViewingDocumentContent(null);
     }
   }, [open]);
 
@@ -239,15 +241,19 @@ export const SemanticAnalysisModal = ({
     return <div className="w-5 h-5 rounded-full border-2 border-gray-300"></div>;
   };
 
-  const formatDocumentContent = (content: any) => {
+  const formatDocumentContent = (content: any, truncate: boolean = true) => {
     if (typeof content === 'string') {
-      return content.length > 200 ? content.substring(0, 200) + '...' : content;
+      return truncate && content.length > 200 ? content.substring(0, 200) + '...' : content;
     }
     if (typeof content === 'object') {
       const text = JSON.stringify(content);
-      return text.length > 200 ? text.substring(0, 200) + '...' : text;
+      return truncate && text.length > 200 ? text.substring(0, 200) + '...' : text;
     }
     return 'Conteúdo não disponível';
+  };
+
+  const handleViewDocument = (doc: SimilarDocument) => {
+    setViewingDocumentContent(doc);
   };
 
   if (isCreatingDocument) {
@@ -456,19 +462,29 @@ export const SemanticAnalysisModal = ({
                           )}
                         </div>
                         
-                        {onUpdateExisting && (
+                        <div className="flex gap-2">
                           <Button
                             size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setSelectedDocumentId(doc.id);
-                              handleUpdateExisting(doc.id);
-                            }}
+                            variant="ghost"
+                            onClick={() => handleViewDocument(doc)}
                             className="text-xs"
                           >
-                            Atualizar Este
+                            Ver Conteúdo
                           </Button>
-                        )}
+                          {onUpdateExisting && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedDocumentId(doc.id);
+                                handleUpdateExisting(doc.id);
+                              }}
+                              className="text-xs"
+                            >
+                              Atualizar Este
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </Card>
                   ))}
@@ -526,6 +542,101 @@ export const SemanticAnalysisModal = ({
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      {/* Document Content Viewer Modal */}
+      <Dialog open={!!viewingDocumentContent} onOpenChange={() => setViewingDocumentContent(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-primary" />
+              {viewingDocumentContent?.titulo}
+            </DialogTitle>
+            <DialogDescription>
+              Visualizando conteúdo completo do documento
+            </DialogDescription>
+          </DialogHeader>
+
+          {viewingDocumentContent && (
+            <div className="space-y-6">
+              {/* Document Metadata */}
+              <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
+                <div>
+                  <p className="text-sm font-medium">Categoria</p>
+                  <p className="text-sm text-muted-foreground">{viewingDocumentContent.categoria}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Versão</p>
+                  <p className="text-sm text-muted-foreground">v{viewingDocumentContent.versao}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Similaridade</p>
+                  <Badge variant="default" className="text-xs">
+                    {viewingDocumentContent.similaridade}% similar
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Criado em</p>
+                  <p className="text-sm text-muted-foreground">
+                    {viewingDocumentContent.criado_em ? new Date(viewingDocumentContent.criado_em).toLocaleDateString('pt-BR') : 'N/A'}
+                  </p>
+                </div>
+                {viewingDocumentContent.profile && (
+                  <div className="col-span-2">
+                    <p className="text-sm font-medium">Criado por</p>
+                    <p className="text-sm text-muted-foreground">
+                      {viewingDocumentContent.profile.nome_completo} ({viewingDocumentContent.profile.email})
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Full Content */}
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold">Conteúdo Completo</h3>
+                <ScrollArea className="h-96 w-full">
+                  <div className="p-4 bg-muted/30 rounded-lg">
+                    <p className="text-sm whitespace-pre-wrap">
+                      {formatDocumentContent(viewingDocumentContent.conteudo, false)}
+                    </p>
+                  </div>
+                </ScrollArea>
+              </div>
+
+              {/* Tags if available */}
+              {viewingDocumentContent.tags && viewingDocumentContent.tags.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="font-medium">Tags</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {viewingDocumentContent.tags.map((tag, index) => (
+                      <Badge key={index} variant="secondary" className="text-xs">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewingDocumentContent(null)}>
+              Fechar
+            </Button>
+            {onUpdateExisting && viewingDocumentContent && (
+              <Button
+                onClick={() => {
+                  setViewingDocumentContent(null);
+                  setSelectedDocumentId(viewingDocumentContent.id);
+                  handleUpdateExisting(viewingDocumentContent.id);
+                }}
+                className="bg-primary hover:bg-primary/90"
+              >
+                Atualizar Este Documento
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 };
