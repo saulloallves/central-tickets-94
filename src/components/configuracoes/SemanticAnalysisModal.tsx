@@ -223,7 +223,7 @@ export const SemanticAnalysisModal = ({
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Bot className="h-5 w-5 text-blue-500" />
@@ -341,9 +341,9 @@ export const SemanticAnalysisModal = ({
                           Documentos Similares Encontrados ({similarDocuments.length})
                         </CardTitle>
                       </CardHeader>
-                      <CardContent>
-                        <ScrollArea className="h-60">
-                          <div className="space-y-3">
+                      <CardContent className="p-0">
+                        <ScrollArea className="h-60 p-4">
+                          <div className="space-y-3 pr-4">
                             {similarDocuments.map((doc) => {
                               const similarity = getSimilarityLevel(doc.similaridade);
                               const isSelected = selectedDocumentId === doc.id;
