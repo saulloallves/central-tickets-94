@@ -100,10 +100,7 @@ serve(async (req) => {
 
     const { data, error } = await supabase
       .from('documentos')
-      .update({
-        ...updateData,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', id)
       .select()
       .single();
