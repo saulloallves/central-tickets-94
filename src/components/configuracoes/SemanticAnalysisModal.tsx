@@ -6,7 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
-import { AlertTriangle, CheckCircle, XCircle, BookOpen, Tag, Clock, User, Percent, Search, Bot, Loader2, FileCheck } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { AlertTriangle, CheckCircle, XCircle, BookOpen, Tag, Clock, User, Percent, Search, Bot, Loader2, FileCheck, Edit, FileText, Replace } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface SimilarDocument {
@@ -42,7 +44,7 @@ interface SemanticAnalysisModalProps {
     recommendation: string;
   }) => void;
   onCreateNew: () => Promise<void>;
-  onUpdateExisting?: (documentId: string) => Promise<void>;
+  onUpdateExisting?: (documentId: string, updateType?: 'full' | 'partial', textToReplace?: string) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -66,6 +68,9 @@ export const SemanticAnalysisModal = ({
   const [hasStartedAnalysis, setHasStartedAnalysis] = useState(false);
   const [isCreatingDocument, setIsCreatingDocument] = useState(false);
   const [viewingDocumentContent, setViewingDocumentContent] = useState<SimilarDocument | null>(null);
+  const [showUpdateOptions, setShowUpdateOptions] = useState<SimilarDocument | null>(null);
+  const [selectedUpdateType, setSelectedUpdateType] = useState<'full' | 'partial'>('full');
+  const [selectedTextToReplace, setSelectedTextToReplace] = useState<string>('');
 
   // Reset states when modal opens/closes
   useEffect(() => {
@@ -79,6 +84,9 @@ export const SemanticAnalysisModal = ({
       setHasStartedAnalysis(false);
       setIsCreatingDocument(false);
       setViewingDocumentContent(null);
+      setShowUpdateOptions(null);
+      setSelectedUpdateType('full');
+      setSelectedTextToReplace('');
     }
   }, [open]);
 
@@ -223,14 +231,27 @@ export const SemanticAnalysisModal = ({
     }
   };
 
-  const handleUpdateExisting = async (documentId: string) => {
+  const handleUpdateExisting = async (documentId: string, updateType?: 'full' | 'partial', textToReplace?: string) => {
     if (onUpdateExisting) {
       setIsCreatingDocument(true);
       try {
-        await onUpdateExisting(documentId);
+        await onUpdateExisting(documentId, updateType, textToReplace);
       } finally {
         setIsCreatingDocument(false);
       }
+    }
+  };
+
+  const handleShowUpdateOptions = (doc: SimilarDocument) => {
+    setShowUpdateOptions(doc);
+    setSelectedUpdateType('full');
+    setSelectedTextToReplace('');
+  };
+
+  const handleConfirmUpdate = () => {
+    if (showUpdateOptions) {
+      handleUpdateExisting(showUpdateOptions.id, selectedUpdateType, selectedTextToReplace);
+      setShowUpdateOptions(null);
     }
   };
 
@@ -475,10 +496,7 @@ export const SemanticAnalysisModal = ({
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => {
-                                setSelectedDocumentId(doc.id);
-                                handleUpdateExisting(doc.id);
-                              }}
+                              onClick={() => handleShowUpdateOptions(doc)}
                               className="text-xs"
                             >
                               Atualizar Este
@@ -626,14 +644,132 @@ export const SemanticAnalysisModal = ({
               <Button
                 onClick={() => {
                   setViewingDocumentContent(null);
-                  setSelectedDocumentId(viewingDocumentContent.id);
-                  handleUpdateExisting(viewingDocumentContent.id);
+                  handleShowUpdateOptions(viewingDocumentContent);
                 }}
                 className="bg-primary hover:bg-primary/90"
               >
                 Atualizar Este Documento
               </Button>
             )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Update Options Modal */}
+      <Dialog open={!!showUpdateOptions} onOpenChange={() => setShowUpdateOptions(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="w-5 h-5 text-primary" />
+              Opções de Atualização
+            </DialogTitle>
+            <DialogDescription>
+              Escolha como deseja atualizar o documento "{showUpdateOptions?.titulo}"
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6">
+            {/* Update Type Selection */}
+            <div className="space-y-4">
+              <Label className="text-base font-medium">Tipo de Atualização</Label>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <Card 
+                  className={`cursor-pointer transition-all ${
+                    selectedUpdateType === 'full' 
+                      ? 'border-primary bg-primary/5' 
+                      : 'hover:border-primary/50'
+                  }`}
+                  onClick={() => setSelectedUpdateType('full')}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <FileText className="w-8 h-8 text-primary" />
+                      <div>
+                        <h4 className="font-medium">Substituir Tudo</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Substitui todo o conteúdo do documento existente
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card 
+                  className={`cursor-pointer transition-all ${
+                    selectedUpdateType === 'partial' 
+                      ? 'border-primary bg-primary/5' 
+                      : 'hover:border-primary/50'
+                  }`}
+                  onClick={() => setSelectedUpdateType('partial')}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <Replace className="w-8 h-8 text-primary" />
+                      <div>
+                        <h4 className="font-medium">Substituir Parte</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Substitui apenas uma parte específica do conteúdo
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+
+            {/* Partial Update Options */}
+            {selectedUpdateType === 'partial' && (
+              <div className="space-y-4">
+                <Label className="text-base font-medium">Texto a ser Substituído</Label>
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    Digite o texto específico que deseja substituir no documento existente:
+                  </p>
+                  <Textarea
+                    value={selectedTextToReplace}
+                    onChange={(e) => setSelectedTextToReplace(e.target.value)}
+                    placeholder="Digite o texto que deseja substituir..."
+                    className="min-h-24"
+                  />
+                </div>
+
+                {/* Current Document Preview */}
+                {showUpdateOptions && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Conteúdo Atual do Documento:</Label>
+                    <ScrollArea className="h-32 w-full border rounded-md p-3">
+                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                        {formatDocumentContent(showUpdateOptions.conteudo, false)}
+                      </p>
+                    </ScrollArea>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Preview of New Content */}
+            <div className="space-y-2">
+              <Label className="text-base font-medium">Novo Conteúdo:</Label>
+              <div className="p-3 bg-muted/50 rounded-md">
+                <p className="text-sm text-muted-foreground">
+                  {formatDocumentContent(documentData.conteudo)}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowUpdateOptions(null)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleConfirmUpdate}
+              disabled={selectedUpdateType === 'partial' && !selectedTextToReplace.trim()}
+              className="bg-primary hover:bg-primary/90"
+            >
+              Confirmar Atualização
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
