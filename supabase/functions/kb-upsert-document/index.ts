@@ -246,7 +246,9 @@ serve(async (req) => {
 
   try {
     const bodyData = await req.json();
-    console.log('Dados recebidos:', JSON.stringify(bodyData));
+    console.log('=== INÍCIO DEBUG ===');
+    console.log('Raw request body:', JSON.stringify(bodyData));
+    console.log('OpenAI Key exists:', !!openAIApiKey);
     
     const { titulo, conteudo, categoria, tipo, valido_ate, tags, justificativa, artigo_id, force, estilo, process_with_ai } = bodyData;
     
