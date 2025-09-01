@@ -512,16 +512,33 @@ serve(async (req) => {
       }
     }
 
+    // Verificar autenticação
+    const authHeader = req.headers.get('authorization');
+    let userId = null;
+    
+    if (authHeader) {
+      const token = authHeader.replace('Bearer ', '');
+      const { data: { user } } = await supabase.auth.getUser(token);
+      userId = user?.id;
+    }
+
+    if (!userId) {
+      return new Response(
+        JSON.stringify({ error: 'Usuário não autenticado' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Inserir/Atualizar documento
     const documentData = {
       titulo: finalTitulo,
       conteudo: typeof finalConteudo === 'string' ? { texto: finalConteudo } : finalConteudo,
       categoria: finalCategoria,
       tipo: tipo || 'permanente',
-      valido_ate: valido_ate && valido_ate.trim() !== '' ? valido_ate : null, // Corrige string vazia
+      valido_ate: valido_ate && valido_ate.trim() !== '' ? valido_ate : null,
       tags: tags || [],
       justificativa,
-      criado_por: (await supabase.auth.getUser()).data.user?.id,
+      criado_por: userId, // Usando o userId verificado
       embedding,
       artigo_id: artigo_id || crypto.randomUUID(),
       estilo: estilo || null,
