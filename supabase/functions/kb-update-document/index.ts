@@ -98,6 +98,8 @@ serve(async (req) => {
       }
     }
 
+    console.log('📋 Dados finais que serão enviados para o Supabase:', updateData);
+
     const { data, error } = await supabase
       .from('documentos')
       .update(updateData)
@@ -105,8 +107,11 @@ serve(async (req) => {
       .select()
       .single();
 
+    console.log('📤 Resposta do Supabase:', { data, error });
+
     if (error) {
-      console.error('Erro ao atualizar documento:', error);
+      console.error('❌ Erro ao atualizar documento:', error);
+      console.error('❌ Update data que causou erro:', updateData);
       throw error;
     }
 
