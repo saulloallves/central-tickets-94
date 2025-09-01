@@ -252,12 +252,13 @@ serve(async (req) => {
     
     const { titulo, conteudo, categoria, tipo, valido_ate, tags, justificativa, artigo_id, force, estilo, process_with_ai } = bodyData;
     
-    if (!titulo || !conteudo) {
-      console.error('Campos obrigatórios ausentes:', { titulo: !!titulo, conteudo: !!conteudo, justificativa: !!justificativa });
+    // Título só é obrigatório se não for processamento com IA
+    if ((!titulo && !process_with_ai) || !conteudo) {
+      console.error('Campos obrigatórios ausentes:', { titulo: !!titulo, conteudo: !!conteudo, process_with_ai: !!process_with_ai });
       return new Response(
         JSON.stringify({ 
-          error: 'Título e conteúdo são obrigatórios',
-          received: { titulo: !!titulo, conteudo: !!conteudo, justificativa: !!justificativa }
+          error: process_with_ai ? 'Conteúdo é obrigatório' : 'Título e conteúdo são obrigatórios',
+          received: { titulo: !!titulo, conteudo: !!conteudo, process_with_ai: !!process_with_ai }
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
