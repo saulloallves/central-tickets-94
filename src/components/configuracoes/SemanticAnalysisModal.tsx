@@ -340,77 +340,75 @@ export const SemanticAnalysisModal = ({
                           Documentos Similares Encontrados ({similarDocuments.length})
                         </CardTitle>
                       </CardHeader>
-                      <CardContent className="p-0">
-                        <ScrollArea className="h-72 p-4">
-                          <div className="space-y-3 pr-4">
-                            {similarDocuments.map((doc) => {
-                              const similarity = getSimilarityLevel(doc.similaridade);
-                              const isSelected = selectedDocumentId === doc.id;
-                              
-                              return (
-                                <Card 
-                                  key={doc.id} 
-                                  className={`cursor-pointer transition-all hover:shadow-md ${
-                                    isSelected ? 'ring-2 ring-primary' : ''
-                                  }`}
-                                  onClick={() => setSelectedDocumentId(doc.id)}
-                                >
-                                  <CardContent className="p-4">
-                                    <div className="flex items-start justify-between mb-2">
-                                      <div className="flex-1">
-                                        <h4 className="text-sm font-medium">{doc.titulo}</h4>
-                                        <p className="text-xs text-muted-foreground">
-                                          {doc.categoria} • v{doc.versao}
-                                        </p>
+                      <CardContent className="p-4">
+                        <div className="space-y-3">
+                          {similarDocuments.map((doc) => {
+                            const similarity = getSimilarityLevel(doc.similaridade);
+                            const isSelected = selectedDocumentId === doc.id;
+                            
+                            return (
+                              <Card 
+                                key={doc.id} 
+                                className={`cursor-pointer transition-all hover:shadow-md ${
+                                  isSelected ? 'ring-2 ring-primary' : ''
+                                }`}
+                                onClick={() => setSelectedDocumentId(doc.id)}
+                              >
+                                <CardContent className="p-4">
+                                  <div className="flex items-start justify-between mb-2">
+                                    <div className="flex-1">
+                                      <h4 className="text-sm font-medium">{doc.titulo}</h4>
+                                      <p className="text-xs text-muted-foreground">
+                                        {doc.categoria} • v{doc.versao}
+                                      </p>
+                                    </div>
+                                    <Badge 
+                                      variant="outline" 
+                                      className={`text-xs ${similarity.textColor}`}
+                                    >
+                                      <Percent className="h-3 w-3 mr-1" />
+                                      {(doc.similaridade * 100).toFixed(1)}%
+                                    </Badge>
+                                  </div>
+                                  
+                                  <div className="space-y-2">
+                                    <div className="space-y-1">
+                                      <div className="flex justify-between text-xs">
+                                        <span>Similaridade</span>
+                                        <span className={similarity.textColor}>
+                                          {similarity.label}
+                                        </span>
                                       </div>
-                                      <Badge 
-                                        variant="outline" 
-                                        className={`text-xs ${similarity.textColor}`}
-                                      >
-                                        <Percent className="h-3 w-3 mr-1" />
-                                        {(doc.similaridade * 100).toFixed(1)}%
-                                      </Badge>
+                                      <Progress 
+                                        value={doc.similaridade * 100} 
+                                        className="h-1"
+                                      />
                                     </div>
                                     
-                                    <div className="space-y-2">
-                                      <div className="space-y-1">
-                                        <div className="flex justify-between text-xs">
-                                          <span>Similaridade</span>
-                                          <span className={similarity.textColor}>
-                                            {similarity.label}
-                                          </span>
-                                        </div>
-                                        <Progress 
-                                          value={doc.similaridade * 100} 
-                                          className="h-1"
-                                        />
+                                    <p className="text-xs text-muted-foreground">
+                                      {truncateText(formatContent(doc.conteudo), 100)}
+                                    </p>
+                                    
+                                    {doc.tags && doc.tags.length > 0 && (
+                                      <div className="flex flex-wrap gap-1">
+                                        {doc.tags.slice(0, 3).map((tag, idx) => (
+                                          <Badge key={idx} variant="outline" className="text-xs">
+                                            {tag}
+                                          </Badge>
+                                        ))}
+                                        {doc.tags.length > 3 && (
+                                          <Badge variant="outline" className="text-xs">
+                                            +{doc.tags.length - 3}
+                                          </Badge>
+                                        )}
                                       </div>
-                                      
-                                      <p className="text-xs text-muted-foreground">
-                                        {truncateText(formatContent(doc.conteudo), 100)}
-                                      </p>
-                                      
-                                      {doc.tags && doc.tags.length > 0 && (
-                                        <div className="flex flex-wrap gap-1">
-                                          {doc.tags.slice(0, 3).map((tag, idx) => (
-                                            <Badge key={idx} variant="outline" className="text-xs">
-                                              {tag}
-                                            </Badge>
-                                          ))}
-                                          {doc.tags.length > 3 && (
-                                            <Badge variant="outline" className="text-xs">
-                                              +{doc.tags.length - 3}
-                                            </Badge>
-                                          )}
-                                        </div>
-                                      )}
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                              );
-                            })}
-                          </div>
-                        </ScrollArea>
+                                    )}
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            );
+                          })}
+                        </div>
                       </CardContent>
                     </Card>
                   ) : (
