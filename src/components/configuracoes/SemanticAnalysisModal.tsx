@@ -62,16 +62,33 @@ export const SemanticAnalysisModal = ({
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [hasStartedAnalysis, setHasStartedAnalysis] = useState(false);
 
-  // Simular análise semântica quando o modal abre
+  // Reset states when modal opens/closes
   useEffect(() => {
-    if (open && documentData) {
+    if (open) {
+      setCurrentStep('embedding');
+      setProgress(0);
+      setSimilarDocuments([]);
+      setSelectedDocumentId(null);
+      setAnalysisResult(null);
+      setError(null);
+      setHasStartedAnalysis(false);
+    }
+  }, [open]);
+
+  // Iniciar análise quando modal abre e ainda não começou
+  useEffect(() => {
+    if (open && documentData && !hasStartedAnalysis && currentStep === 'embedding') {
       performSemanticAnalysis();
     }
-  }, [open, documentData]);
+  }, [open, hasStartedAnalysis, currentStep]);
 
   const performSemanticAnalysis = async () => {
+    if (hasStartedAnalysis) return; // Evitar execuções múltiplas
+    
     try {
+      setHasStartedAnalysis(true);
       setError(null);
       setCurrentStep('embedding');
       setProgress(10);
@@ -163,6 +180,7 @@ export const SemanticAnalysisModal = ({
       setError('Erro durante a análise semântica');
       setCurrentStep('complete');
       setProgress(100);
+      setHasStartedAnalysis(false);
     }
   };
 
