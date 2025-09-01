@@ -265,8 +265,12 @@ serve(async (req) => {
 
     if (!openAIApiKey) {
       console.error('OPENAI_API_KEY não configurada');
+      console.error('Variáveis disponíveis:', Object.keys(Deno.env.toObject()));
       return new Response(
-        JSON.stringify({ error: 'OpenAI API Key não configurada no servidor' }),
+        JSON.stringify({ 
+          error: 'OpenAI API Key não configurada no servidor',
+          debug: 'Verifique se OPENAI_API_KEY está nas variáveis de ambiente'
+        }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
