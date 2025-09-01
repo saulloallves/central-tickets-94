@@ -271,6 +271,8 @@ serve(async (req) => {
       );
     }
 
+    console.log('=== VALIDAÇÃO PASSOU ===');
+    console.log('OpenAI API Key configurada:', openAIApiKey ? 'SIM' : 'NÃO');
     console.log('Processando documento:', titulo, 'estilo:', estilo, 'process_with_ai:', process_with_ai);
     console.log('Dados recebidos completos:', JSON.stringify({ titulo, conteudo: conteudo?.substring(0, 100) + '...', categoria, justificativa: justificativa?.substring(0, 50) + '...' }));
 
@@ -451,6 +453,8 @@ serve(async (req) => {
 
     // Preparar texto para embedding
     const textoParaEmbedding = `Título: ${finalTitulo}\nConteúdo: ${typeof finalConteudo === 'string' ? finalConteudo : JSON.stringify(finalConteudo)}`;
+    console.log('=== GERANDO EMBEDDING ===');
+    console.log('Texto para embedding (primeiros 200 chars):', textoParaEmbedding.substring(0, 200));
 
     // Gerar embedding usando text-embedding-3-small
     const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
@@ -465,14 +469,18 @@ serve(async (req) => {
       }),
     });
 
+    console.log('Embedding response status:', embeddingResponse.status);
+
     if (!embeddingResponse.ok) {
       const error = await embeddingResponse.text();
+      console.error('Erro na OpenAI Embeddings response:', error);
       throw new Error(`Erro na OpenAI Embeddings: ${error}`);
     }
 
     const embeddingData = await embeddingResponse.json();
     const embedding = embeddingData.data[0].embedding;
 
+    console.log('=== EMBEDDING GERADO ===');
     console.log('Embedding gerado, dimensões:', embedding.length);
 
     // Verificar duplicatas usando busca vetorial (apenas se não forçado)
