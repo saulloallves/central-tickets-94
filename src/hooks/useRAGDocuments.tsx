@@ -176,6 +176,11 @@ export const useRAGDocuments = () => {
     try {
       setLoading(true);
       
+      console.log('🚀 Enviando requisição para kb-update-document:', {
+        id: documentId,
+        ...updateData
+      });
+      
       const { data, error } = await supabase.functions.invoke('kb-update-document', {
         body: { 
           id: documentId, 
@@ -183,7 +188,12 @@ export const useRAGDocuments = () => {
         }
       });
 
-      if (error) throw error;
+      console.log('📥 Resposta da edge function:', { data, error });
+
+      if (error) {
+        console.error('❌ Erro da edge function:', error);
+        throw error;
+      }
 
       toast({
         title: "✅ Documento Atualizado",
@@ -193,13 +203,13 @@ export const useRAGDocuments = () => {
       await fetchDocuments();
       return { success: true };
     } catch (error) {
-      console.error('Error updating document:', error);
+      console.error('❌ Erro no hook updateDocument:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível atualizar o documento",
+        description: "Não foi possível atualizar o documento: " + error.message,
         variant: "destructive",
       });
-      return { success: false };
+      return { success: false, error: error.message };
     } finally {
       setLoading(false);
     }

@@ -100,10 +100,15 @@ const KnowledgeHubTab = () => {
   };
 
   const handleUpdateExisting = async (documentId: string, updateType?: 'full' | 'partial', textToReplace?: string) => {
-    console.log('Atualizando documento:', { documentId, updateType, textToReplace });
+    console.log('=== INICIANDO ATUALIZAÇÃO DE DOCUMENTO ===');
+    console.log('Document ID:', documentId);
+    console.log('Update Type:', updateType);
+    console.log('Text to Replace:', textToReplace);
+    console.log('Pending Document Data:', pendingDocumentData);
     
     if (!pendingDocumentData) {
-      console.error('Nenhum dado pendente para atualização');
+      console.error('❌ Nenhum dado pendente para atualização');
+      alert('Erro: Nenhum dado pendente para atualização');
       return;
     }
 
@@ -116,18 +121,26 @@ const KnowledgeHubTab = () => {
         textToReplace: textToReplace || ''
       };
 
+      console.log('📋 Dados que serão enviados para atualização:', updateData);
+
       const result = await updateDocument(documentId, updateData);
       
+      console.log('📊 Resultado da atualização:', result);
+      
       if (result.success) {
-        console.log('Documento atualizado com sucesso');
+        console.log('✅ Documento atualizado com sucesso');
         setShowSemanticAnalysisModal(false);
         setShowSimilarDocumentsModal(false);
         setSimilarDocuments([]);
         setPendingDocumentData(null);
         setAnalysisResult(null);
+      } else {
+        console.error('❌ Falha na atualização do documento:', result);
+        alert('Erro ao atualizar documento: ' + (result.error || 'Erro desconhecido'));
       }
     } catch (error) {
-      console.error('Erro ao atualizar documento:', error);
+      console.error('❌ Erro capturado ao atualizar documento:', error);
+      alert('Erro inesperado ao atualizar documento: ' + error.message);
     }
   };
 
