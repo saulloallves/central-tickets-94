@@ -476,7 +476,8 @@ serve(async (req) => {
     console.log('Embedding gerado, dimensões:', embedding.length);
 
     // Verificar duplicatas usando busca vetorial (apenas se não forçado)
-    if (!artigo_id && !force) {
+    // TEMPORARIAMENTE DESABILITADO PARA DEBUG
+    if (false && !artigo_id && !force) {
       const { data: similares } = await supabase.rpc('match_documentos', {
         query_embedding: embedding,
         match_threshold: 0.85,
