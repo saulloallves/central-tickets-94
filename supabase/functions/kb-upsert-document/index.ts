@@ -463,9 +463,9 @@ serve(async (req) => {
 
     // Melhorar embedding para capturar melhor o contexto semântico
     const embeddingEnriquecido = `
-ASSUNTO/CONTEXTO: ${finalClassificacao?.categoria || categoria || 'Geral'}
+ASSUNTO/CONTEXTO: ${finalCategoria || categoria || 'Geral'}
 TÍTULO: ${finalTitulo}
-TEMAS PRINCIPAIS: ${finalClassificacao?.temas || 'N/A'}
+TEMAS PRINCIPAIS: ${classificacaoData?.temas || 'N/A'}
 CONTEÚDO ESTRUTURADO: ${typeof finalConteudo === 'string' ? finalConteudo : JSON.stringify(finalConteudo)}
 PALAVRAS-CHAVE: ${tags?.join(', ') || 'N/A'}
 CATEGORIA: ${categoria || 'Geral'}
@@ -518,6 +518,7 @@ CATEGORIA: ${categoria || 'Geral'}
 
       if (matchError) {
         console.error('Erro ao buscar duplicatas:', matchError);
+        console.error('Erro detalhado:', matchError.message, matchError.details);
         // Não retornar erro, apenas continuar sem verificação
       } else if (similares && similares.length > 0) {
         console.log('Documentos similares encontrados:', similares.length);
