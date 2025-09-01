@@ -23,6 +23,10 @@ interface RAGDocument {
   classificacao?: any;
   processado_por_ia?: boolean;
   ia_modelo?: string;
+  profile?: {
+    nome_completo: string;
+    email: string;
+  };
 }
 
 interface DocumentFilters {

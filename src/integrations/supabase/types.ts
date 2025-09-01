@@ -409,6 +409,13 @@ export type Database = {
             referencedRelation: "documentos"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_documentos_criado_por"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       equipe_members: {

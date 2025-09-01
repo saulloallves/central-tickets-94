@@ -22,7 +22,10 @@ serve(async (req) => {
     
     let query = supabase
       .from('documentos')
-      .select('*')
+      .select(`
+        *,
+        profile:criado_por(nome_completo, email)
+      `)
       .order('criado_em', { ascending: false });
 
     if (status_filter) {
