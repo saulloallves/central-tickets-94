@@ -342,7 +342,7 @@ export const SemanticAnalysisModal = ({
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="p-0">
-                        <ScrollArea className="h-60 p-4">
+                        <ScrollArea className="h-40 p-4">
                           <div className="space-y-3 pr-4">
                             {similarDocuments.map((doc) => {
                               const similarity = getSimilarityLevel(doc.similaridade);
