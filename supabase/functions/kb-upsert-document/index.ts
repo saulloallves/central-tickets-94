@@ -496,8 +496,11 @@ serve(async (req) => {
         match_count: 3
       });
 
+      console.log('Resultado da busca de similares:', { similares, matchError });
+
       if (matchError) {
         console.error('Erro ao buscar duplicatas:', matchError);
+        // Não retornar erro, apenas continuar sem verificação
       } else if (similares && similares.length > 0) {
         console.log('Documentos similares encontrados:', similares.length);
         console.log('Detalhes dos similares:', similares);
@@ -505,13 +508,12 @@ serve(async (req) => {
         // Retornar com status 200 mas indicando duplicata
         return new Response(
           JSON.stringify({ 
-            success: false,
             warning: 'duplicate_found',
             similar_documents: similares,
             message: 'Encontramos documentos similares. Deseja criar uma nova versão ou prosseguir?'
           }),
           { 
-            status: 200, // Mudado para 200 para não ser tratado como erro
+            status: 200,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
           }
         );
