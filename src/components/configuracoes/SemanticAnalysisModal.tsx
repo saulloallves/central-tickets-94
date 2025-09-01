@@ -118,48 +118,12 @@ export const SemanticAnalysisModal = ({
           }
         });
 
-        if (searchError) {
-          console.warn('Edge function error, usando busca direta:', searchError);
-          throw new Error('Edge function error');
+        if (!searchError && searchResult?.semantic_results?.results) {
+          semanticResults = searchResult.semantic_results.results;
         }
-
-        semanticResults = searchResult?.semantic_results?.results || [];
       } catch (edgeFunctionError) {
-        console.warn('Tentativa de busca direta no banco:', edgeFunctionError);
-        
-        // Fallback: busca direta na tabela documentos
-        try {
-          const { data: directResults, error: directError } = await supabase
-            .from('documentos')
-            .select('id, titulo, conteudo, categoria, versao, status, criado_em, tags')
-            .eq('status', 'ativo')
-            .limit(10);
-
-          if (directError) throw directError;
-
-          // Calcular similaridade simples baseada em palavras-chave
-          const queryWords = documentData.conteudo.toLowerCase().split(/\s+/);
-          semanticResults = (directResults || []).map((doc: any) => {
-            const docContent = typeof doc.conteudo === 'string' ? doc.conteudo : JSON.stringify(doc.conteudo);
-            const docWords = docContent.toLowerCase().split(/\s+/);
-            
-            // Similaridade baseada em palavras comuns
-            const commonWords = queryWords.filter(word => docWords.includes(word)).length;
-            const similarity = Math.min(commonWords / Math.max(queryWords.length, docWords.length), 0.95);
-            
-            return {
-              ...doc,
-              similarity_score: similarity,
-              semantic_relevance: similarity * 0.8,
-              final_score: similarity
-            };
-          }).filter((doc: any) => doc.similarity_score > 0.1)
-            .sort((a: any, b: any) => b.similarity_score - a.similarity_score);
-          
-        } catch (directError) {
-          console.error('Erro na busca direta:', directError);
-          semanticResults = [];
-        }
+        console.warn('Edge function não disponível, continuando sem resultados:', edgeFunctionError);
+        // Não fazer nada - semanticResults permanece vazio
       }
 
       await new Promise(resolve => setTimeout(resolve, 500));
