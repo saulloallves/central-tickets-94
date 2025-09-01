@@ -501,17 +501,17 @@ CATEGORIA: ${categoria || 'Geral'}
     console.log('=== EMBEDDING GERADO ===');
     console.log('Embedding gerado, dimensões:', embedding.length);
 
-    // Verificar duplicatas usando busca vetorial (apenas se não forçado)
+    // Verificar duplicatas usando busca vetorial melhorada (apenas se não forçado)
     if (!artigo_id && !force) {
-      console.log('Verificando duplicatas com threshold 0.85...');
+      console.log('Verificando duplicatas com busca semântica avançada...');
       // Usar busca semântica melhorada para detectar duplicatas por assunto
       const { data: similares, error: matchError } = await supabase.rpc('match_documentos_semantico', {
         query_embedding: embedding,
-        query_text: `${finalTitulo} ${typeof finalConteudo === 'string' ? finalConteudo.substring(0, 200) : ''}`,
-        match_threshold: 0.80, // Threshold mais alto para duplicatas
-        match_count: 5,
-        require_category_match: categoria ? true : false,
-        categoria_filtro: categoria
+        query_text: embeddingEnriquecido,
+        match_threshold: 0.70, // Threshold mais baixo para capturar mais documentos similares
+        match_count: 10,
+        require_category_match: false,
+        categoria_filtro: finalCategoria
       });
 
       console.log('Resultado da busca de similares:', { similares, matchError });
@@ -522,20 +522,58 @@ CATEGORIA: ${categoria || 'Geral'}
         // Não retornar erro, apenas continuar sem verificação
       } else if (similares && similares.length > 0) {
         console.log('Documentos similares encontrados:', similares.length);
-        console.log('Detalhes dos similares:', similares);
         
-        // Retornar com status 200 mas indicando duplicata
-        return new Response(
-          JSON.stringify({ 
+        // Encontrar o documento mais similar
+        const maxSimilarity = Math.max(...similares.map(doc => doc.similaridade));
+        console.log('Maior similaridade encontrada:', maxSimilarity);
+        
+        // Se a similaridade é significativa (>= 0.75), avisar sobre duplicatas
+        if (maxSimilarity >= 0.75) {
+          console.log('Documentos similares detectados - retornando warning');
+          
+          // Buscar informações complementares dos documentos similares
+          const docsWithDetails = await Promise.all(
+            similares.map(async (doc) => {
+              const { data: docDetails } = await supabase
+                .from('documentos')
+                .select(`
+                  id, titulo, conteudo, categoria, versao, status,
+                  criado_em, criado_por, tags, ia_modelo,
+                  profiles!inner(nome_completo, email)
+                `)
+                .eq('id', doc.id)
+                .single();
+              
+              return {
+                id: doc.id,
+                titulo: doc.titulo,
+                conteudo: doc.conteudo,
+                categoria: doc.categoria,
+                versao: doc.versao,
+                similaridade: doc.similaridade,
+                relevancia_semantica: doc.relevancia_semantica || 0,
+                score_final: doc.score_final || doc.similaridade,
+                status: docDetails?.status || 'ativo',
+                criado_em: docDetails?.criado_em,
+                criado_por: docDetails?.criado_por,
+                tags: docDetails?.tags || [],
+                ia_modelo: docDetails?.ia_modelo,
+                profile: docDetails?.profiles
+              };
+            })
+          );
+          
+          return new Response(JSON.stringify({
+            success: false,
             warning: 'duplicate_found',
-            similar_documents: similares,
-            message: 'Encontramos documentos similares. Deseja criar uma nova versão ou prosseguir?'
-          }),
-          { 
-            status: 200,
+            message: `${similares.length} documento(s) similar(es) encontrado(s). Maior similaridade: ${Math.round(maxSimilarity * 100)}%`,
+            similar_documents: docsWithDetails.sort((a, b) => b.score_final - a.score_final)
+          }), { 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        );
+          });
+        } else {
+          console.log('Documentos similares encontrados mas não são duplicatas significativas');
+        }
       } else {
         console.log('Nenhuma duplicata encontrada');
       }
