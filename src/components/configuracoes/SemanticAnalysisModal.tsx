@@ -223,7 +223,7 @@ export const SemanticAnalysisModal = ({
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Bot className="h-5 w-5 text-blue-500" />
@@ -234,8 +234,7 @@ export const SemanticAnalysisModal = ({
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 px-6">
-          <div className="space-y-6 pb-6">
+        <div className="space-y-6 p-6">
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm">Progresso da Análise</CardTitle>
@@ -433,8 +432,7 @@ export const SemanticAnalysisModal = ({
               )}
             </>
           )}
-          </div>
-        </ScrollArea>
+        </div>
 
         {currentStep === 'complete' && (
           <DialogFooter className="flex-col sm:flex-row gap-2">
