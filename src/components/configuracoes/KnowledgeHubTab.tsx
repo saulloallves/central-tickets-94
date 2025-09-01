@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Switch } from '@/components/ui/switch';
 import { Plus, Search, FileText, AlertTriangle, Database, TrendingUp, Shield, CheckCircle, Bot, Sparkles, Settings, FileUp, FilePlus, X, Info, Eye } from 'lucide-react';
 import { useRAGDocuments } from '@/hooks/useRAGDocuments';
+import { supabase } from '@/integrations/supabase/client';
 
 const KnowledgeHubTab = () => {
   const { documents, loading, fetchDocuments, createDocument, updateDocumentStatus, runAudit } = useRAGDocuments();
@@ -23,6 +24,7 @@ const KnowledgeHubTab = () => {
   const [auditResults, setAuditResults] = useState(null);
   const [duplicateDialog, setDuplicateDialog] = useState(null);
   const [selectedDocument, setSelectedDocument] = useState(null);
+  const [availableCategories, setAvailableCategories] = useState([]);
   
   const [newDocument, setNewDocument] = useState({
     titulo: '',
@@ -139,6 +141,29 @@ const KnowledgeHubTab = () => {
   };
 
   const stats = getStats();
+
+  // Buscar categorias existentes
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('documentos')
+          .select('categoria')
+          .not('categoria', 'is', null)
+          .not('categoria', 'eq', '');
+        
+        if (error) throw error;
+        
+        // Extrair categorias únicas
+        const uniqueCategories = [...new Set(data.map(doc => doc.categoria))].filter(Boolean);
+        setAvailableCategories(uniqueCategories);
+      } catch (error) {
+        console.error('Erro ao buscar categorias:', error);
+      }
+    };
+    
+    fetchCategories();
+  }, [documents]); // Re-buscar quando documents mudarem
 
   return (
     <div className="space-y-6">
@@ -312,12 +337,19 @@ const KnowledgeHubTab = () => {
                           (opcional - IA categoriza automaticamente se não selecionada)
                         </span>
                       </Label>
-                      <Input
-                        id="categoria"
-                        value={newDocument.categoria || ''}
-                        onChange={(e) => setNewDocument({...newDocument, categoria: e.target.value})}
-                        placeholder="Digite uma categoria ou deixe vazio para IA categorizar"
-                      />
+                      <Select value={newDocument.categoria} onValueChange={(value) => setNewDocument({...newDocument, categoria: value})}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione uma categoria ou deixe vazio para IA categorizar" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">💡 Deixar vazio (IA categoriza automaticamente)</SelectItem>
+                          {availableCategories.map((categoria) => (
+                            <SelectItem key={categoria} value={categoria}>
+                              {categoria}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <p className="text-xs text-muted-foreground">
                         💡 Deixe vazio para que a IA categorize automaticamente baseada no conteúdo
                       </p>
