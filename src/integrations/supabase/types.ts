@@ -2602,7 +2602,7 @@ export type Database = {
           categoria: string
           conteudo: Json
           id: string
-          similarity: number
+          similaridade: number
           titulo: string
           versao: number
         }[]
