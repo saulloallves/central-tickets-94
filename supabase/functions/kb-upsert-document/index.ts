@@ -250,11 +250,11 @@ serve(async (req) => {
     
     const { titulo, conteudo, categoria, tipo, valido_ate, tags, justificativa, artigo_id, force, estilo, process_with_ai } = bodyData;
     
-    if (!titulo || !conteudo || !justificativa) {
+    if (!titulo || !conteudo) {
       console.error('Campos obrigatórios ausentes:', { titulo: !!titulo, conteudo: !!conteudo, justificativa: !!justificativa });
       return new Response(
         JSON.stringify({ 
-          error: 'Título, conteúdo e justificativa são obrigatórios',
+          error: 'Título e conteúdo são obrigatórios',
           received: { titulo: !!titulo, conteudo: !!conteudo, justificativa: !!justificativa }
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
