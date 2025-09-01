@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Search, FileText, AlertTriangle, Database, TrendingUp, Shield, CheckCircle, Bot, Sparkles } from 'lucide-react';
+import { Plus, Search, FileText, AlertTriangle, Database, TrendingUp, Shield, CheckCircle, Bot, Sparkles, Settings, FileUp, FilePlus, X, Info } from 'lucide-react';
 import { useRAGDocuments } from '@/hooks/useRAGDocuments';
 
 const KnowledgeHubTab = () => {
@@ -504,40 +504,190 @@ const KnowledgeHubTab = () => {
         </CardContent>
       </Card>
 
-      {/* Dialog de duplicatas */}
+      {/* Dialog de duplicatas melhorado */}
       {duplicateDialog && (
-        <AlertDialog open={!!duplicateDialog} onOpenChange={() => setDuplicateDialog(null)}>
-          <AlertDialogContent className="max-w-2xl">
-            <AlertDialogHeader>
-              <AlertDialogTitle>⚠️ Duplicatas Detectadas</AlertDialogTitle>
-              <AlertDialogDescription>
-                {duplicateDialog.message}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
+        <Dialog open={!!duplicateDialog} onOpenChange={() => setDuplicateDialog(null)}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-yellow-100 dark:bg-yellow-900/20 flex items-center justify-center">
+                  <AlertTriangle className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+                </div>
+                <div>
+                  <DialogTitle className="text-xl">Duplicatas Detectadas</DialogTitle>
+                  <DialogDescription className="text-base">
+                    Encontramos documentos similares na base de conhecimento. Escolha como deseja proceder:
+                  </DialogDescription>
+                </div>
+              </div>
+            </DialogHeader>
             
-            <div className="space-y-3 max-h-60 overflow-y-auto">
-              {duplicateDialog.similar.map((doc, index) => (
-                <Card key={doc.id} className="p-3">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h5 className="font-medium">{doc.titulo}</h5>
-                      <p className="text-sm text-muted-foreground">
-                        Similaridade: {(doc.similaridade * 100).toFixed(1)}% | Versão: {doc.versao}
+            <div className="space-y-6">
+              {/* Seção de documentos similares */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                  <FileText className="w-5 h-5" />
+                  Documentos Similares Encontrados
+                </h3>
+                <div className="space-y-3 max-h-80 overflow-y-auto border rounded-lg p-4 bg-muted/20">
+                  {duplicateDialog.similar.map((doc, index) => (
+                    <Card key={doc.id} className="border-l-4 border-l-yellow-500">
+                      <CardContent className="p-4">
+                        <div className="flex justify-between items-start gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <FileText className="w-4 h-4" />
+                              <h5 className="font-medium">{doc.titulo}</h5>
+                              <Badge variant="outline">v{doc.versao}</Badge>
+                            </div>
+                            
+                            <div className="grid grid-cols-3 gap-4 text-sm text-muted-foreground mb-2">
+                              <div>
+                                <span className="font-medium">Similaridade:</span>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                    <div 
+                                      className="h-full bg-gradient-to-r from-yellow-400 to-red-500 rounded-full"
+                                      style={{ width: `${(doc.similaridade * 100)}%` }}
+                                    />
+                                  </div>
+                                  <span className="font-mono">{(doc.similaridade * 100).toFixed(1)}%</span>
+                                </div>
+                              </div>
+                              <div>
+                                <span className="font-medium">Categoria:</span>
+                                <div>{doc.categoria || 'Não definida'}</div>
+                              </div>
+                              <div>
+                                <span className="font-medium">Status:</span>
+                                <Badge className={statusColors[doc.status]}>{doc.status}</Badge>
+                              </div>
+                            </div>
+
+                            <div className="text-sm">
+                              <span className="font-medium">Conteúdo:</span>
+                              <p className="text-muted-foreground mt-1 line-clamp-2">
+                                {typeof doc.conteudo === 'string' 
+                                  ? doc.conteudo.substring(0, 150) + '...'
+                                  : JSON.stringify(doc.conteudo).substring(0, 150) + '...'
+                                }
+                              </p>
+                            </div>
+
+                            {doc.tags && doc.tags.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-2">
+                                {doc.tags.slice(0, 3).map((tag, tagIndex) => (
+                                  <Badge key={tagIndex} variant="outline" className="text-xs">
+                                    {tag}
+                                  </Badge>
+                                ))}
+                                {doc.tags.length > 3 && (
+                                  <Badge variant="outline" className="text-xs">
+                                    +{doc.tags.length - 3} mais
+                                  </Badge>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+
+              {/* Opções de ação */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                  <Settings className="w-5 h-5" />
+                  Opções de Ação
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card className="hover:shadow-md transition-all cursor-pointer border-2 hover:border-primary/50">
+                    <CardContent className="p-4 text-center">
+                      <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center mx-auto mb-3">
+                        <FileUp className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <h4 className="font-semibold mb-2">Nova Versão</h4>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Criar uma nova versão do documento existente mais similar
                       </p>
+                      <Button 
+                        className="w-full" 
+                        variant="outline"
+                        onClick={() => {
+                          console.log('Criar nova versão para documento similar');
+                          // TODO: Implementar lógica de nova versão
+                          setDuplicateDialog(null);
+                        }}
+                      >
+                        <FileUp className="w-4 h-4 mr-2" />
+                        Nova Versão
+                      </Button>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="hover:shadow-md transition-all cursor-pointer border-2 hover:border-primary/50">
+                    <CardContent className="p-4 text-center">
+                      <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center mx-auto mb-3">
+                        <FilePlus className="w-6 h-6 text-green-600 dark:text-green-400" />
+                      </div>
+                      <h4 className="font-semibold mb-2">Criar Separado</h4>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Criar um novo documento independente mesmo com similaridades
+                      </p>
+                      <Button 
+                        className="w-full" 
+                        onClick={handleForceProceed}
+                      >
+                        <FilePlus className="w-4 h-4 mr-2" />
+                        Criar Novo
+                      </Button>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="hover:shadow-md transition-all cursor-pointer border-2 hover:border-destructive/50">
+                    <CardContent className="p-4 text-center">
+                      <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center mx-auto mb-3">
+                        <X className="w-6 h-6 text-red-600 dark:text-red-400" />
+                      </div>
+                      <h4 className="font-semibold mb-2">Cancelar</h4>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Cancelar a criação e revisar o conteúdo
+                      </p>
+                      <Button 
+                        className="w-full" 
+                        variant="outline"
+                        onClick={() => setDuplicateDialog(null)}
+                      >
+                        <X className="w-4 h-4 mr-2" />
+                        Cancelar
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+
+              {/* Informações adicionais */}
+              <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                  <div>
+                    <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                      Sobre a Detecção de Duplicatas
+                    </h4>
+                    <div className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+                      <p>• Similaridade acima de 85% indica conteúdo muito similar</p>
+                      <p>• Nova versão mantém histórico e versionamento</p>
+                      <p>• Criar separado pode causar redundância na base</p>
+                      <p>• Recomendamos revisar o conteúdo antes de prosseguir</p>
                     </div>
                   </div>
-                </Card>
-              ))}
+                </div>
+              </div>
             </div>
-
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={handleForceProceed}>
-                Prosseguir Mesmo Assim
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+          </DialogContent>
+        </Dialog>
       )}
 
       {/* Resultados da auditoria */}
