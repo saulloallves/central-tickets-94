@@ -446,7 +446,7 @@ const KnowledgeHubTab = () => {
                           )}
                         </div>
                         
-                        {doc.tags.length > 0 && (
+                        {doc.tags && doc.tags.length > 0 && (
                           <div className="flex flex-wrap gap-1 mb-2">
                             {doc.tags.map((tag, index) => (
                               <Badge key={index} variant="outline" className="text-xs">
@@ -828,7 +828,7 @@ const KnowledgeHubTab = () => {
                   </CardContent>
                 </Card>
 
-                {selectedDocument.tags.length > 0 && (
+                {selectedDocument.tags && selectedDocument.tags.length > 0 && (
                   <Card>
                     <CardContent className="p-4">
                       <h4 className="font-medium mb-2">Tags</h4>
