@@ -99,8 +99,8 @@ export const CreateMemoryModal = ({ open, onOpenChange, onSuccess }: CreateMemor
         file: inputMethod === 'file' ? file : undefined
       });
 
-      // Para manuais, preencher automaticamente título e categoria da resposta da IA
-      if (result && estilo === 'manual') {
+      // Para manuais e diretrizes, preencher automaticamente título e categoria da resposta da IA
+      if (result && (estilo === 'manual' || estilo === 'diretrizes')) {
         if (result.titulo && !titulo.trim()) {
           setTitulo(result.titulo);
         }
