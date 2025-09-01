@@ -24,7 +24,7 @@ serve(async (req) => {
       .from('documentos')
       .select(`
         *,
-        profile:criado_por(nome_completo, email)
+        profile:profiles!criado_por(nome_completo, email)
       `)
       .order('criado_em', { ascending: false });
 

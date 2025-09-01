@@ -814,7 +814,7 @@ const KnowledgeHubTab = () => {
                     <div className="space-y-2 text-sm">
                       <div><strong>ID:</strong> {selectedDocument.id}</div>
                       <div><strong>Artigo ID:</strong> {selectedDocument.artigo_id}</div>
-                      <div><strong>Criado em:</strong> {new Date(selectedDocument.criado_em).toLocaleDateString('pt-BR')}</div>
+                      <div><strong>Criado em:</strong> {selectedDocument.criado_em ? new Date(selectedDocument.criado_em).toLocaleDateString('pt-BR') : 'Não informado'}</div>
                       <div><strong>Criado por:</strong> {selectedDocument.profile?.nome_completo || selectedDocument.criado_por}</div>
                       <div><strong>Categoria:</strong> {selectedDocument.categoria || 'Não definida'}</div>
                       {selectedDocument.valido_ate && (
