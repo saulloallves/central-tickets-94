@@ -62,11 +62,16 @@ serve(async (req) => {
     const embeddingData = await embeddingResponse.json();
     const queryEmbedding = embeddingData.data[0].embedding;
 
-    console.log('Embedding gerado');
+    console.log('Embedding gerado com sucesso');
+    console.log('Dimensões do embedding:', queryEmbedding.length);
 
     // Configura busca conforme a documentação
-    const LIMIAR_DE_RELEVANCIA = 0.75; // Limiar mais baixo para pegar ideias relacionadas
+    const LIMIAR_DE_RELEVANCIA = 0.5; // Limiar mais baixo para pegar ideias relacionadas
     const MAXIMO_DE_DOCUMENTOS = 5;    // Lista útil para análise
+
+    console.log('Iniciando busca com parâmetros:');
+    console.log('- match_threshold:', LIMIAR_DE_RELEVANCIA);
+    console.log('- match_count:', MAXIMO_DE_DOCUMENTOS);
 
     // Chama a função match_documentos conforme a documentação
     const { data: documentosExistentes, error } = await supabase.rpc('match_documentos', {
@@ -74,6 +79,11 @@ serve(async (req) => {
       match_threshold: LIMIAR_DE_RELEVANCIA,
       match_count: MAXIMO_DE_DOCUMENTOS
     });
+
+    console.log('Resultado da busca:');
+    console.log('- error:', error);
+    console.log('- documentosExistentes:', documentosExistentes);
+    console.log('- quantidade encontrada:', documentosExistentes?.length || 0);
 
     if (error) {
       console.error("Erro ao verificar assuntos relacionados:", error);
