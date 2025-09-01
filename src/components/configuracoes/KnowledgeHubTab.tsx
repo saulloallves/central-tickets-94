@@ -27,6 +27,7 @@ const KnowledgeHubTab = () => {
   const [newDocument, setNewDocument] = useState({
     titulo: '',
     conteudo: '',
+    categoria: '',
     tipo: 'permanente' as 'permanente' | 'temporario',
     valido_ate: '',
     tags: '',
@@ -65,6 +66,7 @@ const KnowledgeHubTab = () => {
       setNewDocument({
         titulo: '',
         conteudo: '',
+        categoria: '',
         tipo: 'permanente',
         valido_ate: '',
         tags: '',
@@ -88,6 +90,7 @@ const KnowledgeHubTab = () => {
       setNewDocument({
         titulo: '',
         conteudo: '',
+        categoria: '',
         tipo: 'permanente',
         valido_ate: '',
         tags: '',
@@ -299,6 +302,25 @@ const KnowledgeHubTab = () => {
                           )}
                         </div>
                       )}
+                    </div>
+
+                    {/* Campo de Categoria */}
+                    <div className="grid gap-2">
+                      <Label htmlFor="categoria">
+                        Categoria
+                        <span className="text-sm text-muted-foreground ml-2">
+                          (opcional - IA categoriza automaticamente se não selecionada)
+                        </span>
+                      </Label>
+                      <Input
+                        id="categoria"
+                        value={newDocument.categoria || ''}
+                        onChange={(e) => setNewDocument({...newDocument, categoria: e.target.value})}
+                        placeholder="Digite uma categoria ou deixe vazio para IA categorizar"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        💡 Deixe vazio para que a IA categorize automaticamente baseada no conteúdo
+                      </p>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
