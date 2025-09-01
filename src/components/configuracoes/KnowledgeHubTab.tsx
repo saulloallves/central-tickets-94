@@ -562,27 +562,6 @@ const KnowledgeHubTab = () => {
                               </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground mb-3">
-                              <div>
-                                <span className="font-medium">Categoria:</span>
-                                <div className="mt-1">{doc.categoria || 'Não definida'}</div>
-                              </div>
-                              <div>
-                                <span className="font-medium">Versão:</span>
-                                <div className="mt-1">v{doc.versao || 1}</div>
-                              </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground mb-3">
-                              <div>
-                                <span className="font-medium">Criado em:</span>
-                                <div className="mt-1">{doc.criado_em ? new Date(doc.criado_em).toLocaleDateString('pt-BR') : 'Não informado'}</div>
-                              </div>
-                              <div>
-                                <span className="font-medium">Criado por:</span>
-                                <div className="mt-1">{doc.profile?.nome_completo || doc.criado_por || 'Não informado'}</div>
-                              </div>
-                            </div>
 
                             <div className="text-sm">
                               <span className="font-medium">Conteúdo:</span>
