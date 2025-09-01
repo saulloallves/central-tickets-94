@@ -518,7 +518,7 @@ serve(async (req) => {
       conteudo: typeof finalConteudo === 'string' ? { texto: finalConteudo } : finalConteudo,
       categoria: finalCategoria,
       tipo: tipo || 'permanente',
-      valido_ate,
+      valido_ate: valido_ate && valido_ate.trim() !== '' ? valido_ate : null, // Corrige string vazia
       tags: tags || [],
       justificativa,
       criado_por: (await supabase.auth.getUser()).data.user?.id,
