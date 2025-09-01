@@ -501,13 +501,20 @@ CATEGORIA: ${categoria || 'Geral'}
     console.log('=== EMBEDDING GERADO ===');
     console.log('Embedding gerado, dimensões:', embedding.length);
 
-    // Verificar duplicatas usando busca vetorial melhorada (apenas se não forçado)
+    // SEMPRE verificar duplicatas usando busca vetorial melhorada (apenas se não forçado)
     if (!artigo_id && !force) {
+      console.log('=== INICIANDO VERIFICAÇÃO DE DUPLICATAS ===');
       console.log('Verificando duplicatas com busca semântica avançada...');
+      
+      // Criar texto de busca básico se não houver processamento com IA
+      const textoParaBusca = embeddingEnriquecido || `${finalTitulo} ${typeof finalConteudo === 'string' ? finalConteudo.substring(0, 300) : JSON.stringify(finalConteudo).substring(0, 300)}`;
+      
+      console.log('Texto para busca semântica (primeiros 200 chars):', textoParaBusca.substring(0, 200));
+      
       // Usar busca semântica melhorada para detectar duplicatas por assunto
       const { data: similares, error: matchError } = await supabase.rpc('match_documentos_semantico', {
         query_embedding: embedding,
-        query_text: embeddingEnriquecido,
+        query_text: textoParaBusca,
         match_threshold: 0.70, // Threshold mais baixo para capturar mais documentos similares
         match_count: 10,
         require_category_match: false,
