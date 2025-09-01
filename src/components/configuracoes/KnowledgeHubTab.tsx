@@ -337,12 +337,12 @@ const KnowledgeHubTab = () => {
                           (opcional - IA categoriza automaticamente se não selecionada)
                         </span>
                       </Label>
-                      <Select value={newDocument.categoria} onValueChange={(value) => setNewDocument({...newDocument, categoria: value})}>
+                      <Select value={newDocument.categoria || "auto"} onValueChange={(value) => setNewDocument({...newDocument, categoria: value === "auto" ? "" : value})}>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione uma categoria ou deixe vazio para IA categorizar" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">💡 Deixar vazio (IA categoriza automaticamente)</SelectItem>
+                          <SelectItem value="auto">💡 Deixar vazio (IA categoriza automaticamente)</SelectItem>
                           {availableCategories.map((categoria) => (
                             <SelectItem key={categoria} value={categoria}>
                               {categoria}
