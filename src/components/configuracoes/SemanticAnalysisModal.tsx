@@ -222,7 +222,7 @@ export const SemanticAnalysisModal = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={currentStep === 'complete' ? onOpenChange : () => {}}>
+    <Dialog open={open} onOpenChange={() => {}}>
       <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
