@@ -43,9 +43,14 @@ const KnowledgeHubTab = () => {
       process_with_ai: newDocument.process_with_ai && !!newDocument.estilo
     };
 
+    console.log('Criando documento com dados:', documentData);
+
     const result = await createDocument(documentData);
     
+    console.log('Resultado da criação:', result);
+    
     if (result.warning === 'duplicate_found') {
+      console.log('Detectada duplicata, mostrando modal...');
       setDuplicateDialog({
         similar: result.similar_documents,
         message: result.message,
@@ -55,6 +60,7 @@ const KnowledgeHubTab = () => {
     }
 
     if (result.success) {
+      console.log('Documento criado com sucesso!');
       setIsCreateDialogOpen(false);
       setNewDocument({
         titulo: '',

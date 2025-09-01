@@ -94,27 +94,37 @@ export const useRAGDocuments = () => {
         body: documentData
       });
 
+      console.log('Response from kb-upsert-document:', { data, error });
+
       if (error) {
-        if (error.message?.includes('409')) {
-          // Duplicate found
-          const errorData = typeof error === 'string' ? JSON.parse(error) : error;
-          return {
-            success: false,
-            warning: 'duplicate_found',
-            similar_documents: errorData.similar_documents as SimilarDocument[],
-            message: errorData.message
-          };
-        }
+        console.log('Error details:', error);
         throw error;
       }
 
-      toast({
-        title: "✅ Documento Criado",
-        description: data.message || "Documento adicionado à base RAG",
-      });
+      // Verificar se a resposta indica duplicata
+      if (data && data.warning === 'duplicate_found') {
+        console.log('Duplicata encontrada na resposta:', data);
+        return {
+          success: false,
+          warning: 'duplicate_found',
+          similar_documents: data.similar_documents as SimilarDocument[],
+          message: data.message || 'Documentos similares encontrados'
+        };
+      }
 
-      await fetchDocuments();
-      return { success: true, document: data.document };
+      // Se chegou aqui, documento foi criado com sucesso
+      if (data && data.success) {
+        toast({
+          title: "✅ Documento Criado",
+          description: data.message || "Documento adicionado à base RAG",
+        });
+
+        await fetchDocuments();
+        return { success: true, document: data.document };
+      }
+
+      // Fallback - tratar como erro se não tem sucesso nem warning
+      throw new Error('Resposta inesperada do servidor');
     } catch (error: any) {
       console.error('Error creating document:', error);
       toast({
