@@ -40,16 +40,9 @@ export function LogoSettings() {
         </div>
       </div>
       
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Logo do Sistema</CardTitle>
-          <CardDescription>
-            Gerencie o logotipo exibido no sistema
-          </CardDescription>
-        </CardHeader>
-      <CardContent className="space-y-4">
+      <div className="w-full max-w-md space-y-4">
         <div className="flex flex-col items-center space-y-4">
-          <div className="w-24 h-24 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
+          <div className="w-24 h-24 flex items-center justify-center border-2 border-dashed border-border rounded-lg bg-muted/30">
             {logoUrl ? (
               <img 
                 src={logoUrl} 
@@ -57,7 +50,7 @@ export function LogoSettings() {
                 className="w-20 h-20 object-contain rounded"
               />
             ) : (
-              <div className="text-gray-400 text-sm text-center">
+              <div className="text-muted-foreground text-sm text-center">
                 Nenhum logo<br />definido
               </div>
             )}
@@ -70,13 +63,12 @@ export function LogoSettings() {
           />
           
           {isUpdating && (
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-muted-foreground">
               Atualizando logo...
             </div>
           )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
     </div>
   );
 }
