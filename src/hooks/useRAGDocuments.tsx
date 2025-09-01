@@ -85,6 +85,7 @@ export const useRAGDocuments = () => {
     artigo_id?: string;
     estilo?: 'manual' | 'diretriz';
     process_with_ai?: boolean;
+    force?: boolean;
   }) => {
     try {
       setLoading(true);

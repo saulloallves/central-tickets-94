@@ -488,16 +488,19 @@ serve(async (req) => {
     console.log('Embedding gerado, dimensões:', embedding.length);
 
     // Verificar duplicatas usando busca vetorial (apenas se não forçado)
-    // TEMPORARIAMENTE DESABILITADO PARA DEBUG
-    if (false && !artigo_id && !force) {
-      const { data: similares } = await supabase.rpc('match_documentos', {
+    if (!artigo_id && !force) {
+      console.log('Verificando duplicatas com threshold 0.85...');
+      const { data: similares, error: matchError } = await supabase.rpc('match_documentos', {
         query_embedding: embedding,
         match_threshold: 0.85,
         match_count: 3
       });
 
-      if (similares && similares.length > 0) {
+      if (matchError) {
+        console.error('Erro ao buscar duplicatas:', matchError);
+      } else if (similares && similares.length > 0) {
         console.log('Documentos similares encontrados:', similares.length);
+        console.log('Detalhes dos similares:', similares);
         return new Response(
           JSON.stringify({ 
             warning: 'duplicate_found',
@@ -509,6 +512,8 @@ serve(async (req) => {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
           }
         );
+      } else {
+        console.log('Nenhuma duplicata encontrada');
       }
     }
 
