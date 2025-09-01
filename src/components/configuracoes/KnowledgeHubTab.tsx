@@ -548,10 +548,10 @@ const KnowledgeHubTab = () => {
                                   <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
                                     <div 
                                       className="h-full bg-gradient-to-r from-yellow-400 to-red-500 rounded-full"
-                                      style={{ width: `${(doc.similaridade * 100)}%` }}
+                                      style={{ width: `${((doc.similarity || doc.similaridade || 0) * 100)}%` }}
                                     />
                                   </div>
-                                  <span className="font-mono">{(doc.similaridade * 100).toFixed(1)}%</span>
+                                  <span className="font-mono">{((doc.similarity || doc.similaridade || 0) * 100).toFixed(1)}%</span>
                                 </div>
                               </div>
                               <div>
@@ -560,7 +560,7 @@ const KnowledgeHubTab = () => {
                               </div>
                               <div>
                                 <span className="font-medium">Status:</span>
-                                <Badge className={statusColors[doc.status]}>{doc.status}</Badge>
+                                <Badge className={statusColors[doc.status] || 'bg-gray-500'}>{doc.status || 'Indefinido'}</Badge>
                               </div>
                             </div>
 
