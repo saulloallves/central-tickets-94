@@ -114,14 +114,17 @@ export const SemanticAnalysisModal = ({
         // Tentar usar a edge function para busca semântica
         const { data: searchResult, error: searchError } = await supabase.functions.invoke('test-semantic-rag', {
           body: {
-            query: documentData.conteudo,
-            assunto: documentData.titulo,
-            categoria: documentData.categoria || null
+            titulo: documentData.titulo || '',
+            conteudo: documentData.conteudo || ''
           }
         });
 
-        if (!searchError && searchResult?.semantic_results?.results) {
-          semanticResults = searchResult.semantic_results.results;
+        if (!searchError && searchResult?.documentos_relacionados) {
+          semanticResults = searchResult.documentos_relacionados;
+        } else if (searchError) {
+          console.warn('Erro na função edge:', searchError);
+        } else {
+          console.log('Resultado da função edge:', searchResult);
         }
       } catch (edgeFunctionError) {
         console.warn('Edge function não disponível, continuando sem resultados:', edgeFunctionError);
