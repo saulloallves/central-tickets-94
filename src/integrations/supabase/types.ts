@@ -2608,14 +2608,20 @@ export type Database = {
         }[]
       }
       match_documentos_semantico: {
-        Args: {
-          categoria_filtro?: string
-          match_count?: number
-          match_threshold?: number
-          query_embedding: string
-          query_text?: string
-          require_category_match?: boolean
-        }
+        Args:
+          | {
+              categoria_filtro?: string
+              match_count?: number
+              match_threshold?: number
+              query_embedding: string
+              query_text?: string
+              require_category_match?: boolean
+            }
+          | {
+              match_count?: number
+              match_threshold?: number
+              query_embedding: string
+            }
         Returns: {
           categoria: string
           conteudo: Json
