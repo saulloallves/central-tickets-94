@@ -7,6 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { AlertTriangle, CheckCircle, XCircle, BookOpen, Tag, Clock, User, Percent, Search, Bot, Loader2, FileCheck } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SimilarDocument {
   id: string;
@@ -99,54 +100,52 @@ export const SemanticAnalysisModal = ({
 
       setCurrentStep('search');
       
-      // Simular busca semântica
+      // Chamar a edge function real para busca semântica
       await new Promise(resolve => setTimeout(resolve, 1000));
       setProgress(60);
 
       setCurrentStep('analysis');
       
-      // Aqui você faria a chamada real para a edge function
-      // Por ora, vou simular alguns documentos similares
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Documentos fictícios para demonstração
-      const mockSimilarDocs: SimilarDocument[] = [
-        {
-          id: '1',
-          titulo: 'Documento Similar 1',
-          conteudo: 'Conteúdo similar ao que está sendo criado...',
-          categoria: 'Exemplo',
-          versao: 1,
-          similaridade: 0.85,
-          relevancia_semantica: 0.8,
-          score_final: 0.82,
-          status: 'ativo',
-          criado_em: new Date().toISOString(),
-          tags: ['exemplo', 'teste']
-        },
-        {
-          id: '2',
-          titulo: 'Outro Documento Relacionado',
-          conteudo: 'Outro conteúdo com alguma similaridade...',
-          categoria: 'Exemplo',
-          versao: 2,
-          similaridade: 0.73,
-          relevancia_semantica: 0.7,
-          score_final: 0.71,
-          status: 'ativo',
-          criado_em: new Date().toISOString(),
-          tags: ['relacionado']
+      // Chamar a edge function test-semantic-rag para análise semântica real
+      const { data: searchResult, error: searchError } = await supabase.functions.invoke('test-semantic-rag', {
+        body: {
+          query: documentData.conteudo,
+          assunto: documentData.titulo,
+          categoria: documentData.categoria || null
         }
-      ];
+      });
 
+      if (searchError) {
+        throw new Error(`Erro na busca semântica: ${searchError.message}`);
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 500));
       setProgress(90);
+
+      // Processar resultados da busca semântica
+      const semanticResults = searchResult?.semantic_results?.results || [];
+      const mockSimilarDocs: SimilarDocument[] = semanticResults.map((result: any, index: number) => ({
+        id: result.id || `semantic-${index}`,
+        titulo: result.titulo || 'Documento sem título',
+        conteudo: result.conteudo || result.content || 'Conteúdo não disponível',
+        categoria: result.categoria || 'Sem categoria',
+        versao: result.versao || 1,
+        similaridade: result.similarity_score || result.similaridade || 0,
+        relevancia_semantica: result.semantic_relevance || result.relevancia_semantica || 0,
+        score_final: result.final_score || result.score_final || result.similarity_score || 0,
+        status: result.status || 'ativo',
+        criado_em: result.criado_em || result.created_at || new Date().toISOString(),
+        tags: result.tags || [],
+        profile: result.profile
+      }));
+
       setSimilarDocuments(mockSimilarDocs);
       
       setCurrentStep('complete');
       setProgress(100);
 
-      // Determinar recomendação
-      const maxSimilarity = Math.max(...mockSimilarDocs.map(doc => doc.similaridade));
+      // Determinar recomendação baseada nos resultados reais
+      const maxSimilarity = mockSimilarDocs.length > 0 ? Math.max(...mockSimilarDocs.map(doc => doc.similaridade)) : 0;
       let recommendation = '';
       let hasConflicts = false;
 
@@ -177,10 +176,18 @@ export const SemanticAnalysisModal = ({
       });
 
     } catch (error) {
-      setError('Erro durante a análise semântica');
+      console.error('Erro durante a análise semântica:', error);
+      setError(`Erro durante a análise semântica: ${error.message}`);
       setCurrentStep('complete');
       setProgress(100);
       setHasStartedAnalysis(false);
+      
+      // Em caso de erro, ainda chama onAnalysisComplete com resultado vazio
+      onAnalysisComplete({
+        hasConflicts: false,
+        similarDocuments: [],
+        recommendation: 'Erro na análise semântica. Verifique manualmente se há documentos similares.'
+      });
     }
   };
 
