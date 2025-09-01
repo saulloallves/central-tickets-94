@@ -166,6 +166,45 @@ export const useRAGDocuments = () => {
     }
   };
 
+  const updateDocument = async (documentId: string, updateData: {
+    titulo?: string;
+    conteudo?: any;
+    categoria?: string;
+    updateType?: 'full' | 'partial';
+    textToReplace?: string;
+  }) => {
+    try {
+      setLoading(true);
+      
+      const { data, error } = await supabase.functions.invoke('kb-update-document', {
+        body: { 
+          id: documentId, 
+          ...updateData 
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "✅ Documento Atualizado",
+        description: `Documento atualizado com sucesso`,
+      });
+
+      await fetchDocuments();
+      return { success: true };
+    } catch (error) {
+      console.error('Error updating document:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar o documento",
+        variant: "destructive",
+      });
+      return { success: false };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const runAudit = async () => {
     try {
       setLoading(true);
@@ -217,6 +256,7 @@ export const useRAGDocuments = () => {
     loading,
     fetchDocuments,
     createDocument,
+    updateDocument,
     updateDocumentStatus,
     runAudit,
     searchSimilar

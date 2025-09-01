@@ -18,20 +18,92 @@ serve(async (req) => {
   }
 
   try {
-    const { id, status } = await req.json();
+    const { 
+      id, 
+      status, 
+      titulo, 
+      conteudo, 
+      categoria, 
+      updateType, 
+      textToReplace 
+    } = await req.json();
     
-    if (!id || !status) {
+    if (!id) {
       return new Response(
-        JSON.stringify({ error: 'ID e status são obrigatórios' }),
+        JSON.stringify({ error: 'ID é obrigatório' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('Atualizando documento:', id, 'para status:', status);
+    console.log('Atualizando documento:', id, 'com dados:', { 
+      status, titulo, categoria, updateType, textToReplace 
+    });
+
+    let updateData: any = {};
+    
+    // Se está apenas atualizando status
+    if (status && !titulo && !conteudo) {
+      updateData.status = status;
+    } 
+    // Se está atualizando conteúdo
+    else if (titulo || conteudo || categoria) {
+      if (titulo) updateData.titulo = titulo;
+      if (categoria) updateData.categoria = categoria;
+      
+      if (conteudo) {
+        if (updateType === 'partial' && textToReplace) {
+          // Buscar o documento atual para fazer substituição parcial
+          const { data: currentDoc, error: fetchError } = await supabase
+            .from('documentos')
+            .select('conteudo')
+            .eq('id', id)
+            .single();
+            
+          if (fetchError) {
+            console.error('Erro ao buscar documento atual:', fetchError);
+            throw fetchError;
+          }
+          
+          // Fazer substituição do texto
+          let currentContent = '';
+          if (typeof currentDoc.conteudo === 'string') {
+            currentContent = currentDoc.conteudo;
+          } else if (typeof currentDoc.conteudo === 'object') {
+            currentContent = JSON.stringify(currentDoc.conteudo);
+          }
+          
+          let newContent = currentContent.replace(textToReplace, conteudo);
+          updateData.conteudo = newContent;
+          
+          console.log('Substituição parcial:', {
+            textoOriginal: textToReplace,
+            textoNovo: conteudo,
+            resultado: newContent.substring(0, 200) + '...'
+          });
+        } else {
+          // Atualização completa
+          updateData.conteudo = conteudo;
+        }
+      }
+      
+      // Incrementar versão quando há mudança de conteúdo
+      if (conteudo) {
+        const { data: currentDoc } = await supabase
+          .from('documentos')
+          .select('versao')
+          .eq('id', id)
+          .single();
+          
+        updateData.versao = (currentDoc?.versao || 1) + 1;
+      }
+    }
 
     const { data, error } = await supabase
       .from('documentos')
-      .update({ status })
+      .update({
+        ...updateData,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', id)
       .select()
       .single();
@@ -47,7 +119,9 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         document: data,
-        message: `Status atualizado para ${status}`
+        message: updateType === 'partial' && textToReplace 
+          ? `Texto "${textToReplace}" substituído com sucesso`
+          : `Documento atualizado com sucesso`
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

@@ -19,7 +19,7 @@ import { SemanticAnalysisModal } from './SemanticAnalysisModal';
 import { supabase } from '@/integrations/supabase/client';
 
 const KnowledgeHubTab = () => {
-  const { documents, loading, fetchDocuments, createDocument, updateDocumentStatus, runAudit } = useRAGDocuments();
+  const { documents, loading, fetchDocuments, createDocument, updateDocument, updateDocumentStatus, runAudit } = useRAGDocuments();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [estiloFilter, setEstiloFilter] = useState('');
@@ -99,14 +99,36 @@ const KnowledgeHubTab = () => {
     }
   };
 
-  const handleUpdateExisting = async (documentId: string) => {
-    // TODO: Implementar lógica para atualizar documento existente
-    console.log('Atualizando documento:', documentId);
-    setShowSemanticAnalysisModal(false);
-    setShowSimilarDocumentsModal(false);
-    setSimilarDocuments([]);
-    setPendingDocumentData(null);
-    setAnalysisResult(null);
+  const handleUpdateExisting = async (documentId: string, updateType?: 'full' | 'partial', textToReplace?: string) => {
+    console.log('Atualizando documento:', { documentId, updateType, textToReplace });
+    
+    if (!pendingDocumentData) {
+      console.error('Nenhum dado pendente para atualização');
+      return;
+    }
+
+    try {
+      const updateData = {
+        titulo: pendingDocumentData.titulo,
+        conteudo: pendingDocumentData.conteudo,
+        categoria: pendingDocumentData.categoria,
+        updateType: updateType || 'full',
+        textToReplace: textToReplace || ''
+      };
+
+      const result = await updateDocument(documentId, updateData);
+      
+      if (result.success) {
+        console.log('Documento atualizado com sucesso');
+        setShowSemanticAnalysisModal(false);
+        setShowSimilarDocumentsModal(false);
+        setSimilarDocuments([]);
+        setPendingDocumentData(null);
+        setAnalysisResult(null);
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar documento:', error);
+    }
   };
 
   const handleCancelAnalysis = () => {
