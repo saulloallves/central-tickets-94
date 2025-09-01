@@ -15,6 +15,7 @@ import { Switch } from '@/components/ui/switch';
 import { Plus, Search, FileText, AlertTriangle, Database, TrendingUp, Shield, CheckCircle, Bot, Sparkles, Settings, FileUp, FilePlus, X, Info, Eye } from 'lucide-react';
 import { useRAGDocuments } from '@/hooks/useRAGDocuments';
 import { SimilarDocumentsModal } from './SimilarDocumentsModal';
+import { SemanticAnalysisModal } from './SemanticAnalysisModal';
 import { supabase } from '@/integrations/supabase/client';
 
 const KnowledgeHubTab = () => {
@@ -25,8 +26,10 @@ const KnowledgeHubTab = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [auditResults, setAuditResults] = useState(null);
   const [showSimilarDocumentsModal, setShowSimilarDocumentsModal] = useState(false);
+  const [showSemanticAnalysisModal, setShowSemanticAnalysisModal] = useState(false);
   const [similarDocuments, setSimilarDocuments] = useState([]);
   const [pendingDocumentData, setPendingDocumentData] = useState(null);
+  const [analysisResult, setAnalysisResult] = useState(null);
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [availableCategories, setAvailableCategories] = useState([]);
   
@@ -50,50 +53,37 @@ const KnowledgeHubTab = () => {
       process_with_ai: newDocument.process_with_ai && !!newDocument.estilo
     };
 
-    console.log('Criando documento com dados:', documentData);
+    console.log('Iniciando análise semântica para:', documentData);
 
-    const result = await createDocument(documentData);
-    
-    console.log('Resultado da criação:', result);
-    
-    if (result.warning === 'duplicate_found') {
-      console.log('Detectada duplicata, mostrando modal...');
-      setSimilarDocuments(result.similar_documents || []);
-      setPendingDocumentData(documentData);
-      setShowSimilarDocumentsModal(true);
-      return;
-    }
+    // Sempre abrir o modal de análise semântica primeiro
+    setPendingDocumentData(documentData);
+    setShowSemanticAnalysisModal(true);
+  };
 
-    if (result.success) {
-      console.log('Documento criado com sucesso!');
-      setIsCreateDialogOpen(false);
-      setNewDocument({
-        titulo: '',
-        conteudo: '',
-        categoria: '',
-        tipo: 'permanente',
-        valido_ate: '',
-        tags: '',
-        justificativa: '',
-        estilo: '',
-        process_with_ai: false
-      });
-    }
+  const handleAnalysisComplete = (result: any) => {
+    console.log('Análise semântica concluída:', result);
+    setAnalysisResult(result);
+    setSimilarDocuments(result.similarDocuments || []);
   };
 
   const handleCreateNew = async () => {
     if (!pendingDocumentData) return;
     
+    console.log('Criando documento após análise:', pendingDocumentData);
+    
     const result = await createDocument({
       ...pendingDocumentData,
-      force: true
+      force: true // Forçar criação mesmo com duplicatas
     });
     
+    setShowSemanticAnalysisModal(false);
     setShowSimilarDocumentsModal(false);
     setSimilarDocuments([]);
     setPendingDocumentData(null);
+    setAnalysisResult(null);
     
     if (result.success) {
+      console.log('Documento criado com sucesso!');
       setIsCreateDialogOpen(false);
       setNewDocument({
         titulo: '',
@@ -112,15 +102,19 @@ const KnowledgeHubTab = () => {
   const handleUpdateExisting = async (documentId: string) => {
     // TODO: Implementar lógica para atualizar documento existente
     console.log('Atualizando documento:', documentId);
+    setShowSemanticAnalysisModal(false);
     setShowSimilarDocumentsModal(false);
     setSimilarDocuments([]);
     setPendingDocumentData(null);
+    setAnalysisResult(null);
   };
 
-  const handleCancelSimilarDocuments = () => {
+  const handleCancelAnalysis = () => {
+    setShowSemanticAnalysisModal(false);
     setShowSimilarDocumentsModal(false);
     setSimilarDocuments([]);
     setPendingDocumentData(null);
+    setAnalysisResult(null);
   };
 
   const handleRunAudit = async () => {
@@ -594,7 +588,22 @@ const KnowledgeHubTab = () => {
         </CardContent>
       </Card>
 
-      {/* Modal de documentos similares */}
+      {/* Modal de análise semântica */}
+      <SemanticAnalysisModal
+        open={showSemanticAnalysisModal}
+        onOpenChange={setShowSemanticAnalysisModal}
+        documentData={pendingDocumentData ? {
+          titulo: pendingDocumentData.titulo || '',
+          conteudo: pendingDocumentData.conteudo || '',
+          categoria: pendingDocumentData.categoria || ''
+        } : { titulo: '', conteudo: '', categoria: '' }}
+        onAnalysisComplete={handleAnalysisComplete}
+        onCreateNew={handleCreateNew}
+        onUpdateExisting={handleUpdateExisting}
+        onCancel={handleCancelAnalysis}
+      />
+
+      {/* Modal de documentos similares (fallback se necessário) */}
       <SimilarDocumentsModal
         open={showSimilarDocumentsModal}
         onOpenChange={setShowSimilarDocumentsModal}
@@ -606,7 +615,7 @@ const KnowledgeHubTab = () => {
         } : { titulo: '', conteudo: '', categoria: '' }}
         onCreateNew={handleCreateNew}
         onUpdateExisting={handleUpdateExisting}
-        onCancel={handleCancelSimilarDocuments}
+        onCancel={handleCancelAnalysis}
       />
 
       {/* Resultados da auditoria */}
