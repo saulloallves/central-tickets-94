@@ -46,6 +46,9 @@ verify_jwt = false
 [functions.lambda-models]
 verify_jwt = false
 
+[functions.debug-env]
+verify_jwt = false
+
 [db]
 port = 54322
 shadow_port = 54320
