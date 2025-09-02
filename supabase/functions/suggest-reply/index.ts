@@ -40,7 +40,7 @@ async function encontrarDocumentosRelacionados(textoDeBusca) {
 
   if (!embeddingResponse.ok) {
     const error = await embeddingResponse.text();
-    console.error("Erro ao gerar embedding:", error);
+    console.error("❌ Erro ao gerar embedding:", error);
     return [];
   }
 
@@ -48,17 +48,17 @@ async function encontrarDocumentosRelacionados(textoDeBusca) {
   const queryEmbedding = embeddingData.data[0].embedding;
 
   // 2. Configura a busca para ser abrangente
-  const LIMIAR_DE_RELEVANCIA = 0.5; // Threshold mais baixo para capturar mais contexto
+  const LIMIAR_DE_RELEVANCIA = 0.75; // Threshold padrão mais rigoroso
   const MAXIMO_DE_DOCUMENTOS = 5;
 
   console.log("2. Executando busca semântica na base de conhecimento...");
   console.log("Parâmetros da busca:", {
     threshold: LIMIAR_DE_RELEVANCIA,
     max_docs: MAXIMO_DE_DOCUMENTOS,
-    texto_busca: textoDeBusca.substring(0, 100) + "..."
+    embedding_size: queryEmbedding.length
   });
   
-  // 3. Chama a função RPC que acessa a tabela documentos
+  // 3. Chama a função segura no Supabase
   const { data, error } = await supabase.rpc('match_documentos', {
     query_embedding: queryEmbedding,
     match_threshold: LIMIAR_DE_RELEVANCIA,
@@ -68,17 +68,17 @@ async function encontrarDocumentosRelacionados(textoDeBusca) {
   if (error) {
     console.error("❌ ERRO na função RPC match_documentos:", error);
     console.error("Detalhes completos do erro:", JSON.stringify(error, null, 2));
-    throw new Error(`Erro na busca RPC: ${error.message}`);
+    return []; // Retorna array vazio em vez de throw
   }
 
   console.log(`✅ Busca RPC executada com sucesso. Resultados: ${data?.length || 0} documentos`);
   if (data && data.length > 0) {
-    console.log("Documentos encontrados na busca RPC:");
+    console.log("📄 Documentos encontrados:");
     data.forEach((doc, i) => {
-      console.log(`  ${i+1}. ${doc.titulo} (similaridade: ${doc.similaridade})`);
+      console.log(`  ${i+1}. ${doc.titulo} (v${doc.versao}) - similaridade: ${(doc.similaridade * 100).toFixed(1)}%`);
     });
   } else {
-    console.log("❌ NENHUM documento encontrado na busca RPC com threshold", LIMIAR_DE_RELEVANCIA);
+    console.log("⚠️ NENHUM documento encontrado com threshold", LIMIAR_DE_RELEVANCIA);
   }
   
   return data || [];
@@ -167,7 +167,7 @@ async function obterSugestaoDeRespostaParaTicket(ticket) {
   const contextoFormatado = documentosDeContexto.map((doc, index) =>
     `--- Início da Fonte ${index + 1} ---\n` +
     `Título: "${doc.titulo}" (Versão ${doc.versao})\n` +
-    `Conteúdo: ${typeof doc.conteudo === 'object' ? JSON.stringify(doc.conteudo) : doc.conteudo}\n` +
+    `Conteúdo: ${JSON.stringify(doc.conteudo)}\n` +
     `--- Fim da Fonte ${index + 1} ---`
   ).join('\n\n');
 
