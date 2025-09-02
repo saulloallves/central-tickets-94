@@ -14,6 +14,146 @@ const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+/**
+ * Encontra documentos relacionados usando busca vetorial semântica
+ * @param {string} textoDeBusca - Texto do ticket para buscar conhecimento
+ * @returns {Array} - Lista de documentos relevantes
+ */
+async function encontrarDocumentosRelacionados(textoDeBusca) {
+  console.log("1. Gerando embedding para o texto do ticket...");
+  
+  // 1. Gera o vetor para o texto de busca (o ticket)
+  const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openAIApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'text-embedding-3-large',
+      input: textoDeBusca,
+    }),
+  });
+
+  if (!embeddingResponse.ok) {
+    const error = await embeddingResponse.text();
+    console.error("Erro ao gerar embedding:", error);
+    return [];
+  }
+
+  const embeddingData = await embeddingResponse.json();
+  const queryEmbedding = embeddingData.data[0].embedding;
+
+  // 2. Configura a busca para ser abrangente
+  const LIMIAR_DE_RELEVANCIA = 0.75;
+  const MAXIMO_DE_DOCUMENTOS = 5;
+
+  console.log("2. Executando busca semântica na base de conhecimento...");
+  
+  // 3. Chama a função segura no Supabase
+  const { data, error } = await supabase.rpc('match_documentos', {
+    query_embedding: queryEmbedding,
+    match_threshold: LIMIAR_DE_RELEVANCIA,
+    match_count: MAXIMO_DE_DOCUMENTOS
+  });
+
+  if (error) {
+    console.error("Erro na busca de documentos:", error);
+    return [];
+  }
+
+  console.log(`Encontrados ${data?.length || 0} documentos relevantes`);
+  return data || [];
+}
+
+/**
+ * Gera resposta com contexto usando GPT-4o
+ * @param {string} contexto - Contexto formatado dos documentos
+ * @param {string} perguntaOriginal - Pergunta/problema do ticket
+ * @returns {string} - Sugestão de resposta gerada
+ */
+async function gerarRespostaComContexto(contexto, perguntaOriginal) {
+  console.log("3. Gerando sugestão de resposta com GPT-4o...");
+  
+  const promptParaIA = `
+  Você é um assistente especialista e sua única função é gerar sugestões de respostas para tickets de suporte.
+
+  **REGRAS CRÍTICAS:**
+  1.  Use EXCLUSIVAMENTE as informações fornecidas na seção "CONTEXTO" abaixo para formular sua resposta.
+  2.  NÃO invente, assuma ou adicione qualquer informação que não esteja explicitamente no contexto.
+  3.  Responda diretamente à pergunta do usuário, que está na seção "PERGUNTA ORIGINAL".
+  4.  Adote um tom profissional, claro e prestativo.
+  5.  Ao final da sua resposta, cite as fontes que você usou no formato: [Fonte: Título do Artigo, Versão X].
+
+  ---
+  **CONTEXTO (Fonte da Verdade):**
+  ${contexto}
+  ---
+  **PERGUNTA ORIGINAL DO TICKET:**
+  ${perguntaOriginal}
+  ---
+
+  **SUGESTÃO DE RESPOSTA:**
+  `;
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openAIApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o',
+      messages: [
+        { role: 'system', content: promptParaIA }
+      ],
+      temperature: 0.2, // Temperatura muito baixa para ser factual e evitar criatividade
+      max_tokens: 1000,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`GPT-4o API error: ${errorText}`);
+  }
+
+  const apiData = await response.json();
+  return apiData.choices[0].message.content;
+}
+
+/**
+ * Orquestra todo o processo de geração de sugestão de resposta para um ticket.
+ * @param {object} ticket - Objeto contendo { titulo: string, descricao: string }
+ * @returns {string} - A sugestão de resposta gerada pela IA.
+ */
+async function obterSugestaoDeRespostaParaTicket(ticket) {
+  const textoDoTicket = `Título: ${ticket.titulo || ticket.codigo_ticket}\nDescrição: ${ticket.descricao_problema}`;
+  
+  console.log("1. Buscando conhecimento relevante na base...");
+  // Etapa de Busca (Retrieval)
+  const documentosDeContexto = await encontrarDocumentosRelacionados(textoDoTicket);
+
+  if (!documentosDeContexto || documentosDeContexto.length === 0) {
+    return "Não foi encontrado nenhum artigo na base de conhecimento que possa ajudar a responder este ticket.";
+  }
+
+  console.log(`2. Encontrados ${documentosDeContexto.length} documentos. Formatando contexto...`);
+  // Formata o contexto para ser injetado no prompt
+  const contextoFormatado = documentosDeContexto.map((doc, index) =>
+    `--- Início da Fonte ${index + 1} ---\n` +
+    `Título: "${doc.titulo}" (Versão ${doc.versao})\n` +
+    `Conteúdo: ${typeof doc.conteudo === 'object' ? JSON.stringify(doc.conteudo) : doc.conteudo}\n` +
+    `--- Fim da Fonte ${index + 1} ---`
+  ).join('\n\n');
+
+  console.log("3. Gerando sugestão de resposta com GPT-4o...");
+  // Etapa de Geração (Generation)
+  const sugestaoFinal = await gerarRespostaComContexto(contextoFormatado, textoDoTicket);
+
+  console.log("4. Sugestão gerada com sucesso!");
+  return sugestaoFinal;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -26,26 +166,10 @@ serve(async (req) => {
       throw new Error('ticketId is required');
     }
 
-    console.log('Generating RAG-powered suggestion for ticket:', ticketId);
+    console.log('=== INICIANDO GERAÇÃO DE SUGESTÃO RAG ===');
+    console.log('Ticket ID:', ticketId);
 
-    // 1. Fetch AI settings
-    const { data: aiSettings, error: settingsError } = await supabase
-      .from('faq_ai_settings')
-      .select('*')
-      .eq('ativo', true)
-      .maybeSingle();
-
-    if (settingsError) {
-      console.error('Error fetching AI settings:', settingsError);
-      throw new Error(`AI settings error: ${settingsError.message}`);
-    }
-
-    if (!aiSettings) {
-      console.error('No active AI settings found');
-      throw new Error('AI settings not configured');
-    }
-
-    // 2. Fetch ticket details
+    // 1. Buscar dados do ticket
     const { data: ticket, error: ticketError } = await supabase
       .from('tickets')
       .select(`
@@ -61,154 +185,27 @@ serve(async (req) => {
       throw new Error('Ticket not found');
     }
 
-    // 3. RAG PIPELINE: Vetorizar o ticket
-    console.log('Vetorizando ticket para busca RAG...');
-    const textoTicket = `${ticket.descricao_problema} ${ticket.categoria || ''}`.trim();
-    
-    const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'text-embedding-3-large',
-        input: textoTicket,
-      }),
-    });
+    console.log('Ticket encontrado:', ticket.codigo_ticket);
 
-    if (!embeddingResponse.ok) {
-      const error = await embeddingResponse.text();
-      throw new Error(`OpenAI Embeddings error: ${error}`);
-    }
+    // 2. Executar o pipeline RAG principal usando as funções documentadas
+    const sugestaoGerada = await obterSugestaoDeRespostaParaTicket(ticket);
 
-    const embeddingData = await embeddingResponse.json();
-    const ticketEmbedding = embeddingData.data[0].embedding;
-
-    // 4. BUSCA SEMÂNTICA RAG MELHORADA: Usar contexto do ticket
-    console.log('Executando busca RAG semântica na base de conhecimento...');
-    const queryTextForRAG = `${ticket.descricao_problema} ${ticket.categoria || ''} ${ticket.prioridade || ''}`.trim();
-    
-    const { data: contextoDocs, error: ragError } = await supabase.rpc('match_documentos_semantico', {
-      query_embedding: ticketEmbedding,
-      query_text: queryTextForRAG,
-      match_threshold: 0.65, // Threshold mais baixo para capturar mais contexto
-      match_count: 8, // Mais documentos para melhor contexto
-      require_category_match: ticket.categoria ? true : false,
-      categoria_filtro: ticket.categoria
-    });
-
-    if (ragError) {
-      console.error('Erro na busca RAG:', ragError);
-      throw ragError;
-    }
-
-    console.log(`RAG encontrou ${contextoDocs?.length || 0} documentos relevantes`);
-
-    // 5. Construir contexto governado para o GPT
-    const contextSections = [];
-    
-    contextSections.push(`CONTEXTO DO TICKET:
-- Código: ${ticket.codigo_ticket}
-- Unidade: ${ticket.unidades?.grupo || ticket.unidade_id}
-- Categoria: ${ticket.categoria || 'Não especificada'}
-- Prioridade: ${ticket.prioridade}
-- Status: ${ticket.status}
-- Descrição: ${ticket.descricao_problema}`);
-
-    // Adicionar documentos RAG com análise semântica avançada
-    if (contextoDocs && contextoDocs.length > 0) {
-      // Ordenar por score final (relevância semântica + similaridade)
-      const docsOrdenados = contextoDocs.sort((a, b) => (b.score_final || b.similaridade) - (a.score_final || a.similaridade));
-      
-      const documentosFormatados = docsOrdenados.map((doc, index) => {
-        const scoreDisplay = doc.score_final ? 
-          `Score: ${(doc.score_final * 100).toFixed(1)}% (Similaridade: ${(doc.similaridade * 100).toFixed(1)}% + Relevância: ${((doc.relevancia_semantica || 0) * 100).toFixed(1)}%)` :
-          `Relevância: ${(doc.similaridade * 100).toFixed(1)}%`;
-          
-        return `**FONTE ${index + 1}** - ${doc.titulo} (v${doc.versao}) - ${scoreDisplay}
-📂 Categoria: ${doc.categoria || 'N/A'}
-${typeof doc.conteudo === 'object' ? JSON.stringify(doc.conteudo, null, 2) : doc.conteudo}`;
-      }).join('\n\n---\n\n');
-
-      contextSections.push(`=== BASE DE CONHECIMENTO SEMÂNTICA (${docsOrdenados.length} documentos por assunto/contexto) ===
-${documentosFormatados}`);
-    } else {
-      contextSections.push('=== BASE DE CONHECIMENTO ===\nNenhum documento relevante encontrado por contexto semântico.');
-    }
-
-    const contextoCompleto = contextSections.join('\n\n');
-
-    // 6. Prompt estruturado para GPT-4o
-    const systemPrompt = `Você é um assistente especializado em suporte técnico da Cresci & Perdi.
-
-REGRAS OBRIGATÓRIAS:
-- Use EXCLUSIVAMENTE as informações da base de conhecimento governada fornecida
-- Cite sempre as fontes usando o formato: [FONTE X - Título]
-- Se não houver informação suficiente, diga claramente: "Informação não encontrada na base de conhecimento"
-- Seja conciso, direto e objetivo (máximo 200 palavras)
-- Use linguagem técnica mas acessível para atendentes
-
-FORMATO DA RESPOSTA:
-1. Resposta principal (baseada nas fontes)
-2. Fontes consultadas: [FONTE X - Título (vX)]`;
-
-    const userPrompt = `${contextoCompleto}
-
-INSTRUÇÃO: Com base exclusivamente nas informações da base de conhecimento governada acima, sugira uma resposta para resolver o problema do ticket.`;
-
-    // 7. Gerar resposta com GPT-4o
-    console.log('Gerando resposta com GPT-4o...');
-    const apiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        temperature: 0.3,
-        max_tokens: aiSettings.max_tokens_sugestao || 800
-      }),
-    });
-
-    if (!apiResponse.ok) {
-      const errorText = await apiResponse.text();
-      throw new Error(`GPT-4o API error: ${errorText}`);
-    }
-
-    const apiData = await apiResponse.json();
-    const respostaSugerida = apiData.choices[0].message.content;
-
-    // 8. Salvar no banco com métricas RAG
+    // 3. Salvar a interação no banco para análise
     const { data: suggestionRecord, error: saveError } = await supabase
       .from('ticket_ai_interactions')
       .insert({
         ticket_id: ticketId,
         kind: 'suggestion',
-        resposta: respostaSugerida,
+        resposta: sugestaoGerada,
         model: 'gpt-4o',
         params: {
-          temperature: 0.3,
-          max_tokens: aiSettings.max_tokens_sugestao || 800
+          temperature: 0.2,
+          max_tokens: 1000
         },
         log: {
-          rag_pipeline: 'v2_governado',
+          rag_pipeline: 'v3_documentado',
           embedding_model: 'text-embedding-3-large',
-          documentos_encontrados: contextoDocs?.length || 0,
-          relevancia_media: contextoDocs?.length ? 
-            (contextoDocs.reduce((acc, doc) => acc + doc.similaridade, 0) / contextoDocs.length) : 0,
-          contexto_size: contextoCompleto.length,
-          fontes_citadas: contextoDocs?.map(doc => ({
-            id: doc.id,
-            titulo: doc.titulo,
-            versao: doc.versao,
-            relevancia: doc.similaridade
-          })) || []
+          pipeline_version: 'RAG_v3_Estruturado'
         }
       })
       .select()
@@ -216,26 +213,24 @@ INSTRUÇÃO: Com base exclusivamente nas informações da base de conhecimento g
 
     if (saveError) {
       console.error('Error saving suggestion:', saveError);
-      throw saveError;
+      // Não falha aqui, só registra o erro
     }
 
-    console.log('RAG-powered suggestion generated successfully');
+    console.log('=== SUGESTÃO GERADA COM SUCESSO ===');
 
     return new Response(JSON.stringify({
-      resposta: respostaSugerida,
+      resposta: sugestaoGerada,
       rag_metrics: {
-        documentos_encontrados: contextoDocs?.length || 0,
-        relevancia_media: contextoDocs?.length ? 
-          ((contextoDocs.reduce((acc, doc) => acc + doc.similaridade, 0) / contextoDocs.length) * 100).toFixed(1) + '%' : '0%',
-        fontes_utilizadas: contextoDocs?.length || 0
-      },
-      pipeline_version: 'RAG_v2_Governado'
+        pipeline_version: 'RAG_v3_Estruturado',
+        modelo_embedding: 'text-embedding-3-large',
+        modelo_geracao: 'gpt-4o'
+      }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
-    console.error('Error in RAG suggest-reply function:', error);
+    console.error('Error in suggest-reply function:', error);
     return new Response(JSON.stringify({ 
       error: error.message 
     }), {
