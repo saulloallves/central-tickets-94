@@ -250,7 +250,7 @@ serve(async (req) => {
     console.log('Raw request body:', JSON.stringify(bodyData));
     console.log('OpenAI Key exists:', !!openAIApiKey);
     
-    const { titulo, conteudo, categoria, tipo, valido_ate, tags, justificativa, artigo_id, force, estilo, process_with_ai } = bodyData;
+    const { titulo, conteudo, categoria, tipo, valido_ate, tags, justificativa, artigo_id, force, estilo, process_with_ai, update_existing_id } = bodyData;
     
     // Título só é obrigatório se não for processamento com IA
     if ((!titulo && !process_with_ai) || !conteudo) {
@@ -586,7 +586,47 @@ CATEGORIA: ${categoria || 'Geral'}
       }
     }
 
-    // Verificar autenticação
+    // Se é uma atualização de documento existente, pular verificação de duplicatas
+    if (update_existing_id) {
+      console.log('Atualizando documento existente:', update_existing_id, '- regenerando embedding');
+      
+      const updateData = {
+        titulo: finalTitulo,
+        conteudo: typeof finalConteudo === 'string' ? { texto: finalConteudo } : finalConteudo,
+        categoria: finalCategoria,
+        embedding: embedding ? JSON.stringify(embedding) : null,
+        classificacao: classificacaoData,
+        processado_por_ia: !!classificacaoData,
+        ia_modelo: iaModelo
+      };
+
+      console.log('Dados para atualização de embedding:', JSON.stringify(updateData, null, 2));
+
+      const { data, error } = await supabase
+        .from('documentos')
+        .update(updateData)
+        .eq('id', update_existing_id)
+        .select()
+        .single();
+        
+      if (error) {
+        console.error('Erro ao atualizar documento:', error);
+        throw error;
+      }
+
+      console.log('Documento atualizado com embedding regenerado:', data.id);
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          document: data,
+          message: 'Documento atualizado e embedding regenerado com sucesso'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Verificar autenticação (apenas para documentos novos)
     const authHeader = req.headers.get('authorization');
     let userId = null;
     
@@ -613,7 +653,7 @@ CATEGORIA: ${categoria || 'Geral'}
     // Garantir que criado_por não seja null ou undefined
     const criadoPor = userId || 'system';
 
-    // Inserir/Atualizar documento
+    // Inserir documento novo
     const documentData = {
       titulo: finalTitulo,
       conteudo: typeof finalConteudo === 'string' ? { texto: finalConteudo } : finalConteudo,

@@ -121,6 +121,33 @@ serve(async (req) => {
 
     console.log('Documento atualizado com sucesso:', data.id);
 
+    // Se foi atualizado conteúdo e foi processado por IA, reprocessar para regenerar embedding
+    if (conteudo && data.processado_por_ia && data.estilo) {
+      console.log('🔄 Reprocessando documento com IA para regenerar embedding...');
+      
+      try {
+        // Chamar a função de upsert para reprocessar e regenerar embedding
+        const { data: reprocessData, error: reprocessError } = await supabase.functions.invoke('kb-upsert-document', {
+          body: {
+            titulo: data.titulo,
+            conteudo: typeof data.conteudo === 'string' ? data.conteudo : JSON.stringify(data.conteudo),
+            categoria: data.categoria,
+            estilo: data.estilo,
+            process_with_ai: true,
+            update_existing_id: data.id // Flag para indicar que é uma atualização
+          }
+        });
+
+        if (reprocessError) {
+          console.error('❌ Erro ao reprocessar documento:', reprocessError);
+        } else {
+          console.log('✅ Documento reprocessado com sucesso - embedding regenerado');
+        }
+      } catch (reprocessErr) {
+        console.error('❌ Erro ao chamar reprocessamento:', reprocessErr);
+      }
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 
