@@ -47,8 +47,8 @@ async function encontrarDocumentosRelacionados(textoDeBusca) {
   const embeddingData = await embeddingResponse.json();
   const queryEmbedding = embeddingData.data[0].embedding;
 
-  // 2. Configura a busca para ser abrangente - usando threshold do hub de conhecimento
-  const LIMIAR_DE_RELEVANCIA = 0.5; // Threshold igual ao hub de conhecimento que funciona
+  // 2. Configura a busca para ser abrangente
+  const LIMIAR_DE_RELEVANCIA = 0.5; // Threshold testado que funciona
   const MAXIMO_DE_DOCUMENTOS = 5;
 
   console.log("2. Executando busca semântica na base de conhecimento...");
@@ -66,12 +66,11 @@ async function encontrarDocumentosRelacionados(textoDeBusca) {
   });
 
   if (error) {
-    console.error("❌ ERRO na função RPC match_documentos:", error);
-    console.error("Detalhes completos do erro:", JSON.stringify(error, null, 2));
-    return []; // Retorna array vazio em vez de throw
+    console.error("❌ Erro na busca de documentos:", error);
+    return [];
   }
 
-  console.log(`✅ Busca RPC executada com sucesso. Resultados: ${data?.length || 0} documentos`);
+  console.log(`✅ Busca executada com sucesso. Resultados: ${data?.length || 0} documentos`);
   if (data && data.length > 0) {
     console.log("📄 Documentos encontrados:");
     data.forEach((doc, i) => {
@@ -141,7 +140,7 @@ async function gerarRespostaComContexto(contexto, perguntaOriginal) {
 
 /**
  * Orquestra todo o processo de geração de sugestão de resposta para um ticket.
- * @param {object} ticket - Objeto contendo { titulo: string, descricao: string }
+ * @param {object} ticket - Objeto contendo { titulo: string, descricao_problema: string }
  * @returns {string} - A sugestão de resposta gerada pela IA.
  */
 async function obterSugestaoDeRespostaParaTicket(ticket) {
