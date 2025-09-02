@@ -134,9 +134,18 @@ serve(async (req) => {
       .eq('ativo', true)
       .order('nome');
 
+    console.log('🏢 Equipes encontradas para análise:', equipesAtivas?.map(e => ({
+      id: e.id,
+      nome: e.nome,
+      descricao: e.descricao,
+      introducao: e.introducao
+    })));
+
     const equipesDisponiveis = equipesAtivas?.map(e => 
       `- ${e.nome}: ${e.descricao}\n  Especialidades: ${e.introducao || 'Não especificado'}`
     ).join('\n') || 'Nenhuma equipe disponível';
+
+    console.log('📋 Prompt das equipes enviado para IA:\n', equipesDisponiveis);
 
     // Prompt para análise completa incluindo título
     const analysisPrompt = `
