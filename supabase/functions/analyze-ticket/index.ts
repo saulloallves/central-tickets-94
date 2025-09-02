@@ -130,22 +130,11 @@ serve(async (req) => {
     // Buscar todas as equipes ativas
     const { data: equipesAtivas } = await supabase
       .from('equipes')
-      .select('id, nome, descricao, introducao')
+      .select('id, nome, descricao')
       .eq('ativo', true)
       .order('nome');
 
-    console.log('🏢 Equipes encontradas para análise:', equipesAtivas?.map(e => ({
-      id: e.id,
-      nome: e.nome,
-      descricao: e.descricao,
-      introducao: e.introducao
-    })));
-
-    const equipesDisponiveis = equipesAtivas?.map(e => 
-      `- ${e.nome}: ${e.descricao}\n  Especialidades: ${e.introducao || 'Não especificado'}`
-    ).join('\n') || 'Nenhuma equipe disponível';
-
-    console.log('📋 Prompt das equipes enviado para IA:\n', equipesDisponiveis);
+    const equipesDisponiveis = equipesAtivas?.map(e => `- ${e.nome}: ${e.descricao}`).join('\n') || 'Nenhuma equipe disponível';
 
     // Prompt para análise completa incluindo título
     const analysisPrompt = `
@@ -163,21 +152,13 @@ Analise este ticket de suporte e forneça:
    - ate_1_hora: problemas urgentes que afetam produtividade  
    - ainda_hoje: problemas importantes mas não bloqueiam trabalho
    - posso_esperar: dúvidas, solicitações, problemas menores
-4. EQUIPE_SUGERIDA: Analise CUIDADOSAMENTE as especialidades de cada equipe e suas descrições completas. Priorize as ESPECIALIDADES (introdução) sobre apenas o nome da equipe.
+4. EQUIPE_SUGERIDA: Sugira qual equipe deve atender baseado no problema e nas equipes disponíveis
 
 Descrição do problema: "${descricao}"
 Categoria atual: ${categoria || 'não definida'}
 
-EQUIPES DISPONÍVEIS (ANALISE AS ESPECIALIDADES COM ATENÇÃO):
+EQUIPES DISPONÍVEIS:
 ${equipesDisponiveis}
-
-INSTRUÇÕES PARA ESCOLHA DA EQUIPE:
-- Leia TODAS as especialidades listadas para cada equipe
-- Para problemas com "eventos": considere Agência (eventos/mídias) ou Concierge Operação (eventos de treinamento)
-- Para problemas de sistema/login: Sistema DFcom
-- Para criação de mídias/materiais: Agência ou Mídias
-- Para automação/girabot: Automação
-- Para áudios/comunicação: Comunicação
 
 ATENÇÃO: A prioridade deve ser EXATAMENTE uma destas palavras: imediato, ate_1_hora, ainda_hoje, posso_esperar
 NÃO use: urgente, crítico, alta, baixa, crise, normal ou qualquer outra variação.
@@ -188,7 +169,7 @@ Responda APENAS em formato JSON válido:
   "categoria": "categoria_sugerida", 
   "prioridade": "imediato_ou_ate_1_hora_ou_ainda_hoje_ou_posso_esperar",
   "equipe_sugerida": "nome_exato_da_equipe_ou_null",
-  "justificativa": "Breve explicação da análise focando nas especialidades da equipe escolhida"
+  "justificativa": "Breve explicação da análise"
 }
 
 CRÍTICO: Use APENAS estas 4 prioridades: imediato, ate_1_hora, ainda_hoje, posso_esperar
