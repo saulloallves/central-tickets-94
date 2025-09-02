@@ -281,7 +281,7 @@ serve(async (req) => {
     console.log('Processando documento:', titulo, 'estilo:', estilo, 'process_with_ai:', process_with_ai);
     console.log('Dados recebidos completos:', JSON.stringify({ titulo, conteudo: conteudo?.substring(0, 100) + '...', categoria, justificativa: justificativa?.substring(0, 50) + '...' }));
 
-    let finalTitulo = titulo;
+    let finalTitulo = titulo || 'Documento sem título';
     let finalConteudo = conteudo;
     let finalCategoria = categoria || 'geral';
     let classificacaoData = null;
@@ -387,7 +387,8 @@ serve(async (req) => {
           console.log('🏷️ título original:', titulo);
           console.log('🏷️ titulo_padrao da IA:', jsonResponse.titulo_padrao);
           
-          finalTitulo = jsonResponse.titulo_padrao || titulo;
+          // Garantir que nunca seja NULL - usar fallback
+          finalTitulo = jsonResponse.titulo_padrao || titulo || 'Documento sem título';
           finalConteudo = jsonResponse.content_full || organizedContent || conteudo;
           finalCategoria = jsonResponse.classe_nome || categoria || 'Manual';
           
@@ -449,7 +450,7 @@ serve(async (req) => {
         const titleMatch = aiResponse.match(/📌 Título:\s*(.+)/);
         const categoryMatch = aiResponse.match(/📂 Classificação:\s*🟢\s*(.+)|📂 Classificação:\s*🔵\s*(.+)|📂 Classificação:\s*🟠\s*(.+)|📂 Classificação:\s*🟡\s*(.+)|📂 Classificação:\s*🟣\s*(.+)|📂 Classificação:\s*⚪\s*(.+)/);
         
-        finalTitulo = titleMatch ? titleMatch[1].trim() : titulo;
+        finalTitulo = titleMatch ? titleMatch[1].trim() : (titulo || 'Documento sem título');
         finalCategoria = categoryMatch ? (categoryMatch[1] || categoryMatch[2] || categoryMatch[3] || categoryMatch[4] || categoryMatch[5] || categoryMatch[6] || '').trim() : 'Diretrizes Institucionais';
         finalConteudo = aiResponse; // Para diretrizes: resultado da IA
         
