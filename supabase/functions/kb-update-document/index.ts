@@ -95,6 +95,10 @@ serve(async (req) => {
           .single();
           
         updateData.versao = (currentDoc?.versao || 1) + 1;
+        
+        // CRÍTICO: Apagar embedding quando conteúdo muda para forçar regeneração
+        updateData.embedding = null;
+        console.log('🔄 Embedding apagado - será regenerado com novo conteúdo na versão:', updateData.versao);
       }
     }
 
