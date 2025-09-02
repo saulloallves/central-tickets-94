@@ -28,11 +28,12 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured');
     }
 
-    // Buscar o documento de pró-labore específico
+    // Buscar o documento de pró-labore pelo título
     const { data: doc, error: fetchError } = await supabase
       .from('documentos')
       .select('id, titulo, conteudo, categoria')
-      .eq('id', '7c72cd7a-77a0-4848-b06c-a7906ce68a5f')
+      .ilike('titulo', '%pró%labore%')
+      .eq('status', 'ativo')
       .single();
 
     if (fetchError || !doc) {
