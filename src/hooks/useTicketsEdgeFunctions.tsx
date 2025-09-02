@@ -4,6 +4,7 @@ import { useAuth } from './useAuth';
 import { useRole } from './useRole';
 import { useToast } from '@/hooks/use-toast';
 import { useUserEquipes } from './useUserEquipes';
+import { NotificationSounds } from '@/lib/notification-sounds';
 
 export interface Ticket {
   id: string;
@@ -208,6 +209,32 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
             new: payload.new ? { id: (payload.new as any)?.id, codigo_ticket: (payload.new as any)?.codigo_ticket } : null,
             old: payload.old ? { id: (payload.old as any)?.id, codigo_ticket: (payload.old as any)?.codigo_ticket } : null
           });
+          
+          // Handle new ticket notifications
+          if (payload.eventType === 'INSERT' && payload.new) {
+            const newTicket = payload.new as any;
+            
+            // Only play sound for tickets not created by current user
+            if (newTicket.criado_por !== user.id) {
+              console.log('🔊 Playing notification sound for new ticket:', newTicket.codigo_ticket);
+              
+              // Play sound based on priority
+              if (newTicket.prioridade === 'crise' || newTicket.prioridade === 'imediato') {
+                NotificationSounds.playCriticalAlert();
+              } else if (newTicket.prioridade === 'ate_1_hora') {
+                NotificationSounds.playNotificationSound('warning');
+              } else {
+                NotificationSounds.playNotificationSound('info');
+              }
+              
+              // Show toast notification
+              toast({
+                title: "🎫 Novo Ticket",
+                description: `${newTicket.codigo_ticket} - ${newTicket.descricao_problema?.substring(0, 60)}...`,
+                duration: 5000,
+              });
+            }
+          }
           
           // Debounce realtime refetches to prevent excessive updates
           if (realtimeDebounceRef.current) {
