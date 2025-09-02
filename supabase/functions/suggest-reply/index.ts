@@ -93,24 +93,22 @@ async function gerarRespostaComContexto(contexto, perguntaOriginal) {
   console.log("3. Gerando sugestão de resposta com GPT-4o...");
   
   const promptParaIA = `
-  Você é um assistente especialista e sua única função é gerar sugestões de respostas para tickets de suporte.
+  Você é um assistente de suporte. Gere uma resposta RESUMIDA e DIRETA para o ticket.
 
-  **REGRAS CRÍTICAS:**
-  1.  Use EXCLUSIVAMENTE as informações fornecidas na seção "CONTEXTO" abaixo para formular sua resposta.
-  2.  NÃO invente, assuma ou adicione qualquer informação que não esteja explicitamente no contexto.
-  3.  Responda diretamente à pergunta do usuário, que está na seção "PERGUNTA ORIGINAL".
-  4.  Adote um tom profissional, claro e prestativo.
-  5.  Ao final da sua resposta, cite as fontes que você usou no formato: [Fonte: Título do Artigo, Versão X].
+  **REGRAS:**
+  1. Use APENAS as informações do contexto fornecido
+  2. Seja CONCISO - máximo 2-3 frases
+  3. Responda DIRETO ao problema do ticket
+  4. Não adicione saudações, agradecimentos ou explicações extras
+  5. Se não souber, diga apenas "Não encontrei informações suficientes na base de conhecimento"
 
-  ---
-  **CONTEXTO (Fonte da Verdade):**
+  **CONTEXTO:**
   ${contexto}
-  ---
-  **PERGUNTA ORIGINAL DO TICKET:**
-  ${perguntaOriginal}
-  ---
 
-  **SUGESTÃO DE RESPOSTA:**
+  **PROBLEMA DO TICKET:**
+  ${perguntaOriginal}
+
+  **RESPOSTA DIRETA:**
   `;
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
