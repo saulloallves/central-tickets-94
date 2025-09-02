@@ -239,138 +239,158 @@ serve(async (req) => {
     // Se não encontrou resposta na KB ou forçou criação, criar ticket
     console.log('Creating ticket - no suitable KB answer found');
 
-    // Buscar equipes ativas para análise
+    // Buscar equipes ativas para análise (com introdução - especialidades)
     const { data: equipes, error: equipesError } = await supabase
       .from('equipes')
-      .select('id, nome, introducao, descricao')
-      .eq('ativo', true);
+      .select('id, nome, introducao')
+      .eq('ativo', true)
+      .order('nome');
 
     if (equipesError) {
       console.error('Error fetching teams:', equipesError);
     }
 
+    console.log('Equipes encontradas para análise:', JSON.stringify(equipes, null, 2));
+
     let analysisResult = null;
     let equipeResponsavelId = null;
-    let modelToUse = 'gpt-4.1-2025-04-14'; // Updated to newer model
+    let modelToUse = 'gpt-5-2025-08-07'; // Use latest model
     let apiProvider = 'openai'; // Default fallback
+    let titulo = null;
 
-    // Sistema de classificação simplificado e robusto
-    let classificationResult = {
-      categoria: 'outro',
-      prioridade: 'posso_esperar',
-      subcategoria: null,
-      is_crise: false,
-      motivo_crise: null,
-      sla_sugerido_horas: 24,
-      equipe_responsavel: null
-    };
-
-    // Fallback inteligente por palavras-chave
-    const messageWords = message.toLowerCase();
-    
-    // Detectar categoria automaticamente
-    if (messageWords.includes('sistema') || messageWords.includes('app') || messageWords.includes('erro') || messageWords.includes('travou') || messageWords.includes('bug')) {
-      classificationResult.categoria = 'sistema';
-    } else if (messageWords.includes('midia') || messageWords.includes('marketing') || messageWords.includes('propaganda') || messageWords.includes('divulgacao')) {
-      classificationResult.categoria = 'midia';
-    } else if (messageWords.includes('juridico') || messageWords.includes('contrato') || messageWords.includes('legal') || messageWords.includes('advogado')) {
-      classificationResult.categoria = 'juridico';
-    } else if (messageWords.includes('rh') || messageWords.includes('funcionario') || messageWords.includes('folha') || messageWords.includes('contratacao')) {
-      classificationResult.categoria = 'rh';
-    } else if (messageWords.includes('financeiro') || messageWords.includes('pagamento') || messageWords.includes('dinheiro') || messageWords.includes('cobranca')) {
-      classificationResult.categoria = 'financeiro';
-    } else if (messageWords.includes('operacao') || messageWords.includes('processo') || messageWords.includes('funcionamento')) {
-      classificationResult.categoria = 'operacoes';
-    }
-
-    // Detectar prioridade automaticamente
-    if (messageWords.includes('urgente') || messageWords.includes('critico') || messageWords.includes('parou') || messageWords.includes('travou tudo')) {
-      classificationResult.prioridade = 'imediato';
-    } else if (messageWords.includes('rapido') || messageWords.includes('hoje') || messageWords.includes('precisa resolver')) {
-      classificationResult.prioridade = 'ainda_hoje';
-    } else if (messageWords.includes('quando possivel') || messageWords.includes('sem pressa') || messageWords.includes('duvida')) {
-      classificationResult.prioridade = 'posso_esperar';
-    }
-
-    // Buscar equipe compatível automaticamente
-    if (equipes && equipes.length > 0) {
-      let equipeEncontrada = equipes.find(eq => 
-        eq.nome.toLowerCase().includes(classificationResult.categoria) || 
-        (eq.introducao && eq.introducao.toLowerCase().includes(classificationResult.categoria)) ||
-        (eq.descricao && eq.descricao.toLowerCase().includes(classificationResult.categoria))
-      );
-      
-      // Se não encontrou por categoria, usar a primeira equipe disponível
-      if (!equipeEncontrada) {
-        equipeEncontrada = equipes[0];
-      }
-      
-      if (equipeEncontrada) {
-        equipeResponsavelId = equipeEncontrada.id;
-        classificationResult.equipe_responsavel = equipeEncontrada.nome;
-        console.log('Equipe automaticamente selecionada:', equipeEncontrada.nome, 'para categoria:', classificationResult.categoria);
-      }
-    }
-
-    // Tentar IA apenas se temos tudo configurado
+    // Sistema de análise completa usando lógica do analyze-ticket
     if (openaiApiKey && equipes && equipes.length > 0) {
       try {
-        console.log('Tentando classificação por IA...');
+        console.log('Iniciando análise IA completa...');
         
+        // Buscar configurações da IA
         const { data: aiSettings } = await supabase
           .from('faq_ai_settings')
           .select('*')
           .eq('ativo', true)
           .maybeSingle();
 
-        modelToUse = aiSettings?.modelo_classificacao || 'gpt-4o-mini';
+        modelToUse = aiSettings?.modelo_classificacao || 'gpt-5-2025-08-07';
         apiProvider = aiSettings?.api_provider || 'openai';
         
         let apiUrl = 'https://api.openai.com/v1/chat/completions';
         let authToken = openaiApiKey;
+        let apiHeaders = {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json',
+        };
         
         if (apiProvider === 'lambda' && aiSettings?.api_base_url) {
           apiUrl = `${aiSettings.api_base_url}/chat/completions`;
           authToken = aiSettings.api_key || openaiApiKey;
+          apiHeaders.Authorization = `Bearer ${authToken}`;
+          
+          // Add custom headers if configured
+          if (aiSettings.custom_headers && typeof aiSettings.custom_headers === 'object') {
+            Object.assign(apiHeaders, aiSettings.custom_headers);
+          }
         }
 
-        const equipesNomes = equipes.map(eq => eq.nome).join(', ');
+        const equipesDisponiveis = equipes?.map(e => `- ${e.nome}: ${e.introducao || 'Sem especialidades definidas'}`).join('\n') || 'Nenhuma equipe disponível';
 
-        const response = await fetch(apiUrl, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${authToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: modelToUse,
-            messages: [
-              {
-                role: 'system',
-                content: `Classifique este ticket. Retorne APENAS JSON válido:
+        console.log('Prompt que será enviado para a IA:', equipesDisponiveis);
+
+        // Prompt melhorado igual ao analyze-ticket
+        const analysisPrompt = `
+Você é um especialista em classificação de tickets de suporte técnico da Cresci & Perdi.
+
+Analise este ticket e forneça:
+
+1. TÍTULO: Crie um título DESCRITIVO de exatamente 3 palavras que resuma o OBJETIVO/PROBLEMA principal.
+   - NÃO copie as primeiras palavras da descrição
+   - Seja criativo e descritivo
+   - Exemplos: "Problema áudio Zoom", "Solicitar materiais gráficos", "Criação mídia planfetos"
+
+2. CATEGORIA: juridico, sistema, midia, operacoes, rh, financeiro, outro
+
+3. PRIORIDADE (OBRIGATÓRIO escolher uma): imediato, ate_1_hora, ainda_hoje, posso_esperar
+   - imediato: problemas críticos que impedem funcionamento
+   - ate_1_hora: problemas urgentes que afetam produtividade  
+   - ainda_hoje: problemas importantes mas não bloqueiam trabalho
+   - posso_esperar: dúvidas, solicitações, problemas menores
+
+4. EQUIPE_SUGERIDA: Analise cuidadosamente qual equipe deve atender baseado nas ESPECIALIDADES de cada equipe:
+
+EQUIPES E SUAS ESPECIALIDADES:
+${equipesDisponiveis}
+
+INSTRUÇÕES PARA DESIGNAÇÃO DE EQUIPE:
+- Leia atentamente as ESPECIALIDADES de cada equipe listadas acima
+- Escolha a equipe cuja especialidade melhor corresponde ao problema descrito
+- Use o nome EXATO da equipe como aparece na lista
+- Se nenhuma equipe se adequar perfeitamente, retorne null
+
+Descrição do problema: "${message}"
+
+Responda APENAS em formato JSON válido:
 {
-  "categoria": "sistema|midia|juridico|rh|financeiro|operacoes|outro",
-  "prioridade": "imediato|ate_1_hora|ainda_hoje|posso_esperar", 
-  "equipe_responsavel": "nome_equipe"
+  "titulo": "Título Descritivo Criativo",
+  "categoria": "categoria_sugerida", 
+  "prioridade": "imediato_ou_ate_1_hora_ou_ainda_hoje_ou_posso_esperar",
+  "equipe_sugerida": "nome_exato_da_equipe_ou_null",
+  "justificativa": "Breve explicação da análise e por que escolheu esta equipe"
 }
 
-Equipes disponíveis: ${equipesNomes}
+CRÍTICO: Use APENAS estas 4 prioridades: imediato, ate_1_hora, ainda_hoje, posso_esperar
+`;
 
-Se não souber, use: categoria="outro", prioridade="posso_esperar", equipe_responsavel="${equipes[0]?.nome}"`
-              },
-              {
-                role: 'user',
-                content: `Ticket: ${message}`
-              }
-            ],
-            max_tokens: 200,
-            temperature: 0.1,
-          }),
+        // Determine API parameters based on model
+        const isNewerOpenAIModel = modelToUse.includes('gpt-4.1') || modelToUse.includes('gpt-5') || modelToUse.includes('o3') || modelToUse.includes('o4');
+        
+        const requestBody = {
+          model: modelToUse,
+          messages: [
+            {
+              role: 'system',
+              content: 'Você é um especialista em classificação de tickets de suporte técnico. Analise sempre em português brasileiro e seja preciso nas classificações.'
+            },
+            {
+              role: 'user',
+              content: analysisPrompt
+            }
+          ]
+        };
+
+        // Set parameters based on provider and model
+        if (apiProvider === 'lambda') {
+          // Lambda API supports temperature and max_tokens
+          requestBody.temperature = aiSettings?.temperatura_classificacao || 0.1;
+          requestBody.max_tokens = aiSettings?.max_tokens_classificacao || 500;
+          requestBody.top_p = 1.0;
+          requestBody.frequency_penalty = 0;
+          requestBody.presence_penalty = 0;
+        } else if (isNewerOpenAIModel) {
+          // Newer OpenAI models use max_completion_tokens and don't support temperature
+          requestBody.max_completion_tokens = aiSettings?.max_tokens_classificacao || 500;
+          requestBody.frequency_penalty = 0;
+          requestBody.presence_penalty = 0;
+        } else {
+          // Legacy OpenAI models
+          requestBody.max_tokens = aiSettings?.max_tokens_classificacao || 500;
+          requestBody.temperature = aiSettings?.temperatura_classificacao || 0.1;
+          requestBody.top_p = 1.0;
+          requestBody.frequency_penalty = 0;
+          requestBody.presence_penalty = 0;
+        }
+
+        console.log('Calling AI API with provider:', apiProvider, 'model:', modelToUse);
+        
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: apiHeaders,
+          body: JSON.stringify(requestBody),
         });
 
         if (response.ok) {
           const aiResponse = await response.json();
           const analysis = aiResponse.choices?.[0]?.message?.content;
+          
+          console.log('AI response:', analysis);
           
           if (analysis) {
             try {
@@ -384,29 +404,78 @@ Se não souber, use: categoria="outro", prioridade="posso_esperar", equipe_respo
               const aiResult = JSON.parse(cleanedAnalysis);
               console.log('IA retornou:', aiResult);
               
-              // Aplicar resultado da IA se válido
-              if (aiResult.categoria) {
-                classificationResult.categoria = aiResult.categoria;
+              // Validar e corrigir prioridade
+              const validPriorities = ['imediato', 'ate_1_hora', 'ainda_hoje', 'posso_esperar'];
+              if (!validPriorities.includes(aiResult.prioridade)) {
+                console.log(`❌ INVALID PRIORITY: AI suggested "${aiResult.prioridade}", mapping to valid priority`);
+                // Mapear prioridades antigas para novas se necessário
+                switch (aiResult.prioridade) {
+                  case 'urgente':
+                  case 'crise':
+                    aiResult.prioridade = 'imediato';
+                    break;
+                  case 'alta':
+                    aiResult.prioridade = 'ate_1_hora';
+                    break;
+                  case 'hoje_18h':
+                    aiResult.prioridade = 'ainda_hoje';
+                    break;
+                  case 'padrao_24h':
+                  default:
+                    aiResult.prioridade = 'posso_esperar';
+                    break;
+                }
               }
-              if (aiResult.prioridade) {
-                classificationResult.prioridade = aiResult.prioridade;
+
+              // Garantir que o título tenha no máximo 3 palavras
+              if (aiResult.titulo) {
+                const cleanTitle = aiResult.titulo.trim().replace(/[.,!?;:"']+/g, '');
+                const words = cleanTitle.split(/\s+/).filter(word => word.length > 0);
+                titulo = words.slice(0, 3).join(' ');
               }
-              if (aiResult.equipe_responsavel) {
-                const equipeEncontrada = equipes.find(eq => 
-                  eq.nome.toLowerCase().includes(aiResult.equipe_responsavel.toLowerCase())
-                );
+
+              // Buscar equipe por nome exato se foi sugerida
+              if (aiResult.equipe_sugerida) {
+                console.log('Procurando equipe:', aiResult.equipe_sugerida);
+                
+                // Primeiro, tentar match exato
+                let equipeEncontrada = equipes.find(eq => eq.nome === aiResult.equipe_sugerida);
+                
+                // Se não encontrar match exato, tentar busca similar
+                if (!equipeEncontrada) {
+                  equipeEncontrada = equipes.find(eq => 
+                    eq.nome.toLowerCase().includes(aiResult.equipe_sugerida.toLowerCase())
+                  );
+                }
+                
                 if (equipeEncontrada) {
                   equipeResponsavelId = equipeEncontrada.id;
-                  classificationResult.equipe_responsavel = equipeEncontrada.nome;
+                  console.log(`Equipe encontrada: ${equipeEncontrada.nome} (ID: ${equipeEncontrada.id})`);
+                } else {
+                  console.log('Nenhuma equipe encontrada para:', aiResult.equipe_sugerida);
                 }
               }
               
-              analysisResult = classificationResult;
+              analysisResult = {
+                categoria: aiResult.categoria || 'outro',
+                prioridade: aiResult.prioridade || 'posso_esperar',
+                titulo: titulo || 'Novo Ticket',
+                equipe_responsavel: aiResult.equipe_sugerida,
+                justificativa: aiResult.justificativa || 'Análise automática'
+              };
+              
               console.log('Classificação final da IA:', analysisResult);
               
             } catch (parseError) {
               console.error('Erro ao parsear resposta da IA:', parseError);
-              // Manter classificação automática
+              // Use fallback
+              analysisResult = {
+                categoria: 'outro',
+                prioridade: 'posso_esperar',
+                titulo: 'Novo Ticket',
+                equipe_responsavel: null,
+                justificativa: 'Análise automática com fallback'
+              };
             }
           }
         } else {
@@ -414,13 +483,35 @@ Se não souber, use: categoria="outro", prioridade="posso_esperar", equipe_respo
         }
       } catch (error) {
         console.error('Erro na classificação por IA:', error);
-        // Manter classificação automática
       }
     }
 
-    // Se não temos analysisResult da IA, usar nossa classificação automática
+    // Se não temos analysisResult da IA, usar fallback
     if (!analysisResult) {
-      analysisResult = classificationResult;
+      // Gerar título baseado na descrição como fallback
+      const generateFallbackTitle = (description: string): string => {
+        const desc = description.toLowerCase();
+        if (desc.includes('áudio') || desc.includes('audio') || desc.includes('som')) return 'Problema Áudio';
+        if (desc.includes('planfeto') || desc.includes('panfleto') || desc.includes('mídia')) return 'Criação Mídia';
+        if (desc.includes('solicitar') || desc.includes('preciso') || desc.includes('gostaria')) return 'Solicitação Material';
+        if (desc.includes('sistema') || desc.includes('erro') || desc.includes('bug')) return 'Erro Sistema';
+        if (desc.includes('evento')) return 'Evento Dúvida';
+        
+        // Fallback: pegar palavras importantes
+        const words = description.trim().split(/\s+/).filter(word => 
+          word.length > 3 && 
+          !['preciso', 'gostaria', 'solicitar', 'favor', 'olá', 'ola'].includes(word.toLowerCase())
+        );
+        return words.slice(0, 3).join(' ') || 'Novo Ticket';
+      };
+
+      analysisResult = {
+        categoria: 'outro',
+        prioridade: 'posso_esperar', 
+        titulo: generateFallbackTitle(message),
+        equipe_responsavel: null,
+        justificativa: 'Análise automática com fallback'
+      };
     }
 
     console.log('Resultado final da classificação:', {
@@ -489,6 +580,7 @@ Se não souber, use: categoria="outro", prioridade="posso_esperar", equipe_respo
       .insert({
         unidade_id: unidade.id,
         franqueado_id: franqueadoId,
+        titulo: analysisResult?.titulo || 'Novo Ticket',
         descricao_problema: message,
         categoria: analysisResult?.categoria || 'outro',
         subcategoria: analysisResult?.subcategoria || null,
@@ -500,10 +592,14 @@ Se não souber, use: categoria="outro", prioridade="posso_esperar", equipe_respo
         data_abertura: new Date().toISOString(),
         arquivos: attachments || [],
         log_ia: analysisResult ? {
-          analysis: analysisResult,
-          model: modelToUse,
+          analysis_timestamp: new Date().toISOString(),
+          ai_response: JSON.stringify(analysisResult),
           api_provider: apiProvider,
-          timestamp: new Date().toISOString()
+          model: modelToUse,
+          categoria_sugerida: analysisResult.categoria,
+          prioridade_sugerida: analysisResult.prioridade,
+          equipe_sugerida: analysisResult.equipe_responsavel,
+          justificativa: analysisResult.justificativa
         } : {}
       })
       .select()
