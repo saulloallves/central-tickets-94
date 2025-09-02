@@ -151,15 +151,27 @@ async function obterSugestaoDeRespostaParaTicket(ticket) {
   const documentosDeContexto = await encontrarDocumentosRelacionados(textoDoTicket);
 
   if (!documentosDeContexto || documentosDeContexto.length === 0) {
-    return "Não foi encontrado nenhum artigo na base de conhecimento que possa ajudar a responder este ticket.";
+    return {
+      resposta: "Não foi encontrado nenhum artigo na base de conhecimento que possa ajudar a responder este ticket.",
+      metrics: {
+        documentos_encontrados: 0,
+        relevancia_media: '0%',
+        relevancia_maxima: '0%'
+      }
+    };
   }
 
   console.log(`2. Encontrados ${documentosDeContexto.length} documentos. Formatando contexto...`);
   
+  // Calcular métricas de relevância
+  const similaridades = documentosDeContexto.map(doc => doc.similaridade);
+  const relevanciaMedia = similaridades.reduce((sum, val) => sum + val, 0) / similaridades.length;
+  const relevanciaMaxima = Math.max(...similaridades);
+  
   // Debug: Mostrar quais documentos foram encontrados
   console.log("Documentos encontrados:");
   documentosDeContexto.forEach((doc, index) => {
-    console.log(`  ${index + 1}. ${doc.titulo} (v${doc.versao}) - Categoria: ${doc.categoria}`);
+    console.log(`  ${index + 1}. ${doc.titulo} (v${doc.versao}) - Categoria: ${doc.categoria} - Similaridade: ${(doc.similaridade * 100).toFixed(1)}%`);
   });
   
   // Formata o contexto para ser injetado no prompt
@@ -175,7 +187,14 @@ async function obterSugestaoDeRespostaParaTicket(ticket) {
   const sugestaoFinal = await gerarRespostaComContexto(contextoFormatado, textoDoTicket);
 
   console.log("4. Sugestão gerada com sucesso!");
-  return sugestaoFinal;
+  return {
+    resposta: sugestaoFinal,
+    metrics: {
+      documentos_encontrados: documentosDeContexto.length,
+      relevancia_media: `${(relevanciaMedia * 100).toFixed(1)}%`,
+      relevancia_maxima: `${(relevanciaMaxima * 100).toFixed(1)}%`
+    }
+  };
 }
 
 serve(async (req) => {
@@ -248,9 +267,9 @@ serve(async (req) => {
 
     // 2. Executar o pipeline RAG principal usando as funções documentadas
     console.log('🤖 Iniciando pipeline RAG...');
-    let sugestaoGerada;
+    let resultadoRAG;
     try {
-      sugestaoGerada = await obterSugestaoDeRespostaParaTicket(ticket);
+      resultadoRAG = await obterSugestaoDeRespostaParaTicket(ticket);
       console.log('✅ Pipeline RAG concluído');
     } catch (ragError) {
       console.error('❌ Erro no pipeline RAG:', ragError);
@@ -264,7 +283,7 @@ serve(async (req) => {
       .insert({
         ticket_id: ticketId,
         kind: 'suggestion',
-        resposta: sugestaoGerada,
+        resposta: resultadoRAG.resposta,
         model: 'gpt-4o',
         params: {
           temperature: 0.2,
@@ -273,7 +292,8 @@ serve(async (req) => {
         log: {
           rag_pipeline: 'v3_documentado',
           embedding_model: 'text-embedding-ada-002',
-          pipeline_version: 'RAG_v3_Estruturado'
+          pipeline_version: 'RAG_v3_Estruturado',
+          metrics: resultadoRAG.metrics
         }
       })
       .select()
@@ -289,11 +309,14 @@ serve(async (req) => {
     console.log('🎉 === SUGESTÃO GERADA COM SUCESSO ===');
 
     const response = {
-      resposta: sugestaoGerada,
+      resposta: resultadoRAG.resposta,
       rag_metrics: {
         pipeline_version: 'RAG_v3_Estruturado',
         modelo_embedding: 'text-embedding-ada-002',
-        modelo_geracao: 'gpt-4o'
+        modelo_geracao: 'gpt-4o',
+        documentos_encontrados: resultadoRAG.metrics.documentos_encontrados,
+        relevancia_media: resultadoRAG.metrics.relevancia_media,
+        relevancia_maxima: resultadoRAG.metrics.relevancia_maxima
       }
     };
 
