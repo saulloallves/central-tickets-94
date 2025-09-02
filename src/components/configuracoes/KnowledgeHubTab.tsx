@@ -17,9 +17,11 @@ import { useRAGDocuments } from '@/hooks/useRAGDocuments';
 import { SimilarDocumentsModal } from './SimilarDocumentsModal';
 import { SemanticAnalysisModal } from './SemanticAnalysisModal';
 import { supabase } from '@/integrations/supabase/client';
+import { useRegenerateEmbeddings } from '@/hooks/useRegenerateEmbeddings';
 
 const KnowledgeHubTab = () => {
   const { documents, loading, fetchDocuments, createDocument, updateDocument, updateDocumentStatus, runAudit } = useRAGDocuments();
+  const { regenerateEmbeddings, loading: regeneratingEmbeddings } = useRegenerateEmbeddings();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [estiloFilter, setEstiloFilter] = useState('');
@@ -288,6 +290,14 @@ const KnowledgeHubTab = () => {
               </CardDescription>
             </div>
             <div className="flex gap-2">
+              <Button 
+                onClick={regenerateEmbeddings} 
+                variant="outline" 
+                disabled={regeneratingEmbeddings}
+                className="bg-red-50 border-red-200 text-red-700 hover:bg-red-100"
+              >
+                {regeneratingEmbeddings ? '🔄 Regenerando...' : '🔧 Regenerar Embeddings'}
+              </Button>
               <Button onClick={handleRunAudit} variant="outline">
                 🔍 Auditoria
               </Button>
