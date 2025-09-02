@@ -185,37 +185,81 @@ serve(async (req) => {
   }
 
   try {
-    const { ticketId } = await req.json();
+    console.log('📥 Recebendo requisição...');
+    
+    // Parse JSON com tratamento de erro
+    let requestBody;
+    try {
+      requestBody = await req.json();
+      console.log('📋 Request body parsed:', requestBody);
+    } catch (parseError) {
+      console.error('❌ Erro ao fazer parse do JSON:', parseError);
+      throw new Error('Invalid JSON in request body');
+    }
+
+    const { ticketId } = requestBody;
     
     if (!ticketId) {
+      console.error('❌ ticketId não fornecido');
       throw new Error('ticketId is required');
     }
 
     console.log('=== INICIANDO GERAÇÃO DE SUGESTÃO RAG ===');
-    console.log('Ticket ID:', ticketId);
+    console.log('🎫 Ticket ID:', ticketId);
 
-    // 1. Buscar dados do ticket
+    // Verificar se as variáveis de ambiente estão corretas
+    if (!openAIApiKey) {
+      console.error('❌ OPENAI_API_KEY não configurada');
+      throw new Error('OpenAI API key not configured');
+    }
+    console.log('✅ OpenAI API key configurada');
+
+    // 1. Buscar dados do ticket com tratamento de erro mais detalhado
+    console.log('🔍 Buscando dados do ticket...');
     const { data: ticket, error: ticketError } = await supabase
       .from('tickets')
       .select(`
-        *,
-        unidades(id, grupo),
-        colaboradores(nome_completo, email)
+        id,
+        codigo_ticket,
+        titulo,
+        descricao_problema,
+        categoria,
+        prioridade,
+        unidade_id
       `)
       .eq('id', ticketId)
       .maybeSingle();
 
-    if (ticketError || !ticket) {
-      console.error('Error fetching ticket:', ticketError);
+    if (ticketError) {
+      console.error('❌ Erro na query do ticket:', ticketError);
+      throw new Error(`Erro ao buscar ticket: ${ticketError.message}`);
+    }
+
+    if (!ticket) {
+      console.error('❌ Ticket não encontrado');
       throw new Error('Ticket not found');
     }
 
-    console.log('Ticket encontrado:', ticket.codigo_ticket);
+    console.log('✅ Ticket encontrado:', ticket.codigo_ticket);
+    console.log('📝 Dados do ticket:', {
+      titulo: ticket.titulo,
+      categoria: ticket.categoria,
+      descricao_length: ticket.descricao_problema?.length || 0
+    });
 
     // 2. Executar o pipeline RAG principal usando as funções documentadas
-    const sugestaoGerada = await obterSugestaoDeRespostaParaTicket(ticket);
+    console.log('🤖 Iniciando pipeline RAG...');
+    let sugestaoGerada;
+    try {
+      sugestaoGerada = await obterSugestaoDeRespostaParaTicket(ticket);
+      console.log('✅ Pipeline RAG concluído');
+    } catch (ragError) {
+      console.error('❌ Erro no pipeline RAG:', ragError);
+      throw new Error(`Erro no pipeline RAG: ${ragError.message}`);
+    }
 
     // 3. Salvar a interação no banco para análise
+    console.log('💾 Salvando interação no banco...');
     const { data: suggestionRecord, error: saveError } = await supabase
       .from('ticket_ai_interactions')
       .insert({
@@ -237,28 +281,39 @@ serve(async (req) => {
       .single();
 
     if (saveError) {
-      console.error('Error saving suggestion:', saveError);
+      console.error('⚠️ Erro ao salvar sugestão (não crítico):', saveError);
       // Não falha aqui, só registra o erro
+    } else {
+      console.log('✅ Interação salva no banco');
     }
 
-    console.log('=== SUGESTÃO GERADA COM SUCESSO ===');
+    console.log('🎉 === SUGESTÃO GERADA COM SUCESSO ===');
 
-    return new Response(JSON.stringify({
+    const response = {
       resposta: sugestaoGerada,
       rag_metrics: {
         pipeline_version: 'RAG_v3_Estruturado',
         modelo_embedding: 'text-embedding-3-large',
         modelo_geracao: 'gpt-4o'
       }
-    }), {
+    };
+
+    console.log('📤 Enviando resposta de sucesso');
+    return new Response(JSON.stringify(response), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
-    console.error('Error in suggest-reply function:', error);
-    return new Response(JSON.stringify({ 
-      error: error.message 
-    }), {
+    console.error('💥 ERRO FATAL na função suggest-reply:', error);
+    console.error('Stack trace:', error.stack);
+    
+    const errorResponse = { 
+      error: error.message,
+      details: error.stack
+    };
+    
+    console.log('📤 Enviando resposta de erro');
+    return new Response(JSON.stringify(errorResponse), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
