@@ -383,9 +383,15 @@ serve(async (req) => {
           const cleanJson = aiResponse.substring(jsonStart, jsonEnd);
           const jsonResponse = JSON.parse(cleanJson);
           
+          console.log('📋 JSON Response do classificador:', JSON.stringify(jsonResponse, null, 2));
+          console.log('🏷️ título original:', titulo);
+          console.log('🏷️ titulo_padrao da IA:', jsonResponse.titulo_padrao);
+          
           finalTitulo = jsonResponse.titulo_padrao || titulo;
           finalConteudo = jsonResponse.content_full || organizedContent || conteudo;
           finalCategoria = jsonResponse.classe_nome || categoria || 'Manual';
+          
+          console.log('🏷️ finalTitulo escolhido:', finalTitulo);
           
           classificacaoData = {
             tipo: 'manual',
@@ -481,9 +487,8 @@ CATEGORIA: ${categoria || 'Geral'}
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'text-embedding-3-large',
+        model: 'text-embedding-ada-002', // Modelo padrão 1536 dimensões
         input: embeddingEnriquecido,
-        dimensions: 1536 // Manter dimensão compatível
       }),
     });
 
@@ -683,6 +688,11 @@ CATEGORIA: ${categoria || 'Geral'}
 
       documentData.versao = (ultimaVersao?.versao || 0) + 1;
     }
+
+    console.log('🗃️ Dados finais para inserção no banco:');
+    console.log('  titulo:', documentData.titulo);
+    console.log('  finalTitulo variável:', finalTitulo);
+    console.log('  documentData completo:', JSON.stringify(documentData, null, 2));
 
     const { data, error } = await supabase
       .from('documentos')
