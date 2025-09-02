@@ -33,6 +33,7 @@ const KnowledgeHubTab = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [estiloFilter, setEstiloFilter] = useState('');
+  const [categoriaFilter, setCategoriaFilter] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [auditResults, setAuditResults] = useState(null);
   const [showSimilarDocumentsModal, setShowSimilarDocumentsModal] = useState(false);
@@ -154,7 +155,8 @@ const KnowledgeHubTab = () => {
     const matchesSearch = doc.titulo.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = !statusFilter || statusFilter === 'all' || doc.status === statusFilter;
     const matchesEstilo = !estiloFilter || estiloFilter === 'all' || doc.estilo === estiloFilter;
-    return matchesSearch && matchesStatus && matchesEstilo;
+    const matchesCategoria = !categoriaFilter || categoriaFilter === 'all' || doc.categoria === categoriaFilter;
+    return matchesSearch && matchesStatus && matchesEstilo && matchesCategoria;
   });
   const statusColors = {
     ativo: 'bg-green-500',
@@ -471,6 +473,19 @@ const KnowledgeHubTab = () => {
                 <SelectItem value="all">Todos os estilos</SelectItem>
                 <SelectItem value="manual">Manual</SelectItem>
                 <SelectItem value="diretriz">Diretriz</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={categoriaFilter} onValueChange={setCategoriaFilter}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Filtrar por categoria" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as categorias</SelectItem>
+                {availableCategories.map(categoria => (
+                  <SelectItem key={categoria} value={categoria}>
+                    {categoria}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
