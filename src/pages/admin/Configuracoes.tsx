@@ -9,13 +9,14 @@ import { RelatoriosTab } from "@/components/configuracoes/RelatoriosTab";
 import { NotificacoesTab } from "@/components/configuracoes/NotificacoesTab";
 import { CrisisConfigTab } from "@/components/configuracoes/CrisisConfigTab";
 import { LogoSettings } from "@/components/configuracoes/LogoSettingsTab";
+import { EmbeddingTestTab } from '@/components/configuracoes/EmbeddingTestTab';
 
 export default function Configuracoes() {
   return (
     <div className="min-h-screen bg-gradient-subtle p-6">
       <div className="w-full space-y-4">
         <Tabs defaultValue="ia" className="w-full">
-          <TabsList className="grid w-full grid-cols-6 mb-6">
+          <TabsList className="grid w-full grid-cols-7 mb-6">
             <TabsTrigger value="logo" className="flex items-center gap-2">
               <Image className="h-4 w-4" />
               Logo
@@ -39,6 +40,9 @@ export default function Configuracoes() {
             <TabsTrigger value="crise" className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4" />
               Modo Crise
+            </TabsTrigger>
+            <TabsTrigger value="debug" className="flex items-center gap-2">
+              🧪 Debug
             </TabsTrigger>
           </TabsList>
 
@@ -64,6 +68,10 @@ export default function Configuracoes() {
 
           <TabsContent value="crise" className="space-y-6 animate-fade-in">
             <CrisisConfigTab />
+          </TabsContent>
+
+          <TabsContent value="debug" className="space-y-6 animate-fade-in">
+            <EmbeddingTestTab />
           </TabsContent>
         </Tabs>
       </div>
