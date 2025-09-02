@@ -2323,6 +2323,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      auto_link_similar_tickets_to_crisis: {
+        Args: {
+          p_crise_id: string
+          p_palavras_chave?: string[]
+          p_time_window_minutes?: number
+        }
+        Returns: number
+      }
       binary_quantize: {
         Args: { "": string } | { "": unknown }
         Returns: unknown

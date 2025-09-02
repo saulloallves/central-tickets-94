@@ -63,7 +63,12 @@ export const useNewCrisisManagement = () => {
               descricao_problema,
               unidade_id,
               prioridade,
-              status
+              status,
+              unidades (
+                grupo,
+                cidade,
+                uf
+              )
             )
           ),
           crise_updates (

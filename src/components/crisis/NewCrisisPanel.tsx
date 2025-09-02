@@ -256,7 +256,7 @@ export const NewCrisisPanel = ({ className }: NewCrisisPanelProps) => {
                       </div>
 
                       {crisis.palavras_chave && crisis.palavras_chave.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mb-3">
+                        <div className="flex flex-wrap gap-1 mb-2">
                           {crisis.palavras_chave.slice(0, 3).map((palavra, i) => (
                             <Badge key={i} variant="outline" className="text-xs">
                               {palavra}
@@ -265,6 +265,36 @@ export const NewCrisisPanel = ({ className }: NewCrisisPanelProps) => {
                           {crisis.palavras_chave.length > 3 && (
                             <Badge variant="outline" className="text-xs">
                               +{crisis.palavras_chave.length - 3} mais
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Unidades Afetadas */}
+                      {crisis.crise_ticket_links && crisis.crise_ticket_links.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-3">
+                          {/* Extrair unidades únicas dos tickets */}
+                          {Array.from(new Set(
+                            crisis.crise_ticket_links
+                              .map(link => link.tickets?.unidades?.grupo)
+                              .filter(grupo => grupo)
+                          )).slice(0, 3).map((grupo, i) => (
+                            <Badge key={i} variant="secondary" className="text-xs bg-orange-100 text-orange-700 border-orange-200">
+                              <MapPin className="h-2 w-2 mr-1" />
+                              {grupo}
+                            </Badge>
+                          ))}
+                          {Array.from(new Set(
+                            crisis.crise_ticket_links
+                              .map(link => link.tickets?.unidades?.grupo)
+                              .filter(grupo => grupo)
+                          )).length > 3 && (
+                            <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-700 border-orange-200">
+                              +{Array.from(new Set(
+                                crisis.crise_ticket_links
+                                  .map(link => link.tickets?.unidades?.grupo)
+                                  .filter(grupo => grupo)
+                              )).length - 3} unidades
                             </Badge>
                           )}
                         </div>
@@ -343,10 +373,11 @@ export const NewCrisisPanel = ({ className }: NewCrisisPanelProps) => {
                                           )}
                                         >
                                           <div className="flex items-center justify-between mb-2">
-                                            <div className="flex items-center gap-2">
-                                              <Badge variant="outline" className="text-xs">
-                                                {link.tickets?.unidades?.grupo || 'N/A'}
-                                              </Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs">
+                              <MapPin className="h-3 w-3 mr-1" />
+                              {link.tickets?.unidades?.grupo || 'N/A'}
+                            </Badge>
                                               <Button
                                                 variant="ghost"
                                                 size="sm"
