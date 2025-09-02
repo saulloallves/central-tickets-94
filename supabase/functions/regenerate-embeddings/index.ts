@@ -62,9 +62,9 @@ serve(async (req) => {
             'Authorization': `Bearer ${openAIApiKey}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            model: 'text-embedding-3-large',
-            input: textoParaEmbedding,
+        body: JSON.stringify({
+          model: 'text-embedding-ada-002', // Modelo padrão 1536 dimensões
+          input: textoParaEmbedding,
           }),
         });
 

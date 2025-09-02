@@ -59,7 +59,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'text-embedding-3-large',
+        model: 'text-embedding-ada-002', // Modelo padrão 1536 dimensões
         input: textoParaEmbedding,
       }),
     });
@@ -97,7 +97,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'text-embedding-3-large',
+        model: 'text-embedding-ada-002', // Modelo padrão 1536 dimensões
         input: testQuery,
       }),
     });

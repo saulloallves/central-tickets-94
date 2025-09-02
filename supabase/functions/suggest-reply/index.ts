@@ -33,7 +33,7 @@ async function encontrarDocumentosRelacionados(textoDeBusca) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'text-embedding-3-large',
+      model: 'text-embedding-ada-002', // Modelo padrão 1536 dimensões
       input: textoDeBusca,
     }),
   });
@@ -272,7 +272,7 @@ serve(async (req) => {
         },
         log: {
           rag_pipeline: 'v3_documentado',
-          embedding_model: 'text-embedding-3-large',
+          embedding_model: 'text-embedding-ada-002',
           pipeline_version: 'RAG_v3_Estruturado'
         }
       })
@@ -292,7 +292,7 @@ serve(async (req) => {
       resposta: sugestaoGerada,
       rag_metrics: {
         pipeline_version: 'RAG_v3_Estruturado',
-        modelo_embedding: 'text-embedding-3-large',
+        modelo_embedding: 'text-embedding-ada-002',
         modelo_geracao: 'gpt-4o'
       }
     };
