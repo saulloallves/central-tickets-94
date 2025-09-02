@@ -130,11 +130,13 @@ serve(async (req) => {
     // Buscar todas as equipes ativas
     const { data: equipesAtivas } = await supabase
       .from('equipes')
-      .select('id, nome, descricao')
+      .select('id, nome, descricao, introducao')
       .eq('ativo', true)
       .order('nome');
 
-    const equipesDisponiveis = equipesAtivas?.map(e => `- ${e.nome}: ${e.descricao}`).join('\n') || 'Nenhuma equipe disponível';
+    const equipesDisponiveis = equipesAtivas?.map(e => 
+      `- ${e.nome}: ${e.descricao}\n  Especialidades: ${e.introducao || 'Não especificado'}`
+    ).join('\n') || 'Nenhuma equipe disponível';
 
     // Prompt para análise completa incluindo título
     const analysisPrompt = `
