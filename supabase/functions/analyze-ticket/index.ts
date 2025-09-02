@@ -163,13 +163,21 @@ Analise este ticket de suporte e forneça:
    - ate_1_hora: problemas urgentes que afetam produtividade  
    - ainda_hoje: problemas importantes mas não bloqueiam trabalho
    - posso_esperar: dúvidas, solicitações, problemas menores
-4. EQUIPE_SUGERIDA: Sugira qual equipe deve atender baseado no problema e nas equipes disponíveis
+4. EQUIPE_SUGERIDA: Analise CUIDADOSAMENTE as especialidades de cada equipe e suas descrições completas. Priorize as ESPECIALIDADES (introdução) sobre apenas o nome da equipe.
 
 Descrição do problema: "${descricao}"
 Categoria atual: ${categoria || 'não definida'}
 
-EQUIPES DISPONÍVEIS:
+EQUIPES DISPONÍVEIS (ANALISE AS ESPECIALIDADES COM ATENÇÃO):
 ${equipesDisponiveis}
+
+INSTRUÇÕES PARA ESCOLHA DA EQUIPE:
+- Leia TODAS as especialidades listadas para cada equipe
+- Para problemas com "eventos": considere Agência (eventos/mídias) ou Concierge Operação (eventos de treinamento)
+- Para problemas de sistema/login: Sistema DFcom
+- Para criação de mídias/materiais: Agência ou Mídias
+- Para automação/girabot: Automação
+- Para áudios/comunicação: Comunicação
 
 ATENÇÃO: A prioridade deve ser EXATAMENTE uma destas palavras: imediato, ate_1_hora, ainda_hoje, posso_esperar
 NÃO use: urgente, crítico, alta, baixa, crise, normal ou qualquer outra variação.
@@ -180,7 +188,7 @@ Responda APENAS em formato JSON válido:
   "categoria": "categoria_sugerida", 
   "prioridade": "imediato_ou_ate_1_hora_ou_ainda_hoje_ou_posso_esperar",
   "equipe_sugerida": "nome_exato_da_equipe_ou_null",
-  "justificativa": "Breve explicação da análise"
+  "justificativa": "Breve explicação da análise focando nas especialidades da equipe escolhida"
 }
 
 CRÍTICO: Use APENAS estas 4 prioridades: imediato, ate_1_hora, ainda_hoje, posso_esperar
