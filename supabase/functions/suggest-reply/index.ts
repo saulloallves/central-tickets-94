@@ -47,8 +47,8 @@ async function encontrarDocumentosRelacionados(textoDeBusca) {
   const embeddingData = await embeddingResponse.json();
   const queryEmbedding = embeddingData.data[0].embedding;
 
-  // 2. Configura a busca para ser abrangente
-  const LIMIAR_DE_RELEVANCIA = 0.75; // Threshold padrão mais rigoroso
+  // 2. Configura a busca para ser abrangente - usando threshold do hub de conhecimento
+  const LIMIAR_DE_RELEVANCIA = 0.5; // Threshold igual ao hub de conhecimento que funciona
   const MAXIMO_DE_DOCUMENTOS = 5;
 
   console.log("2. Executando busca semântica na base de conhecimento...");
