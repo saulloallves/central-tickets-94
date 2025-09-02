@@ -127,41 +127,51 @@ serve(async (req) => {
       return requestBody;
     };
 
-    // Buscar todas as equipes ativas
+    // Buscar todas as equipes ativas com introdução
     const { data: equipesAtivas } = await supabase
       .from('equipes')
-      .select('id, nome, descricao')
+      .select('id, nome, introducao')
       .eq('ativo', true)
       .order('nome');
 
-    const equipesDisponiveis = equipesAtivas?.map(e => `- ${e.nome}: ${e.descricao}`).join('\n') || 'Nenhuma equipe disponível';
+    console.log('Equipes ativas encontradas:', JSON.stringify(equipesAtivas, null, 2));
+
+    const equipesDisponiveis = equipesAtivas?.map(e => `- ${e.nome}: ${e.introducao || 'Sem especialidades definidas'}`).join('\n') || 'Nenhuma equipe disponível';
+
+    console.log('Prompt que será enviado para a IA:', analysisPrompt);
 
     // Prompt para análise completa incluindo título
     const analysisPrompt = `
-Analise este ticket de suporte e forneça:
+Você é um especialista em classificação de tickets de suporte técnico da Cresci & Perdi.
 
-1. TÍTULO: Crie um título DESCRITIVO de exatamente 3 palavras que resuma o OBJETIVO/PROBLEMA principal. NÃO copie as primeiras palavras da descrição. Seja criativo e descritivo.
-   Exemplos: 
-   - "Problema áudio Zoom" (não "Preciso do áudio")
-   - "Solicitar materiais gráficos" (não "Olá Gostaria de") 
-   - "Criação mídia planfetos" (não "mídias para planfetos")
+Analise este ticket e forneça:
 
-2. CATEGORIA: Classifique em uma das opções: juridico, sistema, midia, operacoes, rh, financeiro, outro
-3. PRIORIDADE: Escolha OBRIGATORIAMENTE uma destas 4 opções: imediato, ate_1_hora, ainda_hoje, posso_esperar
+1. TÍTULO: Crie um título DESCRITIVO de exatamente 3 palavras que resuma o OBJETIVO/PROBLEMA principal.
+   - NÃO copie as primeiras palavras da descrição
+   - Seja criativo e descritivo
+   - Exemplos: "Problema áudio Zoom", "Solicitar materiais gráficos", "Criação mídia planfetos"
+
+2. CATEGORIA: juridico, sistema, midia, operacoes, rh, financeiro, outro
+
+3. PRIORIDADE (OBRIGATÓRIO escolher uma): imediato, ate_1_hora, ainda_hoje, posso_esperar
    - imediato: problemas críticos que impedem funcionamento
    - ate_1_hora: problemas urgentes que afetam produtividade  
    - ainda_hoje: problemas importantes mas não bloqueiam trabalho
    - posso_esperar: dúvidas, solicitações, problemas menores
-4. EQUIPE_SUGERIDA: Sugira qual equipe deve atender baseado no problema e nas equipes disponíveis
+
+4. EQUIPE_SUGERIDA: Analise cuidadosamente qual equipe deve atender baseado nas ESPECIALIDADES de cada equipe:
+
+EQUIPES E SUAS ESPECIALIDADES:
+${equipesDisponiveis}
+
+INSTRUÇÕES PARA DESIGNAÇÃO DE EQUIPE:
+- Leia atentamente as ESPECIALIDADES de cada equipe listadas acima
+- Escolha a equipe cuja especialidade melhor corresponde ao problema descrito
+- Use o nome EXATO da equipe como aparece na lista
+- Se nenhuma equipe se adequar perfeitamente, retorne null
 
 Descrição do problema: "${descricao}"
 Categoria atual: ${categoria || 'não definida'}
-
-EQUIPES DISPONÍVEIS:
-${equipesDisponiveis}
-
-ATENÇÃO: A prioridade deve ser EXATAMENTE uma destas palavras: imediato, ate_1_hora, ainda_hoje, posso_esperar
-NÃO use: urgente, crítico, alta, baixa, crise, normal ou qualquer outra variação.
 
 Responda APENAS em formato JSON válido:
 {
@@ -169,7 +179,7 @@ Responda APENAS em formato JSON válido:
   "categoria": "categoria_sugerida", 
   "prioridade": "imediato_ou_ate_1_hora_ou_ainda_hoje_ou_posso_esperar",
   "equipe_sugerida": "nome_exato_da_equipe_ou_null",
-  "justificativa": "Breve explicação da análise"
+  "justificativa": "Breve explicação da análise e por que escolheu esta equipe"
 }
 
 CRÍTICO: Use APENAS estas 4 prioridades: imediato, ate_1_hora, ainda_hoje, posso_esperar
