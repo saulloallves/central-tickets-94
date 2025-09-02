@@ -80,7 +80,7 @@ export const useNewCrisisManagement = () => {
             created_by
           )
         `)
-        .neq('status', 'encerrado')
+        .not('status', 'in', '(resolvido,encerrado)')
         .order('created_at', { ascending: false });
 
       if (crisesError) {
