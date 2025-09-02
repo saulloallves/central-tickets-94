@@ -52,8 +52,13 @@ async function encontrarDocumentosRelacionados(textoDeBusca) {
   const MAXIMO_DE_DOCUMENTOS = 5;
 
   console.log("2. Executando busca semântica na base de conhecimento...");
+  console.log("Parâmetros da busca:", {
+    threshold: LIMIAR_DE_RELEVANCIA,
+    max_docs: MAXIMO_DE_DOCUMENTOS,
+    texto_busca: textoDeBusca.substring(0, 100) + "..."
+  });
   
-  // 3. Chama a função segura no Supabase usando a função RPC que acessa a tabela documentos
+  // 3. Chama a função RPC que acessa a tabela documentos
   const { data, error } = await supabase.rpc('match_documentos', {
     query_embedding: queryEmbedding,
     match_threshold: LIMIAR_DE_RELEVANCIA,
@@ -61,27 +66,21 @@ async function encontrarDocumentosRelacionados(textoDeBusca) {
   });
 
   if (error) {
-    console.error("Erro na busca de documentos:", error);
-    console.error("Detalhes do erro:", JSON.stringify(error, null, 2));
-    
-    // Fallback: tentar busca direta na tabela documentos usando service key
-    console.log("Tentando busca direta na tabela documentos...");
-    const { data: directData, error: directError } = await supabase
-      .from('documentos')
-      .select('id, titulo, conteudo, categoria, versao, status')
-      .eq('status', 'ativo')
-      .limit(MAXIMO_DE_DOCUMENTOS);
-    
-    if (directError) {
-      console.error("Erro na busca direta:", directError);
-      return [];
-    }
-    
-    console.log(`Busca direta encontrou ${directData?.length || 0} documentos`);
-    return directData || [];
+    console.error("❌ ERRO na função RPC match_documentos:", error);
+    console.error("Detalhes completos do erro:", JSON.stringify(error, null, 2));
+    throw new Error(`Erro na busca RPC: ${error.message}`);
   }
 
-  console.log(`Encontrados ${data?.length || 0} documentos relevantes`);
+  console.log(`✅ Busca RPC executada com sucesso. Resultados: ${data?.length || 0} documentos`);
+  if (data && data.length > 0) {
+    console.log("Documentos encontrados na busca RPC:");
+    data.forEach((doc, i) => {
+      console.log(`  ${i+1}. ${doc.titulo} (similaridade: ${doc.similaridade})`);
+    });
+  } else {
+    console.log("❌ NENHUM documento encontrado na busca RPC com threshold", LIMIAR_DE_RELEVANCIA);
+  }
+  
   return data || [];
 }
 
