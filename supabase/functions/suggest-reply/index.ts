@@ -12,7 +12,10 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+  db: { schema: 'public' },
+  auth: { persistSession: false }
+});
 
 /**
  * Encontra documentos relacionados usando busca vetorial semântica
@@ -45,12 +48,12 @@ async function encontrarDocumentosRelacionados(textoDeBusca) {
   const queryEmbedding = embeddingData.data[0].embedding;
 
   // 2. Configura a busca para ser abrangente
-  const LIMIAR_DE_RELEVANCIA = 0.75;
+  const LIMIAR_DE_RELEVANCIA = 0.5; // Threshold mais baixo para capturar mais contexto
   const MAXIMO_DE_DOCUMENTOS = 5;
 
   console.log("2. Executando busca semântica na base de conhecimento...");
   
-  // 3. Chama a função segura no Supabase
+  // 3. Chama a função segura no Supabase usando a função RPC que acessa a tabela documentos
   const { data, error } = await supabase.rpc('match_documentos', {
     query_embedding: queryEmbedding,
     match_threshold: LIMIAR_DE_RELEVANCIA,
@@ -59,7 +62,23 @@ async function encontrarDocumentosRelacionados(textoDeBusca) {
 
   if (error) {
     console.error("Erro na busca de documentos:", error);
-    return [];
+    console.error("Detalhes do erro:", JSON.stringify(error, null, 2));
+    
+    // Fallback: tentar busca direta na tabela documentos usando service key
+    console.log("Tentando busca direta na tabela documentos...");
+    const { data: directData, error: directError } = await supabase
+      .from('documentos')
+      .select('id, titulo, conteudo, categoria, versao, status')
+      .eq('status', 'ativo')
+      .limit(MAXIMO_DE_DOCUMENTOS);
+    
+    if (directError) {
+      console.error("Erro na busca direta:", directError);
+      return [];
+    }
+    
+    console.log(`Busca direta encontrou ${directData?.length || 0} documentos`);
+    return directData || [];
   }
 
   console.log(`Encontrados ${data?.length || 0} documentos relevantes`);
@@ -138,6 +157,13 @@ async function obterSugestaoDeRespostaParaTicket(ticket) {
   }
 
   console.log(`2. Encontrados ${documentosDeContexto.length} documentos. Formatando contexto...`);
+  
+  // Debug: Mostrar quais documentos foram encontrados
+  console.log("Documentos encontrados:");
+  documentosDeContexto.forEach((doc, index) => {
+    console.log(`  ${index + 1}. ${doc.titulo} (v${doc.versao}) - Categoria: ${doc.categoria}`);
+  });
+  
   // Formata o contexto para ser injetado no prompt
   const contextoFormatado = documentosDeContexto.map((doc, index) =>
     `--- Início da Fonte ${index + 1} ---\n` +
