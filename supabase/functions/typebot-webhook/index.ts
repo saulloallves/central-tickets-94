@@ -574,8 +574,8 @@ CRÍTICO: Use APENAS estas 4 prioridades: imediato, ate_1_hora, ainda_hoje, poss
       });
     }
 
-    // Criar ticket com dados da análise ou defaults
-    const { data: ticket, error: ticketError } = await supabase
+    // Criar ticket com dados da análise ou defaults - Split into two operations to avoid PostgreSQL DISTINCT/ORDER BY issue
+    const { data: ticketBasic, error: ticketError } = await supabase
       .from('tickets')
       .insert({
         unidade_id: unidade.id,
@@ -602,14 +602,43 @@ CRÍTICO: Use APENAS estas 4 prioridades: imediato, ate_1_hora, ainda_hoje, poss
           justificativa: analysisResult.justificativa
         } : {}
       })
-      .select()
+      .select('id, codigo_ticket')
       .single();
 
     if (ticketError) {
-      console.error('Error creating ticket:', ticketError);
+      console.error('Error creating ticket:', {
+        code: ticketError.code,
+        message: ticketError.message,
+        hint: ticketError.hint,
+        details: ticketError.details
+      });
       return new Response(JSON.stringify({ 
         error: 'Erro ao criar ticket',
         details: ticketError.message,
+        success: false 
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Fetch the complete ticket data
+    const { data: ticket, error: fetchError } = await supabase
+      .from('tickets')
+      .select('*')
+      .eq('id', ticketBasic.id)
+      .single();
+
+    if (fetchError) {
+      console.error('Error fetching complete ticket:', {
+        code: fetchError.code,
+        message: fetchError.message,
+        hint: fetchError.hint,
+        details: fetchError.details
+      });
+      return new Response(JSON.stringify({ 
+        error: 'Erro ao buscar dados do ticket',
+        details: fetchError.message,
         success: false 
       }), {
         status: 500,
