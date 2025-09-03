@@ -9,17 +9,17 @@ const corsHeaders = {
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY')!;
+const openAIApiKey = Deno.env.get('OPENAI_API_KEY'); // Remove ! para verificação posterior
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 interface TicketForAnalysis {
   id: string;
   codigo_ticket: string;
-  descricao: string;
+  descricao_problema: string; // Campo correto
   categoria: string;
   prioridade: string;
-  equipe_id: string;
+  equipe_responsavel_id: string; // Campo correto
   unidade_id: string;
   created_at: string;
   equipes?: { nome: string };
@@ -33,7 +33,7 @@ Analise os seguintes tickets de suporte e identifique grupos de tickets que repr
 ${tickets.map(t => `
 ID: ${t.id}
 Código: ${t.codigo_ticket}
-Descrição: ${t.descricao}
+Descrição: ${t.descricao_problema}
 Categoria: ${t.categoria}
 Equipe: ${t.equipes?.nome || 'N/A'}
 Unidade: ${t.unidades?.grupo || 'N/A'}
@@ -81,7 +81,9 @@ Se não houver grupos com 5+ tickets similares, retorne: {"grupos_crise": []}
   });
 
   if (!response.ok) {
-    throw new Error(`OpenAI API error: ${response.status}`);
+    const errorText = await response.text();
+    console.error('OpenAI API error:', response.status, errorText);
+    throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
   }
 
   const data = await response.json();
@@ -102,14 +104,14 @@ async function getTicketsForAnalysis(): Promise<TicketForAnalysis[]> {
     .select(`
       id,
       codigo_ticket,
-      descricao,
+      descricao_problema,
       categoria,
       prioridade,
-      equipe_id,
+      equipe_responsavel_id,
       unidade_id,
       created_at,
-      equipes(nome),
-      unidades(grupo)
+      equipes:equipe_responsavel_id(nome),
+      unidades:unidade_id(grupo)
     `)
     .in('status', ['aberto', 'em_andamento'])
     .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
@@ -169,23 +171,36 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  try {
-    console.log('=== INICIANDO DETECÇÃO AUTOMÁTICA DE CRISES ===');
+    try {
+      console.log('=== INICIANDO DETECÇÃO AUTOMÁTICA DE CRISES ===');
 
-    // 1. Buscar tickets para análise
-    const tickets = await getTicketsForAnalysis();
-    console.log(`Analisando ${tickets.length} tickets`);
+      // Verificar se a chave OpenAI existe
+      if (!openAIApiKey) {
+        console.error('OPENAI_API_KEY não encontrada');
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            error: 'OPENAI_API_KEY não configurada',
+            message: 'Configure a chave da OpenAI nas configurações do Supabase'
+          }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
 
-    if (tickets.length < 5) {
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: 'Não há tickets suficientes para análise',
-          tickets_analyzed: tickets.length 
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+      // 1. Buscar tickets para análise
+      const tickets = await getTicketsForAnalysis();
+      console.log(`Analisando ${tickets.length} tickets`);
+
+      if (tickets.length < 5) {
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            message: 'Não há tickets suficientes para análise',
+            tickets_analyzed: tickets.length 
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
 
     // 2. Analisar similaridade com IA
     const analysis = await analyzeTicketSimilarity(tickets);

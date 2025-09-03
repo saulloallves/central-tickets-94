@@ -16,6 +16,7 @@ import { CreateTicketDialog } from '@/components/tickets/CreateTicketDialog';
 import { TicketDetail } from '@/components/tickets/TicketDetail';
 import { SLAAlerts } from '@/components/tickets/SLAAlerts';
 import { TestAIButton } from '@/components/tickets/TestAIButton';
+import { TestOpenAIButton } from '@/components/tickets/TestOpenAIButton';
 import { RefreshButton } from '@/components/ui/refresh-button';
 import { NotificationButton } from '@/components/notifications/NotificationButton';
 import { NewCrisisAlertBanner } from '@/components/crisis/NewCrisisAlertBanner';
@@ -182,6 +183,7 @@ const Tickets = () => {
               <span className="hidden md:inline">Painel de Crises</span>
             </Button>
             <AutoCrisisDetectionButton />
+            <TestOpenAIButton />
             <TestAIButton />
             
             <Button size="sm" onClick={() => setCreateDialogOpen(true)} className="flex-1 md:flex-none">
