@@ -263,6 +263,7 @@ export type Database = {
           palavras_chave: string[] | null
           problem_signature: string | null
           resolved_at: string | null
+          similar_terms: string[] | null
           status: Database["public"]["Enums"]["crise_status"]
           tickets_count: number
           titulo: string
@@ -280,6 +281,7 @@ export type Database = {
           palavras_chave?: string[] | null
           problem_signature?: string | null
           resolved_at?: string | null
+          similar_terms?: string[] | null
           status?: Database["public"]["Enums"]["crise_status"]
           tickets_count?: number
           titulo: string
@@ -297,6 +299,7 @@ export type Database = {
           palavras_chave?: string[] | null
           problem_signature?: string | null
           resolved_at?: string | null
+          similar_terms?: string[] | null
           status?: Database["public"]["Enums"]["crise_status"]
           tickets_count?: number
           titulo?: string
