@@ -5,9 +5,11 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, Clock, User, Building, CheckCircle, X } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { AlertTriangle, Clock, User, Building, CheckCircle, X, MessageSquare, Send, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { TicketDetail } from '@/components/tickets/TicketDetail';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -43,6 +45,10 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
   const { toast } = useToast();
   const [tickets, setTickets] = useState<CrisisTicket[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
+  const [ticketModalOpen, setTicketModalOpen] = useState(false);
+  const [broadcastMessage, setBroadcastMessage] = useState('');
+  const [sendingMessage, setSendingMessage] = useState(false);
 
   useEffect(() => {
     if (isOpen && crisis.id) {
@@ -157,6 +163,88 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
     }
   };
 
+  const handleTicketClick = (ticketId: string) => {
+    setSelectedTicketId(ticketId);
+    setTicketModalOpen(true);
+  };
+
+  const handleCloseTicketDetail = () => {
+    setTicketModalOpen(false);
+    setSelectedTicketId(null);
+  };
+
+  const handleSendBroadcastMessage = async () => {
+    if (!broadcastMessage.trim()) {
+      toast({
+        title: "Erro",
+        description: "Digite uma mensagem antes de enviar",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setSendingMessage(true);
+    try {
+      // Buscar todas as unidades dos tickets relacionados
+      const unidadeIds = [...new Set(tickets.map(t => t.unidade_id))];
+
+      // Buscar grupos WhatsApp das unidades
+      const { data: unidades, error: unidadesError } = await supabase
+        .from('unidades')
+        .select('id, grupo')
+        .in('id', unidadeIds)
+        .not('grupo', 'is', null);
+
+      if (unidadesError) throw unidadesError;
+
+      const grupos = unidades?.map(u => u.grupo).filter(Boolean) || [];
+
+      if (grupos.length === 0) {
+        toast({
+          title: "Aviso",
+          description: "Nenhum grupo WhatsApp encontrado para as unidades desta crise",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Enviar mensagem broadcast para cada grupo
+      const promises = grupos.map(async (grupo) => {
+        const { error } = await supabase.functions.invoke('zapi-send-message', {
+          body: {
+            phone: grupo,
+            message: `🚨 *CRISE ATIVA* 🚨\n\n${crisis.titulo}\n\n${broadcastMessage}\n\n_Mensagem enviada automaticamente pelo sistema de gerenciamento de crises_`,
+            ticketId: null // Mensagem não vinculada a ticket específico
+          }
+        });
+
+        if (error) {
+          console.error('Erro ao enviar para grupo:', grupo, error);
+          throw error;
+        }
+      });
+
+      await Promise.all(promises);
+
+      toast({
+        title: "Mensagem Enviada",
+        description: `Mensagem enviada para ${grupos.length} grupo(s) WhatsApp`,
+        variant: "default"
+      });
+
+      setBroadcastMessage('');
+    } catch (error) {
+      console.error('Erro ao enviar mensagem broadcast:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao enviar mensagem para os grupos",
+        variant: "destructive"
+      });
+    } finally {
+      setSendingMessage(false);
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'aberto':
@@ -235,7 +323,11 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
                 ) : (
                   <div className="space-y-3">
                     {tickets.map((ticket) => (
-                      <Card key={ticket.id} className="relative">
+                      <Card 
+                        key={ticket.id} 
+                        className="relative cursor-pointer hover:bg-muted/50 transition-colors"
+                        onClick={() => handleTicketClick(ticket.id)}
+                      >
                         <CardContent className="p-4">
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
@@ -265,6 +357,16 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
                                 </div>
                               </div>
                             </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleTicketClick(ticket.id);
+                              }}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
                           </div>
                         </CardContent>
                       </Card>
@@ -272,6 +374,36 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
                   </div>
                 )}
               </ScrollArea>
+            </CardContent>
+          </Card>
+
+          {/* Seção de Mensagem Broadcast */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <MessageSquare className="h-4 w-4" />
+                Enviar Mensagem para Todos os Grupos
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Textarea
+                placeholder="Digite sua mensagem para enviar para todos os grupos WhatsApp das unidades relacionadas a esta crise..."
+                value={broadcastMessage}
+                onChange={(e) => setBroadcastMessage(e.target.value)}
+                rows={3}
+              />
+              <div className="flex justify-between items-center">
+                <p className="text-sm text-muted-foreground">
+                  Será enviado para grupos WhatsApp de {[...new Set(tickets.map(t => t.unidade_id))].length} unidade(s)
+                </p>
+                <Button 
+                  onClick={handleSendBroadcastMessage}
+                  disabled={sendingMessage || !broadcastMessage.trim()}
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  {sendingMessage ? 'Enviando...' : 'Enviar Mensagem'}
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
@@ -298,6 +430,14 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
             </div>
           </div>
         </div>
+
+        {/* Modal de Detalhes do Ticket */}
+        {selectedTicketId && ticketModalOpen && (
+          <TicketDetail
+            ticketId={selectedTicketId}
+            onClose={handleCloseTicketDetail}
+          />
+        )}
       </DialogContent>
     </Dialog>
   );
