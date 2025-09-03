@@ -16,9 +16,6 @@ import { CreateTicketDialog } from '@/components/tickets/CreateTicketDialog';
 import { TicketDetail } from '@/components/tickets/TicketDetail';
 
 import { CrisisBanner } from '@/components/tickets/CrisisBanner';
-import { TestAIButton } from '@/components/tickets/TestAIButton';
-import { TestOpenAIButton } from '@/components/tickets/TestOpenAIButton';
-import { RefreshButton } from '@/components/ui/refresh-button';
 import { NotificationButton } from '@/components/notifications/NotificationButton';
 import { useTicketsEdgeFunctions } from '@/hooks/useTicketsEdgeFunctions';
 import { useUserEquipes } from '@/hooks/useUserEquipes';
@@ -39,7 +36,6 @@ const Tickets = () => {
   const { toast } = useToast();
   
   // Initialize notification system but disable its realtime (we'll handle it ourselves)
-  const { testNotificationSound, testCriticalSound } = useTicketNotifications();
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [ticketModalOpen, setTicketModalOpen] = useState(false);
   
@@ -140,30 +136,6 @@ const Tickets = () => {
           
           <div className="flex flex-wrap gap-1 md:gap-2">
             <NotificationButton />
-            <RefreshButton onRefresh={() => {
-              console.log('🔄 Manual refresh triggered');
-              refetch();
-            }} />
-            <Button variant="outline" size="sm" className="hidden md:flex" onClick={() => {
-              console.log('🔄 Force refresh all data');
-              window.location.reload();
-            }}>
-              ↻ Refresh Completo
-            </Button>
-            <Button variant="outline" size="sm" className="hidden md:flex" onClick={() => {
-              // Force reload and test new sound directly
-              import('@/lib/notification-sounds').then(({ NotificationSounds }) => {
-                console.log('🔊 TESTING: Playing NEW gentle info sound...');
-                NotificationSounds.playNotificationSound('info');
-              });
-            }}>
-              🔊 Som Novo
-            </Button>
-            <Button variant="outline" size="sm" className="hidden md:flex" onClick={testCriticalSound}>
-              🚨 Som Crítico
-            </Button>
-            <TestOpenAIButton />
-            <TestAIButton />
             
             <Button size="sm" onClick={() => setCreateDialogOpen(true)} className="flex-1 md:flex-none">
               <Plus className="h-4 w-4 md:mr-2" />

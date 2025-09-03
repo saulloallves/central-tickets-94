@@ -53,7 +53,7 @@ export const NotificationButton = ({ isExpanded = false }: { isExpanded?: boolea
         variant="ghost" 
         size="sm" 
         disabled 
-        className="text-white hover:bg-white/5 hover:backdrop-blur-sm transition-all duration-450"
+        className="text-foreground hover:bg-primary/10 hover:backdrop-blur-sm transition-all duration-450"
       >
         <Bell className="h-4 w-4 opacity-90" />
         {isExpanded && <span className="ml-2 text-sm drop-shadow-md">Notificações</span>}
@@ -69,11 +69,11 @@ export const NotificationButton = ({ isExpanded = false }: { isExpanded?: boolea
           size="sm" 
           className={`relative transition-all duration-450 hover:scale-[1.02] ${
             isExpanded 
-              ? "flex items-center px-3 py-2 rounded-xl hover:bg-white/5 hover:backdrop-blur-sm hover:text-white/95 hover:border hover:border-white/10 text-white w-full justify-start"
-              : "w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl hover:bg-white/5 hover:backdrop-blur-sm hover:text-white/95 text-white mx-auto"
+              ? "flex items-center px-3 py-2 rounded-xl hover:bg-primary/10 hover:backdrop-blur-sm hover:text-primary text-foreground w-full justify-start"
+              : "w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl hover:bg-primary/10 hover:backdrop-blur-sm hover:text-primary text-foreground mx-auto"
           }`}
         >
-          <Bell className={`${isExpanded ? 'h-4 w-4 mr-2' : 'h-3 w-3 sm:h-4 sm:w-4'} text-white opacity-90 drop-shadow-md`} />
+          <Bell className={`${isExpanded ? 'h-4 w-4 mr-2' : 'h-3 w-3 sm:h-4 sm:w-4'} text-foreground opacity-90 drop-shadow-md`} />
           {isExpanded && <span className="text-sm font-medium drop-shadow-md">Notificações</span>}
           {alerts.length > 0 && (
             <Badge 
