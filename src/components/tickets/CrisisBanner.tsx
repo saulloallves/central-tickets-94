@@ -89,7 +89,8 @@ export function CrisisBanner() {
   }, [activeCrises, dismissedCrises]);
 
   const handleDismissCrisis = (crisisId: string) => {
-    setDismissedCrises(prev => new Set([...prev, crisisId]));
+    // Não permitir dismiss - crise deve ficar fixa até ser resolvida
+    console.log('Dismiss não permitido para crise ativa:', crisisId);
   };
 
   const handleOpenCrisis = (crisis: Crisis) => {
@@ -97,7 +98,7 @@ export function CrisisBanner() {
     setIsModalOpen(true);
   };
 
-  const visibleCrises = activeCrises.filter(c => !dismissedCrises.has(c.id));
+  const visibleCrises = activeCrises; // Mostrar todas as crises ativas sempre
 
   if (visibleCrises.length === 0) {
     return null;
@@ -136,13 +137,6 @@ export function CrisisBanner() {
                   onClick={() => handleOpenCrisis(crisis)}
                 >
                   Gerenciar Crise
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => handleDismissCrisis(crisis.id)}
-                >
-                  <X className="h-4 w-4" />
                 </Button>
               </div>
             </AlertDescription>

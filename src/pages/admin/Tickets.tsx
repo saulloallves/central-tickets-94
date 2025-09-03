@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { TicketsKanban } from '@/components/tickets/TicketsKanban';
 import { CreateTicketDialog } from '@/components/tickets/CreateTicketDialog';
 import { TicketDetail } from '@/components/tickets/TicketDetail';
-import { SLAAlerts } from '@/components/tickets/SLAAlerts';
+
 import { CrisisBanner } from '@/components/tickets/CrisisBanner';
 import { TestAIButton } from '@/components/tickets/TestAIButton';
 import { TestOpenAIButton } from '@/components/tickets/TestOpenAIButton';
@@ -129,9 +129,6 @@ const Tickets = () => {
       <div className="w-full p-3 md:p-6 space-y-3 md:space-y-4">
         {/* Banner de Crises */}
         <CrisisBanner />
-        
-        {/* Alertas SLA */}
-        <SLAAlerts />
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
