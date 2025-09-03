@@ -353,9 +353,6 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
                               <div className="flex items-start justify-between">
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2 mb-2">
-                                    <code className="text-sm font-mono bg-muted px-2 py-1 rounded">
-                                      {ticket.codigo_ticket}
-                                    </code>
                                     <div className={`w-2 h-2 rounded-full ${getStatusColor(ticket.status)}`} />
                                     <Badge variant={getPriorityColor(ticket.prioridade)}>
                                       {ticket.prioridade}
