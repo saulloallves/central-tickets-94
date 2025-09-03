@@ -16,7 +16,6 @@ interface Crisis {
   titulo: string;
   status: string;
   created_at: string;
-  equipe_id: string;
 }
 
 interface CrisisTicket {

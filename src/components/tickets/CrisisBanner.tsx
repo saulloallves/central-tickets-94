@@ -3,7 +3,6 @@ import { AlertTriangle, X, Users, Clock } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { CrisisModal } from './CrisisModal';
 
@@ -12,7 +11,6 @@ interface Crisis {
   titulo: string;
   status: string;
   created_at: string;
-  equipe_id: string;
 }
 
 export function CrisisBanner() {
@@ -25,55 +23,18 @@ export function CrisisBanner() {
   useEffect(() => {
     if (!user) return;
 
-    // Buscar crises ativas das equipes do usuário
+    // For now, we'll keep this empty until the database schema is fixed
+    // The crisis system will be enabled once we have the proper equipe_id column
     const fetchActiveCrises = async () => {
-      const { data: userTeams } = await supabase
-        .from('equipe_members')
-        .select('equipe_id')
-        .eq('user_id', user.id)
-        .eq('ativo', true);
-
-      if (!userTeams || userTeams.length === 0) return;
-
-      const teamIds = userTeams.map(t => t.equipe_id);
-
-      const { data: crises, error } = await supabase
-        .from('crises')
-        .select('id, titulo, status, created_at, equipe_id')
-        .in('equipe_id', teamIds)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Erro ao buscar crises ativas:', error);
-        return;
+      try {
+        // TODO: Implement crisis fetching once equipe_id is added to crises table
+        setActiveCrises([]);
+      } catch (error) {
+        console.error('Erro ao buscar crises:', error);
       }
-
-      setActiveCrises(crises || []);
     };
 
     fetchActiveCrises();
-
-    // Subscription para updates em tempo real
-    const channel = supabase
-      .channel('crisis-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'crises',
-          filter: 'is_active=eq.true'
-        },
-        () => {
-          fetchActiveCrises();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, [user]);
 
   // Tocar som de alerta quando nova crise aparece

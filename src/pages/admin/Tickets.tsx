@@ -15,6 +15,7 @@ import { TicketsKanban } from '@/components/tickets/TicketsKanban';
 import { CreateTicketDialog } from '@/components/tickets/CreateTicketDialog';
 import { TicketDetail } from '@/components/tickets/TicketDetail';
 import { SLAAlerts } from '@/components/tickets/SLAAlerts';
+import { CrisisBanner } from '@/components/tickets/CrisisBanner';
 import { TestAIButton } from '@/components/tickets/TestAIButton';
 import { TestOpenAIButton } from '@/components/tickets/TestOpenAIButton';
 import { RefreshButton } from '@/components/ui/refresh-button';
