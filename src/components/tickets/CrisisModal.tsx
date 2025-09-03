@@ -192,10 +192,10 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
       // Buscar todas as unidades dos tickets relacionados
       const unidadeIds = [...new Set(tickets.map(t => t.unidade_id))];
 
-      // Buscar grupos WhatsApp das unidades
+      // Buscar grupos WhatsApp das unidades e nomes das unidades
       const { data: unidades, error: unidadesError } = await supabase
         .from('unidades')
-        .select('id, id_grupo_branco')
+        .select('id, id_grupo_branco, grupo')
         .in('id', unidadeIds)
         .not('id_grupo_branco', 'is', null);
 
@@ -228,10 +228,14 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
       let messageTemplate = template?.template_content || 
         `🚨 *CRISE ATIVA* 🚨\n\n🎫 *Ticket:* {{codigo_ticket}}\n🏢 *Unidade:* {{unidade_id}}\n\n💥 *Motivo:*\n{{motivo}}\n\n⏰ *Informado em:* {{timestamp}}\n\n_Mensagem enviada automaticamente pelo sistema de gerenciamento de crises_`;
 
+      // Obter informações do primeiro ticket para substituição
+      const firstTicket = tickets[0];
+      const unidadeNome = unidades?.find(u => u.id === firstTicket?.unidade_id)?.grupo || 'N/A';
+      
       // Substituir variáveis no template
       const formattedMessage = messageTemplate
-        .replace('{{codigo_ticket}}', tickets[0]?.codigo_ticket || 'N/A')
-        .replace('{{unidade_id}}', tickets[0]?.unidade_id || 'N/A')
+        .replace('{{codigo_ticket}}', firstTicket?.titulo || firstTicket?.codigo_ticket || 'N/A')
+        .replace('{{unidade_id}}', unidadeNome)
         .replace('{{motivo}}', broadcastMessage)
         .replace('{{timestamp}}', new Date().toLocaleString('pt-BR'));
 
