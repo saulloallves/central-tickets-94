@@ -338,7 +338,8 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-hidden flex flex-col space-y-4">
+        <ScrollArea className="flex-1 pr-4">
+          <div className="space-y-4 pb-4">
           {/* Info da Crise */}
           <Card className="flex-shrink-0">
             <CardHeader>
@@ -546,9 +547,10 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
                 <CheckCircle className="h-4 w-4 mr-2" />
                 Resolver Crise
               </Button>
-            </div>
+             </div>
+           </div>
           </div>
-        </div>
+        </ScrollArea>
 
         {/* Modal de Detalhes do Ticket */}
         {selectedTicketId && ticketModalOpen && (
