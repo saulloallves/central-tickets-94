@@ -81,15 +81,15 @@ export const NewCrisisAlertBanner = () => {
 
   return (
     <div className={cn(
-      "w-full transition-all duration-300 rounded-b-lg overflow-hidden shadow-lg",
+      "w-full transition-all duration-300 rounded-lg overflow-hidden shadow-lg m-3 mx-3",
       isMinimized ? "h-12" : "min-h-16"
     )}>
-      <div className="bg-gradient-to-r from-red-600 via-red-500 to-red-600 text-white animate-pulse border-b-2 border-red-700">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
+      <div className="bg-gradient-to-r from-red-600 via-red-500 to-red-600 text-white border-b-2 border-red-700 h-full">
+        <div className="container mx-auto px-4 py-3 h-full">
+          <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <AlertTriangle className="h-6 w-6 animate-bounce" />
+                <AlertTriangle className="h-6 w-6" />
                 <span className="font-bold text-lg">🚨 MODO CRISE ATIVO</span>
                 <Badge variant="destructive" className="bg-white text-red-600 font-bold">
                   {activeCrises.length} CRISE{activeCrises.length > 1 ? 'S' : ''}
