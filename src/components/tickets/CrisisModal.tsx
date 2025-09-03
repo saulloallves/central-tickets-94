@@ -42,6 +42,13 @@ interface CrisisModalProps {
   onClose: () => void;
 }
 
+interface SentMessage {
+  id: string;
+  message: string;
+  timestamp: string;
+  groupCount: number;
+}
+
 export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
   const { toast } = useToast();
   const [tickets, setTickets] = useState<CrisisTicket[]>([]);
@@ -51,6 +58,7 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
   const [broadcastMessage, setBroadcastMessage] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
   const [isTicketsCollapsed, setIsTicketsCollapsed] = useState(false);
+  const [sentMessages, setSentMessages] = useState<SentMessage[]>([]);
 
   useEffect(() => {
     if (isOpen && crisis.id) {
@@ -261,9 +269,19 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
 
       await Promise.all(promises);
 
+      // Adicionar mensagem ao histórico
+      const newSentMessage: SentMessage = {
+        id: Date.now().toString(),
+        message: broadcastMessage,
+        timestamp: new Date().toLocaleString('pt-BR'),
+        groupCount: grupos.length
+      };
+      
+      setSentMessages(prev => [newSentMessage, ...prev]);
+
       toast({
-        title: "Mensagem Enviada",
-        description: `Mensagem enviada para ${grupos.length} grupo(s) WhatsApp`,
+        title: "✅ Mensagem Enviada com Sucesso!",
+        description: `Mensagem: "${broadcastMessage.substring(0, 50)}${broadcastMessage.length > 50 ? '...' : ''}" enviada para ${grupos.length} grupo(s) WhatsApp`,
         variant: "default"
       });
 
@@ -427,6 +445,43 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
               </CollapsibleContent>
             </Card>
           </Collapsible>
+
+          {/* Histórico de Mensagens Enviadas */}
+          {sentMessages.length > 0 && (
+            <Card className="flex-shrink-0">
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4" />
+                  Histórico de Mensagens Enviadas
+                  <Badge variant="outline">{sentMessages.length}</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[200px]">
+                  <div className="space-y-3">
+                    {sentMessages.map((sentMsg) => (
+                      <div 
+                        key={sentMsg.id}
+                        className="p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg"
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
+                            ✅ Enviada
+                          </Badge>
+                          <div className="text-xs text-muted-foreground">
+                            {sentMsg.timestamp} • {sentMsg.groupCount} grupo(s)
+                          </div>
+                        </div>
+                        <p className="text-sm text-foreground font-medium">
+                          {sentMsg.message}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Seção de Mensagem Broadcast */}
           <Card className="flex-shrink-0">
