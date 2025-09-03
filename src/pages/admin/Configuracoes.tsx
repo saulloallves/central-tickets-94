@@ -14,7 +14,25 @@ import { EmbeddingTestTab } from '@/components/configuracoes/EmbeddingTestTab';
 export default function Configuracoes() {
   return (
     <div className="min-h-screen bg-gradient-subtle p-6">
-      <div className="w-full space-y-4">
+      <div className="w-full space-y-6">
+        {/* Header Section */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-12 h-12 bg-primary/10 rounded-lg">
+              <Settings className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-semibold text-foreground">Configurações do Sistema</h1>
+              <p className="text-muted-foreground">Gerencie as configurações e preferências do sistema</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="bg-muted px-3 py-1 rounded-full text-sm text-muted-foreground">
+              Admin Only
+            </div>
+          </div>
+        </div>
+
         <Tabs defaultValue="ia" className="w-full">
           <TabsList className="grid w-full grid-cols-6 mb-6">
             <TabsTrigger value="logo" className="flex items-center gap-2">
