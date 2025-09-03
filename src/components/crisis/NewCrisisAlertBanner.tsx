@@ -81,10 +81,10 @@ export const NewCrisisAlertBanner = () => {
 
   return (
     <div className={cn(
-      "w-full transition-all duration-300 border-b-4 border-red-700",
+      "w-full transition-all duration-300 rounded-b-lg overflow-hidden shadow-lg",
       isMinimized ? "h-12" : "min-h-16"
     )}>
-      <div className="bg-gradient-to-r from-red-600 via-red-500 to-red-600 text-white shadow-2xl animate-pulse">
+      <div className="bg-gradient-to-r from-red-600 via-red-500 to-red-600 text-white animate-pulse border-b-2 border-red-700">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -129,7 +129,7 @@ export const NewCrisisAlertBanner = () => {
 
           {!isMinimized && (
             <div className="mt-3">
-              <div className="bg-red-700/30 rounded p-3 text-sm">
+              <div className="bg-red-700/30 rounded-lg p-3 text-sm">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
