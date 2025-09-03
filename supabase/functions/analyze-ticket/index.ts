@@ -247,7 +247,7 @@ CRÍTICO: Use APENAS estas 4 prioridades: imediato, ate_1_hora, ainda_hoje, poss
         // Mapear prioridades antigas para novas se necessário
         switch (analysis.prioridade) {
           case 'urgente':
-          case 'crise':
+          case 'urgente':
             analysis.prioridade = 'imediato';
             break;
           case 'alta':

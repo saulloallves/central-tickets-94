@@ -1,6 +1,4 @@
 
-import { NewCrisisButton } from './NewCrisisButton';
-
 interface TicketActionsProps {
   ticket: {
     id: string;
@@ -23,18 +21,9 @@ interface TicketActionsProps {
 }
 
 export const TicketActions = ({ ticket, equipes, size = 'default', onEdit, onReply }: TicketActionsProps) => {
-
   return (
     <div className="flex items-center gap-1">
-      <NewCrisisButton 
-        ticketId={ticket.id}
-        currentPriority={ticket.prioridade}
-        ticketInfo={{
-          codigo_ticket: ticket.codigo_ticket,
-          unidade: ticket.unidades?.grupo,
-          categoria: ticket.categoria
-        }}
-      />
+      {/* Ações do ticket - por enquanto vazio */}
     </div>
   );
 };

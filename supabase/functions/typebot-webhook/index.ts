@@ -411,7 +411,7 @@ CRÍTICO: Use APENAS estas 4 prioridades: imediato, ate_1_hora, ainda_hoje, poss
                 // Mapear prioridades antigas para novas se necessário
                 switch (aiResult.prioridade) {
                   case 'urgente':
-                  case 'crise':
+                  case 'urgente':
                     aiResult.prioridade = 'imediato';
                     break;
                   case 'alta':
@@ -561,7 +561,7 @@ CRÍTICO: Use APENAS estas 4 prioridades: imediato, ate_1_hora, ainda_hoje, poss
       analysisResult.categoria = analysisResult.categoria || fallbackCategoria;
       analysisResult.prioridade = analysisResult.prioridade || 'posso_esperar';
       analysisResult.sla_sugerido_horas = analysisResult.sla_sugerido_horas || 24;
-      analysisResult.is_crise = analysisResult.is_crise || false;
+      analysisResult.sla_sugerido_horas = analysisResult.sla_sugerido_horas || 24;
       
       if (!equipeResponsavelId) {
         equipeResponsavelId = fallbackEquipeId;
@@ -587,8 +587,8 @@ CRÍTICO: Use APENAS estas 4 prioridades: imediato, ate_1_hora, ainda_hoje, poss
         prioridade: analysisResult?.prioridade || 'posso_esperar',
         equipe_responsavel_id: equipeResponsavelId || equipes?.[0]?.id,
         canal_origem: 'typebot',
-        status: analysisResult?.is_crise ? 'escalonado' : 'aberto',
-        escalonamento_nivel: analysisResult?.is_crise ? 5 : 0,
+        status: 'aberto',
+        escalonamento_nivel: 0,
         data_abertura: new Date().toISOString(),
         arquivos: attachments || [],
         log_ia: analysisResult ? {
@@ -697,7 +697,6 @@ CRÍTICO: Use APENAS estas 4 prioridades: imediato, ate_1_hora, ainda_hoje, poss
         metadata: {
           ai_analysis_completed: !!finalTicket.log_ia,
           equipe_responsavel_id: finalTicket.equipe_responsavel_id,
-          is_crise: finalTicket.log_ia?.analysis?.is_crise || false,
           sla_sugerido_horas: finalTicket.log_ia?.analysis?.sla_sugerido_horas || 24,
           analysis_model: modelToUse
         }

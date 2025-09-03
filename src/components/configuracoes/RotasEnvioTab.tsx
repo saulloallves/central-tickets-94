@@ -14,9 +14,7 @@ import { useNotificationRoutes, NotificationRoute } from "@/hooks/useNotificatio
 import { useLegacyNotificationDefaults } from "@/hooks/useLegacyNotificationDefaults";
 
 const NOTIFICATION_TYPES = [
-  { value: 'crisis', label: 'Ativação de Crise', description: 'Quando uma crise é ativada' },
-  { value: 'crisis_resolved', label: 'Crise Resolvida', description: 'Quando uma crise é resolvida' },
-  { value: 'crisis_update', label: 'Atualização de Crise', description: 'Quando há ações na crise' },
+  { value: 'sla_breach', label: 'SLA Vencido', description: 'Quando um ticket ultrapassa o prazo' },
   { value: 'ticket_created', label: 'Ticket Criado', description: 'Quando um novo ticket é criado' },
   { value: 'resposta_ticket', label: 'Resposta do Ticket', description: 'Respostas enviadas aos grupos' },
   { value: 'resposta_ticket_franqueado', label: 'Resposta ao Franqueado', description: 'Respostas enviadas ao franqueado' },

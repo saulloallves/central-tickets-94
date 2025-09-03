@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useTicketMessages } from '@/hooks/useTickets';
 import { useAISuggestion } from '@/hooks/useAISuggestion';
 
-import { CrisisButton } from './CrisisButton';
+
 import { TicketActions } from './TicketActions';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -750,7 +750,6 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                 EM CRISE
               </Badge>
             )}
-            <CrisisButton ticketId={ticket.id} currentPriority={ticket.prioridade} />
             <TicketActions ticket={ticket} equipes={equipes} />
           </div>
         </div>
@@ -1248,7 +1247,6 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                   </Button>
                 )}
 
-                <CrisisButton ticketId={ticketId} currentPriority={ticket.prioridade} />
                 <TicketActions ticket={ticket} equipes={equipes} />
               </div>
             </div>

@@ -19,12 +19,8 @@ import { TestAIButton } from '@/components/tickets/TestAIButton';
 import { TestOpenAIButton } from '@/components/tickets/TestOpenAIButton';
 import { RefreshButton } from '@/components/ui/refresh-button';
 import { NotificationButton } from '@/components/notifications/NotificationButton';
-import { NewCrisisAlertBanner } from '@/components/crisis/NewCrisisAlertBanner';
-import { NewCrisisPanel } from '@/components/crisis/NewCrisisPanel';
 import { useTicketsEdgeFunctions } from '@/hooks/useTicketsEdgeFunctions';
 import { useUserEquipes } from '@/hooks/useUserEquipes';
-import { AutoCrisisDetectionButton } from '@/components/tickets/AutoCrisisDetectionButton';
-import { useAutoCrisisDetection } from '@/hooks/useAutoCrisisDetection';
 
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -40,7 +36,6 @@ const Tickets = () => {
   const { userEquipes } = useUserEquipes();
   const { user } = useAuth();
   const { toast } = useToast();
-  const { scheduleAutoDetection } = useAutoCrisisDetection();
   
   // Initialize notification system but disable its realtime (we'll handle it ourselves)
   const { testNotificationSound, testCriticalSound } = useTicketNotifications();
@@ -64,7 +59,6 @@ const Tickets = () => {
   
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [showCrisisPanel, setShowCrisisPanel] = useState(false);
   const [equipes, setEquipes] = useState<Equipe[]>([]);
   const [filters, setFilters] = useState({
     search: '',
@@ -106,12 +100,7 @@ const Tickets = () => {
     };
 
     fetchEquipes();
-    
-    // Iniciar detecção automática agendada
-    const cleanup = scheduleAutoDetection();
-    
-    return cleanup;
-  }, [scheduleAutoDetection]);
+  }, []);
 
   // Edge functions handle realtime automatically through database triggers
 
@@ -134,7 +123,7 @@ const Tickets = () => {
   return (
     <div className="relative">
       {/* New Crisis Alert Banner */}
-      <NewCrisisAlertBanner />
+      {/* Sistema de crises removido */}
       
       <div className="w-full p-3 md:p-6 space-y-3 md:space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -169,20 +158,6 @@ const Tickets = () => {
             <Button variant="outline" size="sm" className="hidden md:flex" onClick={testCriticalSound}>
               🚨 Som Crítico
             </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setShowCrisisPanel(!showCrisisPanel)}
-              className={cn(
-                "flex-1 md:flex-none",
-                showCrisisPanel ? "bg-red-50 border-red-200" : ""
-              )}
-              data-crisis-panel-trigger
-            >
-              <AlertTriangle className="h-4 w-4 md:mr-2" />
-              <span className="hidden md:inline">Painel de Crises</span>
-            </Button>
-            <AutoCrisisDetectionButton />
             <TestOpenAIButton />
             <TestAIButton />
             
@@ -193,10 +168,6 @@ const Tickets = () => {
           </div>
         </div>
 
-        {/* Crisis Panel */}
-        {showCrisisPanel && (
-          <NewCrisisPanel className="mb-6" />
-        )}
 
         {/* Stats Cards - Simplified */}
         <div className="grid grid-cols-3 md:grid-cols-3 gap-2 md:gap-4">

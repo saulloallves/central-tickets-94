@@ -141,9 +141,7 @@ function getLegacyDestination(type: string, ticket: any): string | null {
     case 'ticket_created':
     case 'sla_half':
     case 'sla_breach':
-    case 'crisis':
-    case 'crisis_resolved':
-    case 'crisis_update':
+    case 'sla_breach':
       return ticket.unidades?.id_grupo_branco || null;
     
     default:
@@ -260,15 +258,7 @@ Para mais detalhes, acesse o sistema.`,
 🏢 *Unidade:* {{unidade_id}}
 ⏰ *Venceu em:* {{data_limite_sla}}
 
-🔥 AÇÃO IMEDIATA NECESSÁRIA!`,
-
-    'crisis': `🆘 *CRISE ATIVADA*
-
-📋 *Ticket:* {{codigo_ticket}}
-🏢 *Unidade:* {{unidade_id}}
-💥 *Motivo:* {{motivo}}
-
-🚨 TODOS OS RECURSOS MOBILIZADOS!`
+🔥 AÇÃO IMEDIATA NECESSÁRIA!`
   };
 
   return defaultTemplates[templateKey] || 'Template não configurado';
@@ -668,79 +658,6 @@ serve(async (req) => {
         });
 
         resultadoEnvio = await sendZapiMessage(normalizePhoneNumber(destinoFinal), mensagemSLABreach);
-        break;
-
-      case 'crisis':
-        console.log('Processing crisis');
-        
-        if (customDestination) {
-          destinoFinal = customDestination;
-          console.log(`Using configured destination for crisis: ${destinoFinal}`);
-        } else {
-          throw new Error(`Nenhuma configuração de origem encontrada para crisis na unidade ${ticket.unidade_id}`);
-        }
-
-        const motivo = textoResposta || 'Não informado';
-        const templateCrise = await getMessageTemplate(supabase, 'crisis');
-        const mensagemCrise = processTemplate(templateCrise, {
-          codigo_ticket: formatTicketTitle(ticket),
-          unidade_id: ticket.unidade_id,
-          motivo: motivo
-        });
-
-        resultadoEnvio = await sendZapiMessage(normalizePhoneNumber(destinoFinal), mensagemCrise);
-        break;
-
-      case 'crisis_resolved':
-        console.log('Processing crisis_resolved');
-        
-        if (customDestination) {
-          destinoFinal = customDestination;
-          console.log(`Using configured destination for crisis_resolved: ${destinoFinal}`);
-        } else {
-          throw new Error(`Nenhuma configuração de origem encontrada para crisis_resolved na unidade ${ticket.unidade_id}`);
-        }
-
-        const templateCriseResolvida = `✅ *CRISE RESOLVIDA*
-
-📋 *Ticket:* {{codigo_ticket}}
-🏢 *Unidade:* {{unidade_id}}
-
-🎯 A crise foi oficialmente resolvida!`;
-
-        const mensagemCriseResolvida = processTemplate(templateCriseResolvida, {
-          codigo_ticket: formatTicketTitle(ticket),
-          unidade_id: ticket.unidade_id
-        });
-
-        resultadoEnvio = await sendZapiMessage(normalizePhoneNumber(destinoFinal), mensagemCriseResolvida);
-        break;
-
-      case 'crisis_update':
-        console.log('Processing crisis_update');
-        
-        if (customDestination) {
-          destinoFinal = customDestination;
-          console.log(`Using configured destination for crisis_update: ${destinoFinal}`);
-        } else {
-          throw new Error(`Nenhuma configuração de origem encontrada para crisis_update na unidade ${ticket.unidade_id}`);
-        }
-
-        const templateCriseUpdate = `🔄 *ATUALIZAÇÃO DE CRISE*
-
-📋 *Ticket:* {{codigo_ticket}}
-🏢 *Unidade:* {{unidade_id}}
-🔄 *Ação:* {{acao}}
-
-ℹ️ Nova ação registrada na crise.`;
-
-        const mensagemCriseUpdate = processTemplate(templateCriseUpdate, {
-          codigo_ticket: formatTicketTitle(ticket),
-          unidade_id: ticket.unidade_id,
-          acao: textoResposta || 'Não informado'
-        });
-
-        resultadoEnvio = await sendZapiMessage(normalizePhoneNumber(destinoFinal), mensagemCriseUpdate);
         break;
 
       default:

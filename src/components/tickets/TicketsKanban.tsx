@@ -47,7 +47,6 @@ import { useSimpleTicketDragDrop } from '@/hooks/useSimpleTicketDragDrop';
 import { useToast } from '@/hooks/use-toast';
 import { TicketDetail } from './TicketDetail';
 import { TicketActions } from './TicketActions';
-import { useNewCrisisManagement } from '@/hooks/useNewCrisisManagement';
 import { formatDistanceToNowInSaoPaulo, calculateTimeRemaining, isFromPreviousBusinessDay } from '@/lib/date-utils';
 import { cn } from '@/lib/utils';
 
@@ -479,7 +478,7 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
   const [pendingMoves, setPendingMoves] = useState<Set<string>>(new Set());
   const { toast } = useToast();
   
-  const { activeCrises } = useNewCrisisManagement();
+  // Sistema de crises removido - sem agrupamento
 
   // Use optimistic tickets se existirem, senão use os tickets normais
   const displayTickets = optimisticTickets.length > 0 ? optimisticTickets : tickets;
@@ -705,18 +704,9 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
 
   const getGroupedTicketsAndCrises = (status: keyof typeof COLUMN_STATUS) => {
     const statusTickets = getTicketsByStatus(status);
-    const ticketsInCrisis = new Set<string>();
     
-    // Mark tickets that are in any crisis
-    activeCrises.forEach(crisis => {
-      const crisisTicketIds = crisis.crise_ticket_links?.map(link => link.ticket_id) || [];
-      crisisTicketIds.forEach(ticketId => ticketsInCrisis.add(ticketId));
-    });
-    
-    // Get only tickets NOT in any crisis
-    const individualTickets = statusTickets.filter(ticket => 
-      !ticketsInCrisis.has(ticket.id)
-    );
+    // Sem sistema de crises - todos os tickets são individuais
+    const individualTickets = statusTickets;
     
     return { crisisGroups: [], individualTickets };
   };

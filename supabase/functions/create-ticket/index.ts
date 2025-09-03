@@ -79,7 +79,7 @@ Deno.serve(async (req) => {
     }
 
     // Validate and normalize priority
-    const validPriorities = ['imediato', 'ate_1_hora', 'ainda_hoje', 'posso_esperar', 'crise'];
+    const validPriorities = ['imediato', 'ate_1_hora', 'ainda_hoje', 'posso_esperar'];
     let finalPriority = ticketData.prioridade || 'posso_esperar';
     
     if (!validPriorities.includes(finalPriority)) {

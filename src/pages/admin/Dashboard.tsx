@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { AlertsPanel } from "@/components/admin/AlertsPanel";
-import { CrisisPanel } from "@/components/crisis/CrisisPanel";
+
 import { TicketDetail } from "@/components/tickets/TicketDetail";
 import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
 import { 
@@ -66,12 +66,10 @@ const Dashboard = () => {
       <div>
         <h1 className="text-xl md:text-3xl font-bold tracking-tight">Dashboard</h1>
         <p className="text-sm md:text-base text-muted-foreground">
-          Visão geral do sistema de tickets e gestão de crises
+          Visão geral do sistema de tickets
         </p>
       </div>
 
-      {/* Crisis Management Panel - Priority position */}
-      <CrisisPanel />
 
       {/* KPI Cards */}
       <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">

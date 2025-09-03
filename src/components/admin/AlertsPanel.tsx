@@ -39,14 +39,11 @@ export const AlertsPanel = () => {
     switch (type) {
       case 'sla_breach': return 'SLA Vencido';
       case 'sla_half': return 'SLA 50% do Prazo';
-      case 'ia_escalation_crisis': return 'IA Escalou Ticket de Crise';
+      case 'ia_escalation': return 'IA Escalou Ticket';
       case 'delete_resolved_ticket': return 'Tentativa de Apagar Ticket Resolvido';
       case 'unauthorized_unit_access': return 'Acesso Não Autorizado à Unidade';
       case 'critical_ai_response': return 'IA Respondeu Conteúdo Crítico';
       case 'sla_critical_breach': return 'SLA Crítico Vencido';
-      case 'crisis_resolved': return 'Crise Resolvida';
-      case 'crisis': return 'Crise Ativa';
-      case 'crisis_update': return 'Atualização de Crise';
       case 'ticket_created': return 'Novo Ticket';
       case 'internal_access_request': return 'Solicitação de Acesso Interno';
       default: return type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());

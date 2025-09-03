@@ -14,9 +14,7 @@ const NOTIFICATION_TYPES = [
   { value: 'resposta_ticket', label: 'Resposta do Ticket', description: 'Resposta enviada para grupos' },
   { value: 'resposta_ticket_franqueado', label: 'Resposta ao Franqueado', description: 'Resposta enviada ao franqueado' },
   { value: 'ticket_created', label: 'Ticket Criado', description: 'Quando um novo ticket é criado' },
-  { value: 'crisis', label: 'Ativação de Crise', description: 'Quando uma crise é ativada' },
-  { value: 'crisis_resolved', label: 'Crise Resolvida', description: 'Quando uma crise é resolvida' },
-  { value: 'crisis_update', label: 'Atualização de Crise', description: 'Quando há ações na crise' },
+  { value: 'sla_breach', label: 'SLA Vencido', description: 'Quando um ticket ultrapassa o prazo' },
   { value: 'sla_half', label: 'SLA 50%', description: 'Quando SLA atinge 50%' },
   { value: 'sla_breach', label: 'SLA Vencido', description: 'Quando SLA é ultrapassado' },
 ];
