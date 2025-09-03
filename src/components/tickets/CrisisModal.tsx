@@ -496,27 +496,32 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
                 <MessageSquare className="h-4 w-4" />
-                Enviar Mensagem para Todos os Grupos
+                Enviar Nova Mensagem
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <Textarea
-                placeholder="Digite sua mensagem para enviar para todos os grupos WhatsApp das unidades relacionadas a esta crise..."
+                placeholder="Digite sua mensagem..."
                 value={broadcastMessage}
                 onChange={(e) => setBroadcastMessage(e.target.value)}
                 rows={3}
+                className="resize-none"
               />
               <div className="flex justify-between items-center">
                 <p className="text-sm text-muted-foreground">
-                  Será enviado para grupos WhatsApp de {[...new Set(tickets.map(t => t.unidade_id))].length} unidade(s)
+                  Para {[...new Set(tickets.map(t => t.unidade_id))].length} grupo(s) WhatsApp
                 </p>
                 <Button 
                   onClick={handleSendBroadcastMessage}
                   disabled={sendingMessage || !broadcastMessage.trim()}
+                  size="sm"
                 >
                   <Send className="h-4 w-4 mr-2" />
-                  {sendingMessage ? 'Enviando...' : 'Enviar Mensagem'}
+                  {sendingMessage ? 'Enviando...' : 'Enviar'}
                 </Button>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                💡 Você pode enviar quantas mensagens precisar. Cada uma será adicionada ao histórico da conversa.
               </div>
             </CardContent>
           </Card>
