@@ -10,7 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { useCrisisManagement } from '@/hooks/useCrisisManagement';
+import { useNewCrisisManagement } from '@/hooks/useNewCrisisManagement';
 import { useToast } from '@/hooks/use-toast';
 
 interface ResolveCrisisButtonProps {
@@ -20,13 +20,15 @@ interface ResolveCrisisButtonProps {
 }
 
 export const ResolveCrisisButton = ({ ticketId, size = 'default', className }: ResolveCrisisButtonProps) => {
-  const { activeCrises, resolveCrisis } = useCrisisManagement();
+  const { activeCrises, resolveCrisisAndCloseTickets } = useNewCrisisManagement();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // Encontrar a crise ativa para este ticket
-  const activeCrisis = activeCrises.find(crisis => crisis.ticket_id === ticketId);
+  const activeCrisis = activeCrises.find(crisis => 
+    crisis.crise_ticket_links?.some(link => link.ticket_id === ticketId)
+  );
 
   // Se não há crise ativa para este ticket, não mostrar o botão
   if (!activeCrisis) {
@@ -36,12 +38,16 @@ export const ResolveCrisisButton = ({ ticketId, size = 'default', className }: R
   const handleResolveCrisis = async () => {
     setLoading(true);
     try {
-      const success = await resolveCrisis(activeCrisis.id);
+      const success = await resolveCrisisAndCloseTickets(
+        activeCrisis.id,
+        "Crise resolvida pelo sistema",
+        "concluido"
+      );
       if (success) {
         setOpen(false);
         toast({
           title: "Crise resolvida",
-          description: "A crise foi marcada como resolvida com sucesso.",
+          description: "A crise foi marcada como resolvida e tickets foram finalizados.",
         });
       }
     } catch (error) {
@@ -82,8 +88,14 @@ export const ResolveCrisisButton = ({ ticketId, size = 'default', className }: R
         </DialogHeader>
 
         <div className="bg-red-50 p-3 rounded border-l-4 border-red-500">
-          <h4 className="font-medium text-red-700 mb-1">Motivo da Crise</h4>
-          <p className="text-sm text-red-600">{activeCrisis.motivo}</p>
+          <h4 className="font-medium text-red-700 mb-1">Título da Crise</h4>
+          <p className="text-sm text-red-600">{activeCrisis.titulo}</p>
+          {activeCrisis.descricao && (
+            <>
+              <h4 className="font-medium text-red-700 mb-1 mt-2">Descrição</h4>
+              <p className="text-sm text-red-600">{activeCrisis.descricao}</p>
+            </>
+          )}
         </div>
 
         <DialogFooter>
