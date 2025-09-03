@@ -6,7 +6,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { AlertTriangle, Clock, User, Building, CheckCircle, X, MessageSquare, Send, Eye } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { AlertTriangle, Clock, User, Building, CheckCircle, X, MessageSquare, Send, Eye, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { TicketDetail } from '@/components/tickets/TicketDetail';
@@ -49,6 +50,7 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
   const [ticketModalOpen, setTicketModalOpen] = useState(false);
   const [broadcastMessage, setBroadcastMessage] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
+  const [isTicketsCollapsed, setIsTicketsCollapsed] = useState(false);
 
   useEffect(() => {
     if (isOpen && crisis.id) {
@@ -307,13 +309,27 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
             </CardContent>
           </Card>
 
-          {/* Lista de Tickets */}
-          <Card className="flex-1 min-h-0">
-            <CardHeader className="flex-shrink-0">
-              <CardTitle className="text-base">Tickets Relacionados</CardTitle>
-            </CardHeader>
-            <CardContent className="flex-1 min-h-0">
-              <ScrollArea className="h-full max-h-[300px]">
+          {/* Lista de Tickets - Collapsible */}
+          <Collapsible open={!isTicketsCollapsed} onOpenChange={(open) => setIsTicketsCollapsed(!open)}>
+            <Card className="flex-1 min-h-0">
+              <CardHeader className="flex-shrink-0">
+                <CollapsibleTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    className="w-full justify-between p-0 h-auto font-medium text-base hover:bg-transparent"
+                  >
+                    <CardTitle className="text-base">Tickets Relacionados ({tickets.length})</CardTitle>
+                    {isTicketsCollapsed ? (
+                      <ChevronDown className="h-4 w-4" />
+                    ) : (
+                      <ChevronUp className="h-4 w-4" />
+                    )}
+                  </Button>
+                </CollapsibleTrigger>
+              </CardHeader>
+              <CollapsibleContent>
+                <CardContent className="flex-1 min-h-0">
+                  <ScrollArea className="h-full max-h-[300px]">
                 {loading ? (
                   <div className="text-center py-8">Carregando tickets...</div>
                 ) : tickets.length === 0 ? (
@@ -373,9 +389,11 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
                     ))}
                   </div>
                 )}
-              </ScrollArea>
-            </CardContent>
-          </Card>
+                  </ScrollArea>
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
 
           {/* Seção de Mensagem Broadcast */}
           <Card className="flex-shrink-0">
