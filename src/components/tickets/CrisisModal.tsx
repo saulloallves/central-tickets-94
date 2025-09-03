@@ -452,29 +452,37 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
                   <MessageSquare className="h-4 w-4" />
-                  Histórico de Mensagens Enviadas
-                  <Badge variant="outline">{sentMessages.length}</Badge>
+                  Conversas ({sentMessages.length})
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[200px]">
-                  <div className="space-y-3">
+                <ScrollArea className="h-[250px]">
+                  <div className="space-y-4">
                     {sentMessages.map((sentMsg) => (
-                      <div 
-                        key={sentMsg.id}
-                        className="p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg"
-                      >
-                        <div className="flex items-start justify-between mb-2">
-                          <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
-                            ✅ Enviada
-                          </Badge>
-                          <div className="text-xs text-muted-foreground">
-                            {sentMsg.timestamp} • {sentMsg.groupCount} grupo(s)
+                      <div key={sentMsg.id} className="flex items-start gap-3">
+                        {/* Avatar */}
+                        <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium flex-shrink-0">
+                          A
+                        </div>
+                        
+                        {/* Conteúdo da mensagem */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-sm">Admin Sistema</span>
+                            <Badge variant="secondary" className="text-xs">
+                              Crise
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">
+                              {sentMsg.timestamp}
+                            </span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {sentMsg.message}
+                          </p>
+                          <div className="flex items-center gap-1 mt-1">
+                            <span className="text-xs text-green-600">✓ Enviada para {sentMsg.groupCount} grupo(s)</span>
                           </div>
                         </div>
-                        <p className="text-sm text-foreground font-medium">
-                          {sentMsg.message}
-                        </p>
                       </div>
                     ))}
                   </div>
