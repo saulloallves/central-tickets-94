@@ -370,34 +370,45 @@ serve(async (req) => {
       }
     }
 
-    // For other notification types, fetch ticket data
-    console.log('Fetching ticket data for ID:', ticketId)
-    const { data: ticket, error: ticketError } = await supabase
-      .from('tickets')
-      .select(`
-        *,
-        unidades (id, grupo, id_grupo_azul, id_grupo_branco, id_grupo_vermelho, telefone),
-        colaboradores (nome_completo)
-      `)
-      .eq('id', ticketId)
-      .single()
+    // For other notification types, fetch ticket data (only if ticketId is provided)
+    let ticket: any = null;
+    
+    if (ticketId && ticketId !== 'null') {
+      console.log('Fetching ticket data for ID:', ticketId);
+      const { data: ticketData, error: ticketError } = await supabase
+        .from('tickets')
+        .select(`
+          *,
+          unidades (id, grupo, id_grupo_azul, id_grupo_branco, id_grupo_vermelho, telefone),
+          colaboradores (nome_completo)
+        `)
+        .eq('id', ticketId)
+        .single();
 
-    if (ticketError || !ticket) {
-      console.error('Ticket error:', ticketError)
-      return new Response(
-        JSON.stringify({ success: false, message: 'Ticket não encontrado' }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400 
-        }
-      )
+      if (ticketError || !ticketData) {
+        console.error('Ticket error:', ticketError);
+        return new Response(
+          JSON.stringify({ success: false, message: 'Ticket não encontrado' }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 400 
+          }
+        );
+      }
+      
+      ticket = ticketData;
     }
     
-    console.log('Ticket found:', {
-      id: ticket.id,
-      codigo: ticket.codigo_ticket,
-      franqueado_id: ticket.franqueado_id
-    })
+    // Only log ticket details if ticket exists
+    if (ticket) {
+      console.log('Ticket found:', {
+        id: ticket.id,
+        codigo: ticket.codigo_ticket,
+        franqueado_id: ticket.franqueado_id
+      });
+    } else {
+      console.log('No ticket data needed for this notification type');
+    }
 
     // Função para buscar franqueado (solicitante) baseado no ticket
     const getFranqueadoSolicitante = async (ticket: any) => {
