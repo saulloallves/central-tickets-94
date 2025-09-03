@@ -287,7 +287,7 @@ serve(async (req) => {
   }
 
   try {
-    const { ticketId, type, textoResposta, testPhone } = await req.json()
+    const { ticketId, type, textoResposta, testPhone, payload } = await req.json()
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -658,6 +658,21 @@ serve(async (req) => {
         });
 
         resultadoEnvio = await sendZapiMessage(normalizePhoneNumber(destinoFinal), mensagemSLABreach);
+        break;
+
+      case 'crisis_broadcast':
+        console.log('Processing crisis_broadcast');
+        
+        // Para crisis_broadcast, o phone e message já vêm no payload
+        const phone = payload.phone;
+        const message = payload.message;
+        
+        if (!phone || !message) {
+          throw new Error('Phone and message are required for crisis_broadcast');
+        }
+        
+        resultadoEnvio = await sendZapiMessage(normalizePhoneNumber(phone), message);
+        destinoFinal = phone;
         break;
 
       default:
