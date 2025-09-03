@@ -310,15 +310,18 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
           </Card>
 
           {/* Lista de Tickets - Collapsible */}
-          <Collapsible open={!isTicketsCollapsed} onOpenChange={(open) => setIsTicketsCollapsed(!open)}>
-            <Card className="flex-1 min-h-0">
-              <CardHeader className="flex-shrink-0">
+          <Card className="flex-shrink-0">
+            <Collapsible open={!isTicketsCollapsed} onOpenChange={(open) => setIsTicketsCollapsed(!open)}>
+              <CardHeader className="pb-2">
                 <CollapsibleTrigger asChild>
                   <Button 
                     variant="ghost" 
                     className="w-full justify-between p-0 h-auto font-medium text-base hover:bg-transparent"
                   >
-                    <CardTitle className="text-base">Tickets Relacionados ({tickets.length})</CardTitle>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      Tickets Relacionados 
+                      <Badge variant="outline">{tickets.length}</Badge>
+                    </CardTitle>
                     {isTicketsCollapsed ? (
                       <ChevronDown className="h-4 w-4" />
                     ) : (
@@ -328,8 +331,8 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
                 </CollapsibleTrigger>
               </CardHeader>
               <CollapsibleContent>
-                <CardContent className="flex-1 min-h-0">
-                  <ScrollArea className="h-full max-h-[300px]">
+                <CardContent className="pt-0">
+                  <ScrollArea className="h-[300px]">
                 {loading ? (
                   <div className="text-center py-8">Carregando tickets...</div>
                 ) : tickets.length === 0 ? (
@@ -392,8 +395,8 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
                   </ScrollArea>
                 </CardContent>
               </CollapsibleContent>
-            </Card>
-          </Collapsible>
+            </Collapsible>
+          </Card>
 
           {/* Seção de Mensagem Broadcast */}
           <Card className="flex-shrink-0">
