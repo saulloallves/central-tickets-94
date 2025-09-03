@@ -76,7 +76,8 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
             prioridade,
             data_abertura,
             unidade_id,
-            franqueado_id
+            franqueado_id,
+            unidades!inner(grupo)
           )
         `)
         .eq('crise_id', crisis.id);
@@ -100,8 +101,8 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
           data_abertura: ticket.data_abertura,
           unidade_id: ticket.unidade_id,
           franqueado_id: ticket.franqueado_id,
-          unidades: null, // Será buscado separadamente se necessário
-          franqueados: null // Será buscado separadamente se necessário
+          unidades: { grupo: ticket.unidades?.grupo || ticket.unidade_id },
+          franqueados: null
         };
       }) || [];
 
@@ -173,6 +174,7 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
   const handleCloseTicketDetail = () => {
     setTicketModalOpen(false);
     setSelectedTicketId(null);
+    // NÃO fechar o modal da crise - apenas o modal do ticket
   };
 
   const handleSendBroadcastMessage = async () => {
@@ -330,7 +332,7 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
                   </Button>
                 </CollapsibleTrigger>
               </CardHeader>
-              <CollapsibleContent>
+              <CollapsibleContent className="overflow-hidden transition-all data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
                 <CardContent className="pt-0">
                   <ScrollArea className="h-[300px]">
                 {loading ? (
@@ -368,7 +370,7 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
                               <div className="flex items-center gap-4 text-xs text-muted-foreground">
                                 <div className="flex items-center gap-1">
                                   <Building className="h-3 w-3" />
-                                  {ticket.unidade_id || 'Unidade não definida'}
+                                  {ticket.unidades?.grupo || ticket.unidade_id}
                                 </div>
                                 <div className="flex items-center gap-1">
                                   <Clock className="h-3 w-3" />
@@ -454,10 +456,14 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
 
         {/* Modal de Detalhes do Ticket */}
         {selectedTicketId && ticketModalOpen && (
-          <TicketDetail
-            ticketId={selectedTicketId}
-            onClose={handleCloseTicketDetail}
-          />
+          <Dialog open={ticketModalOpen} onOpenChange={handleCloseTicketDetail}>
+            <DialogContent className="max-w-6xl w-[95vw] h-[95vh] max-h-none">
+              <TicketDetail
+                ticketId={selectedTicketId}
+                onClose={handleCloseTicketDetail}
+              />
+            </DialogContent>
+          </Dialog>
         )}
       </DialogContent>
     </Dialog>
