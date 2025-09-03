@@ -123,7 +123,7 @@ export const NotificationButton = ({ isExpanded = false }: { isExpanded?: boolea
               {alerts.slice(0, 10).map((alert) => (
                 <div 
                   key={alert.id}
-                  className="p-3 hover:bg-muted/50 transition-colors cursor-pointer border-b last:border-b-0"
+                  className="p-3 bg-white hover:bg-white/80 transition-colors cursor-pointer border-b last:border-b-0 mx-2 rounded-lg mb-2 shadow-sm"
                 >
                   <div className="flex items-start gap-3">
                     <div className="mt-0.5">
