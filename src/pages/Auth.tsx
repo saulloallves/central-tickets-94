@@ -25,25 +25,28 @@ const Auth = () => {
     password: '',
     confirmPassword: '',
     nomeCompleto: '',
-    telefone: '',
     role: '',
     equipeId: ''
   });
 
-  // Buscar equipes disponíveis para colaboradores
-  const { data: equipes } = useQuery({
+  // Buscar equipes disponíveis 
+  const { data: equipes, isLoading: equipesLoading, error: equipesError } = useQuery({
     queryKey: ['equipes-for-signup'],
     queryFn: async () => {
+      console.log('Buscando equipes para signup...');
       const { data, error } = await supabase
         .from('equipes')
         .select('id, nome, descricao')
         .eq('ativo', true)
         .order('nome');
       
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao buscar equipes:', error);
+        throw error;
+      }
+      console.log('Equipes encontradas:', data);
       return data || [];
-    },
-    enabled: signupData.role === 'colaborador'
+    }
   });
   const [franqueadoData, setFranqueadoData] = useState({ phone: '', password: '' });
 
@@ -138,7 +141,6 @@ const Auth = () => {
 
     const { error } = await signUp(signupData.email, signupData.password, {
       nome_completo: signupData.nomeCompleto,
-      telefone: signupData.telefone,
       role: signupData.role,
       equipe_id: signupData.role === 'colaborador' ? signupData.equipeId : undefined
     });
@@ -150,7 +152,6 @@ const Auth = () => {
         password: '',
         confirmPassword: '',
         nomeCompleto: '',
-        telefone: '',
         role: '',
         equipeId: ''
       });
@@ -352,17 +353,6 @@ const Auth = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signup-phone">Telefone</Label>
-                    <Input
-                      id="signup-phone"
-                      type="tel"
-                      placeholder="(11) 99999-9999"
-                      value={signupData.telefone}
-                      onChange={(e) => setSignupData({ ...signupData, telefone: e.target.value })}
-                      className="h-11"
-                    />
-                  </div>
-                  <div className="space-y-2">
                     <Label htmlFor="signup-role">Tipo de Usuário</Label>
                     <Select
                       value={signupData.role}
@@ -384,22 +374,38 @@ const Auth = () => {
                   {signupData.role === 'colaborador' && (
                     <div className="space-y-2">
                       <Label htmlFor="signup-equipe">Equipe</Label>
-                      <Select
-                        value={signupData.equipeId}
-                        onValueChange={(value) => setSignupData({ ...signupData, equipeId: value })}
-                        required
-                      >
-                        <SelectTrigger className="h-11">
-                          <SelectValue placeholder="Selecione sua equipe" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {equipes?.map((equipe) => (
-                            <SelectItem key={equipe.id} value={equipe.id}>
-                              {equipe.nome}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      {equipesLoading ? (
+                        <div className="h-11 flex items-center justify-center border rounded-md">
+                          <span className="text-sm text-muted-foreground">Carregando equipes...</span>
+                        </div>
+                      ) : equipesError ? (
+                        <div className="h-11 flex items-center justify-center border rounded-md bg-destructive/10">
+                          <span className="text-sm text-destructive">Erro ao carregar equipes</span>
+                        </div>
+                      ) : (
+                        <Select
+                          value={signupData.equipeId}
+                          onValueChange={(value) => setSignupData({ ...signupData, equipeId: value })}
+                          required
+                        >
+                          <SelectTrigger className="h-11">
+                            <SelectValue placeholder="Selecione sua equipe" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-background border shadow-lg z-50">
+                            {equipes && equipes.length > 0 ? (
+                              equipes.map((equipe) => (
+                                <SelectItem key={equipe.id} value={equipe.id}>
+                                  {equipe.nome}
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <SelectItem value="no-teams" disabled>
+                                Nenhuma equipe disponível
+                              </SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
+                      )}
                       <p className="text-xs text-muted-foreground">
                         Sua solicitação será enviada para aprovação do supervisor da equipe.
                       </p>

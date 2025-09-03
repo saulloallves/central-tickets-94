@@ -10,7 +10,6 @@ interface SignupRequest {
   userId: string;
   email: string;
   nome_completo: string;
-  telefone?: string;
   role: string;
   equipe_id?: string;
 }
@@ -27,7 +26,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { userId, email, nome_completo, telefone, role, equipe_id }: SignupRequest = await req.json();
+    const { userId, email, nome_completo, role, equipe_id }: SignupRequest = await req.json();
 
     console.log('Processando signup de colaborador:', { userId, email, role, equipe_id });
 
@@ -37,8 +36,7 @@ serve(async (req) => {
       .insert({
         id: userId,
         email,
-        nome_completo,
-        telefone
+        nome_completo
       });
 
     if (profileError) {
