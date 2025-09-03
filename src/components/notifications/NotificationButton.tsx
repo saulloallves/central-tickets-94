@@ -34,7 +34,11 @@ export const NotificationButton = ({ isExpanded = false }: { isExpanded?: boolea
       case 'ia_escalation_crisis': return 'IA Escalou Crise';
       case 'critical_ai_response': return 'IA Resposta Crítica';
       case 'internal_access_request': return 'Solicitação de Acesso';
-      default: return type.replace('_', ' ');
+      case 'crisis_resolved': return 'Crise Resolvida';
+      case 'crisis': return 'Crise Ativa';
+      case 'crisis_update': return 'Atualização de Crise';
+      case 'ticket_created': return 'Novo Ticket';
+      default: return type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
     }
   };
 
@@ -141,7 +145,7 @@ export const NotificationButton = ({ isExpanded = false }: { isExpanded?: boolea
                           <>
                             <div className="flex items-center gap-2">
                               <span className="font-mono bg-muted px-1 rounded">
-                                #{formatTicketCode(alert.ticket_id)}
+                                {alert.tickets?.codigo_ticket || `#${formatTicketCode(alert.ticket_id)}`}
                               </span>
                               <span>
                                 {formatDistanceToNow(new Date(alert.created_at), {
@@ -154,8 +158,11 @@ export const NotificationButton = ({ isExpanded = false }: { isExpanded?: boolea
                             {/* Mostrar título do ticket em vez do ID */}
                             <div className="text-xs">
                               <span className="text-primary font-medium">
-                                {alert.tickets?.titulo || alert.tickets?.descricao_problema || 
-                                 alert.payload?.codigo_ticket || 'Ticket sem título'}
+                                {alert.tickets?.titulo || 
+                                 (alert.tickets?.descricao_problema && alert.tickets.descricao_problema.length > 50 
+                                   ? alert.tickets.descricao_problema.substring(0, 50) + '...' 
+                                   : alert.tickets?.descricao_problema) || 
+                                 'Ticket sem título'}
                               </span>
                             </div>
                           </>
