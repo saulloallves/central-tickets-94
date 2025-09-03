@@ -277,17 +277,17 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh]">
-        <DialogHeader>
+      <DialogContent className="max-w-6xl w-[95vw] h-[95vh] max-h-none flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-destructive" />
             Gerenciamento de Crise
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="flex-1 overflow-hidden flex flex-col space-y-4">
           {/* Info da Crise */}
-          <Card>
+          <Card className="flex-shrink-0">
             <CardHeader>
               <CardTitle className="text-lg">{crisis.titulo}</CardTitle>
             </CardHeader>
@@ -308,12 +308,12 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
           </Card>
 
           {/* Lista de Tickets */}
-          <Card className="flex-1">
-            <CardHeader>
+          <Card className="flex-1 min-h-0">
+            <CardHeader className="flex-shrink-0">
               <CardTitle className="text-base">Tickets Relacionados</CardTitle>
             </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-[400px]">
+            <CardContent className="flex-1 min-h-0">
+              <ScrollArea className="h-full max-h-[300px]">
                 {loading ? (
                   <div className="text-center py-8">Carregando tickets...</div>
                 ) : tickets.length === 0 ? (
@@ -378,7 +378,7 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
           </Card>
 
           {/* Seção de Mensagem Broadcast */}
-          <Card>
+          <Card className="flex-shrink-0">
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
                 <MessageSquare className="h-4 w-4" />
@@ -407,10 +407,10 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
             </CardContent>
           </Card>
 
-          <Separator />
+          <Separator className="flex-shrink-0" />
 
           {/* Ações */}
-          <div className="flex items-center justify-between">
+          <div className="flex-shrink-0 flex items-center justify-between">
             <div className="text-sm text-muted-foreground">
               Resolver esta crise irá marcar todos os tickets como concluídos
             </div>
