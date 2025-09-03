@@ -22,6 +22,8 @@ import { NewCrisisAlertBanner } from '@/components/crisis/NewCrisisAlertBanner';
 import { NewCrisisPanel } from '@/components/crisis/NewCrisisPanel';
 import { useTicketsEdgeFunctions } from '@/hooks/useTicketsEdgeFunctions';
 import { useUserEquipes } from '@/hooks/useUserEquipes';
+import { AutoCrisisDetectionButton } from '@/components/tickets/AutoCrisisDetectionButton';
+import { useAutoCrisisDetection } from '@/hooks/useAutoCrisisDetection';
 
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -37,6 +39,7 @@ const Tickets = () => {
   const { userEquipes } = useUserEquipes();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { scheduleAutoDetection } = useAutoCrisisDetection();
   
   // Initialize notification system but disable its realtime (we'll handle it ourselves)
   const { testNotificationSound, testCriticalSound } = useTicketNotifications();
@@ -83,7 +86,7 @@ const Tickets = () => {
     moveTicket
   } = useTicketsEdgeFunctions(filters);
 
-  // Fetch available teams
+  // Fetch available teams and start auto detection
   useEffect(() => {
     const fetchEquipes = async () => {
       try {
@@ -102,7 +105,12 @@ const Tickets = () => {
     };
 
     fetchEquipes();
-  }, []);
+    
+    // Iniciar detecção automática agendada
+    const cleanup = scheduleAutoDetection();
+    
+    return cleanup;
+  }, [scheduleAutoDetection]);
 
   // Edge functions handle realtime automatically through database triggers
 
@@ -173,6 +181,7 @@ const Tickets = () => {
               <AlertTriangle className="h-4 w-4 md:mr-2" />
               <span className="hidden md:inline">Painel de Crises</span>
             </Button>
+            <AutoCrisisDetectionButton />
             <TestAIButton />
             
             <Button size="sm" onClick={() => setCreateDialogOpen(true)} className="flex-1 md:flex-none">

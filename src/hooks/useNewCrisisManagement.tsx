@@ -252,7 +252,7 @@ export const useNewCrisisManagement = () => {
       const { error } = await supabase.rpc('resolve_crise_close_tickets', {
         p_crise_id: crisisId,
         p_mensagem: mensagem,
-        p_status_ticket: statusTicket
+        p_status_ticket: 'concluido' // Sempre marcar como concluído
       });
 
       if (error) {
@@ -267,10 +267,14 @@ export const useNewCrisisManagement = () => {
 
       toast({
         title: "✅ Crise Encerrada",
-        description: "A crise foi encerrada e todos os tickets foram atualizados",
+        description: "A crise foi encerrada e todos os tickets foram movidos para 'Concluído'",
       });
 
       await fetchActiveCrises(true);
+      
+      // Disparar evento para atualizar lista de tickets
+      window.dispatchEvent(new CustomEvent('crisis-resolved'));
+      
       return true;
     } catch (error) {
       console.error('Error resolving crisis:', error);
