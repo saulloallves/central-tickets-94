@@ -54,18 +54,19 @@ export function CrisisBanner() {
 
     fetchActiveCrises();
 
-    // Subscription para updates em tempo real
+    // Subscription para updates em tempo real de crises
     const channel = supabase
-      .channel('crisis-updates')
+      .channel('crisis-realtime-updates')
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'crises',
-          filter: 'is_active=eq.true'
+          table: 'crises'
         },
-        () => {
+        (payload) => {
+          console.log('Crisis realtime update:', payload);
+          // Atualizar imediatamente quando houver mudanças
           fetchActiveCrises();
         }
       )

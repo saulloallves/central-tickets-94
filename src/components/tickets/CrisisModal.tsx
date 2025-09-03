@@ -195,6 +195,7 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
         variant: "default"
       });
 
+      // Fechar modal imediatamente para que o banner suma
       onClose();
     } catch (error) {
       console.error('Erro ao resolver crise:', error);
