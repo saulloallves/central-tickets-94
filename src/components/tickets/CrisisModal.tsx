@@ -195,13 +195,13 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
       // Buscar grupos WhatsApp das unidades
       const { data: unidades, error: unidadesError } = await supabase
         .from('unidades')
-        .select('id, grupo')
+        .select('id, id_grupo_branco')
         .in('id', unidadeIds)
-        .not('grupo', 'is', null);
+        .not('id_grupo_branco', 'is', null);
 
       if (unidadesError) throw unidadesError;
 
-      const grupos = unidades?.map(u => u.grupo).filter(Boolean) || [];
+      const grupos = unidades?.map(u => u.id_grupo_branco).filter(Boolean) || [];
 
       if (grupos.length === 0) {
         toast({
