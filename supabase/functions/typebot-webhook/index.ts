@@ -663,6 +663,41 @@ CRÍTICO: Use APENAS estas 4 prioridades: imediato, ate_1_hora, ainda_hoje, poss
     // Análise já foi feita durante a criação, não precisamos chamar analyze-ticket
     console.log('Ticket created with AI analysis during creation');
 
+    // Call crisis AI analyst after ticket creation (if has team)
+    if (ticket.equipe_responsavel_id) {
+      try {
+        console.log('🚨 Calling crisis AI analyst for ticket:', ticket.id);
+        
+        const analystResponse = await fetch(`${supabaseUrl}/functions/v1/crises-ai-analyst`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            ticket_id: ticket.id,
+            titulo: ticket.titulo,
+            descricao_problema: ticket.descricao_problema,
+            equipe_id: ticket.equipe_responsavel_id,
+            categoria: ticket.categoria
+          })
+        });
+
+        if (analystResponse.ok) {
+          const analysisResult = await analystResponse.json();
+          console.log('✅ Crisis analysis result:', analysisResult);
+        } else {
+          const errorText = await analystResponse.text();
+          console.error('❌ Crisis analyst failed:', errorText);
+        }
+      } catch (analystError) {
+        console.error('💥 Error calling crisis analyst:', analystError);
+        // Continue without failing ticket creation
+      }
+    } else {
+      console.log('⚠️ Ticket has no team assigned, skipping crisis analysis');
+    }
+
     // Buscar dados atualizados do ticket após análise
     const { data: updatedTicket } = await supabase
       .from('tickets')

@@ -62,19 +62,27 @@ serve(async (req) => {
     // 2. Se não há problemas ativos, verificar tickets individuais da equipe
     let individualTickets = [];
     if (!activeProblems || activeProblems.length === 0) {
-      const { data: tickets, error: ticketsError } = await supabase
+      // Buscar todos os tickets da equipe primeiro
+      const { data: allTickets, error: ticketsError } = await supabase
         .from('tickets')
         .select('id, titulo, descricao_problema')
         .eq('equipe_responsavel_id', ticketData.equipe_id)
         .in('status', ['aberto', 'em_atendimento', 'escalonado'])
-        .is('crise_link_id', null) // Não vinculados a crises
         .order('created_at', { ascending: false })
         .limit(20);
 
       if (ticketsError) {
         console.error('Erro ao buscar tickets individuais:', ticketsError);
-      } else {
-        individualTickets = tickets || [];
+      } else if (allTickets) {
+        // Filtrar tickets que não estão vinculados a crises
+        const { data: linkedTickets } = await supabase
+          .from('crise_ticket_links')
+          .select('ticket_id');
+        
+        const linkedTicketIds = new Set(linkedTickets?.map(l => l.ticket_id) || []);
+        individualTickets = allTickets.filter(t => !linkedTicketIds.has(t.id));
+        
+        console.log(`Encontrados ${allTickets.length} tickets da equipe, ${individualTickets.length} não vinculados a crises`);
       }
     }
 
@@ -265,18 +273,52 @@ async function countSimilarTickets(
   newTicket: TicketAnalysisRequest,
   individualTickets: any[]
 ): Promise<number> {
+  console.log('🔍 Analisando similaridade para ticket:', newTicket.descricao_problema);
+  console.log('📋 Tickets individuais encontrados:', individualTickets.length);
+  
+  // Detectar palavras-chave do ticket atual
+  const currentDescription = newTicket.descricao_problema.toLowerCase();
+  const currentTitle = (newTicket.titulo || '').toLowerCase();
+  
   // Por simplicidade, usar contagem básica por categoria ou palavras-chave
-  // Em produção, pode usar análise semântica mais sofisticada
-  const similarTickets = individualTickets.filter(t => 
-    t.titulo?.toLowerCase().includes('sistema') ||
-    t.titulo?.toLowerCase().includes('pdv') ||
-    t.titulo?.toLowerCase().includes('erro') ||
-    t.descricao_problema?.toLowerCase().includes('não funciona') ||
-    t.descricao_problema?.toLowerCase().includes('travou') ||
-    t.descricao_problema?.toLowerCase().includes('caiu')
-  );
+  // Detectar problemas relacionados a sistema/indisponibilidade
+  const similarTickets = individualTickets.filter(t => {
+    const description = (t.descricao_problema || '').toLowerCase();
+    const title = (t.titulo || '').toLowerCase();
+    
+    // Palavras-chave que indicam problemas similares de sistema
+    const systemIssueKeywords = [
+      'sistema', 'caiu', 'travou', 'parou', 'não funciona', 'nao funciona',
+      'erro', 'falhou', 'quebrou', 'pdv', 'indisponivel', 'fora do ar'
+    ];
+    
+    // Contar quantas palavras-chave batem
+    let currentKeywords = 0;
+    let ticketKeywords = 0;
+    
+    systemIssueKeywords.forEach(keyword => {
+      if (currentDescription.includes(keyword) || currentTitle.includes(keyword)) {
+        currentKeywords++;
+      }
+      if (description.includes(keyword) || title.includes(keyword)) {
+        ticketKeywords++;
+      }
+    });
+    
+    // Se ambos os tickets têm palavras-chave relacionadas ao sistema, considerá-los similares
+    const isSimilar = currentKeywords > 0 && ticketKeywords > 0;
+    
+    if (isSimilar) {
+      console.log(`✅ Ticket similar encontrado: "${t.descricao_problema}" (keywords: ${ticketKeywords})`);
+    }
+    
+    return isSimilar;
+  });
 
-  return similarTickets.length + 1; // +1 para incluir o ticket atual
+  const totalSimilar = similarTickets.length + 1; // +1 para incluir o ticket atual
+  console.log(`🎯 Total de tickets similares: ${totalSimilar}`);
+  
+  return totalSimilar;
 }
 
 async function createNewCrise(
