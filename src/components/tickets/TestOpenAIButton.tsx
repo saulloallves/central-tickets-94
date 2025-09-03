@@ -13,7 +13,7 @@ export const TestOpenAIButton = () => {
     try {
       console.log('Testando conexão OpenAI...');
       
-      const { data, error } = await supabase.functions.invoke('test-openai-connection', {
+      const { data, error } = await supabase.functions.invoke('test-openai-key', {
         body: {}
       });
 
@@ -32,7 +32,7 @@ export const TestOpenAIButton = () => {
       if (data.success) {
         toast({
           title: "✅ OpenAI OK",
-          description: `API funcionando! ${data.modelsAvailable} modelos disponíveis`,
+          description: `API funcionando! Chave configurada corretamente`,
         });
       } else {
         toast({
