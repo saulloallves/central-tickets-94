@@ -212,6 +212,29 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
         return;
       }
 
+      // Buscar template de crise ativo
+      const { data: template, error: templateError } = await supabase
+        .from('message_templates')
+        .select('template_content')
+        .eq('template_key', 'crisis')
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (templateError) {
+        console.error('Erro ao buscar template:', templateError);
+      }
+
+      // Usar template ou fallback
+      let messageTemplate = template?.template_content || 
+        `🚨 *CRISE ATIVA* 🚨\n\n🎫 *Ticket:* {{codigo_ticket}}\n🏢 *Unidade:* {{unidade_id}}\n\n💥 *Motivo:*\n{{motivo}}\n\n⏰ *Informado em:* {{timestamp}}\n\n_Mensagem enviada automaticamente pelo sistema de gerenciamento de crises_`;
+
+      // Substituir variáveis no template
+      const formattedMessage = messageTemplate
+        .replace('{{codigo_ticket}}', tickets[0]?.codigo_ticket || 'N/A')
+        .replace('{{unidade_id}}', tickets[0]?.unidade_id || 'N/A')
+        .replace('{{motivo}}', broadcastMessage)
+        .replace('{{timestamp}}', new Date().toLocaleString('pt-BR'));
+
       // Enviar mensagem broadcast para cada grupo usando o processor existente
       const promises = grupos.map(async (grupo) => {
         const { error } = await supabase.functions.invoke('process-notifications', {
@@ -220,7 +243,7 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
             type: 'crisis_broadcast',
             payload: {
               phone: grupo,
-              message: `🚨 *CRISE ATIVA* 🚨\n\n${crisis.titulo}\n\n${broadcastMessage}\n\n_Mensagem enviada automaticamente pelo sistema de gerenciamento de crises_`,
+              message: formattedMessage,
               crise_id: crisis.id
             }
           }
