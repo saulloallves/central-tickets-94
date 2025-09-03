@@ -315,6 +315,14 @@ export const useNewCrisisManagement = () => {
   useEffect(() => {
     fetchActiveCrises();
 
+    // Escutar evento de crise detectada para refresh automático
+    const handleCrisisDetected = () => {
+      console.log('🚨 Crise detectada automaticamente - atualizando painel');
+      fetchActiveCrises(true);
+    };
+
+    window.addEventListener('crisis-detected', handleCrisisDetected);
+
     // Realtime subscription apenas para a tabela crises
     const channel = supabase
       .channel('crises-realtime')
@@ -363,6 +371,7 @@ export const useNewCrisisManagement = () => {
     }, 60000);
 
     return () => {
+      window.removeEventListener('crisis-detected', handleCrisisDetected);
       supabase.removeChannel(channel);
       clearInterval(autoRefresh);
     };

@@ -44,6 +44,11 @@ export const useAutoCrisisDetection = () => {
           title: "🚨 Crises Detectadas!",
           description: `${data.crises_created.length} crises foram criadas automaticamente`,
         });
+        
+        // Disparar evento para atualizar painel de crises
+        window.dispatchEvent(new CustomEvent('crisis-detected', {
+          detail: { crises: data.crises_created }
+        }));
       } else {
         toast({
           title: "✅ Análise Concluída",

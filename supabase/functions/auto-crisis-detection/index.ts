@@ -127,14 +127,15 @@ async function getTicketsForAnalysis(): Promise<TicketForAnalysis[]> {
 async function createAutomaticCrisis(group: any): Promise<string> {
   console.log('Creating automatic crisis for group:', group);
 
+  // Usar a função RPC existente create_crise
   const { data: crisis, error: crisisError } = await supabase
-    .rpc('create_crisis_with_tickets', {
+    .rpc('create_crise', {
       p_titulo: group.titulo,
       p_descricao: group.descricao,
       p_palavras_chave: group.palavras_chave,
       p_ticket_ids: group.tickets,
       p_canal_oficial: 'AUTO_DETECTION',
-      p_created_by: null // Sistema automático
+      p_abriu_por: null // Sistema automático
     });
 
   if (crisisError) {
@@ -142,19 +143,22 @@ async function createAutomaticCrisis(group: any): Promise<string> {
     throw crisisError;
   }
 
-  // Log da detecção automática
+  // Log da detecção automática usando função existente
   await supabase
-    .from('system_logs')
-    .insert({
-      level: 'info',
-      message: `Crise detectada automaticamente: ${group.titulo}`,
-      details: {
+    .rpc('log_system_action', {
+      p_tipo_log: 'sistema',
+      p_entidade_afetada: 'crises',
+      p_entidade_id: crisis,
+      p_acao_realizada: `Crise detectada automaticamente: ${group.titulo}`,
+      p_usuario_responsavel: null,
+      p_dados_novos: {
         crisis_id: crisis,
         tickets_count: group.tickets.length,
         justificativa: group.justificativa,
-        equipe_id: group.equipe_id
+        equipe_id: group.equipe_id,
+        auto_detection: true
       },
-      category: 'auto_crisis_detection'
+      p_canal: 'painel_interno'
     });
 
   return crisis;
