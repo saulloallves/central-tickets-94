@@ -1,16 +1,32 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { AlertTriangle, Clock, User, Building, CheckCircle, X, MessageSquare, Send, Eye, ChevronDown, ChevronUp } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { TicketDetail } from '@/components/tickets/TicketDetail';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { 
+  AlertTriangle, 
+  Clock, 
+  Send, 
+  MessageSquare, 
+  Eye,
+  ChevronUp,
+  ChevronDown,
+  Users,
+  FileText,
+  MessageCircle
+} from "lucide-react";
+import { TicketDetail } from "./TicketDetail";
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -31,9 +47,17 @@ interface CrisisTicket {
   prioridade: string;
   data_abertura: string;
   unidade_id: string;
-  franqueado_id: string | null;
-  unidades: { grupo: string } | null;
-  franqueados: { name: string } | null;
+  franqueado_id: string | number | null;
+  unidades: any;
+  franqueados: any;
+}
+
+interface CrisisMessage {
+  id: string;
+  mensagem: string;
+  total_grupos: number;
+  created_at: string;
+  enviado_por: string | null;
 }
 
 interface CrisisModalProps {
@@ -42,40 +66,35 @@ interface CrisisModalProps {
   onClose: () => void;
 }
 
-interface SentMessage {
-  id: string;
-  message: string;
-  timestamp: string;
-  groupCount: number;
-}
-
 export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
   const { toast } = useToast();
   const [tickets, setTickets] = useState<CrisisTicket[]>([]);
+  const [messages, setMessages] = useState<CrisisMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [ticketModalOpen, setTicketModalOpen] = useState(false);
   const [broadcastMessage, setBroadcastMessage] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
   const [isTicketsCollapsed, setIsTicketsCollapsed] = useState(false);
-  const [sentMessages, setSentMessages] = useState<SentMessage[]>([]);
+  const [activeTab, setActiveTab] = useState('tickets');
 
   useEffect(() => {
     if (isOpen && crisis.id) {
       fetchCrisisTickets();
+      fetchCrisisMessages();
     }
   }, [isOpen, crisis.id]);
 
   const fetchCrisisTickets = async () => {
-    setLoading(true);
     try {
+      setLoading(true);
       console.log('Buscando tickets para crise:', crisis.id);
-      
+
       const { data, error } = await supabase
         .from('crise_ticket_links')
         .select(`
           ticket_id,
-          tickets!inner(
+          tickets (
             id,
             codigo_ticket,
             titulo,
@@ -85,37 +104,36 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
             data_abertura,
             unidade_id,
             franqueado_id,
-            unidades!inner(grupo)
+            unidades (grupo),
+            franqueados (name)
           )
         `)
         .eq('crise_id', crisis.id);
 
       if (error) {
-        console.error('Erro na query:', error);
         throw error;
       }
 
       console.log('Dados retornados:', data);
 
-      const crisisTickets: CrisisTicket[] = data?.map(link => {
-        const ticket = link.tickets as any;
-        return {
-          id: ticket.id,
-          codigo_ticket: ticket.codigo_ticket,
-          titulo: ticket.titulo || 'Sem título',
-          descricao_problema: ticket.descricao_problema,
-          status: ticket.status,
-          prioridade: ticket.prioridade,
-          data_abertura: ticket.data_abertura,
-          unidade_id: ticket.unidade_id,
-          franqueado_id: ticket.franqueado_id,
-          unidades: { grupo: ticket.unidades?.grupo || ticket.unidade_id },
-          franqueados: null
-        };
-      }) || [];
+      const processedTickets: CrisisTicket[] = (data || [])
+        .filter(item => item.tickets) // Filtrar itens com tickets válidos
+        .map(item => ({
+          id: item.tickets.id,
+          codigo_ticket: item.tickets.codigo_ticket,
+          titulo: item.tickets.titulo,
+          descricao_problema: item.tickets.descricao_problema,
+          status: item.tickets.status,
+          prioridade: item.tickets.prioridade,
+          data_abertura: item.tickets.data_abertura,
+          unidade_id: item.tickets.unidade_id,
+          franqueado_id: item.tickets.franqueado_id,
+          unidades: item.tickets.unidades || null,
+          franqueados: item.tickets.franqueados || null
+        }));
 
-      console.log('Tickets processados:', crisisTickets);
-      setTickets(crisisTickets);
+      console.log('Tickets processados:', processedTickets);
+      setTickets(processedTickets);
     } catch (error) {
       console.error('Erro ao buscar tickets da crise:', error);
       toast({
@@ -125,6 +143,25 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCrisisMessages = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('crise_mensagens')
+        .select('*')
+        .eq('crise_id', crisis.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Erro ao buscar mensagens:', error);
+        return;
+      }
+
+      setMessages(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar mensagens da crise:', error);
     }
   };
 
@@ -182,7 +219,6 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
   const handleCloseTicketDetail = () => {
     setTicketModalOpen(false);
     setSelectedTicketId(null);
-    // NÃO fechar o modal da crise - apenas o modal do ticket
   };
 
   const handleSendBroadcastMessage = async () => {
@@ -269,15 +305,22 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
 
       await Promise.all(promises);
 
-      // Adicionar mensagem ao histórico
-      const newSentMessage: SentMessage = {
-        id: Date.now().toString(),
-        message: broadcastMessage,
-        timestamp: new Date().toLocaleString('pt-BR'),
-        groupCount: grupos.length
-      };
-      
-      setSentMessages(prev => [newSentMessage, ...prev]);
+      // Salvar mensagem no banco de dados
+      const { error: saveError } = await supabase
+        .from('crise_mensagens')
+        .insert({
+          crise_id: crisis.id,
+          mensagem: broadcastMessage,
+          total_grupos: grupos.length,
+          grupos_destinatarios: grupos
+        });
+
+      if (saveError) {
+        console.error('Erro ao salvar mensagem:', saveError);
+      }
+
+      // Atualizar lista de mensagens
+      await fetchCrisisMessages();
 
       toast({
         title: "✅ Mensagem Enviada com Sucesso!",
@@ -301,15 +344,15 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'aberto':
-        return 'bg-blue-500';
+        return 'destructive';
       case 'em_atendimento':
-        return 'bg-yellow-500';
-      case 'escalonado':
-        return 'bg-orange-500';
+        return 'default';
+      case 'aguardando':
+        return 'secondary';
       case 'concluido':
-        return 'bg-green-500';
+        return 'outline';
       default:
-        return 'bg-gray-500';
+        return 'outline';
     }
   };
 
@@ -331,226 +374,215 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-6xl w-[95vw] h-[95vh] max-h-none flex flex-col">
-        <DialogHeader className="flex-shrink-0">
+        <DialogHeader className="flex-shrink-0 border-b pb-4">
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-destructive" />
             Gerenciamento de Crise
           </DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 pr-4">
-          <div className="space-y-4 pb-4">
-          {/* Info da Crise */}
-          <Card className="flex-shrink-0">
-            <CardHeader>
-              <CardTitle className="text-lg">{crisis.titulo}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <Badge variant="destructive">{crisis.status}</Badge>
-                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                    <Clock className="h-4 w-4" />
-                    Iniciada em {format(new Date(crisis.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline">{tickets.length} tickets</Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+          {/* Navegação Horizontal */}
+          <TabsList className="grid w-full grid-cols-3 mb-4">
+            <TabsTrigger value="tickets" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Tickets Relacionados
+              <Badge variant="outline">{tickets.length}</Badge>
+            </TabsTrigger>
+            <TabsTrigger value="detalhes" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Detalhes
+            </TabsTrigger>
+            <TabsTrigger value="mensagens" className="flex items-center gap-2">
+              <MessageCircle className="h-4 w-4" />
+              Mensagens
+              <Badge variant="outline">{messages.length}</Badge>
+            </TabsTrigger>
+          </TabsList>
 
-          {/* Lista de Tickets - Collapsible */}
-          <Collapsible open={!isTicketsCollapsed} onOpenChange={(open) => setIsTicketsCollapsed(!open)}>
-            <Card className="flex-shrink-0">
-              <CardHeader className="pb-2">
-                <CollapsibleTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    className="w-full justify-between p-0 h-auto font-medium text-base hover:bg-transparent"
-                  >
-                    <CardTitle className="text-base flex items-center gap-2">
-                      Tickets Relacionados 
-                      <Badge variant="outline">{tickets.length}</Badge>
-                    </CardTitle>
-                    {isTicketsCollapsed ? (
-                      <ChevronDown className="h-4 w-4" />
-                    ) : (
-                      <ChevronUp className="h-4 w-4" />
-                    )}
-                  </Button>
-                </CollapsibleTrigger>
-              </CardHeader>
-              <CollapsibleContent>
-                <CardContent className="pt-0">
-                  <ScrollArea className="h-[300px]">
-                    {loading ? (
-                      <div className="text-center py-8">Carregando tickets...</div>
-                    ) : tickets.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground">
-                        Nenhum ticket encontrado
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {tickets.map((ticket) => (
-                          <Card 
-                            key={ticket.id} 
-                            className="relative cursor-pointer hover:bg-muted/50 transition-colors"
-                            onClick={() => handleTicketClick(ticket.id)}
-                          >
-                            <CardContent className="p-4">
-                              <div className="flex items-start justify-between">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <div className={`w-2 h-2 rounded-full ${getStatusColor(ticket.status)}`} />
-                                    <Badge variant={getPriorityColor(ticket.prioridade)}>
-                                      {ticket.prioridade}
-                                    </Badge>
-                                  </div>
-                                  
-                                  <h4 className="font-medium mb-1">{ticket.titulo}</h4>
-                                  <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                                    {ticket.descricao_problema}
-                                  </p>
-                                  
-                                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                                    <div className="flex items-center gap-1">
-                                      <Building className="h-3 w-3" />
-                                      {ticket.unidades?.grupo || ticket.unidade_id}
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                      <Clock className="h-3 w-3" />
-                                      {format(new Date(ticket.data_abertura), 'dd/MM HH:mm', { locale: ptBR })}
-                                    </div>
-                                  </div>
-                                </div>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleTicketClick(ticket.id);
-                                  }}
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
+          {/* Conteúdo das Abas */}
+          <div className="flex-1 overflow-hidden">
+            <TabsContent value="tickets" className="h-full overflow-auto space-y-4">
+              {loading ? (
+                <div className="flex items-center justify-center h-32">
+                  <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {tickets.map((ticket) => (
+                    <Card key={ticket.id} className="cursor-pointer hover:shadow-md transition-shadow">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3 flex-1">
+                            <div className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" />
+                            <div className="flex flex-col min-w-0 flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Badge variant={getPriorityColor(ticket.prioridade)} className="text-xs">
+                                  {ticket.prioridade}
+                                </Badge>
+                                <Badge variant={getStatusColor(ticket.status)} className="text-xs">
+                                  {ticket.status}
+                                </Badge>
                               </div>
-                            </CardContent>
-                          </Card>
+                              <h4 className="font-medium text-sm truncate">{ticket.titulo}</h4>
+                              <p className="text-xs text-muted-foreground truncate">{ticket.descricao_problema}</p>
+                              <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                                <span className="flex items-center gap-1">
+                                  <Users className="h-3 w-3" />
+                                  {ticket.unidades?.grupo || 'Unidade não identificada'}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  {format(new Date(ticket.data_abertura), 'dd/MM HH:mm', { locale: ptBR })}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleTicketClick(ticket.id)}
+                            className="flex-shrink-0"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="detalhes" className="h-full overflow-auto space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">{crisis.titulo}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <Badge variant="destructive">{crisis.status}</Badge>
+                      <span className="text-sm text-muted-foreground">
+                        Criada em: {format(new Date(crisis.created_at), 'dd/MM/yyyy \'às\' HH:mm', { locale: ptBR })}
+                      </span>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {tickets.length} ticket(s) relacionado(s)
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="mensagens" className="h-full overflow-auto space-y-4">
+              {/* Histórico de Mensagens */}
+              {messages.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <MessageSquare className="h-4 w-4" />
+                      Conversas ({messages.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ScrollArea className="h-[300px]">
+                      <div className="space-y-4">
+                        {messages.map((message) => (
+                          <div key={message.id} className="flex items-start gap-3">
+                            {/* Avatar */}
+                            <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium flex-shrink-0">
+                              A
+                            </div>
+                            
+                            {/* Conteúdo da mensagem */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-medium text-sm">Admin Sistema</span>
+                                <Badge variant="secondary" className="text-xs">
+                                  Crise
+                                </Badge>
+                                <span className="text-xs text-muted-foreground">
+                                  {format(new Date(message.created_at), 'dd/MM HH:mm', { locale: ptBR })}
+                                </span>
+                              </div>
+                              <p className="text-sm text-muted-foreground">
+                                {message.mensagem}
+                              </p>
+                              <div className="flex items-center gap-1 mt-1">
+                                <span className="text-xs text-green-600">✓ Enviada para {message.total_grupos} grupo(s)</span>
+                              </div>
+                            </div>
+                          </div>
                         ))}
                       </div>
-                    )}
-                  </ScrollArea>
-                </CardContent>
-              </CollapsibleContent>
-            </Card>
-          </Collapsible>
+                    </ScrollArea>
+                  </CardContent>
+                </Card>
+              )}
 
-          {/* Histórico de Mensagens Enviadas */}
-          {sentMessages.length > 0 && (
-            <Card className="flex-shrink-0">
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <MessageSquare className="h-4 w-4" />
-                  Conversas ({sentMessages.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-[250px]">
-                  <div className="space-y-4">
-                    {sentMessages.map((sentMsg) => (
-                      <div key={sentMsg.id} className="flex items-start gap-3">
-                        {/* Avatar */}
-                        <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium flex-shrink-0">
-                          A
-                        </div>
-                        
-                        {/* Conteúdo da mensagem */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium text-sm">Admin Sistema</span>
-                            <Badge variant="secondary" className="text-xs">
-                              Crise
-                            </Badge>
-                            <span className="text-xs text-muted-foreground">
-                              {sentMsg.timestamp}
-                            </span>
-                          </div>
-                          <p className="text-sm text-muted-foreground">
-                            {sentMsg.message}
-                          </p>
-                          <div className="flex items-center gap-1 mt-1">
-                            <span className="text-xs text-green-600">✓ Enviada para {sentMsg.groupCount} grupo(s)</span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+              {/* Enviar Nova Mensagem */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4" />
+                    Enviar Nova Mensagem
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Textarea
+                    placeholder="Digite sua mensagem..."
+                    value={broadcastMessage}
+                    onChange={(e) => setBroadcastMessage(e.target.value)}
+                    rows={3}
+                    className="resize-none"
+                  />
+                  <div className="flex justify-between items-center">
+                    <p className="text-sm text-muted-foreground">
+                      Para {[...new Set(tickets.map(t => t.unidade_id))].length} grupo(s) WhatsApp
+                    </p>
+                    <Button 
+                      onClick={handleSendBroadcastMessage}
+                      disabled={sendingMessage || !broadcastMessage.trim()}
+                      size="sm"
+                    >
+                      <Send className="h-4 w-4 mr-2" />
+                      {sendingMessage ? 'Enviando...' : 'Enviar'}
+                    </Button>
                   </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Seção de Mensagem Broadcast */}
-          <Card className="flex-shrink-0">
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <MessageSquare className="h-4 w-4" />
-                Enviar Nova Mensagem
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Textarea
-                placeholder="Digite sua mensagem..."
-                value={broadcastMessage}
-                onChange={(e) => setBroadcastMessage(e.target.value)}
-                rows={3}
-                className="resize-none"
-              />
-              <div className="flex justify-between items-center">
-                <p className="text-sm text-muted-foreground">
-                  Para {[...new Set(tickets.map(t => t.unidade_id))].length} grupo(s) WhatsApp
-                </p>
-                <Button 
-                  onClick={handleSendBroadcastMessage}
-                  disabled={sendingMessage || !broadcastMessage.trim()}
-                  size="sm"
-                >
-                  <Send className="h-4 w-4 mr-2" />
-                  {sendingMessage ? 'Enviando...' : 'Enviar'}
-                </Button>
-              </div>
-              <div className="text-xs text-muted-foreground">
-                💡 Você pode enviar quantas mensagens precisar. Cada uma será adicionada ao histórico da conversa.
-              </div>
-            </CardContent>
-          </Card>
-
-          <Separator className="flex-shrink-0" />
-
-          {/* Ações */}
-          <div className="flex-shrink-0 flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">
-              Resolver esta crise irá marcar todos os tickets como concluídos
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={onClose}>
-                <X className="h-4 w-4 mr-2" />
-                Fechar
-              </Button>
-              <Button 
-                variant="destructive" 
-                onClick={handleResolveCrisis}
-                disabled={loading}
-              >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Resolver Crise
-              </Button>
-             </div>
-           </div>
+                  <div className="text-xs text-muted-foreground">
+                    💡 Você pode enviar quantas mensagens precisar. Cada uma será adicionada ao histórico da conversa.
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
           </div>
-        </ScrollArea>
+        </Tabs>
+
+        {/* Footer com botões */}
+        <div className="flex-shrink-0 flex items-center justify-between border-t pt-4">
+          <p className="text-sm text-muted-foreground">
+            Resolver esta crise irá marcar todos os tickets como concluídos
+          </p>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={onClose}>
+              <span className="mr-2">✕</span>
+              Fechar
+            </Button>
+            <Button 
+              onClick={handleResolveCrisis} 
+              disabled={loading}
+              variant="destructive"
+            >
+              {loading ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+              ) : (
+                <span className="mr-2">✓</span>
+              )}
+              Resolver Crise
+            </Button>
+          </div>
+        </div>
 
         {/* Modal de Detalhes do Ticket */}
         {selectedTicketId && ticketModalOpen && (

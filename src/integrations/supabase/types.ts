@@ -174,6 +174,47 @@ export type Database = {
           },
         ]
       }
+      crise_mensagens: {
+        Row: {
+          created_at: string
+          crise_id: string
+          enviado_por: string | null
+          grupos_destinatarios: Json
+          id: string
+          mensagem: string
+          total_grupos: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          crise_id: string
+          enviado_por?: string | null
+          grupos_destinatarios?: Json
+          id?: string
+          mensagem: string
+          total_grupos?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          crise_id?: string
+          enviado_por?: string | null
+          grupos_destinatarios?: Json
+          id?: string
+          mensagem?: string
+          total_grupos?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crise_mensagens_crise_id_fkey"
+            columns: ["crise_id"]
+            isOneToOne: false
+            referencedRelation: "crises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crise_ticket_links: {
         Row: {
           crise_id: string
