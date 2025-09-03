@@ -49,7 +49,6 @@ interface CrisisTicket {
   unidade_id: string;
   franqueado_id: string | number | null;
   unidades: any;
-  franqueados: any;
 }
 
 interface CrisisMessage {
@@ -104,8 +103,7 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
             data_abertura,
             unidade_id,
             franqueado_id,
-            unidades (grupo),
-            franqueados (name)
+            unidades (grupo)
           )
         `)
         .eq('crise_id', crisis.id);
@@ -128,8 +126,7 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
           data_abertura: item.tickets.data_abertura,
           unidade_id: item.tickets.unidade_id,
           franqueado_id: item.tickets.franqueado_id,
-          unidades: item.tickets.unidades || null,
-          franqueados: item.tickets.franqueados || null
+          unidades: item.tickets.unidades || null
         }));
 
       console.log('Tickets processados:', processedTickets);
