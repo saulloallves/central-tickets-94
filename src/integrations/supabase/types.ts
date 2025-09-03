@@ -257,9 +257,14 @@ export type Database = {
           canal_oficial: string | null
           created_at: string
           descricao: string | null
+          equipe_id: string | null
           id: string
+          is_active: boolean
           palavras_chave: string[] | null
+          problem_signature: string | null
+          resolved_at: string | null
           status: Database["public"]["Enums"]["crise_status"]
+          tickets_count: number
           titulo: string
           ultima_atualizacao: string
           updated_at: string
@@ -269,9 +274,14 @@ export type Database = {
           canal_oficial?: string | null
           created_at?: string
           descricao?: string | null
+          equipe_id?: string | null
           id?: string
+          is_active?: boolean
           palavras_chave?: string[] | null
+          problem_signature?: string | null
+          resolved_at?: string | null
           status?: Database["public"]["Enums"]["crise_status"]
+          tickets_count?: number
           titulo: string
           ultima_atualizacao?: string
           updated_at?: string
@@ -281,14 +291,27 @@ export type Database = {
           canal_oficial?: string | null
           created_at?: string
           descricao?: string | null
+          equipe_id?: string | null
           id?: string
+          is_active?: boolean
           palavras_chave?: string[] | null
+          problem_signature?: string | null
+          resolved_at?: string | null
           status?: Database["public"]["Enums"]["crise_status"]
+          tickets_count?: number
           titulo?: string
           ultima_atualizacao?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "crises_equipe_id_fkey"
+            columns: ["equipe_id"]
+            isOneToOne: false
+            referencedRelation: "equipes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       crises_ativas: {
         Row: {
