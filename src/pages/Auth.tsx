@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ClipboardList, Sparkles, Shield, Zap, Phone } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
 
 const Auth = () => {
   const { user, signIn, signUp, loading } = useAuth();
@@ -25,7 +26,24 @@ const Auth = () => {
     confirmPassword: '',
     nomeCompleto: '',
     telefone: '',
-    role: ''
+    role: '',
+    equipeId: ''
+  });
+
+  // Buscar equipes disponíveis para colaboradores
+  const { data: equipes } = useQuery({
+    queryKey: ['equipes-for-signup'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('equipes')
+        .select('id, nome, descricao')
+        .eq('ativo', true)
+        .order('nome');
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: signupData.role === 'colaborador'
   });
   const [franqueadoData, setFranqueadoData] = useState({ phone: '', password: '' });
 
@@ -99,6 +117,20 @@ const Auth = () => {
     }
 
     if (!signupData.role) {
+      toast({
+        title: "Erro",
+        description: "Selecione um tipo de usuário",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (signupData.role === 'colaborador' && !signupData.equipeId) {
+      toast({
+        title: "Erro", 
+        description: "Colaboradores devem selecionar uma equipe",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -107,7 +139,8 @@ const Auth = () => {
     const { error } = await signUp(signupData.email, signupData.password, {
       nome_completo: signupData.nomeCompleto,
       telefone: signupData.telefone,
-      role: signupData.role
+      role: signupData.role,
+      equipe_id: signupData.role === 'colaborador' ? signupData.equipeId : undefined
     });
 
     if (!error) {
@@ -118,7 +151,8 @@ const Auth = () => {
         confirmPassword: '',
         nomeCompleto: '',
         telefone: '',
-        role: ''
+        role: '',
+        equipeId: ''
       });
     }
 
@@ -289,7 +323,7 @@ const Auth = () => {
               <TabsContent value="signup" className="space-y-4">
                 <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                   <p className="text-sm text-blue-700 dark:text-blue-300">
-                    <strong>Equipe Interna:</strong> Após o cadastro, você poderá solicitar acesso a uma equipe específica.
+                    <strong>Sistema de Aprovação:</strong> {signupData.role === 'colaborador' ? 'Após escolher sua equipe, um supervisor aprovará seu acesso.' : 'Após o cadastro, você poderá solicitar acesso a uma equipe específica.'}
                   </p>
                 </div>
                 <form onSubmit={handleSignUp} className="space-y-4">
@@ -332,7 +366,7 @@ const Auth = () => {
                     <Label htmlFor="signup-role">Tipo de Usuário</Label>
                     <Select
                       value={signupData.role}
-                      onValueChange={(value) => setSignupData({ ...signupData, role: value })}
+                      onValueChange={(value) => setSignupData({ ...signupData, role: value, equipeId: '' })}
                       required
                     >
                       <SelectTrigger className="h-11">
@@ -346,6 +380,31 @@ const Auth = () => {
                       </SelectContent>
                     </Select>
                   </div>
+                  
+                  {signupData.role === 'colaborador' && (
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-equipe">Equipe</Label>
+                      <Select
+                        value={signupData.equipeId}
+                        onValueChange={(value) => setSignupData({ ...signupData, equipeId: value })}
+                        required
+                      >
+                        <SelectTrigger className="h-11">
+                          <SelectValue placeholder="Selecione sua equipe" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {equipes?.map((equipe) => (
+                            <SelectItem key={equipe.id} value={equipe.id}>
+                              {equipe.nome}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        Sua solicitação será enviada para aprovação do supervisor da equipe.
+                      </p>
+                    </div>
+                  )}
                   <div className="space-y-2">
                     <Label htmlFor="signup-password">Senha</Label>
                     <Input

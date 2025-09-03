@@ -43,7 +43,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signUp = async (email: string, password: string, metadata?: any) => {
     const redirectUrl = `${window.location.origin}/`;
     
-    const { error } = await supabase.auth.signUp({
+    const { data: authData, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -58,11 +58,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         description: error.message,
         variant: "destructive"
       });
-    } else {
-      toast({
-        title: "Cadastro realizado",
-        description: "Verifique seu email para confirmar a conta"
-      });
+      return { error };
+    }
+
+    // Se o usuário foi criado, processar dados adicionais
+    if (authData.user) {
+      try {
+        const { data: result, error: processError } = await supabase.functions.invoke('colaborador-signup', {
+          body: {
+            userId: authData.user.id,
+            email,
+            ...metadata
+          }
+        });
+
+        if (processError) {
+          console.error('Erro ao processar signup:', processError);
+          toast({
+            title: "Aviso",
+            description: "Conta criada, mas há pendências. Contate o suporte.",
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: "Cadastro realizado",
+            description: result?.message || "Verifique seu email para confirmar a conta"
+          });
+        }
+      } catch (procError) {
+        console.error('Erro no processamento:', procError);
+        toast({
+          title: "Cadastro realizado",
+          description: "Verifique seu email para confirmar a conta"
+        });
+      }
     }
 
     return { error };
