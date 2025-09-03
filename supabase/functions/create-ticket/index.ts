@@ -134,6 +134,38 @@ Deno.serve(async (req) => {
 
     console.log('✅ Ticket created successfully:', newTicket.codigo_ticket);
 
+    // Call crisis AI analyst after ticket creation (if has team)
+    if (newTicket.equipe_responsavel_id) {
+      try {
+        console.log('Calling crisis AI analyst for ticket:', newTicket.id);
+        
+        const analystResponse = await fetch(`${supabaseUrl}/functions/v1/crises-ai-analyst`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            ticket_id: newTicket.id,
+            titulo: newTicket.titulo,
+            descricao_problema: newTicket.descricao_problema,
+            equipe_id: newTicket.equipe_responsavel_id,
+            categoria: newTicket.categoria
+          })
+        });
+
+        if (analystResponse.ok) {
+          const analysisResult = await analystResponse.json();
+          console.log('Crisis analysis result:', analysisResult);
+        } else {
+          console.error('Crisis analyst failed:', await analystResponse.text());
+        }
+      } catch (analystError) {
+        console.error('Error calling crisis analyst:', analystError);
+        // Continue without failing ticket creation
+      }
+    }
+
     return new Response(JSON.stringify({ 
       success: true,
       ticket: newTicket,

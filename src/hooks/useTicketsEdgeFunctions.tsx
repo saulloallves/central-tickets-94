@@ -42,6 +42,14 @@ export interface Ticket {
   equipes?: { id: string; nome: string };
   atendimento_iniciado_por_profile?: { nome_completo: string };
   created_by_profile?: { nome_completo: string };
+  crise_links?: Array<{
+    id: string;
+    crises?: {
+      id: string;
+      is_active: boolean;
+      status: string;
+    } | null;
+  }>;
 }
 
 export interface TicketFilters {
@@ -91,7 +99,15 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
           *,
           equipes!equipe_responsavel_id(nome),
           unidades(id, grupo, cidade, uf),
-          colaboradores(nome_completo)
+          colaboradores(nome_completo),
+          crise_links:crise_ticket_links!left(
+            id,
+            crises!left(
+              id,
+              is_active,
+              status
+            )
+          )
         `)
         .order('status', { ascending: true })
         .order('position', { ascending: true });
@@ -131,8 +147,24 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
         return;
       }
 
-      console.log('Tickets fetched successfully:', data?.length || 0);
-      setTickets((data as any) || []);
+      const allTickets = (data as any) || [];
+      console.log('Tickets fetched successfully:', allTickets.length);
+      
+      // Filter out tickets that are linked to active crises
+      const visibleTickets = allTickets.filter((ticket: any) => {
+        // If ticket has no crisis links, show it
+        if (!ticket.crise_links || ticket.crise_links.length === 0) {
+          return true;
+        }
+        
+        // Hide ticket if it's linked to any active crisis
+        return !ticket.crise_links.some((link: any) => 
+          link.crises && link.crises.is_active
+        );
+      });
+      
+      console.log('Visible tickets (after filtering crises):', visibleTickets.length);
+      setTickets(visibleTickets);
       
     } catch (error) {
       console.error('Error fetching tickets:', error);
