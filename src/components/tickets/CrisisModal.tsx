@@ -27,6 +27,8 @@ interface CrisisTicket {
   status: string;
   prioridade: string;
   data_abertura: string;
+  unidade_id: string;
+  franqueado_id: string | null;
   unidades: { grupo: string } | null;
   franqueados: { name: string } | null;
 }
@@ -51,6 +53,8 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
   const fetchCrisisTickets = async () => {
     setLoading(true);
     try {
+      console.log('Buscando tickets para crise:', crisis.id);
+      
       const { data, error } = await supabase
         .from('crise_ticket_links')
         .select(`
@@ -63,28 +67,37 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
             status,
             prioridade,
             data_abertura,
-            unidades(grupo),
-            franqueados(name)
+            unidade_id,
+            franqueado_id
           )
         `)
         .eq('crise_id', crisis.id);
 
       if (error) {
+        console.error('Erro na query:', error);
         throw error;
       }
 
-      const crisisTickets: CrisisTicket[] = data?.map(link => ({
-        id: (link.tickets as any).id,
-        codigo_ticket: (link.tickets as any).codigo_ticket,
-        titulo: (link.tickets as any).titulo,
-        descricao_problema: (link.tickets as any).descricao_problema,
-        status: (link.tickets as any).status,
-        prioridade: (link.tickets as any).prioridade,
-        data_abertura: (link.tickets as any).data_abertura,
-        unidades: (link.tickets as any).unidades,
-        franqueados: (link.tickets as any).franqueados
-      })) || [];
+      console.log('Dados retornados:', data);
 
+      const crisisTickets: CrisisTicket[] = data?.map(link => {
+        const ticket = link.tickets as any;
+        return {
+          id: ticket.id,
+          codigo_ticket: ticket.codigo_ticket,
+          titulo: ticket.titulo || 'Sem título',
+          descricao_problema: ticket.descricao_problema,
+          status: ticket.status,
+          prioridade: ticket.prioridade,
+          data_abertura: ticket.data_abertura,
+          unidade_id: ticket.unidade_id,
+          franqueado_id: ticket.franqueado_id,
+          unidades: null, // Será buscado separadamente se necessário
+          franqueados: null // Será buscado separadamente se necessário
+        };
+      }) || [];
+
+      console.log('Tickets processados:', crisisTickets);
       setTickets(crisisTickets);
     } catch (error) {
       console.error('Erro ao buscar tickets da crise:', error);
@@ -242,18 +255,10 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
                               </p>
                               
                               <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                                {ticket.unidades && (
-                                  <div className="flex items-center gap-1">
-                                    <Building className="h-3 w-3" />
-                                    {ticket.unidades.grupo}
-                                  </div>
-                                )}
-                                {ticket.franqueados && (
-                                  <div className="flex items-center gap-1">
-                                    <User className="h-3 w-3" />
-                                    {ticket.franqueados.name}
-                                  </div>
-                                )}
+                                <div className="flex items-center gap-1">
+                                  <Building className="h-3 w-3" />
+                                  {ticket.unidade_id || 'Unidade não definida'}
+                                </div>
                                 <div className="flex items-center gap-1">
                                   <Clock className="h-3 w-3" />
                                   {format(new Date(ticket.data_abertura), 'dd/MM HH:mm', { locale: ptBR })}
