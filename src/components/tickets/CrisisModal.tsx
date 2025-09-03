@@ -212,18 +212,22 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
         return;
       }
 
-      // Enviar mensagem broadcast para cada grupo
+      // Enviar mensagem broadcast para cada grupo usando a mesma lógica dos tickets
       const promises = grupos.map(async (grupo) => {
-        const { error } = await supabase.functions.invoke('zapi-send-message', {
-          body: {
+        // Criar uma notificação na queue para usar o sistema existente
+        const { error } = await supabase.from('notifications_queue').insert({
+          type: 'crisis_broadcast',
+          payload: {
             phone: grupo,
             message: `🚨 *CRISE ATIVA* 🚨\n\n${crisis.titulo}\n\n${broadcastMessage}\n\n_Mensagem enviada automaticamente pelo sistema de gerenciamento de crises_`,
-            ticketId: null // Mensagem não vinculada a ticket específico
-          }
+            crise_id: crisis.id
+          },
+          scheduled_at: new Date().toISOString(),
+          status: 'pending'
         });
 
         if (error) {
-          console.error('Erro ao enviar para grupo:', grupo, error);
+          console.error('Erro ao criar notificação para grupo:', grupo, error);
           throw error;
         }
       });
