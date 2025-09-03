@@ -423,6 +423,25 @@ async function createNewCrise(
   // Vincular o ticket atual à nova crise
   await linkTicketToCrise(supabase, ticket.ticket_id, newCrise.id);
 
+  // Usar função SQL para vincular todos os tickets similares automaticamente
+  try {
+    const { data: ticketsVinculados, error: vinculacaoError } = await supabase
+      .rpc('vincular_tickets_similares_a_crise', {
+        p_crise_id: newCrise.id,
+        p_equipe_id: ticket.equipe_id,
+        p_similar_terms: problemKeywords,
+        p_created_since: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+      });
+
+    if (vinculacaoError) {
+      console.error('Erro ao vincular tickets similares:', vinculacaoError);
+    } else {
+      console.log(`🔗 Vinculados automaticamente ${ticketsVinculados} tickets similares à crise`);
+    }
+  } catch (error) {
+    console.error('Erro na vinculação automática:', error);
+  }
+
   console.log(`🆕 Nova crise criada: ${newCrise.id} com ${similarCount} tickets similares`);
   
   return newCrise.id;

@@ -2761,6 +2761,15 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      vincular_tickets_similares_a_crise: {
+        Args: {
+          p_created_since?: string
+          p_crise_id: string
+          p_equipe_id: string
+          p_similar_terms: string[]
+        }
+        Returns: number
+      }
       vincular_tickets_similares_manual: {
         Args: Record<PropertyKey, never>
         Returns: string
