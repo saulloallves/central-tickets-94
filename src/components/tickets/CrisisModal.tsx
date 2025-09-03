@@ -312,8 +312,8 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
           </Card>
 
           {/* Lista de Tickets - Collapsible */}
-          <Card className="flex-shrink-0">
-            <Collapsible open={!isTicketsCollapsed} onOpenChange={(open) => setIsTicketsCollapsed(!open)}>
+          <Collapsible open={!isTicketsCollapsed} onOpenChange={(open) => setIsTicketsCollapsed(!open)}>
+            <Card className="flex-shrink-0">
               <CardHeader className="pb-2">
                 <CollapsibleTrigger asChild>
                   <Button 
@@ -332,73 +332,73 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
                   </Button>
                 </CollapsibleTrigger>
               </CardHeader>
-              <CollapsibleContent className="overflow-hidden transition-all data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
+              <CollapsibleContent>
                 <CardContent className="pt-0">
                   <ScrollArea className="h-[300px]">
-                {loading ? (
-                  <div className="text-center py-8">Carregando tickets...</div>
-                ) : tickets.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    Nenhum ticket encontrado
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {tickets.map((ticket) => (
-                      <Card 
-                        key={ticket.id} 
-                        className="relative cursor-pointer hover:bg-muted/50 transition-colors"
-                        onClick={() => handleTicketClick(ticket.id)}
-                      >
-                        <CardContent className="p-4">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <code className="text-sm font-mono bg-muted px-2 py-1 rounded">
-                                  {ticket.codigo_ticket}
-                                </code>
-                                <div className={`w-2 h-2 rounded-full ${getStatusColor(ticket.status)}`} />
-                                <Badge variant={getPriorityColor(ticket.prioridade)}>
-                                  {ticket.prioridade}
-                                </Badge>
-                              </div>
-                              
-                              <h4 className="font-medium mb-1">{ticket.titulo}</h4>
-                              <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                                {ticket.descricao_problema}
-                              </p>
-                              
-                              <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                                <div className="flex items-center gap-1">
-                                  <Building className="h-3 w-3" />
-                                  {ticket.unidades?.grupo || ticket.unidade_id}
+                    {loading ? (
+                      <div className="text-center py-8">Carregando tickets...</div>
+                    ) : tickets.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        Nenhum ticket encontrado
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {tickets.map((ticket) => (
+                          <Card 
+                            key={ticket.id} 
+                            className="relative cursor-pointer hover:bg-muted/50 transition-colors"
+                            onClick={() => handleTicketClick(ticket.id)}
+                          >
+                            <CardContent className="p-4">
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <code className="text-sm font-mono bg-muted px-2 py-1 rounded">
+                                      {ticket.codigo_ticket}
+                                    </code>
+                                    <div className={`w-2 h-2 rounded-full ${getStatusColor(ticket.status)}`} />
+                                    <Badge variant={getPriorityColor(ticket.prioridade)}>
+                                      {ticket.prioridade}
+                                    </Badge>
+                                  </div>
+                                  
+                                  <h4 className="font-medium mb-1">{ticket.titulo}</h4>
+                                  <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                                    {ticket.descricao_problema}
+                                  </p>
+                                  
+                                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                                    <div className="flex items-center gap-1">
+                                      <Building className="h-3 w-3" />
+                                      {ticket.unidades?.grupo || ticket.unidade_id}
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <Clock className="h-3 w-3" />
+                                      {format(new Date(ticket.data_abertura), 'dd/MM HH:mm', { locale: ptBR })}
+                                    </div>
+                                  </div>
                                 </div>
-                                <div className="flex items-center gap-1">
-                                  <Clock className="h-3 w-3" />
-                                  {format(new Date(ticket.data_abertura), 'dd/MM HH:mm', { locale: ptBR })}
-                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleTicketClick(ticket.id);
+                                  }}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
                               </div>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleTicketClick(ticket.id);
-                              }}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
                   </ScrollArea>
                 </CardContent>
               </CollapsibleContent>
-            </Collapsible>
-          </Card>
+            </Card>
+          </Collapsible>
 
           {/* Seção de Mensagem Broadcast */}
           <Card className="flex-shrink-0">
