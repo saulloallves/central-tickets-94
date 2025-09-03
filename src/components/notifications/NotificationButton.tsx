@@ -77,8 +77,7 @@ export const NotificationButton = ({ isExpanded = false }: { isExpanded?: boolea
           {isExpanded && <span className="text-sm font-medium drop-shadow-md">Notificações</span>}
           {alerts.length > 0 && (
             <Badge 
-              variant="destructive" 
-              className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
+              className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-white text-red-500 border border-red-200"
             >
               {alerts.length > 9 ? '9+' : alerts.length}
             </Badge>
