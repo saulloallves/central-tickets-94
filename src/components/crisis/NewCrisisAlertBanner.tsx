@@ -81,13 +81,10 @@ export const NewCrisisAlertBanner = () => {
 
   return (
     <div className={cn(
-      "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
+      "w-full transition-all duration-300 border-b-4 border-red-700",
       isMinimized ? "h-12" : "min-h-16"
     )}>
-      <div className={cn(
-        "bg-gradient-to-r from-red-600 via-red-500 to-red-600 text-white shadow-2xl animate-pulse",
-        "border-b-4 border-red-700"
-      )}>
+      <div className="bg-gradient-to-r from-red-600 via-red-500 to-red-600 text-white shadow-2xl animate-pulse">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
