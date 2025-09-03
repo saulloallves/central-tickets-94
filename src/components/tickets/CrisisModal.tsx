@@ -405,9 +405,9 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
                   <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                 </div>
               ) : (
-                <div className="space-y-3">
+                  <div className="space-y-3">
                   {tickets.map((ticket) => (
-                    <Card key={ticket.id} className="cursor-pointer hover:shadow-md transition-shadow">
+                    <Card key={ticket.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleTicketClick(ticket.id)}>
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3 flex-1">
