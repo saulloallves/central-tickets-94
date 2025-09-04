@@ -176,13 +176,19 @@ export const useTeamDashboardMetrics = () => {
 
   const fetchCrisisMetrics = async () => {
     try {
-      // Verificar se há crise ativa
-      const { data: criseAtiva } = await supabase
+      // Verificar se há crise ativa E recente (últimas 24 horas)
+      const twentyFourHoursAgo = new Date();
+      twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+
+      const { data: criseAtiva, error: criseError } = await supabase
         .from('crises')
-        .select('id')
-        .eq('status', 'aberto')
+        .select('id, status, is_active, created_at')
         .eq('is_active', true)
+        .in('status', ['aberto', 'investigando', 'comunicado', 'mitigado'])
+        .gte('created_at', twentyFourHoursAgo.toISOString())
         .limit(1);
+
+      console.log('🚨 Crisis check (recent only):', { criseAtiva, criseError });
 
       const primaryEquipe = getPrimaryEquipe();
       let tickets_criticos_equipe = 0;
@@ -209,14 +215,20 @@ export const useTeamDashboardMetrics = () => {
         .gte('data_abertura', sevenDaysAgo.toISOString())
         .eq('status', 'aberto');
 
+      // Só considera crise ativa se for recente (últimas 24h) e realmente ativa
+      const isCrisisActive = !criseError && criseAtiva && criseAtiva.length > 0;
+      console.log('🚨 Is crisis active (recent only):', isCrisisActive);
+
       setCrisisMetrics({
-        crise_ativa: (criseAtiva?.length || 0) > 0,
+        crise_ativa: isCrisisActive,
         tickets_criticos_equipe,
         backlog_ultimos_7_dias: backlogTickets?.length || 0
       });
 
     } catch (error) {
       console.error('Error fetching crisis metrics:', error);
+      // Em caso de erro, não mostrar crise ativa
+      setCrisisMetrics(prev => prev ? { ...prev, crise_ativa: false } : null);
     }
   };
 
