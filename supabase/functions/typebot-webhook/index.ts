@@ -90,8 +90,9 @@ async function encontrarDocumentosRelacionados(textoTicket: string, limiteResult
 async function rerankComLLM(docs: any[], pergunta: string) {
   if (!openaiApiKey || !docs?.length) return [];
   const prompt = `
-Classifique a relevância (0-10) de cada trecho para responder a PERGUNTA.
-Retorne JSON: [{"id":"<id>","score":0-10}]
+Classifique a relevância (0–10) de cada trecho para responder a PERGUNTA.
+Devolva **APENAS** um objeto JSON no formato exato:
+{"ranking":[{"id":"<id>","score":0-10}]}
 PERGUNTA: ${pergunta}
 
 ${docs.map(d => `ID:${d.id}\nTÍTULO:${d.titulo}\nTRECHO:${limparTexto(d.conteudo).slice(0,600)}`).join('\n---\n')}
@@ -113,9 +114,15 @@ ${docs.map(d => `ID:${d.id}\nTÍTULO:${d.titulo}\nTRECHO:${limparTexto(d.conteud
     // se veio como objeto { ranking: [...] }
     const parsed = JSON.parse(txt);
     scored = Array.isArray(parsed) ? parsed : (parsed.ranking ?? []);
+    console.log('LLM rerank parsed items:', Array.isArray(scored) ? scored.length : 0);
   } catch (e) {
     console.error('Rerank JSON parse error:', e);
     // fallback: usa top-5 da shortlist original
+    return docs.slice(0, 5);
+  }
+  // fallback se veio vazio/inesperado
+  if (!scored || !scored.length) {
+    console.warn('LLM rerank returned empty; using shortlist fallback');
     return docs.slice(0, 5);
   }
   const byId = Object.fromEntries(docs.map(d => [d.id, d]));
@@ -446,7 +453,14 @@ serve(async (req) => {
         const candidatos = await encontrarDocumentosRelacionados(textoDoTicket, 12);
 
         // 2) rerank LLM (top-5)
-        const docsSelecionados = await rerankComLLM(candidatos, textoDoTicket);
+        let docsSelecionados = await rerankComLLM(candidatos, textoDoTicket);
+        if (!docsSelecionados.length) {
+          console.warn('No docs after rerank; falling back to top-5 candidatos');
+          docsSelecionados = candidatos.slice(0,5);
+        }
+        console.log('Docs selecionados para resposta:',
+          docsSelecionados.map(d => `${d.id}:${d.titulo}`).join(' | ')
+        );
 
         if (docsSelecionados.length) {
           // 3) gerar resposta curta com citação
