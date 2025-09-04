@@ -95,12 +95,17 @@ async function searchKnowledgeBase(message: string) {
     // Se temos documentos RAG, usar eles como base
     relevantArticles = articles?.filter(article => {
       // Primeiro priorizar artigos que aparecem nos RAG docs
-      const foundInRag = ragDocuments.some(doc => 
-        doc.conteudo && (
-          doc.conteudo.includes(article.titulo) || 
-          article.conteudo.includes(doc.conteudo.substring(0, 100))
-        )
-      );
+      const foundInRag = ragDocuments.some(doc => {
+        // Extrair texto do conteudo (que pode ser JSON)
+        const conteudoTexto = typeof doc.conteudo === 'object' && doc.conteudo?.texto 
+          ? doc.conteudo.texto 
+          : (typeof doc.conteudo === 'string' ? doc.conteudo : '');
+          
+        return conteudoTexto && (
+          conteudoTexto.includes(article.titulo) || 
+          article.conteudo.includes(conteudoTexto.substring(0, 100))
+        );
+      });
       
       if (foundInRag) return true;
       
