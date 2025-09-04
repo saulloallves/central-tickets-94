@@ -97,9 +97,13 @@ export const useTickets = (filters: TicketFilters) => {
   };
 
   const fetchTickets = async () => {
-    if (!user || roleLoading) return;
+    if (!user || roleLoading) {
+      console.log('🔄 fetchTickets: aguardando user ou role', { user: !!user, roleLoading });
+      return;
+    }
     
     try {
+      console.log('🔄 fetchTickets: iniciando busca de tickets...');
       setLoading(true);
       
       // Enhanced query with equipe join
@@ -113,6 +117,8 @@ export const useTickets = (filters: TicketFilters) => {
         `)
         .order('status', { ascending: true })
         .order('position', { ascending: true });
+
+      console.log('🔄 fetchTickets: query criada, aplicando filtros...', filters);
 
       // Apply search filter - now includes titulo
       if (filters.search) {
@@ -142,6 +148,7 @@ export const useTickets = (filters: TicketFilters) => {
         }
       }
 
+      console.log('🔄 fetchTickets: executando query...');
       let { data, error } = await query;
 
       // Handle RLS recursion errors with fallback
