@@ -97,14 +97,17 @@ const Dashboard = () => {
           </Button>
         </div>
 
-        {/* Alerta de Crise (visível apenas quando ativado) */}
+        {/* Alerta de Crise - só aparece quando há crise ativa */}
         {crisisMetrics?.crise_ativa && (
           <Card className="border-destructive bg-destructive/5">
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
                 <AlertCircle className="h-5 w-5 text-destructive" />
-                <CardTitle className="text-destructive">🚨 ALERTA DE CRISE (VISÍVEL APENAS QUANDO ATIVADO) 🚨</CardTitle>
+                <CardTitle className="text-destructive">🚨 ALERTA DE CRISE ATIVA 🚨</CardTitle>
               </div>
+              <CardDescription className="text-destructive/80">
+                Uma situação de crise está em andamento. Priorize o atendimento aos tickets críticos.
+              </CardDescription>
             </CardHeader>
           </Card>
         )}
