@@ -130,6 +130,27 @@ ${docs.map(d => `ID:${d.id}\nTÍTULO:${d.titulo}\nTRECHO:${limparTexto(d.conteud
                .map(x=>byId[x.id]).filter(Boolean).slice(0,5);
 }
 
+function prepararMensagemParaFranqueado(texto: string): string {
+  // Remover formatação markdown excessiva e deixar mais conversacional
+  let mensagem = texto
+    .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold
+    .replace(/\*(.*?)\*/g, '$1')     // Remove itálico
+    .replace(/#{1,6}\s*/g, '')       // Remove headers markdown
+    .trim();
+  
+  // Adicionar saudação/tom mais amigável se não tiver
+  if (!mensagem.match(/^(olá|oi|bom dia|boa tarde|boa noite)/i)) {
+    mensagem = `Olá! ${mensagem}`;
+  }
+  
+  // Garantir que termine de forma amigável
+  if (!mensagem.match(/[.!?]$/)) {
+    mensagem += '.';
+  }
+  
+  return mensagem;
+}
+
 function formatarContextoFontes(docs: any[]) {
   return docs.map((d, i) =>
     `[Fonte ${i+1}] "${d.titulo}" — ${d.categoria}\n` +
@@ -472,7 +493,7 @@ serve(async (req) => {
             return new Response(JSON.stringify({
               action: 'suggestion',
               success: true,
-              answer: sugestaoFinal,
+              answer: prepararMensagemParaFranqueado(sugestaoFinal),
               source: 'rag_system',
               rag_metrics: {
                 documentos_encontrados: docsSelecionados.length,
@@ -493,7 +514,7 @@ serve(async (req) => {
           return new Response(JSON.stringify({
             action: 'answer',
             success: true,
-            answer: kbResult.answer,
+            answer: prepararMensagemParaFranqueado(kbResult.answer),
             sources: kbResult.sources,
             source: 'knowledge_base',
             message: 'Resposta encontrada na base de conhecimento'
