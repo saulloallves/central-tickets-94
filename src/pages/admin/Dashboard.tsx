@@ -206,12 +206,12 @@ const Dashboard = () => {
         </CardContent>
       </Card>
 
-      {/* SEÇÃO 3: STATUS GERAL */}
+      {/* VISÃO GERAL DO SISTEMA */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5" />
-            SEÇÃO 3: STATUS GERAL
+            VISÃO GERAL DO SISTEMA
           </CardTitle>
         </CardHeader>
         <CardContent>
