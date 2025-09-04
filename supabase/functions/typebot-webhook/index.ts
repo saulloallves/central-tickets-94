@@ -14,26 +14,65 @@ const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// Função para extrair termos de busca do texto
-function extractSearchTerms(text: string): string[] {
-  return text
-    .toLowerCase()
-    .replace(/[^\w\s]/g, ' ')
-    .split(/\s+/)
-    .filter(term => term.length > 3)
-    .slice(0, 10);
+// Função para encontrar documentos relacionados usando busca semântica
+async function encontrarDocumentosRelacionados(textoTicket: string, limiteResultados: number = 5) {
+  if (!openaiApiKey) {
+    console.log('OpenAI API key not available for semantic search');
+    return [];
+  }
+
+  try {
+    // Gerar embedding do texto do ticket
+    const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openaiApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'text-embedding-3-small',
+        input: textoTicket,
+      }),
+    });
+
+    if (!embeddingResponse.ok) {
+      console.error('Error generating embedding:', await embeddingResponse.text());
+      return [];
+    }
+
+    const embeddingData = await embeddingResponse.json();
+    const embedding = embeddingData.data[0].embedding;
+
+    // Buscar documentos similares usando a função match_documents do Supabase
+    const { data: documentos, error } = await supabase.rpc('match_documents', {
+      query_embedding: embedding,
+      match_threshold: 0.78,
+      match_count: limiteResultados
+    });
+
+    if (error) {
+      console.error('Error in semantic search:', error);
+      return [];
+    }
+
+    console.log(`Found ${documentos?.length || 0} relevant documents via semantic search`);
+    return documentos || [];
+  } catch (error) {
+    console.error('Error in semantic search:', error);
+    return [];
+  }
 }
 
-// Módulo de resposta por Knowledge Base
+// Módulo de resposta por Knowledge Base com busca semântica
 async function searchKnowledgeBase(message: string) {
   console.log('Searching knowledge base for:', message);
   
+  // Primeiro tenta busca semântica nos documentos RAG
+  const ragDocuments = await encontrarDocumentosRelacionados(message, 5);
+  
+  // Extrair termos de busca como fallback
   const searchTerms = extractSearchTerms(message);
   console.log('Search terms:', searchTerms);
-
-  if (searchTerms.length === 0) {
-    return { hasAnswer: false, articles: [] };
-  }
 
   // Buscar artigos relevantes na base de conhecimento
   const { data: articles, error } = await supabase
@@ -48,19 +87,53 @@ async function searchKnowledgeBase(message: string) {
     return { hasAnswer: false, articles: [] };
   }
 
-  // Filtrar artigos que contenham os termos de busca
-  const relevantArticles = articles?.filter(article => {
-    const searchText = `${article.titulo} ${article.conteudo} ${article.categoria} ${article.tags?.join(' ') || ''}`.toLowerCase();
-    return searchTerms.some(term => searchText.includes(term));
-  }) || [];
+  // Filtrar artigos que contenham os termos de busca (fallback se não há RAG docs)
+  let relevantArticles = [];
+  
+  if (ragDocuments.length > 0) {
+    // Se temos documentos RAG, usar eles como base
+    relevantArticles = articles?.filter(article => {
+      // Primeiro priorizar artigos que aparecem nos RAG docs
+      const foundInRag = ragDocuments.some(doc => 
+        doc.content && (
+          doc.content.includes(article.titulo) || 
+          article.conteudo.includes(doc.content.substring(0, 100))
+        )
+      );
+      
+      if (foundInRag) return true;
+      
+      // Fallback para busca por termos
+      const searchText = `${article.titulo} ${article.conteudo} ${article.categoria} ${article.tags?.join(' ') || ''}`.toLowerCase();
+      return searchTerms.some(term => searchText.includes(term));
+    }) || [];
+  } else {
+    // Se não há RAG docs, usar busca por termos
+    relevantArticles = articles?.filter(article => {
+      const searchText = `${article.titulo} ${article.conteudo} ${article.categoria} ${article.tags?.join(' ') || ''}`.toLowerCase();
+      return searchTerms.some(term => searchText.includes(term));
+    }) || [];
+  }
 
   console.log(`Found ${relevantArticles.length} relevant articles`);
 
   // Se temos artigos relevantes, tentar gerar resposta com OpenAI
   if (relevantArticles.length > 0 && openaiApiKey) {
-    const knowledgeContext = relevantArticles
+    // Combinar contexto RAG + Knowledge Base
+    let knowledgeContext = '';
+    
+    if (ragDocuments.length > 0) {
+      const ragContext = ragDocuments
+        .map(doc => `**Documento RAG**\n${doc.content}`)
+        .join('\n\n---\n\n');
+      knowledgeContext += ragContext + '\n\n---\n\n';
+    }
+    
+    const kbContext = relevantArticles
       .map(article => `**${article.titulo}**\n${article.conteudo}`)
       .join('\n\n---\n\n');
+    
+    knowledgeContext += kbContext;
 
     try {
       // Get AI settings for knowledge base query
@@ -122,6 +195,16 @@ ${knowledgeContext}`
   }
 
   return { hasAnswer: false, articles: relevantArticles };
+}
+
+// Função para extrair termos de busca do texto (fallback)
+function extractSearchTerms(text: string): string[] {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s]/g, ' ')
+    .split(/\s+/)
+    .filter(term => term.length > 3)
+    .slice(0, 10);
 }
 
 // Função para gerar sugestão direta para franqueado baseada na base de conhecimento
