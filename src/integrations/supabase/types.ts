@@ -2679,6 +2679,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      mark_expired_documents: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       match_documentos: {
         Args: {
           match_count?: number
