@@ -18,6 +18,7 @@ const Auth = () => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPendingApproval, setShowPendingApproval] = useState(false);
+  const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
 
   // Form states
   const [loginData, setLoginData] = useState({ email: '', password: '' });
@@ -147,10 +148,8 @@ const Auth = () => {
     });
 
     if (!error) {
-      // Para colaboradores, mostrar tela de análise em vez de redirecionar
-      if (signupData.role === 'colaborador') {
-        setShowPendingApproval(true);
-      }
+      // Primeiro mostrar tela de confirmação de email
+      setShowEmailConfirmation(true);
       
       // Reset form
       setSignupData({
@@ -219,6 +218,66 @@ const Auth = () => {
     );
   }
 
+  // Tela de confirmação de email
+  if (showEmailConfirmation) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-hero">
+        <Card className="w-full max-w-md shadow-lg border-0 bg-white/95 backdrop-blur-sm">
+          <CardHeader className="text-center pb-6">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
+                <ClipboardList className="h-4 w-4 text-white" />
+              </div>
+              <span className="text-xl font-bold">HelpDesk AI</span>
+            </div>
+            <CardTitle className="text-2xl font-bold text-primary">Confirme seu Email</CardTitle>
+            <CardDescription>Enviamos um link de confirmação</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="text-center space-y-4">
+              <div className="w-16 h-16 mx-auto rounded-full bg-gradient-primary/10 flex items-center justify-center">
+                <ClipboardList className="h-8 w-8 text-primary" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="font-semibold text-lg">Verifique seu Email</h3>
+                <p className="text-muted-foreground">
+                  Enviamos um link de confirmação para seu email. 
+                  Clique no link para confirmar sua conta e prosseguir.
+                </p>
+              </div>
+              <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+                <p className="text-sm text-amber-700 dark:text-amber-300">
+                  <strong>Importante:</strong> 
+                  <br />• Verifique sua caixa de entrada (e spam)
+                  <br />• Clique no link de confirmação recebido
+                  <br />• Após confirmar, sua solicitação será analisada
+                </p>
+              </div>
+            </div>
+            <Button 
+              onClick={() => {
+                setShowEmailConfirmation(false);
+                if (signupData.role === 'colaborador') {
+                  setShowPendingApproval(true);
+                }
+              }} 
+              className="w-full h-11 bg-gradient-primary hover:opacity-90"
+            >
+              Email Confirmado - Continuar
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={() => setShowEmailConfirmation(false)} 
+              className="w-full h-11"
+            >
+              Voltar ao Cadastro
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   // Tela de solicitação em análise
   if (showPendingApproval) {
     return (
@@ -231,8 +290,8 @@ const Auth = () => {
               </div>
               <span className="text-xl font-bold">HelpDesk AI</span>
             </div>
-            <CardTitle className="text-2xl font-bold text-primary">Solicitação Enviada!</CardTitle>
-            <CardDescription>Sua solicitação de acesso está em análise</CardDescription>
+            <CardTitle className="text-2xl font-bold text-primary">Solicitação em Análise!</CardTitle>
+            <CardDescription>Sua solicitação está sendo avaliada</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="text-center space-y-4">
@@ -242,16 +301,16 @@ const Auth = () => {
               <div className="space-y-2">
                 <h3 className="font-semibold text-lg">Aguardando Aprovação</h3>
                 <p className="text-muted-foreground">
-                  Sua solicitação foi enviada para o supervisor da equipe selecionada. 
+                  Email confirmado com sucesso! Sua solicitação foi enviada para o supervisor da equipe selecionada. 
                   Em breve você receberá uma confirmação sobre o acesso ao sistema.
                 </p>
               </div>
-              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                <p className="text-sm text-blue-700 dark:text-blue-300">
-                  <strong>Próximos passos:</strong> 
-                  <br />• O supervisor da equipe analisará sua solicitação
-                  <br />• Você receberá uma notificação sobre a aprovação
-                  <br />• Após aprovação, poderá acessar o sistema normalmente
+              <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                <p className="text-sm text-green-700 dark:text-green-300">
+                  <strong>Status da Solicitação:</strong> 
+                  <br />✓ Email confirmado
+                  <br />⏳ Aguardando aprovação do supervisor
+                  <br />📧 Você receberá notificação da decisão
                 </p>
               </div>
             </div>
