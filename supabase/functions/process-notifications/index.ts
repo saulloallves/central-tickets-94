@@ -516,29 +516,38 @@ serve(async (req) => {
       return `${titulo} (${codigo})`
     }
 
-    // Função para normalizar número de telefone
+    // Função para normalizar número de telefone (pula grupos)
     const normalizePhoneNumber = (phone: any): string | null => {
       if (!phone) return null
       
-      let phoneStr = phone.toString().replace(/\D/g, '') // Remove tudo que não é dígito
+      const phoneStr = phone.toString()
       
-      // Se tem 13 dígitos e começa com 55, já tem código do país
-      if (phoneStr.length === 13 && phoneStr.startsWith('55')) {
+      // Se é um ID de grupo (contém '-group'), retorna como está
+      if (phoneStr.includes('-group') || phoneStr.includes('@g.us')) {
+        console.log('Group ID detected, skipping normalization:', phoneStr)
         return phoneStr
       }
       
+      // Normaliza apenas números individuais
+      let cleanPhone = phoneStr.replace(/\D/g, '') // Remove tudo que não é dígito
+      
+      // Se tem 13 dígitos e começa com 55, já tem código do país
+      if (cleanPhone.length === 13 && cleanPhone.startsWith('55')) {
+        return cleanPhone
+      }
+      
       // Se tem 11 dígitos, adiciona código do país (55)
-      if (phoneStr.length === 11) {
-        return '55' + phoneStr
+      if (cleanPhone.length === 11) {
+        return '55' + cleanPhone
       }
       
       // Se tem 10 dígitos, adiciona 9 e código do país
-      if (phoneStr.length === 10) {
-        return '55' + phoneStr.charAt(0) + phoneStr.charAt(1) + '9' + phoneStr.substring(2)
+      if (cleanPhone.length === 10) {
+        return '55' + cleanPhone.charAt(0) + cleanPhone.charAt(1) + '9' + cleanPhone.substring(2)
       }
       
       console.warn('Phone number format not recognized:', phone)
-      return phoneStr.length >= 10 ? phoneStr : null
+      return cleanPhone.length >= 10 ? cleanPhone : null
     }
 
     // Função para enviar mensagem via ZAPI
