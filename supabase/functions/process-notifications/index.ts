@@ -210,24 +210,34 @@ async function getMessageTemplate(supabase: any, templateKey: string): Promise<s
     console.log(`Template not found in database for ${templateKey}, using default`);
   }
 
-  // Default templates as fallback
+  // Default templates as fallback with enriched variables
   const defaultTemplates: Record<string, string> = {
     'ticket_created': `🎫 *NOVO TICKET CRIADO*
 
 📋 *Ticket:* {{codigo_ticket}}
-🏢 *Unidade:* {{unidade_id}}
+📝 *Título:* {{titulo_ticket}}
+🏢 *Unidade:* {{unidade_nome}} ({{unidade_id}})
+👥 *Equipe:* {{equipe_responsavel}}
+👤 *Responsável:* {{colaborador_responsavel}}
 📂 *Categoria:* {{categoria}}
 ⚡ *Prioridade:* {{prioridade}}
+📊 *Status:* {{status}}
 
 💬 *Problema:*
 {{descricao_problema}}
 
-🕐 *Aberto em:* {{data_abertura}}`,
+🕐 *Aberto em:* {{data_abertura}}
+⏰ *Prazo SLA:* {{data_limite_sla}}`,
 
     'resposta_ticket': `💬 *RESPOSTA DO TICKET*
 
 📋 *Ticket:* {{codigo_ticket}}
-🏢 *Unidade:* {{unidade_id}}
+📝 *Título:* {{titulo_ticket}}
+🏢 *Unidade:* {{unidade_nome}} ({{unidade_id}})
+👥 *Equipe:* {{equipe_responsavel}}
+📂 *Categoria:* {{categoria}}
+⚡ *Prioridade:* {{prioridade}}
+📊 *Status:* {{status}}
 
 📝 *Resposta:*
 {{texto_resposta}}
@@ -244,10 +254,20 @@ async function getMessageTemplate(supabase: any, templateKey: string): Promise<s
 
 Para mais detalhes, acesse o sistema.`,
 
-    'sla_half': `⚠️ *ALERTA SLA - 50%*
+    'sla_half': `⚠️ *ALERTA SLA - 50% DO PRAZO*
 
 📋 *Ticket:* {{codigo_ticket}}
-🏢 *Unidade:* {{unidade_id}}
+📝 *Título:* {{titulo_ticket}}
+🏢 *Unidade:* {{unidade_nome}} ({{unidade_id}})
+👥 *Equipe:* {{equipe_responsavel}}
+📂 *Categoria:* {{categoria}}
+⚡ *Prioridade:* {{prioridade}}
+📊 *Status:* {{status}}
+
+💬 *Problema:*
+{{descricao_problema}}
+
+🕐 *Aberto em:* {{data_abertura}}
 ⏰ *Prazo limite:* {{data_limite_sla}}
 
 ⚡ Atenção necessária!`,
@@ -255,10 +275,34 @@ Para mais detalhes, acesse o sistema.`,
     'sla_breach': `🚨 *SLA VENCIDO*
 
 📋 *Ticket:* {{codigo_ticket}}
-🏢 *Unidade:* {{unidade_id}}
+📝 *Título:* {{titulo_ticket}}
+🏢 *Unidade:* {{unidade_nome}} ({{unidade_id}})
+👥 *Equipe:* {{equipe_responsavel}}
+📂 *Categoria:* {{categoria}}
+⚡ *Prioridade:* {{prioridade}}
+📊 *Status:* {{status}}
+
+💬 *Problema:*
+{{descricao_problema}}
+
+🕐 *Aberto em:* {{data_abertura}}
 ⏰ *Venceu em:* {{data_limite_sla}}
 
-🔥 AÇÃO IMEDIATA NECESSÁRIA!`
+🔥 AÇÃO IMEDIATA NECESSÁRIA!`,
+
+    'crisis': `🚨 *CRISE DETECTADA*
+
+📋 *Ticket:* {{codigo_ticket}}
+📝 *Título:* {{titulo_ticket}}
+🏢 *Unidade:* {{unidade_nome}} ({{unidade_id}})
+👥 *Equipe:* {{equipe_responsavel}}
+📂 *Categoria:* {{categoria}}
+⚡ *Prioridade:* {{prioridade}}
+
+💬 *Problema:*
+{{descricao_problema}}
+
+🚨 CRISE ATIVADA - ATENÇÃO IMEDIATA!`
   };
 
   return defaultTemplates[templateKey] || 'Template não configurado';
@@ -543,13 +587,38 @@ serve(async (req) => {
         }
 
         const templateTicket = await getMessageTemplate(supabase, 'ticket_created');
+        // Get additional ticket information for richer variables
+        const { data: unidadeData } = await supabase
+          .from('unidades')
+          .select('nome')
+          .eq('id', ticket.unidade_id)
+          .single();
+
+        const { data: equipeData } = await supabase
+          .from('equipes')
+          .select('nome')
+          .eq('id', ticket.equipe_responsavel_id)
+          .single();
+
+        const { data: colaboradorData } = await supabase
+          .from('colaboradores')
+          .select('nome_completo')
+          .eq('id', ticket.colaborador_id)
+          .single();
+
         const mensagemTicket = processTemplate(templateTicket, {
           codigo_ticket: formatTicketTitle(ticket),
+          titulo_ticket: ticket.titulo || 'Ticket sem título',
           unidade_id: ticket.unidade_id,
+          unidade_nome: unidadeData?.nome || ticket.unidade_id,
           categoria: ticket.categoria || 'Não informada',
           prioridade: ticket.prioridade,
           descricao_problema: ticket.descricao_problema,
-          data_abertura: new Date(ticket.data_abertura).toLocaleString('pt-BR')
+          data_abertura: new Date(ticket.data_abertura).toLocaleString('pt-BR'),
+          equipe_responsavel: equipeData?.nome || 'Não atribuída',
+          colaborador_responsavel: colaboradorData?.nome_completo || 'Não atribuído',
+          status: ticket.status,
+          data_limite_sla: ticket.data_limite_sla ? new Date(ticket.data_limite_sla).toLocaleString('pt-BR') : 'Não definido'
         });
 
         resultadoEnvio = await sendZapiMessage(normalizePhoneNumber(destinoFinal), mensagemTicket);
@@ -566,9 +635,29 @@ serve(async (req) => {
         }
 
         const templateResposta = await getMessageTemplate(supabase, 'resposta_ticket');
+        
+        // Get additional ticket information for richer variables
+        const { data: unidadeDataResp } = await supabase
+          .from('unidades')
+          .select('nome')
+          .eq('id', ticket.unidade_id)
+          .single();
+
+        const { data: equipeDataResp } = await supabase
+          .from('equipes')
+          .select('nome')
+          .eq('id', ticket.equipe_responsavel_id)
+          .single();
+
         const mensagemResposta = processTemplate(templateResposta, {
           codigo_ticket: formatTicketTitle(ticket),
+          titulo_ticket: ticket.titulo || 'Ticket sem título',
           unidade_id: ticket.unidade_id,
+          unidade_nome: unidadeDataResp?.nome || ticket.unidade_id,
+          categoria: ticket.categoria || 'Não informada',
+          prioridade: ticket.prioridade,
+          status: ticket.status,
+          equipe_responsavel: equipeDataResp?.nome || 'Não atribuída',
           texto_resposta: textoResposta,
           timestamp: new Date().toLocaleString('pt-BR')
         });
@@ -590,8 +679,32 @@ serve(async (req) => {
         console.log(`Sending message to franqueado (solicitante) phone: ${franqueadoSolicitante.phone}`);
 
         const templateFranqueado = await getMessageTemplate(supabase, 'resposta_ticket_franqueado');
+        
+        // Get additional ticket information for richer variables
+        const { data: unidadeDataFranqueado } = await supabase
+          .from('unidades')
+          .select('nome')
+          .eq('id', ticket.unidade_id)
+          .single();
+
+        const { data: equipeDataFranqueado } = await supabase
+          .from('equipes')
+          .select('nome')
+          .eq('id', ticket.equipe_responsavel_id)
+          .single();
+
         const mensagemFranqueado = processTemplate(templateFranqueado, {
           codigo_ticket: formatTicketTitle(ticket),
+          titulo_ticket: ticket.titulo || 'Ticket sem título',
+          unidade_id: ticket.unidade_id,
+          unidade_nome: unidadeDataFranqueado?.nome || ticket.unidade_id,
+          categoria: ticket.categoria || 'Não informada',
+          prioridade: ticket.prioridade,
+          status: ticket.status,
+          equipe_responsavel: equipeDataFranqueado?.nome || 'Não atribuída',
+          descricao_problema: ticket.descricao_problema,
+          data_abertura: new Date(ticket.data_abertura).toLocaleString('pt-BR'),
+          data_limite_sla: ticket.data_limite_sla ? new Date(ticket.data_limite_sla).toLocaleString('pt-BR') : 'Não definido',
           texto_resposta: textoResposta,
           timestamp: new Date().toLocaleString('pt-BR')
         });
@@ -611,9 +724,31 @@ serve(async (req) => {
         }
 
         const templateSLAHalf = await getMessageTemplate(supabase, 'sla_half');
+        
+        // Get additional ticket information for richer variables
+        const { data: unidadeDataSLAHalf } = await supabase
+          .from('unidades')
+          .select('nome')
+          .eq('id', ticket.unidade_id)
+          .single();
+
+        const { data: equipeDataSLAHalf } = await supabase
+          .from('equipes')
+          .select('nome')
+          .eq('id', ticket.equipe_responsavel_id)
+          .single();
+
         const mensagemSLAHalf = processTemplate(templateSLAHalf, {
           codigo_ticket: formatTicketTitle(ticket),
+          titulo_ticket: ticket.titulo || 'Ticket sem título',
           unidade_id: ticket.unidade_id,
+          unidade_nome: unidadeDataSLAHalf?.nome || ticket.unidade_id,
+          categoria: ticket.categoria || 'Não informada',
+          prioridade: ticket.prioridade,
+          status: ticket.status,
+          equipe_responsavel: equipeDataSLAHalf?.nome || 'Não atribuída',
+          descricao_problema: ticket.descricao_problema,
+          data_abertura: new Date(ticket.data_abertura).toLocaleString('pt-BR'),
           data_limite_sla: new Date(ticket.data_limite_sla).toLocaleString('pt-BR')
         });
 
@@ -662,9 +797,31 @@ serve(async (req) => {
         }
 
         const templateSLABreach = await getMessageTemplate(supabase, 'sla_breach');
+        
+        // Get additional ticket information for richer variables
+        const { data: unidadeDataSLABreach } = await supabase
+          .from('unidades')
+          .select('nome')
+          .eq('id', ticket.unidade_id)
+          .single();
+
+        const { data: equipeDataSLABreach } = await supabase
+          .from('equipes')
+          .select('nome')
+          .eq('id', ticket.equipe_responsavel_id)
+          .single();
+
         const mensagemSLABreach = processTemplate(templateSLABreach, {
           codigo_ticket: formatTicketTitle(ticket),
+          titulo_ticket: ticket.titulo || 'Ticket sem título',
           unidade_id: ticket.unidade_id,
+          unidade_nome: unidadeDataSLABreach?.nome || ticket.unidade_id,
+          categoria: ticket.categoria || 'Não informada',
+          prioridade: ticket.prioridade,
+          status: ticket.status,
+          equipe_responsavel: equipeDataSLABreach?.nome || 'Não atribuída',
+          descricao_problema: ticket.descricao_problema,
+          data_abertura: new Date(ticket.data_abertura).toLocaleString('pt-BR'),
           data_limite_sla: new Date(ticket.data_limite_sla).toLocaleString('pt-BR')
         });
 
