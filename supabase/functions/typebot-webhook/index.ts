@@ -124,6 +124,112 @@ ${knowledgeContext}`
   return { hasAnswer: false, articles: relevantArticles };
 }
 
+// Função para gerar sugestão direta para franqueado
+async function generateDirectSuggestion(message: string) {
+  if (!openaiApiKey) {
+    console.log('OpenAI API key not available for direct suggestion');
+    return null;
+  }
+
+  try {
+    // Get AI settings
+    const { data: aiSettings } = await supabase
+      .from('faq_ai_settings')
+      .select('*')
+      .eq('ativo', true)
+      .maybeSingle();
+
+    const modelToUse = aiSettings?.modelo_sugestao || 'gpt-4.1-2025-04-14';
+    const apiProvider = aiSettings?.api_provider || 'openai';
+    
+    let apiUrl = 'https://api.openai.com/v1/chat/completions';
+    let authToken = openaiApiKey;
+    let apiHeaders = {
+      'Authorization': `Bearer ${authToken}`,
+      'Content-Type': 'application/json',
+    };
+    
+    if (apiProvider === 'lambda' && aiSettings?.api_base_url) {
+      apiUrl = `${aiSettings.api_base_url}/chat/completions`;
+      authToken = aiSettings.api_key || openaiApiKey;
+      apiHeaders.Authorization = `Bearer ${authToken}`;
+      
+      if (aiSettings.custom_headers && typeof aiSettings.custom_headers === 'object') {
+        Object.assign(apiHeaders, aiSettings.custom_headers);
+      }
+    }
+
+    const promptDirecto = `Você é um assistente especializado da franquia Cresci & Perdi.
+
+Um franqueado enviou a seguinte mensagem/dúvida:
+"${message}"
+
+Gere uma resposta DIRETA, ÚTIL e PROFISSIONAL para o franqueado, seguindo estas diretrizes:
+
+1. Seja claro e objetivo
+2. Use linguagem profissional mas amigável 
+3. Se for uma dúvida técnica/operacional, dê orientações práticas
+4. Se for uma solicitação, explique os próximos passos
+5. Se não souber a resposta específica, oriente sobre como o franqueado pode obter ajuda
+6. Mantenha o tom de suporte da franquia Cresci & Perdi
+7. Máximo de 200 palavras
+
+Responda como se fosse o suporte oficial da franquia falando diretamente com o franqueado.`;
+
+    // Determine API parameters based on model
+    const isNewerOpenAIModel = modelToUse.includes('gpt-4.1') || modelToUse.includes('gpt-5') || modelToUse.includes('o3') || modelToUse.includes('o4');
+    
+    const requestBody = {
+      model: modelToUse,
+      messages: [
+        {
+          role: 'system',
+          content: 'Você é um assistente oficial de suporte da franquia Cresci & Perdi. Seja sempre profissional, prestativo e direto nas respostas.'
+        },
+        {
+          role: 'user',
+          content: promptDirecto
+        }
+      ]
+    };
+
+    // Set parameters based on provider and model
+    if (apiProvider === 'lambda') {
+      requestBody.temperature = aiSettings?.temperatura_sugestao || 0.7;
+      requestBody.max_tokens = aiSettings?.max_tokens_sugestao || 300;
+    } else if (isNewerOpenAIModel) {
+      requestBody.max_completion_tokens = aiSettings?.max_tokens_sugestao || 300;
+    } else {
+      requestBody.max_tokens = aiSettings?.max_tokens_sugestao || 300;
+      requestBody.temperature = aiSettings?.temperatura_sugestao || 0.7;
+    }
+
+    console.log('Generating direct suggestion with model:', modelToUse);
+    
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: apiHeaders,
+      body: JSON.stringify(requestBody),
+    });
+
+    if (response.ok) {
+      const aiResponse = await response.json();
+      const suggestion = aiResponse.choices?.[0]?.message?.content;
+      
+      if (suggestion) {
+        console.log('Direct suggestion generated successfully');
+        return suggestion.trim();
+      }
+    } else {
+      console.error('Error calling AI API for direct suggestion:', await response.text());
+    }
+  } catch (error) {
+    console.error('Error generating direct suggestion:', error);
+  }
+
+  return null;
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -218,7 +324,7 @@ serve(async (req) => {
       }
     }
 
-    // Primeiro, tentar responder pela base de conhecimento (se não forçar criação)
+    // Se não forçar criação, tentar responder pela KB ou gerar sugestão direta
     if (!force_create) {
       const kbResult = await searchKnowledgeBase(message);
       
@@ -233,6 +339,21 @@ serve(async (req) => {
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
+      } else {
+        // Se não encontrou na KB, gerar sugestão direta para franqueado
+        console.log('No KB answer found, generating direct suggestion');
+        const directSuggestion = await generateDirectSuggestion(message);
+        
+        if (directSuggestion) {
+          return new Response(JSON.stringify({
+            action: 'suggestion',
+            success: true,
+            answer: directSuggestion,
+            message: 'Sugestão de resposta gerada pela IA'
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
       }
     }
 
