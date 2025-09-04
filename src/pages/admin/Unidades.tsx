@@ -121,7 +121,7 @@ const Unidades = () => {
 
   if (loading) {
     return (
-      <ProtectedRoute requiredPermission="view_all_tickets">
+      <ProtectedRoute requiredPermissions={['view_all_tickets', 'view_team_tickets']} requireAll={false}>
         <div className="w-full space-y-6">
           <div className="animate-pulse">
             <div className="h-8 bg-muted rounded w-48 mb-2"></div>
@@ -146,7 +146,7 @@ const Unidades = () => {
   }
 
   return (
-    <ProtectedRoute requiredPermission="view_all_tickets">
+    <ProtectedRoute requiredPermissions={['view_all_tickets', 'view_team_tickets']} requireAll={false}>
       <div className="w-full space-y-4 md:space-y-6 pt-3 md:pt-6">
         <div>
           <h2 className="text-xl md:text-3xl font-bold tracking-tight">Unidades</h2>
