@@ -30,7 +30,7 @@ async function encontrarDocumentosRelacionados(textoTicket: string, limiteResult
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'text-embedding-3-small',
+        model: 'text-embedding-ada-002', // Mesmo modelo do suggest-reply
         input: textoTicket,
       }),
     });
@@ -44,9 +44,10 @@ async function encontrarDocumentosRelacionados(textoTicket: string, limiteResult
     const embedding = embeddingData.data[0].embedding;
 
     // Buscar documentos similares usando a função match_documentos do Supabase
+    // Usar mesmos parâmetros do suggest-reply
     const { data: documentos, error } = await supabase.rpc('match_documentos', {
       query_embedding: embedding,
-      match_threshold: 0.78,
+      match_threshold: 0.5, // Mesmo threshold do suggest-reply (mais permissivo)
       match_count: limiteResultados
     });
 
