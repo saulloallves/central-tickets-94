@@ -353,7 +353,12 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    console.log('Received webhook payload - message length:', message?.length, 'codigo_unidade:', codigo_unidade);
+    console.log(
+      'Received webhook payload - message length:',
+      body?.message?.length,
+      'codigo_unidade:',
+      body?.codigo_unidade
+    );
 
     const {
       message,
