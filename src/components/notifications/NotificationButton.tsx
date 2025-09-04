@@ -74,7 +74,7 @@ export const NotificationButton = ({ isExpanded = false }: { isExpanded?: boolea
           }`}
         >
           <Bell className={`${isExpanded ? 'h-4 w-4 mr-2 text-white' : 'h-3 w-3 sm:h-4 sm:w-4 text-foreground'} opacity-90 drop-shadow-md`} />
-          {isExpanded && <span className="text-sm font-medium drop-shadow-md">Notificações</span>}
+          {isExpanded && <span className="text-sm font-medium drop-shadow-md text-white">Notificações</span>}
           {alerts.length > 0 && (
             <Badge 
               className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-white text-red-500 border border-red-200"
