@@ -314,10 +314,67 @@ function processTemplate(template: string, variables: Record<string, any>): stri
   
   for (const [key, value] of Object.entries(variables)) {
     const placeholder = `{{${key}}}`;
-    processed = processed.replace(new RegExp(placeholder, 'g'), String(value || ''));
+    const formattedValue = formatDisplayValue(key, value);
+    processed = processed.replace(new RegExp(placeholder, 'g'), String(formattedValue || ''));
   }
   
   return processed;
+}
+
+// Format values for better display in messages
+function formatDisplayValue(key: string, value: any): string {
+  if (!value) return '';
+  
+  const valueStr = String(value);
+  
+  // Format priority values
+  if (key === 'prioridade') {
+    const prioridadeMap: Record<string, string> = {
+      'imediato': 'Imediato',
+      'ate_1_hora': 'Até 1 Hora',
+      'ainda_hoje': 'Ainda Hoje',
+      'posso_esperar': 'Posso Esperar',
+      'urgente': 'Urgente',
+      'alta': 'Alta',
+      'media': 'Média',
+      'baixa': 'Baixa',
+      'hoje_18h': 'Hoje 18h',
+      'padrao_24h': 'Padrão 24h',
+      'crise': 'CRISE'
+    };
+    return prioridadeMap[valueStr] || valueStr;
+  }
+  
+  // Format status values
+  if (key === 'status') {
+    const statusMap: Record<string, string> = {
+      'aberto': 'Aberto',
+      'em_atendimento': 'Em Atendimento',
+      'aguardando_franqueado': 'Aguardando Franqueado',
+      'escalonado': 'Escalonado',
+      'concluido': 'Concluído',
+      'cancelado': 'Cancelado',
+      'pendente': 'Pendente'
+    };
+    return statusMap[valueStr] || valueStr;
+  }
+  
+  // Format category values
+  if (key === 'categoria') {
+    const categoriaMap: Record<string, string> = {
+      'sistema': 'Sistema',
+      'financeiro': 'Financeiro',
+      'operacional': 'Operacional',
+      'comercial': 'Comercial',
+      'juridico': 'Jurídico',
+      'marketing': 'Marketing',
+      'suporte': 'Suporte',
+      'outros': 'Outros'
+    };
+    return categoriaMap[valueStr] || valueStr;
+  }
+  
+  return valueStr;
 }
 
 const corsHeaders = {
