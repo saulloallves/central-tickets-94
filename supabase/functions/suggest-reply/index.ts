@@ -47,9 +47,9 @@ async function encontrarDocumentosRelacionados(textoDeBusca) {
   const embeddingData = await embeddingResponse.json();
   const queryEmbedding = embeddingData.data[0].embedding;
 
-  // 2. Configura a busca para ser abrangente
-  const LIMIAR_DE_RELEVANCIA = 0.5; // Threshold testado que funciona
-  const MAXIMO_DE_DOCUMENTOS = 5;
+  // 2. Configura a busca para ser mais abrangente e capturar similaridades semânticas
+  const LIMIAR_DE_RELEVANCIA = 0.3; // Threshold mais baixo para capturar mais contexto relevante
+  const MAXIMO_DE_DOCUMENTOS = 8; // Mais documentos para melhor contexto
 
   console.log("2. Executando busca semântica na base de conhecimento...");
   console.log("Parâmetros da busca:", {
@@ -103,7 +103,7 @@ async function gerarRespostaComContexto(contexto, perguntaOriginal) {
   5. Se não tiver informação suficiente no contexto, responda: "Não encontrei informações suficientes na base de conhecimento"
 
   **INSTRUÇÃO PRINCIPAL:**
-  Com base no contexto encontrado através da busca semântica na base de conhecimento, formule uma resposta específica e útil para a pergunta do ticket. Use TODO o conteúdo relevante disponível para criar uma orientação clara e prática.
+  Analise a pergunta e use TODO o contexto relacionado encontrado através da busca semântica. Mesmo que a pergunta não seja exatamente igual ao que está no documento, se o contexto contém informações que podem responder a pergunta (ex: pergunta sobre "tenho que solicitar" e contexto tem informações sobre "como solicitar"), use essas informações para responder de forma útil e prática.
 
   **CONTEXTO ENCONTRADO NA BASE DE CONHECIMENTO:**
   ${contexto}
@@ -111,7 +111,7 @@ async function gerarRespostaComContexto(contexto, perguntaOriginal) {
   **PERGUNTA/PROBLEMA DO TICKET:**
   ${perguntaOriginal}
 
-  **RESPOSTA DIRETA (usando apenas o contexto fornecido):**
+  **RESPOSTA DIRETA (usando contexto encontrado para responder a pergunta):**
   `;
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
