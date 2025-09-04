@@ -124,11 +124,17 @@ ${knowledgeContext}`
   return { hasAnswer: false, articles: relevantArticles };
 }
 
-// Função para gerar sugestão direta para franqueado
-async function generateDirectSuggestion(message: string) {
+// Função para gerar sugestão direta para franqueado baseada na base de conhecimento
+async function generateDirectSuggestion(message: string, relevantArticles: any[] = []) {
+  // Se não tem artigos relevantes, retorna a frase padrão
+  if (relevantArticles.length === 0) {
+    console.log('No relevant articles found, returning default message');
+    return 'Não tenho conhecimento sobre isso, vou abrir um ticket para que nosso suporte te ajude.';
+  }
+
   if (!openaiApiKey) {
     console.log('OpenAI API key not available for direct suggestion');
-    return null;
+    return 'Não tenho conhecimento sobre isso, vou abrir um ticket para que nosso suporte te ajude.';
   }
 
   try {
@@ -159,18 +165,25 @@ async function generateDirectSuggestion(message: string) {
       }
     }
 
-    const promptDirecto = `Um franqueado da Cresci & Perdi enviou: "${message}"
+    // Build context from relevant articles
+    const kbContext = relevantArticles.map(article => 
+      `Título: ${article.titulo}\nConteúdo: ${article.conteudo}`
+    ).join('\n\n');
 
-Gere uma resposta DIRETA e OBJETIVA:
+    const promptDirecto = `Base de conhecimento disponível:
+${kbContext}
 
-1. Sem saudações ou cumprimentos
-2. Vá direto ao ponto
-3. Máximo 80 palavras
-4. Se for dúvida: responda objetivamente
-5. Se for solicitação: explique próximos passos necessários
-6. Use linguagem profissional mas simples
+Franqueado perguntou: "${message}"
 
-Responda apenas o essencial para resolver a questão.`;
+INSTRUÇÕES:
+1. Use APENAS as informações da base de conhecimento acima
+2. Se a base de conhecimento não tem informação suficiente para responder completamente, responda EXATAMENTE: "Não tenho conhecimento sobre isso, vou abrir um ticket para que nosso suporte te ajude."
+3. Se tem informação relevante na base, responda de forma DIRETA e OBJETIVA
+4. Sem saudações ou cumprimentos
+5. Máximo 80 palavras
+6. Vá direto ao ponto
+
+Resposta:`;
 
     // Determine API parameters based on model
     const isNewerOpenAIModel = modelToUse.includes('gpt-4.1') || modelToUse.includes('gpt-5') || modelToUse.includes('o3') || modelToUse.includes('o4');
@@ -180,7 +193,7 @@ Responda apenas o essencial para resolver a questão.`;
       messages: [
         {
           role: 'system',
-          content: 'Você responde de forma direta e objetiva, sem saudações. Seja conciso e prático.'
+          content: 'Você responde baseado EXCLUSIVAMENTE na base de conhecimento fornecida. Se não tiver informação suficiente, use EXATAMENTE a frase padrão indicada.'
         },
         {
           role: 'user',
@@ -223,7 +236,8 @@ Responda apenas o essencial para resolver a questão.`;
     console.error('Error generating direct suggestion:', error);
   }
 
-  return null;
+  // Fallback para a frase padrão em caso de erro
+  return 'Não tenho conhecimento sobre isso, vou abrir um ticket para que nosso suporte te ajude.';
 }
 
 serve(async (req) => {
@@ -338,7 +352,7 @@ serve(async (req) => {
       } else {
         // Se não encontrou na KB, gerar sugestão direta para franqueado
         console.log('No KB answer found, generating direct suggestion');
-        const directSuggestion = await generateDirectSuggestion(message);
+        const directSuggestion = await generateDirectSuggestion(message, kbResult.articles);
         
         if (directSuggestion) {
           return new Response(JSON.stringify({
