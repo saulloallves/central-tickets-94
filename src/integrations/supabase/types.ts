@@ -2444,6 +2444,14 @@ export type Database = {
         }
         Returns: string
       }
+      create_internal_access_request_manual: {
+        Args: {
+          p_desired_role?: string
+          p_equipe_id: string
+          p_user_id: string
+        }
+        Returns: string
+      }
       create_internal_alert: {
         Args: {
           p_alert_category?: string
