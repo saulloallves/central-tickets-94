@@ -576,14 +576,15 @@ serve(async (req) => {
     const customDestination = await getDestinationNumber(supabase, type, ticket);
 
     switch (type) {
+      case 'ticket_created':
       case 'ticket_criado':
-        console.log('Processing ticket_criado');
+        console.log('Processing ticket_created/ticket_criado');
         
         if (customDestination) {
           destinoFinal = customDestination;
-          console.log(`Using configured destination for ticket_criado: ${destinoFinal}`);
+          console.log(`Using configured destination for ticket_created: ${destinoFinal}`);
         } else {
-          throw new Error(`Nenhuma configuração de origem encontrada para ticket_criado na unidade ${ticket.unidade_id}`);
+          throw new Error(`Nenhuma configuração de origem encontrada para ticket_created na unidade ${ticket.unidade_id}`);
         }
 
         const templateTicket = await getMessageTemplate(supabase, 'ticket_created');
