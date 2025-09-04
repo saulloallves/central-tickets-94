@@ -2429,6 +2429,10 @@ export type Database = {
           | { ticket_unidade_id: string }
         Returns: boolean
       }
+      cleanup_old_notifications: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       cleanup_orphaned_crises: {
         Args: Record<PropertyKey, never>
         Returns: undefined
