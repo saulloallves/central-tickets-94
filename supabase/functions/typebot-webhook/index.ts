@@ -715,6 +715,21 @@ CRÍTICO: Use APENAS estas 4 prioridades: imediato, ate_1_hora, ainda_hoje, poss
       ia_analysis: !!finalTicket.log_ia
     });
 
+    // Enviar notificação de criação de ticket
+    try {
+      console.log('📱 Enviando notificação de criação de ticket...');
+      await supabase.functions.invoke('process-notifications', {
+        body: {
+          ticketId: finalTicket.id,
+          type: 'ticket_created'
+        }
+      });
+      console.log('✅ Notificação enviada com sucesso');
+    } catch (notificationError) {
+      console.error('❌ Erro ao enviar notificação:', notificationError);
+      // Não falha a criação do ticket por causa da notificação
+    }
+
     // Resposta de sucesso com análise da IA
     const responseData = {
       statusCode: 200,
