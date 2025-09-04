@@ -47,6 +47,7 @@ export const useTeamDashboardMetrics = () => {
           data_abertura,
           data_limite_sla,
           resolvido_em,
+          updated_at,
           colaborador_id,
           colaboradores(nome_completo)
         `)
@@ -58,10 +59,12 @@ export const useTeamDashboardMetrics = () => {
         const em_atendimento = teamTickets.filter(t => t.status === 'em_atendimento').length;
         const escalonados = teamTickets.filter(t => t.status === 'escalonado').length;
         
+        // Tickets resolvidos hoje (status concluído + updated_at de hoje)
         const resolvidos_hoje = teamTickets.filter(t => 
-          t.resolvido_em && 
-          t.resolvido_em >= startOfDay && 
-          t.resolvido_em <= endOfDay
+          t.status === 'concluido' && 
+          t.updated_at && 
+          t.updated_at >= startOfDay && 
+          t.updated_at <= endOfDay
         ).length;
 
         // Tickets próximos de vencer SLA (próximas 2 horas)
