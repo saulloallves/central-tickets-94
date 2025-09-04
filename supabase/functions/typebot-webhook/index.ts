@@ -103,7 +103,19 @@ ${docs.map(d => `ID:${d.id}\nTÍTULO:${d.titulo}\nTRECHO:${limparTexto(d.conteud
   });
   const j = await r.json();
   let scored: any[] = [];
-  try { scored = JSON.parse(j.choices[0].message.content); } catch {}
+  try {
+    let txt = j.choices?.[0]?.message?.content ?? '[]';
+    // remove cercas ```json ... ```
+    txt = txt.replace(/```json\s*([\s\S]*?)```/i, '$1').trim();
+    txt = txt.replace(/```([\s\S]*?)```/g, '$1').trim();
+    // se veio como objeto { ranking: [...] }
+    const parsed = JSON.parse(txt);
+    scored = Array.isArray(parsed) ? parsed : (parsed.ranking ?? []);
+  } catch (e) {
+    console.error('Rerank JSON parse error:', e);
+    // fallback: usa top-5 da shortlist original
+    return docs.slice(0, 5);
+  }
   const byId = Object.fromEntries(docs.map(d => [d.id, d]));
   return scored.sort((a,b)=>(b.score||0)-(a.score||0))
                .map(x=>byId[x.id]).filter(Boolean).slice(0,5);
@@ -508,7 +520,7 @@ serve(async (req) => {
     // Buscar equipes ativas para análise (com introdução - especialidades)
     const { data: equipes, error: equipesError } = await supabase
       .from('equipes')
-      .select('id, nome, introducao')
+      .select('id, nome, introducao, descricao')
       .eq('ativo', true)
       .order('nome');
 
@@ -1007,7 +1019,7 @@ CRÍTICO: Use APENAS estas 4 prioridades: imediato, ate_1_hora, ainda_hoje, poss
         metadata: {
           ai_analysis_completed: !!finalTicket.log_ia,
           equipe_responsavel_id: finalTicket.equipe_responsavel_id,
-          sla_sugerido_horas: finalTicket.log_ia?.analysis?.sla_sugerido_horas || 24,
+          sla_sugerido_horas: (analysisResult?.sla_sugerido_horas ?? 24),
           analysis_model: modelToUse
         }
       }
