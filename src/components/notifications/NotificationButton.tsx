@@ -73,7 +73,7 @@ export const NotificationButton = ({ isExpanded = false }: { isExpanded?: boolea
               : "w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl hover:bg-primary/10 hover:backdrop-blur-sm hover:text-primary text-foreground mx-auto"
           }`}
         >
-          <Bell className={`${isExpanded ? 'h-4 w-4 mr-2' : 'h-3 w-3 sm:h-4 sm:w-4'} text-foreground opacity-90 drop-shadow-md`} />
+          <Bell className={`${isExpanded ? 'h-4 w-4 mr-2 text-white' : 'h-3 w-3 sm:h-4 sm:w-4 text-foreground'} opacity-90 drop-shadow-md`} />
           {isExpanded && <span className="text-sm font-medium drop-shadow-md">Notificações</span>}
           {alerts.length > 0 && (
             <Badge 
