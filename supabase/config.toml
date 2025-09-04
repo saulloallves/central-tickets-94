@@ -55,6 +55,9 @@ verify_jwt = false
 [functions.colaborador-signup]
 verify_jwt = false
 
+[functions.process-pending-notifications]
+verify_jwt = false
+
 [db]
 port = 54322
 shadow_port = 54320
