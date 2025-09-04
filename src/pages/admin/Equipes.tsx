@@ -140,21 +140,8 @@ export default function Equipes() {
           )}
         </div>
 
-        <Tabs defaultValue="equipes" className="w-full">
-          <TabsList className={cn("grid w-full", hasRole('colaborador') ? "grid-cols-1" : "grid-cols-2")}>
-            <TabsTrigger value="equipes" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Equipes ({filteredEquipes.length})
-            </TabsTrigger>
-            {!hasRole('colaborador') && (
-              <TabsTrigger value="solicitacoes" className="flex items-center gap-2">
-                <UserCheck className="h-4 w-4" />
-                Solicitações de Acesso
-              </TabsTrigger>
-            )}
-          </TabsList>
-
-          <TabsContent value="equipes" className="space-y-6">
+        {hasRole('colaborador') ? (
+          <div className="space-y-6">
             <div className="flex items-center gap-4">
               <div className="relative flex-1 max-w-sm">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -197,15 +184,70 @@ export default function Equipes() {
                 ))}
               </div>
             )}
-          </TabsContent>
+          </div>
+        ) : (
+          <Tabs defaultValue="equipes" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="equipes" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Equipes ({filteredEquipes.length})
+              </TabsTrigger>
+              <TabsTrigger value="solicitacoes" className="flex items-center gap-2">
+                <UserCheck className="h-4 w-4" />
+                Solicitações de Acesso
+              </TabsTrigger>
+            </TabsList>
 
-          
-          {!hasRole('colaborador') && (
+            <TabsContent value="equipes" className="space-y-6">
+              <div className="flex items-center gap-4">
+                <div className="relative flex-1 max-w-sm">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por nome ou descrição..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+
+              {filteredEquipes.length === 0 ? (
+                <div className="text-center py-12">
+                  <Users className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">
+                    {searchTerm ? 'Nenhuma equipe encontrada' : 'Nenhuma equipe cadastrada'}
+                  </h3>
+                  <p className="text-muted-foreground mb-6">
+                    {searchTerm 
+                      ? 'Tente ajustar os filtros de busca.' 
+                      : 'Comece criando sua primeira equipe para organizar os membros.'
+                    }
+                  </p>
+                  {canCreateEquipe && !searchTerm && (
+                    <CreateEquipeDialog onSuccess={fetchEquipes} />
+                  )}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
+                  {filteredEquipes.map((equipe) => (
+                    <EquipeCard
+                      key={equipe.id}
+                      equipe={equipe}
+                      memberCount={equipe.member_count}
+                      isLeader={equipe.is_user_leader}
+                      onRefresh={fetchEquipes}
+                      isCollaborator={hasRole('colaborador')}
+                    />
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+
             <TabsContent value="solicitacoes" className="space-y-4">
               <InternalAccessApproval />
             </TabsContent>
-          )}
-        </Tabs>
+          </Tabs>
+        )}
       </div>
     </ProtectedRoute>
   );
