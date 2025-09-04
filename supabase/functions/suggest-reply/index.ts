@@ -47,22 +47,21 @@ async function encontrarDocumentosRelacionados(textoDeBusca) {
   const embeddingData = await embeddingResponse.json();
   const queryEmbedding = embeddingData.data[0].embedding;
 
-  // 2. Configura busca híbrida com thresholds otimizados
-  const LIMIAR_DE_RELEVANCIA = 0.6; // Threshold mais alto para menos ruído
-  const MAXIMO_DE_DOCUMENTOS = 5; // Menos documentos, mais focados
+  // 2. Configura busca híbrida otimizada
+  const MATCH_COUNT = 12; // mais candidatos; rerank decide
 
   console.log("2. Executando busca híbrida (semântica + text search)...");
   console.log("Parâmetros da busca:", {
-    threshold: LIMIAR_DE_RELEVANCIA,
-    max_docs: MAXIMO_DE_DOCUMENTOS,
-    embedding_size: queryEmbedding.length
+    match_count: MATCH_COUNT,
+    embedding_size: queryEmbedding.length,
+    alpha: 0.65
   });
   
   // 3. Chama a função híbrida no Supabase
   const { data, error } = await supabase.rpc('match_documentos_hibrido', {
     query_embedding: queryEmbedding,
     query_text: textoDeBusca,
-    match_count: MAXIMO_DE_DOCUMENTOS,
+    match_count: MATCH_COUNT,
     alpha: 0.65
   });
 
@@ -71,20 +70,79 @@ async function encontrarDocumentosRelacionados(textoDeBusca) {
     return [];
   }
 
-  // Filtrar por score híbrido
-  const documentosRelevantes = (data || []).filter(doc => doc.score >= LIMIAR_DE_RELEVANCIA);
-
-  console.log(`✅ Busca executada com sucesso. Resultados: ${documentosRelevantes.length} documentos relevantes`);
-  if (documentosRelevantes && documentosRelevantes.length > 0) {
-    console.log("📄 Documentos encontrados:");
-    documentosRelevantes.forEach((doc, i) => {
+  const candidatos = data || [];
+  console.log(`✅ Busca executada com sucesso. Resultados: ${candidatos.length} candidatos`);
+  if (candidatos && candidatos.length > 0) {
+    console.log("📄 Candidatos encontrados:");
+    candidatos.forEach((doc, i) => {
       console.log(`  ${i+1}. ${doc.titulo} (v${doc.versao}) - score: ${(doc.score * 100).toFixed(1)}% (sem: ${(doc.similaridade * 100).toFixed(1)}%, text: ${(doc.text_rank * 100).toFixed(1)}%)`);
     });
-  } else {
-    console.log("⚠️ NENHUM documento encontrado com score >=", LIMIAR_DE_RELEVANCIA);
   }
   
-  return documentosRelevantes;
+  return candidatos;
+}
+
+/**
+ * Reranking com LLM para selecionar os documentos mais relevantes
+ * @param {Array} docs - Lista de documentos candidatos
+ * @param {string} pergunta - Pergunta do ticket
+ * @returns {Array} - Top 5 documentos reordenados por relevância
+ */
+async function rerankComLLM(docs, pergunta) {
+  if (!docs || docs.length === 0) return [];
+  
+  console.log("3. Executando rerank LLM dos candidatos...");
+  
+  const prompt = `
+Classifique a relevância (0-10) de cada trecho para responder a PERGUNTA.
+Retorne JSON: [{"id":"<id>","score":0-10}]
+PERGUNTA: ${pergunta}
+
+${docs.map(d => `ID:${d.id}\nTÍTULO:${d.titulo}\nTRECHO:${String(d.conteudo||'').replace(/\s+/g,' ').slice(0,600)}`).join('\n---\n')}
+`.trim();
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 
+      'Authorization': `Bearer ${openAIApiKey}`, 
+      'Content-Type': 'application/json' 
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0,
+      response_format: { type: 'json_object' }
+    })
+  });
+  
+  if (!response.ok) {
+    console.error("❌ Erro no rerank LLM:", await response.text());
+    return docs.slice(0, 5); // fallback para os primeiros 5
+  }
+  
+  const data = await response.json();
+  let scored = [];
+  try { 
+    scored = JSON.parse(data.choices[0].message.content); 
+  } catch (parseError) {
+    console.error("❌ Erro no parse do rerank JSON:", parseError);
+    return docs.slice(0, 5);
+  }
+  
+  const byId = Object.fromEntries(docs.map(d => [d.id, d]));
+  const reranked = scored
+    .sort((a,b) => (b.score||0) - (a.score||0))
+    .map(x => byId[x.id])
+    .filter(Boolean)
+    .slice(0, 5);
+    
+  console.log(`✅ Rerank concluído: ${reranked.length} documentos selecionados`);
+  reranked.forEach((doc, i) => {
+    const scoreInfo = scored.find(s => s.id === doc.id);
+    console.log(`  ${i+1}. ${doc.titulo} - score rerank: ${scoreInfo?.score || 0}/10`);
+  });
+  
+  return reranked;
 }
 
 /**
@@ -103,7 +161,7 @@ function formatarContextoFontes(docs) {
 }
 
 async function gerarRespostaComContexto(docsSelecionados, perguntaOriginal) {
-  console.log("3. Gerando sugestão de resposta com GPT-4o...");
+  console.log("4. Gerando sugestão de resposta com GPT-4o...");
   
   const contexto = formatarContextoFontes(docsSelecionados);
   
@@ -156,42 +214,57 @@ async function obterSugestaoDeRespostaParaTicket(ticket) {
   
   console.log("1. Buscando conhecimento relevante na base...");
   // Etapa de Busca (Retrieval)
-  const documentosDeContexto = await encontrarDocumentosRelacionados(textoDoTicket);
-
-  if (!documentosDeContexto || documentosDeContexto.length === 0) {
+  const candidatos = await encontrarDocumentosRelacionados(textoDoTicket);
+  
+  if (!candidatos || candidatos.length === 0) {
     return {
       resposta: "Não encontrei informações na base de conhecimento para responder essa pergunta.",
       metrics: {
         documentos_encontrados: 0,
+        candidatos_encontrados: 0,
         relevancia_media: '0%',
         relevancia_maxima: '0%'
       }
     };
   }
 
-  console.log(`2. Encontrados ${documentosDeContexto.length} documentos. Gerando resposta...`);
+  console.log(`2. Encontrados ${candidatos.length} candidatos. Executando rerank...`);
+  // Etapa de Rerank
+  const documentosDeContexto = await rerankComLLM(candidatos, textoDoTicket);
   
-  // Calcular métricas de relevância usando scores híbridos
-  const scores = documentosDeContexto.map(doc => doc.score || doc.similaridade || 0);
-  const relevanciaMedia = scores.reduce((sum, val) => sum + val, 0) / scores.length;
-  const relevanciaMaxima = Math.max(...scores);
+  if (!documentosDeContexto || documentosDeContexto.length === 0) {
+    return {
+      resposta: "Não encontrei informações suficientes na base de conhecimento para responder essa pergunta específica.",
+      metrics: {
+        documentos_encontrados: 0,
+        candidatos_encontrados: candidatos.length,
+        relevancia_media: '0%',
+        relevancia_maxima: '0%'
+      }
+    };
+  }
   
-  // Debug: Mostrar quais documentos foram encontrados
-  console.log("Documentos encontrados:");
+  // Calcular métricas de relevância usando scores híbridos dos candidatos originais
+  const candidatosScores = candidatos.map(doc => doc.score || doc.similaridade || 0);
+  const relevanciaMedia = candidatosScores.reduce((sum, val) => sum + val, 0) / candidatosScores.length;
+  const relevanciaMaxima = Math.max(...candidatosScores);
+  
+  // Debug: Mostrar quais documentos foram selecionados após rerank
+  console.log("Documentos selecionados após rerank:");
   documentosDeContexto.forEach((doc, index) => {
     const score = doc.score || doc.similaridade || 0;
     console.log(`  ${index + 1}. ${doc.titulo} (v${doc.versao}) - Score: ${(score * 100).toFixed(1)}%`);
   });
 
-  console.log("3. Gerando sugestão de resposta com GPT-4o...");
   // Etapa de Geração (Generation) usando documentos estruturados
   const sugestaoFinal = await gerarRespostaComContexto(documentosDeContexto, textoDoTicket);
 
-  console.log("4. Sugestão gerada com sucesso!");
+  console.log("5. Sugestão gerada com sucesso!");
   return {
     resposta: sugestaoFinal,
     metrics: {
       documentos_encontrados: documentosDeContexto.length,
+      candidatos_encontrados: candidatos.length,
       relevancia_media: `${(relevanciaMedia * 100).toFixed(1)}%`,
       relevancia_maxima: `${(relevanciaMaxima * 100).toFixed(1)}%`
     }
@@ -287,14 +360,19 @@ serve(async (req) => {
         resposta: resultadoRAG.resposta,
         model: 'gpt-4o',
         params: {
-          temperature: 0.2,
-          max_tokens: 1000
+          temperature: 0.1,
+          max_tokens: 300
         },
         log: {
           rag_pipeline: 'v4_hibrido',
           embedding_model: 'text-embedding-3-small',
           pipeline_version: 'RAG_v4_Hibrido_Otimizado',
-          metrics: resultadoRAG.metrics
+          metrics: {
+            ...resultadoRAG.metrics,
+            alpha: 0.65,
+            match_count_candidatos: 12,
+            rerank_model: 'gpt-4o-mini'
+          }
         }
       })
       .select()
@@ -316,6 +394,7 @@ serve(async (req) => {
         modelo_embedding: 'text-embedding-3-small',
         modelo_geracao: 'gpt-4o',
         documentos_encontrados: resultadoRAG.metrics.documentos_encontrados,
+        candidatos_encontrados: resultadoRAG.metrics.candidatos_encontrados,
         relevancia_media: resultadoRAG.metrics.relevancia_media,
         relevancia_maxima: resultadoRAG.metrics.relevancia_maxima
       }
