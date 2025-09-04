@@ -154,8 +154,9 @@ export const useInternalAlerts = () => {
   };
 
   const markAlertAsProcessed = async (alertId: string) => {
+    console.log('🔄 Tentando marcar alerta como lido:', alertId);
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('notifications_queue')
         .update({ 
           status: 'processed',
@@ -163,8 +164,14 @@ export const useInternalAlerts = () => {
         })
         .eq('id', alertId);
 
-      if (error) throw error;
+      console.log('✅ Resultado da atualização:', { data, error });
 
+      if (error) {
+        console.error('❌ Erro na atualização:', error);
+        throw error;
+      }
+
+      console.log('🔄 Atualizando lista de alertas...');
       // Refresh alerts list after a small delay
       setTimeout(() => fetchAlerts(), 500);
 
@@ -173,10 +180,10 @@ export const useInternalAlerts = () => {
         description: "Alerta marcado como processado",
       });
     } catch (error) {
-      console.error('Error marking alert as processed:', error);
+      console.error('❌ Error marking alert as processed:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível processar o alerta",
+        description: "Não foi possível processar o alerta. Verifique as permissões.",
         variant: "destructive",
       });
     }
