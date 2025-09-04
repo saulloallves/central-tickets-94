@@ -174,13 +174,16 @@ async function searchKnowledgeBase(message: string) {
               content: `Você é o Girabot, assistente da Cresci e Perdi.
 
 **REGRAS CRÍTICAS:**
-1. Use EXCLUSIVAMENTE as informações do contexto fornecido
+1. Use EXCLUSIVAMENTE as informações do contexto fornecido abaixo
 2. NUNCA invente ou adicione informações que não estão no contexto
 3. NUNCA use saudações, cumprimentos ou despedidas
 4. Máximo 2-3 frases diretas e objetivas
 5. Se não tiver informação suficiente no contexto, responda: "Não encontrei informações suficientes na base de conhecimento"
 
-Base de Conhecimento da Cresci e Perdi:
+**INSTRUÇÃO PRINCIPAL:**
+Com base no contexto encontrado através da busca semântica na base de conhecimento, formule uma resposta específica e útil para a pergunta. Use TODO o conteúdo relevante disponível para criar uma orientação clara e prática.
+
+**CONTEXTO ENCONTRADO NA BASE DE CONHECIMENTO:**
 ${knowledgeContext}`
             },
             {
