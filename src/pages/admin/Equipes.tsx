@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Users, Search, UserCheck, Plus } from "lucide-react";
 import { InternalAccessApproval } from "@/components/equipes/InternalAccessApproval";
+import { ResetUserPassword } from "./ResetUserPassword";
 import { EquipeCard } from "@/components/equipes/EquipeCard";
 import { CreateEquipeDialog } from "@/components/equipes/CreateEquipeDialog";
 import { useToast } from "@/hooks/use-toast";
@@ -137,6 +138,13 @@ export default function Equipes() {
               <CreateEquipeDialog onSuccess={fetchEquipes} />
             </div>
           )}
+        </div>
+
+        {/* Botão temporário para resetar senha do Igor */}
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+          <h3 className="text-orange-800 font-semibold mb-2">Reset de Senha - Suporte Técnico</h3>
+          <p className="text-orange-700 text-sm mb-3">Use este botão para resetar a senha do Igor temporariamente:</p>
+          <ResetUserPassword />
         </div>
 
         <Tabs defaultValue="equipes" className="w-full">
