@@ -423,6 +423,7 @@ export type Database = {
           tags: string[] | null
           tipo: Database["public"]["Enums"]["article_type"]
           titulo: string
+          tsv: unknown | null
           valido_ate: string | null
           versao: number
         }
@@ -444,6 +445,7 @@ export type Database = {
           tags?: string[] | null
           tipo?: Database["public"]["Enums"]["article_type"]
           titulo: string
+          tsv?: unknown | null
           valido_ate?: string | null
           versao?: number
         }
@@ -465,6 +467,7 @@ export type Database = {
           tags?: string[] | null
           tipo?: Database["public"]["Enums"]["article_type"]
           titulo?: string
+          tsv?: unknown | null
           valido_ate?: string | null
           versao?: number
         }
@@ -2694,6 +2697,24 @@ export type Database = {
           conteudo: Json
           id: string
           similaridade: number
+          titulo: string
+          versao: number
+        }[]
+      }
+      match_documentos_hibrido: {
+        Args: {
+          alpha?: number
+          match_count: number
+          query_embedding: string
+          query_text: string
+        }
+        Returns: {
+          categoria: string
+          conteudo: string
+          id: string
+          score: number
+          similaridade: number
+          text_rank: number
           titulo: string
           versao: number
         }[]

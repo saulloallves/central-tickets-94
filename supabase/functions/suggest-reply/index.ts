@@ -25,7 +25,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 async function encontrarDocumentosRelacionados(textoDeBusca) {
   console.log("1. Gerando embedding para o texto do ticket...");
   
-  // 1. Gera o vetor para o texto de busca (o ticket)
+  // 1. Gera o vetor para o texto de busca usando text-embedding-3-small
   const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
     method: 'POST',
     headers: {
@@ -33,7 +33,7 @@ async function encontrarDocumentosRelacionados(textoDeBusca) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'text-embedding-ada-002', // Modelo padrão 1536 dimensões
+      model: 'text-embedding-3-small', // Modelo atualizado 1536 dimensões
       input: textoDeBusca,
     }),
   });
@@ -47,40 +47,44 @@ async function encontrarDocumentosRelacionados(textoDeBusca) {
   const embeddingData = await embeddingResponse.json();
   const queryEmbedding = embeddingData.data[0].embedding;
 
-  // 2. Configura a busca para ser mais abrangente e capturar similaridades semânticas
-  const LIMIAR_DE_RELEVANCIA = 0.3; // Threshold mais baixo para capturar mais contexto relevante
-  const MAXIMO_DE_DOCUMENTOS = 8; // Mais documentos para melhor contexto
+  // 2. Configura busca híbrida com thresholds otimizados
+  const LIMIAR_DE_RELEVANCIA = 0.6; // Threshold mais alto para menos ruído
+  const MAXIMO_DE_DOCUMENTOS = 5; // Menos documentos, mais focados
 
-  console.log("2. Executando busca semântica na base de conhecimento...");
+  console.log("2. Executando busca híbrida (semântica + text search)...");
   console.log("Parâmetros da busca:", {
     threshold: LIMIAR_DE_RELEVANCIA,
     max_docs: MAXIMO_DE_DOCUMENTOS,
     embedding_size: queryEmbedding.length
   });
   
-  // 3. Chama a função segura no Supabase
-  const { data, error } = await supabase.rpc('match_documentos', {
+  // 3. Chama a função híbrida no Supabase
+  const { data, error } = await supabase.rpc('match_documentos_hibrido', {
     query_embedding: queryEmbedding,
-    match_threshold: LIMIAR_DE_RELEVANCIA,
-    match_count: MAXIMO_DE_DOCUMENTOS
+    query_text: textoDeBusca,
+    match_count: MAXIMO_DE_DOCUMENTOS,
+    alpha: 0.65
   });
 
   if (error) {
-    console.error("❌ Erro na busca de documentos:", error);
+    console.error("❌ Erro na busca híbrida de documentos:", error);
     return [];
   }
 
-  console.log(`✅ Busca executada com sucesso. Resultados: ${data?.length || 0} documentos`);
-  if (data && data.length > 0) {
+  // Filtrar por score híbrido
+  const documentosRelevantes = (data || []).filter(doc => doc.score >= LIMIAR_DE_RELEVANCIA);
+
+  console.log(`✅ Busca executada com sucesso. Resultados: ${documentosRelevantes.length} documentos relevantes`);
+  if (documentosRelevantes && documentosRelevantes.length > 0) {
     console.log("📄 Documentos encontrados:");
-    data.forEach((doc, i) => {
-      console.log(`  ${i+1}. ${doc.titulo} (v${doc.versao}) - similaridade: ${(doc.similaridade * 100).toFixed(1)}%`);
+    documentosRelevantes.forEach((doc, i) => {
+      console.log(`  ${i+1}. ${doc.titulo} (v${doc.versao}) - score: ${(doc.score * 100).toFixed(1)}% (sem: ${(doc.similaridade * 100).toFixed(1)}%, text: ${(doc.text_rank * 100).toFixed(1)}%)`);
     });
   } else {
-    console.log("⚠️ NENHUM documento encontrado com threshold", LIMIAR_DE_RELEVANCIA);
+    console.log("⚠️ NENHUM documento encontrado com score >=", LIMIAR_DE_RELEVANCIA);
   }
   
-  return data || [];
+  return documentosRelevantes;
 }
 
 /**
@@ -89,34 +93,32 @@ async function encontrarDocumentosRelacionados(textoDeBusca) {
  * @param {string} perguntaOriginal - Pergunta/problema do ticket
  * @returns {string} - Sugestão de resposta gerada
  */
-async function gerarRespostaComContexto(contexto, perguntaOriginal) {
+// Formatar contexto com fontes estruturadas
+function formatarContextoFontes(docs) {
+  return docs.map((doc, i) =>
+    `[Fonte ${i+1}] "${doc.titulo}" (v${doc.versao}) — ${doc.categoria}\n` +
+    `${(doc.conteudo || '').replace(/\s+/g,' ').slice(0,700)}\n` +
+    `ID:${doc.id}`
+  ).join('\n\n');
+}
+
+async function gerarRespostaComContexto(docsSelecionados, perguntaOriginal) {
   console.log("3. Gerando sugestão de resposta com GPT-4o...");
   
-  const promptParaIA = `
-  Você é o Girabot, assistente da Cresci e Perdi.
+  const contexto = formatarContextoFontes(docsSelecionados);
+  
+  const systemMsg = `Você é o Girabot, assistente da Cresci e Perdi.
+Regras: responda SÓ com base no CONTEXTO. Máx. 3 frases, diretas. Se não houver dado suficiente, diga exatamente:
+"Não encontrei informações suficientes na base de conhecimento para responder essa pergunta específica".
+Retorne no final as fontes usadas no formato [Fonte N].`;
 
-  **REGRAS CRÍTICAS:**
-  1. ANALISE especificamente o que está sendo perguntado
-  2. Use APENAS as informações do contexto fornecido para RESPONDER a pergunta específica
-  3. NUNCA invente informações que não estão no contexto
-  4. NUNCA use saudações, cumprimentos ou despedidas
-  5. NUNCA apenas reproduza o conteúdo dos documentos - RESPONDA a pergunta específica
-  6. Máximo 2-3 frases diretas e objetivas
-  7. Se não conseguir responder a pergunta específica com o contexto disponível, diga: "Não encontrei informações suficientes na base de conhecimento para responder essa pergunta específica"
+  const userMsg = `CONTEXTO:
+${contexto}
 
-  **PROCESSO:**
-  1. Identifique exatamente o que está sendo perguntado
-  2. Procure no contexto as informações que respondem essa pergunta específica
-  3. Formule uma resposta direta e específica para a pergunta usando apenas essas informações
+PERGUNTA:
+${perguntaOriginal}
 
-  **CONTEXTO DA BASE DE CONHECIMENTO:**
-  ${contexto}
-
-  **PERGUNTA ESPECÍFICA QUE PRECISA SER RESPONDIDA:**
-  ${perguntaOriginal}
-
-  **RESPOSTA DIRETA E ESPECÍFICA PARA A PERGUNTA:**
-  `;
+Responda em até 3 frases e cite as fontes no formato [Fonte N].`;
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -127,10 +129,11 @@ async function gerarRespostaComContexto(contexto, perguntaOriginal) {
     body: JSON.stringify({
       model: 'gpt-4o',
       messages: [
-        { role: 'system', content: promptParaIA }
+        { role: 'system', content: systemMsg },
+        { role: 'user', content: userMsg }
       ],
-      temperature: 0.2, // Temperatura muito baixa para ser factual e evitar criatividade
-      max_tokens: 1000,
+      temperature: 0.1, // Temperatura baixa para ser factual
+      max_tokens: 300,
     }),
   });
 
@@ -166,30 +169,23 @@ async function obterSugestaoDeRespostaParaTicket(ticket) {
     };
   }
 
-  console.log(`2. Encontrados ${documentosDeContexto.length} documentos. Formatando contexto...`);
+  console.log(`2. Encontrados ${documentosDeContexto.length} documentos. Gerando resposta...`);
   
-  // Calcular métricas de relevância
-  const similaridades = documentosDeContexto.map(doc => doc.similaridade);
-  const relevanciaMedia = similaridades.reduce((sum, val) => sum + val, 0) / similaridades.length;
-  const relevanciaMaxima = Math.max(...similaridades);
+  // Calcular métricas de relevância usando scores híbridos
+  const scores = documentosDeContexto.map(doc => doc.score || doc.similaridade || 0);
+  const relevanciaMedia = scores.reduce((sum, val) => sum + val, 0) / scores.length;
+  const relevanciaMaxima = Math.max(...scores);
   
   // Debug: Mostrar quais documentos foram encontrados
   console.log("Documentos encontrados:");
   documentosDeContexto.forEach((doc, index) => {
-    console.log(`  ${index + 1}. ${doc.titulo} (v${doc.versao}) - Categoria: ${doc.categoria} - Similaridade: ${(doc.similaridade * 100).toFixed(1)}%`);
+    const score = doc.score || doc.similaridade || 0;
+    console.log(`  ${index + 1}. ${doc.titulo} (v${doc.versao}) - Score: ${(score * 100).toFixed(1)}%`);
   });
-  
-  // Formata o contexto para ser injetado no prompt
-  const contextoFormatado = documentosDeContexto.map((doc, index) =>
-    `--- Início da Fonte ${index + 1} ---\n` +
-    `Título: "${doc.titulo}" (Versão ${doc.versao})\n` +
-    `Conteúdo: ${JSON.stringify(doc.conteudo)}\n` +
-    `--- Fim da Fonte ${index + 1} ---`
-  ).join('\n\n');
 
   console.log("3. Gerando sugestão de resposta com GPT-4o...");
-  // Etapa de Geração (Generation)
-  const sugestaoFinal = await gerarRespostaComContexto(contextoFormatado, textoDoTicket);
+  // Etapa de Geração (Generation) usando documentos estruturados
+  const sugestaoFinal = await gerarRespostaComContexto(documentosDeContexto, textoDoTicket);
 
   console.log("4. Sugestão gerada com sucesso!");
   return {
@@ -295,9 +291,9 @@ serve(async (req) => {
           max_tokens: 1000
         },
         log: {
-          rag_pipeline: 'v3_documentado',
-          embedding_model: 'text-embedding-ada-002',
-          pipeline_version: 'RAG_v3_Estruturado',
+          rag_pipeline: 'v4_hibrido',
+          embedding_model: 'text-embedding-3-small',
+          pipeline_version: 'RAG_v4_Hibrido_Otimizado',
           metrics: resultadoRAG.metrics
         }
       })
@@ -316,8 +312,8 @@ serve(async (req) => {
     const response = {
       resposta: resultadoRAG.resposta,
       rag_metrics: {
-        pipeline_version: 'RAG_v3_Estruturado',
-        modelo_embedding: 'text-embedding-ada-002',
+        pipeline_version: 'RAG_v4_Hibrido_Otimizado',
+        modelo_embedding: 'text-embedding-3-small',
         modelo_geracao: 'gpt-4o',
         documentos_encontrados: resultadoRAG.metrics.documentos_encontrados,
         relevancia_media: resultadoRAG.metrics.relevancia_media,
