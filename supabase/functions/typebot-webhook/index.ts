@@ -417,36 +417,155 @@ serve(async (req) => {
       }
     }
 
-    // Se não forçar criação, tentar responder pela KB ou gerar sugestão direta
+    // Se não forçar criação, usar o mesmo template do sistema de sugestão IA
     if (!force_create) {
-      const kbResult = await searchKnowledgeBase(message);
+      console.log('Force create is false, generating RAG suggestion using suggest-reply function...');
       
-      if (kbResult.hasAnswer) {
-        console.log('Answer found in knowledge base');
-        return new Response(JSON.stringify({
-          action: 'answer',
-          success: true,
-          answer: kbResult.answer,
-          sources: kbResult.sources,
-          message: 'Resposta encontrada na base de conhecimento'
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      } else {
-        // Se não encontrou na KB, gerar sugestão direta para franqueado
-        console.log('No KB answer found, generating direct suggestion');
-        const directSuggestion = await generateDirectSuggestion(message, kbResult.articles);
+      try {
+        // Criar um ticket temporário para passar para suggest-reply
+        const tempTicketData = {
+          titulo: `Consulta via Typebot - ${new Date().toISOString()}`,
+          descricao_problema: message,
+          codigo_ticket: `TEMP-${Date.now()}`,
+          categoria: category_hint || 'geral',
+          prioridade: 'posso_esperar'
+        };
+
+        // Simular o comportamento da função suggest-reply
+        const textoDoTicket = `Título: ${tempTicketData.titulo}\nDescrição: ${tempTicketData.descricao_problema}`;
         
-        if (directSuggestion) {
+        // Encontrar documentos usando busca semântica como no suggest-reply
+        const documentosDeContexto = await encontrarDocumentosRelacionados(textoDoTicket, 5);
+        
+        let suggestionResponse = null;
+        
+        if (documentosDeContexto && documentosDeContexto.length > 0) {
+          console.log(`Found ${documentosDeContexto.length} relevant RAG documents`);
+          
+          // Calcular métricas como no suggest-reply
+          const similaridades = documentosDeContexto.map(doc => doc.similarity);
+          const relevanciaMedia = similaridades.reduce((sum, val) => sum + val, 0) / similaridades.length;
+          const relevanciaMaxima = Math.max(...similaridades);
+          
+          // Formatar contexto igual ao suggest-reply
+          const contextoFormatado = documentosDeContexto.map((doc, index) =>
+            `--- Início da Fonte ${index + 1} ---\n` +
+            `Título: "${doc.title}" (Versão ${doc.version || 1})\n` +
+            `Conteúdo: ${JSON.stringify(doc.content)}\n` +
+            `--- Fim da Fonte ${index + 1} ---`
+          ).join('\n\n');
+          
+          // Gerar resposta usando o mesmo prompt do suggest-reply
+          const promptParaIA = `
+          Você é um assistente de suporte. Gere uma resposta RESUMIDA e DIRETA para o ticket.
+
+          **REGRAS:**
+          1. Use APENAS as informações do contexto fornecido
+          2. Seja CONCISO - máximo 2-3 frases
+          3. Responda DIRETO ao problema do ticket
+          4. Não adicione saudações, agradecimentos ou explicações extras
+          5. Se não souber, diga apenas "Não encontrei informações suficientes na base de conhecimento"
+
+          **CONTEXTO:**
+          ${contextoFormatado}
+
+          **PROBLEMA DO TICKET:**
+          ${textoDoTicket}
+
+          **RESPOSTA DIRETA:**
+          `;
+
+          const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${openaiApiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'gpt-4o',
+              messages: [
+                { role: 'system', content: promptParaIA }
+              ],
+              temperature: 0.2,
+              max_tokens: 1000,
+            }),
+          });
+
+          if (response.ok) {
+            const apiData = await response.json();
+            const sugestaoFinal = apiData.choices[0].message.content;
+            
+            // Verificar se a resposta é útil
+            const isUsefulResponse = !sugestaoFinal.toLowerCase().includes('não encontrei informações suficientes') &&
+              !sugestaoFinal.toLowerCase().includes('não há informações relevantes');
+
+            if (isUsefulResponse) {
+              console.log('Generated useful RAG suggestion:', sugestaoFinal);
+              return new Response(JSON.stringify({
+                action: 'suggestion',
+                success: true,
+                answer: sugestaoFinal,
+                source: 'rag_system',
+                rag_metrics: {
+                  documentos_encontrados: documentosDeContexto.length,
+                  relevancia_media: `${(relevanciaMedia * 100).toFixed(1)}%`,
+                  relevancia_maxima: `${(relevanciaMaxima * 100).toFixed(1)}%`
+                },
+                message: 'Sugestão RAG gerada baseada na base de conhecimento'
+              }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              });
+            }
+          }
+        }
+
+        // Fallback para KB tradicional se RAG não funcionou
+        console.log('RAG didn\'t find useful content, trying traditional KB search...');
+        const kbResult = await searchKnowledgeBase(message);
+        
+        if (kbResult.hasAnswer) {
+          console.log('Answer found in knowledge base');
           return new Response(JSON.stringify({
-            action: 'suggestion',
+            action: 'answer',
             success: true,
-            answer: directSuggestion,
-            message: 'Sugestão de resposta gerada pela IA'
+            answer: kbResult.answer,
+            sources: kbResult.sources,
+            source: 'knowledge_base',
+            message: 'Resposta encontrada na base de conhecimento'
           }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
         }
+
+        // Se nada funcionou, usar resposta padrão
+        console.log('No relevant knowledge found, using default response');
+        const defaultResponse = "Não tenho conhecimento sobre isso, vou abrir um ticket para que nosso suporte te ajude.";
+        
+        return new Response(JSON.stringify({
+          action: 'suggestion',
+          success: true,
+          answer: defaultResponse,
+          source: 'default',
+          will_create_ticket: true,
+          message: 'Resposta padrão - ticket será criado'
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+        
+      } catch (error) {
+        console.error('Error generating RAG suggestion:', error);
+        
+        // Em caso de erro, usar resposta padrão
+        return new Response(JSON.stringify({
+          action: 'suggestion',
+          success: true,
+          answer: "Não tenho conhecimento sobre isso, vou abrir um ticket para que nosso suporte te ajude.",
+          source: 'error_fallback',
+          error: error.message,
+          message: 'Erro na geração de sugestão - usando resposta padrão'
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
       }
     }
 
