@@ -43,8 +43,8 @@ async function encontrarDocumentosRelacionados(textoTicket: string, limiteResult
     const embeddingData = await embeddingResponse.json();
     const embedding = embeddingData.data[0].embedding;
 
-    // Buscar documentos similares usando a função match_documents do Supabase
-    const { data: documentos, error } = await supabase.rpc('match_documents', {
+    // Buscar documentos similares usando a função match_documentos do Supabase
+    const { data: documentos, error } = await supabase.rpc('match_documentos', {
       query_embedding: embedding,
       match_threshold: 0.78,
       match_count: limiteResultados
@@ -95,9 +95,9 @@ async function searchKnowledgeBase(message: string) {
     relevantArticles = articles?.filter(article => {
       // Primeiro priorizar artigos que aparecem nos RAG docs
       const foundInRag = ragDocuments.some(doc => 
-        doc.content && (
-          doc.content.includes(article.titulo) || 
-          article.conteudo.includes(doc.content.substring(0, 100))
+        doc.conteudo && (
+          doc.conteudo.includes(article.titulo) || 
+          article.conteudo.includes(doc.conteudo.substring(0, 100))
         )
       );
       
@@ -124,7 +124,7 @@ async function searchKnowledgeBase(message: string) {
     
     if (ragDocuments.length > 0) {
       const ragContext = ragDocuments
-        .map(doc => `**Documento RAG**\n${doc.content}`)
+        .map(doc => `**Documento RAG**\n${doc.conteudo}`)
         .join('\n\n---\n\n');
       knowledgeContext += ragContext + '\n\n---\n\n';
     }
@@ -443,15 +443,15 @@ serve(async (req) => {
           console.log(`Found ${documentosDeContexto.length} relevant RAG documents`);
           
           // Calcular métricas como no suggest-reply
-          const similaridades = documentosDeContexto.map(doc => doc.similarity);
+          const similaridades = documentosDeContexto.map(doc => doc.similaridade);
           const relevanciaMedia = similaridades.reduce((sum, val) => sum + val, 0) / similaridades.length;
           const relevanciaMaxima = Math.max(...similaridades);
           
           // Formatar contexto igual ao suggest-reply
           const contextoFormatado = documentosDeContexto.map((doc, index) =>
             `--- Início da Fonte ${index + 1} ---\n` +
-            `Título: "${doc.title}" (Versão ${doc.version || 1})\n` +
-            `Conteúdo: ${JSON.stringify(doc.content)}\n` +
+            `Título: "${doc.titulo}" (Versão ${doc.versao})\n` +
+            `Conteúdo: ${JSON.stringify(doc.conteudo)}\n` +
             `--- Fim da Fonte ${index + 1} ---`
           ).join('\n\n');
           
