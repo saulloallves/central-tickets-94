@@ -159,22 +159,18 @@ async function generateDirectSuggestion(message: string) {
       }
     }
 
-    const promptDirecto = `Você é um assistente especializado da franquia Cresci & Perdi.
+    const promptDirecto = `Um franqueado da Cresci & Perdi enviou: "${message}"
 
-Um franqueado enviou a seguinte mensagem/dúvida:
-"${message}"
+Gere uma resposta DIRETA e OBJETIVA:
 
-Gere uma resposta DIRETA, ÚTIL e PROFISSIONAL para o franqueado, seguindo estas diretrizes:
+1. Sem saudações ou cumprimentos
+2. Vá direto ao ponto
+3. Máximo 80 palavras
+4. Se for dúvida: responda objetivamente
+5. Se for solicitação: explique próximos passos necessários
+6. Use linguagem profissional mas simples
 
-1. Seja claro e objetivo
-2. Use linguagem profissional mas amigável 
-3. Se for uma dúvida técnica/operacional, dê orientações práticas
-4. Se for uma solicitação, explique os próximos passos
-5. Se não souber a resposta específica, oriente sobre como o franqueado pode obter ajuda
-6. Mantenha o tom de suporte da franquia Cresci & Perdi
-7. Máximo de 200 palavras
-
-Responda como se fosse o suporte oficial da franquia falando diretamente com o franqueado.`;
+Responda apenas o essencial para resolver a questão.`;
 
     // Determine API parameters based on model
     const isNewerOpenAIModel = modelToUse.includes('gpt-4.1') || modelToUse.includes('gpt-5') || modelToUse.includes('o3') || modelToUse.includes('o4');
@@ -184,7 +180,7 @@ Responda como se fosse o suporte oficial da franquia falando diretamente com o f
       messages: [
         {
           role: 'system',
-          content: 'Você é um assistente oficial de suporte da franquia Cresci & Perdi. Seja sempre profissional, prestativo e direto nas respostas.'
+          content: 'Você responde de forma direta e objetiva, sem saudações. Seja conciso e prático.'
         },
         {
           role: 'user',
@@ -195,13 +191,13 @@ Responda como se fosse o suporte oficial da franquia falando diretamente com o f
 
     // Set parameters based on provider and model
     if (apiProvider === 'lambda') {
-      requestBody.temperature = aiSettings?.temperatura_sugestao || 0.7;
-      requestBody.max_tokens = aiSettings?.max_tokens_sugestao || 300;
+      requestBody.temperature = aiSettings?.temperatura_sugestao || 0.3;
+      requestBody.max_tokens = aiSettings?.max_tokens_sugestao || 150;
     } else if (isNewerOpenAIModel) {
-      requestBody.max_completion_tokens = aiSettings?.max_tokens_sugestao || 300;
+      requestBody.max_completion_tokens = aiSettings?.max_tokens_sugestao || 150;
     } else {
-      requestBody.max_tokens = aiSettings?.max_tokens_sugestao || 300;
-      requestBody.temperature = aiSettings?.temperatura_sugestao || 0.7;
+      requestBody.max_tokens = aiSettings?.max_tokens_sugestao || 150;
+      requestBody.temperature = aiSettings?.temperatura_sugestao || 0.3;
     }
 
     console.log('Generating direct suggestion with model:', modelToUse);
