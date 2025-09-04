@@ -99,14 +99,8 @@ ${docs.map(d => `ID:${d.id}\nTÍTULO:${d.titulo}\nTRECHO:${limparTexto(d.conteud
   const r = await openAI('chat/completions', {
     model: 'gpt-4o-mini',
     messages: [{ role: 'user', content: prompt }],
-    temperature: 0,
-    response_format: { type: 'json_object' }
+    temperature: 0
   });
-  
-  if (!r.ok) {
-    console.error('LLM rerank error:', await r.text());
-    return docs.slice(0, 5);
-  }
   const j = await r.json();
   let scored: any[] = [];
   try { scored = JSON.parse(j.choices[0].message.content); } catch {}
@@ -150,23 +144,21 @@ Inclua as fontes no fim no formato [Fonte N].
 async function searchKnowledgeBase(message: string) {
   console.log('Searching knowledge base for:', message);
   
-  // Primeiro tenta busca semântica nos documentos RAG
-  const ragDocuments = await encontrarDocumentosRelacionados(message, 8);
-  
   // 🔎 Busca KB simples com OR/ILIKE por termos (melhor que pegar tudo)
   const terms = extractSearchTerms(message);
-  let orFilter = terms.map(t => 
-    `titulo.ilike.%${t}%,conteudo.ilike.%${t}%,categoria.ilike.%${t}%`
-  ).join(',');
+  const orFilter = terms.length
+    ? terms.map(t => `titulo.ilike.%${t}%,conteudo.ilike.%${t}%,categoria.ilike.%${t}%`).join(',')
+    : null;
 
-  const { data: articles, error } = await supabase
+  let query = supabase
     .from('knowledge_articles')
     .select('id, titulo, conteudo, categoria, tags')
     .eq('ativo', true)
     .eq('aprovado', true)
     .eq('usado_pela_ia', true)
-    .or(orFilter)
     .limit(5);
+  if (orFilter) query = query.or(orFilter);
+  const { data: articles, error } = await query;
 
   if (error) {
     console.error('Error fetching KB articles:', error);
@@ -177,9 +169,6 @@ async function searchKnowledgeBase(message: string) {
   const artigosTop2 = (articles || [])
     .sort((a,b) => limparTexto(a.conteudo).length - limparTexto(b.conteudo).length)
     .slice(0,2);
-  const kbBlocos = artigosTop2.map((a, i) => 
-    `[KB ${i+1}] "${a.titulo}" — ${a.categoria}\n${limparTexto(a.conteudo).slice(0,700)}`
-  ).join('\n\n');
 
   // Se temos artigos relevantes, tentar gerar resposta com mesmo padrão
   if (artigosTop2.length > 0 && openaiApiKey) {
@@ -254,7 +243,7 @@ async function generateDirectSuggestion(message: string, relevantArticles: any[]
 
     // Build context from relevant articles
     const kbContext = relevantArticles.map(article => 
-      `Título: ${article.titulo}\nConteúdo: ${article.conteudo}`
+      `Título: ${article.titulo}\nConteúdo: ${limparTexto(article.conteudo)}`
     ).join('\n\n');
 
     const promptDirecto = `Base de conhecimento disponível:
@@ -832,7 +821,6 @@ CRÍTICO: Use APENAS estas 4 prioridades: imediato, ate_1_hora, ainda_hoje, poss
       }
       analysisResult.categoria = analysisResult.categoria || fallbackCategoria;
       analysisResult.prioridade = analysisResult.prioridade || 'posso_esperar';
-      analysisResult.sla_sugerido_horas = analysisResult.sla_sugerido_horas || 24;
       analysisResult.sla_sugerido_horas = analysisResult.sla_sugerido_horas || 24;
       
       if (!equipeResponsavelId) {
