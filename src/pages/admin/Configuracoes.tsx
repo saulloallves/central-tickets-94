@@ -7,7 +7,7 @@ import { IASettingsTab } from "@/components/configuracoes/IASettingsTab";
 import KnowledgeHubTab from "@/components/configuracoes/KnowledgeHubTab";
 import { RelatoriosTab } from "@/components/configuracoes/RelatoriosTab";
 import { NotificacoesTab } from "@/components/configuracoes/NotificacoesTab";
-import { NotificationQueueManager } from "@/components/configuracoes/NotificationQueueManager";
+
 
 import { LogoSettings } from "@/components/configuracoes/LogoSettingsTab";
 import { EmbeddingTestTab } from '@/components/configuracoes/EmbeddingTestTab';
@@ -74,7 +74,6 @@ export default function Configuracoes() {
           </TabsContent>
 
           <TabsContent value="notificacoes" className="space-y-6 animate-fade-in">
-            <NotificationQueueManager />
             <NotificacoesTab />
           </TabsContent>
 
