@@ -30,32 +30,36 @@ serve(async (req) => {
 
     console.log('Processando signup de colaborador:', { userId, email, role, equipe_id });
 
-    // 1. Criar o profile
+    // 1. Criar ou atualizar o profile (upsert)
     const { error: profileError } = await supabaseClient
       .from('profiles')
-      .insert({
+      .upsert({
         id: userId,
         email,
         nome_completo
+      }, {
+        onConflict: 'id'
       });
 
     if (profileError) {
-      console.error('Erro ao criar profile:', profileError);
+      console.error('Erro ao criar/atualizar profile:', profileError);
       throw profileError;
     }
 
     // 2. Se for colaborador e tiver equipe_id, criar solicitação de acesso
     if (role === 'colaborador' && equipe_id) {
-      // Inserir role temporário como colaborador
+      // Inserir ou atualizar role como colaborador (upsert)
       const { error: roleError } = await supabaseClient
         .from('user_roles')
-        .insert({
+        .upsert({
           user_id: userId,
           role: 'colaborador'
+        }, {
+          onConflict: 'user_id,role'
         });
 
       if (roleError) {
-        console.error('Erro ao criar role:', roleError);
+        console.error('Erro ao criar/atualizar role:', roleError);
         // Não falhar por isso, pode já existir
       }
 
@@ -76,16 +80,18 @@ serve(async (req) => {
 
       console.log('Solicitação de acesso criada para equipe:', equipe_id);
     } else {
-      // Para outros roles, apenas inserir o role
+      // Para outros roles, inserir ou atualizar o role (upsert)
       const { error: roleError } = await supabaseClient
         .from('user_roles')
-        .insert({
+        .upsert({
           user_id: userId,
           role: role
+        }, {
+          onConflict: 'user_id,role'
         });
 
       if (roleError) {
-        console.error('Erro ao criar role:', roleError);
+        console.error('Erro ao criar/atualizar role:', roleError);
         throw roleError;
       }
     }
