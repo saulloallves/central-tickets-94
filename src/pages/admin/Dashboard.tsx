@@ -34,6 +34,9 @@ const Dashboard = () => {
     primaryEquipe,
     refetch 
   } = useTeamDashboardMetrics();
+  
+  // Debug log to verify data structure
+  console.log('Dashboard metrics:', { teamMetrics, crisisMetrics, loading, primaryEquipe });
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   
   // Listen for notification ticket modal events
@@ -87,7 +90,7 @@ const Dashboard = () => {
           <div>
             <h1 className="text-xl md:text-3xl font-bold tracking-tight">Dashboard da Equipe</h1>
             <p className="text-sm md:text-base text-muted-foreground">
-              {primaryEquipe ? `Equipe: ${primaryEquipe.equipes.nome}` : 'Visão focada na sua produtividade'}
+              {primaryEquipe ? `Equipe: ${primaryEquipe.equipes.nome}` : 'Visão geral da equipe'}
             </p>
           </div>
           <Button variant="outline" onClick={refetch} className="gap-2">
