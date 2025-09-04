@@ -28,7 +28,6 @@ import {
 const Dashboard = () => {
   const { isAdmin, isColaborador } = useRole();
   const { 
-    personalMetrics, 
     teamMetrics, 
     crisisMetrics, 
     loading, 
@@ -113,66 +112,22 @@ const Dashboard = () => {
         )}
       </div>
 
-      {/* SEÇÃO 1: MINHA PRODUTIVIDADE */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            SEÇÃO 1: MINHA PRODUTIVIDADE
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-5">
-            <KPICard
-              title="Meus Tickets Abertos"
-              value={personalMetrics?.meus_tickets_abertos?.toString() || "0"}
-              description="Tickets em minha fila"
-              icon={<TicketIcon className="h-4 w-4 text-warning" />}
-            />
-            <KPICard
-              title="Em Atendimento"
-              value={personalMetrics?.meus_tickets_em_atendimento?.toString() || "0"}
-              description="Que estou resolvendo"
-              icon={<User className="h-4 w-4 text-info" />}
-            />
-            <KPICard
-              title="Crítico"
-              value={personalMetrics?.meus_tickets_por_prioridade?.critico?.toString() || "0"}
-              description="Prioridade máxima"
-              icon={<AlertTriangleIcon className="h-4 w-4 text-critical" />}
-            />
-            <KPICard
-              title="Alto"
-              value={personalMetrics?.meus_tickets_por_prioridade?.alto?.toString() || "0"}
-              description="Até 1 hora"
-              icon={<ClockIcon className="h-4 w-4 text-warning" />}
-            />
-            <KPICard
-              title="Médio"
-              value={personalMetrics?.meus_tickets_por_prioridade?.medio?.toString() || "0"}
-              description="Hoje/Pode esperar"
-              icon={<BarChart3 className="h-4 w-4 text-success" />}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* SEÇÃO 2: VISÃO DA EQUIPE */}
+      {/* VISÃO DA EQUIPE */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            SEÇÃO 2: VISÃO DA EQUIPE {primaryEquipe ? `DE ${primaryEquipe.equipes.nome.toUpperCase()}` : ''}
+            VISÃO DA EQUIPE {primaryEquipe ? `DE ${primaryEquipe.equipes.nome.toUpperCase()}` : ''}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Métricas principais da equipe */}
-          <div className="grid gap-3 md:gap-4 grid-cols-1 md:grid-cols-3">
+          <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-5">
             <KPICard
-              title="Fila da Equipe"
-              value={teamMetrics?.fila_equipe?.toString() || "0"}
-              description="Tickets aguardando"
-              icon={<TicketIcon className="h-4 w-4 text-warning" />}
+              title="Total de Tickets"
+              value={teamMetrics?.total_tickets?.toString() || "0"}
+              description="Todos os tickets"
+              icon={<TicketIcon className="h-4 w-4 text-primary" />}
             />
             <KPICard
               title="Resolvidos Hoje"
@@ -181,10 +136,22 @@ const Dashboard = () => {
               icon={<CheckCircleIcon className="h-4 w-4 text-success" />}
             />
             <KPICard
-              title="Total Abertos"
-              value={teamMetrics?.total_abertos?.toString() || "0"}
-              description="Em todas as etapas"
-              icon={<TrendingUpIcon className="h-4 w-4 text-info" />}
+              title="Em Atendimento"
+              value={teamMetrics?.em_atendimento?.toString() || "0"}
+              description="Sendo resolvidos"
+              icon={<User className="h-4 w-4 text-info" />}
+            />
+            <KPICard
+              title="Abertos"
+              value={teamMetrics?.abertos?.toString() || "0"}
+              description="Aguardando atendimento"
+              icon={<AlertTriangleIcon className="h-4 w-4 text-warning" />}
+            />
+            <KPICard
+              title="Escalonados"
+              value={teamMetrics?.escalonados?.toString() || "0"}
+              description="Enviados para supervisão"
+              icon={<TrendingUpIcon className="h-4 w-4 text-critical" />}
             />
           </div>
 

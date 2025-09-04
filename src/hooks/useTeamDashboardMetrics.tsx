@@ -4,20 +4,12 @@ import { useAuth } from './useAuth';
 import { useUserEquipes } from './useUserEquipes';
 import { useToast } from '@/hooks/use-toast';
 
-interface PersonalMetrics {
-  meus_tickets_abertos: number;
-  meus_tickets_em_atendimento: number;
-  meus_tickets_por_prioridade: {
-    critico: number;
-    alto: number;
-    medio: number;
-  };
-}
-
 interface TeamMetrics {
-  fila_equipe: number;
+  total_tickets: number;
   resolvidos_hoje: number;
-  total_abertos: number;
+  em_atendimento: number;
+  abertos: number;
+  escalonados: number;
   tickets_proximos_vencer: any[];
   carga_por_colaborador: any[];
 }
@@ -32,69 +24,9 @@ export const useTeamDashboardMetrics = () => {
   const { user } = useAuth();
   const { userEquipes, getPrimaryEquipe } = useUserEquipes();
   const { toast } = useToast();
-  const [personalMetrics, setPersonalMetrics] = useState<PersonalMetrics | null>(null);
   const [teamMetrics, setTeamMetrics] = useState<TeamMetrics | null>(null);
   const [crisisMetrics, setCrisisMetrics] = useState<CrisisMetrics | null>(null);
   const [loading, setLoading] = useState(true);
-
-  const fetchPersonalMetrics = async () => {
-    if (!user) return;
-
-    try {
-      // Buscar meus tickets do colaborador logado
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('id', user.id)
-        .single();
-
-      if (!profile?.email) return;
-
-      const { data: colaborador } = await supabase
-        .from('colaboradores')
-        .select('id')
-        .eq('email', profile.email)
-        .single();
-
-      if (!colaborador) return;
-
-      const today = new Date().toISOString().split('T')[0];
-
-      // Meus tickets abertos e em atendimento
-      const { data: myTickets } = await supabase
-        .from('tickets')
-        .select('id, status, prioridade')
-        .eq('colaborador_id', colaborador.id)
-        .in('status', ['aberto', 'em_atendimento'])
-        .gte('data_abertura', today);
-
-      if (myTickets) {
-        const abertos = myTickets.filter(t => t.status === 'aberto').length;
-        const em_atendimento = myTickets.filter(t => t.status === 'em_atendimento').length;
-        
-        // Contar por prioridade (usando nova nomenclatura)
-        const critico = myTickets.filter(t => 
-          t.prioridade === 'crise' || t.prioridade === 'imediato'
-        ).length;
-        const alto = myTickets.filter(t => t.prioridade === 'ate_1_hora').length;
-        const medio = myTickets.filter(t => 
-          t.prioridade === 'ainda_hoje' || t.prioridade === 'posso_esperar'
-        ).length;
-
-        setPersonalMetrics({
-          meus_tickets_abertos: abertos,
-          meus_tickets_em_atendimento: em_atendimento,
-          meus_tickets_por_prioridade: {
-            critico,
-            alto,
-            medio
-          }
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching personal metrics:', error);
-    }
-  };
 
   const fetchTeamMetrics = async () => {
     const primaryEquipe = getPrimaryEquipe();
@@ -121,16 +53,15 @@ export const useTeamDashboardMetrics = () => {
         .eq('equipe_responsavel_id', primaryEquipe.equipe_id);
 
       if (teamTickets) {
-        const fila_equipe = teamTickets.filter(t => t.status === 'aberto').length;
+        const total_tickets = teamTickets.length;
+        const abertos = teamTickets.filter(t => t.status === 'aberto').length;
+        const em_atendimento = teamTickets.filter(t => t.status === 'em_atendimento').length;
+        const escalonados = teamTickets.filter(t => t.status === 'escalonado').length;
         
         const resolvidos_hoje = teamTickets.filter(t => 
           t.resolvido_em && 
           t.resolvido_em >= startOfDay && 
           t.resolvido_em <= endOfDay
-        ).length;
-
-        const total_abertos = teamTickets.filter(t => 
-          ['aberto', 'em_atendimento', 'escalonado'].includes(t.status)
         ).length;
 
         // Tickets próximos de vencer SLA (próximas 2 horas)
@@ -162,9 +93,11 @@ export const useTeamDashboardMetrics = () => {
           .slice(0, 5); // Top 5
 
         setTeamMetrics({
-          fila_equipe,
+          total_tickets,
           resolvidos_hoje,
-          total_abertos,
+          em_atendimento,
+          abertos,
+          escalonados,
           tickets_proximos_vencer,
           carga_por_colaborador
         });
@@ -236,7 +169,6 @@ export const useTeamDashboardMetrics = () => {
     setLoading(true);
     try {
       await Promise.all([
-        fetchPersonalMetrics(),
         fetchTeamMetrics(),
         fetchCrisisMetrics()
       ]);
@@ -252,7 +184,6 @@ export const useTeamDashboardMetrics = () => {
   }, [user, userEquipes]);
 
   return {
-    personalMetrics,
     teamMetrics,
     crisisMetrics,
     loading,
