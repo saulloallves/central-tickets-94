@@ -103,7 +103,7 @@ export default function Equipes() {
 
   if (loading) {
     return (
-      <ProtectedRoute requiredPermission="view_all_tickets">
+      <ProtectedRoute requiredPermissions={['view_all_tickets']} requireAll={false}>
         <div className="w-full space-y-6">
           <div className="animate-pulse">
             <div className="h-8 bg-muted rounded w-48 mb-2"></div>
@@ -122,7 +122,7 @@ export default function Equipes() {
   }
 
   return (
-    <ProtectedRoute requiredPermission="view_all_tickets">
+    <ProtectedRoute requiredPermissions={['view_all_tickets']} requireAll={false}>
       <div className="w-full space-y-4 md:space-y-6 pt-3 md:pt-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
