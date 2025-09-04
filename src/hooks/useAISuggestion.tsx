@@ -118,12 +118,46 @@ export const useAISuggestion = (ticketId: string) => {
         attempts++;
       }
       
-      // Show enhanced RAG metrics in toast
+      // Show enhanced RAG metrics in toast - but check if suggestion was actually useful
       const ragMetrics = data.rag_metrics || {};
-      toast({
-        title: "✨ Sugestão RAG Gerada",
-        description: `${ragMetrics.documentos_encontrados || 0} documentos RAG | Relevância: ${ragMetrics.relevancia_media || '0%'}`,
+      const currentSuggestionData = await new Promise<AISuggestion | null>((resolve) => {
+        const checkSuggestion = async () => {
+          try {
+            const { data: checkData } = await supabase
+              .from('ticket_ai_interactions')
+              .select('id, resposta, foi_usada, resposta_final, created_at, log')
+              .eq('ticket_id', ticketId)
+              .eq('kind', 'suggestion')
+              .order('created_at', { ascending: false })
+              .limit(1);
+            
+            resolve(checkData && checkData.length > 0 ? checkData[0] as AISuggestion : null);
+          } catch {
+            resolve(null);
+          }
+        };
+        checkSuggestion();
       });
+
+      // Check if the AI actually found useful information
+      const isUsefulResponse = currentSuggestionData?.resposta && 
+        !currentSuggestionData.resposta.toLowerCase().includes('não encontrei informações suficientes') &&
+        !currentSuggestionData.resposta.toLowerCase().includes('não há informações relevantes');
+
+      if (isUsefulResponse) {
+        toast({
+          title: "✨ Sugestão RAG Gerada",
+          description: `${ragMetrics.documentos_encontrados || 0} documentos RAG | Relevância: ${ragMetrics.relevancia_media || '0%'}`,
+        });
+      } else {
+        toast({
+          title: "❌ RAG Sem Resultado",
+          description: ragMetrics.documentos_encontrados > 0 
+            ? `${ragMetrics.documentos_encontrados} documentos encontrados, mas relevância insuficiente (${ragMetrics.relevancia_media || '0%'})`
+            : "Nenhum documento relevante encontrado na base de conhecimento",
+          variant: "destructive",
+        });
+      }
 
       return data;
     } catch (error) {
