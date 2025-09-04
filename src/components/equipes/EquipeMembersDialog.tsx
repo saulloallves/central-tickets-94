@@ -35,9 +35,10 @@ interface EquipeMembersDialogProps {
   equipeNome: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  isCollaborator?: boolean;
 }
 
-export function EquipeMembersDialog({ equipeId, equipeNome, open, onOpenChange }: EquipeMembersDialogProps) {
+export function EquipeMembersDialog({ equipeId, equipeNome, open, onOpenChange, isCollaborator = false }: EquipeMembersDialogProps) {
   const [members, setMembers] = useState<EquipeMember[]>([]);
   const [availableUsers, setAvailableUsers] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(false);
@@ -241,85 +242,87 @@ export function EquipeMembersDialog({ equipeId, equipeNome, open, onOpenChange }
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Add Member Form */}
-          <div className="border rounded-lg p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-medium">Adicionar Membro</h3>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setAddingMember(!addingMember)}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                {addingMember ? "Cancelar" : "Adicionar"}
-              </Button>
-            </div>
-
-            {addingMember && (
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div>
-                  <Label>Usuário</Label>
-                  <Select
-                    value={newMember.user_id}
-                    onValueChange={(value) => setNewMember({ ...newMember, user_id: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione um usuário" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableUsersToAdd.map((user) => (
-                        <SelectItem key={user.id} value={user.id}>
-                          {user.nome_completo} ({user.email})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <div className="flex items-center gap-2">
-                    <Label>Papel na equipe</Label>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Define o papel do membro dentro desta equipe específica, não o cargo de RH da empresa.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-                  <Select
-                    value={newMember.role}
-                    onValueChange={(value) => setNewMember({ ...newMember, role: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o papel" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="member">Membro</SelectItem>
-                      <SelectItem value="leader">Líder</SelectItem>
-                      <SelectItem value="supervisor">Supervisor</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex items-center space-x-2 mt-6">
-                  <Switch
-                    id="primary"
-                    checked={newMember.is_primary}
-                    onCheckedChange={(checked) => setNewMember({ ...newMember, is_primary: checked })}
-                  />
-                  <Label htmlFor="primary">Primário</Label>
-                </div>
-
-                <div className="flex items-end">
-                  <Button onClick={handleAddMember} className="w-full">
-                    Adicionar
-                  </Button>
-                </div>
+          {/* Add Member Form - Only for non-collaborators */}
+          {!isCollaborator && (
+            <div className="border rounded-lg p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-medium">Adicionar Membro</h3>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setAddingMember(!addingMember)}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  {addingMember ? "Cancelar" : "Adicionar"}
+                </Button>
               </div>
-            )}
-          </div>
+
+              {addingMember && (
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div>
+                    <Label>Usuário</Label>
+                    <Select
+                      value={newMember.user_id}
+                      onValueChange={(value) => setNewMember({ ...newMember, user_id: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um usuário" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableUsersToAdd.map((user) => (
+                          <SelectItem key={user.id} value={user.id}>
+                            {user.nome_completo} ({user.email})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <Label>Papel na equipe</Label>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Define o papel do membro dentro desta equipe específica, não o cargo de RH da empresa.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    <Select
+                      value={newMember.role}
+                      onValueChange={(value) => setNewMember({ ...newMember, role: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o papel" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="member">Membro</SelectItem>
+                        <SelectItem value="leader">Líder</SelectItem>
+                        <SelectItem value="supervisor">Supervisor</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex items-center space-x-2 mt-6">
+                    <Switch
+                      id="primary"
+                      checked={newMember.is_primary}
+                      onCheckedChange={(checked) => setNewMember({ ...newMember, is_primary: checked })}
+                    />
+                    <Label htmlFor="primary">Primário</Label>
+                  </div>
+
+                  <div className="flex items-end">
+                    <Button onClick={handleAddMember} className="w-full">
+                      Adicionar
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Members List */}
           <div>
@@ -337,7 +340,7 @@ export function EquipeMembersDialog({ equipeId, equipeNome, open, onOpenChange }
                     <TableHead>Email</TableHead>
                     <TableHead>Papel na Equipe</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Ações</TableHead>
+                    {!isCollaborator && <TableHead>Ações</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -365,57 +368,61 @@ export function EquipeMembersDialog({ equipeId, equipeNome, open, onOpenChange }
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="flex items-center gap-2">
-                                <Switch
-                                  checked={member.is_primary}
-                                  onCheckedChange={() => handleTogglePrimary(member.id, member.is_primary)}
-                                />
-                                <span className="text-xs font-medium text-muted-foreground">
-                                  Primário
-                                </span>
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Define este membro como primário da equipe</p>
-                            </TooltipContent>
-                          </Tooltip>
+                        {!isCollaborator ? (
+                          <div className="flex items-center gap-3">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="flex items-center gap-2">
+                                  <Switch
+                                    checked={member.is_primary}
+                                    onCheckedChange={() => handleTogglePrimary(member.id, member.is_primary)}
+                                  />
+                                  <span className="text-xs font-medium text-muted-foreground">
+                                    Primário
+                                  </span>
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Define este membro como primário da equipe</p>
+                              </TooltipContent>
+                            </Tooltip>
 
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="flex items-center gap-2">
-                                <Switch
-                                  checked={member.ativo}
-                                  onCheckedChange={() => handleToggleActive(member.id, member.ativo)}
-                                />
-                                <span className="text-xs font-medium text-muted-foreground">
-                                  Ativo
-                                </span>
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Ativar ou desativar membro da equipe</p>
-                            </TooltipContent>
-                          </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="flex items-center gap-2">
+                                  <Switch
+                                    checked={member.ativo}
+                                    onCheckedChange={() => handleToggleActive(member.id, member.ativo)}
+                                  />
+                                  <span className="text-xs font-medium text-muted-foreground">
+                                    Ativo
+                                  </span>
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Ativar ou desativar membro da equipe</p>
+                              </TooltipContent>
+                            </Tooltip>
 
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleRemoveMember(member.id)}
-                                className="text-destructive hover:text-destructive"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Remover membro da equipe</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleRemoveMember(member.id)}
+                                  className="text-destructive hover:text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Remover membro da equipe</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">-</span>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}

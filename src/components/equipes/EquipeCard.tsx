@@ -36,16 +36,17 @@ interface EquipeCardProps {
   memberCount?: number;
   isLeader?: boolean;
   onRefresh?: () => void;
+  isCollaborator?: boolean;
 }
 
-export const EquipeCard = ({ equipe, memberCount = 0, isLeader = false, onRefresh }: EquipeCardProps) => {
+export const EquipeCard = ({ equipe, memberCount = 0, isLeader = false, onRefresh, isCollaborator = false }: EquipeCardProps) => {
   const [showMembers, setShowMembers] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const { user } = useAuth();
   const { hasRole } = useRole();
 
-  const canEdit = hasRole('admin') || hasRole('diretoria') || isLeader;
-  const canManageMembers = hasRole('admin') || hasRole('diretoria');
+  const canEdit = !isCollaborator && (hasRole('admin') || hasRole('diretoria') || isLeader);
+  const canManageMembers = !isCollaborator && (hasRole('admin') || hasRole('diretoria'));
 
   const getRoleIcon = (role: string) => {
     switch (role) {
@@ -164,6 +165,7 @@ export const EquipeCard = ({ equipe, memberCount = 0, isLeader = false, onRefres
         equipeNome={equipe.nome}
         open={showMembers}
         onOpenChange={setShowMembers}
+        isCollaborator={isCollaborator}
       />
 
       {canEdit && (

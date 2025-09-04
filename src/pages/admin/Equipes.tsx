@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { useAuth } from "@/hooks/useAuth";
 import { useRole } from "@/hooks/useRole";
+import { cn } from "@/lib/utils";
 
 interface Equipe {
   id: string;
@@ -140,15 +141,17 @@ export default function Equipes() {
         </div>
 
         <Tabs defaultValue="equipes" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className={cn("grid w-full", hasRole('colaborador') ? "grid-cols-1" : "grid-cols-2")}>
             <TabsTrigger value="equipes" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               Equipes ({filteredEquipes.length})
             </TabsTrigger>
-            <TabsTrigger value="solicitacoes" className="flex items-center gap-2">
-              <UserCheck className="h-4 w-4" />
-              Solicitações de Acesso
-            </TabsTrigger>
+            {!hasRole('colaborador') && (
+              <TabsTrigger value="solicitacoes" className="flex items-center gap-2">
+                <UserCheck className="h-4 w-4" />
+                Solicitações de Acesso
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="equipes" className="space-y-6">
@@ -189,15 +192,19 @@ export default function Equipes() {
                     memberCount={equipe.member_count}
                     isLeader={equipe.is_user_leader}
                     onRefresh={fetchEquipes}
+                    isCollaborator={hasRole('colaborador')}
                   />
                 ))}
               </div>
             )}
           </TabsContent>
 
-          <TabsContent value="solicitacoes" className="space-y-4">
-            <InternalAccessApproval />
-          </TabsContent>
+          
+          {!hasRole('colaborador') && (
+            <TabsContent value="solicitacoes" className="space-y-4">
+              <InternalAccessApproval />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </ProtectedRoute>
