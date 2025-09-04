@@ -41,7 +41,8 @@ async function openAI(path, payload, tries = 3) {
  * Limpa HTML/ruído dos trechos
  */
 function limparTexto(s) {
-  return String(s || '')
+  const raw = (s && typeof s === 'object') ? JSON.stringify(s) : String(s || '');
+  return raw
     .replace(/<style[\s\S]*?<\/style>/gi, ' ')
     .replace(/<script[\s\S]*?<\/script>/gi, ' ')
     .replace(/<[^>]+>/g, ' ')
@@ -99,7 +100,8 @@ ${docs.map(d => `ID:${d.id}\nTÍTULO:${d.titulo}\nTRECHO:${limparTexto(d.conteud
   const r = await openAI('chat/completions', {
     model: 'gpt-4o-mini',
     messages: [{ role: 'user', content: prompt }],
-    temperature: 0
+    temperature: 0,
+    response_format: { type: 'json_object' }
   });
   const j = await r.json();
   let scored: any[] = [];
@@ -335,7 +337,6 @@ serve(async (req) => {
   try {
     console.log('🚀 === TYPEBOT WEBHOOK CALLED ===');
     console.log('📨 Method:', req.method);
-    console.log('📨 Headers:', Object.fromEntries(req.headers.entries()));
     console.log('📨 URL:', req.url);
     
     // Validar token via header X-Webhook-Token
@@ -352,7 +353,7 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    console.log('Received data from Typebot:', JSON.stringify(body, null, 2));
+    console.log('Received webhook payload - message length:', message?.length, 'codigo_unidade:', codigo_unidade);
 
     const {
       message,
@@ -409,7 +410,7 @@ serve(async (req) => {
       const { data: franqueado } = await supabase
         .from('franqueados')
         .select('id')
-        .eq('web_password', parseInt(web_password))
+        .eq('web_password', String(web_password))
         .maybeSingle();
       
       if (franqueado) {
