@@ -157,7 +157,7 @@ async function obterSugestaoDeRespostaParaTicket(ticket) {
 
   if (!documentosDeContexto || documentosDeContexto.length === 0) {
     return {
-      resposta: "Não foi encontrado nenhum artigo na base de conhecimento que possa ajudar a responder este ticket.",
+      resposta: "Não encontrei informações na base de conhecimento para responder essa pergunta.",
       metrics: {
         documentos_encontrados: 0,
         relevancia_media: '0%',
