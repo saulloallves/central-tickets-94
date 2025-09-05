@@ -2300,6 +2300,60 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_conversas: {
+        Row: {
+          connected_phone: string
+          contact_name: string | null
+          contact_phone: string
+          conversa: Json
+          created_at: string
+          id: string
+          instance_id: string
+          is_group: boolean
+          last_direction: string
+          last_message_at: string
+          last_message_text: string | null
+          meta: Json
+          sender_lid: string | null
+          sender_photo: string | null
+          updated_at: string
+        }
+        Insert: {
+          connected_phone: string
+          contact_name?: string | null
+          contact_phone: string
+          conversa?: Json
+          created_at?: string
+          id?: string
+          instance_id: string
+          is_group?: boolean
+          last_direction?: string
+          last_message_at?: string
+          last_message_text?: string | null
+          meta?: Json
+          sender_lid?: string | null
+          sender_photo?: string | null
+          updated_at?: string
+        }
+        Update: {
+          connected_phone?: string
+          contact_name?: string | null
+          contact_phone?: string
+          conversa?: Json
+          created_at?: string
+          id?: string
+          instance_id?: string
+          is_group?: boolean
+          last_direction?: string
+          last_message_at?: string
+          last_message_text?: string | null
+          meta?: Json
+          sender_lid?: string | null
+          sender_photo?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       v_kb_articles_usage: {
