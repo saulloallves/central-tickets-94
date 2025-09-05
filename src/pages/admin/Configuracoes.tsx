@@ -2,7 +2,7 @@
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings, Brain, BookOpen, TrendingUp, AlertTriangle, Image, Bell, Users } from "lucide-react";
+import { Settings, Brain, BookOpen, TrendingUp, AlertTriangle, Image, Bell, Users, MessageSquare } from "lucide-react";
 import { IASettingsTab } from "@/components/configuracoes/IASettingsTab";
 import KnowledgeHubTab from "@/components/configuracoes/KnowledgeHubTab";
 import { RelatoriosTab } from "@/components/configuracoes/RelatoriosTab";
@@ -11,6 +11,7 @@ import { NotificacoesTab } from "@/components/configuracoes/NotificacoesTab";
 
 import { LogoSettings } from "@/components/configuracoes/LogoSettingsTab";
 import { EmbeddingTestTab } from '@/components/configuracoes/EmbeddingTestTab';
+import { WhatsAppManagementTab } from '@/components/configuracoes/WhatsAppManagementTab';
 
 export default function Configuracoes() {
   return (
@@ -35,7 +36,7 @@ export default function Configuracoes() {
         </div>
 
         <Tabs defaultValue="ia" className="w-full">
-          <TabsList className="grid w-full grid-cols-6 mb-6">
+          <TabsList className="grid w-full grid-cols-7 mb-6">
             <TabsTrigger value="logo" className="flex items-center gap-2">
               <Image className="h-4 w-4" />
               Logo
@@ -55,6 +56,10 @@ export default function Configuracoes() {
             <TabsTrigger value="relatorios" className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4" />
               Relatórios
+            </TabsTrigger>
+            <TabsTrigger value="whatsapp" className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
+              WhatsApp
             </TabsTrigger>
             <TabsTrigger value="debug" className="flex items-center gap-2">
               🧪 Debug
@@ -81,6 +86,10 @@ export default function Configuracoes() {
             <RelatoriosTab />
           </TabsContent>
 
+
+          <TabsContent value="whatsapp" className="space-y-6 animate-fade-in">
+            <WhatsAppManagementTab />
+          </TabsContent>
 
           <TabsContent value="debug" className="space-y-6 animate-fade-in">
             <EmbeddingTestTab />
