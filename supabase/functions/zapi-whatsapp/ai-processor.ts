@@ -3,6 +3,7 @@ import { formatResponseForFranqueado } from './utils.ts';
 import { ZAPIClient } from './zapi-client.ts';
 import { ConversationManager } from './conversation-manager.ts';
 import { ConversationMessageData } from './types.ts';
+import { encontrarDocumentosRelacionados, rerankComLLM, gerarRespostaComContexto } from './rag-engine.ts';
 
 export class AIProcessor {
   constructor(
@@ -23,26 +24,52 @@ export class AIProcessor {
     isGroup: boolean
   ): Promise<string | null> {
     try {
-      console.log('Generating AI response for message:', message);
+      console.log('Generating AI response using RAG v4 for message:', message);
       
-      // Call the existing faq-suggest function
-      const { data: aiResponse, error: aiError } = await this.supabase.functions.invoke('faq-suggest', {
-        body: { pergunta: message }
-      });
-
-      if (aiError) {
-        console.error('Error calling faq-suggest:', aiError);
+      // Use advanced RAG system (same as typebot-webhook)
+      const candidatos = await encontrarDocumentosRelacionados(message, 12);
+      
+      if (candidatos.length === 0) {
+        console.log('No documents found in RAG search');
         return null;
       }
 
-      if (!aiResponse?.resposta_sugerida) {
-        console.log('No AI response generated');
+      // Rerank with LLM
+      let docsSelecionados = await rerankComLLM(candidatos, message);
+      if (!docsSelecionados.length) {
+        console.warn('No docs after rerank; falling back to top-5 candidatos');
+        docsSelecionados = candidatos.slice(0, 5);
+      }
+      
+      console.log('Docs selecionados para resposta:', 
+        docsSelecionados.map(d => `${d.id}:${d.titulo}`).join(' | ')
+      );
+
+      if (docsSelecionados.length === 0) {
+        console.log('No relevant documents found');
         return null;
       }
 
-      // Format response for franchisee
-      const formattedResponse = formatResponseForFranqueado(aiResponse.resposta_sugerida);
-      console.log('AI response generated:', formattedResponse);
+      // Generate response with context
+      const respostaRAG = await gerarRespostaComContexto(docsSelecionados, message);
+      
+      let formattedResponse: string;
+      try {
+        const payload = JSON.parse(respostaRAG);
+        formattedResponse = formatResponseForFranqueado(payload.texto);
+      } catch (e) {
+        console.error('Error parsing RAG JSON response:', e);
+        formattedResponse = formatResponseForFranqueado(respostaRAG);
+      }
+
+      // Check if response is useful
+      const isUseful = !/não encontrei informações suficientes/i.test(formattedResponse);
+      if (!isUseful) {
+        console.log('RAG response not useful, skipping');
+        return null;
+      }
+
+      console.log('Generated useful RAG v4 response:', formattedResponse);
 
       // Send response via Z-API
       const sent = await this.zapiClient.sendMessage(phone, formattedResponse);
