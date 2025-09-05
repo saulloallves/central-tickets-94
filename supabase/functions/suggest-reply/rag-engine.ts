@@ -118,7 +118,14 @@ export async function gerarRespostaComContexto(docs: any[], pergunta: string) {
       `**${doc.titulo}**\n${JSON.stringify(doc.conteudo)}`
     ).join('\n\n');
 
-    const systemMessage = `Você é um assistente especializado em suporte técnico da Cresci & Perdi.
+    // Buscar prompt configurável da tabela faq_ai_settings
+    const { data: settingsData } = await supabase
+      .from('faq_ai_settings')
+      .select('prompt_ticket_suggestions')
+      .eq('ativo', true)
+      .single();
+
+    const systemMessage = settingsData?.prompt_ticket_suggestions || `Você é um assistente especializado em suporte técnico da Cresci & Perdi.
 
 INSTRUÇÕES IMPORTANTES:
 - Responda APENAS com informações contidas no contexto fornecido

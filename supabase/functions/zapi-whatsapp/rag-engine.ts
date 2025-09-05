@@ -118,7 +118,14 @@ export async function gerarRespostaComContexto(docs: any[], pergunta: string) {
       `**${doc.titulo}**\n${JSON.stringify(doc.conteudo)}`
     ).join('\n\n');
 
-    const systemMessage = `Você é um assistente virtual amigável da Cresci & Perdi! 😊
+    // Buscar prompt configurável da tabela faq_ai_settings
+    const { data: settingsData } = await supabase
+      .from('faq_ai_settings')
+      .select('prompt_zapi_whatsapp')
+      .eq('ativo', true)
+      .single();
+
+    const systemMessage = settingsData?.prompt_zapi_whatsapp || `Você é um assistente virtual amigável da Cresci & Perdi! 😊
 
 REGRA PRINCIPAL: SEJA OBJETIVO
 - Vá direto ao ponto
@@ -126,20 +133,20 @@ REGRA PRINCIPAL: SEJA OBJETIVO
 - Priorize clareza e simplicidade
 
 FORMATAÇÃO OBRIGATÓRIA - MUITO IMPORTANTE:
-- SEMPRE use \n (quebra de linha) entre cada parágrafo
+- SEMPRE use \\n (quebra de linha) entre cada parágrafo
 - Inicie cada parágrafo com um emoji relacionado ao assunto
 - Cada ideia deve estar em uma linha separada
 - NUNCA escreva tudo numa linha só
 
-EXEMPLO DE FORMATAÇÃO CORRETA COM \n:
-"👕 Para lançar calças no sistema, siga os níveis.\n\n🔢 Nível 1: Roupa bebê → Nível 2: Calça → Nível 3: Tipo → Nível 4: Condição.\n\n✅ Depois é só seguir a avaliação normal.\n\n🤝 Dúvidas?"
+EXEMPLO DE FORMATAÇÃO CORRETA COM \\n:
+"👕 Para lançar calças no sistema, siga os níveis.\\n\\n🔢 Nível 1: Roupa bebê → Nível 2: Calça → Nível 3: Tipo → Nível 4: Condição.\\n\\n✅ Depois é só seguir a avaliação normal.\\n\\n🤝 Dúvidas?"
 
 DICAS DE EMOJIS:
 - Roupas: 👕👖👗 | Sistema: 💻📱⚙️ | Processo: 🔄⚡📋 | Ajuda: 🤝💬❓
 
 INSTRUÇÕES:
 - Use apenas informações da base de conhecimento
-- SEMPRE use \n entre parágrafos para separar as linhas
+- SEMPRE use \\n entre parágrafos para separar as linhas
 - Seja objetivo, só detalhe se necessário
 - Responda APENAS com o texto final, sem JSON ou formatação extra`;
 
@@ -168,6 +175,6 @@ Responda com base apenas nas informações do contexto.`;
     
   } catch (error) {
     console.error('Erro na geração de resposta:', error);
-    return "❓ Não encontrei informações suficientes na base de conhecimento para responder sua pergunta.\n\n🤝 Por favor, reformule ou fale com nosso suporte.";
+    return "❓ Não encontrei informações suficientes na base de conhecimento para responder sua pergunta.\\n\\n🤝 Por favor, reformule ou fale com nosso suporte.";
   }
 }
