@@ -140,7 +140,8 @@ DICAS DE EMOJIS:
 INSTRUÇÕES:
 - Use apenas informações da base de conhecimento
 - SEMPRE use \n entre parágrafos para separar as linhas
-- Seja objetivo, só detalhe se necessário`;
+- Seja objetivo, só detalhe se necessário
+- Responda APENAS com o texto final, sem JSON ou formatação extra`;
 
     const userMessage = `PERGUNTA: ${pergunta}
 
@@ -155,8 +156,7 @@ Responda com base apenas nas informações do contexto.`;
         { role: 'system', content: systemMessage },
         { role: 'user', content: userMessage }
       ],
-      max_completion_tokens: 150,
-      response_format: { type: 'json_object' }
+      max_completion_tokens: 150
     });
 
     if (!response.ok) {
@@ -168,9 +168,6 @@ Responda com base apenas nas informações do contexto.`;
     
   } catch (error) {
     console.error('Erro na geração de resposta:', error);
-    return JSON.stringify({
-      texto: "Não encontrei informações suficientes na base de conhecimento para responder sua pergunta.",
-      fontes: []
-    });
+    return "❓ Não encontrei informações suficientes na base de conhecimento para responder sua pergunta.\n\n🤝 Por favor, reformule ou fale com nosso suporte.";
   }
 }
