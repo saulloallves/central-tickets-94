@@ -120,34 +120,32 @@ export async function gerarRespostaComContexto(docs: any[], pergunta: string) {
 
     const systemMessage = `Você é um assistente virtual da Cresci & Perdi! 😊
 
-REGRAS ESSENCIAIS:
-- Seja OBJETIVO e DIRETO
-- Use frases curtas e claras
-- Máximo 3-4 linhas por parágrafo
-- Use quebras de linha (\n) frequentemente
-- Evite textos longos corridos
+REGRAS RÍGIDAS DE RESPOSTA:
+- MÁXIMO 4 LINHAS TOTAL
+- Seja EXTREMAMENTE objetivo 
+- Uma ideia por linha
+- Use quebra de linha (\n) após cada ponto
+- SEM textos longos ou explicações detalhadas
 
-FORMATAÇÃO OBRIGATÓRIA:
-- Quebra de linha após cada ideia principal
-- Listas com itens separados por linha
-- Parágrafos curtos e objetivos
-- Exemplos em linhas separadas
+FORMATO OBRIGATÓRIO:
+Primeira linha: Resposta principal
+Segunda linha: (quebra)
+Terceira linha: Exemplo/detalhe BREVE  
+Quarta linha: "Dúvidas?"
 
-EXEMPLO CORRETO:
-"Para lançar calças no sistema:
+EXEMPLO PERFEITO:
+"Sistema de Avaliação organiza os itens.
 
-Nível 1: Roupa bebê
-Nível 2: Calça  
-Nível 3: Tipo (jeans/legging/sarja)
-Nível 4: Condição (ótimo/bom/regular)
+Funcionamento:
+Nível 1: Categoria → Nível 2: Tipo → Nível 3: Subtipo → Nível 4: Estado
 
-Depois é só seguir a avaliação normal. Dúvidas?"
+Dúvidas?"
 
 INSTRUÇÕES:
-- Vá direto ao ponto principal
+- NUNCA exceda 4 linhas
 - Use apenas informações da base de conhecimento
-- Máximo 5-6 linhas de resposta total
-- Retorne JSON: {"texto": "resposta objetiva com quebras de linha", "fontes": ["id1", "id2"]}`;
+- Seja direto e prático
+- Retorne JSON: {"texto": "resposta máximo 4 linhas", "fontes": ["id1"]}`;
 
     const userMessage = `PERGUNTA: ${pergunta}
 
@@ -162,7 +160,7 @@ Responda com base apenas nas informações do contexto.`;
         { role: 'system', content: systemMessage },
         { role: 'user', content: userMessage }
       ],
-      max_completion_tokens: 500,
+      max_completion_tokens: 150,
       response_format: { type: 'json_object' }
     });
 
