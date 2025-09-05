@@ -2,7 +2,6 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0';
 import { encontrarDocumentosRelacionados, rerankComLLM, gerarRespostaComContexto } from './rag-engine.ts';
-import { prepararMensagemParaFranqueado } from './text-utils.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -87,26 +86,18 @@ async function obterSugestaoDeRespostaParaTicket(ticket: any): Promise<TicketRes
     const respostaRAG = await gerarRespostaComContexto(docsSelecionados, textoDoTicket);
     
     let textoFinal: string;
-    let fontesUtilizadas: number[] = [];
+    let fontesUtilizadas: string[] = [];
     
     try {
       const payload = JSON.parse(respostaRAG);
-      textoFinal = prepararMensagemParaFranqueado(payload.texto);
+      textoFinal = payload.texto;
       fontesUtilizadas = payload.fontes || [];
-      
-      // Converter números das fontes para IDs dos documentos
-      const fontesIds = fontesUtilizadas
-        .filter(idx => idx >= 1 && idx <= docsSelecionados.length)
-        .map(idx => docsSelecionados[idx - 1]?.id)
-        .filter(Boolean);
-        
-      console.log('✅ Resposta RAG gerada e formatada:', textoFinal.substring(0, 100) + '...');
-      
     } catch (e) {
       console.error('Error parsing RAG JSON response:', e);
-      textoFinal = prepararMensagemParaFranqueado(respostaRAG);
-      fontesUtilizadas = [];
+      textoFinal = respostaRAG;
     }
+
+    console.log('✅ Resposta RAG gerada:', textoFinal.substring(0, 100) + '...');
 
     return {
       success: true,
@@ -116,7 +107,7 @@ async function obterSugestaoDeRespostaParaTicket(ticket: any): Promise<TicketRes
         candidatos_encontrados: candidatos.length,
         pipeline: 'v4_hibrido',
         selecionados: docsSelecionados.map(d => ({ id: d.id, titulo: d.titulo })),
-        fontes_utilizadas: fontesIds || []
+        fontes_utilizadas: fontesUtilizadas
       }
     };
 
