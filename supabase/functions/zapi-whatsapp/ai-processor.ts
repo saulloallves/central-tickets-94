@@ -50,8 +50,8 @@ export class AIProcessor {
         return null;
       }
 
-      // Generate response with context
-      const respostaRAG = await gerarRespostaComContexto(docsSelecionados, message);
+      // Generate response with context and conversation history
+      const respostaRAG = await gerarRespostaComContexto(docsSelecionados, message, undefined, phone);
       
       let formattedResponse: string;
       try {

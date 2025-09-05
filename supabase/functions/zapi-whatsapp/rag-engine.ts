@@ -110,13 +110,35 @@ Critérios:
 }
 
 /**
- * Gera resposta final usando contexto dos documentos
+ * Gera resposta final usando contexto dos documentos e histórico da conversa
  */
-export async function gerarRespostaComContexto(docs: any[], pergunta: string) {
+export async function gerarRespostaComContexto(docs: any[], pergunta: string, conversationHistory?: any[], contactPhone?: string) {
   try {
     const contexto = docs.map(doc => 
       `**${doc.titulo}**\n${JSON.stringify(doc.conteudo)}`
     ).join('\n\n');
+
+    // Buscar histórico da conversa se fornecido o contactPhone
+    let conversaCompleta = conversationHistory;
+    if (!conversaCompleta && contactPhone) {
+      const { data: conversaData } = await supabase
+        .from('whatsapp_conversas')
+        .select('conversa')
+        .eq('contact_phone', contactPhone)
+        .single();
+      
+      conversaCompleta = conversaData?.conversa || [];
+    }
+
+    // Formatar histórico da conversa (últimas 10 mensagens)
+    let historicoConversa = '';
+    if (conversaCompleta && conversaCompleta.length > 0) {
+      const ultimasMensagens = conversaCompleta.slice(-10);
+      historicoConversa = ultimasMensagens.map((msg: any) => {
+        const autor = msg.from_me ? 'Suporte' : 'Cliente';
+        return `${autor}: ${msg.text}`;
+      }).join('\n');
+    }
 
     // Buscar prompt configurável da tabela faq_ai_settings
     const { data: settingsData } = await supabase
@@ -150,12 +172,15 @@ INSTRUÇÕES:
 - Seja objetivo, só detalhe se necessário
 - Responda APENAS com o texto final, sem JSON ou formatação extra`;
 
-    const userMessage = `PERGUNTA: ${pergunta}
+    const userMessage = `PERGUNTA ATUAL: ${pergunta}
 
-CONTEXTO:
+${historicoConversa ? `HISTÓRICO DA CONVERSA:
+${historicoConversa}
+
+` : ''}CONTEXTO DA BASE DE CONHECIMENTO:
 ${contexto}
 
-Responda com base apenas nas informações do contexto.`;
+Responda com base nas informações do contexto, considerando o histórico da conversa para dar uma resposta mais personalizada e contextualizada.`;
 
     const response = await openAI('chat/completions', {
       model: 'gpt-4.1-2025-04-14',
