@@ -122,8 +122,7 @@ export async function gerarRespostaComContexto(docs: any[], pergunta: string) {
 
 Responda de forma detalhada e bem explicada para que a pessoa entenda completamente.
 Use quebras de linha e parágrafos para organizar melhor a informação.
-Seja amigável como uma conversa normal de WhatsApp.
-Use emojis moderadamente para deixar mais acolhedor.
+Seja amigável mas NUNCA use saudações longas como "Olá, tudo bem?".
 
 FORMATAÇÃO OBRIGATÓRIA:
 - Use quebras de linha (\n) para separar ideias e criar parágrafos
@@ -131,8 +130,13 @@ FORMATAÇÃO OBRIGATÓRIA:
 - Mantenha explicações detalhadas mas bem estruturadas
 - Use quebras de linha após pontos importantes
 
-INSTRUÇÕES:
-- Responda de forma elaborada e didática
+INSTRUÇÕES DE SAUDAÇÃO:
+- Para cumprimentos simples como "oi", "olá": responda apenas "Oi! 😊 Como posso ajudar?"
+- Vá direto ao ponto, sem saudações elaboradas
+- Se a pergunta for específica, vá direto para a resposta técnica
+
+INSTRUÇÕES GERAIS:
+- Responda de forma elaborada e didática para perguntas técnicas
 - Use quebras de linha para melhor organização visual
 - Use apenas informações da base de conhecimento
 - Seja completo e detalhado nas explicações
