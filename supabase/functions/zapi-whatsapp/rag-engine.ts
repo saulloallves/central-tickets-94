@@ -29,8 +29,8 @@ export async function encontrarDocumentosRelacionados(textoTicket: string, limit
     const { data: candidatos, error } = await supabase.rpc('match_documentos_hibrido', {
       query_embedding: queryEmbedding,
       query_text: textoTicket,
-      match_threshold: 0.1,
-      match_count: limiteResultados
+      match_count: limiteResultados,
+      alpha: 0.5
     });
 
     if (error) {
