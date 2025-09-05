@@ -138,7 +138,15 @@ ${docs.map(d => `ID:${d.id}\nTÍTULO:${d.titulo}\nTRECHO:${limparTexto(d.conteud
   const data = await response.json();
   let scored = [];
   try { 
-    scored = JSON.parse(data.choices[0].message.content); 
+    const content = data.choices[0].message.content;
+    // Se for string, precisa fazer parse. Se já for objeto, usar direto
+    scored = typeof content === 'string' ? JSON.parse(content) : content;
+    
+    // Garantir que scored é um array
+    if (!Array.isArray(scored)) {
+      console.error("❌ Resposta do rerank não é array:", scored);
+      return docs.slice(0, 5);
+    }
   } catch (parseError) {
     console.error("❌ Erro no parse do rerank JSON:", parseError);
     return docs.slice(0, 5);
