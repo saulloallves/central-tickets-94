@@ -56,10 +56,12 @@ export class AIProcessor {
       let formattedResponse: string;
       try {
         const payload = JSON.parse(respostaRAG);
-        formattedResponse = formatResponseForFranqueado(payload.texto);
+        // Send the AI response exactly as generated, without any formatting
+        formattedResponse = payload.texto;
       } catch (e) {
         console.error('Error parsing RAG JSON response:', e);
-        formattedResponse = formatResponseForFranqueado(respostaRAG);
+        // If parsing fails, use the raw response without formatting
+        formattedResponse = respostaRAG;
       }
 
       // Check if response is useful

@@ -35,7 +35,7 @@ export class ZAPIClient {
         },
         body: JSON.stringify({
           phone: phone,
-          message: message.trim(),
+          message: message, // Send message exactly as received, without trim()
         }),
       });
 
