@@ -289,12 +289,7 @@ serve(async (req) => {
       unidade_id: unidade.id,
       equipe_responsavel_id: equipeResponsavelId,
       franqueado_id: franqueadoId,
-      canal_origem: 'typebot',
-      origem_dados: {
-        source: 'typebot_webhook',
-        ai_analysis: analysisResult,
-        metadata: metadata || {}
-      }
+      canal_origem: 'typebot'
     };
 
     const ticket = await createTicket(ticketData);

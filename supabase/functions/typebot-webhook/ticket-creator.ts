@@ -17,7 +17,6 @@ export interface TicketData {
   equipe_responsavel_id?: string;
   franqueado_id?: string;
   canal_origem?: string;
-  origem_dados?: any;
 }
 
 export async function createTicket(ticketData: TicketData) {
@@ -40,7 +39,6 @@ export async function createTicket(ticketData: TicketData) {
       equipe_responsavel_id: ticketData.equipe_responsavel_id,
       franqueado_id: ticketData.franqueado_id,
       canal_origem: ticketData.canal_origem || 'typebot',
-      origem_dados: ticketData.origem_dados || { source: 'typebot_webhook' },
       status: 'aberto'
     })
     .select()
