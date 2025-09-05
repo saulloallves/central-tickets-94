@@ -54,14 +54,8 @@ export async function classifyTicket(message: string, equipes: any[]): Promise<C
 
     const equipesDisponiveis = equipes?.map(e => `- ${e.nome}: ${e.introducao || 'Sem especialidades definidas'}`).join('\n') || 'Nenhuma equipe disponível';
 
-    // Buscar prompt configurável da tabela faq_ai_settings
-    const { data: settingsData } = await supabase
-      .from('faq_ai_settings')
-      .select('prompt_classificacao')
-      .eq('ativo', true)
-      .single();
-
-    const analysisPrompt = settingsData?.prompt_classificacao || `Você é um especialista em classificação de tickets de suporte técnico da Cresci & Perdi.
+    const analysisPrompt = `
+Você é um especialista em classificação de tickets de suporte técnico da Cresci & Perdi.
 
 Analise este ticket e forneça:
 
@@ -100,7 +94,8 @@ Responda APENAS em formato JSON válido:
   "justificativa": "Breve explicação da análise e por que escolheu esta equipe"
 }
 
-CRÍTICO: Use APENAS estas 4 prioridades: imediato, ate_1_hora, ainda_hoje, posso_esperar`;
+CRÍTICO: Use APENAS estas 4 prioridades: imediato, ate_1_hora, ainda_hoje, posso_esperar
+`;
 
     const requestBody = {
       model: modelToUse,
