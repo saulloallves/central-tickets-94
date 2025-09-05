@@ -15,6 +15,11 @@ export class ZAPIClient {
       return false;
     }
 
+    if (!message || message.trim() === '') {
+      console.error('Cannot send empty message');
+      return false;
+    }
+
     try {
       const response = await fetch(`${this.baseUrl}/instances/${this.instanceId}/token/${this.token}/send-text`, {
         method: 'POST',
@@ -23,7 +28,7 @@ export class ZAPIClient {
         },
         body: JSON.stringify({
           phone: phone,
-          message: message,
+          message: message.trim(),
         }),
       });
 

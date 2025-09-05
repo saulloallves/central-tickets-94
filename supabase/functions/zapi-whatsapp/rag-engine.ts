@@ -145,7 +145,7 @@ ${contexto}
 Responda com base apenas nas informações do contexto.`;
 
     const response = await openAI('chat/completions', {
-      model: 'gpt-5-2025-08-07',
+      model: 'gpt-4.1-2025-04-14',
       messages: [
         { role: 'system', content: systemMessage },
         { role: 'user', content: userMessage }
