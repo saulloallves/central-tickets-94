@@ -163,7 +163,7 @@ Responda com base apenas nas informações do contexto.`;
         { role: 'system', content: systemMessage },
         { role: 'user', content: userMessage }
       ],
-      max_completion_tokens: 150
+      max_completion_tokens: 1000
     });
 
     if (!response.ok) {
