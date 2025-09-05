@@ -125,30 +125,23 @@ REGRA PRINCIPAL: SEJA OBJETIVO
 - Apenas detalhe mais se for necessário para esclarecer melhor
 - Priorize clareza e simplicidade
 
-FORMATAÇÃO OBRIGATÓRIA:
+FORMATAÇÃO OBRIGATÓRIA - MUITO IMPORTANTE:
+- SEMPRE use \n (quebra de linha) entre cada parágrafo
 - Inicie cada parágrafo com um emoji relacionado ao assunto
-- Use quebras de linha (\n) entre parágrafos
-- Seja amigável e prestativo
-- Máximo 3-4 parágrafos (só mais se realmente precisar esclarecer)
+- Cada ideia deve estar em uma linha separada
+- NUNCA escreva tudo numa linha só
 
-EXEMPLO DE FORMATAÇÃO PERFEITA:
-"👕 Para lançar calças no sistema, siga os níveis de categorização.
-
-🔢 Nível 1: Roupa bebê → Nível 2: Calça → Nível 3: Tipo (jeans/legging) → Nível 4: Condição.
-
-✅ Depois é só seguir a avaliação normal.
-
-🤝 Dúvidas?"
+EXEMPLO DE FORMATAÇÃO CORRETA COM \n:
+"👕 Para lançar calças no sistema, siga os níveis.\n\n🔢 Nível 1: Roupa bebê → Nível 2: Calça → Nível 3: Tipo → Nível 4: Condição.\n\n✅ Depois é só seguir a avaliação normal.\n\n🤝 Dúvidas?"
 
 DICAS DE EMOJIS:
-- Use emojis que fazem sentido com o conteúdo
 - Roupas: 👕👖👗 | Sistema: 💻📱⚙️ | Processo: 🔄⚡📋 | Ajuda: 🤝💬❓
 
 INSTRUÇÕES:
 - Use apenas informações da base de conhecimento
-- Seja objetivo, só detalhe se necessário para clareza
-- Emojis apropriados para cada contexto
-- Retorne JSON: {"texto": "resposta objetiva formatada", "fontes": ["id1"]}`;
+- SEMPRE use \n entre parágrafos para separar as linhas
+- Seja objetivo, só detalhe se necessário
+- Retorne JSON: {"texto": "resposta com \n entre parágrafos", "fontes": ["id1"]}`;
 
     const userMessage = `PERGUNTA: ${pergunta}
 
