@@ -10,7 +10,8 @@ import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Save, RotateCcw, Info, Zap, MessageCircle, Sparkles, Settings, Brain, RefreshCw, CheckCircle } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Save, RotateCcw, Info, Zap, MessageCircle, Sparkles, Settings, Brain, RefreshCw, CheckCircle, Edit, Bot, Phone, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -173,6 +174,7 @@ export function IASettingsTab() {
   const [lambdaModels, setLambdaModels] = useState<any[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<'none' | 'success' | 'error'>('none');
   const [isAutoLoading, setIsAutoLoading] = useState(false);
+  const [editingPrompt, setEditingPrompt] = useState<{type: string, title: string, value: string} | null>(null);
   const { toast } = useToast();
 
   // Get models for current provider
@@ -1080,37 +1082,102 @@ export function IASettingsTab() {
             
             <h4 className="font-semibold text-sm text-muted-foreground">🔧 Prompts Específicos por Funcionalidade</h4>
             
-            <div className="space-y-2">
-              <Label htmlFor="prompt_typebot">🤖 Prompt para Typebot (Webhook)</Label>
-              <Textarea
-                id="prompt_typebot"
-                value={settings.prompt_typebot || ''}
-                onChange={(e) => setSettings(prev => ({...prev, prompt_typebot: e.target.value}))}
-                rows={5}
-                placeholder="Instruções específicas para respostas do Typebot..."
-              />
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="h-auto p-4 flex flex-col items-start gap-2 hover:bg-muted/50">
+                    <div className="flex items-center gap-2">
+                      <Bot className="h-4 w-4" />
+                      <span className="font-medium">Typebot</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground text-left">
+                      Configurar prompt para webhook do Typebot
+                    </p>
+                    <Edit className="h-3 w-3 self-end" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>🤖 Prompt para Typebot (Webhook)</DialogTitle>
+                    <DialogDescription>
+                      Configure as instruções específicas para respostas do Typebot
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <Textarea
+                      value={settings.prompt_typebot || ''}
+                      onChange={(e) => setSettings(prev => ({...prev, prompt_typebot: e.target.value}))}
+                      rows={12}
+                      placeholder="Instruções específicas para respostas do Typebot..."
+                      className="min-h-[300px]"
+                    />
+                  </div>
+                </DialogContent>
+              </Dialog>
 
-            <div className="space-y-2">
-              <Label htmlFor="prompt_zapi_whatsapp">💬 Prompt para WhatsApp (Z-API)</Label>
-              <Textarea
-                id="prompt_zapi_whatsapp"
-                value={settings.prompt_zapi_whatsapp || ''}
-                onChange={(e) => setSettings(prev => ({...prev, prompt_zapi_whatsapp: e.target.value}))}
-                rows={8}
-                placeholder="Instruções específicas para respostas do WhatsApp..."
-              />
-            </div>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="h-auto p-4 flex flex-col items-start gap-2 hover:bg-muted/50">
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4" />
+                      <span className="font-medium">WhatsApp</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground text-left">
+                      Configurar prompt para Z-API WhatsApp
+                    </p>
+                    <Edit className="h-3 w-3 self-end" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>💬 Prompt para WhatsApp (Z-API)</DialogTitle>
+                    <DialogDescription>
+                      Configure as instruções específicas para respostas do WhatsApp
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <Textarea
+                      value={settings.prompt_zapi_whatsapp || ''}
+                      onChange={(e) => setSettings(prev => ({...prev, prompt_zapi_whatsapp: e.target.value}))}
+                      rows={15}
+                      placeholder="Instruções específicas para respostas do WhatsApp..."
+                      className="min-h-[400px]"
+                    />
+                  </div>
+                </DialogContent>
+              </Dialog>
 
-            <div className="space-y-2">
-              <Label htmlFor="prompt_ticket_suggestions">🎫 Prompt para Sugestões de Tickets</Label>
-              <Textarea
-                id="prompt_ticket_suggestions"
-                value={settings.prompt_ticket_suggestions || ''}
-                onChange={(e) => setSettings(prev => ({...prev, prompt_ticket_suggestions: e.target.value}))}
-                rows={4}
-                placeholder="Instruções específicas para sugestões no sistema de tickets..."
-              />
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="h-auto p-4 flex flex-col items-start gap-2 hover:bg-muted/50">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      <span className="font-medium">Tickets</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground text-left">
+                      Configurar prompt para sugestões de tickets
+                    </p>
+                    <Edit className="h-3 w-3 self-end" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>🎫 Prompt para Sugestões de Tickets</DialogTitle>
+                    <DialogDescription>
+                      Configure as instruções específicas para sugestões no sistema de tickets
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <Textarea
+                      value={settings.prompt_ticket_suggestions || ''}
+                      onChange={(e) => setSettings(prev => ({...prev, prompt_ticket_suggestions: e.target.value}))}
+                      rows={8}
+                      placeholder="Instruções específicas para sugestões no sistema de tickets..."
+                      className="min-h-[250px]"
+                    />
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         </CardContent>
