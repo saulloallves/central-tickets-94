@@ -28,10 +28,15 @@ interface AISettings {
   modelo_chat: string;
   modelo_classificacao: string;
   
-  // Prompts
+  // Prompts gerais
   prompt_sugestao: string;
   prompt_chat: string;
   prompt_classificacao: string;
+  
+  // Prompts específicos por funcionalidade
+  prompt_typebot: string;
+  prompt_zapi_whatsapp: string;
+  prompt_ticket_suggestions: string;
   
   // Configurações gerais
   estilo_resposta: string;
@@ -110,6 +115,9 @@ const defaultSettings: AISettings = {
   prompt_sugestao: 'Você é um assistente especializado em suporte técnico. Ajude o atendente com sugestões baseadas na base de conhecimento da Cresci & Perdi.',
   prompt_chat: 'Você é um assistente de IA da Cresci & Perdi. Ajude o atendente a resolver o ticket do cliente baseado nos manuais e procedimentos da empresa.',
   prompt_classificacao: 'Classifique este ticket nas categorias apropriadas baseado na descrição do problema e diretrizes da Cresci & Perdi.',
+  prompt_typebot: 'Você é um assistente virtual amigável da Cresci & Perdi! Responda de forma objetiva e útil baseado nas informações da base de conhecimento. Use emojis e quebras de linha para uma resposta mais amigável.',
+  prompt_zapi_whatsapp: 'Você é um assistente virtual da Cresci & Perdi no WhatsApp. Seja objetivo, use emojis e formate bem as respostas com quebras de linha. Baseie-se apenas nas informações da base de conhecimento.',
+  prompt_ticket_suggestions: 'Você é um assistente especializado em suporte da Cresci & Perdi. Gere sugestões de resposta para atendentes baseadas na base de conhecimento e contexto do ticket.',
   auto_classificacao: true,
   usar_busca_semantica: true,
   temperatura_chat: 0.3,
@@ -372,6 +380,9 @@ export function IASettingsTab() {
           prompt_sugestao: data.prompt_sugestao || defaultSettings.prompt_sugestao,
           prompt_chat: data.prompt_chat || defaultSettings.prompt_chat,
           prompt_classificacao: data.prompt_classificacao || defaultSettings.prompt_classificacao,
+          prompt_typebot: data.prompt_typebot || defaultSettings.prompt_typebot,
+          prompt_zapi_whatsapp: data.prompt_zapi_whatsapp || defaultSettings.prompt_zapi_whatsapp,
+          prompt_ticket_suggestions: data.prompt_ticket_suggestions || defaultSettings.prompt_ticket_suggestions,
           auto_classificacao: data.auto_classificacao ?? defaultSettings.auto_classificacao,
           usar_busca_semantica: data.usar_busca_semantica ?? defaultSettings.usar_busca_semantica,
           temperatura_chat: data.temperatura_chat ?? defaultSettings.temperatura_chat,
@@ -996,7 +1007,10 @@ export function IASettingsTab() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Prompts Gerais */}
           <div className="space-y-4">
+            <h4 className="font-semibold text-sm text-muted-foreground border-b pb-2">📋 Prompts Gerais do Sistema</h4>
+            
             <div className="space-y-2">
               <Label htmlFor="prompt_sugestao">🔮 Prompt para Sugestões</Label>
               <Textarea
@@ -1028,6 +1042,55 @@ export function IASettingsTab() {
                 rows={3}
                 placeholder="Instruções para classificação automática..."
               />
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Prompts Específicos por Funcionalidade */}
+          <div className="space-y-4">
+            <h4 className="font-semibold text-sm text-muted-foreground border-b pb-2">🎯 Prompts dos Agentes Finais</h4>
+            
+            <div className="space-y-2">
+              <Label htmlFor="prompt_typebot">🤖 Prompt Typebot (Agente Final)</Label>
+              <Textarea
+                id="prompt_typebot"
+                value={settings.prompt_typebot}
+                onChange={(e) => setSettings(prev => ({...prev, prompt_typebot: e.target.value}))}
+                rows={4}
+                placeholder="Instruções para o agente que gera respostas finais no Typebot webhook..."
+              />
+              <p className="text-xs text-muted-foreground">
+                Este prompt será usado pelo agente que gera a resposta final no Typebot, após a busca RAG.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="prompt_zapi_whatsapp">📱 Prompt WhatsApp Z-API (Agente Final)</Label>
+              <Textarea
+                id="prompt_zapi_whatsapp"
+                value={settings.prompt_zapi_whatsapp}
+                onChange={(e) => setSettings(prev => ({...prev, prompt_zapi_whatsapp: e.target.value}))}
+                rows={4}
+                placeholder="Instruções para o agente que gera respostas finais no WhatsApp..."
+              />
+              <p className="text-xs text-muted-foreground">
+                Este prompt será usado pelo agente que gera a resposta final no WhatsApp (Z-API), após a busca RAG.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="prompt_ticket_suggestions">🎫 Prompt Sugestões de Tickets (Agente Final)</Label>
+              <Textarea
+                id="prompt_ticket_suggestions"
+                value={settings.prompt_ticket_suggestions}
+                onChange={(e) => setSettings(prev => ({...prev, prompt_ticket_suggestions: e.target.value}))}
+                rows={4}
+                placeholder="Instruções para o agente que gera sugestões no sistema de tickets..."
+              />
+              <p className="text-xs text-muted-foreground">
+                Este prompt será usado pelo agente que gera sugestões de resposta no sistema de tickets, após a busca RAG.
+              </p>
             </div>
           </div>
         </CardContent>
