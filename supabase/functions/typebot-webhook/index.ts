@@ -99,7 +99,7 @@ ${docs.map(d => `ID:${d.id}\nTÍTULO:${d.titulo}\nTRECHO:${limparTexto(d.conteud
 `.trim();
 
   const r = await openAI('chat/completions', {
-    model: 'gpt-4o-mini',
+    model: 'gpt-4.1',
     messages: [{ role: 'user', content: prompt }],
     temperature: 0,
     response_format: { type: 'json_object' }
