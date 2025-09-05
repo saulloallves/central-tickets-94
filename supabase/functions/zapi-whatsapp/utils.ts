@@ -27,8 +27,10 @@ export function formatResponseForFranqueado(aiResponse: string): string {
   formatted = formatted.replace(/^(Olá|Oi|Bom dia|Boa tarde|Boa noite)[,!]?\s*/i, '');
   formatted = formatted.replace(/\s*(Att|Atenciosamente|Abraços|Obrigado)[.,]?\s*$/i, '');
   
-  // Clean up extra whitespace
-  formatted = formatted.replace(/\s+/g, ' ').trim();
+  // Clean up extra whitespace BUT PRESERVE line breaks
+  formatted = formatted.replace(/[ \t]+/g, ' '); // Only remove spaces and tabs, not \n
+  formatted = formatted.replace(/\n\s+/g, '\n'); // Remove spaces after line breaks
+  formatted = formatted.trim();
   
   return formatted;
 }
