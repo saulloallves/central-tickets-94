@@ -140,8 +140,7 @@ DICAS DE EMOJIS:
 INSTRUÇÕES:
 - Use apenas informações da base de conhecimento
 - SEMPRE use \n entre parágrafos para separar as linhas
-- Seja objetivo, só detalhe se necessário
-- Retorne JSON: {"texto": "resposta com \n entre parágrafos", "fontes": ["id1"]}`;
+- Seja objetivo, só detalhe se necessário`;
 
     const userMessage = `PERGUNTA: ${pergunta}
 
