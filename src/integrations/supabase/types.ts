@@ -717,9 +717,6 @@ export type Database = {
           prompt_chat: string | null
           prompt_classificacao: string | null
           prompt_sugestao: string | null
-          prompt_ticket_suggestions: string | null
-          prompt_typebot: string | null
-          prompt_zapi_whatsapp: string | null
           temperatura: number
           temperatura_chat: number | null
           temperatura_classificacao: number | null
@@ -770,9 +767,6 @@ export type Database = {
           prompt_chat?: string | null
           prompt_classificacao?: string | null
           prompt_sugestao?: string | null
-          prompt_ticket_suggestions?: string | null
-          prompt_typebot?: string | null
-          prompt_zapi_whatsapp?: string | null
           temperatura?: number
           temperatura_chat?: number | null
           temperatura_classificacao?: number | null
@@ -823,9 +817,6 @@ export type Database = {
           prompt_chat?: string | null
           prompt_classificacao?: string | null
           prompt_sugestao?: string | null
-          prompt_ticket_suggestions?: string | null
-          prompt_typebot?: string | null
-          prompt_zapi_whatsapp?: string | null
           temperatura?: number
           temperatura_chat?: number | null
           temperatura_classificacao?: number | null
