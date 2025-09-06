@@ -4,6 +4,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0';
 import { openAI } from './openai-client.ts';
+import { wrapAIFunction } from '../_shared/ai-alert-utils.ts';
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -22,6 +23,11 @@ export async function classifyTicket(message: string, equipes: any[]): Promise<C
   if (!openaiApiKey || !equipes || equipes.length === 0) {
     return null;
   }
+
+  return await wrapAIFunction(
+    'TypebotClassifier-AI',
+    'typebot-webhook/ai-classifier/classifyTicket',
+    async () => {
 
   try {
     console.log('Iniciando análise IA completa...');
