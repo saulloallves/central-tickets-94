@@ -139,7 +139,14 @@ ${alert.userId ? `👤 *Usuário:* ${alert.userId}` : ''}
 ⚠️ *Ação necessária:* Verificar configurações e conectividade da IA`;
 
     // Enviar via Z-API
-    const zapiUrl = `${zapiConfig.base_url}/send-text`;
+    const zapiUrl = `${zapiConfig.base_url}/instances/${zapiConfig.instance_id}/token/${zapiConfig.instance_token}/send-text`;
+    
+    console.log('📱 Enviando para Z-API:', {
+      url: zapiUrl,
+      phone: grupoId,
+      messageLength: mensagem.length
+    });
+
     const response = await fetch(zapiUrl, {
       method: 'POST',
       headers: {
@@ -148,9 +155,7 @@ ${alert.userId ? `👤 *Usuário:* ${alert.userId}` : ''}
       },
       body: JSON.stringify({
         phone: grupoId,
-        message: mensagem,
-        instance_id: zapiConfig.instance_id,
-        instance_token: zapiConfig.instance_token
+        message: mensagem
       })
     });
 
