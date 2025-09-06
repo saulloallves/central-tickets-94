@@ -12,6 +12,7 @@ import { NotificacoesTab } from "@/components/configuracoes/NotificacoesTab";
 import { LogoSettings } from "@/components/configuracoes/LogoSettingsTab";
 import { EmbeddingTestTab } from '@/components/configuracoes/EmbeddingTestTab';
 import { WhatsAppManagementTab } from '@/components/configuracoes/WhatsAppManagementTab';
+import { AIAlertsTestTab } from '@/components/configuracoes/AIAlertsTestTab';
 
 export default function Configuracoes() {
   return (
@@ -36,7 +37,7 @@ export default function Configuracoes() {
         </div>
 
         <Tabs defaultValue="ia" className="w-full">
-          <TabsList className="grid w-full grid-cols-7 mb-6">
+          <TabsList className="grid w-full grid-cols-8 mb-6">
             <TabsTrigger value="logo" className="flex items-center gap-2">
               <Image className="h-4 w-4" />
               Logo
@@ -60,6 +61,10 @@ export default function Configuracoes() {
             <TabsTrigger value="whatsapp" className="flex items-center gap-2">
               <MessageSquare className="h-4 w-4" />
               WhatsApp
+            </TabsTrigger>
+            <TabsTrigger value="ai-alerts" className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4" />
+              Alertas IA
             </TabsTrigger>
             <TabsTrigger value="debug" className="flex items-center gap-2">
               🧪 Debug
@@ -89,6 +94,10 @@ export default function Configuracoes() {
 
           <TabsContent value="whatsapp" className="space-y-6 animate-fade-in">
             <WhatsAppManagementTab />
+          </TabsContent>
+
+          <TabsContent value="ai-alerts" className="space-y-6 animate-fade-in">
+            <AIAlertsTestTab />
           </TabsContent>
 
           <TabsContent value="debug" className="space-y-6 animate-fade-in">

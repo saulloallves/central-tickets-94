@@ -2,10 +2,12 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAIAlertSystem } from '@/hooks/useAIAlertSystem';
 
 export const useAIAnalysis = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { wrapAIFunction } = useAIAlertSystem();
 
   const analyzeTicket = async (ticketId: string, descricao: string, categoria?: string) => {
     setLoading(true);

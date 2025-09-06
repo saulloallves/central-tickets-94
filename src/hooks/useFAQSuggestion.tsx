@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAIAlertSystem } from '@/hooks/useAIAlertSystem';
 
 interface FAQResponse {
   resposta_ia_sugerida: string;
@@ -11,6 +12,7 @@ interface FAQResponse {
 export const useFAQSuggestion = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { wrapAIFunction } = useAIAlertSystem();
 
   const getSuggestion = async (pergunta: string): Promise<FAQResponse | null> => {
     if (!pergunta.trim()) return null;
@@ -19,27 +21,37 @@ export const useFAQSuggestion = () => {
     try {
       console.log('Getting FAQ suggestion for:', pergunta);
       
-      const { data, error } = await supabase.functions.invoke('faq-suggest', {
-        body: { pergunta }
-      });
+      const data = await wrapAIFunction(
+        'FAQ-Suggest-AI',
+        'hooks/useFAQSuggestion/getSuggestion',
+        async () => {
+          const { data, error } = await supabase.functions.invoke('faq-suggest', {
+            body: { pergunta }
+          });
 
-      if (error) {
-        console.error('FAQ suggestion error:', error);
-        toast({
-          title: "Erro na Sugestão",
-          description: "Não foi possível obter sugestão da IA",
-          variant: "destructive",
-        });
-        return null;
-      }
+          if (error) {
+            console.error('FAQ suggestion error:', error);
+            throw error;
+          }
+
+          if (!data || !data.resposta_ia_sugerida) {
+            throw new Error('Resposta vazia da IA FAQ');
+          }
+
+          return data;
+        },
+        undefined,
+        undefined,
+        { pergunta }
+      );
 
       console.log('FAQ suggestion received:', data);
       return data;
     } catch (error) {
       console.error('Error in FAQ suggestion:', error);
       toast({
-        title: "Erro",
-        description: "Erro inesperado na sugestão",
+        title: "Erro na Sugestão",
+        description: "Não foi possível obter sugestão da IA",
         variant: "destructive",
       });
       return null;

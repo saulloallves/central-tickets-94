@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAIAlertSystem } from '@/hooks/useAIAlertSystem';
 
 interface AISuggestion {
   id: string;
@@ -28,6 +29,7 @@ export const useAISuggestion = (ticketId: string) => {
   const [suggestion, setSuggestion] = useState<AISuggestion | null>(null);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { wrapAIFunction } = useAIAlertSystem();
 
   const getLatestSuggestion = async () => {
     if (!ticketId) return;
@@ -54,31 +56,48 @@ export const useAISuggestion = (ticketId: string) => {
   };
 
   const generateSuggestion = async () => {
+    if (!ticketId) return;
+    
     setLoading(true);
+    console.log('🤖 Iniciando geração de sugestão para ticket:', ticketId);
+    
     try {
-      console.log('Generating RAG-powered AI suggestion for ticket:', ticketId);
-      
-      // Create timeout promise
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Timeout: A requisição RAG demorou mais que 45 segundos')), 45000)
-      );
-      
-      // Race between function call and timeout
-      const suggestionPromise = supabase.functions.invoke('suggest-reply', {
-        body: { ticketId }
-      });
-      
-      const { data, error } = await Promise.race([suggestionPromise, timeoutPromise]) as any;
+      // Usar o wrapper de alerta para monitorar a função de IA
+      const data = await wrapAIFunction(
+        'SuggestReply-RAG',
+        'hooks/useAISuggestion/generateSuggestion',
+        async () => {
+          console.log('📡 Chamando Edge Function suggest-reply...');
+          
+          // Create timeout promise
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Timeout: A requisição RAG demorou mais que 45 segundos')), 45000)
+          );
+          
+          // Race between function call and timeout
+          const suggestionPromise = supabase.functions.invoke('suggest-reply', {
+            body: { ticketId }
+          });
+          
+          const { data, error } = await Promise.race([suggestionPromise, timeoutPromise]) as any;
 
-      if (error) {
-        console.error('RAG Suggestion error:', error);
-        toast({
-          title: "Erro na Sugestão RAG",
-          description: error.message || "Não foi possível gerar sugestão com a base RAG",
-          variant: "destructive",
-        });
-        return null;
-      }
+          if (error) {
+            console.error('❌ Erro na Edge Function:', error);
+            throw error;
+          }
+
+          console.log('✅ Resposta da Edge Function recebida:', data);
+
+          if (!data || !data.resposta) {
+            throw new Error('Resposta vazia da IA');
+          }
+          
+          return data;
+        },
+        ticketId,
+        undefined,
+        { ticketId }
+      );
 
       console.log('RAG AI suggestion generated:', data);
       

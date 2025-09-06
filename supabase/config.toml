@@ -16,6 +16,9 @@ jwt_expiry = 3600
 enable_signup = true
 enable_anonymous_users = false
 
+[functions.ai-alert-system]
+verify_jwt = false
+
 [functions.analyze-ticket]
 verify_jwt = false
 
