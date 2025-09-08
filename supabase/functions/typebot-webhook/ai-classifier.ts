@@ -28,39 +28,38 @@ export async function classifyTicket(message: string, equipes: any[]): Promise<C
     'TypebotClassifier-AI',
     'typebot-webhook/ai-classifier/classifyTicket',
     async () => {
+      try {
+        console.log('Iniciando análise IA completa...');
+        
+        const { data: aiSettings } = await supabase
+          .from('faq_ai_settings')
+          .select('*')
+          .eq('ativo', true)
+          .maybeSingle();
 
-  try {
-    console.log('Iniciando análise IA completa...');
-    
-    const { data: aiSettings } = await supabase
-      .from('faq_ai_settings')
-      .select('*')
-      .eq('ativo', true)
-      .maybeSingle();
+        const modelToUse = aiSettings?.modelo_classificacao || 'gpt-4o-mini';
+        const apiProvider = aiSettings?.api_provider || 'openai';
+        
+        let apiUrl = 'https://api.openai.com/v1/chat/completions';
+        let authToken = openaiApiKey;
+        let apiHeaders = {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json',
+        };
+        
+        if (apiProvider === 'lambda' && aiSettings?.api_base_url) {
+          apiUrl = `${aiSettings.api_base_url}/chat/completions`;
+          authToken = aiSettings.api_key || openaiApiKey;
+          apiHeaders.Authorization = `Bearer ${authToken}`;
+          
+          if (aiSettings.custom_headers && typeof aiSettings.custom_headers === 'object') {
+            Object.assign(apiHeaders, aiSettings.custom_headers);
+          }
+        }
 
-    const modelToUse = aiSettings?.modelo_classificacao || 'gpt-4o-mini';
-    const apiProvider = aiSettings?.api_provider || 'openai';
-    
-    let apiUrl = 'https://api.openai.com/v1/chat/completions';
-    let authToken = openaiApiKey;
-    let apiHeaders = {
-      'Authorization': `Bearer ${authToken}`,
-      'Content-Type': 'application/json',
-    };
-    
-    if (apiProvider === 'lambda' && aiSettings?.api_base_url) {
-      apiUrl = `${aiSettings.api_base_url}/chat/completions`;
-      authToken = aiSettings.api_key || openaiApiKey;
-      apiHeaders.Authorization = `Bearer ${authToken}`;
-      
-      if (aiSettings.custom_headers && typeof aiSettings.custom_headers === 'object') {
-        Object.assign(apiHeaders, aiSettings.custom_headers);
-      }
-    }
+        const equipesDisponiveis = equipes?.map(e => `- ${e.nome}: ${e.introducao || 'Sem especialidades definidas'}`).join('\n') || 'Nenhuma equipe disponível';
 
-    const equipesDisponiveis = equipes?.map(e => `- ${e.nome}: ${e.introducao || 'Sem especialidades definidas'}`).join('\n') || 'Nenhuma equipe disponível';
-
-    const analysisPrompt = `
+        const analysisPrompt = `
 Você é um especialista em classificação de tickets de suporte técnico da Cresci & Perdi.
 
 Analise este ticket e forneça:
@@ -78,137 +77,133 @@ Analise este ticket e forneça:
    - ainda_hoje: problemas importantes mas não bloqueiam trabalho
    - posso_esperar: dúvidas, solicitações, problemas menores
 
-4. EQUIPE_SUGERIDA: Analise cuidadosamente qual equipe deve atender baseado nas ESPECIALIDADES de cada equipe:
+4. EQUIPE SUGERIDA: Escolha a melhor equipe baseado nas especialidades:
 
-EQUIPES E SUAS ESPECIALIDADES:
 ${equipesDisponiveis}
 
-INSTRUÇÕES PARA DESIGNAÇÃO DE EQUIPE:
-- Leia atentamente as ESPECIALIDADES de cada equipe listadas acima
-- Escolha a equipe cuja especialidade melhor corresponde ao problema descrito
-- Use o nome EXATO da equipe como aparece na lista
-- Se nenhuma equipe se adequar perfeitamente, retorne null
+ANÁLISE: "${message}"
 
-Descrição do problema: "${message}"
-
-Responda APENAS em formato JSON válido:
+Responda APENAS em JSON válido:
 {
-  "titulo": "Título Descritivo Criativo",
-  "categoria": "categoria_sugerida", 
-  "prioridade": "imediato_ou_ate_1_hora_ou_ainda_hoje_ou_posso_esperar",
-  "equipe_sugerida": "nome_exato_da_equipe_ou_null",
+  "categoria": "uma_das_categorias_definidas",
+  "prioridade": "uma_das_4_prioridades_definidas",
+  "titulo": "Título de 3 palavras descritivo",
+  "equipe_sugerida": "id_da_equipe_mais_apropriada_ou_null",
   "justificativa": "Breve explicação da análise e por que escolheu esta equipe"
 }
 
 CRÍTICO: Use APENAS estas 4 prioridades: imediato, ate_1_hora, ainda_hoje, posso_esperar
 `;
 
-    const requestBody = {
-      model: modelToUse,
-      messages: [
-        {
-          role: 'system',
-          content: 'Você é um especialista em classificação de tickets de suporte técnico. Analise sempre em português brasileiro e seja preciso nas classificações.'
-        },
-        {
-          role: 'user',
-          content: analysisPrompt
+        const requestBody = {
+          model: modelToUse,
+          messages: [
+            {
+              role: 'system',
+              content: 'Você é um especialista em classificação de tickets de suporte técnico. Analise sempre em português brasileiro e seja preciso nas classificações.'
+            },
+            {
+              role: 'user',
+              content: analysisPrompt
+            }
+          ]
+        };
+
+        if (apiProvider === 'lambda') {
+          requestBody.temperature = aiSettings?.temperatura_classificacao || 0.1;
+          requestBody.max_tokens = aiSettings?.max_tokens_classificacao || 500;
+          requestBody.top_p = 1.0;
+          requestBody.frequency_penalty = 0;
+          requestBody.presence_penalty = 0;
+        } else {
+          requestBody.max_tokens = aiSettings?.max_tokens_classificacao || 500;
+          requestBody.temperature = aiSettings?.temperatura_classificacao || 0.1;
+          requestBody.top_p = 1.0;
+          requestBody.frequency_penalty = 0;
+          requestBody.presence_penalty = 0;
         }
-      ]
-    };
 
-    if (apiProvider === 'lambda') {
-      requestBody.temperature = aiSettings?.temperatura_classificacao || 0.1;
-      requestBody.max_tokens = aiSettings?.max_tokens_classificacao || 500;
-      requestBody.top_p = 1.0;
-      requestBody.frequency_penalty = 0;
-      requestBody.presence_penalty = 0;
-    } else {
-      requestBody.max_tokens = aiSettings?.max_tokens_classificacao || 500;
-      requestBody.temperature = aiSettings?.temperatura_classificacao || 0.1;
-      requestBody.top_p = 1.0;
-      requestBody.frequency_penalty = 0;
-      requestBody.presence_penalty = 0;
-    }
+        console.log('Calling AI API with provider:', apiProvider, 'model:', modelToUse);
+        
+        const response = (apiProvider === 'openai')
+          ? await openAI('chat/completions', requestBody)
+          : await fetch(apiUrl, {
+              method: 'POST',
+              headers: apiHeaders,
+              body: JSON.stringify(requestBody),
+            });
 
-    console.log('Calling AI API with provider:', apiProvider, 'model:', modelToUse);
-    
-    const response = (apiProvider === 'openai')
-      ? await openAI('chat/completions', requestBody)
-      : await fetch(apiUrl, {
-          method: 'POST',
-          headers: apiHeaders,
-          body: JSON.stringify(requestBody),
-        });
-
-    if (response.ok) {
-      const aiResponse = await response.json();
-      const analysis = aiResponse.choices?.[0]?.message?.content;
-      
-      console.log('AI response:', analysis);
-      
-      if (analysis) {
-        try {
-          let cleanedAnalysis = analysis.trim();
-          if (analysis.includes('```json')) {
-            cleanedAnalysis = analysis.replace(/```json\s*/g, '').replace(/```\s*$/g, '').trim();
-          } else if (analysis.includes('```')) {
-            cleanedAnalysis = analysis.replace(/```\s*/g, '').trim();
-          }
+        if (response.ok) {
+          const aiResponse = await response.json();
+          const analysis = aiResponse.choices?.[0]?.message?.content;
           
-          const aiResult = JSON.parse(cleanedAnalysis);
-          console.log('IA retornou:', aiResult);
+          console.log('AI response:', analysis);
           
-          // Validar e corrigir prioridade
-          const validPriorities = ['imediato', 'ate_1_hora', 'ainda_hoje', 'posso_esperar'];
-          if (!validPriorities.includes(aiResult.prioridade)) {
-            console.log(`❌ INVALID PRIORITY: AI suggested "${aiResult.prioridade}", mapping to valid priority`);
-            switch (aiResult.prioridade) {
-              case 'urgente':
-                aiResult.prioridade = 'imediato';
-                break;
-              case 'alta':
-                aiResult.prioridade = 'ate_1_hora';
-                break;
-              case 'hoje_18h':
-                aiResult.prioridade = 'ainda_hoje';
-                break;
-              case 'padrao_24h':
-              default:
-                aiResult.prioridade = 'posso_esperar';
-                break;
+          if (analysis) {
+            try {
+              let cleanedAnalysis = analysis.trim();
+              if (analysis.includes('```json')) {
+                cleanedAnalysis = analysis.replace(/```json\s*/g, '').replace(/```\s*$/g, '').trim();
+              } else if (analysis.includes('```')) {
+                cleanedAnalysis = analysis.replace(/```\s*/g, '').trim();
+              }
+              
+              const aiResult = JSON.parse(cleanedAnalysis);
+              console.log('IA retornou:', aiResult);
+              
+              // Validar e corrigir prioridade
+              const validPriorities = ['imediato', 'ate_1_hora', 'ainda_hoje', 'posso_esperar'];
+              if (!validPriorities.includes(aiResult.prioridade)) {
+                console.log(`❌ INVALID PRIORITY: AI suggested "${aiResult.prioridade}", mapping to valid priority`);
+                switch (aiResult.prioridade) {
+                  case 'urgente':
+                    aiResult.prioridade = 'imediato';
+                    break;
+                  case 'alta':
+                    aiResult.prioridade = 'ate_1_hora';
+                    break;
+                  case 'hoje_18h':
+                    aiResult.prioridade = 'ainda_hoje';
+                    break;
+                  case 'padrao_24h':
+                  default:
+                    aiResult.prioridade = 'posso_esperar';
+                    break;
+                }
+              }
+
+              // Garantir que o título tenha no máximo 3 palavras
+              let titulo = 'Novo Ticket';
+              if (aiResult.titulo) {
+                const cleanTitle = aiResult.titulo.trim().replace(/[.,!?;:"']+/g, '');
+                const words = cleanTitle.split(/\s+/).filter(word => word.length > 0);
+                titulo = words.slice(0, 3).join(' ');
+              }
+              
+              return {
+                categoria: aiResult.categoria || 'outro',
+                prioridade: aiResult.prioridade || 'posso_esperar',
+                titulo: titulo,
+                equipe_responsavel: aiResult.equipe_sugerida,
+                justificativa: aiResult.justificativa || 'Análise automática'
+              };
+              
+            } catch (parseError) {
+              console.error('Erro ao parsear resposta da IA:', parseError);
+              return null;
             }
           }
-
-          // Garantir que o título tenha no máximo 3 palavras
-          let titulo = 'Novo Ticket';
-          if (aiResult.titulo) {
-            const cleanTitle = aiResult.titulo.trim().replace(/[.,!?;:"']+/g, '');
-            const words = cleanTitle.split(/\s+/).filter(word => word.length > 0);
-            titulo = words.slice(0, 3).join(' ');
-          }
-          
-          return {
-            categoria: aiResult.categoria || 'outro',
-            prioridade: aiResult.prioridade || 'posso_esperar',
-            titulo: titulo,
-            equipe_responsavel: aiResult.equipe_sugerida,
-            justificativa: aiResult.justificativa || 'Análise automática'
-          };
-          
-        } catch (parseError) {
-          console.error('Erro ao parsear resposta da IA:', parseError);
-          return null;
+        } else {
+          console.error('Erro na API da IA:', response.status, await response.text());
         }
+      } catch (error) {
+        console.error('Erro na classificação por IA:', error);
+        throw error;
       }
-    } else {
-      console.error('Erro na API da IA:', response.status, await response.text());
-    }
-  } catch (error) {
-    console.error('Erro na classificação por IA:', error);
-  }
 
-  return null;
+      return null;
+    }
+  );
 }
 
 export function generateFallbackClassification(message: string): ClassificationResult {
