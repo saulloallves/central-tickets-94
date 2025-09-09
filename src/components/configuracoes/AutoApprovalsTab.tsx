@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useAutoApprovals } from '@/hooks/useAutoApprovals';
+import { useKnowledgeMemories } from '@/hooks/useKnowledgeMemories';
 import { formatDistanceToNowInSaoPaulo } from '@/lib/date-utils';
 import { CheckCircle, XCircle, Clock, FileText, User, MessageSquare, Eye, Plus, BookOpen, GitCompare, AlertTriangle, Lightbulb } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
@@ -20,7 +21,9 @@ export function AutoApprovalsTab() {
   const [selectedApproval, setSelectedApproval] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('pending');
   const [showUpdateOptions, setShowUpdateOptions] = useState(false);
+  const [showCreateOptions, setShowCreateOptions] = useState(false);
   const [selectedUpdateDocument, setSelectedUpdateDocument] = useState<any>(null);
+  const { createMemory } = useKnowledgeMemories();
   const {
     toast
   } = useToast();
@@ -46,10 +49,27 @@ export function AutoApprovalsTab() {
       });
     }
   };
-  const handleCreateNewDocument = () => {
+  const handleCreateNewDocument = async (estilo: 'manual' | 'diretrizes') => {
     if (selectedApproval) {
-      handleCreateDocument(selectedApproval.id);
+      try {
+        await createMemory({
+          estilo,
+          content: selectedApproval.documentation_content
+        });
+        
+        // Atualizar status da aprovação
+        await updateApprovalStatus(selectedApproval.id, 'processed');
+        
+        fetchApprovals(activeTab === 'all' ? undefined : activeTab);
+        toast({
+          title: "✨ Documento criado",
+          description: "Novo documento foi criado com sucesso na base de conhecimento."
+        });
+      } catch (error) {
+        console.error('Erro ao criar documento:', error);
+      }
       setSelectedApproval(null);
+      setShowCreateOptions(false);
     }
   };
   const handleUpdateExistingDocument = (updateType: 'full' | 'partial', selectedText?: string) => {
@@ -251,7 +271,7 @@ export function AutoApprovalsTab() {
                   </div>
 
                   <div className="flex gap-3">
-                    <Button variant="default" onClick={handleCreateNewDocument} className="bg-green-600 hover:bg-green-700">
+                    <Button variant="default" onClick={() => setShowCreateOptions(true)} className="bg-green-600 hover:bg-green-700">
                       <Plus className="h-4 w-4 mr-2" />
                       Criar Novo Documento
                     </Button>
@@ -313,6 +333,46 @@ export function AutoApprovalsTab() {
                 <div className="font-medium">Atualização Parcial</div>
                 <div className="text-sm text-muted-foreground">
                   Adicionar informações ao documento existente
+                </div>
+              </div>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de opções de criação */}
+      <Dialog open={showCreateOptions} onOpenChange={setShowCreateOptions}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Escolher Tipo de Processamento</DialogTitle>
+            <DialogDescription>
+              Selecione como deseja processar este conteúdo
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3">
+            <Button 
+              variant="outline" 
+              className="justify-start h-auto p-4"
+              onClick={() => handleCreateNewDocument('manual')}
+            >
+              <FileText className="h-5 w-5 mr-3" />
+              <div className="text-left">
+                <div className="font-medium">Manual</div>
+                <div className="text-sm text-muted-foreground">
+                  Processamento com IA para organizar documentação técnica
+                </div>
+              </div>
+            </Button>
+            <Button 
+              variant="outline" 
+              className="justify-start h-auto p-4"
+              onClick={() => handleCreateNewDocument('diretrizes')}
+            >
+              <BookOpen className="h-5 w-5 mr-3" />
+              <div className="text-left">
+                <div className="font-medium">Diretriz</div>
+                <div className="text-sm text-muted-foreground">
+                  Processamento com IA para categorizar regras e infrações institucionais
                 </div>
               </div>
             </Button>
