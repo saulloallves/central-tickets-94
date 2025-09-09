@@ -13,43 +13,50 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
 
-async function buscarDocumentosRelacionados(mensagem: string) {
-  if (!openaiApiKey) {
-    console.log('⚠️ OpenAI API key não configurada para busca semântica');
-    return [];
-  }
-
-  try {
-    console.log('🔍 Gerando embedding para busca...');
-    
-    // Gerar embedding da mensagem
-    const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
+async function openAI(path: string, payload: any, tries = 3) {
+  let wait = 300;
+  for (let i = 0; i < tries; i++) {
+    const r = await fetch(`https://api.openai.com/v1/${path}`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openaiApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'text-embedding-3-small',
-        input: mensagem,
-        encoding_format: 'float'
-      })
+      headers: { 'Authorization': `Bearer ${openaiApiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (r.ok) return r;
+    if (r.status === 429 || r.status === 503) { 
+      await new Promise(res => setTimeout(res, wait)); 
+      wait *= 2; 
+      continue; 
+    }
+    throw new Error(`${path} error: ${await r.text()}`);
+  }
+  throw new Error(`${path} error: too many retries`);
+}
+
+/**
+ * RAG v4 - Busca híbrida usando embeddings + keywords
+ */
+async function encontrarDocumentosRelacionados(textoMensagem: string, limiteResultados: number = 12) {
+  try {
+    console.log('🔍 Gerando embedding para:', textoMensagem.substring(0, 100) + '...');
+    
+    const embeddingResponse = await openAI('embeddings', {
+      model: 'text-embedding-3-small',
+      input: textoMensagem
     });
 
     if (!embeddingResponse.ok) {
-      throw new Error(`Embedding API error: ${embeddingResponse.status}`);
+      throw new Error(`Embedding API error: ${await embeddingResponse.text()}`);
     }
 
     const embeddingData = await embeddingResponse.json();
     const queryEmbedding = embeddingData.data[0].embedding;
 
-    console.log('🔎 Buscando documentos relacionados...');
-
-    // Buscar documentos similares usando a função híbrida
-    const { data, error } = await supabase.rpc('match_documentos_hibrido', {
+    console.log('🔎 Executando busca híbrida v4...');
+    
+    const { data: candidatos, error } = await supabase.rpc('match_documentos_hibrido', {
       query_embedding: queryEmbedding,
-      query_text: mensagem,
-      match_count: 5,
+      query_text: textoMensagem,
+      match_count: limiteResultados,
       alpha: 0.5
     });
 
@@ -58,41 +65,102 @@ async function buscarDocumentosRelacionados(mensagem: string) {
       return [];
     }
 
-    console.log(`📚 Encontrados ${data?.length || 0} documentos relevantes`);
-    return data || [];
-
+    console.log(`🔎 RAG v4 → ${candidatos?.length || 0} candidatos`);
+    return candidatos || [];
+    
   } catch (error) {
-    console.error('Erro ao buscar documentos:', error);
+    console.error('Erro ao buscar documentos relacionados:', error);
     return [];
   }
 }
 
-async function corrigirRespostaComConhecimento(mensagem: string, documentos: any[]) {
+/**
+ * RAG v4 - Re-ranking com LLM usando GPT-4.1
+ */
+async function rerankComLLM(docs: any[], pergunta: string) {
+  if (!docs || docs.length === 0) return [];
+
+  try {
+    console.log('🧠 Re-ranking com LLM v4...');
+    
+    const docsParaAnalise = docs.map((doc, idx) => 
+      `ID: ${doc.id}\nTítulo: ${doc.titulo}\nConteúdo: ${JSON.stringify(doc.conteudo).substring(0, 800)}`
+    ).join('\n\n---\n\n');
+
+    const prompt = `Você deve analisar os documentos e classificar sua relevância para responder à pergunta do usuário.
+
+PERGUNTA: "${pergunta}"
+
+DOCUMENTOS:
+${docsParaAnalise}
+
+Retorne APENAS um JSON válido com array "scores" contendo objetos com "id" e "score" (0-100):
+{"scores": [{"id": "doc-id", "score": 85}, ...]}
+
+Critérios:
+- Score 80-100: Diretamente relevante e útil
+- Score 60-79: Parcialmente relevante  
+- Score 40-59: Tangencialmente relacionado
+- Score 0-39: Pouco ou nada relevante`;
+
+    const response = await openAI('chat/completions', {
+      model: 'gpt-4.1-2025-04-14',
+      messages: [{ role: 'user', content: prompt }],
+      max_completion_tokens: 1000,
+      response_format: { type: 'json_object' }
+    });
+
+    if (!response.ok) {
+      throw new Error(`LLM rerank error: ${await response.text()}`);
+    }
+
+    const data = await response.json();
+    const result = JSON.parse(data.choices[0].message.content);
+    
+    console.log(`RAG v4 rerank parsed items: ${result.scores?.length || 0}`);
+    
+    if (!result.scores) return docs.slice(0, 5);
+
+    // Ordenar por score e pegar top 5
+    const rankedDocs = result.scores
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5)
+      .map(item => docs.find(doc => doc.id === item.id))
+      .filter(Boolean);
+
+    const docIds = rankedDocs.map(doc => doc.id).join(' | ');
+    console.log(`Docs selecionados para resposta: ${docIds}`);
+
+    return rankedDocs;
+    
+  } catch (error) {
+    console.error('Erro no reranking LLM:', error);
+    return docs.slice(0, 5);
+  }
+}
+
+/**
+ * Correção da resposta usando RAG v4 + GPT-4.1
+ */
+async function corrigirRespostaComRAGv4(mensagem: string, documentos: any[]) {
   if (!openaiApiKey) {
     console.log('⚠️ OpenAI API key não configurada, retornando mensagem original');
     return mensagem;
   }
 
   try {
-    // Preparar contexto dos documentos
-    const contexto = documentos.length > 0 
-      ? documentos.map(doc => `**${doc.titulo}**\n${doc.conteudo?.texto || doc.conteudo || 'Sem conteúdo'}`).join('\n\n---\n\n')
-      : 'Nenhum documento relevante encontrado na base de conhecimento.';
+    const contexto = documentos.map(doc => 
+      `**${doc.titulo}**\n${JSON.stringify(doc.conteudo)}`
+    ).join('\n\n');
 
-    console.log(`🧠 Usando modelo GPT-4o-mini com ${documentos.length} documentos de contexto`);
+    console.log(`🧠 RAG v4 - Usando GPT-4.1 com ${documentos.length} documentos de contexto`);
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openaiApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: `Você é um especialista em atendimento ao cliente da Cresci & Perdi. 
+    const response = await openAI('chat/completions', {
+      model: 'gpt-4.1-2025-04-14',
+      messages: [
+        {
+          role: 'system',
+          content: `Você é um especialista em atendimento ao cliente da Cresci & Perdi. 
 
 IMPORTANTE: Você deve corrigir e padronizar a resposta do atendente seguindo estas regras:
 
@@ -103,29 +171,28 @@ IMPORTANTE: Você deve corrigir e padronizar a resposta do atendente seguindo es
 4. Torne a resposta mais clara, completa e detalhada
 5. Use linguagem institucional consistente
 
-📚 VALIDAÇÃO COM BASE DE CONHECIMENTO:
+📚 VALIDAÇÃO COM BASE DE CONHECIMENTO (RAG v4):
 - Se houver informações na base de conhecimento relacionadas à resposta, SEMPRE priorize e use essas informações oficiais
 - Se a resposta do atendente contradizer a base de conhecimento, corrija usando as informações oficiais
 - Se não houver informações relevantes na base, apenas faça a correção de forma e tom
 - NUNCA invente informações que não estão na base de conhecimento
+- Use as informações dos documentos fornecidos como referência oficial
 
 📋 FORMATO DE SAÍDA:
 Retorne apenas a versão corrigida e padronizada da resposta, sem explicações adicionais.`
-          },
-          {
-            role: 'user',
-            content: `BASE DE CONHECIMENTO:
+        },
+        {
+          role: 'user',
+          content: `BASE DE CONHECIMENTO (RAG v4):
 ${contexto}
 
 RESPOSTA DO ATENDENTE PARA CORRIGIR:
 ${mensagem}
 
 Corrija e padronize esta resposta usando as informações da base de conhecimento quando relevante:`
-          }
-        ],
-        max_tokens: 800,
-        temperature: 0.3
-      })
+        }
+      ],
+      max_completion_tokens: 1000
     });
 
     if (!response.ok) {
@@ -150,18 +217,12 @@ async function avaliarParaDocumentacao(respostaCorrigida: string) {
   }
 
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openaiApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: `Você é um especialista em documentação institucional. 
+    const response = await openAI('chat/completions', {
+      model: 'gpt-4.1-2025-04-14',
+      messages: [
+        {
+          role: 'system',
+          content: `Você é um especialista em documentação institucional. 
 Avalie se o texto pode ser transformado em documentação oficial.
 
 CRITÉRIOS PARA DOCUMENTAÇÃO:
@@ -176,16 +237,14 @@ Responda em JSON com este formato exato:
   "classificacao": "Sim" ou "Não",
   "resultado": "explicação ou texto formatado para documentação"
 }`
-          },
-          {
-            role: 'user',
-            content: `Avalie este texto: ${respostaCorrigida}`
-          }
-        ],
-        max_tokens: 500,
-        temperature: 0.1,
-        response_format: { type: 'json_object' }
-      })
+        },
+        {
+          role: 'user',
+          content: `Avalie este texto: ${respostaCorrigida}`
+        }
+      ],
+      max_completion_tokens: 500,
+      response_format: { type: 'json_object' }
     });
 
     if (!response.ok) {
@@ -210,7 +269,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log('🚀 Iniciando process-response com busca semântica');
+    console.log('🚀 Iniciando process-response com RAG v4');
     
     const body = await req.json();
     const { mensagem, ticket_id, usuario_id } = body;
@@ -232,21 +291,25 @@ serve(async (req) => {
       });
     }
 
-    // 1. Buscar documentos relacionados na base de conhecimento
-    console.log('📚 Buscando documentos na base de conhecimento...');
-    const documentosRelacionados = await buscarDocumentosRelacionados(mensagem);
+    // 1. RAG v4 - Buscar documentos relacionados usando busca híbrida
+    console.log('📚 RAG v4 - Buscando documentos na base de conhecimento...');
+    const documentosCandidatos = await encontrarDocumentosRelacionados(mensagem, 12);
 
-    // 2. Corrigir resposta usando a base de conhecimento
-    console.log('🔄 Corrigindo resposta com base de conhecimento...');
-    const respostaCorrigida = await corrigirRespostaComConhecimento(mensagem, documentosRelacionados);
-    console.log('✅ Resposta corrigida');
+    // 2. RAG v4 - Re-ranking com LLM para selecionar os melhores
+    console.log('🧠 RAG v4 - Re-ranking com LLM...');
+    const documentosRanqueados = await rerankComLLM(documentosCandidatos, mensagem);
 
-    // 3. Avaliar se pode ser documentação
+    // 3. Corrigir resposta usando RAG v4
+    console.log('🔄 RAG v4 - Corrigindo resposta com base de conhecimento...');
+    const respostaCorrigida = await corrigirRespostaComRAGv4(mensagem, documentosRanqueados);
+    console.log('✅ Resposta corrigida com RAG v4');
+
+    // 4. Avaliar se pode ser documentação
     console.log('📋 Avaliando para documentação...');
     const avaliacao = await avaliarParaDocumentacao(respostaCorrigida);
     console.log('📝 Avaliação:', avaliacao.classificacao);
 
-    // 4. Se pode ser documentação, salvar para aprovação
+    // 5. Se pode ser documentação, salvar para aprovação
     if (avaliacao.pode_documentar) {
       console.log('💾 Salvando para aprovação automática...');
       try {
@@ -256,7 +319,7 @@ serve(async (req) => {
             original_message: mensagem,
             corrected_response: respostaCorrigida,
             documentation_content: avaliacao.resultado,
-            similar_documents: documentosRelacionados,
+            similar_documents: documentosRanqueados,
             ticket_id,
             created_by: usuario_id,
             status: 'pending',
@@ -275,20 +338,22 @@ serve(async (req) => {
       }
     }
 
-    console.log('✅ Processamento concluído com sucesso');
+    console.log('✅ RAG v4 processamento concluído com sucesso');
 
     return new Response(JSON.stringify({
       success: true,
       resposta_corrigida: respostaCorrigida,
       avaliacao_documentacao: avaliacao,
-      documentos_encontrados: documentosRelacionados.length,
-      pode_virar_documento: avaliacao.pode_documentar
+      documentos_encontrados: documentosCandidatos.length,
+      documentos_usados: documentosRanqueados.length,
+      pode_virar_documento: avaliacao.pode_documentar,
+      rag_version: "v4"
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 
   } catch (error) {
-    console.error('❌ Erro no processamento:', error);
+    console.error('❌ Erro no RAG v4 processamento:', error);
     console.error('❌ Stack trace:', error.stack);
     return new Response(JSON.stringify({ 
       success: false, 
