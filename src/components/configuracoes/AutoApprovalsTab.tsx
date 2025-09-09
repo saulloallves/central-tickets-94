@@ -24,7 +24,7 @@ export function AutoApprovalsTab() {
   const [showCreateOptions, setShowCreateOptions] = useState(false);
   const [selectedUpdateDocument, setSelectedUpdateDocument] = useState<any>(null);
   const [isCreatingDocument, setIsCreatingDocument] = useState(false);
-  const { createDocument } = useRAGDocuments();
+  const { createDocument, updateDocument } = useRAGDocuments();
   const {
     toast
   } = useToast();
@@ -91,18 +91,65 @@ export function AutoApprovalsTab() {
       }
     }
   };
-  const handleUpdateExistingDocument = (updateType: 'full' | 'partial', selectedText?: string) => {
-    if (selectedApproval && selectedUpdateDocument) {
-      // Aqui você pode implementar a lógica de atualização
-      // Por enquanto, vamos apenas criar um novo documento
-      handleCreateDocument(selectedApproval.id);
-      setSelectedApproval(null);
-      setShowUpdateOptions(false);
-      setSelectedUpdateDocument(null);
+  const handleUpdateExistingDocument = async (documentId: string, updateType: 'full' | 'partial', textToReplace?: string) => {
+    console.log('=== INICIANDO ATUALIZAÇÃO DE DOCUMENTO ===');
+    console.log('Document ID:', documentId);
+    console.log('Update Type:', updateType);
+    console.log('Text to Replace:', textToReplace);
+    console.log('Selected Approval:', selectedApproval);
+    
+    if (!selectedApproval) {
+      console.error('❌ Nenhuma aprovação selecionada');
       toast({
-        title: "Documento atualizado",
-        description: `O documento "${selectedUpdateDocument.titulo}" foi atualizado com sucesso.`
+        title: "Erro",
+        description: "Nenhuma aprovação selecionada para atualização",
+        variant: "destructive",
       });
+      return;
+    }
+
+    setIsCreatingDocument(true);
+    setShowUpdateOptions(false);
+    
+    try {
+      const updateData = {
+        titulo: `Atualização gerada automaticamente - ${new Date().toLocaleDateString('pt-BR')}`,
+        conteudo: selectedApproval.documentation_content,
+        categoria: 'Suporte',
+        updateType: updateType || 'full',
+        textToReplace: textToReplace || ''
+      };
+      
+      console.log('📋 Dados que serão enviados para atualização:', updateData);
+      const result = await updateDocument(documentId, updateData);
+      console.log('📊 Resultado da atualização:', result);
+      
+      if (result.success) {
+        console.log('✅ Documento atualizado com sucesso');
+        
+        // Atualizar status da aprovação
+        await updateApprovalStatus(selectedApproval.id, 'processed', 'Documento atualizado com sucesso');
+        
+        fetchApprovals(activeTab === 'all' ? undefined : activeTab);
+        toast({
+          title: "✨ Documento atualizado",
+          description: "O documento foi atualizado com sucesso na base de conhecimento."
+        });
+      } else {
+        console.error('❌ Falha na atualização do documento:', result);
+        throw new Error(result.error || 'Erro desconhecido na atualização');
+      }
+    } catch (error) {
+      console.error('❌ Erro capturado ao atualizar documento:', error);
+      toast({
+        title: "Erro",
+        description: `Erro inesperado ao atualizar documento: ${error.message}`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreatingDocument(false);
+      setSelectedApproval(null);
+      setSelectedUpdateDocument(null);
     }
   };
   const handleShowUpdateOptions = (document: any) => {
@@ -338,7 +385,7 @@ export function AutoApprovalsTab() {
           </DialogHeader>
           
           <div className="space-y-4">
-            <Button variant="outline" className="w-full justify-start h-auto p-4" onClick={() => handleUpdateExistingDocument('full')}>
+            <Button variant="outline" className="w-full justify-start h-auto p-4" onClick={() => handleUpdateExistingDocument(selectedUpdateDocument?.id, 'full')}>
               <div className="text-left">
                 <div className="font-medium">Substituição Completa</div>
                 <div className="text-sm text-muted-foreground">
@@ -347,7 +394,7 @@ export function AutoApprovalsTab() {
               </div>
             </Button>
             
-            <Button variant="outline" className="w-full justify-start h-auto p-4" onClick={() => handleUpdateExistingDocument('partial')}>
+            <Button variant="outline" className="w-full justify-start h-auto p-4" onClick={() => handleUpdateExistingDocument(selectedUpdateDocument?.id, 'partial')}>
               <div className="text-left">
                 <div className="font-medium">Atualização Parcial</div>
                 <div className="text-sm text-muted-foreground">
