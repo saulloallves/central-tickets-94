@@ -247,11 +247,16 @@ serve(async (req) => {
   }
 
   try {
-    const { estilo, titulo, categoria, content, arquivo_path } = await req.json();
+    const body = await req.json();
+    console.log('Request body recebido:', JSON.stringify(body, null, 2));
+    
+    const { estilo, titulo, categoria, content, arquivo_path } = body;
 
     console.log('Processando nova memória:', { estilo, titulo, categoria, arquivo_path });
+    console.log('Content length:', content?.length || 0);
 
     if (!estilo || !content) {
+      console.error('Parâmetros obrigatórios faltando:', { estilo: !!estilo, content: !!content });
       return new Response(
         JSON.stringify({ error: 'Estilo e conteúdo são obrigatórios' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
