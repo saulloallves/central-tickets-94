@@ -250,7 +250,9 @@ serve(async (req) => {
 
       // Gera análise comparativa detalhada
       console.log('📊 Gerando análise comparativa detalhada...');
+      console.log('Artigos relacionados para análise:', artigosRelacionados.length);
       const analiseComparativa = await gerarAnaliseComparativa(textoCompleto, artigosRelacionados);
+      console.log('✅ Análise comparativa gerada:', analiseComparativa ? 'SUCESSO' : 'VAZIA');
 
       return new Response(JSON.stringify({
         documentos_relacionados: documentosFormatados,
