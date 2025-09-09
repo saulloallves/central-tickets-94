@@ -40,10 +40,9 @@ Responda APENAS com um array JSON no formato: [{"index": 1, "score": 95}, {"inde
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-5-2025-08-07',
+        model: 'gpt-4.1-2025-04-14',
         messages: [{ role: 'user', content: prompt }],
-        max_completion_tokens: 1000,
-        response_format: { type: "json_object" }
+        max_completion_tokens: 1000
       }),
     });
 
@@ -53,10 +52,26 @@ Responda APENAS com um array JSON no formato: [{"index": 1, "score": 95}, {"inde
     }
 
     const data = await response.json();
-    const ranking = JSON.parse(data.choices[0].message.content);
+    let ranking;
     
-    // Aplicar re-ranking
-    const docsComScore = ranking.rankings || ranking;
+    try {
+      ranking = JSON.parse(data.choices[0].message.content);
+    } catch (parseError) {
+      console.error('❌ Erro no parsing do JSON:', parseError);
+      console.log('Conteúdo recebido:', data.choices[0].message.content);
+      return docs.slice(0, 5); // Fallback
+    }
+    
+    // Aplicar re-ranking - verificar diferentes formatos de resposta
+    let docsComScore = ranking;
+    if (ranking.rankings) docsComScore = ranking.rankings;
+    if (Array.isArray(ranking)) docsComScore = ranking;
+    
+    if (!Array.isArray(docsComScore)) {
+      console.error('❌ Formato de ranking inválido:', docsComScore);
+      return docs.slice(0, 5);
+    }
+    
     const documentosReRankeados = docsComScore
       .sort((a: any, b: any) => b.score - a.score)
       .map((item: any) => ({
@@ -134,7 +149,7 @@ Seja detalhado e forneça insights práticos para tomada de decisão.`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-5-2025-08-07',
+        model: 'gpt-4.1-2025-04-14',
         messages: [{ role: 'user', content: prompt }],
         max_completion_tokens: 2000
       }),
