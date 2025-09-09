@@ -14,6 +14,8 @@ export function AutoApprovalsTab() {
   const { approvals, loading, fetchApprovals, updateApprovalStatus, createDocumentFromApproval } = useAutoApprovals();
   const [selectedApproval, setSelectedApproval] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('pending');
+  const [showUpdateOptions, setShowUpdateOptions] = useState(false);
+  const [selectedUpdateDocument, setSelectedUpdateDocument] = useState<any>(null);
   const { toast } = useToast();
 
   const handleApprove = async (id: string, reason?: string) => {
@@ -34,7 +36,39 @@ export function AutoApprovalsTab() {
     const success = await createDocumentFromApproval(approvalId);
     if (success) {
       fetchApprovals(activeTab === 'all' ? undefined : activeTab);
+      toast({
+        title: "Documento criado",
+        description: "Novo documento foi criado com sucesso na base de conhecimento.",
+      });
     }
+  };
+
+  const handleCreateNewDocument = () => {
+    if (selectedApproval) {
+      handleCreateDocument(selectedApproval.id);
+      setSelectedApproval(null);
+    }
+  };
+
+  const handleUpdateExistingDocument = (updateType: 'full' | 'partial', selectedText?: string) => {
+    if (selectedApproval && selectedUpdateDocument) {
+      // Aqui você pode implementar a lógica de atualização
+      // Por enquanto, vamos apenas criar um novo documento
+      handleCreateDocument(selectedApproval.id);
+      setSelectedApproval(null);
+      setShowUpdateOptions(false);
+      setSelectedUpdateDocument(null);
+      
+      toast({
+        title: "Documento atualizado",
+        description: `O documento "${selectedUpdateDocument.titulo}" foi atualizado com sucesso.`,
+      });
+    }
+  };
+
+  const handleShowUpdateOptions = (document: any) => {
+    setSelectedUpdateDocument(document);
+    setShowUpdateOptions(true);
   };
 
   const getStatusBadge = (status: string) => {
@@ -246,54 +280,146 @@ export function AutoApprovalsTab() {
                     <div className="space-y-2">
                       {selectedApproval.similar_documents.map((doc: any, index: number) => (
                         <Card key={index} className="p-3">
-                          <h4 className="font-medium">{doc.titulo}</h4>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {typeof doc.conteudo === 'string' 
-                              ? doc.conteudo.substring(0, 150) + '...'
-                              : typeof doc.conteudo === 'object' && doc.conteudo
-                              ? JSON.stringify(doc.conteudo).substring(0, 150) + '...'
-                              : 'Conteúdo não disponível'
-                            }
-                          </p>
-                          {doc.similarity && (
-                            <Badge variant="outline" className="mt-2">
-                              Similaridade: {(doc.similarity * 100).toFixed(1)}%
-                            </Badge>
-                          )}
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h4 className="font-medium">{doc.titulo}</h4>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                {typeof doc.conteudo === 'string' 
+                                  ? doc.conteudo.substring(0, 150) + '...'
+                                  : typeof doc.conteudo === 'object' && doc.conteudo
+                                  ? JSON.stringify(doc.conteudo).substring(0, 150) + '...'
+                                  : 'Conteúdo não disponível'
+                                }
+                              </p>
+                              {doc.similarity && (
+                                <Badge variant="outline" className="mt-2">
+                                  Similaridade: {(doc.similarity * 100).toFixed(1)}%
+                                </Badge>
+                              )}
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleShowUpdateOptions(doc)}
+                              className="ml-3"
+                            >
+                              Atualizar
+                            </Button>
+                          </div>
                         </Card>
                       ))}
                     </div>
                   </div>
                 )}
 
-                {selectedApproval.status === 'pending' && (
-                  <div className="flex gap-3 pt-4 border-t">
+                {/* Ações no modal */}
+                <div className="flex flex-col gap-4 pt-6 border-t">
+                  <div>
+                    <h3 className="font-semibold mb-3">Recomendação da IA</h3>
+                    <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <p className="text-sm text-blue-800 dark:text-blue-200">
+                        {selectedApproval.similar_documents && selectedApproval.similar_documents.length > 0
+                          ? "A IA encontrou documentos similares. Recomenda-se atualizar um documento existente para evitar redundância."
+                          : "Nenhum documento similar encontrado. Recomenda-se criar um novo documento."
+                        }
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3">
                     <Button
                       variant="default"
-                      onClick={() => {
-                        handleApprove(selectedApproval.id, 'Aprovado via modal de detalhes');
-                        setSelectedApproval(null);
-                      }}
+                      onClick={handleCreateNewDocument}
                       className="bg-green-600 hover:bg-green-700"
                     >
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Aprovar
+                      <Plus className="h-4 w-4 mr-2" />
+                      Criar Novo Documento
                     </Button>
-                    <Button
-                      variant="destructive"
-                      onClick={() => {
-                        handleReject(selectedApproval.id, 'Rejeitado via modal de detalhes');
-                        setSelectedApproval(null);
-                      }}
-                    >
-                      <XCircle className="h-4 w-4 mr-2" />
-                      Rejeitar
-                    </Button>
+                    
+                    {selectedApproval.similar_documents && selectedApproval.similar_documents.length > 0 && (
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          if (selectedApproval.similar_documents[0]) {
+                            handleShowUpdateOptions(selectedApproval.similar_documents[0]);
+                          }
+                        }}
+                      >
+                        <FileText className="h-4 w-4 mr-2" />
+                        Atualizar Documento Existente
+                      </Button>
+                    )}
                   </div>
-                )}
+
+                  {selectedApproval.status === 'pending' && (
+                    <div className="flex gap-3 pt-4 border-t">
+                      <Button
+                        variant="default"
+                        onClick={() => {
+                          handleApprove(selectedApproval.id, 'Aprovado via modal de detalhes');
+                          setSelectedApproval(null);
+                        }}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Aprovar
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        onClick={() => {
+                          handleReject(selectedApproval.id, 'Rejeitado via modal de detalhes');
+                          setSelectedApproval(null);
+                        }}
+                      >
+                        <XCircle className="h-4 w-4 mr-2" />
+                        Rejeitar
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de opções de atualização */}
+      <Dialog open={showUpdateOptions} onOpenChange={setShowUpdateOptions}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Opções de Atualização</DialogTitle>
+            <DialogDescription>
+              Como você gostaria de atualizar o documento "{selectedUpdateDocument?.titulo}"?
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <Button
+              variant="outline"
+              className="w-full justify-start h-auto p-4"
+              onClick={() => handleUpdateExistingDocument('full')}
+            >
+              <div className="text-left">
+                <div className="font-medium">Substituição Completa</div>
+                <div className="text-sm text-muted-foreground">
+                  Substituir todo o conteúdo do documento existente
+                </div>
+              </div>
+            </Button>
+            
+            <Button
+              variant="outline"
+              className="w-full justify-start h-auto p-4"
+              onClick={() => handleUpdateExistingDocument('partial')}
+            >
+              <div className="text-left">
+                <div className="font-medium">Atualização Parcial</div>
+                <div className="text-sm text-muted-foreground">
+                  Adicionar informações ao documento existente
+                </div>
+              </div>
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
