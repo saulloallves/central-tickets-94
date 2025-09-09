@@ -15,7 +15,7 @@ import { useToast } from '@/components/ui/use-toast';
 
 export function AutoApprovalsTab() {
   const { approvals, loading, fetchApprovals, updateApprovalStatus, createDocumentFromApproval } = useAutoApprovals();
-  const { updateDocument } = useKnowledgeMemories();
+  const { createMemory, updateDocument } = useKnowledgeMemories();
   const [selectedApproval, setSelectedApproval] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('pending');
   const [showUpdateOptions, setShowUpdateOptions] = useState<any>(null);
@@ -48,10 +48,33 @@ export function AutoApprovalsTab() {
     }
   };
 
-  const handleCreateNewDocument = () => {
-    if (selectedApproval) {
-      handleCreateDocument(selectedApproval.id);
+  const handleCreateNewDocument = async () => {
+    if (!selectedApproval) return;
+
+    try {
+      await createMemory({
+        estilo: 'diretrizes',
+        titulo: `Documentação gerada automaticamente - ${new Date().toLocaleDateString('pt-BR')}`,
+        categoria: 'Suporte',
+        content: selectedApproval.documentation_content
+      });
+
+      await updateApprovalStatus(selectedApproval.id, 'processed');
+      
+      toast({
+        title: "Documento criado",
+        description: "Novo documento foi criado com sucesso na base de conhecimento.",
+      });
+
       setSelectedApproval(null);
+      fetchApprovals(activeTab === 'all' ? undefined : activeTab);
+    } catch (error) {
+      console.error('Error creating document:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao criar documento.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -81,6 +104,7 @@ export function AutoApprovalsTab() {
 
       setShowUpdateOptions(null);
       setSelectedApproval(null);
+      fetchApprovals(activeTab === 'all' ? undefined : activeTab);
     } catch (error) {
       console.error('Error updating document:', error);
       toast({

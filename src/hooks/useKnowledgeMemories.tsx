@@ -84,8 +84,8 @@ export const useKnowledgeMemories = () => {
     try {
       const { data: result, error } = await supabase.functions.invoke('kb-update-document', {
         body: {
-          documentId,
-          newContent,
+          id: documentId,
+          conteudo: newContent,
           updateType,
           textToReplace
         }
