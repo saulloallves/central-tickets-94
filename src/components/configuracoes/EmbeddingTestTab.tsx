@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, TestTube } from 'lucide-react';
+import { TesteRAGSemantico } from './TesteRAGSemantico';
 
 export const EmbeddingTestTab = () => {
   const [testing, setTesting] = useState(false);
@@ -117,6 +118,9 @@ export const EmbeddingTestTab = () => {
           )}
         </CardContent>
       </Card>
+      
+      {/* Componente de Teste RAG Semântico */}
+      <TesteRAGSemantico />
     </div>
   );
 };
