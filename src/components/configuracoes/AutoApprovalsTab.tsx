@@ -57,7 +57,7 @@ export function AutoApprovalsTab() {
       
       try {
         const result = await createDocument({
-          titulo: `Documentação gerada automaticamente - ${new Date().toLocaleDateString('pt-BR')}`,
+          titulo: '', // Deixar vazio para que a IA gere um título inteligente
           conteudo: selectedApproval.documentation_content,
           categoria: 'Suporte',
           justificativa: 'Documento criado a partir de aprovação automática',
@@ -113,7 +113,7 @@ export function AutoApprovalsTab() {
     
     try {
       const updateData = {
-        titulo: `Atualização gerada automaticamente - ${new Date().toLocaleDateString('pt-BR')}`,
+        titulo: '', // Deixar vazio para que a IA gere um título inteligente para atualizações
         conteudo: selectedApproval.documentation_content,
         categoria: 'Suporte',
         updateType: updateType || 'full',
