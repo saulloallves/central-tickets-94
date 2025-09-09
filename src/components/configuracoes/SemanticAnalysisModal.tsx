@@ -742,102 +742,190 @@ export const SemanticAnalysisModal = ({
 // Componente para renderizar a análise comparativa de forma bonita
 const AnaliseComparativaDisplay = ({ analise }: { analise: string }) => {
   const parseAnalise = (text: string) => {
-    const sections = text.split(/## /);
-    const parsed = {
-      novoDocumento: '',
-      sobreposicao: '',
-      comparacao: '',
-      contradicoes: '',
-      recomendacao: ''
+    // Dividir por seções usando ## como delimitador
+    const lines = text.split('\n').filter(line => line.trim());
+    
+    const sections = {
+      novoDocumento: { titulo: '', items: [] as string[] },
+      sobreposicao: { titulo: '', items: [] as string[] },
+      comparacao: { similaridades: [] as string[], diferencas: [] as string[] },
+      contradicoes: [] as string[],
+      recomendacao: { titulo: '', items: [] as string[] }
     };
 
-    sections.forEach(section => {
-      if (section.includes('📄') || section.includes('Novo Documento')) {
-        parsed.novoDocumento = section.replace(/📄.*?\n/, '').trim();
-      } else if (section.includes('🔍') || section.includes('Análise de Sobreposição')) {
-        parsed.sobreposicao = section.replace(/🔍.*?\n/, '').trim();
-      } else if (section.includes('⚖️') || section.includes('Comparação')) {
-        parsed.comparacao = section.replace(/⚖️.*?\n/, '').trim();
-      } else if (section.includes('⚠️') || section.includes('CONTRADIÇÕES')) {
-        parsed.contradicoes = section.replace(/⚠️.*?\n/, '').trim();
-      } else if (section.includes('💡') || section.includes('Recomendação')) {
-        parsed.recomendacao = section.replace(/💡.*?\n/, '').trim();
+    let currentSection = '';
+    let currentSubsection = '';
+
+    lines.forEach(line => {
+      line = line.trim();
+      
+      if (line.includes('📄') || line.includes('Novo Documento')) {
+        currentSection = 'novoDocumento';
+        sections.novoDocumento.titulo = line.replace(/^## /, '').replace('📄', '').trim();
+      } else if (line.includes('🔍') || line.includes('Análise de Sobreposição')) {
+        currentSection = 'sobreposicao';
+        sections.sobreposicao.titulo = line.replace(/^## /, '').replace('🔍', '').trim();
+      } else if (line.includes('⚖️') || line.includes('Comparação')) {
+        currentSection = 'comparacao';
+      } else if (line.includes('⚠️') || line.includes('CONTRADIÇÕES')) {
+        currentSection = 'contradicoes';
+      } else if (line.includes('💡') || line.includes('Recomendação')) {
+        currentSection = 'recomendacao';
+        sections.recomendacao.titulo = line.replace(/^## /, '').replace('💡', '').trim();
+      } else if (line.startsWith('**') && line.endsWith(':**')) {
+        currentSubsection = line.toLowerCase().includes('similar') ? 'similaridades' : 
+                           line.toLowerCase().includes('diferenç') ? 'diferencas' : '';
+      } else if (line.startsWith('•') || line.startsWith('-')) {
+        const item = line.replace(/^[•-]\s*/, '').trim();
+        if (item) {
+          if (currentSection === 'comparacao' && currentSubsection === 'similaridades') {
+            sections.comparacao.similaridades.push(item);
+          } else if (currentSection === 'comparacao' && currentSubsection === 'diferencas') {
+            sections.comparacao.diferencas.push(item);
+          } else if (currentSection === 'contradicoes') {
+            sections.contradicoes.push(item);
+          } else if (currentSection === 'novoDocumento') {
+            sections.novoDocumento.items.push(item);
+          } else if (currentSection === 'sobreposicao') {
+            sections.sobreposicao.items.push(item);
+          } else if (currentSection === 'recomendacao') {
+            sections.recomendacao.items.push(item);
+          }
+        }
+      } else if (line.startsWith('**') && (currentSection === 'recomendacao' || currentSection === 'novoDocumento' || currentSection === 'sobreposicao')) {
+        const item = line.replace(/\*\*/g, '').trim();
+        if (item) {
+          if (currentSection === 'recomendacao') {
+            sections.recomendacao.items.push(item);
+          } else if (currentSection === 'novoDocumento') {
+            sections.novoDocumento.items.push(item);
+          } else if (currentSection === 'sobreposicao') {
+            sections.sobreposicao.items.push(item);
+          }
+        }
       }
     });
 
-    return parsed;
+    return sections;
   };
 
   const parsedAnalise = parseAnalise(analise);
 
-  const extractListItems = (text: string) => {
-    return text.split('•').filter(item => item.trim().length > 0).map(item => item.trim());
-  };
-
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Novo Documento */}
-      {parsedAnalise.novoDocumento && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <FileText className="w-4 h-4 text-blue-500" />
+      {(parsedAnalise.novoDocumento.items.length > 0 || parsedAnalise.novoDocumento.titulo) && (
+        <Card className="border-l-4 border-l-blue-500">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <FileText className="w-5 h-5 text-blue-500" />
               Novo Documento
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="space-y-2 text-sm">
-              {parsedAnalise.novoDocumento.split('\n').filter(line => line.trim()).map((line, index) => (
-                <div key={index} className="flex items-start gap-2">
-                  <span className="text-muted-foreground">•</span>
-                  <span>{line.replace(/^\*\*|\*\*$/g, '').replace(/\*\*(.*?)\*\*/g, '$1')}</span>
-                </div>
-              ))}
+            <div className="space-y-3">
+              {parsedAnalise.novoDocumento.items.map((item, index) => {
+                if (item.toLowerCase().includes('assunto:')) {
+                  return (
+                    <div key={index} className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
+                      <Target className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <span className="font-medium text-blue-900">Assunto:</span>
+                        <span className="text-blue-800 ml-2">{item.replace(/.*assunto:\s*/i, '')}</span>
+                      </div>
+                    </div>
+                  );
+                } else if (item.toLowerCase().includes('tipo:')) {
+                  return (
+                    <div key={index} className="flex items-start gap-3 p-3 bg-slate-50 rounded-lg">
+                      <Tag className="w-4 h-4 text-slate-600 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <span className="font-medium text-slate-900">Tipo:</span>
+                        <span className="text-slate-800 ml-2">{item.replace(/.*tipo:\s*/i, '')}</span>
+                      </div>
+                    </div>
+                  );
+                } else {
+                  return (
+                    <div key={index} className="flex items-start gap-2">
+                      <span className="text-blue-500 font-bold">•</span>
+                      <span className="text-sm">{item}</span>
+                    </div>
+                  );
+                }
+              })}
             </div>
           </CardContent>
         </Card>
       )}
 
       {/* Análise de Sobreposição */}
-      {parsedAnalise.sobreposicao && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-orange-500" />
+      {parsedAnalise.sobreposicao.items.length > 0 && (
+        <Card className="border-l-4 border-l-orange-500">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-orange-500" />
               Análise de Sobreposição
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="space-y-2 text-sm">
-              {parsedAnalise.sobreposicao.split('\n').filter(line => line.trim()).map((line, index) => (
-                <div key={index} className="flex items-start gap-2">
-                  <span className="text-muted-foreground">•</span>
-                  <span>{line.replace(/^\*\*|\*\*$/g, '').replace(/\*\*(.*?)\*\*/g, '$1')}</span>
-                </div>
-              ))}
+            <div className="space-y-3">
+              {parsedAnalise.sobreposicao.items.map((item, index) => {
+                if (item.toLowerCase().includes('documentos relacionados:')) {
+                  const count = item.replace(/.*documentos relacionados:\s*/i, '');
+                  return (
+                    <div key={index} className="flex items-center gap-3 p-3 bg-orange-50 rounded-lg">
+                      <BookOpen className="w-4 h-4 text-orange-600" />
+                      <span className="font-medium">Documentos relacionados:</span>
+                      <Badge variant="secondary" className="bg-orange-100 text-orange-800">{count}</Badge>
+                    </div>
+                  );
+                } else if (item.toLowerCase().includes('nível de sobreposição:')) {
+                  const nivel = item.replace(/.*nível de sobreposição:\s*/i, '');
+                  const color = nivel.toLowerCase().includes('alto') ? 'red' : 
+                               nivel.toLowerCase().includes('médio') ? 'yellow' : 'green';
+                  return (
+                    <div key={index} className="flex items-center gap-3 p-3 bg-orange-50 rounded-lg">
+                      <Percent className="w-4 h-4 text-orange-600" />
+                      <span className="font-medium">Nível de sobreposição:</span>
+                      <Badge variant="outline" className={`border-${color}-500 text-${color}-700`}>{nivel}</Badge>
+                    </div>
+                  );
+                } else {
+                  return (
+                    <div key={index} className="flex items-start gap-2">
+                      <span className="text-orange-500 font-bold">•</span>
+                      <span className="text-sm">{item}</span>
+                    </div>
+                  );
+                }
+              })}
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Comparação */}
-      {parsedAnalise.comparacao && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <GitCompare className="w-4 h-4 text-purple-500" />
+      {/* Comparação Detalhada */}
+      {(parsedAnalise.comparacao.similaridades.length > 0 || parsedAnalise.comparacao.diferencas.length > 0) && (
+        <Card className="border-l-4 border-l-purple-500">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <GitCompare className="w-5 h-5 text-purple-500" />
               Comparação Detalhada
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="grid md:grid-cols-2 gap-4">
-              {parsedAnalise.comparacao.includes('Similaridades:') && (
+            <div className="grid md:grid-cols-2 gap-6">
+              {parsedAnalise.comparacao.similaridades.length > 0 && (
                 <div>
-                  <h4 className="font-medium text-sm mb-2 text-green-600">Similaridades</h4>
-                  <div className="space-y-1">
-                    {extractListItems(parsedAnalise.comparacao.split('**Diferenças:**')[0].replace('**Similaridades:**', '')).map((item, index) => (
+                  <div className="flex items-center gap-2 mb-3 p-2 bg-green-50 rounded-lg">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <h4 className="font-semibold text-green-800">Similaridades</h4>
+                  </div>
+                  <div className="space-y-2">
+                    {parsedAnalise.comparacao.similaridades.map((item, index) => (
                       <div key={index} className="flex items-start gap-2 text-sm">
-                        <CheckCircle className="w-3 h-3 text-green-500 mt-0.5 flex-shrink-0" />
+                        <CheckCircle className="w-3 h-3 text-green-500 mt-1 flex-shrink-0" />
                         <span>{item}</span>
                       </div>
                     ))}
@@ -845,13 +933,16 @@ const AnaliseComparativaDisplay = ({ analise }: { analise: string }) => {
                 </div>
               )}
               
-              {parsedAnalise.comparacao.includes('Diferenças:') && (
+              {parsedAnalise.comparacao.diferencas.length > 0 && (
                 <div>
-                  <h4 className="font-medium text-sm mb-2 text-blue-600">Diferenças</h4>
-                  <div className="space-y-1">
-                    {extractListItems(parsedAnalise.comparacao.split('**Diferenças:**')[1] || '').map((item, index) => (
+                  <div className="flex items-center gap-2 mb-3 p-2 bg-blue-50 rounded-lg">
+                    <XCircle className="w-4 h-4 text-blue-600" />
+                    <h4 className="font-semibold text-blue-800">Diferenças</h4>
+                  </div>
+                  <div className="space-y-2">
+                    {parsedAnalise.comparacao.diferencas.map((item, index) => (
                       <div key={index} className="flex items-start gap-2 text-sm">
-                        <XCircle className="w-3 h-3 text-blue-500 mt-0.5 flex-shrink-0" />
+                        <XCircle className="w-3 h-3 text-blue-500 mt-1 flex-shrink-0" />
                         <span>{item}</span>
                       </div>
                     ))}
@@ -864,20 +955,20 @@ const AnaliseComparativaDisplay = ({ analise }: { analise: string }) => {
       )}
 
       {/* Contradições */}
-      {parsedAnalise.contradicoes && parsedAnalise.contradicoes.toLowerCase() !== 'nenhuma contradição identificada' && (
-        <Card className="border-l-4 border-l-red-500">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-red-500" />
-              Contradições Identificadas
+      {parsedAnalise.contradicoes.length > 0 && !parsedAnalise.contradicoes.some(c => c.toLowerCase().includes('nenhuma contradição')) && (
+        <Card className="border-l-4 border-l-red-500 bg-red-50">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-red-500" />
+              ⚠️ Contradições Identificadas
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="space-y-2">
-              {extractListItems(parsedAnalise.contradicoes).map((item, index) => (
-                <div key={index} className="flex items-start gap-2 text-sm">
-                  <AlertTriangle className="w-3 h-3 text-red-500 mt-0.5 flex-shrink-0" />
-                  <span className="text-red-700">{item}</span>
+            <div className="space-y-3">
+              {parsedAnalise.contradicoes.map((item, index) => (
+                <div key={index} className="flex items-start gap-2 p-3 bg-red-100 rounded-lg">
+                  <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+                  <span className="text-red-800 font-medium text-sm">{item}</span>
                 </div>
               ))}
             </div>
@@ -885,33 +976,53 @@ const AnaliseComparativaDisplay = ({ analise }: { analise: string }) => {
         </Card>
       )}
 
-      {/* Recomendação */}
-      {parsedAnalise.recomendacao && (
-        <Card className="border-l-4 border-l-green-500">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Target className="w-4 h-4 text-green-500" />
-              Recomendação Final
+      {/* Recomendação Final */}
+      {parsedAnalise.recomendacao.items.length > 0 && (
+        <Card className="border-l-4 border-l-green-500 bg-green-50">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Target className="w-5 h-5 text-green-500" />
+              💡 Recomendação Final
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="space-y-2 text-sm">
-              {parsedAnalise.recomendacao.split('\n').filter(line => line.trim()).map((line, index) => {
-                const cleanLine = line.replace(/^\*\*|\*\*$/g, '').replace(/\*\*(.*?)\*\*/g, '$1');
-                const isRecommendation = cleanLine.includes('SUGESTÃO:') || cleanLine.includes('ATUALIZAR') || cleanLine.includes('CRIAR');
-                const isDocumentName = cleanLine.includes('Documento para atualizar:');
-                const isReason = cleanLine.includes('Razão:') || cleanLine.includes('Ação:');
-                
-                return (
-                  <div key={index} className={`flex items-start gap-2 ${
-                    isRecommendation ? 'font-medium text-green-700' : 
-                    isDocumentName ? 'font-medium text-blue-700' :
-                    isReason ? 'text-orange-700' : ''
-                  }`}>
-                    <span className="text-muted-foreground">•</span>
-                    <span>{cleanLine}</span>
-                  </div>
-                );
+            <div className="space-y-3">
+              {parsedAnalise.recomendacao.items.map((item, index) => {
+                if (item.includes('SUGESTÃO:') || item.includes('ATUALIZAR') || item.includes('CRIAR')) {
+                  return (
+                    <div key={index} className="p-3 bg-green-100 rounded-lg border border-green-200">
+                      <div className="flex items-center gap-2">
+                        <Target className="w-4 h-4 text-green-600" />
+                        <span className="font-bold text-green-800">{item}</span>
+                      </div>
+                    </div>
+                  );
+                } else if (item.includes('Documento para atualizar:')) {
+                  return (
+                    <div key={index} className="p-3 bg-blue-100 rounded-lg border border-blue-200">
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-blue-600" />
+                        <span className="font-medium text-blue-800">{item}</span>
+                      </div>
+                    </div>
+                  );
+                } else if (item.includes('Razão:') || item.includes('Ação:') || item.includes('Justificativa:')) {
+                  return (
+                    <div key={index} className="p-3 bg-orange-100 rounded-lg border border-orange-200">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="w-4 h-4 text-orange-600 mt-0.5" />
+                        <span className="text-orange-800">{item}</span>
+                      </div>
+                    </div>
+                  );
+                } else {
+                  return (
+                    <div key={index} className="flex items-start gap-2">
+                      <span className="text-green-500 font-bold">•</span>
+                      <span className="text-sm">{item}</span>
+                    </div>
+                  );
+                }
               })}
             </div>
           </CardContent>
