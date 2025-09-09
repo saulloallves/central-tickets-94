@@ -80,42 +80,60 @@ async function moderarTexto(conversa: string, problema: string) {
   }
 
   try {
-    const textoCompleto = `PROBLEMA RELATADO: ${problema}\n\nCONVERSA COMPLETA:\n${conversa}`;
-    
     const response = await openAI('chat/completions', {
       model: 'gpt-4.1-2025-04-14',
       messages: [
         {
           role: 'system',
-          content: `Você é um agente moderador e especialista em documentação institucional.  
-Sua função é analisar qualquer texto recebido e decidir se ele pode ser transformado em uma documentação/regra oficial.
+          content: `Você é um especialista em documentação da Cresci & Perdi.
 
-🧭 REGRAS DE AVALIAÇÃO
-1. O texto só pode ser aceito como documentação se:
-   - Estiver completo (não faltar informações críticas).
-   - Não contiver dúvidas, subjetividade ou continuação de conversa.
-   - Estiver claro, objetivo e com teor institucional.
-2. Se o texto *não cumprir* esses requisitos, classifique como *"Não permitido transformar em documentação"* e explique quais informações faltam ou por que ele gera dúvidas.
-3. Se o texto *cumprir* os requisitos, então:
-   - Corrija a ortografia e gramática.
-   - Remova expressões informais ou de conversa.
-   - Formate no padrão de *documentação institucional oficial*.
+TAREFA: Transformar conversas de atendimento em documentação estruturada.
 
-📌 Saída SEMPRE deve ter duas partes:
-- *Classificação:* Pode ser transformado em documentação? (Sim ou Não).
-- *Resultado:*  
-  - Se "Não": explique os pontos que faltam.  
-  - Se "Sim": entregue o texto final no formato de documentação institucional.
+PROCESSO:
+1. Analise a conversa entre franqueado e suporte
+2. Extraia a solução/procedimento fornecido pelo suporte
+3. Transforme em um documento objetivo e prático
+4. Avalie se é adequado para documentação oficial
 
-Responda em JSON com este formato exato:
+FORMATO DE SAÍDA - JSON:
 {
-  "classificacao": "Sim" ou "Não",
-  "resultado": "texto explicativo ou documentação formatada"
-}`
+  "classificacao": "Sim" | "Não",
+  "resultado": "documento estruturado OU motivo da rejeição"
+}
+
+CRITÉRIOS PARA APROVAÇÃO ("Sim"):
+- A resposta do suporte contém instruções claras e específicas
+- É aplicável a situações similares futuras
+- Fornece um procedimento completo
+- Não contém conversas subjetivas ou dúvidas do atendente
+
+CRITÉRIOS PARA REJEIÇÃO ("Não"):
+- Resposta muito genérica ("entre em contato", "vou verificar")
+- Conversas com dúvidas ou incertezas
+- Apenas redirecionamentos sem solução
+- Informações incompletas
+
+FORMATO DO DOCUMENTO (se aprovado):
+- Use linguagem direta e objetiva
+- Remova referências pessoais ("você", "eu", conversas)
+- Organize em passos lógicos se necessário
+- Foque nas instruções práticas
+
+EXEMPLO:
+Conversa: "[FRANQUEADO]: como categorizo uma calça jeans sem marca?
+[SUPORTE]: Para prosseguir corretamente, é necessário seguir por níveis, avançando etapa a etapa..."
+
+Documento: "Para categorizar uma calça jeans sem marca: 1) Seguir por níveis, avançando etapa a etapa. 2) Verificar em cada nível para garantir que tudo ocorra conforme o esperado..."`
         },
         {
           role: 'user',
-          content: `Texto original:\n"${textoCompleto}"`
+          content: `PROBLEMA/PERGUNTA:
+${problema}
+
+CONVERSA DE ATENDIMENTO:
+${conversa}
+
+Transforme esta conversa em documentação estruturada:`
         }
       ],
       max_completion_tokens: 1000,
