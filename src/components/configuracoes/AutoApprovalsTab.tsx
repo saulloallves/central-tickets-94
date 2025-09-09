@@ -19,6 +19,7 @@ export function AutoApprovalsTab() {
   const [selectedApproval, setSelectedApproval] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('pending');
   const [showUpdateOptions, setShowUpdateOptions] = useState<any>(null);
+  const [showCreateOptions, setShowCreateOptions] = useState(false);
   const [selectedUpdateType, setSelectedUpdateType] = useState<'full' | 'partial'>('full');
   const [selectedTextToReplace, setSelectedTextToReplace] = useState('');
   const { toast } = useToast();
@@ -37,7 +38,7 @@ export function AutoApprovalsTab() {
     }
   };
 
-  const handleCreateDocument = async (approvalId: string) => {
+  const handleCreateDocumentFromApproval = async (approvalId: string) => {
     const success = await createDocumentFromApproval(approvalId);
     if (success) {
       fetchApprovals(activeTab === 'all' ? undefined : activeTab);
@@ -48,24 +49,36 @@ export function AutoApprovalsTab() {
     }
   };
 
-  const handleCreateNewDocument = async () => {
+  const handleCreateNewDocument = () => {
+    if (!selectedApproval) return;
+    setShowCreateOptions(true);
+  };
+
+  const handleCreateDocument = async (estilo: 'manual' | 'diretrizes' | 'auto') => {
     if (!selectedApproval) return;
 
     try {
-      await createMemory({
-        estilo: 'diretrizes',
-        titulo: `Documentação gerada automaticamente - ${new Date().toLocaleDateString('pt-BR')}`,
-        categoria: 'Suporte',
-        content: selectedApproval.documentation_content
-      });
+      if (estilo === 'auto') {
+        // Usar o processador com IA que já coloca título automaticamente
+        await createDocumentFromApproval(selectedApproval.id);
+      } else {
+        // Criar com estilo específico
+        await createMemory({
+          estilo,
+          titulo: estilo === 'manual' ? `Documentação Manual - ${new Date().toLocaleDateString('pt-BR')}` : `Diretrizes - ${new Date().toLocaleDateString('pt-BR')}`,
+          categoria: 'Suporte',
+          content: selectedApproval.documentation_content
+        });
 
-      await updateApprovalStatus(selectedApproval.id, 'processed');
+        await updateApprovalStatus(selectedApproval.id, 'processed');
+      }
       
       toast({
         title: "Documento criado",
         description: "Novo documento foi criado com sucesso na base de conhecimento.",
       });
 
+      setShowCreateOptions(false);
       setSelectedApproval(null);
       fetchApprovals(activeTab === 'all' ? undefined : activeTab);
     } catch (error) {
@@ -254,7 +267,7 @@ export function AutoApprovalsTab() {
                       <Button
                         variant="default"
                         size="sm"
-                        onClick={() => handleCreateDocument(approval.id)}
+                        onClick={() => handleCreateDocumentFromApproval(approval.id)}
                         className="bg-blue-600 hover:bg-blue-700"
                       >
                         <Plus className="h-4 w-4 mr-2" />
@@ -429,6 +442,77 @@ export function AutoApprovalsTab() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Options Modal */}
+      <Dialog open={showCreateOptions} onOpenChange={setShowCreateOptions}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="w-5 h-5 text-green-600" />
+              Criar Novo Documento
+            </DialogTitle>
+            <DialogDescription>
+              Escolha como deseja criar o novo documento
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <Button
+              variant="outline"
+              className="w-full justify-start h-auto p-4"
+              onClick={() => handleCreateDocument('auto')}
+            >
+              <div className="text-left">
+                <div className="font-medium flex items-center gap-2">
+                  <Lightbulb className="w-4 h-4 text-blue-500" />
+                  Processamento Automático (IA)
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  A IA processa e organiza automaticamente com título e estrutura
+                </div>
+              </div>
+            </Button>
+            
+            <Button
+              variant="outline"
+              className="w-full justify-start h-auto p-4"
+              onClick={() => handleCreateDocument('diretrizes')}
+            >
+              <div className="text-left">
+                <div className="font-medium flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-purple-500" />
+                  Diretrizes
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Criar como documento de diretrizes organizacionais
+                </div>
+              </div>
+            </Button>
+
+            <Button
+              variant="outline"
+              className="w-full justify-start h-auto p-4"
+              onClick={() => handleCreateDocument('manual')}
+            >
+              <div className="text-left">
+                <div className="font-medium flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-green-500" />
+                  Manual
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Criar como documento manual de procedimentos
+                </div>
+              </div>
+            </Button>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateOptions(false)}>
+              Cancelar
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
