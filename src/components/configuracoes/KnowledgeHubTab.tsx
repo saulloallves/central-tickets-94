@@ -16,7 +16,7 @@ import { SimilarDocumentsModal } from './SimilarDocumentsModal';
 import { SemanticAnalysisModal } from './SemanticAnalysisModal';
 import { RegenerateEmbeddingsButton } from './RegenerateEmbeddingsButton';
 import { supabase } from '@/integrations/supabase/client';
-import '@/utils/regenerateEmbeddings'; // Auto-executa regeneração
+
 import { useRegenerateEmbeddings } from '@/hooks/useRegenerateEmbeddings';
 const KnowledgeHubTab = () => {
   const {
