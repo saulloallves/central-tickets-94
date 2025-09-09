@@ -2,6 +2,73 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0';
 
+// Reutiliza a mesma lógica de re-ranking dos outros sistemas
+async function rerankComLLM(docs: any[], pergunta: string) {
+  if (!docs || docs.length === 0) return [];
+
+  try {
+    console.log('🧠 Re-ranking com LLM...');
+    
+    const docsParaAnalise = docs.map((doc) => 
+      `ID: ${doc.id}\nTítulo: ${doc.titulo}\nConteúdo: ${JSON.stringify(doc.conteudo).substring(0, 800)}`
+    ).join('\n\n---\n\n');
+
+    const prompt = `Você deve analisar os documentos e classificar sua relevância para o conteúdo que o usuário quer criar.
+
+CONTEÚDO A SER CRIADO: "${pergunta}"
+
+DOCUMENTOS EXISTENTES:
+${docsParaAnalise}
+
+Retorne APENAS um JSON válido com array "scores" contendo objetos com "id" e "score" (0-100):
+{"scores": [{"id": "doc-id", "score": 85}, ...]}
+
+Critérios para detectar similaridade:
+- Score 80-100: Muito similar, pode estar duplicando conteúdo
+- Score 60-79: Parcialmente similar, considere atualizar
+- Score 40-59: Relacionado ao tema
+- Score 0-39: Pouco relacionado`;
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4.1-2025-04-14',
+        messages: [{ role: 'user', content: prompt }],
+        max_completion_tokens: 1000,
+        response_format: { type: 'json_object' }
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`LLM rerank error: ${await response.text()}`);
+    }
+
+    const data = await response.json();
+    const result = JSON.parse(data.choices[0].message.content);
+    
+    console.log(`LLM rerank parsed items: ${result.scores?.length || 0}`);
+    
+    if (!result.scores) return docs.slice(0, 5);
+
+    // Ordenar por score e pegar top 5
+    const rankedDocs = result.scores
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5)
+      .map(item => docs.find(doc => doc.id === item.id))
+      .filter(Boolean);
+
+    return rankedDocs;
+    
+  } catch (error) {
+    console.error('Erro no reranking LLM:', error);
+    return docs.slice(0, 5);
+  }
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -65,32 +132,38 @@ serve(async (req) => {
     console.log('Embedding gerado com sucesso');
     console.log('Dimensões do embedding:', queryEmbedding.length);
 
-    // Configura busca conforme a documentação
-    const LIMIAR_DE_RELEVANCIA = 0.5; // Limiar mais baixo para pegar ideias relacionadas
-    const MAXIMO_DE_DOCUMENTOS = 5;    // Lista útil para análise
+    // Usa a mesma busca híbrida dos outros sistemas
+    const LIMIAR_DE_RELEVANCIA = 0.1; // Mesmo threshold do suggest-reply
+    const MAXIMO_DE_DOCUMENTOS = 12;   // Busca mais documentos para depois re-ranking
 
-    console.log('Iniciando busca com parâmetros:');
+    console.log('Iniciando busca híbrida com parâmetros:');
     console.log('- match_threshold:', LIMIAR_DE_RELEVANCIA);
     console.log('- match_count:', MAXIMO_DE_DOCUMENTOS);
 
-    // Chama a função match_documentos conforme a documentação
-    const { data: documentosExistentes, error } = await supabase.rpc('match_documentos', {
+    // Usa a mesma função híbrida dos outros sistemas
+    const { data: candidatos, error } = await supabase.rpc('match_documentos_hibrido', {
       query_embedding: queryEmbedding,
+      query_text: textoCompleto,
       match_threshold: LIMIAR_DE_RELEVANCIA,
       match_count: MAXIMO_DE_DOCUMENTOS
     });
 
-    console.log('Resultado da busca:');
+    console.log('Resultado da busca híbrida:');
     console.log('- error:', error);
-    console.log('- documentosExistentes:', documentosExistentes);
-    console.log('- quantidade encontrada:', documentosExistentes?.length || 0);
+    console.log('- candidatos:', candidatos?.length || 0);
 
     if (error) {
       console.error("Erro ao verificar assuntos relacionados:", error);
       throw new Error("Falha na consulta à base de conhecimento.");
     }
 
-    const artigosRelacionados = documentosExistentes || [];
+    let artigosRelacionados = candidatos || [];
+    
+    // Re-ranking com LLM como os outros sistemas
+    if (artigosRelacionados.length > 0) {
+      console.log('🧠 Aplicando re-ranking com LLM...');
+      artigosRelacionados = await rerankComLLM(artigosRelacionados, textoCompleto);
+    }
     console.log(`Encontrados ${artigosRelacionados.length} documentos relacionados`);
 
     // Formata resultado conforme esperado pela interface
