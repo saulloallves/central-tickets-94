@@ -54,24 +54,18 @@ export function AutoApprovalsTab() {
     setShowCreateOptions(true);
   };
 
-  const handleCreateDocument = async (estilo: 'manual' | 'diretrizes' | 'auto') => {
+  const handleCreateDocument = async (estilo: 'manual' | 'diretrizes') => {
     if (!selectedApproval) return;
 
     try {
-      if (estilo === 'auto') {
-        // Usar o processador com IA que já coloca título automaticamente
-        await createDocumentFromApproval(selectedApproval.id);
-      } else {
-        // Criar com estilo específico
-        await createMemory({
-          estilo,
-          titulo: estilo === 'manual' ? `Documentação Manual - ${new Date().toLocaleDateString('pt-BR')}` : `Diretrizes - ${new Date().toLocaleDateString('pt-BR')}`,
-          categoria: 'Suporte',
-          content: selectedApproval.documentation_content
-        });
+      // Sempre usar o processador com IA (createDocumentFromApproval) 
+      // mas passando o estilo específico
+      await createMemory({
+        estilo,
+        content: selectedApproval.documentation_content
+      });
 
-        await updateApprovalStatus(selectedApproval.id, 'processed');
-      }
+      await updateApprovalStatus(selectedApproval.id, 'processed');
       
       toast({
         title: "Documento criado",
@@ -462,15 +456,15 @@ export function AutoApprovalsTab() {
             <Button
               variant="outline"
               className="w-full justify-start h-auto p-4"
-              onClick={() => handleCreateDocument('auto')}
+              onClick={() => handleCreateDocument('manual')}
             >
               <div className="text-left">
                 <div className="font-medium flex items-center gap-2">
-                  <Lightbulb className="w-4 h-4 text-blue-500" />
-                  Processamento Automático (IA)
+                  <FileText className="w-4 h-4 text-green-500" />
+                  Manual - Organiza e classifica documentação técnica
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  A IA processa e organiza automaticamente com título e estrutura
+                  Processado com IA para organizar procedimentos técnicos
                 </div>
               </div>
             </Button>
@@ -483,26 +477,10 @@ export function AutoApprovalsTab() {
               <div className="text-left">
                 <div className="font-medium flex items-center gap-2">
                   <BookOpen className="w-4 h-4 text-purple-500" />
-                  Diretrizes
+                  Diretriz - Categoriza regras e infrações institucionais
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  Criar como documento de diretrizes organizacionais
-                </div>
-              </div>
-            </Button>
-
-            <Button
-              variant="outline"
-              className="w-full justify-start h-auto p-4"
-              onClick={() => handleCreateDocument('manual')}
-            >
-              <div className="text-left">
-                <div className="font-medium flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-green-500" />
-                  Manual
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Criar como documento manual de procedimentos
+                  Processado com IA para organizar diretrizes organizacionais
                 </div>
               </div>
             </Button>
