@@ -206,20 +206,29 @@ serve(async (req) => {
     const MAXIMO_DE_DOCUMENTOS = 12;   // Busca mais documentos para depois re-ranking
 
     console.log('Iniciando busca híbrida com parâmetros:');
-    console.log('- match_threshold:', LIMIAR_DE_RELEVANCIA);
     console.log('- match_count:', MAXIMO_DE_DOCUMENTOS);
+    console.log('- alpha (peso vetorial):', 0.85);
+    console.log('- query_text length:', textoCompleto.length);
 
     // Usa a mesma função híbrida dos outros sistemas com parâmetros corretos
     const { data: candidatos, error } = await supabase.rpc('match_documentos_hibrido', {
-      alpha: 0.85, // Peso da busca vetorial (85%) vs textual (15%)
-      match_count: MAXIMO_DE_DOCUMENTOS,
       query_embedding: queryEmbedding,
-      query_text: textoCompleto
+      query_text: textoCompleto,
+      match_count: MAXIMO_DE_DOCUMENTOS,
+      alpha: 0.85 // Peso da busca vetorial (85%) vs textual (15%)
     });
 
     console.log('Resultado da busca híbrida:');
     console.log('- error:', error);
-    console.log('- candidatos:', candidatos?.length || 0);
+    console.log('- candidatos encontrados:', candidatos?.length || 0);
+    
+    if (candidatos && candidatos.length > 0) {
+      console.log('Primeiros candidatos:', candidatos.slice(0, 3).map(c => ({
+        titulo: c.titulo,
+        similarity: c.similarity,
+        content_preview: c.conteudo?.texto?.substring(0, 100) || 'No content'
+      })));
+    }
 
     if (error) {
       console.error("Erro ao verificar assuntos relacionados:", error);
