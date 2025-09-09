@@ -2821,9 +2821,7 @@ export type Database = {
         }
         Returns: {
           conteudo: Json
-          hybrid_score: number
           id: string
-          keyword_score: number
           similarity_score: number
           titulo: string
         }[]
