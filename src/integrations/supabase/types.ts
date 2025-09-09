@@ -1216,6 +1216,54 @@ export type Database = {
           },
         ]
       }
+      knowledge_auto_approvals: {
+        Row: {
+          ai_evaluation: Json | null
+          comparative_analysis: string | null
+          corrected_response: string
+          created_at: string
+          created_by: string | null
+          decision_reason: string | null
+          documentation_content: string
+          id: string
+          original_message: string
+          similar_documents: Json | null
+          status: string
+          ticket_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          ai_evaluation?: Json | null
+          comparative_analysis?: string | null
+          corrected_response: string
+          created_at?: string
+          created_by?: string | null
+          decision_reason?: string | null
+          documentation_content: string
+          id?: string
+          original_message: string
+          similar_documents?: Json | null
+          status?: string
+          ticket_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ai_evaluation?: Json | null
+          comparative_analysis?: string | null
+          corrected_response?: string
+          created_at?: string
+          created_by?: string | null
+          decision_reason?: string | null
+          documentation_content?: string
+          id?: string
+          original_message?: string
+          similar_documents?: Json | null
+          status?: string
+          ticket_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       knowledge_suggestions: {
         Row: {
           article_id: string | null

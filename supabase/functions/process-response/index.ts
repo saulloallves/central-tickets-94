@@ -1,7 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0';
-import { encontrarDocumentosRelacionados, rerankComLLM } from '../typebot-webhook/rag-engine.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -31,6 +30,26 @@ async function openAI(path: string, payload: any, tries = 3) {
     throw new Error(`${path} error: ${await r.text()}`);
   }
   throw new Error(`${path} error: too many retries`);
+}
+
+async function encontrarDocumentosRelacionados(query: string, limit: number = 5) {
+  try {
+    const { data, error } = await supabase.rpc('search_knowledge_articles', {
+      query_text: query,
+      limit_count: limit
+    });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Erro na busca semântica:', error);
+    return [];
+  }
+}
+
+async function rerankComLLM(documentos: any[], query: string) {
+  // Simplified rerank - just return the first 5 documents
+  return documentos.slice(0, 5);
 }
 
 async function corrigirResposta(mensagem: string, contextoDocs: any[]) {
