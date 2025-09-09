@@ -501,22 +501,6 @@ export const SemanticAnalysisModal = ({
             </div>
           )}
 
-          {/* No Similar Documents */}
-          {similarDocuments.length === 0 && currentStep === 'complete' && !error && (
-            <div className="space-y-4">
-              <Card className="border-l-4 border-l-green-500">
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-2 mb-2">
-                    <CheckCircle className="w-5 h-5 text-green-500" />
-                    <p className="font-medium text-green-700">Nenhum documento similar encontrado</p>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    O documento é único e pode ser criado sem conflitos
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          )}
 
           {/* Error State */}
           {error && (
