@@ -477,7 +477,8 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
 
   const moveTicket = async (ticketId: string, toStatus: string, beforeId?: string, afterId?: string): Promise<boolean> => {
     try {
-      console.log('📤 Moving ticket via edge function:', { ticketId, toStatus, beforeId, afterId });
+      console.log('📤 [FRONTEND] Moving ticket via edge function:', { ticketId, toStatus, beforeId, afterId });
+      console.log('📤 [FRONTEND] Status change detected to concluido:', toStatus === 'concluido');
       
       const { data, error } = await supabase.functions.invoke('move-ticket', {
         body: { ticketId, toStatus, beforeId, afterId },
