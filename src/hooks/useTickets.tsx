@@ -771,49 +771,59 @@ export const useTickets = (filters: TicketFilters) => {
       if (cleanUpdates.status === 'concluido') {
         console.log('🎯 Ticket concluído, disparando moderação...');
         
-        // Buscar conversa completa do ticket
-        const { data: mensagens, error: msgError } = await supabase
-          .from('ticket_mensagens')
-          .select('mensagem, direcao, created_at')
-          .eq('ticket_id', ticketId)
-          .order('created_at', { ascending: true });
+        // Buscar dados completos do ticket incluindo a conversa JSON
+        const { data: ticketData, error: ticketError } = await supabase
+          .from('tickets')
+          .select('descricao_problema, conversa')
+          .eq('id', ticketId)
+          .single();
 
-        if (!msgError && mensagens && mensagens.length > 0) {
-          const conversa = mensagens
-            .map(msg => `[${msg.direcao.toUpperCase()}]: ${msg.mensagem}`)
-            .join('\n\n');
+        if (!ticketError && ticketData) {
+          // Processar conversa do JSON
+          let conversaTexto = '';
+          
+          if (ticketData.conversa && Array.isArray(ticketData.conversa)) {
+            conversaTexto = ticketData.conversa
+              .map((msg: any) => {
+                const autor = msg.autor || msg.role || 'desconhecido';
+                const texto = msg.texto || msg.content || msg.mensagem || '';
+                return `[${autor.toUpperCase()}]: ${texto}`;
+              })
+              .join('\n\n');
+          } else if (ticketData.conversa && typeof ticketData.conversa === 'string') {
+            conversaTexto = ticketData.conversa;
+          }
 
-          // Buscar dados do ticket para o problema
-          const { data: ticketData } = await supabase
-            .from('tickets')
-            .select('descricao_problema')
-            .eq('id', ticketId)
-            .single();
+          if (conversaTexto.trim()) {
+            console.log('📝 Conversa capturada:', conversaTexto.substring(0, 200) + '...');
+            
+            // Chamar função de moderação
+            try {
+              const { data: moderacaoResult, error: moderacaoError } = await supabase.functions.invoke('ticket-completion-moderator', {
+                body: {
+                  ticket_id: ticketId,
+                  conversa: conversaTexto,
+                  problema: ticketData.descricao_problema || '',
+                  usuario_id: user?.id
+                }
+              });
 
-          // Chamar função de moderação
-          try {
-            const { data: moderacaoResult, error: moderacaoError } = await supabase.functions.invoke('ticket-completion-moderator', {
-              body: {
-                ticket_id: ticketId,
-                conversa: conversa,
-                problema: ticketData?.descricao_problema || '',
-                usuario_id: user?.id
+              if (moderacaoError) {
+                console.error('Erro na moderação:', moderacaoError);
+              } else {
+                console.log('✅ Moderação executada:', moderacaoResult);
+                if (moderacaoResult.pode_virar_documentacao) {
+                  toast({
+                    title: "📋 Ticket enviado para moderação",
+                    description: "O conteúdo foi analisado e enviado para aprovação de documentação",
+                  });
+                }
               }
-            });
-
-            if (moderacaoError) {
-              console.error('Erro na moderação:', moderacaoError);
-            } else {
-              console.log('✅ Moderação executada:', moderacaoResult);
-              if (moderacaoResult.pode_virar_documentacao) {
-                toast({
-                  title: "📋 Ticket enviado para moderação",
-                  description: "O conteúdo foi analisado e enviado para aprovação de documentação",
-                });
-              }
+            } catch (error) {
+              console.error('Erro ao chamar moderação:', error);
             }
-          } catch (error) {
-            console.error('Erro ao chamar moderação:', error);
+          } else {
+            console.log('⚠️ Conversa vazia, pulando moderação');
           }
         }
       }
