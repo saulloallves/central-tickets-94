@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useAutoApprovals } from '@/hooks/useAutoApprovals';
-import { useKnowledgeMemories } from '@/hooks/useKnowledgeMemories';
+import { useRAGDocuments } from '@/hooks/useRAGDocuments';
 import { formatDistanceToNowInSaoPaulo } from '@/lib/date-utils';
 import { CheckCircle, XCircle, Clock, FileText, User, MessageSquare, Eye, Plus, BookOpen, GitCompare, AlertTriangle, Lightbulb } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
@@ -23,7 +23,7 @@ export function AutoApprovalsTab() {
   const [showUpdateOptions, setShowUpdateOptions] = useState(false);
   const [showCreateOptions, setShowCreateOptions] = useState(false);
   const [selectedUpdateDocument, setSelectedUpdateDocument] = useState<any>(null);
-  const { createMemory } = useKnowledgeMemories();
+  const { createDocument } = useRAGDocuments();
   const {
     toast
   } = useToast();
@@ -49,24 +49,38 @@ export function AutoApprovalsTab() {
       });
     }
   };
-  const handleCreateNewDocument = async (estilo: 'manual' | 'diretrizes') => {
+  const handleCreateNewDocument = async (estilo: 'manual' | 'diretriz') => {
     if (selectedApproval) {
       try {
-        await createMemory({
+        const result = await createDocument({
+          titulo: `Documentação gerada automaticamente - ${new Date().toLocaleDateString('pt-BR')}`,
+          conteudo: selectedApproval.documentation_content,
+          categoria: 'Suporte',
+          justificativa: 'Documento criado a partir de aprovação automática',
           estilo,
-          content: selectedApproval.documentation_content
+          process_with_ai: true, // Sempre processar com IA
+          force: true // Forçar criação mesmo com duplicatas
         });
         
-        // Atualizar status da aprovação
-        await updateApprovalStatus(selectedApproval.id, 'processed');
-        
-        fetchApprovals(activeTab === 'all' ? undefined : activeTab);
-        toast({
-          title: "✨ Documento criado",
-          description: "Novo documento foi criado com sucesso na base de conhecimento."
-        });
+        if (result.success) {
+          // Atualizar status da aprovação
+          await updateApprovalStatus(selectedApproval.id, 'processed');
+          
+          fetchApprovals(activeTab === 'all' ? undefined : activeTab);
+          toast({
+            title: "✨ Documento criado",
+            description: "Novo documento foi criado com sucesso na base de conhecimento."
+          });
+        } else {
+          throw new Error(result.error || 'Erro ao criar documento');
+        }
       } catch (error) {
         console.error('Erro ao criar documento:', error);
+        toast({
+          title: "Erro",
+          description: `Não foi possível criar o documento: ${error.message}`,
+          variant: "destructive",
+        });
       }
       setSelectedApproval(null);
       setShowCreateOptions(false);
@@ -366,7 +380,7 @@ export function AutoApprovalsTab() {
             <Button 
               variant="outline" 
               className="justify-start h-auto p-4"
-              onClick={() => handleCreateNewDocument('diretrizes')}
+              onClick={() => handleCreateNewDocument('diretriz')}
             >
               <BookOpen className="h-5 w-5 mr-3" />
               <div className="text-left">
