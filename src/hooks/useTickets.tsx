@@ -767,6 +767,57 @@ export const useTickets = (filters: TicketFilters) => {
       console.log('Clean updates object:', cleanUpdates);
       console.log('===========================');
 
+      // Se o ticket foi marcado como concluído, disparar moderação
+      if (cleanUpdates.status === 'concluido') {
+        console.log('🎯 Ticket concluído, disparando moderação...');
+        
+        // Buscar conversa completa do ticket
+        const { data: mensagens, error: msgError } = await supabase
+          .from('ticket_mensagens')
+          .select('mensagem, direcao, created_at')
+          .eq('ticket_id', ticketId)
+          .order('created_at', { ascending: true });
+
+        if (!msgError && mensagens && mensagens.length > 0) {
+          const conversa = mensagens
+            .map(msg => `[${msg.direcao.toUpperCase()}]: ${msg.mensagem}`)
+            .join('\n\n');
+
+          // Buscar dados do ticket para o problema
+          const { data: ticketData } = await supabase
+            .from('tickets')
+            .select('descricao_problema')
+            .eq('id', ticketId)
+            .single();
+
+          // Chamar função de moderação
+          try {
+            const { data: moderacaoResult, error: moderacaoError } = await supabase.functions.invoke('ticket-completion-moderator', {
+              body: {
+                ticket_id: ticketId,
+                conversa: conversa,
+                problema: ticketData?.descricao_problema || '',
+                usuario_id: user?.id
+              }
+            });
+
+            if (moderacaoError) {
+              console.error('Erro na moderação:', moderacaoError);
+            } else {
+              console.log('✅ Moderação executada:', moderacaoResult);
+              if (moderacaoResult.pode_virar_documentacao) {
+                toast({
+                  title: "📋 Ticket enviado para moderação",
+                  description: "O conteúdo foi analisado e enviado para aprovação de documentação",
+                });
+              }
+            }
+          } catch (error) {
+            console.error('Erro ao chamar moderação:', error);
+          }
+        }
+      }
+
       const { data, error } = await supabase
         .from('tickets')
         .update(cleanUpdates)
