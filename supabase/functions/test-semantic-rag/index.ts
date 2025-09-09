@@ -209,12 +209,12 @@ serve(async (req) => {
     console.log('- match_threshold:', LIMIAR_DE_RELEVANCIA);
     console.log('- match_count:', MAXIMO_DE_DOCUMENTOS);
 
-    // Usa a mesma função híbrida dos outros sistemas
+    // Usa a mesma função híbrida dos outros sistemas com parâmetros corretos
     const { data: candidatos, error } = await supabase.rpc('match_documentos_hibrido', {
+      alpha: 0.85, // Peso da busca vetorial (85%) vs textual (15%)
+      match_count: MAXIMO_DE_DOCUMENTOS,
       query_embedding: queryEmbedding,
-      query_text: textoCompleto,
-      match_threshold: LIMIAR_DE_RELEVANCIA,
-      match_count: MAXIMO_DE_DOCUMENTOS
+      query_text: textoCompleto
     });
 
     console.log('Resultado da busca híbrida:');
