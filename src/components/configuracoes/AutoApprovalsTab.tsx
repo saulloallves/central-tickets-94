@@ -4,18 +4,23 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAutoApprovals } from '@/hooks/useAutoApprovals';
+import { useKnowledgeMemories } from '@/hooks/useKnowledgeMemories';
 import { formatDistanceToNowInSaoPaulo } from '@/lib/date-utils';
-import { CheckCircle, XCircle, Clock, FileText, User, MessageSquare, Eye, Plus, BookOpen, GitCompare, AlertTriangle, Lightbulb } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, FileText, User, MessageSquare, Eye, Plus, BookOpen, GitCompare, AlertTriangle, Lightbulb, Edit, Replace } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 export function AutoApprovalsTab() {
   const { approvals, loading, fetchApprovals, updateApprovalStatus, createDocumentFromApproval } = useAutoApprovals();
+  const { updateDocument } = useKnowledgeMemories();
   const [selectedApproval, setSelectedApproval] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('pending');
-  const [showUpdateOptions, setShowUpdateOptions] = useState(false);
-  const [selectedUpdateDocument, setSelectedUpdateDocument] = useState<any>(null);
+  const [showUpdateOptions, setShowUpdateOptions] = useState<any>(null);
+  const [selectedUpdateType, setSelectedUpdateType] = useState<'full' | 'partial'>('full');
+  const [selectedTextToReplace, setSelectedTextToReplace] = useState('');
   const { toast } = useToast();
 
   const handleApprove = async (id: string, reason?: string) => {
@@ -50,25 +55,45 @@ export function AutoApprovalsTab() {
     }
   };
 
-  const handleUpdateExistingDocument = (updateType: 'full' | 'partial', selectedText?: string) => {
-    if (selectedApproval && selectedUpdateDocument) {
-      // Aqui você pode implementar a lógica de atualização
-      // Por enquanto, vamos apenas criar um novo documento
-      handleCreateDocument(selectedApproval.id);
-      setSelectedApproval(null);
-      setShowUpdateOptions(false);
-      setSelectedUpdateDocument(null);
-      
+  const handleShowUpdateOptions = (document: any) => {
+    setShowUpdateOptions(document);
+    setSelectedUpdateType('full');
+    setSelectedTextToReplace('');
+  };
+
+  const handleConfirmUpdate = async () => {
+    if (!showUpdateOptions || !selectedApproval) return;
+
+    try {
+      await updateDocument(
+        showUpdateOptions.id,
+        selectedApproval.documentation_content,
+        selectedUpdateType,
+        selectedUpdateType === 'partial' ? selectedTextToReplace : undefined
+      );
+
+      await updateApprovalStatus(selectedApproval.id, 'processed');
+
       toast({
-        title: "Documento atualizado",
-        description: `O documento "${selectedUpdateDocument.titulo}" foi atualizado com sucesso.`,
+        title: "Documento Atualizado",
+        description: "O documento foi atualizado com sucesso.",
+      });
+
+      setShowUpdateOptions(null);
+      setSelectedApproval(null);
+    } catch (error) {
+      console.error('Error updating document:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar documento.",
+        variant: "destructive",
       });
     }
   };
 
-  const handleShowUpdateOptions = (document: any) => {
-    setSelectedUpdateDocument(document);
-    setShowUpdateOptions(true);
+  const formatDocumentContent = (content: string, truncate: boolean = true) => {
+    if (!content) return '';
+    return truncate && content.length > 500 ? content.substring(0, 500) + '...' : content;
   };
 
   const getStatusBadge = (status: string) => {
@@ -383,45 +408,6 @@ export function AutoApprovalsTab() {
         </DialogContent>
       </Dialog>
 
-      {/* Modal de opções de atualização */}
-      <Dialog open={showUpdateOptions} onOpenChange={setShowUpdateOptions}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Opções de Atualização</DialogTitle>
-            <DialogDescription>
-              Como você gostaria de atualizar o documento "{selectedUpdateDocument?.titulo}"?
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <Button
-              variant="outline"
-              className="w-full justify-start h-auto p-4"
-              onClick={() => handleUpdateExistingDocument('full')}
-            >
-              <div className="text-left">
-                <div className="font-medium">Substituição Completa</div>
-                <div className="text-sm text-muted-foreground">
-                  Substituir todo o conteúdo do documento existente
-                </div>
-              </div>
-            </Button>
-            
-            <Button
-              variant="outline"
-              className="w-full justify-start h-auto p-4"
-              onClick={() => handleUpdateExistingDocument('partial')}
-            >
-              <div className="text-left">
-                <div className="font-medium">Atualização Parcial</div>
-                <div className="text-sm text-muted-foreground">
-                  Adicionar informações ao documento existente
-                </div>
-              </div>
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

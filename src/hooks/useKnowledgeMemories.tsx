@@ -79,8 +79,45 @@ export const useKnowledgeMemories = () => {
     }
   };
 
+  const updateDocument = async (documentId: string, newContent: string, updateType: 'full' | 'partial', textToReplace?: string) => {
+    setLoading(true);
+    try {
+      const { data: result, error } = await supabase.functions.invoke('kb-update-document', {
+        body: {
+          documentId,
+          newContent,
+          updateType,
+          textToReplace
+        }
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      toast({
+        title: "✨ Documento Atualizado",
+        description: "O documento foi atualizado com sucesso",
+      });
+
+      return result;
+
+    } catch (error) {
+      console.error('Erro ao atualizar documento:', error);
+      toast({
+        title: "Erro",
+        description: `Não foi possível atualizar o documento: ${error.message}`,
+        variant: "destructive",
+      });
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     createMemory,
+    updateDocument,
     loading
   };
 };
