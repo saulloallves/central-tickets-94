@@ -177,9 +177,11 @@ IMPORTANTE: Você deve corrigir e padronizar a resposta do atendente seguindo es
 - Se não houver informações relevantes na base, apenas faça a correção de forma e tom
 - NUNCA invente informações que não estão na base de conhecimento
 - Use as informações dos documentos fornecidos como referência oficial
+- NUNCA cite códigos de manuais, procedimentos ou documentos específicos (como "PRO 02.02", "Manual XYZ", etc.)
+- Incorpore as informações de forma natural sem referenciar a fonte
 
 📋 FORMATO DE SAÍDA:
-Retorne apenas a versão corrigida e padronizada da resposta, sem explicações adicionais.`
+Retorne apenas a versão corrigida e padronizada da resposta, sem explicações adicionais ou referências a documentos.`
         },
         {
           role: 'user',
