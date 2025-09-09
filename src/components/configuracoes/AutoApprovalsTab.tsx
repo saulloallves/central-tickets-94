@@ -4,12 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useAutoApprovals } from '@/hooks/useAutoApprovals';
 import { useRAGDocuments } from '@/hooks/useRAGDocuments';
 import { formatDistanceToNowInSaoPaulo } from '@/lib/date-utils';
-import { CheckCircle, XCircle, Clock, FileText, User, MessageSquare, Eye, Plus, BookOpen, GitCompare, AlertTriangle, Lightbulb, Loader2 } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, FileText, User, MessageSquare, Eye, Plus, BookOpen, GitCompare, AlertTriangle, Lightbulb, Loader2, Edit, Replace } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
 export function AutoApprovalsTab() {
   const {
     approvals,
@@ -24,6 +26,8 @@ export function AutoApprovalsTab() {
   const [showCreateOptions, setShowCreateOptions] = useState(false);
   const [selectedUpdateDocument, setSelectedUpdateDocument] = useState<any>(null);
   const [isCreatingDocument, setIsCreatingDocument] = useState(false);
+  const [selectedUpdateType, setSelectedUpdateType] = useState<'full' | 'partial'>('full');
+  const [selectedTextToReplace, setSelectedTextToReplace] = useState('');
   const { createDocument, updateDocument } = useRAGDocuments();
   const {
     toast
@@ -91,6 +95,21 @@ export function AutoApprovalsTab() {
       }
     }
   };
+  const handleConfirmUpdate = async () => {
+    if (!selectedUpdateDocument) return;
+    
+    await handleUpdateExistingDocument(
+      selectedUpdateDocument.id, 
+      selectedUpdateType, 
+      selectedUpdateType === 'partial' ? selectedTextToReplace : undefined
+    );
+    
+    setShowUpdateOptions(false);
+    setSelectedUpdateDocument(null);
+    setSelectedUpdateType('full');
+    setSelectedTextToReplace('');
+  };
+
   const handleUpdateExistingDocument = async (documentId: string, updateType: 'full' | 'partial', textToReplace?: string) => {
     console.log('=== INICIANDO ATUALIZAÇÃO DE DOCUMENTO ===');
     console.log('Document ID:', documentId);
@@ -109,7 +128,6 @@ export function AutoApprovalsTab() {
     }
 
     setIsCreatingDocument(true);
-    setShowUpdateOptions(false);
     
     try {
       const updateData = {
@@ -149,11 +167,12 @@ export function AutoApprovalsTab() {
     } finally {
       setIsCreatingDocument(false);
       setSelectedApproval(null);
-      setSelectedUpdateDocument(null);
     }
   };
   const handleShowUpdateOptions = (document: any) => {
     setSelectedUpdateDocument(document);
+    setSelectedUpdateType('full');
+    setSelectedTextToReplace('');
     setShowUpdateOptions(true);
   };
   const getStatusBadge = (status: string) => {
