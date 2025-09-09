@@ -26,22 +26,36 @@ export const useAutoApprovals = () => {
   const fetchApprovals = async (status?: string) => {
     setLoading(true);
     try {
-      // For now, return empty array since table was just created
-      // This will be populated once the process-response function starts working
-      const mockData: AutoApproval[] = [];
-      setApprovals(mockData);
+      let query = supabase
+        .from('knowledge_auto_approvals')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (status && status !== 'all') {
+        query = query.eq('status', status);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Erro ao buscar aprovações:', error);
+        throw error;
+      }
+
+      setApprovals((data || []).map(item => ({
+        ...item,
+        similar_documents: Array.isArray(item.similar_documents) ? item.similar_documents : []
+      })));
       
-      toast({
-        title: "Aprovações carregadas",
-        description: "Sistema de aprovações automáticas configurado e pronto",
-      });
+      console.log(`📋 Aprovações carregadas: ${data?.length || 0} registros (status: ${status || 'todos'})`);
     } catch (error) {
       console.error('Erro:', error);
       toast({
         title: "Erro",
-        description: "Erro ao conectar com o banco de dados",
+        description: "Erro ao carregar aprovações",
         variant: "destructive"
       });
+      setApprovals([]);
     } finally {
       setLoading(false);
     }
@@ -49,7 +63,21 @@ export const useAutoApprovals = () => {
 
   const updateApprovalStatus = async (id: string, status: string, reason?: string) => {
     try {
-      // Update local state for now
+      const { error } = await supabase
+        .from('knowledge_auto_approvals')
+        .update({
+          status,
+          decision_reason: reason,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+
+      if (error) {
+        console.error('Erro ao atualizar aprovação:', error);
+        throw error;
+      }
+
+      // Update local state
       setApprovals(prev => 
         prev.map(approval => 
           approval.id === id 
@@ -66,6 +94,11 @@ export const useAutoApprovals = () => {
       return true;
     } catch (error) {
       console.error('Erro:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar status da aprovação",
+        variant: "destructive"
+      });
       return false;
     }
   };
