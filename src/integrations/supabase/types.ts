@@ -2816,6 +2816,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      regenerate_single_document_embedding: {
+        Args: { doc_id: string }
+        Returns: undefined
+      }
       reject_internal_access: {
         Args: { p_reason?: string; p_request_id: string }
         Returns: undefined
