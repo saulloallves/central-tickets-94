@@ -276,10 +276,6 @@ export function AutoApprovalsTab() {
                         </Button>
                       </div>}
 
-                    {approval.status === 'approved' && <Button variant="default" size="sm" onClick={() => handleCreateDocument(approval.id)} className="bg-blue-600 hover:bg-blue-700">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Criar Documento
-                      </Button>}
                   </CardContent>
                 </Card>)}
             </div>}
