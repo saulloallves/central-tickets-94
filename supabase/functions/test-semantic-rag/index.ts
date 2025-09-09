@@ -24,14 +24,26 @@ async function rerankComLLM(docs: any[], pergunta: string): Promise<any[]> {
       return `[${index + 1}] Título: ${doc.titulo}\nConteúdo: ${texto?.substring(0, 500) || 'Sem conteúdo'}`;
     }).join('\n\n');
 
-    const prompt = `Analise os seguintes documentos e determine quais são mais relevantes para o texto fornecido. Retorne apenas uma lista JSON com os índices dos documentos ordenados por relevância (mais relevante primeiro), com scores de 0-100.
+    const prompt = `Analise os documentos existentes e determine quais são SEMANTICAMENTE SIMILARES ao novo texto fornecido.
 
-Texto de consulta: "${pergunta}"
+IMPORTANTE: Um documento existente é relevante se:
+- Trata do MESMO ASSUNTO/TÓPICO principal
+- Contém informações SOBREPOSTAS ou RELACIONADAS
+- Pode ser COMPLEMENTAR ou uma VERSÃO EXPANDIDA do novo texto
+- O novo texto pode ser uma PARTE/SEÇÃO de um documento maior existente
 
-Documentos:
+Novo texto: "${pergunta}"
+
+Documentos existentes:
 ${documentosFormatados}
 
-Responda APENAS com um array JSON no formato: [{"index": 1, "score": 95}, {"index": 2, "score": 80}]`;
+Critérios de pontuação:
+- 90-100: Mesmo assunto, muito similar ou o novo é parte do existente
+- 70-89: Assunto relacionado, informações complementares
+- 50-69: Parcialmente relacionado
+- 0-49: Pouco ou nada relacionado
+
+Responda APENAS com um array JSON: [{"index": 1, "score": 95}, {"index": 2, "score": 80}]`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -107,7 +119,7 @@ async function gerarAnaliseComparativa(novoConteudo: string, documentosRelaciona
       return `**Documento ${index + 1}: ${doc.titulo}**\n${texto?.substring(0, 800) || 'Sem conteúdo'}`;
     }).join('\n\n');
 
-    const prompt = `Faça uma análise comparativa BREVE e BEM FORMATADA entre o novo documento e os documentos existentes.
+    const prompt = `Compare o NOVO DOCUMENTO com os DOCUMENTOS EXISTENTES para identificar sobreposições, complementaridade e recomendar a melhor ação.
 
 **NOVO DOCUMENTO:**
 ${novoConteudo}
@@ -115,30 +127,39 @@ ${novoConteudo}
 **DOCUMENTOS EXISTENTES:**
 ${documentosFormatados}
 
+**INSTRUÇÕES IMPORTANTES:**
+- Se o novo documento é uma PARTE/SEÇÃO de um existente → Recomende ATUALIZAR o existente
+- Se o novo documento é COMPLEMENTAR → Recomende ATUALIZAR o existente  
+- Se o novo documento é ÚNICO/DIFERENTE → Recomende CRIAR NOVO
+- Identifique claramente se há SOBREPOSIÇÃO de conteúdo
+
 **ANÁLISE (seja conciso e objetivo):**
 
-## 📄 Resumo do Novo Documento
-• **Assunto:** [principal tema em 1 linha]
-• **Categoria:** [tipo de conteúdo]
+## 📄 Novo Documento
+**Assunto:** [tema principal em 1 linha]
+**Tipo:** [classificação do conteúdo]
 
-## 🔍 Documentos Similares Encontrados
-• **${documentosRelacionados.length} documento(s)** relacionado(s) encontrado(s)
+## 🔍 Análise de Sobreposição
+**Documentos relacionados:** ${documentosRelacionados.length}
+**Nível de sobreposição:** [Alto/Médio/Baixo/Nenhum]
 
-## ⚖️ Comparação Rápida
-**Similaridades:**
-• [máximo 2-3 pontos principais]
+## ⚖️ Comparação
+**O que é similar:**
+• [máximo 2 pontos principais]
 
-**Diferenças:**
-• [máximo 2-3 aspectos únicos]
+**O que é único no novo:**
+• [máximo 2 aspectos diferentes]
 
-## 💡 Recomendação
-**${documentosRelacionados.length > 0 ? '⚠️ ATUALIZAR EXISTENTE' : '✅ CRIAR NOVO'}**
+## 💡 Recomendação Final
+${documentosRelacionados.length > 0 ? '**⚠️ SUGESTÃO: ATUALIZAR DOCUMENTO EXISTENTE**' : '**✅ SUGESTÃO: CRIAR NOVO DOCUMENTO**'}
+
 ${documentosRelacionados.length > 0 ? 
-  '• Sugiro atualizar: **' + documentosRelacionados[0]?.titulo + '**\n• Motivo: [razão em 1 linha]' : 
-  '• Justificativa: Conteúdo único, sem duplicação'
+  `**Documento para atualizar:** ${documentosRelacionados[0]?.titulo}
+**Razão:** [explicar se é complementar/parte/sobreposição]` : 
+  '**Justificativa:** Conteúdo único sem sobreposição significativa'
 }
 
-Mantenha a resposta CURTA e OBJETIVA (máximo 300 palavras).`;
+(Máximo 250 palavras)`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
