@@ -252,7 +252,12 @@ export function AutoApprovalsTab() {
                         <Card key={index} className="p-3">
                           <h4 className="font-medium">{doc.titulo}</h4>
                           <p className="text-sm text-muted-foreground mt-1">
-                            {doc.conteudo?.substring(0, 150)}...
+                            {typeof doc.conteudo === 'string' 
+                              ? doc.conteudo.substring(0, 150) + '...'
+                              : typeof doc.conteudo === 'object' && doc.conteudo
+                              ? JSON.stringify(doc.conteudo).substring(0, 150) + '...'
+                              : 'Conteúdo não disponível'
+                            }
                           </p>
                           {doc.similarity && (
                             <Badge variant="outline" className="mt-2">
