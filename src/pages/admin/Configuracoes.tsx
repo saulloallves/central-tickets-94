@@ -7,7 +7,7 @@ import { IASettingsTab } from "@/components/configuracoes/IASettingsTab";
 import KnowledgeHubTab from "@/components/configuracoes/KnowledgeHubTab";
 import { RelatoriosTab } from "@/components/configuracoes/RelatoriosTab";
 import { NotificacoesTab } from "@/components/configuracoes/NotificacoesTab";
-
+import { AutoApprovalsTab } from "@/components/configuracoes/AutoApprovalsTab";
 
 import { LogoSettings } from "@/components/configuracoes/LogoSettingsTab";
 import { EmbeddingTestTab } from '@/components/configuracoes/EmbeddingTestTab';
@@ -37,7 +37,7 @@ export default function Configuracoes() {
         </div>
 
         <Tabs defaultValue="ia" className="w-full">
-          <TabsList className="grid w-full grid-cols-8 mb-6">
+          <TabsList className="grid w-full grid-cols-9 mb-6">
             <TabsTrigger value="logo" className="flex items-center gap-2">
               <Image className="h-4 w-4" />
               Logo
@@ -65,6 +65,10 @@ export default function Configuracoes() {
             <TabsTrigger value="ai-alerts" className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4" />
               Alertas IA
+            </TabsTrigger>
+            <TabsTrigger value="auto-approvals" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Aprovações
             </TabsTrigger>
             <TabsTrigger value="debug" className="flex items-center gap-2">
               🧪 Debug
@@ -98,6 +102,10 @@ export default function Configuracoes() {
 
           <TabsContent value="ai-alerts" className="space-y-6 animate-fade-in">
             <AIAlertsTestTab />
+          </TabsContent>
+
+          <TabsContent value="auto-approvals" className="space-y-6 animate-fade-in">
+            <AutoApprovalsTab />
           </TabsContent>
 
           <TabsContent value="debug" className="space-y-6 animate-fade-in">

@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTicketMessages } from '@/hooks/useTickets';
 import { useAISuggestion } from '@/hooks/useAISuggestion';
+import { useResponseProcessor } from '@/hooks/useResponseProcessor';
 
 
 import { TicketActions } from './TicketActions';
@@ -35,6 +36,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
   
   const { messages, sendMessage, loading: messagesLoading } = useTicketMessages(ticketId);
   const { suggestion, loading: suggestionLoading, generateSuggestion, markSuggestionUsed } = useAISuggestion(ticketId);
+  const { processResponse, isProcessing: responseProcessing } = useResponseProcessor();
   
   const { toast } = useToast();
 
@@ -229,9 +231,24 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
         uploadedAttachments = await uploadAttachments(attachments);
       }
 
+      // Process response with AI correction before sending
+      let finalMessage = newMessage.trim() || (uploadedAttachments.length > 0 ? '' : 'Mensagem vazia');
+      
+      if (finalMessage.trim()) {
+        const { data: userData } = await supabase.auth.getUser();
+        const processed = await processResponse(finalMessage, ticketId, userData.user?.id || '');
+        if (processed?.respostaFinal && processed.respostaFinal !== finalMessage) {
+          finalMessage = processed.respostaFinal;
+          
+          toast({
+            title: "Resposta processada",
+            description: "Sua mensagem foi corrigida e padronizada automaticamente",
+          });
+        }
+      }
+
       // Send text message with attachments metadata
-      const messageText = newMessage.trim() || (uploadedAttachments.length > 0 ? '' : 'Mensagem vazia');
-      const success = await sendMessage(messageText, uploadedAttachments);
+      const success = await sendMessage(finalMessage, uploadedAttachments);
       
       if (success) {
         // Send attachments via Z-API if any
