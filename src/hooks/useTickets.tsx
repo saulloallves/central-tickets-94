@@ -703,6 +703,7 @@ export const useTickets = (filters: TicketFilters) => {
       console.log('=== UPDATE TICKET DEBUG ===');
       console.log('Original updates object:', updates);
       console.log('Ticket ID:', ticketId);
+      console.log('🔍 Checking if status is being changed to concluido:', updates.status === 'concluido');
       
       // Filter out undefined, null, and empty string values
       // Also ensure enum fields are not included if they're empty
@@ -766,6 +767,7 @@ export const useTickets = (filters: TicketFilters) => {
 
       console.log('Clean updates object:', cleanUpdates);
       console.log('===========================');
+      console.log('🔍 Final check - will trigger moderation?', cleanUpdates.status === 'concluido');
 
       // Se o ticket foi marcado como concluído, disparar moderação
       if (cleanUpdates.status === 'concluido') {
