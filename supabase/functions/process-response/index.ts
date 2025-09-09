@@ -92,12 +92,13 @@ Gere a *versão corrigida e padronizada da resposta*, já validada com o banco d
   const userPrompt = `BANCO DE CONHECIMENTO:\n${contexto}\n\nRESPOSTA HUMANA PARA CORRIGIR:\n${mensagem}\n\nCorrija e padronize esta resposta:`;
 
   const response = await openAI('chat/completions', {
-    model: 'gpt-5-2025-08-07',
+    model: 'gpt-4o-mini',
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt }
     ],
-    max_completion_tokens: 1000
+    max_tokens: 1000,
+    temperature: 0.7
   });
 
   const data = await response.json();
@@ -133,12 +134,13 @@ RESPONDA EM JSON:
 }`;
 
   const response = await openAI('chat/completions', {
-    model: 'gpt-5-2025-08-07',
+    model: 'gpt-4o-mini',
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: respostaCorrigida }
     ],
-    max_completion_tokens: 1000,
+    max_tokens: 1000,
+    temperature: 0.3,
     response_format: { type: 'json_object' }
   });
 
@@ -204,9 +206,10 @@ ${contextoExistente}
 **Justificativa:** [Explicar o motivo da recomendação]`;
 
   const response = await openAI('chat/completions', {
-    model: 'gpt-5-2025-08-07',
+    model: 'gpt-4o-mini',
     messages: [{ role: 'user', content: prompt }],
-    max_completion_tokens: 1500
+    max_tokens: 1500,
+    temperature: 0.7
   });
 
   const data = await response.json();
@@ -219,30 +222,66 @@ serve(async (req) => {
   }
 
   try {
-    const { mensagem, ticket_id, usuario_id } = await req.json();
+    console.log('🚀 Iniciando process-response');
+    
+    const body = await req.json();
+    const { mensagem, ticket_id, usuario_id } = body;
+    
+    console.log('📝 Dados recebidos:', { 
+      ticket_id, 
+      usuario_id, 
+      mensagem_length: mensagem?.length || 0 
+    });
+
+    if (!mensagem || !ticket_id || !usuario_id) {
+      console.error('❌ Dados obrigatórios ausentes');
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Dados obrigatórios ausentes' 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (!openaiApiKey) {
+      console.error('❌ OpenAI API key não configurada');
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'OpenAI API key não configurada' 
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
     
     console.log('🔄 Processando resposta:', { ticket_id, usuario_id, mensagem: mensagem.substring(0, 100) });
 
     // 1. Buscar documentos relacionados para correção
+    console.log('📚 Buscando documentos relacionados...');
     const documentosRelacionados = await encontrarDocumentosRelacionados(mensagem, 5);
     const documentosRanqueados = await rerankComLLM(documentosRelacionados, mensagem);
     
     console.log(`📚 Encontrados ${documentosRanqueados.length} documentos para correção`);
 
     // 2. Corrigir e padronizar resposta
+    console.log('✏️ Corrigindo resposta...');
     const respostaCorrigida = await corrigirResposta(mensagem, documentosRanqueados);
     console.log('✅ Resposta corrigida');
 
     // 3. Avaliar se pode ser documentação
+    console.log('📋 Avaliando para documentação...');
     const avaliacao = await avaliarParaDocumentacao(respostaCorrigida);
     console.log('📝 Avaliação para documentação:', avaliacao.classificacao);
 
     let dadosDocumentacao = null;
     if (avaliacao.pode_documentar) {
+      console.log('🔍 Processando para documentação...');
       // 4. Processar para documentação (busca semântica)
       dadosDocumentacao = await processarParaDocumentacao(avaliacao.resultado);
       
       // 5. Salvar na tabela de aprovações automáticas
+      console.log('💾 Salvando aprovação automática...');
       const { data: aprovacao, error } = await supabase
         .from('knowledge_auto_approvals')
         .insert({
@@ -266,6 +305,8 @@ serve(async (req) => {
       }
     }
 
+    console.log('✅ Processamento concluído com sucesso');
+
     return new Response(JSON.stringify({
       success: true,
       resposta_corrigida: respostaCorrigida,
@@ -278,6 +319,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('❌ Erro no processamento:', error);
+    console.error('❌ Stack trace:', error.stack);
     return new Response(JSON.stringify({ 
       success: false, 
       error: error.message 
