@@ -34,9 +34,22 @@ async function openAI(path: string, payload: any, tries = 3) {
 
 async function encontrarDocumentosRelacionados(query: string, limit: number = 5) {
   try {
-    const { data, error } = await supabase.rpc('search_knowledge_articles', {
+    // Generate embedding for the query
+    const embeddingResponse = await openAI('embeddings', {
+      model: 'text-embedding-3-small',
+      input: query,
+      encoding_format: 'float'
+    });
+    
+    const embeddingData = await embeddingResponse.json();
+    const queryEmbedding = embeddingData.data[0].embedding;
+
+    // Use the corrected hybrid search function
+    const { data, error } = await supabase.rpc('match_documentos_hibrido', {
+      query_embedding: queryEmbedding,
       query_text: query,
-      limit_count: limit
+      match_count: limit,
+      alpha: 0.5
     });
 
     if (error) throw error;
