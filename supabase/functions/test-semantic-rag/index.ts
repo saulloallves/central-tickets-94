@@ -210,6 +210,26 @@ serve(async (req) => {
     console.log('- alpha (peso vetorial):', 0.85);
     console.log('- query_text length:', textoCompleto.length);
 
+    // TESTE: Primeiro vamos tentar busca simples usando match_documentos_semantico
+    console.log('🔍 TESTANDO BUSCA SIMPLES PRIMEIRO');
+    
+    const { data: candidatosSimples, error: errorSimples } = await supabase.rpc('match_documentos_semantico', {
+      query_embedding: queryEmbedding,
+      match_threshold: 0.1,
+      match_count: MAXIMO_DE_DOCUMENTOS
+    });
+    
+    console.log('📋 Resultado busca simples:');
+    console.log('- error:', errorSimples);
+    console.log('- candidatos simples:', candidatosSimples?.length || 0);
+    
+    if (candidatosSimples && candidatosSimples.length > 0) {
+      console.log('✅ ENCONTROU NA BUSCA SIMPLES:', candidatosSimples.slice(0, 2).map(c => ({
+        titulo: c.titulo,
+        similarity: c.similarity
+      })));
+    }
+
     // Usa a mesma função híbrida dos outros sistemas com parâmetros corretos
     const { data: candidatos, error } = await supabase.rpc('match_documentos_hibrido', {
       query_embedding: queryEmbedding,
@@ -218,16 +238,18 @@ serve(async (req) => {
       alpha: 0.85 // Peso da busca vetorial (85%) vs textual (15%)
     });
 
-    console.log('Resultado da busca híbrida:');
+    console.log('📋 Resultado da busca híbrida:');
     console.log('- error:', error);
     console.log('- candidatos encontrados:', candidatos?.length || 0);
     
     if (candidatos && candidatos.length > 0) {
-      console.log('Primeiros candidatos:', candidatos.slice(0, 3).map(c => ({
+      console.log('✅ HÍBRIDA - Primeiros candidatos:', candidatos.slice(0, 3).map(c => ({
         titulo: c.titulo,
         similarity: c.similarity,
         content_preview: c.conteudo?.texto?.substring(0, 100) || 'No content'
       })));
+    } else {
+      console.log('❌ BUSCA HÍBRIDA NÃO ENCONTROU NADA - Vamos usar busca simples');
     }
 
     if (error) {
@@ -235,7 +257,8 @@ serve(async (req) => {
       throw new Error("Falha na consulta à base de conhecimento.");
     }
 
-    let artigosRelacionados = candidatos || [];
+    // Use busca simples se híbrida falhou, senão use híbrida
+    let artigosRelacionados = candidatos && candidatos.length > 0 ? candidatos : (candidatosSimples || []);
     
     // Re-ranking com LLM como os outros sistemas
     if (artigosRelacionados.length > 0) {
