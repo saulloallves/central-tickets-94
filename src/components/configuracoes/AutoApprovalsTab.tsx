@@ -393,35 +393,127 @@ export function AutoApprovalsTab() {
         </DialogContent>
       </Dialog>
 
-      {/* Modal de opções de atualização */}
+      {/* Modal de opções de atualização igual ao Hub de Conhecimento */}
       <Dialog open={showUpdateOptions} onOpenChange={setShowUpdateOptions}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Opções de Atualização</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="w-5 h-5 text-primary" />
+              Opções de Atualização
+            </DialogTitle>
             <DialogDescription>
-              Como você gostaria de atualizar o documento "{selectedUpdateDocument?.titulo}"?
+              Escolha como deseja atualizar o documento "{selectedUpdateDocument?.titulo}"
             </DialogDescription>
           </DialogHeader>
-          
-          <div className="space-y-4">
-            <Button variant="outline" className="w-full justify-start h-auto p-4" onClick={() => handleUpdateExistingDocument(selectedUpdateDocument?.id, 'full')}>
-              <div className="text-left">
-                <div className="font-medium">Substituição Completa</div>
-                <div className="text-sm text-muted-foreground">
-                  Substituir todo o conteúdo do documento existente
-                </div>
+
+          <div className="space-y-6">
+            {/* Update Type Selection */}
+            <div className="space-y-4">
+              <Label className="text-base font-medium">Tipo de Atualização</Label>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <Card 
+                  className={`cursor-pointer transition-all ${
+                    selectedUpdateType === 'full' 
+                      ? 'border-primary bg-primary/5' 
+                      : 'hover:border-primary/50'
+                  }`}
+                  onClick={() => setSelectedUpdateType('full')}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <FileText className="w-8 h-8 text-primary" />
+                      <div>
+                        <h4 className="font-medium">Substituir Tudo</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Substitui todo o conteúdo do documento existente
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card 
+                  className={`cursor-pointer transition-all ${
+                    selectedUpdateType === 'partial' 
+                      ? 'border-primary bg-primary/5' 
+                      : 'hover:border-primary/50'
+                  }`}
+                  onClick={() => setSelectedUpdateType('partial')}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <Replace className="w-8 h-8 text-primary" />
+                      <div>
+                        <h4 className="font-medium">Substituir Parte</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Substitui apenas uma parte específica do conteúdo
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
-            </Button>
-            
-            <Button variant="outline" className="w-full justify-start h-auto p-4" onClick={() => handleUpdateExistingDocument(selectedUpdateDocument?.id, 'partial')}>
-              <div className="text-left">
-                <div className="font-medium">Atualização Parcial</div>
-                <div className="text-sm text-muted-foreground">
-                  Adicionar informações ao documento existente
+            </div>
+
+            {/* Partial Update Options */}
+            {selectedUpdateType === 'partial' && (
+              <div className="space-y-4">
+                <Label className="text-base font-medium">Texto a ser Substituído</Label>
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    Digite o texto específico que deseja substituir no documento existente:
+                  </p>
+                  <Textarea
+                    value={selectedTextToReplace}
+                    onChange={(e) => setSelectedTextToReplace(e.target.value)}
+                    placeholder="Digite o texto que deseja substituir..."
+                    className="min-h-24"
+                  />
                 </div>
+
+                {/* Current Document Preview */}
+                {selectedUpdateDocument && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Conteúdo Atual do Documento:</Label>
+                    <ScrollArea className="h-32 w-full border rounded-md p-3">
+                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                        {typeof selectedUpdateDocument.conteudo === 'string' 
+                          ? selectedUpdateDocument.conteudo 
+                          : typeof selectedUpdateDocument.conteudo === 'object' && selectedUpdateDocument.conteudo?.texto
+                            ? selectedUpdateDocument.conteudo.texto
+                            : JSON.stringify(selectedUpdateDocument.conteudo || {}, null, 2)
+                        }
+                      </p>
+                    </ScrollArea>
+                  </div>
+                )}
               </div>
-            </Button>
+            )}
+
+            {/* Preview of New Content */}
+            <div className="space-y-2">
+              <Label className="text-base font-medium">Novo Conteúdo:</Label>
+              <div className="p-3 bg-muted/50 rounded-md">
+                <p className="text-sm text-muted-foreground">
+                  {selectedApproval?.documentation_content}
+                </p>
+              </div>
+            </div>
           </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowUpdateOptions(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleConfirmUpdate}
+              disabled={selectedUpdateType === 'partial' && !selectedTextToReplace.trim()}
+              className="bg-primary hover:bg-primary/90"
+            >
+              Confirmar Atualização
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
