@@ -24,15 +24,6 @@ export const useResponseProcessor = () => {
     setIsProcessing(true);
     
     try {
-      // Temporariamente desabilitado o processamento
-      // Apenas retorna a mensagem original
-      console.log('⚠️ Processamento desabilitado temporariamente');
-      
-      return { 
-        respostaFinal: mensagem 
-      };
-
-      /* CÓDIGO DESABILITADO TEMPORARIAMENTE
       const { data, error } = await supabase.functions.invoke('process-response', {
         body: {
           mensagem,
@@ -70,7 +61,6 @@ export const useResponseProcessor = () => {
         respostaFinal: result.resposta_corrigida,
         processData: result
       };
-      */
 
     } catch (error) {
       console.error('Erro no processamento:', error);
