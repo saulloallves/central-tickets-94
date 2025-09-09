@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useAutoApprovals } from '@/hooks/useAutoApprovals';
 import { useRAGDocuments } from '@/hooks/useRAGDocuments';
 import { formatDistanceToNowInSaoPaulo } from '@/lib/date-utils';
-import { CheckCircle, XCircle, Clock, FileText, User, MessageSquare, Eye, Plus, BookOpen, GitCompare, AlertTriangle, Lightbulb } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, FileText, User, MessageSquare, Eye, Plus, BookOpen, GitCompare, AlertTriangle, Lightbulb, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 export function AutoApprovalsTab() {
   const {
@@ -23,6 +23,7 @@ export function AutoApprovalsTab() {
   const [showUpdateOptions, setShowUpdateOptions] = useState(false);
   const [showCreateOptions, setShowCreateOptions] = useState(false);
   const [selectedUpdateDocument, setSelectedUpdateDocument] = useState<any>(null);
+  const [isCreatingDocument, setIsCreatingDocument] = useState(false);
   const { createDocument } = useRAGDocuments();
   const {
     toast
@@ -51,6 +52,9 @@ export function AutoApprovalsTab() {
   };
   const handleCreateNewDocument = async (estilo: 'manual' | 'diretriz') => {
     if (selectedApproval) {
+      setIsCreatingDocument(true);
+      setShowCreateOptions(false);
+      
       try {
         const result = await createDocument({
           titulo: `Documentação gerada automaticamente - ${new Date().toLocaleDateString('pt-BR')}`,
@@ -81,9 +85,10 @@ export function AutoApprovalsTab() {
           description: `Não foi possível criar o documento: ${error.message}`,
           variant: "destructive",
         });
+      } finally {
+        setIsCreatingDocument(false);
+        setSelectedApproval(null);
       }
-      setSelectedApproval(null);
-      setShowCreateOptions(false);
     }
   };
   const handleUpdateExistingDocument = (updateType: 'full' | 'partial', selectedText?: string) => {
@@ -390,6 +395,35 @@ export function AutoApprovalsTab() {
                 </div>
               </div>
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de carregamento */}
+      <Dialog open={isCreatingDocument} onOpenChange={() => {}}>
+        <DialogContent className="max-w-md">
+          <DialogHeader className="text-center">
+            <DialogTitle className="flex items-center justify-center gap-3 text-lg">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              Criando Documento
+            </DialogTitle>
+            <DialogDescription className="text-center">
+              Processando conteúdo com IA e gerando documentação...
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex flex-col items-center gap-4 py-6">
+            <div className="relative">
+              <div className="w-16 h-16 border-4 border-muted border-t-primary rounded-full animate-spin"></div>
+              <FileText className="h-6 w-6 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-primary" />
+            </div>
+            
+            <div className="text-center space-y-2">
+              <p className="text-sm font-medium">Aguarde alguns instantes...</p>
+              <p className="text-xs text-muted-foreground">
+                A IA está analisando e estruturando o conteúdo
+              </p>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
