@@ -1,215 +1,243 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0';
-
-// Reutiliza a mesma lógica de re-ranking dos outros sistemas
-async function rerankComLLM(docs: any[], pergunta: string) {
-  if (!docs || docs.length === 0) return [];
-
-  try {
-    console.log('🧠 Re-ranking com LLM...');
-    
-    const docsParaAnalise = docs.map((doc) => 
-      `ID: ${doc.id}\nTítulo: ${doc.titulo}\nConteúdo: ${JSON.stringify(doc.conteudo).substring(0, 800)}`
-    ).join('\n\n---\n\n');
-
-    const prompt = `Você deve analisar os documentos e classificar sua relevância para o conteúdo que o usuário quer criar.
-
-CONTEÚDO A SER CRIADO: "${pergunta}"
-
-DOCUMENTOS EXISTENTES:
-${docsParaAnalise}
-
-Retorne APENAS um JSON válido com array "scores" contendo objetos com "id" e "score" (0-100):
-{"scores": [{"id": "doc-id", "score": 85}, ...]}
-
-Critérios para detectar similaridade:
-- Score 80-100: Muito similar, pode estar duplicando conteúdo
-- Score 60-79: Parcialmente similar, considere atualizar
-- Score 40-59: Relacionado ao tema
-- Score 0-39: Pouco relacionado`;
-
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4.1-2025-04-14',
-        messages: [{ role: 'user', content: prompt }],
-        max_completion_tokens: 1000,
-        response_format: { type: 'json_object' }
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`LLM rerank error: ${await response.text()}`);
-    }
-
-    const data = await response.json();
-    const result = JSON.parse(data.choices[0].message.content);
-    
-    console.log(`LLM rerank parsed items: ${result.scores?.length || 0}`);
-    
-    if (!result.scores) return docs.slice(0, 5);
-
-    // Ordenar por score e pegar top 5
-    const rankedDocs = result.scores
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 5)
-      .map(item => docs.find(doc => doc.id === item.id))
-      .filter(Boolean);
-
-    return rankedDocs;
-    
-  } catch (error) {
-    console.error('Erro no reranking LLM:', error);
-    return docs.slice(0, 5);
-  }
-}
-
-// Nova função para gerar análise comparativa detalhada
-async function gerarAnaliseComparativa(novoConteudo: string, documentosRelacionados: any[]) {
-  if (!documentosRelacionados || documentosRelacionados.length === 0) {
-    return "Nenhum documento similar encontrado para comparação.";
-  }
-
-  try {
-    console.log('📊 Gerando análise comparativa...');
-    
-    const docsDetalhados = documentosRelacionados.map((doc, index) => 
-      `DOCUMENTO ${index + 1}:
-Título: ${doc.titulo}
-Categoria: ${doc.categoria || 'Não definida'}
-Versão: ${doc.versao || 1}
-Similaridade: ${Math.round(doc.similaridade * 100)}%
-Conteúdo: ${typeof doc.conteudo === 'string' ? doc.conteudo.substring(0, 600) : JSON.stringify(doc.conteudo).substring(0, 600)}...`
-    ).join('\n\n---\n\n');
-
-    const prompt = `Você é um especialista em análise de conteúdo. Analise o novo documento que o usuário quer criar versus os documentos existentes similares e forneça uma explicação clara das relações entre eles.
-
-NOVO DOCUMENTO QUE O USUÁRIO QUER CRIAR:
-${novoConteudo}
-
-DOCUMENTOS SIMILARES EXISTENTES:
-${docsDetalhados}
-
-Por favor, forneça uma análise comparativa que inclua:
-
-1. **O que o novo documento está abordando:** Resuma em 2-3 frases o tema principal e objetivo do novo conteúdo.
-
-2. **O que os documentos similares já cobrem:** Para cada documento similar, explique brevemente o que ele aborda.
-
-3. **Principais semelhanças:** Identifique os pontos em comum entre o novo documento e os existentes.
-
-4. **Diferenças importantes:** Destaque o que há de diferente ou único no novo documento.
-
-5. **Recomendação estratégica:** Sugira se é melhor:
-   - Atualizar um documento existente (e qual)
-   - Criar um novo documento (justificando por quê)
-   - Mesclar informações de documentos existentes
-
-Seja objetivo, claro e útil para a tomada de decisão.`;
-
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-5-2025-08-07',
-        messages: [{ role: 'user', content: prompt }],
-        max_completion_tokens: 2000
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`Análise comparativa error: ${await response.text()}`);
-    }
-
-    const data = await response.json();
-    return data.choices[0].message.content;
-    
-  } catch (error) {
-    console.error('Erro na análise comparativa:', error);
-    return "Erro ao gerar análise comparativa. Verifique os documentos manualmente.";
-  }
-}
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+// Re-ranking com LLM para melhorar a relevância dos resultados
+async function rerankComLLM(docs: any[], pergunta: string): Promise<any[]> {
+  const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
+  
+  if (!openaiApiKey || docs.length === 0) {
+    console.log('⚠️ Sem API key ou documentos para re-ranking');
+    return docs;
+  }
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  try {
+    console.log('🔄 Iniciando re-ranking com LLM para', docs.length, 'documentos');
+
+    // Formatar documentos para o LLM
+    const documentosFormatados = docs.map((doc, index) => {
+      const texto = typeof doc.conteudo === 'object' ? doc.conteudo.texto : doc.conteudo;
+      return `[${index + 1}] Título: ${doc.titulo}\nConteúdo: ${texto?.substring(0, 500) || 'Sem conteúdo'}`;
+    }).join('\n\n');
+
+    const prompt = `Analise os seguintes documentos e determine quais são mais relevantes para o texto fornecido. Retorne apenas uma lista JSON com os índices dos documentos ordenados por relevância (mais relevante primeiro), com scores de 0-100.
+
+Texto de consulta: "${pergunta}"
+
+Documentos:
+${documentosFormatados}
+
+Responda APENAS com um array JSON no formato: [{"index": 1, "score": 95}, {"index": 2, "score": 80}]`;
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openaiApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-5-2025-08-07',
+        messages: [{ role: 'user', content: prompt }],
+        max_completion_tokens: 1000,
+        response_format: { type: "json_object" }
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('❌ Erro no re-ranking:', await response.text());
+      return docs;
+    }
+
+    const data = await response.json();
+    const ranking = JSON.parse(data.choices[0].message.content);
+    
+    // Aplicar re-ranking
+    const docsComScore = ranking.rankings || ranking;
+    const documentosReRankeados = docsComScore
+      .sort((a: any, b: any) => b.score - a.score)
+      .map((item: any) => ({
+        ...docs[item.index - 1],
+        score: item.score / 100,
+        similarity: item.score / 100
+      }))
+      .filter((doc: any) => doc && doc.score > 0.3); // Só documentos com score > 30%
+
+    console.log('✅ Re-ranking concluído:', documentosReRankeados.length, 'documentos relevantes');
+    return documentosReRankeados;
+
+  } catch (error) {
+    console.error('❌ Erro no re-ranking:', error);
+    return docs;
+  }
+}
+
+// Gerar análise comparativa detalhada
+async function gerarAnaliseComparativa(novoConteudo: string, documentosRelacionados: any[]): Promise<string> {
+  const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
+  
+  if (!openaiApiKey || documentosRelacionados.length === 0) {
+    console.log('⚠️ Sem API key ou documentos para análise comparativa');
+    return '';
+  }
+
+  try {
+    console.log('📝 Gerando análise comparativa detalhada');
+
+    const documentosFormatados = documentosRelacionados.map((doc, index) => {
+      const texto = typeof doc.conteudo === 'object' ? doc.conteudo.texto : doc.conteudo;
+      return `**Documento ${index + 1}: ${doc.titulo}**\n${texto?.substring(0, 800) || 'Sem conteúdo'}`;
+    }).join('\n\n');
+
+    const prompt = `Como especialista em análise de conteúdo, faça uma análise comparativa detalhada entre o novo documento e os documentos existentes encontrados.
+
+**NOVO DOCUMENTO:**
+${novoConteudo}
+
+**DOCUMENTOS EXISTENTES NA BASE:**
+${documentosFormatados}
+
+**ESTRUTURA DA ANÁLISE:**
+
+1. **Resumo do Novo Documento:**
+   - Assunto principal
+   - Categoria/tipo de conteúdo
+   - Pontos-chave abordados
+
+2. **Resumo dos Documentos Similares:**
+   - Lista dos documentos relacionados e seus focos
+
+3. **Similaridades Encontradas:**
+   - Temas em comum
+   - Procedimentos similares
+   - Terminologia compartilhada
+
+4. **Diferenças Identificadas:**
+   - Aspectos únicos do novo documento
+   - Lacunas nos documentos existentes
+   - Abordagens diferentes
+
+5. **Recomendação Estratégica:**
+   - Deve criar novo documento ou atualizar existente?
+   - Se atualizar: qual documento e como?
+   - Se criar novo: justificativa para a criação
+
+Seja detalhado e forneça insights práticos para tomada de decisão.`;
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openaiApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-5-2025-08-07',
+        messages: [{ role: 'user', content: prompt }],
+        max_completion_tokens: 2000
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('❌ Erro na análise comparativa:', await response.text());
+      return '';
+    }
+
+    const data = await response.json();
+    const analise = data.choices[0].message.content;
+
+    console.log('✅ Análise comparativa gerada:', analise.length, 'caracteres');
+    return analise;
+
+  } catch (error) {
+    console.error('❌ Erro na análise comparativa:', error);
+    return '';
+  }
+}
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    console.log('🚀 === VERIFICAÇÃO DE ASSUNTOS RELACIONADOS ===');
+    
     const { titulo, conteudo } = await req.json();
+    const textoCompleto = `Título: ${titulo}\nConteúdo: ${conteudo}`;
     
-    if (!titulo && !conteudo) {
-      throw new Error('Título ou conteúdo é obrigatório');
+    console.log('📝 Dados recebidos:');
+    console.log('- Título:', titulo || 'Não informado');
+    console.log('- Conteúdo length:', conteudo?.length || 0);
+    console.log('- Texto completo preview:', textoCompleto.substring(0, 200) + '...');
+
+    const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openaiApiKey) {
+      throw new Error('OpenAI API key não configurada');
     }
 
-    // Combina título + conteúdo conforme a documentação
-    const textoCompleto = `Título: ${titulo || ''}\nConteúdo: ${conteudo || ''}`.trim();
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
-    if (textoCompleto.length < 50) {
-      console.log("Texto muito curto para análise semântica");
-      return new Response(JSON.stringify({
-        documentos_relacionados: [],
-        recomendacao: "Texto muito curto para análise. Escreva mais conteúdo."
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Credenciais do Supabase não configuradas');
     }
 
-    console.log('=== VERIFICAÇÃO DE ASSUNTOS RELACIONADOS ===');
-    console.log('Texto completo:', textoCompleto.substring(0, 200) + '...');
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Gera o embedding conforme a documentação
+    console.log('🎯 ETAPA 1: GERANDO EMBEDDING');
+    console.log('- Modelo usado: text-embedding-3-small');
+    console.log('- Texto completo length:', textoCompleto.length);
+    console.log('- Primeiros 200 chars:', textoCompleto.substring(0, 200));
+
+    // Gerar embedding usando OpenAI
     const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
+        'Authorization': `Bearer ${openaiApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'text-embedding-3-small', // Usando o modelo padrão do sistema
         input: textoCompleto,
+        model: 'text-embedding-3-small'
       }),
     });
 
     if (!embeddingResponse.ok) {
       const error = await embeddingResponse.text();
+      console.error('❌ ERRO NO EMBEDDING:', error);
       throw new Error(`OpenAI Embeddings error: ${error}`);
     }
 
     const embeddingData = await embeddingResponse.json();
     const queryEmbedding = embeddingData.data[0].embedding;
 
-    console.log('Embedding gerado com sucesso');
-    console.log('Dimensões do embedding:', queryEmbedding.length);
+    console.log('✅ EMBEDDING CRIADO COM SUCESSO');
+    console.log('- Dimensões do embedding:', queryEmbedding.length);
+    console.log('- Primeiros 5 valores:', queryEmbedding.slice(0, 5));
 
-    // Usa a mesma busca híbrida dos outros sistemas
-    const LIMIAR_DE_RELEVANCIA = 0.1; // Mesmo threshold do suggest-reply
-    const MAXIMO_DE_DOCUMENTOS = 12;   // Busca mais documentos para depois re-ranking
+    console.log('🎯 ETAPA 2: VERIFICANDO DOCUMENTOS NA BASE');
+    
+    // Primeiro verificar quantos documentos temos
+    const { data: totalDocs, error: countError } = await supabase
+      .from('documentos')
+      .select('id, titulo, categoria')
+      .eq('status', 'ativo');
+      
+    console.log('📊 DOCUMENTOS DISPONÍVEIS:', totalDocs?.length || 0);
+    if (totalDocs) {
+      totalDocs.forEach(doc => {
+        console.log(`- ${doc.titulo} (${doc.categoria})`);
+      });
+    }
 
-    console.log('Iniciando busca híbrida com parâmetros:');
-    console.log('- match_count:', MAXIMO_DE_DOCUMENTOS);
-    console.log('- alpha (peso vetorial):', 0.85);
-    console.log('- query_text length:', textoCompleto.length);
-
+    const MAXIMO_DE_DOCUMENTOS = 12;
+    
+    console.log('🎯 ETAPA 3: FAZENDO BUSCA SEMÂNTICA');
+    
     // TESTE: Primeiro vamos tentar busca simples usando match_documentos_semantico
     console.log('🔍 TESTANDO BUSCA SIMPLES PRIMEIRO');
     
@@ -219,17 +247,24 @@ serve(async (req) => {
       match_count: MAXIMO_DE_DOCUMENTOS
     });
     
-    console.log('📋 Resultado busca simples:');
+    console.log('📋 BUSCA SIMPLES - Resultado:');
     console.log('- error:', errorSimples);
-    console.log('- candidatos simples:', candidatosSimples?.length || 0);
+    console.log('- candidatos encontrados:', candidatosSimples?.length || 0);
     
     if (candidatosSimples && candidatosSimples.length > 0) {
-      console.log('✅ ENCONTROU NA BUSCA SIMPLES:', candidatosSimples.slice(0, 2).map(c => ({
-        titulo: c.titulo,
-        similarity: c.similarity
-      })));
+      console.log('✅ ENCONTROU NA BUSCA SIMPLES:');
+      candidatosSimples.forEach((c, i) => {
+        console.log(`  ${i+1}. ${c.titulo} (similarity: ${c.similarity})`);
+      });
+    } else {
+      console.log('❌ BUSCA SIMPLES NÃO ENCONTROU NADA');
+      if (errorSimples) {
+        console.error('Erro na busca simples:', errorSimples);
+      }
     }
 
+    console.log('🔍 TESTANDO BUSCA HÍBRIDA');
+    
     // Usa a mesma função híbrida dos outros sistemas com parâmetros corretos
     const { data: candidatos, error } = await supabase.rpc('match_documentos_hibrido', {
       query_embedding: queryEmbedding,
@@ -238,63 +273,32 @@ serve(async (req) => {
       alpha: 0.85 // Peso da busca vetorial (85%) vs textual (15%)
     });
 
-    console.log('📋 Resultado da busca híbrida:');
+    console.log('📋 BUSCA HÍBRIDA - Resultado:');
     console.log('- error:', error);
     console.log('- candidatos encontrados:', candidatos?.length || 0);
     
     if (candidatos && candidatos.length > 0) {
-      console.log('✅ HÍBRIDA - Primeiros candidatos:', candidatos.slice(0, 3).map(c => ({
-        titulo: c.titulo,
-        similarity: c.similarity,
-        content_preview: c.conteudo?.texto?.substring(0, 100) || 'No content'
-      })));
+      console.log('✅ HÍBRIDA - Documentos encontrados:');
+      candidatos.forEach((c, i) => {
+        console.log(`  ${i+1}. ${c.titulo} (similarity: ${c.similarity})`);
+      });
     } else {
-      console.log('❌ BUSCA HÍBRIDA NÃO ENCONTROU NADA - Vamos usar busca simples');
+      console.log('❌ BUSCA HÍBRIDA NÃO ENCONTROU NADA');
+      if (error) {
+        console.error('Erro na busca híbrida:', error);
+      }
     }
 
-    if (error) {
-      console.error("Erro ao verificar assuntos relacionados:", error);
-      throw new Error("Falha na consulta à base de conhecimento.");
-    }
-
+    console.log('🎯 ETAPA 4: PROCESSANDO RESULTADOS');
+    
     // Use busca simples se híbrida falhou, senão use híbrida
     let artigosRelacionados = candidatos && candidatos.length > 0 ? candidatos : (candidatosSimples || []);
     
-    // Re-ranking com LLM como os outros sistemas
-    if (artigosRelacionados.length > 0) {
-      console.log('🧠 Aplicando re-ranking com LLM...');
-      artigosRelacionados = await rerankComLLM(artigosRelacionados, textoCompleto);
-    }
-    console.log(`Encontrados ${artigosRelacionados.length} documentos relacionados`);
+    console.log('📊 ARTIGOS SELECIONADOS PARA ANÁLISE:', artigosRelacionados.length);
 
-    // Formata resultado conforme esperado pela interface
-    if (artigosRelacionados.length > 0) {
-      const documentosFormatados = artigosRelacionados.map(doc => ({
-        id: doc.id,
-        titulo: doc.titulo,
-        versao: doc.versao || 1,
-        similaridade: Math.round(doc.similaridade * 100),
-        categoria: doc.categoria,
-        conteudo_preview: typeof doc.conteudo === 'string' ? 
-          doc.conteudo.substring(0, 200) + '...' : 
-          'Conteúdo estruturado'
-      }));
-
-      // Gera análise comparativa detalhada
-      console.log('📊 Gerando análise comparativa detalhada...');
-      console.log('Artigos relacionados para análise:', artigosRelacionados.length);
-      const analiseComparativa = await gerarAnaliseComparativa(textoCompleto, artigosRelacionados);
-      console.log('✅ Análise comparativa gerada:', analiseComparativa ? 'SUCESSO' : 'VAZIA');
-
-      return new Response(JSON.stringify({
-        documentos_relacionados: documentosFormatados,
-        recomendacao: "Atenção! Encontramos documentos similares. Veja a análise detalhada abaixo:",
-        analise_comparativa: analiseComparativa,
-        deve_criar_novo: false
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    } else {
+    if (artigosRelacionados.length === 0) {
+      console.log('❌ NENHUM DOCUMENTO RELACIONADO ENCONTRADO');
+      
       return new Response(JSON.stringify({
         documentos_relacionados: [],
         recomendacao: "Ótimo! Nenhum documento parecido encontrado. Este parece ser um conteúdo novo.",
@@ -305,12 +309,56 @@ serve(async (req) => {
       });
     }
 
+    console.log('🎯 ETAPA 5: RE-RANKING COM LLM');
+    
+    // Re-ranking com LLM se temos candidatos
+    const documentosReRankeados = await rerankComLLM(artigosRelacionados, textoCompleto);
+    
+    console.log('📊 DOCUMENTOS APÓS RE-RANKING:', documentosReRankeados.length);
+    documentosReRankeados.forEach((doc, i) => {
+      console.log(`  ${i+1}. ${doc.titulo} (score: ${doc.score})`);
+    });
+
+    console.log('🎯 ETAPA 6: GERANDO ANÁLISE COMPARATIVA');
+    
+    const analiseComparativa = await gerarAnaliseComparativa(textoCompleto, documentosReRankeados);
+    
+    console.log('✅ ANÁLISE COMPARATIVA GERADA');
+    console.log('- Tamanho da análise:', analiseComparativa?.length || 0, 'caracteres');
+
+    console.log('🎯 ETAPA 7: PREPARANDO RESPOSTA FINAL');
+    
+    const resposta = {
+      documentos_relacionados: documentosReRankeados.map(doc => ({
+        id: doc.id,
+        titulo: doc.titulo,
+        conteudo: doc.conteudo,
+        categoria: doc.categoria,
+        versao: doc.versao || 1,
+        similaridade: Math.round((doc.score || doc.similarity || 0) * 100),
+        criado_em: doc.criado_em,
+        status: doc.status,
+        tags: doc.tags || [],
+        profile: doc.profile
+      })),
+      recomendacao: "Atenção! Encontramos documentos similares. Considere atualizar um existente.",
+      analise_comparativa: analiseComparativa,
+      deve_criar_novo: false
+    };
+    
+    console.log('✅ PROCESSO CONCLUÍDO COM SUCESSO');
+    console.log('- Documentos relacionados:', resposta.documentos_relacionados.length);
+    console.log('- Tem análise comparativa:', !!resposta.analise_comparativa);
+
+    return new Response(JSON.stringify(resposta), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+
   } catch (error) {
-    console.error('Erro na verificação de assuntos relacionados:', error);
-    return new Response(JSON.stringify({ 
-      erro: error.message,
-      documentos_relacionados: [],
-      recomendacao: "Erro na análise. Tente novamente."
+    console.error('❌ Erro na verificação de assuntos relacionados:', error);
+    return new Response(JSON.stringify({
+      error: 'Falha na consulta à base de conhecimento.',
+      details: error.message
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
