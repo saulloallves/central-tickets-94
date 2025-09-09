@@ -7,6 +7,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 /**
  * Recupera documentos relacionados usando busca híbrida (semântica + keyword)
+ * Adaptado da tecnologia Z-API WhatsApp
  */
 export async function encontrarDocumentosRelacionados(textoTicket: string, limiteResultados: number = 12) {
   try {
@@ -29,8 +30,8 @@ export async function encontrarDocumentosRelacionados(textoTicket: string, limit
     const { data: candidatos, error } = await supabase.rpc('match_documentos_hibrido', {
       query_embedding: queryEmbedding,
       query_text: textoTicket,
-      match_threshold: 0.1,
-      match_count: limiteResultados
+      match_count: limiteResultados,
+      alpha: 0.5
     });
 
     if (error) {
@@ -110,45 +111,67 @@ Critérios:
 }
 
 /**
- * Gera resposta final usando contexto dos documentos
+ * Gera resposta final usando contexto dos documentos - adaptado do Z-API WhatsApp
  */
-export async function gerarRespostaComContexto(docs: any[], pergunta: string) {
+export async function gerarRespostaComContexto(docs: any[], pergunta: string, ticketConversa?: any[]) {
   try {
     const contexto = docs.map(doc => 
       `**${doc.titulo}**\n${JSON.stringify(doc.conteudo)}`
     ).join('\n\n');
 
+    // Formatar histórico da conversa do ticket (últimas 5 mensagens para contexto)
+    let historicoConversa = '';
+    if (ticketConversa && ticketConversa.length > 0) {
+      const ultimasMensagens = ticketConversa.slice(-5);
+      historicoConversa = ultimasMensagens.map((msg: any) => {
+        const autor = msg.autor || 'Sistema';
+        return `${autor}: ${msg.texto}`;
+      }).join('\n');
+    }
+
     // Buscar prompt configurável da tabela faq_ai_settings
     const { data: settingsData } = await supabase
       .from('faq_ai_settings')
-      .select('prompt_ticket_suggestions')
+      .select('prompt_sugestao')
       .eq('ativo', true)
       .single();
 
-    const systemMessage = settingsData?.prompt_ticket_suggestions || `Você é um assistente especializado em suporte técnico da Cresci & Perdi.
+    const systemMessage = settingsData?.prompt_sugestao || `Você é um assistente especializado em suporte técnico da Cresci & Perdi! 🎯
 
-INSTRUÇÕES IMPORTANTES:
-- Responda APENAS com informações contidas no contexto fornecido
-- Seja direto e objetivo (2-3 frases máximo)
-- NÃO invente informações
-- Se não encontrar informações suficientes, diga isso claramente
-- Retorne apenas JSON: {"texto": "sua resposta", "fontes": ["id1", "id2"]}`;
+REGRA PRINCIPAL: SEJA OBJETIVO E ÚTIL
+- Responda diretamente à pergunta do ticket
+- Use informações relevantes da base de conhecimento
+- Mantenha tom profissional mas amigável
+- Estruture respostas de forma clara
 
-    const userMessage = `PERGUNTA: ${pergunta}
+FORMATAÇÃO:
+- Use emojis para organizar visualmente
+- Separe ideias em parágrafos
+- Destaque pontos importantes
 
-CONTEXTO:
+INSTRUÇÕES:
+- Use APENAS informações da base de conhecimento fornecida
+- Se não encontrar informações suficientes, seja honesto
+- Adapte a resposta ao contexto do ticket
+- Seja conciso mas completo`;
+
+    const userMessage = `TICKET: ${pergunta}
+
+${historicoConversa ? `HISTÓRICO DA CONVERSA:
+${historicoConversa}
+
+` : ''}CONTEXTO DA BASE DE CONHECIMENTO:
 ${contexto}
 
-Responda com base apenas nas informações do contexto.`;
+Gere uma sugestão de resposta profissional baseada nas informações da base de conhecimento.`;
 
     const response = await openAI('chat/completions', {
-      model: 'gpt-5-2025-08-07',
+      model: 'gpt-4.1-2025-04-14',
       messages: [
         { role: 'system', content: systemMessage },
         { role: 'user', content: userMessage }
       ],
-      max_completion_tokens: 500,
-      response_format: { type: 'json_object' }
+      max_completion_tokens: 1000
     });
 
     if (!response.ok) {
@@ -160,9 +183,6 @@ Responda com base apenas nas informações do contexto.`;
     
   } catch (error) {
     console.error('Erro na geração de resposta:', error);
-    return JSON.stringify({
-      texto: "Não encontrei informações suficientes na base de conhecimento para responder sua pergunta.",
-      fontes: []
-    });
+    return "Não encontrei informações suficientes na base de conhecimento para gerar uma sugestão adequada para este ticket.";
   }
 }

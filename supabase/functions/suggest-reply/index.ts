@@ -82,21 +82,13 @@ async function obterSugestaoDeRespostaParaTicket(ticket: any): Promise<TicketRes
       };
     }
 
-    // 3) Gerar resposta curta com citação
+    // 3) Gerar resposta com contexto usando tecnologia do Z-API WhatsApp
     console.log('3. Gerando resposta com contexto...');
-    const respostaRAG = await gerarRespostaComContexto(docsSelecionados, textoDoTicket);
+    const respostaRAG = await gerarRespostaComContexto(docsSelecionados, textoDoTicket, ticket.conversa);
     
-    let textoFinal: string;
-    let fontesUtilizadas: string[] = [];
-    
-    try {
-      const payload = JSON.parse(respostaRAG);
-      textoFinal = payload.texto;
-      fontesUtilizadas = payload.fontes || [];
-    } catch (e) {
-      console.error('Error parsing RAG JSON response:', e);
-      textoFinal = respostaRAG;
-    }
+    // A resposta já vem formatada, sem necessidade de parsing JSON
+    const textoFinal = respostaRAG;
+    const fontesUtilizadas = docsSelecionados.map(d => d.titulo);
 
     console.log('✅ Resposta RAG gerada:', textoFinal.substring(0, 100) + '...');
 
@@ -106,7 +98,7 @@ async function obterSugestaoDeRespostaParaTicket(ticket: any): Promise<TicketRes
       rag_metrics: {
         documentos_encontrados: docsSelecionados.length,
         candidatos_encontrados: candidatos.length,
-        pipeline: 'v4_hibrido',
+        pipeline: 'v4_hibrido_zapi',
         selecionados: docsSelecionados.map(d => ({ id: d.id, titulo: d.titulo })),
         fontes_utilizadas: fontesUtilizadas
       }
@@ -161,11 +153,11 @@ serve(async (req) => {
 
     console.log('🎫 Ticket ID:', body.ticketId);
 
-    // Buscar dados do ticket
+    // Buscar dados do ticket incluindo conversa
     console.log('🔍 Buscando dados do ticket...');
     const { data: ticket, error: ticketError } = await supabase
       .from('tickets')
-      .select('id, codigo_ticket, titulo, descricao_problema, categoria, prioridade')
+      .select('id, codigo_ticket, titulo, descricao_problema, categoria, prioridade, conversa')
       .eq('id', body.ticketId)
       .single();
 

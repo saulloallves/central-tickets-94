@@ -1784,7 +1784,7 @@ export type Database = {
           kind: Database["public"]["Enums"]["ai_interaction_kind"]
           log?: Json
           mensagem?: string | null
-          model: string
+          model?: string
           params?: Json
           resposta: string
           resposta_final?: string | null
@@ -2815,19 +2815,17 @@ export type Database = {
       match_documentos_hibrido: {
         Args: {
           alpha?: number
-          match_count: number
+          match_count?: number
           query_embedding: string
           query_text: string
         }
         Returns: {
-          categoria: string
-          conteudo: string
+          conteudo: Json
+          hybrid_score: number
           id: string
-          score: number
-          similaridade: number
-          text_rank: number
+          keyword_score: number
+          similarity_score: number
           titulo: string
-          versao: number
         }[]
       }
       match_documentos_semantico: {
