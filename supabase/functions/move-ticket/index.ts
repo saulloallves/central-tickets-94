@@ -105,6 +105,88 @@ Deno.serve(async (req) => {
 
     console.log('✅ Ticket updated successfully:', updatedTicket.id);
 
+    // Se o ticket foi marcado como concluído, disparar moderação
+    if (toStatus === 'concluido' && toStatus !== currentTicket.status) {
+      console.log('🎯 Ticket concluído, disparando moderação...');
+      
+      try {
+        // Buscar dados completos do ticket incluindo a conversa JSON
+        const { data: ticketData, error: ticketError } = await supabase
+          .from('tickets')
+          .select('descricao_problema, conversa')
+          .eq('id', ticketId)
+          .single();
+
+        if (!ticketError && ticketData) {
+          // Processar conversa do JSON
+          let conversaTexto = '';
+          
+          if (ticketData.conversa && Array.isArray(ticketData.conversa)) {
+            conversaTexto = ticketData.conversa
+              .map((msg: any) => {
+                const autor = msg.autor || msg.role || 'desconhecido';
+                const texto = msg.texto || msg.content || msg.mensagem || '';
+                return `[${autor.toUpperCase()}]: ${texto}`;
+              })
+              .join('\n\n');
+          } else if (ticketData.conversa && typeof ticketData.conversa === 'string') {
+            conversaTexto = ticketData.conversa;
+          }
+
+          if (conversaTexto.trim()) {
+            console.log('📝 Conversa capturada para moderação:', conversaTexto.substring(0, 200) + '...');
+            
+            // PRIMEIRO: Criar entrada pendente para mostrar na UI
+            const { data: aprovacaoPendente, error: pendingError } = await supabase
+              .from('knowledge_auto_approvals')
+              .insert({
+                original_message: `${ticketData.descricao_problema}\n\n${conversaTexto}`,
+                corrected_response: 'Processando...',
+                documentation_content: 'Analisando conteúdo...',
+                similar_documents: [],
+                ticket_id: ticketId,
+                status: 'pending',
+                ai_evaluation: { processando: true }
+              })
+              .select()
+              .single();
+
+            if (pendingError) {
+              console.error('❌ Erro ao criar entrada pendente:', pendingError);
+            } else {
+              console.log('✅ Entrada pendente criada:', aprovacaoPendente.id);
+              
+              // SEGUNDO: Chamar edge function de moderação em background
+              try {
+                const { data: moderationResult, error: moderationError } = await supabase.functions.invoke('ticket-completion-moderator', {
+                  body: {
+                    ticket_id: ticketId,
+                    conversa: conversaTexto,
+                    problema: ticketData.descricao_problema,
+                    approval_id: aprovacaoPendente.id
+                  }
+                });
+
+                if (moderationError) {
+                  console.error('❌ Erro na moderação:', moderationError);
+                } else {
+                  console.log('✅ Moderação disparada com sucesso');
+                }
+              } catch (moderationErr) {
+                console.error('❌ Erro ao disparar moderação:', moderationErr);
+              }
+            }
+          } else {
+            console.log('⚠️ Conversa vazia, não disparando moderação');
+          }
+        } else {
+          console.error('❌ Erro ao buscar dados do ticket:', ticketError);
+        }
+      } catch (moderationError) {
+        console.error('💥 Erro geral na moderação:', moderationError);
+      }
+    }
+
     return new Response(JSON.stringify({ 
       success: true,
       ticket: updatedTicket,
