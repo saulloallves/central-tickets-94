@@ -7,44 +7,36 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Search, Brain, Zap } from 'lucide-react';
+import { Loader2, Search, Brain, CheckCircle, AlertTriangle } from 'lucide-react';
 
-interface ResultadoSemantico {
+interface DocumentoSimilar {
   id: string;
   titulo: string;
   categoria: string;
-  similaridade_vetorial: string;
-  relevancia_semantica: string;
-  score_final: string;
+  versao: number;
+  similaridade: number;
   conteudo_preview: string;
 }
 
 interface ResultadoTeste {
-  busca_semantica: {
-    total: number;
-    documentos: ResultadoSemantico[];
-    metodo: string;
-  };
-  busca_tradicional: {
-    total: number;
-    documentos: any[];
-    metodo: string;
-  };
+  documentos_relacionados: DocumentoSimilar[];
+  recomendacao: string;
+  analise_comparativa?: string;
+  deve_criar_novo: boolean;
 }
 
 export const TesteRAGSemantico = () => {
-  const [query, setQuery] = useState('');
-  const [assunto, setAssunto] = useState('');
-  const [categoria, setCategoria] = useState('');
+  const [titulo, setTitulo] = useState('');
+  const [conteudo, setConteudo] = useState('');
   const [loading, setLoading] = useState(false);
   const [resultado, setResultado] = useState<ResultadoTeste | null>(null);
   const { toast } = useToast();
 
   const executarTeste = async () => {
-    if (!query.trim()) {
+    if (!titulo.trim() && !conteudo.trim()) {
       toast({
         title: "Erro",
-        description: "Digite uma consulta para testar",
+        description: "Digite um título ou conteúdo para testar",
         variant: "destructive",
       });
       return;
@@ -54,9 +46,8 @@ export const TesteRAGSemantico = () => {
     try {
       const { data, error } = await supabase.functions.invoke('test-semantic-rag', {
         body: {
-          query: query.trim(),
-          assunto: assunto.trim(),
-          categoria: categoria.trim()
+          titulo: titulo.trim(),
+          conteudo: conteudo.trim()
         }
       });
 
@@ -64,16 +55,16 @@ export const TesteRAGSemantico = () => {
         throw error;
       }
 
-      setResultado(data.resultados);
+      setResultado(data);
       toast({
-        title: "Teste Executado",
-        description: `Encontrados ${data.resultados.busca_semantica.total} docs semânticos vs ${data.resultados.busca_tradicional.total} tradicionais`,
+        title: "Análise Concluída",
+        description: `Encontrados ${data.documentos_relacionados?.length || 0} documentos similares`,
       });
     } catch (error) {
       console.error('Erro no teste RAG:', error);
       toast({
         title: "Erro no Teste",
-        description: "Falha ao executar teste semântico",
+        description: "Falha ao executar análise semântica",
         variant: "destructive",
       });
     } finally {
@@ -87,58 +78,49 @@ export const TesteRAGSemantico = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Brain className="h-5 w-5" />
-            Teste RAG Semântico vs Tradicional
+            Teste de Detecção de Conteúdo Similar
           </CardTitle>
           <CardDescription>
-            Compare como o sistema entende ASSUNTOS através de embeddings semânticos vs busca tradicional
+            Teste como a IA analisa similaridade de documentos e fornece recomendações inteligentes
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="query">Consulta/Problema</Label>
+              <Label htmlFor="titulo">Título do Documento</Label>
+              <Input
+                id="titulo"
+                placeholder="Ex: Como configurar sistema de vendas"
+                value={titulo}
+                onChange={(e) => setTitulo(e.target.value)}
+              />
+            </div>
+            <div className="md:col-span-1">
+              <Label htmlFor="conteudo">Conteúdo</Label>
               <Textarea
-                id="query"
-                placeholder="Ex: Cliente não consegue vender produtos no sistema"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                rows={3}
-              />
-            </div>
-            <div>
-              <Label htmlFor="assunto">Assunto Principal</Label>
-              <Input
-                id="assunto"
-                placeholder="Ex: Sistema travado, vendas"
-                value={assunto}
-                onChange={(e) => setAssunto(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="categoria">Categoria</Label>
-              <Input
-                id="categoria"
-                placeholder="Ex: Sistema, Vendas, Técnico"
-                value={categoria}
-                onChange={(e) => setCategoria(e.target.value)}
+                id="conteudo"
+                placeholder="Ex: Este documento explica como configurar o sistema para vendas de produtos..."
+                value={conteudo}
+                onChange={(e) => setConteudo(e.target.value)}
+                rows={4}
               />
             </div>
           </div>
           
           <Button 
             onClick={executarTeste} 
-            disabled={loading || !query.trim()}
+            disabled={loading || (!titulo.trim() && !conteudo.trim())}
             className="w-full"
           >
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Executando Teste RAG...
+                Analisando Similaridade...
               </>
             ) : (
               <>
                 <Search className="mr-2 h-4 w-4" />
-                Testar Busca Semântica
+                Testar Detecção de Similaridade
               </>
             )}
           </Button>
@@ -146,97 +128,103 @@ export const TesteRAGSemantico = () => {
       </Card>
 
       {resultado && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Busca Semântica */}
-          <Card>
+        <div className="space-y-6">
+          {/* Recomendação da IA */}
+          <Card className={resultado.deve_criar_novo ? "border-green-200 bg-green-50 dark:bg-green-950" : "border-orange-200 bg-orange-50 dark:bg-orange-950"}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Brain className="h-5 w-5 text-blue-500" />
-                Busca Semântica ({resultado.busca_semantica.total})
+                {resultado.deve_criar_novo ? (
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                ) : (
+                  <AlertTriangle className="h-5 w-5 text-orange-600" />
+                )}
+                Recomendação da IA
               </CardTitle>
-              <CardDescription>
-                {resultado.busca_semantica.metodo}
-              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {resultado.busca_semantica.documentos.map((doc, index) => (
-                  <div key={doc.id} className="border rounded-lg p-3">
-                    <div className="flex items-start justify-between mb-2">
-                      <h4 className="font-medium text-sm">{doc.titulo}</h4>
-                      <Badge variant="secondary">{doc.categoria}</Badge>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2 text-xs mb-2">
-                      <div>
-                        <span className="text-muted-foreground">Vetorial:</span>
-                        <br />
-                        <Badge variant="outline">{doc.similaridade_vetorial}</Badge>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Semântica:</span>
-                        <br />
-                        <Badge variant="outline">{doc.relevancia_semantica}</Badge>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Final:</span>
-                        <br />
-                        <Badge className="bg-blue-500">{doc.score_final}</Badge>
-                      </div>
-                    </div>
-                    <p className="text-xs text-muted-foreground line-clamp-2">
-                      {doc.conteudo_preview}
-                    </p>
-                  </div>
-                ))}
-              </div>
+              <p className={resultado.deve_criar_novo ? "text-green-800 dark:text-green-200" : "text-orange-800 dark:text-orange-200"}>
+                {resultado.recomendacao}
+              </p>
             </CardContent>
           </Card>
 
-          {/* Busca Tradicional */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Zap className="h-5 w-5 text-orange-500" />
-                Busca Tradicional ({resultado.busca_tradicional.total})
-              </CardTitle>
-              <CardDescription>
-                {resultado.busca_tradicional.metodo}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {resultado.busca_tradicional.documentos.map((doc, index) => (
-                  <div key={doc.id} className="border rounded-lg p-3">
-                    <div className="flex items-start justify-between mb-2">
-                      <h4 className="font-medium text-sm">{doc.titulo}</h4>
-                      <Badge variant="secondary">{doc.categoria}</Badge>
-                    </div>
-                    <div className="mb-2">
-                      <Badge variant="outline">{doc.similaridade}</Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground line-clamp-2">
-                      {doc.conteudo_preview}
-                    </p>
+          {/* Análise Comparativa Detalhada */}
+          {resultado.analise_comparativa && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Brain className="h-5 w-5 text-blue-500" />
+                  Análise Comparativa Detalhada
+                </CardTitle>
+                <CardDescription>
+                  Análise inteligente das relações entre o novo documento e os existentes
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="prose prose-sm max-w-none dark:prose-invert">
+                  <div className="whitespace-pre-wrap text-sm">
+                    {resultado.analise_comparativa}
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Documentos Similares Encontrados */}
+          {resultado.documentos_relacionados && resultado.documentos_relacionados.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Search className="h-5 w-5" />
+                  Documentos Similares Encontrados ({resultado.documentos_relacionados.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {resultado.documentos_relacionados.map((doc, index) => (
+                    <div key={doc.id} className="border rounded-lg p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <h4 className="font-medium">{doc.titulo}</h4>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary">{doc.categoria}</Badge>
+                          <Badge 
+                            variant="outline" 
+                            className={doc.similaridade >= 80 ? "border-red-200 text-red-700" : 
+                                     doc.similaridade >= 60 ? "border-orange-200 text-orange-700" : 
+                                     "border-blue-200 text-blue-700"}
+                          >
+                            {doc.similaridade}% similar
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="text-sm text-muted-foreground mb-2">
+                        Versão {doc.versao}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {doc.conteudo_preview}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       )}
 
       <Card className="bg-blue-50 dark:bg-blue-950">
         <CardHeader>
           <CardTitle className="text-blue-800 dark:text-blue-200">
-            Como Funciona a Busca Semântica
+            Como Funciona a Análise de Similaridade
           </CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-blue-700 dark:text-blue-300">
           <ul className="list-disc list-inside space-y-1">
-            <li><strong>Embedding Contextual:</strong> Cria representação vetorial rica em ASSUNTO/CONTEXTO</li>
-            <li><strong>Score Híbrido:</strong> 70% similaridade vetorial + 30% relevância contextual</li>
-            <li><strong>Filtros Semânticos:</strong> Bonus por categoria, palavras-chave e títulos relacionados</li>
-            <li><strong>Compreensão de Assunto:</strong> Entende o PROBLEMA por trás das palavras</li>
+            <li><strong>Análise Semântica:</strong> Usa embeddings para entender o contexto do conteúdo</li>
+            <li><strong>Busca Híbrida:</strong> Combina similaridade vetorial (85%) + relevância textual (15%)</li>
+            <li><strong>Re-ranking com IA:</strong> GPT re-analisa e classifica a relevância dos documentos</li>
+            <li><strong>Análise Comparativa:</strong> Explica as relações e fornece recomendações estratégicas</li>
+            <li><strong>Filtragem Contextual:</strong> Prioriza conteúdo semanticamente relevante sobre palavras similares</li>
           </ul>
         </CardContent>
       </Card>

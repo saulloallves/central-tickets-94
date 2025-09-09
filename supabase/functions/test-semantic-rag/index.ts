@@ -69,6 +69,75 @@ Critérios para detectar similaridade:
   }
 }
 
+// Nova função para gerar análise comparativa detalhada
+async function gerarAnaliseComparativa(novoConteudo: string, documentosRelacionados: any[]) {
+  if (!documentosRelacionados || documentosRelacionados.length === 0) {
+    return "Nenhum documento similar encontrado para comparação.";
+  }
+
+  try {
+    console.log('📊 Gerando análise comparativa...');
+    
+    const docsDetalhados = documentosRelacionados.map((doc, index) => 
+      `DOCUMENTO ${index + 1}:
+Título: ${doc.titulo}
+Categoria: ${doc.categoria || 'Não definida'}
+Versão: ${doc.versao || 1}
+Similaridade: ${Math.round(doc.similaridade * 100)}%
+Conteúdo: ${typeof doc.conteudo === 'string' ? doc.conteudo.substring(0, 600) : JSON.stringify(doc.conteudo).substring(0, 600)}...`
+    ).join('\n\n---\n\n');
+
+    const prompt = `Você é um especialista em análise de conteúdo. Analise o novo documento que o usuário quer criar versus os documentos existentes similares e forneça uma explicação clara das relações entre eles.
+
+NOVO DOCUMENTO QUE O USUÁRIO QUER CRIAR:
+${novoConteudo}
+
+DOCUMENTOS SIMILARES EXISTENTES:
+${docsDetalhados}
+
+Por favor, forneça uma análise comparativa que inclua:
+
+1. **O que o novo documento está abordando:** Resuma em 2-3 frases o tema principal e objetivo do novo conteúdo.
+
+2. **O que os documentos similares já cobrem:** Para cada documento similar, explique brevemente o que ele aborda.
+
+3. **Principais semelhanças:** Identifique os pontos em comum entre o novo documento e os existentes.
+
+4. **Diferenças importantes:** Destaque o que há de diferente ou único no novo documento.
+
+5. **Recomendação estratégica:** Sugira se é melhor:
+   - Atualizar um documento existente (e qual)
+   - Criar um novo documento (justificando por quê)
+   - Mesclar informações de documentos existentes
+
+Seja objetivo, claro e útil para a tomada de decisão.`;
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-5-2025-08-07',
+        messages: [{ role: 'user', content: prompt }],
+        max_completion_tokens: 2000
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Análise comparativa error: ${await response.text()}`);
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+    
+  } catch (error) {
+    console.error('Erro na análise comparativa:', error);
+    return "Erro ao gerar análise comparativa. Verifique os documentos manualmente.";
+  }
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -179,9 +248,14 @@ serve(async (req) => {
           'Conteúdo estruturado'
       }));
 
+      // Gera análise comparativa detalhada
+      console.log('📊 Gerando análise comparativa detalhada...');
+      const analiseComparativa = await gerarAnaliseComparativa(textoCompleto, artigosRelacionados);
+
       return new Response(JSON.stringify({
         documentos_relacionados: documentosFormatados,
-        recomendacao: "Atenção! Encontramos artigos que já falam sobre este assunto. Considere atualizar um desses artigos em vez de criar um novo.",
+        recomendacao: "Atenção! Encontramos documentos similares. Veja a análise detalhada abaixo:",
+        analise_comparativa: analiseComparativa,
         deve_criar_novo: false
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -189,7 +263,8 @@ serve(async (req) => {
     } else {
       return new Response(JSON.stringify({
         documentos_relacionados: [],
-        recomendacao: "Ótimo! Nenhum artigo parecido encontrado. Este parece ser um conteúdo novo.",
+        recomendacao: "Ótimo! Nenhum documento parecido encontrado. Este parece ser um conteúdo novo.",
+        analise_comparativa: null,
         deve_criar_novo: true
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
