@@ -45,7 +45,7 @@ const Index = () => {
                 <ClipboardList className="h-8 w-8 text-white" />
               </div>
               <div className="text-left">
-                <h1 className="text-3xl font-bold text-white">HelpDesk AI</h1>
+                <h1 className="text-3xl font-bold text-white">Central de Tickets</h1>
                 <p className="text-white/60">Gestão Inteligente de Tickets</p>
               </div>
             </div>

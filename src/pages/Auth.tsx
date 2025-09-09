@@ -228,7 +228,7 @@ const Auth = () => {
               <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
                 <ClipboardList className="h-4 w-4 text-white" />
               </div>
-              <span className="text-xl font-bold">HelpDesk AI</span>
+              <span className="text-xl font-bold">Central de Tickets</span>
             </div>
             <CardTitle className="text-2xl font-bold text-primary">Confirme seu Email</CardTitle>
             <CardDescription>Enviamos um link de confirmação</CardDescription>
@@ -288,7 +288,7 @@ const Auth = () => {
               <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
                 <ClipboardList className="h-4 w-4 text-white" />
               </div>
-              <span className="text-xl font-bold">HelpDesk AI</span>
+              <span className="text-xl font-bold">Central de Tickets</span>
             </div>
             <CardTitle className="text-2xl font-bold text-primary">Solicitação em Análise!</CardTitle>
             <CardDescription>Sua solicitação está sendo avaliada</CardDescription>
@@ -336,7 +336,7 @@ const Auth = () => {
               <ClipboardList className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white">HelpDesk AI</h1>
+              <h1 className="text-2xl font-bold text-white">Central de Tickets</h1>
               <p className="text-white/60 text-sm">Gestão Inteligente de Tickets</p>
             </div>
           </div>
@@ -383,7 +383,7 @@ const Auth = () => {
               <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
                 <ClipboardList className="h-4 w-4 text-white" />
               </div>
-              <span className="text-xl font-bold">HelpDesk AI</span>
+              <span className="text-xl font-bold">Central de Tickets</span>
             </div>
             <CardTitle className="text-2xl font-bold">Bem-vindo</CardTitle>
             <CardDescription>Acesse sua conta ou crie uma nova</CardDescription>
