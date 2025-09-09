@@ -42,6 +42,7 @@ interface SemanticAnalysisModalProps {
     hasConflicts: boolean;
     similarDocuments: SimilarDocument[];
     recommendation: string;
+    analiseComparativa?: string;
   }) => void;
   onCreateNew: () => Promise<void>;
   onUpdateExisting?: (documentId: string, updateType?: 'full' | 'partial', textToReplace?: string) => Promise<void>;
@@ -103,7 +104,7 @@ export const SemanticAnalysisModal = ({
     try {
       setHasStartedAnalysis(true);
       setError(null);
-      console.log('Iniciando análise semântica REAL para:', {
+      console.log('Iniciando análise semântica com IA para:', {
         titulo: documentData.titulo,
         conteudo: documentData.conteudo.substring(0, 200) + '...',
         categoria: documentData.categoria
@@ -115,93 +116,58 @@ export const SemanticAnalysisModal = ({
       setCurrentStep('search');
       setProgress(50);
 
-      // BUSCA REAL no banco de dados
-      const { data: documentosExistentes, error: searchError } = await supabase
-        .from('documentos')
-        .select(`
-          id,
-          titulo,
-          conteudo,
-          categoria,
-          versao,
-          status,
-          criado_em,
-          criado_por,
-          tags,
-          profiles:criado_por(nome_completo, email)
-        `)
-        .eq('status', 'ativo');
+      // Usar a função de análise semântica com IA
+      const { data: analysisData, error: analysisError } = await supabase.functions.invoke('test-semantic-rag', {
+        body: {
+          titulo: documentData.titulo,
+          conteudo: documentData.conteudo
+        }
+      });
 
       setProgress(75);
 
-      if (searchError) {
-        throw new Error(`Erro na busca: ${searchError.message}`);
+      if (analysisError) {
+        throw new Error(`Erro na análise semântica: ${analysisError.message}`);
       }
 
-      console.log('Documentos encontrados na base:', documentosExistentes?.length || 0);
+      console.log('Resultado da análise semântica:', analysisData);
 
-      // Calcular similaridade baseada em palavras-chave do título e conteúdo
-      const textoBusca = `${documentData.titulo} ${documentData.conteudo}`.toLowerCase();
-      const palavrasChave = textoBusca.split(/\s+/).filter(palavra => palavra.length > 3);
-      
-      const documentosSimilares: SimilarDocument[] = [];
-      
-      if (documentosExistentes) {
-        for (const doc of documentosExistentes) {
-          const textoDoc = `${doc.titulo} ${JSON.stringify(doc.conteudo)}`.toLowerCase();
-          
-          // Calcular similaridade baseada em palavras em comum
-          let palavrasComuns = 0;
-          
-          for (const palavra of palavrasChave) {
-            if (textoDoc.includes(palavra)) {
-              palavrasComuns++;
-            }
-          }
-          
-          const similaridade = palavrasChave.length > 0 ? palavrasComuns / palavrasChave.length : 0;
-          
-          console.log(`Documento "${doc.titulo}": ${palavrasComuns}/${palavrasChave.length} palavras comuns = ${(similaridade * 100).toFixed(1)}%`);
-          
-          // Se similaridade > 20%, considera como similar
-          if (similaridade > 0.2) {
-            documentosSimilares.push({
-              id: doc.id,
-              titulo: doc.titulo,
-              conteudo: doc.conteudo,
-              categoria: doc.categoria || 'Sem categoria',
-              versao: doc.versao || 1,
-              similaridade: Math.round(similaridade * 100),
-              criado_em: doc.criado_em,
-              status: doc.status,
-              tags: doc.tags || [],
-              profile: doc.profiles ? {
-                nome_completo: doc.profiles.nome_completo,
-                email: doc.profiles.email
-              } : undefined
-            });
-          }
-        }
+      setCurrentStep('analysis');
+      setProgress(90);
+
+      let documentosSimilares: SimilarDocument[] = [];
+      let recommendation = "Nenhum documento similar encontrado. Seguro para criar.";
+      let analiseComparativa = null;
+
+      if (analysisData?.documentos_relacionados && analysisData.documentos_relacionados.length > 0) {
+        documentosSimilares = analysisData.documentos_relacionados.map((doc: any) => ({
+          id: doc.id,
+          titulo: doc.titulo,
+          conteudo: doc.conteudo,
+          categoria: doc.categoria || 'Sem categoria',
+          versao: doc.versao || 1,
+          similaridade: doc.similaridade || 0,
+          criado_em: doc.criado_em,
+          status: doc.status,
+          tags: doc.tags || [],
+          profile: doc.profile
+        }));
+
+        recommendation = analysisData.recomendacao || "Atenção! Encontramos documentos similares. Considere atualizar um existente.";
+        analiseComparativa = analysisData.analise_comparativa;
       }
 
-      // Ordenar por similaridade (maior para menor)
-      documentosSimilares.sort((a, b) => b.similaridade - a.similaridade);
-
-      console.log('Documentos similares encontrados:', documentosSimilares.length);
       setSimilarDocuments(documentosSimilares);
-      
       setCurrentStep('complete');
       setProgress(100);
 
       const hasConflicts = documentosSimilares.length > 0;
-      const recommendation = hasConflicts 
-        ? "Atenção! Encontramos documentos similares. Considere atualizar um existente."
-        : "Nenhum documento similar encontrado. Seguro para criar.";
 
       const result = {
         hasConflicts,
         similarDocuments: documentosSimilares,
-        recommendation
+        recommendation,
+        analiseComparativa
       };
 
       setAnalysisResult(result);
@@ -422,6 +388,30 @@ export const SemanticAnalysisModal = ({
                   <p className="text-sm text-muted-foreground">
                     {analysisResult.recommendation}
                   </p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Análise Comparativa */}
+          {analysisResult?.analiseComparativa && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <Bot className="w-5 h-5 text-blue-500" />
+                Análise Comparativa Detalhada
+              </h3>
+              
+              <Card className="border-l-4 border-l-blue-500">
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Bot className="w-5 h-5 text-blue-500" />
+                    <p className="font-medium">Análise Comparativa da IA</p>
+                  </div>
+                  <div className="prose prose-sm max-w-none text-muted-foreground">
+                    <div className="whitespace-pre-wrap text-sm">
+                      {analysisResult.analiseComparativa}
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>
