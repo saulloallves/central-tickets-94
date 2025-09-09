@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useAutoApprovals } from '@/hooks/useAutoApprovals';
 import { formatDistanceToNowInSaoPaulo } from '@/lib/date-utils';
-import { CheckCircle, XCircle, Clock, FileText, User, MessageSquare, Eye, Plus } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, FileText, User, MessageSquare, Eye, Plus, BookOpen, GitCompare, AlertTriangle, Lightbulb } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 export function AutoApprovalsTab() {
@@ -236,11 +236,7 @@ export function AutoApprovalsTab() {
                 {selectedApproval.comparative_analysis && (
                   <div>
                     <h3 className="font-semibold mb-3">Análise Comparativa</h3>
-                    <div className="bg-muted p-4 rounded-lg">
-                      <pre className="whitespace-pre-wrap text-sm">
-                        {selectedApproval.comparative_analysis}
-                      </pre>
-                    </div>
+                    <AnaliseComparativaDisplay analise={selectedApproval.comparative_analysis} />
                   </div>
                 )}
 
@@ -300,6 +296,135 @@ export function AutoApprovalsTab() {
           )}
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+// Componente para exibir análise comparativa estruturada
+function AnaliseComparativaDisplay({ analise }: { analise: string }) {
+  // Parse da análise para extrair seções estruturadas
+  const parseAnalise = (texto: string) => {
+    const sections = {
+      newDocument: '',
+      overlapAnalysis: '',
+      detailedComparison: '',
+      contradictions: '',
+      finalRecommendation: ''
+    };
+
+    // Tenta encontrar seções baseadas em marcadores comuns
+    const lines = texto.split('\n');
+    let currentSection = '';
+    
+    for (const line of lines) {
+      const trimmedLine = line.trim();
+      
+      if (trimmedLine.includes('### 1.') || trimmedLine.includes('Novo Texto') || trimmedLine.includes('Novo Documento')) {
+        currentSection = 'newDocument';
+      } else if (trimmedLine.includes('### 2.') || trimmedLine.includes('Sobreposição') || trimmedLine.includes('Overlap')) {
+        currentSection = 'overlapAnalysis';
+      } else if (trimmedLine.includes('### 3.') || trimmedLine.includes('Comparação') || trimmedLine.includes('Detailed')) {
+        currentSection = 'detailedComparison';
+      } else if (trimmedLine.includes('### 4.') || trimmedLine.includes('Contradições') || trimmedLine.includes('Contradictions')) {
+        currentSection = 'contradictions';
+      } else if (trimmedLine.includes('### 5.') || trimmedLine.includes('Recomendação') || trimmedLine.includes('Recommendation')) {
+        currentSection = 'finalRecommendation';
+      } else if (currentSection && trimmedLine) {
+        sections[currentSection as keyof typeof sections] += line + '\n';
+      }
+    }
+
+    // Se não encontrou seções estruturadas, usa o texto completo
+    if (!sections.newDocument && !sections.overlapAnalysis) {
+      sections.newDocument = texto;
+    }
+
+    return sections;
+  };
+
+  const sections = parseAnalise(analise);
+
+  return (
+    <div className="space-y-4">
+      {sections.newDocument && (
+        <Card className="border-blue-200 dark:border-blue-800">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+              <BookOpen className="h-5 w-5" />
+              Novo Documento
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="prose prose-sm max-w-none">
+              <pre className="whitespace-pre-wrap text-sm">{sections.newDocument}</pre>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {sections.overlapAnalysis && (
+        <Card className="border-orange-200 dark:border-orange-800">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
+              <GitCompare className="h-5 w-5" />
+              Análise de Sobreposição
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="prose prose-sm max-w-none">
+              <pre className="whitespace-pre-wrap text-sm">{sections.overlapAnalysis}</pre>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {sections.detailedComparison && (
+        <Card className="border-purple-200 dark:border-purple-800">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
+              <GitCompare className="h-5 w-5" />
+              Comparação Detalhada
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="prose prose-sm max-w-none">
+              <pre className="whitespace-pre-wrap text-sm">{sections.detailedComparison}</pre>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {sections.contradictions && (
+        <Card className="border-red-200 dark:border-red-800">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-red-700 dark:text-red-300">
+              <AlertTriangle className="h-5 w-5" />
+              Contradições Identificadas
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="prose prose-sm max-w-none">
+              <pre className="whitespace-pre-wrap text-sm">{sections.contradictions}</pre>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {sections.finalRecommendation && (
+        <Card className="border-green-200 dark:border-green-800">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-300">
+              <Lightbulb className="h-5 w-5" />
+              Recomendação Final
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="prose prose-sm max-w-none">
+              <pre className="whitespace-pre-wrap text-sm">{sections.finalRecommendation}</pre>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
