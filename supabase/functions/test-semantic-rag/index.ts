@@ -107,40 +107,38 @@ async function gerarAnaliseComparativa(novoConteudo: string, documentosRelaciona
       return `**Documento ${index + 1}: ${doc.titulo}**\n${texto?.substring(0, 800) || 'Sem conteúdo'}`;
     }).join('\n\n');
 
-    const prompt = `Como especialista em análise de conteúdo, faça uma análise comparativa detalhada entre o novo documento e os documentos existentes encontrados.
+    const prompt = `Faça uma análise comparativa BREVE e BEM FORMATADA entre o novo documento e os documentos existentes.
 
 **NOVO DOCUMENTO:**
 ${novoConteudo}
 
-**DOCUMENTOS EXISTENTES NA BASE:**
+**DOCUMENTOS EXISTENTES:**
 ${documentosFormatados}
 
-**ESTRUTURA DA ANÁLISE:**
+**ANÁLISE (seja conciso e objetivo):**
 
-1. **Resumo do Novo Documento:**
-   - Assunto principal
-   - Categoria/tipo de conteúdo
-   - Pontos-chave abordados
+## 📄 Resumo do Novo Documento
+• **Assunto:** [principal tema em 1 linha]
+• **Categoria:** [tipo de conteúdo]
 
-2. **Resumo dos Documentos Similares:**
-   - Lista dos documentos relacionados e seus focos
+## 🔍 Documentos Similares Encontrados
+• **${documentosRelacionados.length} documento(s)** relacionado(s) encontrado(s)
 
-3. **Similaridades Encontradas:**
-   - Temas em comum
-   - Procedimentos similares
-   - Terminologia compartilhada
+## ⚖️ Comparação Rápida
+**Similaridades:**
+• [máximo 2-3 pontos principais]
 
-4. **Diferenças Identificadas:**
-   - Aspectos únicos do novo documento
-   - Lacunas nos documentos existentes
-   - Abordagens diferentes
+**Diferenças:**
+• [máximo 2-3 aspectos únicos]
 
-5. **Recomendação Estratégica:**
-   - Deve criar novo documento ou atualizar existente?
-   - Se atualizar: qual documento e como?
-   - Se criar novo: justificativa para a criação
+## 💡 Recomendação
+**${documentosRelacionados.length > 0 ? '⚠️ ATUALIZAR EXISTENTE' : '✅ CRIAR NOVO'}**
+${documentosRelacionados.length > 0 ? 
+  '• Sugiro atualizar: **' + documentosRelacionados[0]?.titulo + '**\n• Motivo: [razão em 1 linha]' : 
+  '• Justificativa: Conteúdo único, sem duplicação'
+}
 
-Seja detalhado e forneça insights práticos para tomada de decisão.`;
+Mantenha a resposta CURTA e OBJETIVA (máximo 300 palavras).`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
