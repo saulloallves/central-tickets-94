@@ -797,30 +797,73 @@ export const useTickets = (filters: TicketFilters) => {
           if (conversaTexto.trim()) {
             console.log('📝 Conversa capturada:', conversaTexto.substring(0, 200) + '...');
             
-            // Chamar função de moderação
+            // 1. PRIMEIRO: Criar entrada pendente para mostrar na UI
+            const { data: aprovacaoPendente, error: pendingError } = await supabase
+              .from('knowledge_auto_approvals')
+              .insert({
+                original_message: `${ticketData.descricao_problema}\n\n${conversaTexto}`,
+                corrected_response: 'Processando...',
+                documentation_content: 'Analisando conteúdo...',
+                similar_documents: [],
+                ticket_id: ticketId,
+                created_by: user?.id,
+                status: 'pending',
+                ai_evaluation: { processando: true }
+              })
+              .select()
+              .single();
+
+            if (pendingError) {
+              console.error('Erro ao criar entrada pendente:', pendingError);
+              return;
+            }
+
+            console.log('✅ Entrada pendente criada:', aprovacaoPendente.id);
+            
+            toast({
+              title: "📋 Ticket enviado para análise",
+              description: "O conteúdo está sendo processado para possível documentação",
+            });
+
+            // 2. DEPOIS: Chamar moderação em background para atualizar o status
             try {
               const { data: moderacaoResult, error: moderacaoError } = await supabase.functions.invoke('ticket-completion-moderator', {
                 body: {
                   ticket_id: ticketId,
                   conversa: conversaTexto,
                   problema: ticketData.descricao_problema || '',
-                  usuario_id: user?.id
+                  usuario_id: user?.id,
+                  approval_id: aprovacaoPendente.id // Passar o ID para atualizar depois
                 }
               });
 
               if (moderacaoError) {
                 console.error('Erro na moderação:', moderacaoError);
+                // Marcar como erro se falhar
+                await supabase
+                  .from('knowledge_auto_approvals')
+                  .update({
+                    status: 'rejected',
+                    corrected_response: 'Erro no processamento',
+                    documentation_content: 'Falha na análise automática',
+                    decision_reason: 'Erro técnico na moderação'
+                  })
+                  .eq('id', aprovacaoPendente.id);
               } else {
-                console.log('✅ Moderação executada:', moderacaoResult);
-                if (moderacaoResult.pode_virar_documentacao) {
-                  toast({
-                    title: "📋 Ticket enviado para moderação",
-                    description: "O conteúdo foi analisado e enviado para aprovação de documentação",
-                  });
-                }
+                console.log('✅ Moderação executada em background');
               }
             } catch (error) {
               console.error('Erro ao chamar moderação:', error);
+              // Marcar como erro se falhar
+              await supabase
+                .from('knowledge_auto_approvals')
+                .update({
+                  status: 'rejected',
+                  corrected_response: 'Erro no processamento',
+                  documentation_content: 'Falha na análise automática',
+                  decision_reason: 'Erro técnico na moderação'
+                })
+                .eq('id', aprovacaoPendente.id);
             }
           } else {
             console.log('⚠️ Conversa vazia, pulando moderação');

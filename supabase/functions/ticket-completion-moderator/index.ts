@@ -212,11 +212,12 @@ serve(async (req) => {
     console.log('🚀 Iniciando moderação de ticket concluído');
     
     const body = await req.json();
-    const { ticket_id, conversa, problema, usuario_id } = body;
+    const { ticket_id, conversa, problema, usuario_id, approval_id } = body;
     
     console.log('📝 Dados recebidos:', { 
       ticket_id, 
       usuario_id, 
+      approval_id,
       conversa_length: conversa?.length || 0,
       problema_length: problema?.length || 0
     });
@@ -244,40 +245,70 @@ serve(async (req) => {
       console.log('✅ Texto aprovado pela moderação, analisando similaridade...');
       analise = await analisarSimilaridade(moderacao.resultado);
       console.log(`📊 Encontrados ${analise.documentos_similares.length} documentos similares`);
+    }
 
-      // 3. Salvar para aprovação com análise completa
-      console.log('💾 Salvando para aprovação com análise de similaridade...');
-      try {
-        const { data: aprovacao, error } = await supabase
-          .from('knowledge_auto_approvals')
-          .insert({
-            original_message: `${problema}\n\n${conversa}`,
-            corrected_response: moderacao.resultado,
-            documentation_content: moderacao.resultado,
-            similar_documents: analise.documentos_similares,
-            comparative_analysis: analise.analise_comparativa,
-            ticket_id,
-            created_by: usuario_id,
-            status: 'pending',
-            ai_evaluation: {
-              moderacao: moderacao,
-              similaridade_analisada: true,
-              documentos_similares_count: analise.documentos_similares.length
-            }
-          })
-          .select()
-          .single();
+    // 3. Atualizar a entrada existente (se approval_id foi passado) ou criar nova
+    if (approval_id) {
+      console.log('🔄 Atualizando entrada existente...');
+      const { error: updateError } = await supabase
+        .from('knowledge_auto_approvals')
+        .update({
+          corrected_response: moderacao.resultado,
+          documentation_content: moderacao.classificacao === 'Sim' ? moderacao.resultado : '',
+          similar_documents: analise.documentos_similares,
+          comparative_analysis: analise.analise_comparativa,
+          status: moderacao.classificacao === 'Sim' ? 'approved' : 'rejected',
+          decision_reason: moderacao.classificacao === 'Sim' ? 'Aprovado pela IA - adequado para documentação' : moderacao.resultado,
+          ai_evaluation: {
+            moderacao: moderacao,
+            similaridade_analisada: moderacao.classificacao === 'Sim',
+            documentos_similares_count: analise.documentos_similares.length
+          }
+        })
+        .eq('id', approval_id);
 
-        if (error) {
-          console.error('❌ Erro ao salvar aprovação:', error);
-        } else {
-          console.log('💾 Aprovação salva com ID:', aprovacao.id);
-        }
-      } catch (error) {
-        console.error('❌ Erro ao processar aprovação:', error);
+      if (updateError) {
+        console.error('❌ Erro ao atualizar aprovação:', updateError);
+      } else {
+        console.log('✅ Aprovação atualizada com sucesso');
       }
     } else {
-      console.log('❌ Texto rejeitado pela moderação:', moderacao.resultado);
+      // Fallback: criar nova entrada se não tiver approval_id
+      if (moderacao.classificacao === 'Sim') {
+        console.log('💾 Criando nova entrada para aprovação...');
+        try {
+          const { data: aprovacao, error } = await supabase
+            .from('knowledge_auto_approvals')
+            .insert({
+              original_message: `${problema}\n\n${conversa}`,
+              corrected_response: moderacao.resultado,
+              documentation_content: moderacao.resultado,
+              similar_documents: analise.documentos_similares,
+              comparative_analysis: analise.analise_comparativa,
+              ticket_id,
+              created_by: usuario_id,
+              status: 'approved',
+              decision_reason: 'Aprovado pela IA - adequado para documentação',
+              ai_evaluation: {
+                moderacao: moderacao,
+                similaridade_analisada: true,
+                documentos_similares_count: analise.documentos_similares.length
+              }
+            })
+            .select()
+            .single();
+
+          if (error) {
+            console.error('❌ Erro ao salvar aprovação:', error);
+          } else {
+            console.log('💾 Aprovação salva com ID:', aprovacao.id);
+          }
+        } catch (error) {
+          console.error('❌ Erro ao processar aprovação:', error);
+        }
+      } else {
+        console.log('❌ Texto rejeitado pela moderação, não criando entrada');
+      }
     }
 
     console.log('✅ Moderação concluída com sucesso');
