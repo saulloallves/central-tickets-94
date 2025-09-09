@@ -119,7 +119,7 @@ async function gerarAnaliseComparativa(novoConteudo: string, documentosRelaciona
       return `**Documento ${index + 1}: ${doc.titulo}**\n${texto?.substring(0, 800) || 'Sem conteúdo'}`;
     }).join('\n\n');
 
-    const prompt = `Compare o NOVO DOCUMENTO com os DOCUMENTOS EXISTENTES para identificar sobreposições, complementaridade e recomendar a melhor ação.
+    const prompt = `Compare o NOVO DOCUMENTO com os DOCUMENTOS EXISTENTES para identificar sobreposições, contradições e recomendar a melhor ação.
 
 **NOVO DOCUMENTO:**
 ${novoConteudo}
@@ -128,38 +128,43 @@ ${novoConteudo}
 ${documentosFormatados}
 
 **INSTRUÇÕES IMPORTANTES:**
-- Se o novo documento é uma PARTE/SEÇÃO de um existente → Recomende ATUALIZAR o existente
-- Se o novo documento é COMPLEMENTAR → Recomende ATUALIZAR o existente  
+- Identifique CONTRADIÇÕES entre novo e existente
+- Se o novo documento é uma PARTE/SEÇÃO de um existente → Recomende ATUALIZAR
+- Se há CONTRADIÇÕES/CONFLITOS → Mencione especificamente
+- Se o novo documento é COMPLEMENTAR → Recomende ATUALIZAR  
 - Se o novo documento é ÚNICO/DIFERENTE → Recomende CRIAR NOVO
-- Identifique claramente se há SOBREPOSIÇÃO de conteúdo
 
-**ANÁLISE (seja conciso e objetivo):**
+**ANÁLISE:**
 
 ## 📄 Novo Documento
-**Assunto:** [tema principal em 1 linha]
-**Tipo:** [classificação do conteúdo]
+**Assunto:** [tema principal]
+**Tipo:** [classificação]
 
 ## 🔍 Análise de Sobreposição
 **Documentos relacionados:** ${documentosRelacionados.length}
 **Nível de sobreposição:** [Alto/Médio/Baixo/Nenhum]
 
-## ⚖️ Comparação
-**O que é similar:**
-• [máximo 2 pontos principais]
+## ⚖️ Comparação Detalhada
+**Similaridades:**
+• [pontos em comum]
 
-**O que é único no novo:**
-• [máximo 2 aspectos diferentes]
+**Diferenças:**
+• [aspectos únicos do novo]
+
+**⚠️ CONTRADIÇÕES IDENTIFICADAS:**
+• [liste contradições específicas entre novo e existente, ou "Nenhuma contradição identificada"]
 
 ## 💡 Recomendação Final
-${documentosRelacionados.length > 0 ? '**⚠️ SUGESTÃO: ATUALIZAR DOCUMENTO EXISTENTE**' : '**✅ SUGESTÃO: CRIAR NOVO DOCUMENTO**'}
+${documentosRelacionados.length > 0 ? '**SUGESTÃO: ATUALIZAR DOCUMENTO EXISTENTE**' : '**SUGESTÃO: CRIAR NOVO DOCUMENTO**'}
 
 ${documentosRelacionados.length > 0 ? 
   `**Documento para atualizar:** ${documentosRelacionados[0]?.titulo}
-**Razão:** [explicar se é complementar/parte/sobreposição]` : 
+**Razão:** [explicar o tipo de atualização necessária]
+**Ação:** [descrever como incorporar o novo conteúdo]` : 
   '**Justificativa:** Conteúdo único sem sobreposição significativa'
 }
 
-(Máximo 250 palavras)`;
+(Máximo 300 palavras)`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',

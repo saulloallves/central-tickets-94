@@ -8,7 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { AlertTriangle, CheckCircle, XCircle, BookOpen, Tag, Clock, User, Percent, Search, Bot, Loader2, FileCheck, Edit, FileText, Replace } from 'lucide-react';
+import { AlertTriangle, CheckCircle, XCircle, BookOpen, Tag, Clock, User, Percent, Search, Bot, Loader2, FileCheck, Edit, FileText, Replace, AlertCircle, TrendingUp, GitCompare, Target } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface SimilarDocument {
@@ -401,19 +401,7 @@ export const SemanticAnalysisModal = ({
                 Análise Comparativa Detalhada
               </h3>
               
-              <Card className="border-l-4 border-l-blue-500">
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Bot className="w-5 h-5 text-blue-500" />
-                    <p className="font-medium">Análise Comparativa da IA</p>
-                  </div>
-                  <div className="prose prose-sm max-w-none text-muted-foreground">
-                    <div className="whitespace-pre-wrap text-sm">
-                      {analysisResult.analiseComparativa}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <AnaliseComparativaDisplay analise={analysisResult.analiseComparativa} />
             </div>
           )}
 
@@ -748,5 +736,187 @@ export const SemanticAnalysisModal = ({
         </DialogContent>
       </Dialog>
     </Dialog>
+  );
+};
+
+// Componente para renderizar a análise comparativa de forma bonita
+const AnaliseComparativaDisplay = ({ analise }: { analise: string }) => {
+  const parseAnalise = (text: string) => {
+    const sections = text.split(/## /);
+    const parsed = {
+      novoDocumento: '',
+      sobreposicao: '',
+      comparacao: '',
+      contradicoes: '',
+      recomendacao: ''
+    };
+
+    sections.forEach(section => {
+      if (section.includes('📄') || section.includes('Novo Documento')) {
+        parsed.novoDocumento = section.replace(/📄.*?\n/, '').trim();
+      } else if (section.includes('🔍') || section.includes('Análise de Sobreposição')) {
+        parsed.sobreposicao = section.replace(/🔍.*?\n/, '').trim();
+      } else if (section.includes('⚖️') || section.includes('Comparação')) {
+        parsed.comparacao = section.replace(/⚖️.*?\n/, '').trim();
+      } else if (section.includes('⚠️') || section.includes('CONTRADIÇÕES')) {
+        parsed.contradicoes = section.replace(/⚠️.*?\n/, '').trim();
+      } else if (section.includes('💡') || section.includes('Recomendação')) {
+        parsed.recomendacao = section.replace(/💡.*?\n/, '').trim();
+      }
+    });
+
+    return parsed;
+  };
+
+  const parsedAnalise = parseAnalise(analise);
+
+  const extractListItems = (text: string) => {
+    return text.split('•').filter(item => item.trim().length > 0).map(item => item.trim());
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Novo Documento */}
+      {parsedAnalise.novoDocumento && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <FileText className="w-4 h-4 text-blue-500" />
+              Novo Documento
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="space-y-2 text-sm">
+              {parsedAnalise.novoDocumento.split('\n').filter(line => line.trim()).map((line, index) => (
+                <div key={index} className="flex items-start gap-2">
+                  <span className="text-muted-foreground">•</span>
+                  <span>{line.replace(/^\*\*|\*\*$/g, '').replace(/\*\*(.*?)\*\*/g, '$1')}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Análise de Sobreposição */}
+      {parsedAnalise.sobreposicao && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-orange-500" />
+              Análise de Sobreposição
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="space-y-2 text-sm">
+              {parsedAnalise.sobreposicao.split('\n').filter(line => line.trim()).map((line, index) => (
+                <div key={index} className="flex items-start gap-2">
+                  <span className="text-muted-foreground">•</span>
+                  <span>{line.replace(/^\*\*|\*\*$/g, '').replace(/\*\*(.*?)\*\*/g, '$1')}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Comparação */}
+      {parsedAnalise.comparacao && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <GitCompare className="w-4 h-4 text-purple-500" />
+              Comparação Detalhada
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="grid md:grid-cols-2 gap-4">
+              {parsedAnalise.comparacao.includes('Similaridades:') && (
+                <div>
+                  <h4 className="font-medium text-sm mb-2 text-green-600">Similaridades</h4>
+                  <div className="space-y-1">
+                    {extractListItems(parsedAnalise.comparacao.split('**Diferenças:**')[0].replace('**Similaridades:**', '')).map((item, index) => (
+                      <div key={index} className="flex items-start gap-2 text-sm">
+                        <CheckCircle className="w-3 h-3 text-green-500 mt-0.5 flex-shrink-0" />
+                        <span>{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {parsedAnalise.comparacao.includes('Diferenças:') && (
+                <div>
+                  <h4 className="font-medium text-sm mb-2 text-blue-600">Diferenças</h4>
+                  <div className="space-y-1">
+                    {extractListItems(parsedAnalise.comparacao.split('**Diferenças:**')[1] || '').map((item, index) => (
+                      <div key={index} className="flex items-start gap-2 text-sm">
+                        <XCircle className="w-3 h-3 text-blue-500 mt-0.5 flex-shrink-0" />
+                        <span>{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Contradições */}
+      {parsedAnalise.contradicoes && parsedAnalise.contradicoes.toLowerCase() !== 'nenhuma contradição identificada' && (
+        <Card className="border-l-4 border-l-red-500">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-red-500" />
+              Contradições Identificadas
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="space-y-2">
+              {extractListItems(parsedAnalise.contradicoes).map((item, index) => (
+                <div key={index} className="flex items-start gap-2 text-sm">
+                  <AlertTriangle className="w-3 h-3 text-red-500 mt-0.5 flex-shrink-0" />
+                  <span className="text-red-700">{item}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Recomendação */}
+      {parsedAnalise.recomendacao && (
+        <Card className="border-l-4 border-l-green-500">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Target className="w-4 h-4 text-green-500" />
+              Recomendação Final
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="space-y-2 text-sm">
+              {parsedAnalise.recomendacao.split('\n').filter(line => line.trim()).map((line, index) => {
+                const cleanLine = line.replace(/^\*\*|\*\*$/g, '').replace(/\*\*(.*?)\*\*/g, '$1');
+                const isRecommendation = cleanLine.includes('SUGESTÃO:') || cleanLine.includes('ATUALIZAR') || cleanLine.includes('CRIAR');
+                const isDocumentName = cleanLine.includes('Documento para atualizar:');
+                const isReason = cleanLine.includes('Razão:') || cleanLine.includes('Ação:');
+                
+                return (
+                  <div key={index} className={`flex items-start gap-2 ${
+                    isRecommendation ? 'font-medium text-green-700' : 
+                    isDocumentName ? 'font-medium text-blue-700' :
+                    isReason ? 'text-orange-700' : ''
+                  }`}>
+                    <span className="text-muted-foreground">•</span>
+                    <span>{cleanLine}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 };
