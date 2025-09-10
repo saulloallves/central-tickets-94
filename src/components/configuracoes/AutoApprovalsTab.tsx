@@ -111,11 +111,7 @@ export function AutoApprovalsTab() {
   };
 
   const handleUpdateExistingDocument = async (documentId: string, updateType: 'full' | 'partial', textToReplace?: string) => {
-    console.log('=== INICIANDO ATUALIZAÇÃO DE DOCUMENTO ===');
-    console.log('Document ID:', documentId);
-    console.log('Update Type:', updateType);
-    console.log('Text to Replace:', textToReplace);
-    console.log('Selected Approval:', selectedApproval);
+    // Document update started
     
     if (!selectedApproval) {
       console.error('❌ Nenhuma aprovação selecionada');
@@ -138,12 +134,12 @@ export function AutoApprovalsTab() {
         textToReplace: textToReplace || ''
       };
       
-      console.log('📋 Dados que serão enviados para atualização:', updateData);
+      // Update data prepared
       const result = await updateDocument(documentId, updateData);
-      console.log('📊 Resultado da atualização:', result);
+      // Update completed
       
       if (result.success) {
-        console.log('✅ Documento atualizado com sucesso');
+        // Document updated successfully
         
         // Atualizar status da aprovação
         await updateApprovalStatus(selectedApproval.id, 'processed', 'Documento atualizado com sucesso');

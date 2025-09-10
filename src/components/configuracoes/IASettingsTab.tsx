@@ -181,7 +181,7 @@ export function IASettingsTab() {
   const getCurrentModels = (): Array<{ value: string; label: string }> => {
     if (settings.api_provider === 'lambda') {
       if (lambdaModels.length > 0) {
-        console.log('Lambda models available:', lambdaModels);
+        // Lambda models loaded
         return lambdaModels.map(model => {
           const modelId = model.value || model.id;
           const isInUse = modelId === settings.modelo_sugestao || 
@@ -231,12 +231,7 @@ export function IASettingsTab() {
 
     try {
       // First save the current settings
-      console.log('Testando conexão Lambda com configurações:', {
-        api_provider: settings.api_provider,
-        api_key: settings.api_key?.substring(0, 10) + '...',
-        api_base_url: settings.api_base_url,
-        id: settings.id
-      });
+      // Testing Lambda connection
 
       // Save settings first using the same logic as saveSettings
       if (settings.id) {

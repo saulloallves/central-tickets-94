@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -573,6 +574,10 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
         {selectedTicketId && ticketModalOpen && (
           <Dialog open={ticketModalOpen} onOpenChange={handleCloseTicketDetail}>
             <DialogContent className="max-w-5xl w-[90vw] h-[80vh] max-h-none">
+              <DialogHeader className="sr-only">
+                <DialogTitle>Detalhes do Ticket</DialogTitle>
+                <DialogDescription>Visualização completa dos detalhes do ticket</DialogDescription>
+              </DialogHeader>
               <TicketDetail
                 ticketId={selectedTicketId}
                 onClose={handleCloseTicketDetail}

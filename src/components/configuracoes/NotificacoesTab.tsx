@@ -97,7 +97,7 @@ export function NotificacoesTab() {
         return;
       }
 
-      console.log('Templates loaded from DB:', data); // Debug log
+      // Templates loaded from DB
 
       const formattedTemplates = (data || []).map(template => ({
         id: template.id,
@@ -110,7 +110,7 @@ export function NotificacoesTab() {
         is_active: template.is_active
       }));
       
-      console.log('Formatted templates:', formattedTemplates); // Debug log
+      // Templates formatted
       setTemplates(formattedTemplates);
     } catch (error) {
       console.error('Error loading templates:', error);

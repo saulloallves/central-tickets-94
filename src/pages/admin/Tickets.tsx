@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useRole } from '@/hooks/useRole';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -262,6 +262,10 @@ const Tickets = () => {
         {/* Modal de Ticket */}
         <Dialog open={ticketModalOpen} onOpenChange={setTicketModalOpen}>
           <DialogContent className="w-[96vw] max-w-6xl h-[90vh] p-0 overflow-hidden">
+            <DialogHeader className="sr-only">
+              <DialogTitle>Detalhes do Ticket</DialogTitle>
+              <DialogDescription>Visualização completa dos detalhes do ticket</DialogDescription>
+            </DialogHeader>
             {selectedTicketId && (
               <TicketDetail 
                 ticketId={selectedTicketId}

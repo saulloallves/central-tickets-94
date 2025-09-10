@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { KPICard } from "@/components/dashboard/KPICard";
@@ -243,6 +243,10 @@ const Dashboard = () => {
       {/* Ticket Detail Modal */}
       <Dialog open={!!selectedTicketId} onOpenChange={() => setSelectedTicketId(null)}>
         <DialogContent className="w-[96vw] max-w-6xl h-[90vh] p-0 overflow-hidden">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Detalhes do Ticket</DialogTitle>
+            <DialogDescription>Visualização completa dos detalhes do ticket</DialogDescription>
+          </DialogHeader>
           {selectedTicketId && (
             <TicketDetail 
               ticketId={selectedTicketId}

@@ -63,14 +63,14 @@ const KnowledgeHubTab = () => {
       estilo: newDocument.estilo || undefined,
       process_with_ai: newDocument.process_with_ai && !!newDocument.estilo
     };
-    console.log('Iniciando análise semântica para:', documentData);
+    // Starting semantic analysis
 
     // Sempre abrir o modal de análise semântica primeiro
     setPendingDocumentData(documentData);
     setShowSemanticAnalysisModal(true);
   };
   const handleAnalysisComplete = (result: any) => {
-    console.log('Análise semântica concluída:', result);
+    // Semantic analysis completed
     setAnalysisResult(result);
     setSimilarDocuments(result.similarDocuments || []);
   };
@@ -103,11 +103,7 @@ const KnowledgeHubTab = () => {
     }
   };
   const handleUpdateExisting = async (documentId: string, updateType?: 'full' | 'partial', textToReplace?: string) => {
-    console.log('=== INICIANDO ATUALIZAÇÃO DE DOCUMENTO ===');
-    console.log('Document ID:', documentId);
-    console.log('Update Type:', updateType);
-    console.log('Text to Replace:', textToReplace);
-    console.log('Pending Document Data:', pendingDocumentData);
+    // Document update started
     if (!pendingDocumentData) {
       console.error('❌ Nenhum dado pendente para atualização');
       alert('Erro: Nenhum dado pendente para atualização');

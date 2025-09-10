@@ -419,14 +419,8 @@ export const useTickets = (filters: TicketFilters) => {
     }
 
     try {
-      console.log('🎫 === TICKET CREATION DEBUG ===');
-      console.log('📥 Raw ticketData received:', JSON.stringify(ticketData, null, 2));
-      console.log('🔍 Priority value detailed analysis:');
-      console.log('  - Value:', ticketData.prioridade);
-      console.log('  - Type:', typeof ticketData.prioridade);
-      console.log('  - JSON stringified:', JSON.stringify(ticketData.prioridade));
-      console.log('  - Contains legacy value check: validating priority value');
-      console.log('================================');
+      // Ticket creation started
+      // Processing ticket data
 
       // Get user profile to establish relationships
       const { data: profile } = await supabase
@@ -700,10 +694,7 @@ export const useTickets = (filters: TicketFilters) => {
 
   const updateTicket = async (ticketId: string, updates: Partial<Ticket>) => {
     try {
-      console.log('=== UPDATE TICKET DEBUG ===');
-      console.log('Original updates object:', updates);
-      console.log('Ticket ID:', ticketId);
-      console.log('🔍 Checking if status is being changed to concluido:', updates.status === 'concluido');
+      // Updating ticket data
       
       // Filter out undefined, null, and empty string values
       // Also ensure enum fields are not included if they're empty
