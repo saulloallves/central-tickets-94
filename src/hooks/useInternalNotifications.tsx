@@ -33,7 +33,12 @@ export const useInternalNotifications = () => {
   const { data: notifications = [], isLoading } = useQuery({
     queryKey: ['internal-notifications', user?.id],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!user?.id) {
+        console.log('🔔 No user ID, returning empty notifications');
+        return [];
+      }
+
+      console.log('🔔 Fetching notifications for user:', user.id);
 
       const { data, error } = await supabase
         .from('internal_notification_recipients')
@@ -61,11 +66,13 @@ export const useInternalNotifications = () => {
         .limit(50);
 
       if (error) {
-        console.error('Error fetching notifications:', error);
+        console.error('🔔 Error fetching notifications:', error);
         throw error;
       }
 
-      return data.map(item => ({
+      console.log('🔔 Fetched notifications raw data:', data?.length, 'items');
+
+      const mappedNotifications = data.map(item => ({
         id: item.internal_notifications.id,
         title: item.internal_notifications.title,
         message: item.internal_notifications.message,
@@ -80,6 +87,11 @@ export const useInternalNotifications = () => {
         },
         equipe: item.internal_notifications.equipes
       })) as InternalNotification[];
+
+      console.log('🔔 Mapped notifications:', mappedNotifications.length, 'items');
+      console.log('🔔 Unread count:', mappedNotifications.filter(n => !n.recipient_status?.is_read).length);
+      
+      return mappedNotifications;
     },
     enabled: !!user?.id,
   });
