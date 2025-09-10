@@ -11,7 +11,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { 
@@ -20,8 +19,6 @@ import {
   Send, 
   MessageSquare, 
   Eye,
-  ChevronUp,
-  ChevronDown,
   Users,
   FileText,
   MessageCircle
@@ -74,7 +71,6 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
   const [ticketModalOpen, setTicketModalOpen] = useState(false);
   const [broadcastMessage, setBroadcastMessage] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
-  const [isTicketsCollapsed, setIsTicketsCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('tickets');
 
   useEffect(() => {
@@ -115,7 +111,7 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
       console.log('Dados retornados:', data);
 
       const processedTickets: CrisisTicket[] = (data || [])
-        .filter(item => item.tickets) // Filtrar itens com tickets válidos
+        .filter(item => item.tickets)
         .map(item => ({
           id: item.tickets.id,
           codigo_ticket: item.tickets.codigo_ticket,
@@ -195,7 +191,6 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
         variant: "default"
       });
 
-      // Fechar modal imediatamente para que o banner suma
       onClose();
     } catch (error) {
       console.error('Erro ao resolver crise:', error);
@@ -231,10 +226,8 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
 
     setSendingMessage(true);
     try {
-      // Buscar todas as unidades dos tickets relacionados
       const unidadeIds = [...new Set(tickets.map(t => t.unidade_id))];
 
-      // Buscar grupos WhatsApp das unidades e nomes das unidades
       const { data: unidades, error: unidadesError } = await supabase
         .from('unidades')
         .select('id, id_grupo_branco, grupo')
@@ -254,7 +247,6 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
         return;
       }
 
-      // Buscar template de crise ativo
       const { data: template, error: templateError } = await supabase
         .from('message_templates')
         .select('template_content')
@@ -266,26 +258,22 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
         console.error('Erro ao buscar template:', templateError);
       }
 
-      // Usar template ou fallback
       let messageTemplate = template?.template_content || 
         `🚨 *CRISE ATIVA* 🚨\n\n🎫 *Ticket:* {{codigo_ticket}}\n🏢 *Unidade:* {{unidade_id}}\n\n💥 *Motivo:*\n{{motivo}}\n\n⏰ *Informado em:* {{timestamp}}\n\n_Mensagem enviada automaticamente pelo sistema de gerenciamento de crises_`;
 
-      // Obter informações do primeiro ticket para substituição
       const firstTicket = tickets[0];
       const unidadeNome = unidades?.find(u => u.id === firstTicket?.unidade_id)?.grupo || 'N/A';
       
-      // Substituir variáveis no template
       const formattedMessage = messageTemplate
         .replace('{{codigo_ticket}}', firstTicket?.titulo || firstTicket?.codigo_ticket || 'N/A')
         .replace('{{unidade_id}}', unidadeNome)
         .replace('{{motivo}}', broadcastMessage)
         .replace('{{timestamp}}', new Date().toLocaleString('pt-BR'));
 
-      // Enviar mensagem broadcast para cada grupo usando o processor existente
       const promises = grupos.map(async (grupo) => {
         const { error } = await supabase.functions.invoke('process-notifications', {
           body: {
-            ticketId: null, // Não vinculado a ticket específico 
+            ticketId: null,
             type: 'crisis_broadcast',
             payload: {
               phone: grupo,
@@ -303,7 +291,6 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
 
       await Promise.all(promises);
 
-      // Salvar mensagem no banco de dados
       const { error: saveError } = await supabase
         .from('crise_mensagens')
         .insert({
@@ -317,7 +304,6 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
         console.error('Erro ao salvar mensagem:', saveError);
       }
 
-      // Atualizar lista de mensagens
       await fetchCrisisMessages();
 
       toast({
@@ -371,7 +357,7 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl w-[95vw] h-[95vh] max-h-none flex flex-col">
+      <DialogContent className="max-w-4xl w-[90vw] h-[80vh] max-h-none flex flex-col overflow-hidden">
         <DialogHeader className="flex-shrink-0 border-b pb-4">
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-destructive" />
@@ -379,183 +365,184 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-          {/* Navegação Horizontal */}
-          <TabsList className="grid w-full grid-cols-3 mb-4">
-            <TabsTrigger value="tickets" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Tickets Relacionados
-              <Badge variant="outline">{tickets.length}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="detalhes" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Detalhes
-            </TabsTrigger>
-            <TabsTrigger value="mensagens" className="flex items-center gap-2">
-              <MessageCircle className="h-4 w-4" />
-              Mensagens
-              <Badge variant="outline">{messages.length}</Badge>
-            </TabsTrigger>
-          </TabsList>
+        <div className="flex-1 overflow-hidden">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
+            <TabsList className="grid w-full grid-cols-3 mb-4 flex-shrink-0">
+              <TabsTrigger value="tickets" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Tickets
+                <Badge variant="outline">{tickets.length}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="detalhes" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Detalhes
+              </TabsTrigger>
+              <TabsTrigger value="mensagens" className="flex items-center gap-2">
+                <MessageCircle className="h-4 w-4" />
+                Mensagens
+                <Badge variant="outline">{messages.length}</Badge>
+              </TabsTrigger>
+            </TabsList>
 
-          {/* Conteúdo das Abas */}
-          <div className="flex-1 overflow-hidden">
-            <TabsContent value="tickets" className="h-full overflow-auto space-y-4">
-              {loading ? (
-                <div className="flex items-center justify-center h-32">
-                  <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                </div>
-              ) : (
-                  <div className="space-y-3">
-                  {tickets.map((ticket) => (
-                    <Card key={ticket.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleTicketClick(ticket.id)}>
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3 flex-1">
-                            <div className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" />
-                            <div className="flex flex-col min-w-0 flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <Badge variant={getPriorityColor(ticket.prioridade)} className="text-xs">
-                                  {ticket.prioridade}
-                                </Badge>
-                                <Badge variant={getStatusColor(ticket.status)} className="text-xs">
-                                  {ticket.status}
-                                </Badge>
+            <div className="flex-1 overflow-hidden">
+              <TabsContent value="tickets" className="h-full m-0">
+                <ScrollArea className="h-full pr-4">
+                  {loading ? (
+                    <div className="flex items-center justify-center h-32">
+                      <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {tickets.map((ticket) => (
+                        <Card key={ticket.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleTicketClick(ticket.id)}>
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3 flex-1 min-w-0">
+                                <div className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" />
+                                <div className="flex flex-col min-w-0 flex-1">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <Badge variant={getPriorityColor(ticket.prioridade)} className="text-xs">
+                                      {ticket.prioridade}
+                                    </Badge>
+                                    <Badge variant={getStatusColor(ticket.status)} className="text-xs">
+                                      {ticket.status}
+                                    </Badge>
+                                  </div>
+                                  <h4 className="font-medium text-sm truncate">{ticket.titulo}</h4>
+                                  <p className="text-xs text-muted-foreground truncate">{ticket.descricao_problema}</p>
+                                  <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                                    <span className="flex items-center gap-1">
+                                      <Users className="h-3 w-3" />
+                                      {ticket.unidades?.grupo || 'Unidade não identificada'}
+                                    </span>
+                                    <span className="flex items-center gap-1">
+                                      <Clock className="h-3 w-3" />
+                                      {format(new Date(ticket.data_abertura), 'dd/MM HH:mm', { locale: ptBR })}
+                                    </span>
+                                  </div>
+                                </div>
                               </div>
-                              <h4 className="font-medium text-sm truncate">{ticket.titulo}</h4>
-                              <p className="text-xs text-muted-foreground truncate">{ticket.descricao_problema}</p>
-                              <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                                <span className="flex items-center gap-1">
-                                  <Users className="h-3 w-3" />
-                                  {ticket.unidades?.grupo || 'Unidade não identificada'}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <Clock className="h-3 w-3" />
-                                  {format(new Date(ticket.data_abertura), 'dd/MM HH:mm', { locale: ptBR })}
-                                </span>
-                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleTicketClick(ticket.id);
+                                }}
+                                className="flex-shrink-0"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
                             </div>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleTicketClick(ticket.id)}
-                            className="flex-shrink-0"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </ScrollArea>
+              </TabsContent>
+
+              <TabsContent value="detalhes" className="h-full m-0">
+                <ScrollArea className="h-full pr-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">{crisis.titulo}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <Badge variant="destructive">{crisis.status}</Badge>
+                          <span className="text-sm text-muted-foreground">
+                            Criada em: {format(new Date(crisis.created_at), 'dd/MM/yyyy \'às\' HH:mm', { locale: ptBR })}
+                          </span>
                         </div>
+                        <div className="text-sm text-muted-foreground">
+                          {tickets.length} ticket(s) relacionado(s)
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </ScrollArea>
+              </TabsContent>
+
+              <TabsContent value="mensagens" className="h-full m-0 space-y-4">
+                <div className="h-full flex flex-col space-y-4">
+                  {/* Formulário de envio de mensagem */}
+                  <Card className="flex-shrink-0">
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Send className="h-4 w-4" />
+                        Comunicação de Crise
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <Textarea
+                        placeholder="Digite sua mensagem de comunicação de crise..."
+                        value={broadcastMessage}
+                        onChange={(e) => setBroadcastMessage(e.target.value)}
+                        className="min-h-[80px] resize-none"
+                      />
+                      <Button 
+                        onClick={handleSendBroadcastMessage}
+                        disabled={!broadcastMessage.trim() || sendingMessage}
+                        className="w-full"
+                      >
+                        {sendingMessage ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                            Enviando...
+                          </>
+                        ) : (
+                          <>
+                            <Send className="w-4 h-4 mr-2" />
+                            Enviar para Grupos WhatsApp
+                          </>
+                        )}
+                      </Button>
+                    </CardContent>
+                  </Card>
+
+                  {/* Histórico de mensagens */}
+                  {messages.length > 0 && (
+                    <Card className="flex-1 overflow-hidden">
+                      <CardHeader>
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <MessageSquare className="h-4 w-4" />
+                          Histórico de Mensagens ({messages.length})
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="h-full overflow-hidden">
+                        <ScrollArea className="h-[200px]">
+                          <div className="space-y-4">
+                            {messages.map((message) => (
+                              <div key={message.id} className="flex items-start gap-3">
+                                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium flex-shrink-0">
+                                  A
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className="text-sm font-medium">Admin</span>
+                                    <span className="text-xs text-muted-foreground">
+                                      {format(new Date(message.created_at), 'dd/MM HH:mm', { locale: ptBR })}
+                                    </span>
+                                    <Badge variant="outline" className="text-xs">
+                                      {message.total_grupos} grupo(s)
+                                    </Badge>
+                                  </div>
+                                  <p className="text-sm break-words">{message.mensagem}</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </ScrollArea>
                       </CardContent>
                     </Card>
-                  ))}
+                  )}
                 </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="detalhes" className="h-full overflow-auto space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">{crisis.titulo}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <Badge variant="destructive">{crisis.status}</Badge>
-                      <span className="text-sm text-muted-foreground">
-                        Criada em: {format(new Date(crisis.created_at), 'dd/MM/yyyy \'às\' HH:mm', { locale: ptBR })}
-                      </span>
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {tickets.length} ticket(s) relacionado(s)
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="mensagens" className="h-full overflow-auto space-y-4">
-              {/* Histórico de Mensagens */}
-              {messages.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <MessageSquare className="h-4 w-4" />
-                      Conversas ({messages.length})
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ScrollArea className="h-[300px]">
-                      <div className="space-y-4">
-                        {messages.map((message) => (
-                          <div key={message.id} className="flex items-start gap-3">
-                            {/* Avatar */}
-                            <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium flex-shrink-0">
-                              A
-                            </div>
-                            
-                            {/* Conteúdo da mensagem */}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="font-medium text-sm">Admin Sistema</span>
-                                <Badge variant="secondary" className="text-xs">
-                                  Crise
-                                </Badge>
-                                <span className="text-xs text-muted-foreground">
-                                  {format(new Date(message.created_at), 'dd/MM HH:mm', { locale: ptBR })}
-                                </span>
-                              </div>
-                              <p className="text-sm text-muted-foreground">
-                                {message.mensagem}
-                              </p>
-                              <div className="flex items-center gap-1 mt-1">
-                                <span className="text-xs text-green-600">✓ Enviada para {message.total_grupos} grupo(s)</span>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </ScrollArea>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Enviar Nova Mensagem */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <MessageSquare className="h-4 w-4" />
-                    Enviar Nova Mensagem
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Textarea
-                    placeholder="Digite sua mensagem..."
-                    value={broadcastMessage}
-                    onChange={(e) => setBroadcastMessage(e.target.value)}
-                    rows={3}
-                    className="resize-none"
-                  />
-                  <div className="flex justify-between items-center">
-                    <p className="text-sm text-muted-foreground">
-                      Para {[...new Set(tickets.map(t => t.unidade_id))].length} grupo(s) WhatsApp
-                    </p>
-                    <Button 
-                      onClick={handleSendBroadcastMessage}
-                      disabled={sendingMessage || !broadcastMessage.trim()}
-                      size="sm"
-                    >
-                      <Send className="h-4 w-4 mr-2" />
-                      {sendingMessage ? 'Enviando...' : 'Enviar'}
-                    </Button>
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    💡 Você pode enviar quantas mensagens precisar. Cada uma será adicionada ao histórico da conversa.
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </div>
-        </Tabs>
+              </TabsContent>
+            </div>
+          </Tabs>
+        </div>
 
         {/* Footer com botões */}
         <div className="flex-shrink-0 flex items-center justify-between border-t pt-4">
@@ -585,7 +572,7 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
         {/* Modal de Detalhes do Ticket */}
         {selectedTicketId && ticketModalOpen && (
           <Dialog open={ticketModalOpen} onOpenChange={handleCloseTicketDetail}>
-            <DialogContent className="max-w-6xl w-[95vw] h-[95vh] max-h-none">
+            <DialogContent className="max-w-5xl w-[90vw] h-[80vh] max-h-none">
               <TicketDetail
                 ticketId={selectedTicketId}
                 onClose={handleCloseTicketDetail}
