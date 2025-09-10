@@ -2650,10 +2650,6 @@ export type Database = {
         }
         Returns: string
       }
-      detect_girabot_crisis: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
       fix_missing_colaborador_roles: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -2915,10 +2911,6 @@ export type Database = {
       }
       next_ticket_code: {
         Args: { p_unidade_id: string }
-        Returns: string
-      }
-      process_existing_girabot_crisis: {
-        Args: Record<PropertyKey, never>
         Returns: string
       }
       regenerate_single_document_embedding: {
