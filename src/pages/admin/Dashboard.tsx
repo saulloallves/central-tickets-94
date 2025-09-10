@@ -5,7 +5,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { KPICard } from "@/components/dashboard/KPICard";
-import { AlertsPanel } from "@/components/admin/AlertsPanel";
+import { InternalAlertsPanel } from "@/components/dashboard/InternalAlertsPanel";
 import { TicketDetail } from "@/components/tickets/TicketDetail";
 import { useTeamDashboardMetrics } from "@/hooks/useTeamDashboardMetrics";
 import { useInternalNotifications } from "@/hooks/useInternalNotifications";
@@ -237,8 +237,8 @@ const Dashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Alerts Panel */}
-      <AlertsPanel />
+      {/* Internal Alerts Panel */}
+      <InternalAlertsPanel />
       
       {/* Ticket Detail Modal */}
       <Dialog open={!!selectedTicketId} onOpenChange={() => setSelectedTicketId(null)}>
