@@ -2,7 +2,9 @@ import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useInternalNotifications } from '@/hooks/useInternalNotifications';
+import { InternalNotificationsList } from './InternalNotificationsList';
 
 interface NotificationButtonProps {
   isExpanded: boolean;
@@ -34,23 +36,45 @@ export const NotificationButton = ({ isExpanded }: NotificationButtonProps) => {
     </Button>
   );
 
+  const popoverContent = (
+    <PopoverContent 
+      className="w-96 p-0 bg-background/95 backdrop-blur-sm border-border/50" 
+      side={isExpanded ? "bottom" : "right"}
+      align="start"
+    >
+      <InternalNotificationsList />
+    </PopoverContent>
+  );
+
   if (!isExpanded) {
     return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            {button}
-          </TooltipTrigger>
-          <TooltipContent 
-            side="right" 
-            className="liquid-glass-card text-white ml-2"
-          >
-            Notificações {unreadCount > 0 && `(${unreadCount})`}
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <Popover>
+        <TooltipProvider>
+          <Tooltip>
+            <PopoverTrigger asChild>
+              <TooltipTrigger asChild>
+                {button}
+              </TooltipTrigger>
+            </PopoverTrigger>
+            <TooltipContent 
+              side="right" 
+              className="liquid-glass-card text-white ml-2"
+            >
+              Notificações {unreadCount > 0 && `(${unreadCount})`}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        {popoverContent}
+      </Popover>
     );
   }
 
-  return button;
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        {button}
+      </PopoverTrigger>
+      {popoverContent}
+    </Popover>
+  );
 };
