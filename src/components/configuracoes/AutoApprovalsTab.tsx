@@ -380,13 +380,6 @@ export function AutoApprovalsTab() {
                   </div>
 
                   {selectedApproval.status === 'approved' && <div className="flex gap-3 pt-4 border-t">
-                      <Button variant="default" onClick={() => {
-                  handleApprove(selectedApproval.id, 'Aprovado via modal de detalhes');
-                  setSelectedApproval(null);
-                }} className="bg-green-600 hover:bg-green-700">
-                        <CheckCircle className="h-4 w-4 mr-2" />
-                        Aprovar
-                      </Button>
                       <Button variant="destructive" onClick={() => {
                   handleReject(selectedApproval.id, 'Rejeitado via modal de detalhes');
                   setSelectedApproval(null);
