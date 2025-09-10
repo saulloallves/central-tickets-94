@@ -10,7 +10,7 @@ import { NotificacoesTab } from "@/components/configuracoes/NotificacoesTab";
 import { AutoApprovalsTab } from "@/components/configuracoes/AutoApprovalsTab";
 
 import { LogoSettings } from "@/components/configuracoes/LogoSettingsTab";
-import { EmbeddingTestTab } from '@/components/configuracoes/EmbeddingTestTab';
+
 import { WhatsAppManagementTab } from '@/components/configuracoes/WhatsAppManagementTab';
 import { AIAlertsTestTab } from '@/components/configuracoes/AIAlertsTestTab';
 
@@ -37,7 +37,7 @@ export default function Configuracoes() {
         </div>
 
         <Tabs defaultValue="ia" className="w-full">
-          <TabsList className="grid w-full grid-cols-9 mb-6">
+          <TabsList className="grid w-full grid-cols-8 mb-6">
             <TabsTrigger value="logo" className="flex items-center gap-2">
               <Image className="h-4 w-4" />
               Logo
@@ -69,9 +69,6 @@ export default function Configuracoes() {
             <TabsTrigger value="auto-approvals" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               Aprovações
-            </TabsTrigger>
-            <TabsTrigger value="debug" className="flex items-center gap-2">
-              🧪 Debug
             </TabsTrigger>
           </TabsList>
 
@@ -108,9 +105,6 @@ export default function Configuracoes() {
             <AutoApprovalsTab />
           </TabsContent>
 
-          <TabsContent value="debug" className="space-y-6 animate-fade-in">
-            <EmbeddingTestTab />
-          </TabsContent>
         </Tabs>
       </div>
     </div>
