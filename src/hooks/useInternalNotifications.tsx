@@ -167,7 +167,7 @@ export const useInternalNotifications = () => {
   useEffect(() => {
     if (!user?.id) return;
 
-    console.log('Setting up internal notifications realtime...');
+    console.log('🔔 Setting up internal notifications realtime for user:', user.id);
 
     const channel = supabase
       .channel('internal-notification-updates')
@@ -180,8 +180,8 @@ export const useInternalNotifications = () => {
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          console.log('New notification received:', payload);
-          
+          console.log('🔔 New internal notification received:', payload);
+          console.log('🔔 Payload new data:', payload.new);
           // Invalidate queries to refetch
           queryClient.invalidateQueries({ 
             queryKey: ['internal-notifications', user.id] 
@@ -203,8 +203,8 @@ export const useInternalNotifications = () => {
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          console.log('Notification updated:', payload);
-          
+          console.log('🔔 Internal notification updated:', payload);
+          console.log('🔔 Update payload:', payload.new);
           // Invalidate queries to refetch
           queryClient.invalidateQueries({ 
             queryKey: ['internal-notifications', user.id] 
@@ -214,7 +214,7 @@ export const useInternalNotifications = () => {
       .subscribe();
 
     return () => {
-      console.log('Cleaning up internal notifications realtime...');
+      console.log('🔔 Cleaning up internal notifications realtime for user:', user.id);
       supabase.removeChannel(channel);
     };
   }, [user?.id, queryClient, toast]);

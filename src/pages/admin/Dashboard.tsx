@@ -8,6 +8,7 @@ import { KPICard } from "@/components/dashboard/KPICard";
 import { AlertsPanel } from "@/components/admin/AlertsPanel";
 import { TicketDetail } from "@/components/tickets/TicketDetail";
 import { useTeamDashboardMetrics } from "@/hooks/useTeamDashboardMetrics";
+import { useInternalNotifications } from "@/hooks/useInternalNotifications";
 import { useRole } from "@/hooks/useRole";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -35,8 +36,12 @@ const Dashboard = () => {
     refetch 
   } = useTeamDashboardMetrics();
   
+  // Initialize internal notifications system
+  const { notifications, unreadCount } = useInternalNotifications();
+  
   // Debug log to verify data structure
   console.log('Dashboard metrics:', { teamMetrics, crisisMetrics, loading, primaryEquipe });
+  console.log('🔔 Internal notifications debug:', { notificationCount: notifications.length, unreadCount });
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   
   // Listen for notification ticket modal events
