@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { RefreshCw } from 'lucide-react';
-export const ProcessPendingButton = () => {
+export const ProcessPendingButton: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const {
     toast

@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Bug } from 'lucide-react';
-export const TestNotificationButton = () => {
+export const TestNotificationButton: React.FC = () => {
   const [isTesting, setIsTesting] = useState(false);
   const {
     toast
