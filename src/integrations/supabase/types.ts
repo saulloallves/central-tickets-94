@@ -2548,15 +2548,6 @@ export type Database = {
       }
     }
     Functions: {
-      activate_crisis: {
-        Args: {
-          p_criada_por?: string
-          p_impacto_regional?: string[]
-          p_motivo?: string
-          p_ticket_id: string
-        }
-        Returns: string
-      }
       add_24h_skip_weekend: {
         Args: { ts: string }
         Returns: string
@@ -2836,15 +2827,6 @@ export type Database = {
         Args: { "": string } | { "": unknown } | { "": unknown }
         Returns: string
       }
-      log_crisis_action: {
-        Args: {
-          p_acao: string
-          p_by?: string
-          p_crisis_id: string
-          p_meta?: Json
-        }
-        Returns: undefined
-      }
       log_system_action: {
         Args: {
           p_acao_realizada: string
@@ -2954,10 +2936,6 @@ export type Database = {
           p_mensagem?: string
           p_status_ticket?: Database["public"]["Enums"]["ticket_status"]
         }
-        Returns: undefined
-      }
-      resolve_crisis: {
-        Args: { p_crisis_id: string; p_resolvida_por?: string }
         Returns: undefined
       }
       set_limit: {
