@@ -106,6 +106,21 @@ export function useProfile() {
     if (!user) return { success: false, error: 'Usuário não autenticado' };
 
     try {
+      console.log('Attempting to update profile:', {
+        userId: user.id,
+        updates,
+        userEmail: user.email
+      });
+
+      // First check if profile exists
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      console.log('Existing profile:', existingProfile);
+
       const { data, error } = await supabase
         .from('profiles')
         .upsert({
@@ -116,15 +131,27 @@ export function useProfile() {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+        throw error;
+      }
 
+      console.log('Profile updated successfully:', data);
       setProfile(data);
       return { success: true, data };
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao atualizar perfil:', err);
+      const errorMessage = err?.message 
+        ? `${err.message} (Código: ${err.code || 'desconhecido'})` 
+        : 'Erro desconhecido';
       return { 
         success: false, 
-        error: err instanceof Error ? err.message : 'Erro desconhecido' 
+        error: errorMessage
       };
     }
   };
