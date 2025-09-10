@@ -164,15 +164,16 @@ export const useAISuggestion = (ticketId: string) => {
         !currentSuggestionData.resposta.toLowerCase().includes('não há informações relevantes');
 
       if (isUsefulResponse) {
+        const fontesCount = ragMetrics.fontes_utilizadas?.length || ragMetrics.selecionados?.length || 0;
         toast({
           title: "✨ Sugestão RAG Gerada",
-          description: `${ragMetrics.documentos_encontrados || 0} documentos RAG | Relevância: ${ragMetrics.relevancia_media || '0%'}`,
+          description: `${ragMetrics.documentos_encontrados || 0} documentos encontrados | ${fontesCount} fontes utilizadas`,
         });
       } else {
         toast({
           title: "❌ RAG Sem Resultado",
           description: ragMetrics.documentos_encontrados > 0 
-            ? `${ragMetrics.documentos_encontrados} documentos encontrados, mas relevância insuficiente (${ragMetrics.relevancia_media || '0%'})`
+            ? `${ragMetrics.documentos_encontrados} documentos encontrados, mas sem relevância suficiente`
             : "Nenhum documento relevante encontrado na base de conhecimento",
           variant: "destructive",
         });
