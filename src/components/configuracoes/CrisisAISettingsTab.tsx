@@ -324,7 +324,7 @@ Responda APENAS com um JSON válido:
               {settings.user_prompt
                 .replace('{{DESCRICAO}}', 'Sistema está fora do ar desde 10:00')
                 .replace('{{EXISTING_PROBLEMS}}', '- Problema ID: abc123\n  Título: Sistema indisponível\n  Tickets relacionados: 2')
-                .replace('{{SIMILAR_COUNT}}', '3')}
+                .replace('{{SIMILAR_COUNT}}', '3 tickets similares:\n- Ticket #2024-001: "Sistema travou e não responde"\n- Ticket #2024-002: "Plataforma indisponível para clientes"\n- Ticket #2024-003: "Erro de conexão generalizado"')}
             </div>
           </CardContent>
         </Card>
