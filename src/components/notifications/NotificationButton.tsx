@@ -38,9 +38,10 @@ export const NotificationButton = ({ isExpanded }: NotificationButtonProps) => {
 
   const popoverContent = (
     <PopoverContent 
-      className="w-96 p-0 bg-background/95 backdrop-blur-sm border-border/50" 
+      className="w-80 max-w-sm p-0 bg-background border-border shadow-lg" 
       side={isExpanded ? "bottom" : "right"}
       align="start"
+      sideOffset={8}
     >
       <InternalNotificationsList />
     </PopoverContent>
