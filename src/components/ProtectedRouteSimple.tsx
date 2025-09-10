@@ -10,7 +10,7 @@ interface ProtectedRouteProps {
 
 export const ProtectedRoute = ({ children, requiredRole, requiredRoles }: ProtectedRouteProps) => {
   const { user, loading } = useAuth();
-  const { hasRole, loading: roleLoading } = useRole();
+  const { hasRole, loading: roleLoading, hasPendingAccess } = useRole();
   const location = useLocation();
 
   if (loading || roleLoading) {
@@ -26,6 +26,11 @@ export const ProtectedRoute = ({ children, requiredRole, requiredRoles }: Protec
 
   if (!user) {
     return <Navigate to="/auth" state={{ from: location }} replace />;
+  }
+
+  // Se o usuário tem solicitação pendente e não tem nenhuma role aprovada
+  if (hasPendingAccess && !hasRole('admin') && !hasRole('supervisor') && !hasRole('colaborador') && !hasRole('franqueado') && !hasRole('diretoria')) {
+    return <Navigate to="/pending-approval" replace />;
   }
 
   if (requiredRole && !hasRole(requiredRole)) {

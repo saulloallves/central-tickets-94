@@ -8,6 +8,7 @@ export const useRole = () => {
   const { user } = useAuth();
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasPendingAccess, setHasPendingAccess] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -18,24 +19,34 @@ export const useRole = () => {
 
     const fetchRoles = async () => {
       try {
+        // Verificar roles aprovadas
         const { data, error } = await supabase
           .from('user_roles')
-          .select('role')
+          .select('role, approved')
           .eq('user_id', user.id);
+
+        // Verificar se há solicitação pendente
+        const { data: pendingRequest } = await supabase
+          .from('internal_access_requests')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('status', 'pending')
+          .maybeSingle();
 
         if (error) {
           console.error('Error fetching roles:', error);
           setRoles([]);
         } else {
-          let userRoles = data?.map(r => r.role as AppRole) || [];
+          // Filtrar apenas roles aprovadas
+          let userRoles = data?.filter(r => r.approved).map(r => r.role as AppRole) || [];
           
-          // Se não tem roles e tem email, verificar se é franqueado
+          // Se não tem roles aprovadas e tem email, verificar se é franqueado
           if (userRoles.length === 0 && user.email) {
             const { data: franqueadoData } = await supabase
               .from('franqueados')
               .select('id')
               .eq('email', user.email)
-              .single();
+              .maybeSingle();
             
             if (franqueadoData) {
               userRoles = ['franqueado'];
@@ -44,6 +55,9 @@ export const useRole = () => {
           
           setRoles(userRoles);
         }
+
+        // Definir se há acesso pendente
+        setHasPendingAccess(!!pendingRequest);
       } catch (error) {
         console.error('Error fetching roles:', error);
         setRoles([]);
@@ -75,6 +89,7 @@ export const useRole = () => {
     isColaborador,
     isFranqueado,
     isGerente,
-    loading
+    loading,
+    hasPendingAccess
   };
 };
