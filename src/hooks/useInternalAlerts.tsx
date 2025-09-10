@@ -272,17 +272,26 @@ export const useInternalAlerts = () => {
   };
 
   useEffect(() => {
-    // Request audio permission on first load
-    NotificationSounds.requestAudioPermission();
+    const sessionKey = 'internal_alerts_initialized';
+    const wasInitialized = sessionStorage.getItem(sessionKey) === 'true';
     
-    const initializeAlerts = async () => {
-      await fetchAlerts();
-    };
-    
-    initializeAlerts();
-    const unsubscribe = setupRealtimeAlerts();
-    
-    return unsubscribe;
+    if (!wasInitialized) {
+      // Request audio permission on first load
+      NotificationSounds.requestAudioPermission();
+      sessionStorage.setItem(sessionKey, 'true');
+      
+      const initializeAlerts = async () => {
+        await fetchAlerts();
+      };
+      
+      initializeAlerts();
+      const unsubscribe = setupRealtimeAlerts();
+      
+      return unsubscribe;
+    } else {
+      // Just fetch latest data without full initialization
+      fetchAlerts();
+    }
   }, []); // Remove dependencies to prevent infinite loops
 
   return {

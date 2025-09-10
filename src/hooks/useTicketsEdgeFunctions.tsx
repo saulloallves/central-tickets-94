@@ -306,19 +306,28 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
     };
   }, [user, fetchTickets]);
 
-  // Initial setup with better lifecycle management
+  // Initial setup with session persistence to avoid re-initialization
   useEffect(() => {
-    if (user && !roleLoading && !fetchedRef.current) {
+    const sessionKey = `tickets_initialized_${user?.id}`;
+    const wasInitialized = sessionStorage.getItem(sessionKey) === 'true';
+    
+    if (user && !roleLoading && !fetchedRef.current && !wasInitialized) {
       console.log('🚀 Initializing tickets system for user:', user.id);
       fetchedRef.current = true;
-      fetchTickets();
+      sessionStorage.setItem(sessionKey, 'true');
       
-      // Set up realtime after initial fetch
-      const cleanup = setupRealtime();
+      const initialize = async () => {
+        await fetchTickets();
+        setupRealtime();
+      };
       
-      return cleanup;
+      initialize();
+    } else if (wasInitialized && !fetchedRef.current) {
+      // Re-hydrate from session but with minimal initialization
+      fetchedRef.current = true;
+      fetchTickets(true); // Silent refetch
     }
-  }, [user, roleLoading, fetchTickets, setupRealtime]);
+  }, [user?.id, roleLoading]);
 
   // Filter-based refetch with improved debouncing
   useEffect(() => {
