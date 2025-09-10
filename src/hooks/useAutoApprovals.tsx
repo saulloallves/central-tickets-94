@@ -137,8 +137,8 @@ export const useAutoApprovals = () => {
         return false;
       }
 
-      // Marcar como processado
-      await updateApprovalStatus(approvalId, 'processed', 'Documento criado automaticamente');
+      // Marcar como aprovado pelo usuário
+      await updateApprovalStatus(approvalId, 'user_approved', 'Documento criado pelo usuário');
 
       toast({
         title: "Documento criado",

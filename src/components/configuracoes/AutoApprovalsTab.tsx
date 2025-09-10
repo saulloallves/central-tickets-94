@@ -33,13 +33,13 @@ export function AutoApprovalsTab() {
     toast
   } = useToast();
   const handleApprove = async (id: string, reason?: string) => {
-    const success = await updateApprovalStatus(id, 'approved', reason);
+    const success = await updateApprovalStatus(id, 'user_approved', reason);
     if (success) {
       fetchApprovals(activeTab === 'all' ? undefined : activeTab);
     }
   };
   const handleReject = async (id: string, reason?: string) => {
-    const success = await updateApprovalStatus(id, 'rejected', reason);
+    const success = await updateApprovalStatus(id, 'user_rejected', reason);
     if (success) {
       fetchApprovals(activeTab === 'all' ? undefined : activeTab);
     }
@@ -202,9 +202,9 @@ export function AutoApprovalsTab() {
       case 'pending':
         return approval.status === 'approved'; // Aprovado pela moderação, aguardando decisão
       case 'approved':
-        return approval.status === 'processed'; // Já virou documento
+        return approval.status === 'user_approved' || approval.status === 'processed'; // Você aprovou
       case 'rejected':
-        return approval.status === 'rejected'; // Rejeitado pela moderação
+        return approval.status === 'rejected' || approval.status === 'user_rejected'; // Rejeitado por IA ou por você
       case 'processing':
         return approval.status === 'pending'; // Sendo processado
       default:
@@ -287,7 +287,7 @@ export function AutoApprovalsTab() {
                       </p>
                     </div>
 
-                    {approval.status === 'pending' && <div className="flex gap-2 pt-2">
+                    {approval.status === 'approved' && <div className="flex gap-2 pt-2">
                         <Button variant="default" size="sm" onClick={() => handleApprove(approval.id, 'Aprovado para criação de documento')} className="bg-green-600 hover:bg-green-700">
                           <CheckCircle className="h-4 w-4 mr-2" />
                           Aprovar
@@ -389,7 +389,7 @@ export function AutoApprovalsTab() {
                       </Button>}
                   </div>
 
-                  {selectedApproval.status === 'pending' && <div className="flex gap-3 pt-4 border-t">
+                  {selectedApproval.status === 'approved' && <div className="flex gap-3 pt-4 border-t">
                       <Button variant="default" onClick={() => {
                   handleApprove(selectedApproval.id, 'Aprovado via modal de detalhes');
                   setSelectedApproval(null);
