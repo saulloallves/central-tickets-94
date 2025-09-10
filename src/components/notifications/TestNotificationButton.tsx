@@ -37,5 +37,14 @@ export const TestNotificationButton = () => {
       setIsTesting(false);
     }
   };
-  return;
+  return (
+    <Button
+      onClick={handleTestNotification}
+      disabled={isTesting}
+      variant="outline"
+      size="sm"
+    >
+      <Bug className={`h-4 w-4 ${isTesting ? 'animate-spin' : ''}`} />
+    </Button>
+  );
 };

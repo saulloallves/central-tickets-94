@@ -37,5 +37,14 @@ export const ProcessPendingButton = () => {
       setIsProcessing(false);
     }
   };
-  return;
+  return (
+    <Button
+      onClick={handleProcessPending}
+      disabled={isProcessing}
+      variant="outline"
+      size="sm"
+    >
+      <RefreshCw className={`h-4 w-4 ${isProcessing ? 'animate-spin' : ''}`} />
+    </Button>
+  );
 };
