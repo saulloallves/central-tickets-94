@@ -39,7 +39,13 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogHeader, 
+  DialogTitle 
+} from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTickets, type TicketFilters, type Ticket } from '@/hooks/useTickets';
 import { useTicketsEdgeFunctions } from '@/hooks/useTicketsEdgeFunctions';
