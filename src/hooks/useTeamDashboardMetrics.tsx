@@ -120,7 +120,7 @@ export const useTeamDashboardMetrics = () => {
         .from('crises')
         .select('id, status, is_active, created_at')
         .eq('is_active', true)
-        .in('status', ['aberto', 'investigando', 'comunicado', 'mitigado'])
+        .in('status', ['investigando', 'comunicado', 'mitigado'])
         .gte('created_at', twentyFourHoursAgo.toISOString())
         .limit(1);
 
