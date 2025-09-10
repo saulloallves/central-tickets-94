@@ -79,11 +79,11 @@ serve(async (req) => {
 
         console.log(`Successfully processed notification ${notification.id}`);
 
-        // Mark as processed
+        // Mark as sent (successful processing)
         await supabase
           .from('notifications_queue')
           .update({ 
-            status: 'processed', 
+            status: 'sent', 
             processed_at: new Date().toISOString()
           })
           .eq('id', notification.id);

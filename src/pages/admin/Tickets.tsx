@@ -17,6 +17,7 @@ import { TicketDetail } from '@/components/tickets/TicketDetail';
 
 import { CrisisBanner } from '@/components/tickets/CrisisBanner';
 import { NotificationButton } from '@/components/notifications/NotificationButton';
+import { ProcessPendingButton } from '@/components/notifications/ProcessPendingButton';
 import { useTicketsEdgeFunctions } from '@/hooks/useTicketsEdgeFunctions';
 import { useUserEquipes } from '@/hooks/useUserEquipes';
 
@@ -136,6 +137,7 @@ const Tickets = () => {
           
           <div className="flex flex-wrap gap-1 md:gap-2">
             <NotificationButton isExpanded={false} />
+            <ProcessPendingButton />
             
             <Button size="sm" onClick={() => setCreateDialogOpen(true)} className="flex-1 md:flex-none">
               <Plus className="h-4 w-4 md:mr-2" />
