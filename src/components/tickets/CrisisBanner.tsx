@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { CrisisModal } from './CrisisModal';
+import { NotificationSounds } from '@/lib/notification-sounds';
 
 interface Crisis {
   id: string;
@@ -88,9 +89,8 @@ export function CrisisBanner() {
     if (activeCrises.length > 0) {
       const newCrises = activeCrises.filter(c => !dismissedCrises.has(c.id));
       if (newCrises.length > 0) {
-        // Som de alerta específico para crises
-        const audio = new Audio('/sounds/crisis-alert.mp3');
-        audio.play().catch(e => console.log('Could not play crisis sound:', e));
+        // Som de alerta crítico usando sistema padronizado
+        NotificationSounds.playCriticalAlert();
       }
     }
   }, [activeCrises, dismissedCrises]);

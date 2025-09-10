@@ -66,12 +66,14 @@ export const useAIAnalysis = () => {
     try {
       const { data: user } = await supabase.auth.getUser();
       
-      const { data, error } = await supabase.rpc('activate_crisis', {
-        p_ticket_id: ticketId,
-        p_motivo: motivo,
-        p_criada_por: user.user?.id,
-        p_impacto_regional: null
-      });
+      // Escalate ticket to crisis priority - the trigger will handle crisis creation
+      const { data, error } = await supabase
+        .from('tickets')
+        .update({ 
+          prioridade: 'crise',
+          escalonamento_nivel: 5 
+        })
+        .eq('id', ticketId);
 
       if (error) {
         console.error('Error activating crisis:', error);
