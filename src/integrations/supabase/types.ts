@@ -404,6 +404,42 @@ export type Database = {
           },
         ]
       }
+      crisis_ai_settings: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          keywords_base: string[]
+          similarity_threshold: number
+          system_prompt: string
+          threshold_similares: number
+          updated_at: string
+          user_prompt: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          keywords_base?: string[]
+          similarity_threshold?: number
+          system_prompt?: string
+          threshold_similares?: number
+          updated_at?: string
+          user_prompt?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          keywords_base?: string[]
+          similarity_threshold?: number
+          system_prompt?: string
+          threshold_similares?: number
+          updated_at?: string
+          user_prompt?: string
+        }
+        Relationships: []
+      }
       documentos: {
         Row: {
           artigo_id: string

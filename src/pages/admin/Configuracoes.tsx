@@ -13,6 +13,7 @@ import { LogoSettings } from "@/components/configuracoes/LogoSettingsTab";
 
 import { WhatsAppManagementTab } from '@/components/configuracoes/WhatsAppManagementTab';
 import { AIAlertsTestTab } from '@/components/configuracoes/AIAlertsTestTab';
+import CrisisAISettingsTab from '@/components/configuracoes/CrisisAISettingsTab';
 
 export default function Configuracoes() {
   return (
@@ -37,7 +38,7 @@ export default function Configuracoes() {
         </div>
 
         <Tabs defaultValue="ia" className="w-full">
-          <TabsList className="grid w-full grid-cols-8 mb-6">
+          <TabsList className="grid w-full grid-cols-9 mb-6">
             <TabsTrigger value="logo" className="flex items-center gap-2">
               <Image className="h-4 w-4" />
               Logo
@@ -69,6 +70,10 @@ export default function Configuracoes() {
             <TabsTrigger value="auto-approvals" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               Aprovações
+            </TabsTrigger>
+            <TabsTrigger value="crisis-ai" className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4" />
+              IA Crises
             </TabsTrigger>
           </TabsList>
 
@@ -103,6 +108,10 @@ export default function Configuracoes() {
 
           <TabsContent value="auto-approvals" className="space-y-6 animate-fade-in">
             <AutoApprovalsTab />
+          </TabsContent>
+
+          <TabsContent value="crisis-ai" className="space-y-6 animate-fade-in">
+            <CrisisAISettingsTab />
           </TabsContent>
 
         </Tabs>

@@ -23,6 +23,14 @@ interface AIAnalysisResponse {
   reasoning: string;
 }
 
+interface CrisisAISettings {
+  system_prompt: string;
+  user_prompt: string;
+  threshold_similares: number;
+  keywords_base: string[];
+  similarity_threshold: number;
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -45,6 +53,49 @@ serve(async (req) => {
 
     const ticketData: TicketAnalysisRequest = await req.json();
     console.log('Analisando ticket:', ticketData.ticket_id, 'da equipe:', ticketData.equipe_id);
+
+    // Buscar configurações de IA para crises
+    const { data: settingsData, error: settingsError } = await supabase
+      .from('crisis_ai_settings')
+      .select('*')
+      .eq('ativo', true)
+      .single();
+
+    if (settingsError && settingsError.code !== 'PGRST116') {
+      console.error('Error fetching crisis AI settings:', settingsError);
+      throw new Error('Failed to fetch crisis AI settings');
+    }
+
+    // Usar configurações padrão se não encontrar na base
+    const settings: CrisisAISettings = settingsData || {
+      system_prompt: 'Você é um analista especializado em identificar padrões de problemas técnicos e relacionar tickets de suporte a problemas existentes.',
+      user_prompt: `NOVO TICKET:
+Título: {{TITULO}}
+Descrição: {{DESCRICAO}}
+Categoria: {{CATEGORIA}}
+
+PROBLEMAS EXISTENTES ATIVOS:
+{{EXISTING_PROBLEMS}}
+
+Analise se o novo ticket corresponde a algum dos problemas existentes.
+
+Responda APENAS com um JSON válido:
+{
+  "ticket_corresponde": "sim" ou "nao",
+  "id_problema_correspondente": "ID do problema se corresponde, null caso contrário",
+  "confianca": número de 0 a 100,
+  "reasoning": "explicação da análise"
+}`,
+      threshold_similares: 5,
+      keywords_base: ['sistema', 'caiu', 'fora', 'ar', 'indisponivel', 'indisponível', 'travou', 'lento', 'nao', 'não', 'funciona', 'funcionando', 'acesso', 'login', 'entrar', 'conectar', 'conexao', 'erro', 'falha', 'problema'],
+      similarity_threshold: 0.7
+    };
+
+    console.log('Using crisis AI settings:', { 
+      threshold: settings.threshold_similares, 
+      similarity_threshold: settings.similarity_threshold,
+      keywords_count: settings.keywords_base.length 
+    });
 
     // 1. Buscar crises ativas da mesma equipe (últimas 4 horas)
     const { data: activeProblems, error: problemsError } = await supabase
@@ -135,7 +186,8 @@ serve(async (req) => {
       const analysis = await analyzeTicketWithAI(
         openaiApiKey,
         ticketData,
-        activeProblems
+        activeProblems,
+        settings
       );
 
       if (analysis.ticket_corresponde === "sim" && analysis.id_problema_correspondente) {
@@ -153,9 +205,9 @@ serve(async (req) => {
     }
 
     // 7. Contar tickets similares para decidir se deve criar nova crise
-    const similarCount = await countSimilarTickets(supabase, ticketData, individualTickets);
+    const similarCount = await countSimilarTickets(supabase, ticketData, individualTickets, settings);
     
-    if (similarCount >= 5) {
+    if (similarCount >= settings.threshold_similares) {
       // DUPLA VERIFICAÇÃO: Buscar se já existe crise recente para esta equipe
       const { data: recentCrises } = await supabase
         .from('crises')
@@ -233,7 +285,7 @@ serve(async (req) => {
     return new Response(JSON.stringify({
       action: "no_action",
       similar_tickets_count: similarCount,
-      threshold: 5
+      threshold: settings.threshold_similares
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -250,37 +302,25 @@ serve(async (req) => {
 async function analyzeTicketWithAI(
   apiKey: string,
   ticket: TicketAnalysisRequest,
-  existingProblems: ExistingProblem[]
+  existingProblems: ExistingProblem[],
+  settings: CrisisAISettings
 ): Promise<AIAnalysisResponse> {
-  const systemPrompt = `Você é um analista especializado em identificar padrões de problemas técnicos e relacionar tickets de suporte a problemas existentes.
+  // Substituir placeholders no template
+  const existingProblemsText = existingProblems.map(p => 
+    `ID: ${p.id}\nTítulo: ${p.titulo}\nTickets relacionados: ${p.tickets_count}`
+  ).join('\n\n');
 
-Sua tarefa é determinar se um novo ticket corresponde a algum problema já identificado e ativo.
+  const userPrompt = settings.user_prompt
+    .replace('{{TITULO}}', ticket.titulo)
+    .replace('{{DESCRICAO}}', ticket.descricao_problema)
+    .replace('{{CATEGORIA}}', ticket.categoria || 'N/A')
+    .replace('{{EXISTING_PROBLEMS}}', existingProblemsText);
 
-CRITÉRIOS PARA CORRESPONDÊNCIA:
-- Problemas de sistema/infraestrutura com sintomas similares
-- Mesma causa raiz aparente (ex: indisponibilidade, lentidão, falhas de conexão)
-- Mesmo tipo de impacto nos usuários
-- Timeframe próximo (problemas relacionados no tempo)
-
-RETORNE SEMPRE UM JSON VÁLIDO com esta estrutura:
-{
-  "ticket_corresponde": "sim" ou "nao",
-  "id_problema_correspondente": "ID do problema se corresponde, null caso contrário",
-  "confianca": número de 0 a 100,
-  "reasoning": "explicação da análise"
-}`;
-
-  const userPrompt = `NOVO TICKET:
-Título: ${ticket.titulo}
-Descrição: ${ticket.descricao_problema}
-Categoria: ${ticket.categoria || 'N/A'}
-
-PROBLEMAS EXISTENTES ATIVOS:
-${existingProblems.map(p => 
-  `ID: ${p.id}\nTítulo: ${p.titulo}\nTickets relacionados: ${p.tickets_count}`
-).join('\n\n')}
-
-Analise se o novo ticket corresponde a algum dos problemas existentes.`;
+  console.log('AI Analysis - Using prompts:', {
+    system_prompt_length: settings.system_prompt.length,
+    user_prompt_length: userPrompt.length,
+    existing_problems_count: existingProblems.length
+  });
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -291,7 +331,7 @@ Analise se o novo ticket corresponde a algum dos problemas existentes.`;
     body: JSON.stringify({
       model: 'gpt-4.1-2025-04-14',
       messages: [
-        { role: 'system', content: systemPrompt },
+        { role: 'system', content: settings.system_prompt },
         { role: 'user', content: userPrompt }
       ],
       max_completion_tokens: 500,
@@ -362,7 +402,8 @@ async function linkTicketToCrise(
 async function countSimilarTickets(
   supabase: any,
   newTicket: TicketAnalysisRequest,
-  individualTickets: any[]
+  individualTickets: any[],
+  settings: CrisisAISettings
 ): Promise<number> {
   console.log('🔍 Analisando similaridade para ticket:', newTicket.descricao_problema);
   console.log('📋 Tickets individuais encontrados:', individualTickets.length);
@@ -371,12 +412,8 @@ async function countSimilarTickets(
   const currentDescription = newTicket.descricao_problema.toLowerCase();
   const currentTitle = (newTicket.titulo || '').toLowerCase();
   
-  // Palavras-chave que indicam problemas similares de sistema
-  const systemIssueKeywords = [
-    'sistema', 'caiu', 'fora', 'ar', 'indisponivel', 'indisponibilidade',
-    'travou', 'lento', 'nao', 'não', 'funciona', 'funcionando', 'acesso',
-    'login', 'entrar', 'conectar', 'conexao', 'erro', 'falha', 'problema'
-  ];
+  // Usar palavras-chave das configurações
+  const systemIssueKeywords = settings.keywords_base;
   
   // Detectar palavras-chave no ticket atual
   const currentKeywords = systemIssueKeywords.filter(keyword => 
