@@ -183,22 +183,23 @@ export function AutoApprovalsTab() {
         return <Badge variant="default" className="gap-1 bg-green-600"><CheckCircle className="h-3 w-3" />Aprovado</Badge>;
       case 'rejected':
         return <Badge variant="destructive" className="gap-1"><XCircle className="h-3 w-3" />Rejeitado</Badge>;
-      case 'processed':
-        return <Badge variant="default" className="gap-1 bg-blue-600"><FileText className="h-3 w-3" />Processado</Badge>;
+      case 'processing':
+        return <Badge variant="default" className="gap-1 bg-orange-600"><Loader2 className="h-3 w-3 animate-spin" />Processando</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
   };
   const filteredApprovals = approvals.filter(approval => {
     if (activeTab === 'all') return true;
+    if (activeTab === 'processing') return approval.status === 'processing';
     return approval.status === activeTab;
   });
   return <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Aprovações Automáticas</h2>
+          <h2 className="text-2xl font-bold">Aprovações</h2>
           <p className="text-muted-foreground">
-            Gerencie respostas que foram processadas pela IA e podem virar documentação
+            Gerencie conteúdos que passaram pela moderação da IA e aguardam aprovação final
           </p>
         </div>
       </div>
@@ -206,9 +207,9 @@ export function AutoApprovalsTab() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="pending">Pendentes</TabsTrigger>
-          <TabsTrigger value="approved">Aprovadas</TabsTrigger>
-          <TabsTrigger value="rejected">Rejeitadas</TabsTrigger>
-          <TabsTrigger value="processed">Processadas</TabsTrigger>
+          <TabsTrigger value="approved">Aprovados</TabsTrigger>
+          <TabsTrigger value="rejected">Rejeitados</TabsTrigger>
+          <TabsTrigger value="processing">Processando</TabsTrigger>
           <TabsTrigger value="all">Todas</TabsTrigger>
         </TabsList>
 
@@ -223,7 +224,11 @@ export function AutoApprovalsTab() {
                 <FileText className="h-12 w-12 text-muted-foreground mb-4" />
                 <h3 className="text-lg font-medium mb-2">Nenhuma aprovação encontrada</h3>
                 <p className="text-muted-foreground text-center">
-                  {activeTab === 'pending' ? 'Não há aprovações pendentes no momento. Respostas processadas pela IA aparecerão aqui.' : `Não há aprovações com status "${activeTab}".`}
+                  {activeTab === 'pending' && 'Não há conteúdos pendentes de aprovação no momento. Conteúdos aprovados pela moderação aparecerão aqui.'}
+                  {activeTab === 'approved' && 'Não há conteúdos aprovados. Conteúdos que viraram documentos ou atualizaram existentes aparecerão aqui.'}
+                  {activeTab === 'rejected' && 'Não há conteúdos rejeitados. Conteúdos rejeitados pela moderação ou por você aparecerão aqui.'}
+                  {activeTab === 'processing' && 'Não há conteúdos sendo processados. Tickets recém-concluídos sendo processados pela IA aparecerão aqui.'}
+                  {activeTab === 'all' && 'Não há aprovações registradas no sistema.'}
                 </p>
               </CardContent>
             </Card> : <div className="grid gap-4">
@@ -286,9 +291,9 @@ export function AutoApprovalsTab() {
       <Dialog open={!!selectedApproval} onOpenChange={() => setSelectedApproval(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Detalhes da Aprovação Automática</DialogTitle>
+            <DialogTitle>Detalhes da Aprovação</DialogTitle>
             <DialogDescription>
-              Análise completa da resposta processada pela IA
+              Análise completa do conteúdo processado e moderado pela IA
             </DialogDescription>
           </DialogHeader>
           
