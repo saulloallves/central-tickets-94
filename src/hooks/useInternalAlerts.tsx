@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useRole } from '@/hooks/useRole';
+import { useAuth } from '@/hooks/useAuth';
 import { NotificationSounds } from '@/lib/notification-sounds';
 
 export interface InternalAlert {
@@ -38,6 +39,7 @@ export const useInternalAlerts = () => {
   const [alerts, setAlerts] = useState<InternalAlert[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
   const { isAdmin, hasRole } = useRole();
 
   const fetchAlerts = async (status = 'pending') => {
@@ -189,7 +191,25 @@ export const useInternalAlerts = () => {
     }
   };
 
-  const setupRealtimeAlerts = () => {
+  const setupRealtimeAlerts = async () => {
+    // Buscar as equipes do usuário para filtrar notificações
+    let userEquipeIds: string[] = [];
+    
+    if (user?.id) {
+      try {
+        const { data: userEquipes } = await supabase
+          .from('equipe_members')
+          .select('equipe_id')
+          .eq('user_id', user.id)
+          .eq('ativo', true);
+        
+        userEquipeIds = userEquipes?.map(eq => eq.equipe_id) || [];
+        console.log('User equipes for notifications:', userEquipeIds);
+      } catch (error) {
+        console.error('Error fetching user equipes for notifications:', error);
+      }
+    }
+
     const channel = supabase
       .channel('internal-alerts')
       .on(
@@ -200,9 +220,43 @@ export const useInternalAlerts = () => {
           table: 'notifications_queue',
           filter: 'alert_level=neq.null'
         },
-        (payload) => {
+        async (payload) => {
           console.log('New internal alert received:', payload.new);
           const newAlert = payload.new as InternalAlert;
+          
+          // Filtrar por equipe se o alerta tem ticket_id
+          if (newAlert.ticket_id && userEquipeIds.length > 0) {
+            try {
+              const { data: ticketData } = await supabase
+                .from('tickets')
+                .select(`
+                  equipe_responsavel_id, 
+                  codigo_ticket, 
+                  unidade_id,
+                  equipes:equipe_responsavel_id (
+                    nome
+                  )
+                `)
+                .eq('id', newAlert.ticket_id)
+                .single();
+              
+              if (ticketData?.equipe_responsavel_id && !userEquipeIds.includes(ticketData.equipe_responsavel_id)) {
+                console.log(`🔇 Notification filtered: User not in equipe ${ticketData.equipe_responsavel_id}`);
+                return; // Usuário não faz parte da equipe responsável
+              }
+              
+              // Adicionar dados do ticket ao payload para exibir informações mais detalhadas
+              newAlert.payload = {
+                ...newAlert.payload,
+                codigo_ticket: ticketData?.codigo_ticket,
+                unidade_id: ticketData?.unidade_id,
+                equipe_nome: (ticketData?.equipes as any)?.nome
+              };
+            } catch (error) {
+              console.error('Error checking ticket equipe:', error);
+              // Em caso de erro, continua com a notificação
+            }
+          }
           
           // Check if user should see this notification based on type
           if (newAlert.type === 'internal_access_request') {
@@ -232,20 +286,47 @@ export const useInternalAlerts = () => {
               variant: "destructive",
             });
           }
-          // Regular alerts
+          // Regular alerts - incluindo ticket_created, sla_half, sla_breach, etc.
           else {
             let soundType: 'success' | 'warning' | 'critical' | 'info' = 'info';
-            switch (newAlert.alert_level) {
-              case 'critical':
-                soundType = 'critical';
+            let title = "";
+            let description = "";
+            
+            const equipeInfo = newAlert.payload?.equipe_nome ? ` [${newAlert.payload.equipe_nome}]` : '';
+            
+            switch (newAlert.type) {
+              case 'ticket_created':
+                soundType = 'info';
+                title = "🎫 Novo Ticket";
+                description = `Ticket ${newAlert.payload?.codigo_ticket || ''}${equipeInfo} foi criado`;
                 break;
-              case 'warning':
+              case 'sla_half':
                 soundType = 'warning';
+                title = "⏰ SLA 50%";
+                description = `Ticket ${newAlert.payload?.codigo_ticket || ''}${equipeInfo} atingiu 50% do prazo`;
+                break;
+              case 'sla_breach':
+                soundType = 'critical';
+                title = "🚨 SLA Vencido";
+                description = `Ticket ${newAlert.payload?.codigo_ticket || ''}${equipeInfo} está vencido`;
+                break;
+              case 'crisis':
+                soundType = 'critical';
+                title = "🔥 Crise Detectada";
+                description = `Ticket ${newAlert.payload?.codigo_ticket || ''}${equipeInfo} em crise`;
                 break;
               default:
                 soundType = 'info';
+                title = "🔔 Notificação";
+                description = newAlert.type;
             }
+            
             NotificationSounds.playNotificationSound(soundType);
+            toast({
+              title,
+              description,
+              variant: newAlert.alert_level === 'critical' ? "destructive" : "default",
+            });
           }
           
           // Refresh alerts list with throttling to prevent rapid updates
@@ -282,12 +363,16 @@ export const useInternalAlerts = () => {
       
       const initializeAlerts = async () => {
         await fetchAlerts();
+        const unsubscribe = await setupRealtimeAlerts();
+        return unsubscribe;
       };
       
-      initializeAlerts();
-      const unsubscribe = setupRealtimeAlerts();
-      
-      return unsubscribe;
+      initializeAlerts().then(unsubscribe => {
+        // Store cleanup function for later use
+        if (unsubscribe && typeof unsubscribe === 'function') {
+          return unsubscribe;
+        }
+      });
     } else {
       // Just fetch latest data without full initialization
       fetchAlerts();
