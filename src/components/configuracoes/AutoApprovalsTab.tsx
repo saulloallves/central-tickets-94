@@ -191,7 +191,25 @@ export function AutoApprovalsTab() {
   };
   const filteredApprovals = approvals.filter(approval => {
     if (activeTab === 'all') return true;
-    return approval.status === activeTab;
+    
+    // Mapear os status corretamente:
+    // 'pending' aba = status 'approved' (aprovado pela moderação, aguardando decisão)
+    // 'approved' aba = status 'processed' (já virou documento)
+    // 'rejected' aba = status 'rejected' (rejeitado pela moderação)
+    // 'processing' aba = status 'pending' (sendo processado pela IA)
+    
+    switch (activeTab) {
+      case 'pending':
+        return approval.status === 'approved'; // Aprovado pela moderação, aguardando decisão
+      case 'approved':
+        return approval.status === 'processed'; // Já virou documento
+      case 'rejected':
+        return approval.status === 'rejected'; // Rejeitado pela moderação
+      case 'processing':
+        return approval.status === 'pending'; // Sendo processado
+      default:
+        return approval.status === activeTab;
+    }
   });
   return <div className="space-y-6">
       <div className="flex items-center justify-between">
