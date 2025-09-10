@@ -287,16 +287,6 @@ export function AutoApprovalsTab() {
                       </p>
                     </div>
 
-                    {approval.status === 'approved' && <div className="flex gap-2 pt-2">
-                        <Button variant="default" size="sm" onClick={() => handleApprove(approval.id, 'Aprovado para criação de documento')} className="bg-green-600 hover:bg-green-700">
-                          <CheckCircle className="h-4 w-4 mr-2" />
-                          Aprovar
-                        </Button>
-                        <Button variant="destructive" size="sm" onClick={() => handleReject(approval.id, 'Rejeitado - não adequado para documentação')}>
-                          <XCircle className="h-4 w-4 mr-2" />
-                          Rejeitar
-                        </Button>
-                      </div>}
 
                   </CardContent>
                 </Card>)}
