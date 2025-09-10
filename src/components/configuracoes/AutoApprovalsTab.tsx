@@ -191,7 +191,6 @@ export function AutoApprovalsTab() {
   };
   const filteredApprovals = approvals.filter(approval => {
     if (activeTab === 'all') return true;
-    if (activeTab === 'processing') return approval.status === 'processing';
     return approval.status === activeTab;
   });
   return <div className="space-y-6">
