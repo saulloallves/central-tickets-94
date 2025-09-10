@@ -25,7 +25,7 @@ export function CrisisBanner() {
   useEffect(() => {
     if (!user) return;
 
-    // Buscar crises ativas das equipes do usuário
+    // Buscar crises ativas das equipes do usuário + crises globais
     const fetchActiveCrises = async () => {
       const { data: userTeams } = await supabase
         .from('equipe_members')
@@ -33,22 +33,28 @@ export function CrisisBanner() {
         .eq('user_id', user.id)
         .eq('ativo', true);
 
-      if (!userTeams || userTeams.length === 0) return;
+      const teamIds = userTeams?.map(t => t.equipe_id) || [];
 
-      const teamIds = userTeams.map(t => t.equipe_id);
-
-      const { data: crises, error } = await supabase
+      // Buscar crises das equipes do usuário OU crises globais (sem equipe específica)
+      let query = supabase
         .from('crises')
         .select('id, titulo, status, created_at, equipe_id')
-        .in('equipe_id', teamIds)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
+        .eq('is_active', true);
+
+      if (teamIds.length > 0) {
+        query = query.or(`equipe_id.in.(${teamIds.join(',')}),equipe_id.is.null`);
+      } else {
+        query = query.is('equipe_id', null);
+      }
+
+      const { data: crises, error } = await query.order('created_at', { ascending: false });
 
       if (error) {
         console.error('Erro ao buscar crises ativas:', error);
         return;
       }
 
+      console.log('🚨 Crises encontradas:', crises);
       setActiveCrises(crises || []);
     };
 
