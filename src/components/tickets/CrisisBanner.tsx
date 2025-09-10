@@ -61,7 +61,9 @@ export function CrisisBanner() {
 
     fetchActiveCrises();
 
-    // Subscription para updates em tempo real de crises
+    // Subscription para updates em tempo real de crises com debounce
+    let fetchTimeout: NodeJS.Timeout;
+    
     const channel = supabase
       .channel('crisis-realtime-updates')
       .on(
@@ -73,13 +75,23 @@ export function CrisisBanner() {
         },
         (payload) => {
           console.log('Crisis realtime update:', payload);
-          // Atualizar imediatamente quando houver mudanças
-          fetchActiveCrises();
+          
+          // Debounce para evitar múltiplas chamadas simultâneas
+          if (fetchTimeout) {
+            clearTimeout(fetchTimeout);
+          }
+          
+          fetchTimeout = setTimeout(() => {
+            fetchActiveCrises();
+          }, 500); // Aguardar 500ms para agrupar mudanças simultâneas
         }
       )
       .subscribe();
 
     return () => {
+      if (fetchTimeout) {
+        clearTimeout(fetchTimeout);
+      }
       supabase.removeChannel(channel);
     };
   }, [user]);

@@ -156,42 +156,68 @@ serve(async (req) => {
     const similarCount = await countSimilarTickets(supabase, ticketData, individualTickets);
     
     if (similarCount >= 5) {
-      // Verificar mais uma vez se não foi criada uma crise nos últimos minutos
+      // DUPLA VERIFICAÇÃO: Buscar se já existe crise recente para esta equipe
       const { data: recentCrises } = await supabase
         .from('crises')
-        .select('id, titulo, similar_terms')
+        .select('id, titulo, similar_terms, problem_signature')
         .eq('equipe_id', ticketData.equipe_id)
         .eq('is_active', true)
-        .gte('created_at', new Date(Date.now() - 10 * 60 * 1000).toISOString())
+        .gte('created_at', new Date(Date.now() - 15 * 60 * 1000).toISOString()) // Últimos 15 minutos
         .order('created_at', { ascending: false });
 
       // Se há uma crise muito recente com termos similares, vincular a ela
       if (recentCrises && recentCrises.length > 0) {
-        const recentCrisis = recentCrises[0];
         const currentKeywords = ticketData.descricao_problema.toLowerCase().split(' ');
         
-        if (recentCrisis.similar_terms) {
-          const hasMatchingTerms = recentCrisis.similar_terms.some(term => 
-            currentKeywords.some(keyword => 
-              keyword.includes(term.toLowerCase()) || term.toLowerCase().includes(keyword)
-            )
-          );
-          
-          if (hasMatchingTerms) {
-            await linkTicketToCrise(supabase, ticketData.ticket_id, recentCrisis.id);
+        for (const recentCrisis of recentCrises) {
+          if (recentCrisis.similar_terms) {
+            const hasMatchingTerms = recentCrisis.similar_terms.some(term => 
+              currentKeywords.some(keyword => 
+                keyword.includes(term.toLowerCase()) || term.toLowerCase().includes(keyword)
+              )
+            );
             
-            return new Response(JSON.stringify({
-              action: "linked_to_recent",
-              crise_id: recentCrisis.id,
-              reasoning: `Vinculado à crise recente: ${recentCrisis.titulo}`
-            }), {
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            });
+            if (hasMatchingTerms) {
+              console.log(`🔗 Vinculando à crise recente: ${recentCrisis.titulo} (ID: ${recentCrisis.id})`);
+              await linkTicketToCrise(supabase, ticketData.ticket_id, recentCrisis.id);
+              
+              return new Response(JSON.stringify({
+                action: "linked_to_recent",
+                crise_id: recentCrisis.id,
+                reasoning: `Vinculado à crise recente: ${recentCrisis.titulo}`
+              }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              });
+            }
           }
         }
       }
 
-      // Criar nova crise apenas se não há crises similares recentes
+      // VERIFICAÇÃO FINAL: Buscar usando signature única para evitar corrida de condição
+      const problemSignature = `${ticketData.equipe_id}_${ticketData.categoria || 'geral'}_sistema`;
+      const { data: signatureCheck } = await supabase
+        .from('crises')
+        .select('id, titulo')
+        .eq('equipe_id', ticketData.equipe_id)
+        .eq('problem_signature', problemSignature)
+        .eq('is_active', true)
+        .gte('created_at', new Date(Date.now() - 30 * 60 * 1000).toISOString())
+        .single();
+
+      if (signatureCheck) {
+        console.log(`🔗 Crise com signature encontrada: ${signatureCheck.titulo} (ID: ${signatureCheck.id})`);
+        await linkTicketToCrise(supabase, ticketData.ticket_id, signatureCheck.id);
+        
+        return new Response(JSON.stringify({
+          action: "linked_to_signature_match",
+          crise_id: signatureCheck.id,
+          reasoning: `Vinculado à crise existente por signature: ${signatureCheck.titulo}`
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Criar nova crise apenas se passou por todas as verificações
       const newCriseId = await createNewCrise(supabase, ticketData, similarCount);
       
       return new Response(JSON.stringify({
@@ -406,7 +432,7 @@ async function createNewCrise(
       titulo: `Crise automática: ${ticket.titulo}`,
       descricao: `Crise detectada automaticamente devido a ${similarCount} tickets similares`,
       equipe_id: ticket.equipe_id,
-      problem_signature: `problema_${ticket.categoria || 'geral'}_${Date.now()}`,
+      problem_signature: `${ticket.equipe_id}_${ticket.categoria || 'geral'}_sistema`,
       similar_terms: problemKeywords,
       status: 'aberto',
       is_active: true,
