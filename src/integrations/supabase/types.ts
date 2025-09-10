@@ -1065,6 +1065,82 @@ export type Database = {
           },
         ]
       }
+      internal_notification_recipients: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          notification_id: string | null
+          read_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          notification_id?: string | null
+          read_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          notification_id?: string | null
+          read_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "internal_notification_recipients_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "internal_notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      internal_notifications: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          equipe_id: string | null
+          id: string
+          message: string | null
+          payload: Json | null
+          title: string
+          type: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          equipe_id?: string | null
+          id?: string
+          message?: string | null
+          payload?: Json | null
+          title: string
+          type: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          equipe_id?: string | null
+          id?: string
+          message?: string | null
+          payload?: Json | null
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "internal_notifications_equipe_id_fkey"
+            columns: ["equipe_id"]
+            isOneToOne: false
+            referencedRelation: "equipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       knowledge_article_usage: {
         Row: {
           article_id: string

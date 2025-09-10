@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useRole } from '@/hooks/useRole';
 import { useAuth } from '@/hooks/useAuth';
+import { useCreateInternalNotification } from './useCreateInternalNotification';
 import { NotificationSounds } from '@/lib/notification-sounds';
 
 export interface InternalAlert {

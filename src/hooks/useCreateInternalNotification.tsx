@@ -1,0 +1,53 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from './use-toast';
+
+interface CreateNotificationParams {
+  title: string;
+  message?: string;
+  type: 'ticket' | 'sla' | 'alert' | 'info' | 'crisis';
+  equipe_id?: string;
+  recipients?: string[]; // Optional: if not provided, will auto-derive from equipe_id
+  payload?: Record<string, any>;
+}
+
+export const useCreateInternalNotification = () => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (params: CreateNotificationParams) => {
+      const { data, error } = await supabase.functions.invoke('create-internal-notification', {
+        body: params,
+      });
+
+      if (error) {
+        console.error('Error creating notification:', error);
+        throw error;
+      }
+
+      return data;
+    },
+    onSuccess: (data) => {
+      console.log('Notification created successfully:', data);
+      
+      // Invalidate all notification queries to trigger refetch
+      queryClient.invalidateQueries({ 
+        queryKey: ['internal-notifications'] 
+      });
+
+      toast({
+        title: "Notificação enviada",
+        description: `Notificação enviada para ${data.recipients_count} usuários`,
+      });
+    },
+    onError: (error: any) => {
+      console.error('Failed to create notification:', error);
+      toast({
+        title: "Erro",
+        description: error.message || "Não foi possível enviar a notificação",
+        variant: "destructive",
+      });
+    },
+  });
+};
