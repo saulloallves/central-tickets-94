@@ -184,7 +184,7 @@ export const useTeamDashboardMetrics = () => {
     if (user && userEquipes.length > 0) {
       fetchAllMetrics();
     }
-  }, [user, userEquipes]);
+  }, [user, userEquipes.length]); // Usar .length em vez do array completo
 
   return {
     teamMetrics,

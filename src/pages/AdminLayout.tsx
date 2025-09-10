@@ -35,9 +35,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   // Mark as not first render after initial load
   useEffect(() => {
-    if (!authLoading && !roleLoading && !equipeLoading && !requestLoading) {
-      setIsFirstRender(false);
-    }
+    const timer = setTimeout(() => {
+      if (!authLoading && !roleLoading && !equipeLoading && !requestLoading) {
+        setIsFirstRender(false);
+      }
+    }, 100); // Pequeno delay para evitar flicker
+
+    return () => clearTimeout(timer);
   }, [authLoading, roleLoading, equipeLoading, requestLoading]);
 
   // Show loading spinner ONLY on first render or auth loading
