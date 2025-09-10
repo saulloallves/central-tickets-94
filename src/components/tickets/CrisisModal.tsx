@@ -162,29 +162,22 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
   const handleResolveCrisis = async () => {
     try {
       setLoading(true);
+      console.log('🔄 Iniciando resolução da crise:', crisis.id);
 
-      // Atualizar status da crise
-      const { error: crisisError } = await supabase
-        .from('crises')
-        .update({
-          status: 'encerrado',
-          is_active: false,
-          resolved_at: new Date().toISOString()
-        })
-        .eq('id', crisis.id);
+      // Usar função database para resolver crise de forma transacional
+      console.log('📝 Chamando função resolve_crise_close_tickets...');
+      const { error } = await supabase.rpc('resolve_crise_close_tickets', {
+        p_crise_id: crisis.id,
+        p_mensagem: 'Crise resolvida através do painel administrativo',
+        p_by: (await supabase.auth.getUser()).data.user?.id
+      });
 
-      if (crisisError) throw crisisError;
-
-      // Resolver todos os tickets vinculados
-      const ticketIds = tickets.map(t => t.id);
-      if (ticketIds.length > 0) {
-        const { error: ticketsError } = await supabase
-          .from('tickets')
-          .update({ status: 'concluido' })
-          .in('id', ticketIds);
-
-        if (ticketsError) throw ticketsError;
+      if (error) {
+        console.error('❌ Erro ao resolver crise via RPC:', error);
+        throw error;
       }
+      
+      console.log('✅ Crise resolvida com sucesso via RPC');
 
       toast({
         title: "Crise Resolvida",
@@ -192,14 +185,53 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
         variant: "default"
       });
 
+      console.log('🎉 Crise resolvida com sucesso, fechando modal');
       onClose();
     } catch (error) {
-      console.error('Erro ao resolver crise:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao resolver crise",
-        variant: "destructive"
-      });
+      console.error('❌ Erro geral ao resolver crise:', error);
+      
+      // Fallback para método manual se a função RPC falhar
+      try {
+        console.log('🔄 Tentando método manual de resolução...');
+        
+        // Atualizar status da crise manualmente
+        const { error: crisisError } = await supabase
+          .from('crises')
+          .update({
+            status: 'encerrado',
+            is_active: false,
+            resolved_at: new Date().toISOString()
+          })
+          .eq('id', crisis.id);
+
+        if (crisisError) throw crisisError;
+
+        // Resolver todos os tickets vinculados
+        const ticketIds = tickets.map(t => t.id);
+        if (ticketIds.length > 0) {
+          const { error: ticketsError } = await supabase
+            .from('tickets')
+            .update({ status: 'concluido' })
+            .in('id', ticketIds);
+
+          if (ticketsError) throw ticketsError;
+        }
+
+        toast({
+          title: "Crise Resolvida",
+          description: `Crise e ${tickets.length} tickets foram resolvidos com sucesso (método manual)`,
+          variant: "default"
+        });
+
+        onClose();
+      } catch (fallbackError) {
+        console.error('❌ Erro no método manual:', fallbackError);
+        toast({
+          title: "Erro",
+          description: `Erro ao resolver crise: ${fallbackError.message || 'Erro desconhecido'}`,
+          variant: "destructive"
+        });
+      }
     } finally {
       setLoading(false);
     }
