@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useTicketNotifications } from '@/hooks/useTicketNotifications';
 import { Plus, Filter, Calendar, Users, Clock, AlertTriangle } from 'lucide-react';
@@ -14,33 +13,38 @@ import { useToast } from '@/hooks/use-toast';
 import { TicketsKanban } from '@/components/tickets/TicketsKanban';
 import { CreateTicketDialog } from '@/components/tickets/CreateTicketDialog';
 import { TicketDetail } from '@/components/tickets/TicketDetail';
-
 import { CrisisBanner } from '@/components/tickets/CrisisBanner';
 import { NotificationButton } from '@/components/notifications/NotificationButton';
 import { ProcessPendingButton } from '@/components/notifications/ProcessPendingButton';
 import { TestNotificationButton } from '@/components/notifications/TestNotificationButton';
 import { useTicketsEdgeFunctions } from '@/hooks/useTicketsEdgeFunctions';
 import { useUserEquipes } from '@/hooks/useUserEquipes';
-
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
-
 interface Equipe {
   id: string;
   nome: string;
   ativo: boolean;
 }
-
 const Tickets = () => {
-  const { isAdmin, isSupervisor } = useRole();
-  const { userEquipes } = useUserEquipes();
-  const { user } = useAuth();
-  const { toast } = useToast();
-  
+  const {
+    isAdmin,
+    isSupervisor
+  } = useRole();
+  const {
+    userEquipes
+  } = useUserEquipes();
+  const {
+    user
+  } = useAuth();
+  const {
+    toast
+  } = useToast();
+
   // Initialize notification system but disable its realtime (we'll handle it ourselves)
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [ticketModalOpen, setTicketModalOpen] = useState(false);
-  
+
   // Listen for notification ticket modal events
   useEffect(() => {
     const handleOpenTicketModal = (event: CustomEvent) => {
@@ -48,14 +52,11 @@ const Tickets = () => {
       setSelectedTicketId(event.detail.ticketId);
       setTicketModalOpen(true);
     };
-    
     window.addEventListener('openTicketModal', handleOpenTicketModal as EventListener);
-    
     return () => {
       window.removeEventListener('openTicketModal', handleOpenTicketModal as EventListener);
     };
   }, []);
-  
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [equipes, setEquipes] = useState<Equipe[]>([]);
@@ -68,11 +69,10 @@ const Tickets = () => {
     status_sla: 'all',
     equipe_id: 'all'
   });
-
-  const { 
+  const {
     tickets,
     loading,
-    ticketStats, 
+    ticketStats,
     refetch,
     createTicket,
     updateTicket,
@@ -84,12 +84,10 @@ const Tickets = () => {
   useEffect(() => {
     const fetchEquipes = async () => {
       try {
-        const { data, error } = await supabase
-          .from('equipes')
-          .select('id, nome, ativo')
-          .eq('ativo', true)
-          .order('nome');
-
+        const {
+          data,
+          error
+        } = await supabase.from('equipes').select('id, nome, ativo').eq('ativo', true).order('nome');
         if (!error && data) {
           setEquipes(data);
         }
@@ -97,7 +95,6 @@ const Tickets = () => {
         console.error('Error fetching equipes:', error);
       }
     };
-
     fetchEquipes();
   }, []);
 
@@ -106,21 +103,20 @@ const Tickets = () => {
   const handleTicketSelect = (ticketId: string) => {
     setSelectedTicketId(ticketId);
   };
-
   const handleCloseDetail = () => {
     setSelectedTicketId(null);
   };
-
   const getSLABadgeVariant = (status: string) => {
     switch (status) {
-      case 'vencido': return 'destructive';
-      case 'alerta': return 'outline';
-      default: return 'secondary';
+      case 'vencido':
+        return 'destructive';
+      case 'alerta':
+        return 'outline';
+      default:
+        return 'secondary';
     }
   };
-
-  return (
-    <div className="relative">
+  return <div className="relative">
       {/* New Crisis Alert Banner */}
       {/* Sistema de crises removido */}
       
@@ -141,10 +137,7 @@ const Tickets = () => {
             <ProcessPendingButton />
             <TestNotificationButton />
             
-            <Button size="sm" onClick={() => setCreateDialogOpen(true)} className="flex-1 md:flex-none">
-              <Plus className="h-4 w-4 md:mr-2" />
-              <span className="hidden md:inline">Novo Ticket</span>
-            </Button>
+            
           </div>
         </div>
 
@@ -185,18 +178,18 @@ const Tickets = () => {
         </div>
 
         {/* Collapsible Filters */}
-        {showFilters && (
-          <Card className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border border-border/40">
+        {showFilters && <Card className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border border-border/40">
             <CardContent className="p-4">
               <div className="flex gap-4 items-center flex-wrap">
-                <Input
-                  placeholder="Buscar tickets..."
-                  value={filters.search}
-                  onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                  className="max-w-xs"
-                />
+                <Input placeholder="Buscar tickets..." value={filters.search} onChange={e => setFilters(prev => ({
+              ...prev,
+              search: e.target.value
+            }))} className="max-w-xs" />
                 
-                <Select value={filters.prioridade} onValueChange={(value) => setFilters(prev => ({ ...prev, prioridade: value }))}>
+                <Select value={filters.prioridade} onValueChange={value => setFilters(prev => ({
+              ...prev,
+              prioridade: value
+            }))}>
                   <SelectTrigger className="w-40">
                     <SelectValue placeholder="Prioridade" />
                   </SelectTrigger>
@@ -210,58 +203,44 @@ const Tickets = () => {
                   </SelectContent>
                 </Select>
                 
-                <Select value={filters.equipe_id} onValueChange={(value) => setFilters(prev => ({ ...prev, equipe_id: value }))}>
+                <Select value={filters.equipe_id} onValueChange={value => setFilters(prev => ({
+              ...prev,
+              equipe_id: value
+            }))}>
                   <SelectTrigger className="w-48">
                     <SelectValue placeholder="Equipe" />
                   </SelectTrigger>
                   <SelectContent className="bg-background border-border z-50 shadow-lg">
                     <SelectItem value="all">Todas Equipes</SelectItem>
-                    {userEquipes.length > 0 && (
-                      <SelectItem value="minhas_equipes">Minhas Equipes</SelectItem>
-                    )}
-                    {equipes.map((equipe) => (
-                      <SelectItem key={equipe.id} value={equipe.id}>
+                    {userEquipes.length > 0 && <SelectItem value="minhas_equipes">Minhas Equipes</SelectItem>}
+                    {equipes.map(equipe => <SelectItem key={equipe.id} value={equipe.id}>
                         {equipe.nome}
-                      </SelectItem>
-                    ))}
+                      </SelectItem>)}
                   </SelectContent>
                 </Select>
 
-                {(isAdmin || isSupervisor) && (
-                  <Select value={filters.unidade_id} onValueChange={(value) => setFilters(prev => ({ ...prev, unidade_id: value }))}>
+                {(isAdmin || isSupervisor) && <Select value={filters.unidade_id} onValueChange={value => setFilters(prev => ({
+              ...prev,
+              unidade_id: value
+            }))}>
                     <SelectTrigger className="w-40">
                       <SelectValue placeholder="Unidade" />
                     </SelectTrigger>
                     <SelectContent className="bg-background border-border z-50 shadow-lg">
                       <SelectItem value="all">Todas</SelectItem>
                     </SelectContent>
-                  </Select>
-                )}
+                  </Select>}
               </div>
             </CardContent>
-          </Card>
-        )}
+          </Card>}
 
         {/* Main Content */}
-        <TicketsKanban 
-          tickets={tickets}
-          loading={loading}
-          onTicketSelect={handleTicketSelect}
-          selectedTicketId={selectedTicketId}
-          equipes={equipes}
-          showFilters={showFilters}
-          onToggleFilters={() => setShowFilters(!showFilters)}
-          onChangeStatus={async (ticketId, fromStatus, toStatus, beforeId, afterId) => {
-            const success = await moveTicket(ticketId, toStatus, beforeId, afterId);
-            return success;
-          }}
-        />
+        <TicketsKanban tickets={tickets} loading={loading} onTicketSelect={handleTicketSelect} selectedTicketId={selectedTicketId} equipes={equipes} showFilters={showFilters} onToggleFilters={() => setShowFilters(!showFilters)} onChangeStatus={async (ticketId, fromStatus, toStatus, beforeId, afterId) => {
+        const success = await moveTicket(ticketId, toStatus, beforeId, afterId);
+        return success;
+      }} />
 
-        <CreateTicketDialog 
-          open={createDialogOpen}
-          onOpenChange={setCreateDialogOpen}
-          onCreateTicket={createTicket}
-        />
+        <CreateTicketDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} onCreateTicket={createTicket} />
 
         {/* Modal de Ticket */}
         <Dialog open={ticketModalOpen} onOpenChange={setTicketModalOpen}>
@@ -270,20 +249,13 @@ const Tickets = () => {
               <DialogTitle>Detalhes do Ticket</DialogTitle>
               <DialogDescription>Visualização completa dos detalhes do ticket</DialogDescription>
             </DialogHeader>
-            {selectedTicketId && (
-              <TicketDetail 
-                ticketId={selectedTicketId}
-                onClose={() => {
-                  setTicketModalOpen(false);
-                  setSelectedTicketId(null);
-                }}
-              />
-            )}
+            {selectedTicketId && <TicketDetail ticketId={selectedTicketId} onClose={() => {
+            setTicketModalOpen(false);
+            setSelectedTicketId(null);
+          }} />}
           </DialogContent>
         </Dialog>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Tickets;
