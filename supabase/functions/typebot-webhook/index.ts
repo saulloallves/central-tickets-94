@@ -22,6 +22,8 @@ const corsHeaders = {
 };
 
 const webhookToken = Deno.env.get('TYPEBOT_WEBHOOK_TOKEN');
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -296,6 +298,37 @@ serve(async (req) => {
     await addInitialMessage(ticket.id, message, attachments);
 
     console.log('✅ Ticket created successfully:', ticket.codigo_ticket);
+
+    // Chamar análise de crises se o ticket tem equipe responsável
+    if (equipeResponsavelId) {
+      try {
+        console.log('🔍 Chamando análise de crises...');
+        const analystResponse = await fetch(`${supabaseUrl}/functions/v1/crises-ai-analyst`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ticket_id: ticket.id,
+            titulo: ticket.titulo,
+            descricao_problema: ticket.descricao_problema,
+            equipe_id: ticket.equipe_responsavel_id,
+            categoria: ticket.categoria
+          })
+        });
+
+        if (analystResponse.ok) {
+          const analysisResult = await analystResponse.json();
+          console.log('🔍 Crisis analysis result:', analysisResult);
+        } else {
+          console.error('❌ Crisis analyst failed:', await analystResponse.text());
+        }
+      } catch (analystError) {
+        console.error('❌ Error calling crisis analyst:', analystError);
+        // Continue without failing ticket creation
+      }
+    }
 
     return new Response(JSON.stringify({
       success: true,
