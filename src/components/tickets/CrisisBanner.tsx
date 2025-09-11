@@ -63,6 +63,7 @@ export function CrisisBanner() {
       }
 
       console.log('🚨 Crises encontradas:', crises);
+      console.log('🚨 User admin status:', isAdmin(), 'diretor:', isDiretor());
       setActiveCrises(crises || []);
     };
 
@@ -101,7 +102,7 @@ export function CrisisBanner() {
       }
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, isAdmin, isDiretor]);
 
   // Tocar som de alerta quando nova crise aparece
   useEffect(() => {
