@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { findSimilarTicketsForCrisis } from './crisis-similarity.ts';
 
 interface TicketForAnalysis {
   id: string;
@@ -103,26 +104,76 @@ serve(async (req) => {
       });
     }
 
-    // 2. Usar GPT para analisar e agrupar tickets por similaridade
-    const similarityGroups = await analyzeTicketSimilarity(openaiApiKey, unlinkedTickets);
+    // 2. Buscar crises ativas da equipe para verificar se podemos vincular tickets
+    const { data: activeCrises, error: crisesError } = await supabase
+      .from('crises')
+      .select('id, titulo, similar_terms, keywords, problem_signature')
+      .eq('equipe_id', equipe_id)
+      .eq('is_active', true)
+      .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // Últimas 24 horas
+      .order('created_at', { ascending: false });
+
+    if (crisesError) {
+      console.error('Erro ao buscar crises ativas:', crisesError);
+    }
+
+    console.log(`🔍 Crises ativas encontradas: ${activeCrises?.length || 0}`);
+
+    // 3. Primeiro tentar vincular tickets às crises existentes
+    const linkedResults = [];
+    const remainingTickets = [...unlinkedTickets];
+
+    if (activeCrises && activeCrises.length > 0) {
+      for (const crise of activeCrises) {
+        const similarTickets = await findSimilarTicketsForCrisis(openaiApiKey, crise, remainingTickets);
+        
+        if (similarTickets.length > 0) {
+          // Vincular tickets similares à crise existente
+          for (const ticket of similarTickets) {
+            await linkTicketToCrise(supabase, ticket.id, crise.id);
+            // Remover ticket da lista de pendentes
+            const index = remainingTickets.findIndex(t => t.id === ticket.id);
+            if (index > -1) {
+              remainingTickets.splice(index, 1);
+            }
+          }
+
+          linkedResults.push({
+            crise_id: crise.id,
+            crise_titulo: crise.titulo,
+            tickets_linked: similarTickets.length,
+            ticket_ids: similarTickets.map(t => t.id),
+            action: 'linked_to_existing'
+          });
+
+          console.log(`🔗 Vinculados ${similarTickets.length} tickets à crise existente: ${crise.titulo}`);
+        }
+      }
+    }
+
+    console.log(`📊 Restam ${remainingTickets.length} tickets para análise de novos grupos`);
+
+    // 4. Usar GPT para analisar e agrupar tickets restantes
+    const similarityGroups = await analyzeTicketSimilarity(openaiApiKey, remainingTickets);
 
     console.log(`🎯 IA identificou ${similarityGroups.length} grupos de problemas similares`);
 
-    const results = [];
+    const results = [...linkedResults]; // Incluir resultados de vinculação às crises existentes
 
-    // 3. Para cada grupo com tickets suficientes, criar crise se solicitado
+    // 5. Para cada grupo com tickets suficientes, criar crise se solicitado
     for (const group of similarityGroups) {
       if (group.ticket_ids.length >= min_tickets_per_group) {
         console.log(`📊 Grupo "${group.problem_type}": ${group.ticket_ids.length} tickets`);
         
         if (auto_create_crises) {
-          const criseId = await createCriseFromGroup(supabase, equipe_id, group, unlinkedTickets);
+          const criseId = await createCriseFromGroup(supabase, equipe_id, group, remainingTickets);
           results.push({
             group: group.problem_type,
             tickets_count: group.ticket_ids.length,
             crise_created: true,
             crise_id: criseId,
-            ticket_ids: group.ticket_ids
+            ticket_ids: group.ticket_ids,
+            action: 'new_crise_created'
           });
         } else {
           results.push({
@@ -131,7 +182,7 @@ serve(async (req) => {
             crise_created: false,
             suggested_title: group.suggested_crisis_title,
             reasoning: group.reasoning,
-            ticket_ids: group.ticket_ids
+            action: 'suggestion_only'
           });
         }
       }
@@ -141,8 +192,10 @@ serve(async (req) => {
       action: "bulk_analysis_completed",
       equipe_id,
       total_tickets_analyzed: unlinkedTickets.length,
+      tickets_linked_to_existing_crises: linkedResults.reduce((sum, r) => sum + r.tickets_linked, 0),
+      tickets_remaining_for_new_groups: remainingTickets.length,
       groups_found: similarityGroups.length,
-      groups_with_sufficient_tickets: results.length,
+      groups_with_sufficient_tickets: results.filter(r => r.action !== 'linked_to_existing').length,
       results,
       auto_create_crises
     }), {
