@@ -1,6 +1,8 @@
 // src/lib/notification-sounds.ts
 export class NotificationSounds {
   private static audioContext: AudioContext | null = null;
+  private static lastSoundTime: { [key: string]: number } = {};
+  private static readonly SOUND_THROTTLE_MS = 2000; // 2 segundos entre sons do mesmo tipo
   
   // Initialize audio context
   private static getAudioContext(): AudioContext {
@@ -12,6 +14,16 @@ export class NotificationSounds {
 
   // Generate a notification sound using Web Audio API
   static playNotificationSound(type: 'success' | 'warning' | 'critical' | 'info' = 'info') {
+    // Throttle sounds - don't play the same type of sound too frequently
+    const now = Date.now();
+    const lastTime = this.lastSoundTime[type] || 0;
+    
+    if (now - lastTime < this.SOUND_THROTTLE_MS) {
+      console.log(`🔇 Sound throttled for type: ${type} (last played ${now - lastTime}ms ago)`);
+      return;
+    }
+    
+    this.lastSoundTime[type] = now;
     try {
       const audioContext = this.getAudioContext();
       
@@ -114,10 +126,27 @@ export class NotificationSounds {
     }
   }
 
-  // Play gentle critical alert sequence
+  // Play gentle critical alert sequence (with throttling)
   static playCriticalAlert() {
+    // Use a special key for critical alerts to throttle them separately
+    const now = Date.now();
+    const lastTime = this.lastSoundTime['critical_alert'] || 0;
+    
+    if (now - lastTime < this.SOUND_THROTTLE_MS * 2) { // Double throttle for critical alerts
+      console.log('🔇 Critical alert sound throttled');
+      return;
+    }
+    
+    this.lastSoundTime['critical_alert'] = now;
+    
     this.playNotificationSound('critical');
-    setTimeout(() => this.playNotificationSound('critical'), 600);
+    setTimeout(() => {
+      // Only play second beep if enough time has passed
+      const timeElapsed = Date.now() - this.lastSoundTime['critical_alert'];
+      if (timeElapsed >= 600) {
+        this.playNotificationSound('critical');
+      }
+    }, 600);
   }
 
   // Request permission for audio (for autoplay policies)
