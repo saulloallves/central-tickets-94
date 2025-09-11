@@ -22,8 +22,8 @@ const corsHeaders = {
 };
 
 const webhookToken = Deno.env.get('TYPEBOT_WEBHOOK_TOKEN');
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const supabaseUrl = Deno.env.get('SUPABASE_URL');
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -304,6 +304,12 @@ serve(async (req) => {
     if (ticket.equipe_responsavel_id) {
       try {
         console.log('🔍 Chamando análise de crises...');
+        
+        if (!supabaseUrl || !supabaseServiceKey) {
+          console.error('❌ Variáveis de ambiente SUPABASE não configuradas');
+          return;
+        }
+        
         const analystResponse = await fetch(`${supabaseUrl}/functions/v1/crises-ai-analyst`, {
           method: 'POST',
           headers: {
