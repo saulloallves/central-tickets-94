@@ -25,29 +25,34 @@ export function AppSidebar() {
   const isMobile = useIsMobile();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isLocked, setIsLocked] = useState(false); // Estado para travar a sidebar
 
   const handleSignOut = async () => {
     await signOut();
   };
 
   const handleMouseEnter = () => {
-    setIsExpanded(true);
-    // Ajustar margin do conteúdo principal apenas no desktop
-    if (!isMobile) {
-      const mainContent = document.querySelector('[data-main-content]') as HTMLElement;
-      if (mainContent) {
-        mainContent.style.marginLeft = '240px';
+    if (!isLocked) {
+      setIsExpanded(true);
+      // Ajustar margin do conteúdo principal apenas no desktop
+      if (!isMobile) {
+        const mainContent = document.querySelector('[data-main-content]') as HTMLElement;
+        if (mainContent) {
+          mainContent.style.marginLeft = '240px';
+        }
       }
     }
   };
 
   const handleMouseLeave = () => {
-    setIsExpanded(false);
-    // Restaurar margin original apenas no desktop
-    if (!isMobile) {
-      const mainContent = document.querySelector('[data-main-content]') as HTMLElement;
-      if (mainContent) {
-        mainContent.style.marginLeft = '80px';
+    if (!isLocked) {
+      setIsExpanded(false);
+      // Restaurar margin original apenas no desktop
+      if (!isMobile) {
+        const mainContent = document.querySelector('[data-main-content]') as HTMLElement;
+        if (mainContent) {
+          mainContent.style.marginLeft = '80px';
+        }
       }
     }
   };
@@ -164,7 +169,17 @@ export function AppSidebar() {
           <div className="flex flex-col space-y-2 mt-auto">
             {/* Notifications Section */}
             <div className="flex justify-center">
-              <NotificationButton isExpanded={isExpanded} variant="sidebar" />
+              <NotificationButton 
+                isExpanded={isExpanded} 
+                variant="sidebar" 
+                onNotificationOpen={() => {
+                  setIsLocked(true);
+                  setIsExpanded(true);
+                }}
+                onNotificationClose={() => {
+                  setIsLocked(false);
+                }}
+              />
             </div>
             {/* User Profile Section */}
             <div className="flex justify-center">

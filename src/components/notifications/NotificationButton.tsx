@@ -9,9 +9,11 @@ import { InternalNotificationsList } from './InternalNotificationsList';
 interface NotificationButtonProps {
   isExpanded: boolean;
   variant?: 'sidebar' | 'tickets';
+  onNotificationOpen?: () => void;
+  onNotificationClose?: () => void;
 }
 
-export const NotificationButton = ({ isExpanded, variant = 'tickets' }: NotificationButtonProps) => {
+export const NotificationButton = ({ isExpanded, variant = 'tickets', onNotificationOpen, onNotificationClose }: NotificationButtonProps) => {
   const { unreadCount } = useInternalNotifications();
 
   const getButtonStyles = () => {
@@ -68,7 +70,17 @@ export const NotificationButton = ({ isExpanded, variant = 'tickets' }: Notifica
 
   if (!isExpanded) {
     return (
-      <Popover>
+      <Popover 
+        onOpenChange={(open) => {
+          if (variant === 'sidebar') {
+            if (open) {
+              onNotificationOpen?.();
+            } else {
+              onNotificationClose?.();
+            }
+          }
+        }}
+      >
         <TooltipProvider>
           <Tooltip>
             <PopoverTrigger asChild>
@@ -91,7 +103,17 @@ export const NotificationButton = ({ isExpanded, variant = 'tickets' }: Notifica
   }
 
   return (
-    <Popover>
+    <Popover 
+      onOpenChange={(open) => {
+        if (variant === 'sidebar') {
+          if (open) {
+            onNotificationOpen?.();
+          } else {
+            onNotificationClose?.();
+          }
+        }
+      }}
+    >
       <PopoverTrigger asChild>
         {button}
       </PopoverTrigger>
