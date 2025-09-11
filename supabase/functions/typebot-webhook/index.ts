@@ -299,13 +299,43 @@ serve(async (req) => {
 
     console.log('✅ Ticket created successfully:', ticket.codigo_ticket);
 
-    // Sistema de análise de crises desativado - agora usamos análise em massa manual
-    // A nova análise IA em massa é executada manualmente pelo usuário via interface
-    let crisisAnalysisResult = { 
-      action: "manual_analysis_required",
-      message: "Use a nova análise IA em massa na interface de tickets"
-    };
-    console.log('ℹ️ Análise automática de crise desativada. Use a nova análise IA em massa na interface.');
+    // Chamar análise de crises inteligente se o ticket tem equipe responsável
+    let crisisAnalysisResult = null;
+    if (ticket.equipe_responsavel_id) {
+      try {
+        console.log('🔍 Chamando análise inteligente de crises...');
+        
+        const analystResponse = await fetch(`${supabaseUrl}/functions/v1/crises-ai-analyst`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ticket_id: ticket.id,
+            titulo: ticket.titulo,
+            descricao_problema: ticket.descricao_problema,
+            equipe_id: ticket.equipe_responsavel_id,
+            categoria: ticket.categoria
+          })
+        });
+
+        if (analystResponse.ok) {
+          crisisAnalysisResult = await analystResponse.json();
+          console.log('🔍 Crisis analysis result:', crisisAnalysisResult);
+        } else {
+          console.error('❌ Crisis analyst failed:', await analystResponse.text());
+        }
+      } catch (analystError) {
+        console.error('❌ Error calling crisis analyst:', analystError);
+        // Continue without failing ticket creation
+      }
+    } else {
+      crisisAnalysisResult = { 
+        action: "no_team_assigned",
+        message: "Ticket sem equipe responsável - análise de crise ignorada"
+      };
+    }
 
     return new Response(JSON.stringify({
       success: true,

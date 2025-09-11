@@ -52,7 +52,9 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const ticketData: TicketAnalysisRequest = await req.json();
-    console.log('Analisando ticket:', ticketData.ticket_id, 'da equipe:', ticketData.equipe_id);
+    console.log('🔍 Analisando ticket individual:', ticketData.ticket_id, 'da equipe:', ticketData.equipe_id);
+
+    // NOVA LÓGICA: Primeiro verificar se já existe crise ativa para vincular
 
     // Buscar configurações de IA para crises
     const { data: settingsData, error: settingsError } = await supabase
@@ -97,13 +99,13 @@ Responda APENAS com um JSON válido:
       keywords_count: settings.keywords_base.length 
     });
 
-    // 1. Buscar crises ativas da mesma equipe (últimas 4 horas)
+    // 1. PRIMEIRO: Buscar crises ativas da mesma equipe para tentar vincular
     const { data: activeProblems, error: problemsError } = await supabase
       .from('crises')
       .select('id, titulo, problem_signature, tickets_count, similar_terms')
       .eq('equipe_id', ticketData.equipe_id)
       .eq('is_active', true)
-      .gte('created_at', new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString())
+      .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // Últimas 24 horas
       .order('created_at', { ascending: false });
 
     if (problemsError) {
@@ -111,6 +113,59 @@ Responda APENAS com um JSON válido:
     }
 
     console.log(`🔍 Crises ativas encontradas: ${activeProblems?.length || 0}`);
+
+    // 2. Verificar se alguma crise ativa é similar ao ticket atual
+    if (activeProblems && activeProblems.length > 0) {
+      // Análise simples por palavras-chave primeiro
+      const currentDescription = ticketData.descricao_problema.toLowerCase();
+      const currentTitle = ticketData.titulo.toLowerCase();
+      
+      for (const crisis of activeProblems) {
+        if (crisis.similar_terms && crisis.similar_terms.length > 0) {
+          const hasMatchingTerms = crisis.similar_terms.some(term => 
+            currentDescription.includes(term.toLowerCase()) || 
+            currentTitle.includes(term.toLowerCase())
+          );
+          
+          if (hasMatchingTerms) {
+            console.log(`🎯 Crise similar encontrada por palavra-chave: ${crisis.titulo}`);
+            await linkTicketToCrise(supabase, ticketData.ticket_id, crisis.id);
+            
+            return new Response(JSON.stringify({
+              action: "linked_to_existing",
+              crise_id: crisis.id,
+              reasoning: `Ticket vinculado à crise existente por palavra-chave: ${crisis.titulo}`
+            }), {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          }
+        }
+      }
+
+      // Se não encontrou por palavra-chave, usar IA para análise mais profunda
+      if (activeProblems.length > 0) {
+        const analysis = await analyzeTicketWithAI(
+          openaiApiKey,
+          ticketData,
+          activeProblems,
+          settings
+        );
+
+        if (analysis.ticket_corresponde === "sim" && analysis.id_problema_correspondente) {
+          await linkTicketToCrise(supabase, ticketData.ticket_id, analysis.id_problema_correspondente);
+          
+          return new Response(JSON.stringify({
+            action: "linked_to_existing_ai",
+            crise_id: analysis.id_problema_correspondente,
+            reasoning: analysis.reasoning
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+      }
+    }
+
+    // 3. Se não há crises ativas similares, verificar se deve criar nova crise
 
     // 2. Verificar se já existe uma crise ativa para este tipo de problema
     let existingCrisisForSimilarProblem = null;
@@ -148,13 +203,13 @@ Responda APENAS com um JSON válido:
       });
     }
 
-    // 4. Se não há crises ativas similares, verificar tickets individuais da equipe
+    // Buscar tickets similares recentes da mesma equipe (últimas 2 horas, não apenas 1)
     const { data: allTickets, error: ticketsError } = await supabase
       .from('tickets')
       .select('id, titulo, descricao_problema')
       .eq('equipe_responsavel_id', ticketData.equipe_id)
       .in('status', ['aberto', 'em_atendimento', 'escalonado'])
-      .gte('created_at', new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString())
+      .gte('created_at', new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()) // Últimas 2 horas
       .order('created_at', { ascending: false })
       .limit(20);
 
@@ -181,34 +236,14 @@ Responda APENAS com um JSON válido:
 
     console.log(`Encontrados ${allTickets?.length || 0} tickets da equipe, ${individualTickets.length} não vinculados a crises`);
 
-    // 6. Usar IA para análise se há problemas ativos
-    if (activeProblems && activeProblems.length > 0) {
-      const analysis = await analyzeTicketWithAI(
-        openaiApiKey,
-        ticketData,
-        activeProblems,
-        settings
-      );
-
-      if (analysis.ticket_corresponde === "sim" && analysis.id_problema_correspondente) {
-        // Vincular à crise existente
-        await linkTicketToCrise(supabase, ticketData.ticket_id, analysis.id_problema_correspondente);
-        
-        return new Response(JSON.stringify({
-          action: "linked_to_existing",
-          crise_id: analysis.id_problema_correspondente,
-          reasoning: analysis.reasoning
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-    }
-
-    // 7. Contar tickets similares para decidir se deve criar nova crise
+    // 4. Contar tickets similares (usando lógica mais liberal para detecção)
     const similarResult = await countSimilarTickets(supabase, ticketData, individualTickets, settings);
     const { count: similarCount, similarTickets } = similarResult;
     
-    if (similarCount >= settings.threshold_similares) {
+    // MUDANÇA: Reduzir threshold para 2 tickets similares (mais sensível)
+    const effectiveThreshold = Math.min(settings.threshold_similares, 2);
+    
+    if (similarCount >= effectiveThreshold) {
       // DUPLA VERIFICAÇÃO: Buscar se já existe crise recente para esta equipe
       const { data: recentCrises } = await supabase
         .from('crises')
