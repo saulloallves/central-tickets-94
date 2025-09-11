@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTicketNotifications } from '@/hooks/useTicketNotifications';
-import { Plus, Filter, Calendar, Users, Clock, AlertTriangle } from 'lucide-react';
+import { Plus, Filter, Calendar, Users, Clock, AlertTriangle, Brain } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -16,6 +16,7 @@ import { TicketDetail } from '@/components/tickets/TicketDetail';
 import { CrisisBanner } from '@/components/tickets/CrisisBanner';
 import { NotificationButton } from '@/components/notifications/NotificationButton';
 import { useTicketsEdgeFunctions } from '@/hooks/useTicketsEdgeFunctions';
+import { BulkAnalysisDialog } from '@/components/tickets/BulkAnalysisDialog';
 import { useUserEquipes } from '@/hooks/useUserEquipes';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -42,6 +43,8 @@ const Tickets = () => {
   // Initialize notification system but disable its realtime (we'll handle it ourselves)
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [ticketModalOpen, setTicketModalOpen] = useState(false);
+  const [bulkAnalysisOpen, setBulkAnalysisOpen] = useState(false);
+  const [selectedEquipeForAnalysis, setSelectedEquipeForAnalysis] = useState<string>('');
 
   // Listen for notification ticket modal events
   useEffect(() => {
@@ -132,6 +135,17 @@ const Tickets = () => {
           
           <div className="flex flex-wrap gap-1 md:gap-2">
             <NotificationButton isExpanded={false} variant="tickets" />
+            {(isAdmin || isSupervisor) && equipes.length > 0 && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setBulkAnalysisOpen(true)}
+                className="gap-2"
+              >
+                <Brain className="h-4 w-4" />
+                <span className="hidden md:inline">Análise IA</span>
+              </Button>
+            )}
           </div>
         </div>
 
@@ -249,6 +263,14 @@ const Tickets = () => {
           }} />}
           </DialogContent>
         </Dialog>
+
+        {/* Bulk Analysis Dialog */}
+        <BulkAnalysisDialog 
+          open={bulkAnalysisOpen}
+          onOpenChange={setBulkAnalysisOpen}
+          equipeId={selectedEquipeForAnalysis || equipes[0]?.id || ''}
+          equipeNome={equipes.find(e => e.id === selectedEquipeForAnalysis)?.nome || equipes[0]?.nome || 'Equipe'}
+        />
       </div>
     </div>;
 };
