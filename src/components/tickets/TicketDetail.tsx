@@ -155,7 +155,15 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
     const uploadedFiles = [];
     
     for (const file of files) {
-      const fileName = `${Date.now()}-${file.name}`;
+      // Sanitize filename - remove special characters and spaces
+      const sanitizedName = file.name
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // Remove accents
+        .replace(/[^a-zA-Z0-9.-]/g, '_') // Replace special chars with underscore
+        .replace(/_{2,}/g, '_') // Replace multiple underscores with single
+        .toLowerCase();
+      
+      const fileName = `${Date.now()}-${sanitizedName}`;
       const { data, error } = await supabase.storage
         .from('ticket-attachments')
         .upload(fileName, file, {
