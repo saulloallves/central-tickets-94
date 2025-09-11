@@ -300,7 +300,8 @@ serve(async (req) => {
     console.log('✅ Ticket created successfully:', ticket.codigo_ticket);
 
     // Chamar análise de crises se o ticket tem equipe responsável
-    if (equipeResponsavelId) {
+    let analysisResult = null;
+    if (ticket.equipe_responsavel_id) {
       try {
         console.log('🔍 Chamando análise de crises...');
         const analystResponse = await fetch(`${supabaseUrl}/functions/v1/crises-ai-analyst`, {
@@ -319,7 +320,7 @@ serve(async (req) => {
         });
 
         if (analystResponse.ok) {
-          const analysisResult = await analystResponse.json();
+          analysisResult = await analystResponse.json();
           console.log('🔍 Crisis analysis result:', analysisResult);
         } else {
           console.error('❌ Crisis analyst failed:', await analystResponse.text());
