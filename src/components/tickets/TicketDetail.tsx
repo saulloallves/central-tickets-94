@@ -369,11 +369,12 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
         throw error;
       }
 
-      // Update local ticket state
+      // Update local ticket state immediately
       setTicket(prev => ({
         ...prev,
         equipe_responsavel_id: equipeId || null,
-        equipes: equipes.find(e => e.id === equipeId) || null
+        equipes: equipes.find(e => e.id === equipeId) || null,
+        updated_at: new Date().toISOString()
       }));
 
       toast({
@@ -498,6 +499,15 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
         throw error;
       }
 
+      // Update local ticket state immediately
+      setTicket(prev => ({
+        ...prev,
+        status: 'em_atendimento',
+        atendimento_iniciado_por: userData.user?.id,
+        atendimento_iniciado_em: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }));
+
       toast({
         title: "Atendimento Iniciado",
         description: "Status alterado para 'em atendimento'",
@@ -529,9 +539,11 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
         throw error;
       }
 
+      // Update local ticket state immediately
       setTicket(prev => ({
         ...prev,
-        status: newStatus
+        status: newStatus,
+        updated_at: new Date().toISOString()
       }));
 
       toast({
@@ -592,6 +604,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
         .from('tickets')
         .update({ 
           status: 'concluido',
+          resolvido_em: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
         .eq('id', ticketId);
@@ -599,6 +612,14 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
       if (error) {
         throw error;
       }
+
+      // Update local ticket state immediately
+      setTicket(prev => ({
+        ...prev,
+        status: 'concluido',
+        resolvido_em: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }));
 
       toast({
         title: "Ticket Concluído",
