@@ -210,7 +210,7 @@ Regras importantes:
 
   console.log('🤖 Enviando tickets para análise GPT:', {
     total_tickets: tickets.length,
-    model: 'gpt-5-2025-08-07'
+    model: 'gpt-4.1-2025-04-14'
   });
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -220,12 +220,12 @@ Regras importantes:
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-5-2025-08-07',
+      model: 'gpt-4.1-2025-04-14',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
       ],
-      max_completion_tokens: 2000,
+      max_tokens: 2000,
       response_format: { type: "json_object" }
     }),
   });
