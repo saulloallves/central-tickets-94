@@ -164,17 +164,41 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
       setLoading(true);
       console.log('🔄 Iniciando resolução da crise:', crisis.id);
 
+      // Obter o usuário autenticado primeiro
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) {
+        console.error('❌ Erro ao obter usuário:', userError);
+        throw new Error('Erro de autenticação');
+      }
+
       // Usar função database para resolver crise de forma transacional
       console.log('📝 Chamando função resolve_crise_close_tickets...');
-      const { error } = await supabase.rpc('resolve_crise_close_tickets', {
+      console.log('📋 Parâmetros:', {
         p_crise_id: crisis.id,
         p_mensagem: 'Crise resolvida através do painel administrativo',
-        p_by: (await supabase.auth.getUser()).data.user?.id
+        p_status_ticket: 'concluido',
+        p_by: user?.id
       });
+      
+      const { data, error } = await supabase.rpc('resolve_crise_close_tickets', {
+        p_crise_id: crisis.id,
+        p_mensagem: 'Crise resolvida através do painel administrativo',
+        p_status_ticket: 'concluido' as const,
+        p_by: user?.id || null
+      });
+
+      console.log('📄 Resposta da função RPC:', { data, error });
 
       if (error) {
         console.error('❌ Erro ao resolver crise via RPC:', error);
-        throw error;
+        console.error('❌ Detalhes do erro:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        throw new Error(`Erro na função RPC: ${error.message}`);
       }
       
       console.log('✅ Crise resolvida com sucesso via RPC');
@@ -182,12 +206,11 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
       toast({
         title: "Crise Resolvida",
         description: `Crise e ${tickets.length} tickets foram resolvidos com sucesso`,
-        variant: "default"
       });
 
       console.log('🎉 Crise resolvida com sucesso, fechando modal');
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Erro geral ao resolver crise:', error);
       
       // Fallback para método manual se a função RPC falhar
@@ -220,15 +243,14 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
         toast({
           title: "Crise Resolvida",
           description: `Crise e ${tickets.length} tickets foram resolvidos com sucesso (método manual)`,
-          variant: "default"
         });
 
         onClose();
-      } catch (fallbackError) {
+      } catch (fallbackError: any) {
         console.error('❌ Erro no método manual:', fallbackError);
         toast({
           title: "Erro",
-          description: `Erro ao resolver crise: ${fallbackError.message || 'Erro desconhecido'}`,
+          description: `Erro ao resolver crise: ${fallbackError?.message || 'Erro desconhecido'}`,
           variant: "destructive"
         });
       }
