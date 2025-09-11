@@ -24,6 +24,7 @@ export function CrisisBanner() {
   const [selectedCrisis, setSelectedCrisis] = useState<Crisis | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [dismissedCrises, setDismissedCrises] = useState<Set<string>>(new Set());
+  const [alreadyPlayedSounds, setAlreadyPlayedSounds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!user) return;
@@ -104,16 +105,43 @@ export function CrisisBanner() {
     };
   }, [user, isAdmin, isDiretor]);
 
-  // Tocar som de alerta quando nova crise aparece
+  // Tocar som de alerta quando nova crise aparece (apenas uma vez por crise)
   useEffect(() => {
     if (activeCrises.length > 0) {
-      const newCrises = activeCrises.filter(c => !dismissedCrises.has(c.id));
+      // Filtrar crises que ainda não tiveram som tocado
+      const newCrises = activeCrises.filter(c => !alreadyPlayedSounds.has(c.id));
+      
       if (newCrises.length > 0) {
+        console.log('🚨 Tocando som para novas crises:', newCrises.map(c => c.titulo));
+        
         // Som de alerta crítico usando sistema padronizado
         NotificationSounds.playCriticalAlert();
+        
+        // Marcar essas crises como já tendo som tocado
+        setAlreadyPlayedSounds(prev => {
+          const newSet = new Set(prev);
+          newCrises.forEach(crisis => newSet.add(crisis.id));
+          return newSet;
+        });
       }
     }
-  }, [activeCrises, dismissedCrises]);
+  }, [activeCrises, alreadyPlayedSounds]);
+
+  // Limpar sons de crises que foram resolvidas
+  useEffect(() => {
+    const activeCrisisIds = new Set(activeCrises.map(c => c.id));
+    
+    setAlreadyPlayedSounds(prev => {
+      const newSet = new Set<string>();
+      // Manter apenas sons de crises que ainda estão ativas
+      prev.forEach(crisisId => {
+        if (activeCrisisIds.has(crisisId)) {
+          newSet.add(crisisId);
+        }
+      });
+      return newSet;
+    });
+  }, [activeCrises]);
 
   const handleDismissCrisis = (crisisId: string) => {
     // Não permitir dismiss - crise deve ficar fixa até ser resolvida
