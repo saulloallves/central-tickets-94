@@ -29,43 +29,71 @@ export function CrisisBanner() {
   useEffect(() => {
     if (!user) return;
 
+    let isMounted = true;
+    let retryCount = 0;
+    const maxRetries = 3;
+
     // Buscar crises ativas das equipes do usuário + crises globais
     const fetchActiveCrises = async () => {
-      let query = supabase
-        .from('crises')
-        .select('id, titulo, status, created_at, equipe_id')
-        .eq('is_active', true);
+      try {
+        let query = supabase
+          .from('crises')
+          .select('id, titulo, status, created_at, equipe_id')
+          .eq('is_active', true);
 
-      // Admins e diretoria veem todas as crises ativas
-      if (isAdmin() || isDiretor()) {
-        // Nenhum filtro adicional - todas as crises ativas
-      } else {
-        // Usuários normais só veem crises das suas equipes ou globais
-        const { data: userTeams } = await supabase
-          .from('equipe_members')
-          .select('equipe_id')
-          .eq('user_id', user.id)
-          .eq('ativo', true);
-
-        const teamIds = userTeams?.map(t => t.equipe_id) || [];
-
-        if (teamIds.length > 0) {
-          query = query.or(`equipe_id.in.(${teamIds.join(',')}),equipe_id.is.null`);
+        // Admins e diretoria veem todas as crises ativas
+        if (isAdmin() || isDiretor()) {
+          // Nenhum filtro adicional - todas as crises ativas
         } else {
-          query = query.is('equipe_id', null);
+          // Usuários normais só veem crises das suas equipes ou globais
+          const { data: userTeams } = await supabase
+            .from('equipe_members')
+            .select('equipe_id')
+            .eq('user_id', user.id)
+            .eq('ativo', true);
+
+          const teamIds = userTeams?.map(t => t.equipe_id) || [];
+
+          if (teamIds.length > 0) {
+            query = query.or(`equipe_id.in.(${teamIds.join(',')}),equipe_id.is.null`);
+          } else {
+            query = query.is('equipe_id', null);
+          }
+        }
+
+        const { data: crises, error } = await query.order('created_at', { ascending: false });
+
+        if (error) {
+          console.error('Erro ao buscar crises ativas:', error);
+          
+          // Retry logic para evitar loops infinitos
+          if (retryCount < maxRetries && isMounted) {
+            retryCount++;
+            console.log(`Tentativa ${retryCount} de ${maxRetries}...`);
+            setTimeout(() => {
+              if (isMounted) {
+                fetchActiveCrises();
+              }
+            }, 2000 * retryCount); // Backoff progressivo
+          }
+          return;
+        }
+
+        if (isMounted) {
+          setActiveCrises(crises || []);
+          retryCount = 0; // Reset retry count on success
+        }
+      } catch (error) {
+        console.error('Erro geral ao buscar crises:', error);
+        if (retryCount < maxRetries && isMounted) {
+          retryCount++;
+          setTimeout(() => {
+            if (isMounted) {
+              fetchActiveCrises();
+            }
+          }, 2000 * retryCount);
         }
       }
-
-      const { data: crises, error } = await query.order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Erro ao buscar crises ativas:', error);
-        return;
-      }
-
-      console.log('🚨 Crises encontradas:', crises);
-      console.log('🚨 User admin status:', isAdmin(), 'diretor:', isDiretor());
-      setActiveCrises(crises || []);
     };
 
     fetchActiveCrises();
@@ -98,6 +126,7 @@ export function CrisisBanner() {
       .subscribe();
 
     return () => {
+      isMounted = false;
       if (fetchTimeout) {
         clearTimeout(fetchTimeout);
       }
