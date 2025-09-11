@@ -299,18 +299,13 @@ serve(async (req) => {
 
     console.log('✅ Ticket created successfully:', ticket.codigo_ticket);
 
-     // Sistema de análise de crises desativado - agora usamos análise em massa manual
-     // A nova análise IA em massa é executada manualmente pelo usuário via interface
-     let crisisAnalysisResult = null;
-     console.log('ℹ️ Análise automática de crise desativada. Use a nova análise IA em massa na interface.');
-        
-        // Sistema de análise automática desativado - usar nova análise IA em massa
-        console.log('🔄 Análise automática desativada. Use a análise IA em massa na interface.');
-        crisisAnalysisResult = { 
-          action: "manual_analysis_required",
-          message: "Use a nova análise IA em massa na interface de tickets"
-        };
-    }
+    // Sistema de análise de crises desativado - agora usamos análise em massa manual
+    // A nova análise IA em massa é executada manualmente pelo usuário via interface
+    let crisisAnalysisResult = { 
+      action: "manual_analysis_required",
+      message: "Use a nova análise IA em massa na interface de tickets"
+    };
+    console.log('ℹ️ Análise automática de crise desativada. Use a nova análise IA em massa na interface.');
 
     return new Response(JSON.stringify({
       success: true,
