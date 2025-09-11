@@ -15,8 +15,6 @@ import { CreateTicketDialog } from '@/components/tickets/CreateTicketDialog';
 import { TicketDetail } from '@/components/tickets/TicketDetail';
 import { CrisisBanner } from '@/components/tickets/CrisisBanner';
 import { NotificationButton } from '@/components/notifications/NotificationButton';
-import { ProcessPendingButton } from '@/components/notifications/ProcessPendingButton';
-import { TestNotificationButton } from '@/components/notifications/TestNotificationButton';
 import { useTicketsEdgeFunctions } from '@/hooks/useTicketsEdgeFunctions';
 import { useUserEquipes } from '@/hooks/useUserEquipes';
 import { supabase } from '@/integrations/supabase/client';
@@ -134,10 +132,6 @@ const Tickets = () => {
           
           <div className="flex flex-wrap gap-1 md:gap-2">
             <NotificationButton isExpanded={false} />
-            <ProcessPendingButton />
-            <TestNotificationButton />
-            
-            
           </div>
         </div>
 

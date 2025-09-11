@@ -17,7 +17,7 @@ export const NotificationButton = ({ isExpanded }: NotificationButtonProps) => {
     <Button 
       variant="ghost" 
       size="sm" 
-      className={`relative text-white hover:bg-white/5 transition-all duration-300 ${
+      className={`relative text-foreground hover:bg-accent transition-all duration-300 ${
         isExpanded ? 'w-full justify-start px-4' : 'w-10 h-10 p-0'
       }`}
     >
