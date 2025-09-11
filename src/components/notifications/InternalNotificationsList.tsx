@@ -202,7 +202,7 @@ export const InternalNotificationsList = () => {
                       
                       {notification.message && (
                         <p className="text-xs text-muted-foreground line-clamp-2 mb-1">
-                          {notification.message}
+                          {notification.message.replace(/Ticket [a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi, 'Ticket')}
                         </p>
                       )}
                       
