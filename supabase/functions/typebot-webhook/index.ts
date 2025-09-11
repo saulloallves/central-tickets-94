@@ -306,9 +306,9 @@ serve(async (req) => {
         console.log('🔍 Chamando análise de crises...');
         
         if (!supabaseUrl || !supabaseServiceKey) {
-          console.error('❌ Variáveis de ambiente SUPABASE não configuradas');
-          return;
-        }
+          console.error('❌ Variáveis de ambiente SUPABASE não configuradas para análise de crise');
+          // Continue sem a análise de crise, mas não falhe a criação do ticket
+        } else {
         
         const analystResponse = await fetch(`${supabaseUrl}/functions/v1/crises-ai-analyst`, {
           method: 'POST',
@@ -330,6 +330,7 @@ serve(async (req) => {
           console.log('🔍 Crisis analysis result:', crisisAnalysisResult);
         } else {
           console.error('❌ Crisis analyst failed:', await analystResponse.text());
+        }
         }
       } catch (analystError) {
         console.error('❌ Error calling crisis analyst:', analystError);
