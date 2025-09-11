@@ -357,6 +357,45 @@ export function FranqueadoTicketDetail({ ticketId, onClose }: FranqueadoTicketDe
                 }`}
               >
                 <p className="text-sm whitespace-pre-wrap">{message.mensagem}</p>
+                
+                {/* Render anexos */}
+                {message.anexos && Array.isArray(message.anexos) && message.anexos.length > 0 && (
+                  <div className="mt-2 space-y-2">
+                    {message.anexos.map((attachment: any, idx: number) => (
+                      <div key={idx} className="flex items-center gap-2 p-2 bg-background/50 rounded border">
+                        {(attachment.tipo === 'imagem' || attachment.type?.startsWith('image/')) ? (
+                          <div className="flex items-center gap-2">
+                            <img 
+                              src={attachment.url} 
+                              alt={attachment.nome || attachment.name || 'Imagem'}
+                              className="max-w-48 max-h-48 rounded object-cover cursor-pointer border"
+                              onClick={() => window.open(attachment.url, '_blank')}
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                              }}
+                            />
+                            <span className="text-xs text-muted-foreground">
+                              {attachment.nome || attachment.name || 'Imagem'}
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <a 
+                              href={attachment.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-xs text-primary hover:underline"
+                            >
+                              📎 {attachment.nome || attachment.name || 'Anexo'}
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
                 <p className="text-xs mt-1 opacity-70">
                   {new Date(message.created_at).toLocaleString('pt-BR')} - {message.canal}
                 </p>

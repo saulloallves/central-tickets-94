@@ -988,17 +988,22 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                                  <div className="mt-2 space-y-2">
                                    {message.anexos.map((attachment: any, idx: number) => (
                                      <div key={idx} className="flex items-center gap-2 p-2 bg-background/50 rounded border">
-                                       {attachment.type?.startsWith('image/') ? (
-                                         <div className="flex items-center gap-2">
-                                           <Image className="h-4 w-4 text-green-600" />
-                                           <img 
-                                             src={attachment.url} 
-                                             alt={attachment.name}
-                                             className="max-w-32 max-h-32 rounded object-cover cursor-pointer"
-                                             onClick={() => window.open(attachment.url, '_blank')}
-                                           />
-                                           <span className="text-xs text-muted-foreground">{attachment.name}</span>
-                                         </div>
+                                        {(attachment.tipo === 'imagem' || attachment.type?.startsWith('image/')) ? (
+                                          <div className="flex items-center gap-2">
+                                            <img 
+                                              src={attachment.url} 
+                                              alt={attachment.nome || attachment.name || 'Imagem'}
+                                              className="max-w-48 max-h-48 rounded object-cover cursor-pointer border"
+                                              onClick={() => window.open(attachment.url, '_blank')}
+                                              onError={(e) => {
+                                                const target = e.target as HTMLImageElement;
+                                                target.style.display = 'none';
+                                              }}
+                                            />
+                                            <span className="text-xs text-muted-foreground">
+                                              {attachment.nome || attachment.name || 'Imagem'}
+                                            </span>
+                                          </div>
                                        ) : attachment.type?.startsWith('video/') ? (
                                          <div className="flex items-center gap-2">
                                            <Video className="h-4 w-4 text-blue-600" />
