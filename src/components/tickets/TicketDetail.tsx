@@ -237,7 +237,9 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
       
       // Upload attachments if any
       if (attachments.length > 0) {
+        console.log('📎 Uploading attachments:', attachments.length);
         uploadedAttachments = await uploadAttachments(attachments);
+        console.log('✅ Uploaded attachments:', uploadedAttachments);
       }
 
       // Process response with AI correction before sending
@@ -257,11 +259,13 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
       }
 
       // Send text message with attachments metadata
+      console.log('💬 Sending message to database:', { finalMessage, attachments: uploadedAttachments });
       const success = await sendMessage(finalMessage, uploadedAttachments);
       
       if (success) {
         // Send attachments via Z-API if any
         if (uploadedAttachments.length > 0) {
+          console.log('📱 Sending attachments via Z-API:', uploadedAttachments);
           await sendAttachments(uploadedAttachments);
         }
 

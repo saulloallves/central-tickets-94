@@ -1097,18 +1097,20 @@ export const useTicketMessages = (ticketId: string) => {
       // Don't add optimistically - let realtime handle it
       // The realtime subscription will trigger fetchMessages() and update the state
       
-      // Enviar notificação WhatsApp para o grupo
-      try {
-        await supabase.functions.invoke('process-notifications', {
-          body: {
-            ticketId,
-            type: 'resposta_ticket',
-            textoResposta: mensagem
-          }
-        });
-      } catch (notifyError) {
-        console.error('Error sending WhatsApp notification:', notifyError);
-        // Não mostrar erro ao usuário pois a mensagem foi enviada com sucesso
+      // Enviar notificação WhatsApp apenas se não há anexos (anexos são enviados separadamente)
+      if (mensagem.trim() && (!anexos || anexos.length === 0)) {
+        try {
+          await supabase.functions.invoke('process-notifications', {
+            body: {
+              ticketId,
+              type: 'resposta_ticket',
+              textoResposta: mensagem
+            }
+          });
+        } catch (notifyError) {
+          console.error('Error sending WhatsApp notification:', notifyError);
+          // Não mostrar erro ao usuário pois a mensagem foi enviada com sucesso
+        }
       }
       
       return true;
