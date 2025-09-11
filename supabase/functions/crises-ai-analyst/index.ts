@@ -418,36 +418,87 @@ async function countSimilarTickets(
   const currentDescription = newTicket.descricao_problema.toLowerCase();
   const currentTitle = (newTicket.titulo || '').toLowerCase();
   
-  // Usar palavras-chave das configurações
+  // Usar palavras-chave das configurações + análise semântica
   const systemIssueKeywords = settings.keywords_base;
   
-  // Detectar palavras-chave no ticket atual
-  const currentKeywords = systemIssueKeywords.filter(keyword => 
+  // Extrair palavras-chave principais do ticket atual (palavras com 4+ letras, excluindo comuns)
+  const stopWords = ['para', 'com', 'uma', 'por', 'das', 'dos', 'que', 'quando', 'onde', 'como', 'este', 'esta', 'isso', 'aqui', 'ali'];
+  const currentSpecificKeywords = currentDescription
+    .split(/\s+/)
+    .filter(word => word.length >= 4 && !stopWords.includes(word))
+    .slice(0, 5); // Pegar até 5 palavras principais
+  
+  console.log('🎯 Palavras específicas extraídas:', currentSpecificKeywords);
+  
+  // Detectar palavras-chave do sistema no ticket atual
+  const currentSystemKeywords = systemIssueKeywords.filter(keyword => 
     currentDescription.includes(keyword) || currentTitle.includes(keyword)
   );
   
-  if (currentKeywords.length === 0) {
-    console.log('❌ Nenhuma palavra-chave de sistema encontrada no ticket atual');
+  console.log('🎯 Palavras-chave do sistema encontradas:', currentSystemKeywords);
+  
+  // Se não tem palavras do sistema MAS tem palavras específicas, ainda pode ser crise
+  if (currentSystemKeywords.length === 0 && currentSpecificKeywords.length === 0) {
+    console.log('❌ Nenhuma palavra-chave relevante encontrada no ticket atual');
     return { count: 1, similarTickets: [] }; // Apenas o ticket atual
   }
 
-  console.log('🎯 Palavras-chave encontradas:', currentKeywords);
   
-  // Contar tickets similares
+  // Contar tickets similares usando análise híbrida
   const similarTickets = individualTickets.filter(ticket => {
     const description = (ticket.descricao_problema || '').toLowerCase();
     const title = (ticket.titulo || '').toLowerCase();
     
-    // Contar quantas palavras-chave coincidem
-    const matchingKeywords = currentKeywords.filter(keyword => 
+    // 1. Verificar palavras-chave do sistema
+    const matchingSystemKeywords = currentSystemKeywords.filter(keyword => 
       description.includes(keyword) || title.includes(keyword)
     );
     
-    // Considerar similar se tiver pelo menos 2 palavras-chave em comum
-    if (matchingKeywords.length >= 2) {
-      console.log(`✅ Ticket similar encontrado: "${ticket.titulo || ticket.descricao_problema}" (keywords: ${matchingKeywords.length})`);
+    // 2. Verificar palavras específicas (para casos como "girabot", "fluxo")
+    const matchingSpecificKeywords = currentSpecificKeywords.filter(keyword => 
+      description.includes(keyword) || title.includes(keyword)
+    );
+    
+    // 3. Análise de similaridade textual (Levenshtein simplificado)
+    const similarity = calculateTextSimilarity(currentDescription, description);
+    
+    // Considerar similar se:
+    // - Tem pelo menos 1 palavra do sistema + 1 específica, OU
+    // - Tem 2+ palavras específicas em comum, OU  
+    // - Tem alta similaridade textual (>70%)
+    const isSystemSimilar = matchingSystemKeywords.length >= 1 && matchingSpecificKeywords.length >= 1;
+    const isSpecificSimilar = matchingSpecificKeywords.length >= 2;
+    const isTextSimilar = similarity > 0.7;
+    
+    if (isSystemSimilar || isSpecificSimilar || isTextSimilar) {
+      console.log(`✅ Ticket similar encontrado: "${ticket.titulo || ticket.descricao_problema}"`);
+      console.log(`   - Sistema: ${matchingSystemKeywords.length}, Específicas: ${matchingSpecificKeywords.length}, Similaridade: ${(similarity * 100).toFixed(1)}%`);
       return true;
     }
+    
+    return false;
+  });
+  
+  console.log(`📊 Total de tickets similares: ${similarTickets.length + 1} (incluindo atual)`);
+  
+  return { 
+    count: similarTickets.length + 1, // +1 para incluir o ticket atual
+    similarTickets 
+  };
+}
+
+// Função auxiliar para calcular similaridade textual básica
+function calculateTextSimilarity(text1: string, text2: string): number {
+  if (text1 === text2) return 1.0;
+  
+  const words1 = new Set(text1.split(/\s+/));
+  const words2 = new Set(text2.split(/\s+/));
+  
+  const intersection = new Set([...words1].filter(x => words2.has(x)));
+  const union = new Set([...words1, ...words2]);
+  
+  return intersection.size / union.size;
+}
     
     return false;
   });
