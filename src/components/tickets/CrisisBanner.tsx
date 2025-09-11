@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useRole } from '@/hooks/useRole';
 import { CrisisModal } from './CrisisModal';
 import { NotificationSounds } from '@/lib/notification-sounds';
 
@@ -18,6 +19,7 @@ interface Crisis {
 
 export function CrisisBanner() {
   const { user } = useAuth();
+  const { isAdmin, isDiretor } = useRole();
   const [activeCrises, setActiveCrises] = useState<Crisis[]>([]);
   const [selectedCrisis, setSelectedCrisis] = useState<Crisis | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -28,24 +30,29 @@ export function CrisisBanner() {
 
     // Buscar crises ativas das equipes do usuário + crises globais
     const fetchActiveCrises = async () => {
-      const { data: userTeams } = await supabase
-        .from('equipe_members')
-        .select('equipe_id')
-        .eq('user_id', user.id)
-        .eq('ativo', true);
-
-      const teamIds = userTeams?.map(t => t.equipe_id) || [];
-
-      // Buscar crises das equipes do usuário OU crises globais (sem equipe específica)
       let query = supabase
         .from('crises')
         .select('id, titulo, status, created_at, equipe_id')
         .eq('is_active', true);
 
-      if (teamIds.length > 0) {
-        query = query.or(`equipe_id.in.(${teamIds.join(',')}),equipe_id.is.null`);
+      // Admins e diretoria veem todas as crises ativas
+      if (isAdmin() || isDiretor()) {
+        // Nenhum filtro adicional - todas as crises ativas
       } else {
-        query = query.is('equipe_id', null);
+        // Usuários normais só veem crises das suas equipes ou globais
+        const { data: userTeams } = await supabase
+          .from('equipe_members')
+          .select('equipe_id')
+          .eq('user_id', user.id)
+          .eq('ativo', true);
+
+        const teamIds = userTeams?.map(t => t.equipe_id) || [];
+
+        if (teamIds.length > 0) {
+          query = query.or(`equipe_id.in.(${teamIds.join(',')}),equipe_id.is.null`);
+        } else {
+          query = query.is('equipe_id', null);
+        }
       }
 
       const { data: crises, error } = await query.order('created_at', { ascending: false });
