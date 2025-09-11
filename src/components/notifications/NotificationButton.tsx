@@ -49,9 +49,12 @@ export const NotificationButton = ({ isExpanded, variant = 'tickets' }: Notifica
   const popoverContent = (
     <PopoverContent 
       className="w-80 max-w-sm p-0 bg-background border-border shadow-lg" 
-      side={isExpanded ? "bottom" : "right"}
+      side={variant === 'sidebar' ? "right" : (isExpanded ? "bottom" : "right")}
       align="start"
-      sideOffset={8}
+      sideOffset={variant === 'sidebar' ? 80 : 8}
+      alignOffset={variant === 'sidebar' ? -40 : 0}
+      avoidCollisions={true}
+      sticky={variant === 'sidebar' ? "always" : "partial"}
     >
       <InternalNotificationsList />
     </PopoverContent>
@@ -70,6 +73,7 @@ export const NotificationButton = ({ isExpanded, variant = 'tickets' }: Notifica
             <TooltipContent 
               side="right" 
               className="liquid-glass-card text-white ml-2"
+              sideOffset={variant === 'sidebar' ? 20 : 8}
             >
               Notificações {unreadCount > 0 && `(${unreadCount})`}
             </TooltipContent>
