@@ -91,7 +91,17 @@ export const useInternalNotifications = () => {
       console.log('🔔 Mapped notifications:', mappedNotifications.length, 'items');
       console.log('🔔 Unread count:', mappedNotifications.filter(n => !n.recipient_status?.is_read).length);
       
-      return mappedNotifications;
+      // Ordenar para colocar não lidas no topo
+      const sortedNotifications = mappedNotifications.sort((a, b) => {
+        // Primeiro critério: não lidas primeiro
+        if (!a.recipient_status?.is_read && b.recipient_status?.is_read) return -1;
+        if (a.recipient_status?.is_read && !b.recipient_status?.is_read) return 1;
+        
+        // Segundo critério: mais recentes primeiro (dentro de cada grupo)
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+      
+      return sortedNotifications;
     },
     enabled: !!user?.id,
   });
