@@ -67,6 +67,70 @@ serve(async (req) => {
       metadata
     } = body;
 
+    // Helper function to validate URL
+    const isValidUrl = (string: string): boolean => {
+      try {
+        const url = new URL(string);
+        return url.protocol === 'http:' || url.protocol === 'https:';
+      } catch {
+        return false;
+      }
+    };
+
+    // Helper function to detect file type from URL
+    const detectFileType = (url: string): string => {
+      const ext = url.toLowerCase().split('.').pop() || '';
+      
+      if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext)) {
+        return 'imagem';
+      }
+      if (['mp4', 'avi', 'mov', 'wmv', 'webm'].includes(ext)) {
+        return 'video';
+      }
+      if (['mp3', 'wav', 'ogg', 'm4a', 'aac'].includes(ext)) {
+        return 'audio';
+      }
+      if (['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(ext)) {
+        return 'documento';
+      }
+      return 'arquivo';
+    };
+
+    // Helper function to get filename from URL
+    const getFileNameFromUrl = (url: string): string => {
+      try {
+        const pathname = new URL(url).pathname;
+        return pathname.split('/').pop() || 'arquivo';
+      } catch {
+        return 'arquivo';
+      }
+    };
+
+    // Process attachments to validate URLs and format them properly
+    const processedAttachments = (attachments || []).map((attachment: any) => {
+      // If attachment is already an object with url, enhance it
+      if (typeof attachment === 'object' && attachment.url) {
+        return {
+          ...attachment,
+          tipo: attachment.tipo || detectFileType(attachment.url),
+          nome: attachment.nome || getFileNameFromUrl(attachment.url)
+        };
+      }
+      
+      // If attachment is just a URL string, convert it to proper format
+      if (typeof attachment === 'string' && isValidUrl(attachment)) {
+        return {
+          url: attachment,
+          tipo: detectFileType(attachment),
+          nome: getFileNameFromUrl(attachment)
+        };
+      }
+      
+      return attachment;
+    }).filter((att: any) => att && (att.url || att.nome)); // Filter out invalid attachments
+
+    console.log('Processed attachments:', processedAttachments);
+
     // Validar dados obrigatórios
     if (!message) {
       return new Response(JSON.stringify({ 
@@ -295,7 +359,7 @@ serve(async (req) => {
     };
 
     const ticket = await createTicket(ticketData);
-    await addInitialMessage(ticket.id, message, attachments);
+    await addInitialMessage(ticket.id, message, processedAttachments);
 
     console.log('✅ Ticket created successfully:', ticket.codigo_ticket);
 
