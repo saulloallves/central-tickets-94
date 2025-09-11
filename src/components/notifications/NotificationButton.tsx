@@ -58,7 +58,7 @@ export const NotificationButton = ({ isExpanded, variant = 'tickets', onNotifica
       avoidCollisions={false}
       style={variant === 'sidebar' ? {
         position: 'fixed',
-        left: '100px',
+        left: '50px',
         top: '50%',
         transform: 'translateY(-50%)',
         zIndex: 9999
