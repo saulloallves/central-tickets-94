@@ -194,6 +194,8 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
 
   const sendAttachments = async (attachmentData: any[]) => {
     try {
+      console.log('🚀 Calling zapi-send-media with:', { ticketId, attachments: attachmentData });
+      
       const { data, error } = await supabase.functions.invoke('zapi-send-media', {
         body: {
           ticketId: ticketId,
@@ -201,9 +203,12 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error from zapi-send-media:', error);
+        throw error;
+      }
 
-      console.log('Attachments sent via Z-API:', data);
+      console.log('✅ zapi-send-media response:', data);
       
       if (data.failed > 0) {
         toast({
@@ -217,13 +222,16 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
           description: `${data.sent} arquivo(s) enviado(s) via WhatsApp`,
         });
       }
+      
+      return data;
     } catch (error) {
-      console.error('Error sending attachments:', error);
+      console.error('❌ Error sending attachments:', error);
       toast({
         title: "Erro ao enviar anexos",
         description: "Falha ao enviar anexos via WhatsApp",
         variant: "destructive"
       });
+      throw error;
     }
   };
 
@@ -258,14 +266,14 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
         }
       }
 
-      // Send text message with attachments metadata
+      // Send text message with attachments metadata to database
       console.log('💬 Sending message to database:', { finalMessage, attachments: uploadedAttachments });
       const success = await sendMessage(finalMessage, uploadedAttachments);
       
       if (success) {
-        // Send attachments via Z-API if any
+        // PRIMEIRO: Send attachments via Z-API if any
         if (uploadedAttachments.length > 0) {
-          console.log('📱 Sending attachments via Z-API:', uploadedAttachments);
+          console.log('📱 Sending attachments via Z-API FIRST:', uploadedAttachments);
           await sendAttachments(uploadedAttachments);
         }
 

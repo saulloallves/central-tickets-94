@@ -28,9 +28,15 @@ serve(async (req) => {
   }
 
   try {
+    console.log('🚀 === Z-API SEND MEDIA FUNCTION CALLED ===');
+    console.log('Request body:', JSON.stringify(await req.clone().json(), null, 2));
+    
     const { ticketId, attachments } = await req.json();
     
+    console.log('📋 Parsed request:', { ticketId, attachmentsCount: attachments?.length });
+    
     if (!ticketId || !attachments || !Array.isArray(attachments)) {
+      console.error('❌ Invalid request data:', { ticketId, attachments });
       return new Response(
         JSON.stringify({ error: 'ticketId and attachments array are required' }), 
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

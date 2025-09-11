@@ -1097,8 +1097,8 @@ export const useTicketMessages = (ticketId: string) => {
       // Don't add optimistically - let realtime handle it
       // The realtime subscription will trigger fetchMessages() and update the state
       
-      // Enviar notificação WhatsApp apenas se não há anexos (anexos são enviados separadamente)
-      if (mensagem.trim() && (!anexos || anexos.length === 0)) {
+      // Sempre enviar notificação WhatsApp se há texto
+      if (mensagem.trim()) {
         try {
           await supabase.functions.invoke('process-notifications', {
             body: {
