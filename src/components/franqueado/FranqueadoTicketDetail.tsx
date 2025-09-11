@@ -7,6 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { X, Send, Clock, MapPin, User, Phone, MessageSquare, AlertTriangle } from 'lucide-react';
+import { ImageModal } from '@/components/ui/image-modal';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -364,21 +365,20 @@ export function FranqueadoTicketDetail({ ticketId, onClose }: FranqueadoTicketDe
                     {message.anexos.map((attachment: any, idx: number) => (
                       <div key={idx} className="flex items-center gap-2 p-2 bg-background/50 rounded border">
                         {(attachment.tipo === 'imagem' || attachment.type?.startsWith('image/')) ? (
-                          <div className="flex items-center gap-2">
+                          <ImageModal 
+                            src={attachment.url} 
+                            alt={attachment.nome || attachment.name || 'Imagem'}
+                          >
                             <img 
                               src={attachment.url} 
                               alt={attachment.nome || attachment.name || 'Imagem'}
-                              className="max-w-48 max-h-48 rounded object-cover cursor-pointer border"
-                              onClick={() => window.open(attachment.url, '_blank')}
+                              className="max-w-48 max-h-48 rounded object-cover cursor-pointer border hover:opacity-80 transition-opacity"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
                                 target.style.display = 'none';
                               }}
                             />
-                            <span className="text-xs text-muted-foreground">
-                              {attachment.nome || attachment.name || 'Imagem'}
-                            </span>
-                          </div>
+                          </ImageModal>
                         ) : (
                           <div className="flex items-center gap-2">
                             <a 

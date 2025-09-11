@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useTicketMessages } from '@/hooks/useTickets';
 import { useAISuggestion } from '@/hooks/useAISuggestion';
 import { useResponseProcessor } from '@/hooks/useResponseProcessor';
+import { ImageModal } from '@/components/ui/image-modal';
 
 
 import { TicketActions } from './TicketActions';
@@ -988,22 +989,21 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                                  <div className="mt-2 space-y-2">
                                    {message.anexos.map((attachment: any, idx: number) => (
                                      <div key={idx} className="flex items-center gap-2 p-2 bg-background/50 rounded border">
-                                        {(attachment.tipo === 'imagem' || attachment.type?.startsWith('image/')) ? (
-                                          <div className="flex items-center gap-2">
-                                            <img 
-                                              src={attachment.url} 
-                                              alt={attachment.nome || attachment.name || 'Imagem'}
-                                              className="max-w-48 max-h-48 rounded object-cover cursor-pointer border"
-                                              onClick={() => window.open(attachment.url, '_blank')}
-                                              onError={(e) => {
-                                                const target = e.target as HTMLImageElement;
-                                                target.style.display = 'none';
-                                              }}
-                                            />
-                                            <span className="text-xs text-muted-foreground">
-                                              {attachment.nome || attachment.name || 'Imagem'}
-                                            </span>
-                                          </div>
+                        {(attachment.tipo === 'imagem' || attachment.type?.startsWith('image/')) ? (
+                          <ImageModal 
+                            src={attachment.url} 
+                            alt={attachment.nome || attachment.name || 'Imagem'}
+                          >
+                            <img 
+                              src={attachment.url} 
+                              alt={attachment.nome || attachment.name || 'Imagem'}
+                              className="max-w-48 max-h-48 rounded object-cover cursor-pointer border hover:opacity-80 transition-opacity"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                              }}
+                            />
+                          </ImageModal>
                                        ) : attachment.type?.startsWith('video/') ? (
                                          <div className="flex items-center gap-2">
                                            <Video className="h-4 w-4 text-blue-600" />
