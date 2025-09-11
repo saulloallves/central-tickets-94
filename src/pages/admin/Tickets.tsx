@@ -131,7 +131,7 @@ const Tickets = () => {
           </div>
           
           <div className="flex flex-wrap gap-1 md:gap-2">
-            <NotificationButton isExpanded={false} />
+            <NotificationButton isExpanded={false} variant="tickets" />
           </div>
         </div>
 

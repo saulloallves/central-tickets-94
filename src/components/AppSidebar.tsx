@@ -164,7 +164,7 @@ export function AppSidebar() {
           <div className="flex flex-col space-y-2 mt-auto">
             {/* Notifications Section */}
             <div className="flex justify-center">
-              <NotificationButton isExpanded={isExpanded} />
+              <NotificationButton isExpanded={isExpanded} variant="sidebar" />
             </div>
             {/* User Profile Section */}
             <div className="flex justify-center">

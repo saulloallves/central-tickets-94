@@ -8,18 +8,28 @@ import { InternalNotificationsList } from './InternalNotificationsList';
 
 interface NotificationButtonProps {
   isExpanded: boolean;
+  variant?: 'sidebar' | 'tickets';
 }
 
-export const NotificationButton = ({ isExpanded }: NotificationButtonProps) => {
+export const NotificationButton = ({ isExpanded, variant = 'tickets' }: NotificationButtonProps) => {
   const { unreadCount } = useInternalNotifications();
+
+  const getButtonStyles = () => {
+    if (variant === 'sidebar') {
+      return `relative text-white hover:bg-white/5 transition-all duration-300 ${
+        isExpanded ? 'w-full justify-start px-4' : 'w-10 h-10 p-0'
+      }`;
+    }
+    return `relative text-foreground hover:bg-accent transition-all duration-300 ${
+      isExpanded ? 'w-full justify-start px-4' : 'w-10 h-10 p-0'
+    }`;
+  };
 
   const button = (
     <Button 
       variant="ghost" 
       size="sm" 
-      className={`relative text-foreground hover:bg-accent transition-all duration-300 ${
-        isExpanded ? 'w-full justify-start px-4' : 'w-10 h-10 p-0'
-      }`}
+      className={getButtonStyles()}
     >
       <Bell className="h-4 w-4" />
       {isExpanded && <span className="ml-2">Notificações</span>}
