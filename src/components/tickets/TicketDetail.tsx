@@ -1101,7 +1101,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                         <input
                           type="file"
                           multiple
-                          accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+                          accept="image/jpeg,image/png,image/gif,image/webp,image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
                           onChange={handleFileSelect}
                           className="hidden"
                           id="attachment-input"
