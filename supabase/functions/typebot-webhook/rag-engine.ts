@@ -6,9 +6,16 @@ import { openAI } from './openai-client.ts';
 import { limparTexto, formatarContextoFontes, prepararMensagemParaFranqueado } from './text-utils.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0';
 
-const supabaseUrl = Deno.env.get('SUPABASE_URL');
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
+function getSupabaseClient() {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY environment variables');
+  }
+  
+  return createClient(supabaseUrl, supabaseServiceKey);
+}
 
 export async function encontrarDocumentosRelacionados(textoTicket: string, limiteResultados = 12) {
   if (!Deno.env.get('OPENAI_API_KEY')) {
@@ -26,6 +33,7 @@ export async function encontrarDocumentosRelacionados(textoTicket: string, limit
   const embData = await embRes.json();
   const queryEmbedding = embData.data[0].embedding;
 
+  const supabase = getSupabaseClient();
   const { data, error } = await supabase.rpc('match_documentos_hibrido', {
     query_embedding: queryEmbedding,
     query_text: texto,
@@ -92,6 +100,7 @@ export async function gerarRespostaComContexto(docs: any[], pergunta: string) {
   const contexto = formatarContextoFontes(docs);
   
   // Buscar prompt configurável da tabela faq_ai_settings
+  const supabase = getSupabaseClient();
   const { data: settingsData } = await supabase
     .from('faq_ai_settings')
     .select('prompt_typebot')

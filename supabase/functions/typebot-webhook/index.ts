@@ -300,7 +300,7 @@ serve(async (req) => {
     console.log('✅ Ticket created successfully:', ticket.codigo_ticket);
 
     // Chamar análise de crises se o ticket tem equipe responsável
-    let analysisResult = null;
+    let crisisAnalysisResult = null;
     if (ticket.equipe_responsavel_id) {
       try {
         console.log('🔍 Chamando análise de crises...');
@@ -326,8 +326,8 @@ serve(async (req) => {
         });
 
         if (analystResponse.ok) {
-          analysisResult = await analystResponse.json();
-          console.log('🔍 Crisis analysis result:', analysisResult);
+          crisisAnalysisResult = await analystResponse.json();
+          console.log('🔍 Crisis analysis result:', crisisAnalysisResult);
         } else {
           console.error('❌ Crisis analyst failed:', await analystResponse.text());
         }
@@ -350,7 +350,7 @@ serve(async (req) => {
         data_abertura: ticket.data_abertura,
         equipe_responsavel_id: ticket.equipe_responsavel_id
       },
-      ai_analysis: analysisResult,
+      ai_analysis: crisisAnalysisResult,
       message: `Ticket ${ticket.codigo_ticket} criado com sucesso`
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -4,9 +4,16 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0';
 
-const supabaseUrl = Deno.env.get('SUPABASE_URL');
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
+function getSupabaseClient() {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY environment variables');
+  }
+  
+  return createClient(supabaseUrl, supabaseServiceKey);
+}
 
 export interface TicketData {
   titulo: string;
@@ -28,6 +35,7 @@ export async function createTicket(ticketData: TicketData) {
     equipe_responsavel_id: ticketData.equipe_responsavel_id
   });
 
+  const supabase = getSupabaseClient();
   const { data: ticket, error: ticketError } = await supabase
     .from('tickets')
     .insert({
@@ -54,6 +62,7 @@ export async function createTicket(ticketData: TicketData) {
 }
 
 export async function addInitialMessage(ticketId: string, message: string, attachments?: any[]) {
+  const supabase = getSupabaseClient();
   const { error: messageError } = await supabase
     .from('ticket_mensagens')
     .insert({
@@ -73,6 +82,7 @@ export async function addInitialMessage(ticketId: string, message: string, attac
 }
 
 export async function findUnitByCode(codigo_unidade: string) {
+  const supabase = getSupabaseClient();
   const { data: unidade, error: unidadeError } = await supabase
     .from('unidades')
     .select('id')
@@ -87,6 +97,7 @@ export async function findUnitByCode(codigo_unidade: string) {
 }
 
 export async function findFranqueadoByPassword(web_password: string) {
+  const supabase = getSupabaseClient();
   const { data: franqueado } = await supabase
     .from('franqueados')
     .select('id')
@@ -97,6 +108,7 @@ export async function findFranqueadoByPassword(web_password: string) {
 }
 
 export async function getActiveTeams() {
+  const supabase = getSupabaseClient();
   const { data: equipes, error: equipesError } = await supabase
     .from('equipes')
     .select('id, nome, introducao, descricao')

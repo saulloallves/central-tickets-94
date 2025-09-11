@@ -4,8 +4,16 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0';
 
-const supabaseUrl = Deno.env.get('SUPABASE_URL');
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+function getSupabaseClient() {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY environment variables');
+  }
+  
+  return createClient(supabaseUrl, supabaseServiceKey);
+}
 
 interface AIAlert {
   assistantName: string;
@@ -50,7 +58,7 @@ export async function sendAIAlert(alert: AIAlert): Promise<void> {
   try {
     console.log('🚨 Enviando alerta de IA:', alert);
     
-    const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
+    const supabase = getSupabaseClient();
     
     const { error } = await supabase.functions.invoke('ai-alert-system', {
       body: {

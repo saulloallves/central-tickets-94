@@ -6,10 +6,18 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0';
 import { extractSearchTerms, limparTexto, prepararMensagemParaFranqueado } from './text-utils.ts';
 import { gerarRespostaComContexto } from './rag-engine.ts';
 
-const supabaseUrl = Deno.env.get('SUPABASE_URL');
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
-const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
+
+function getSupabaseClient() {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY environment variables');
+  }
+  
+  return createClient(supabaseUrl, supabaseServiceKey);
+}
 
 export async function searchKnowledgeBase(message: string) {
   console.log('Searching knowledge base for:', message);
@@ -19,6 +27,7 @@ export async function searchKnowledgeBase(message: string) {
     ? terms.map(t => `titulo.ilike.%${t}%,conteudo.ilike.%${t}%,categoria.ilike.%${t}%`).join(',')
     : null;
 
+  const supabase = getSupabaseClient();
   let query = supabase
     .from('knowledge_articles')
     .select('id, titulo, conteudo, categoria, tags')
@@ -85,6 +94,7 @@ export async function generateDirectSuggestion(message: string, relevantArticles
   }
 
   try {
+    const supabase = getSupabaseClient();
     const { data: aiSettings } = await supabase
       .from('faq_ai_settings')
       .select('*')
