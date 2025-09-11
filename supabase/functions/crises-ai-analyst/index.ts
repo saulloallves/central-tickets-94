@@ -499,15 +499,6 @@ function calculateTextSimilarity(text1: string, text2: string): number {
   
   return intersection.size / union.size;
 }
-    
-    return false;
-  });
-  
-  const totalSimilar = similarTickets.length + 1; // +1 para incluir o ticket atual
-  console.log(`🎯 Total de tickets similares: ${totalSimilar}`);
-  
-  return { count: totalSimilar, similarTickets };
-}
 
 async function createNewCrise(
   supabase: any,
