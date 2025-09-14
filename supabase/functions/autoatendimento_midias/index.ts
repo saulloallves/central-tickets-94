@@ -11,8 +11,12 @@ serve(async (req: Request) => {
   }
 
   try {
+    console.log("🖼️ AUTOATENDIMENTO_MIDIAS - Recebendo requisição");
     const body = await req.json();
-    const phone = body?.phone || body?.participantPhone;
+    console.log("📦 Body parseado:", JSON.stringify(body, null, 2));
+    
+    const phone = body?.body?.phone || body?.phone || body?.participantPhone;
+    console.log("📞 Telefone extraído:", phone);
 
     if (!phone) {
       return new Response(JSON.stringify({ error: "Telefone não encontrado" }), {
