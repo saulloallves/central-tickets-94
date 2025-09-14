@@ -23,7 +23,7 @@ serve(async (req: Request) => {
 
     const functionsBaseUrl =
       Deno.env.get("FUNCTIONS_BASE_URL") ||
-      `https://<sua-instancia>.supabase.co/functions/v1`;
+      `https://hryurntaljdisohawpqf.supabase.co/functions/v1`;
 
     // 🔹 MENU INICIAL
     if (KEYWORDS.some((k) => message.includes(k))) {
