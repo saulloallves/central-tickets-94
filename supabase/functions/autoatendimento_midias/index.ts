@@ -25,8 +25,8 @@ serve(async (req) => {
 
     // Configurações Z-API
     const instanceId = Deno.env.get("ZAPI_INSTANCE_ID");
-    const instanceToken = Deno.env.get("ZAPI_INSTANCE_TOKEN") || Deno.env.get("ZAPI_TOKEN");
-    const clientToken = Deno.env.get("ZAPI_CLIENT_TOKEN") || Deno.env.get("ZAPI_TOKEN");
+    const instanceToken = Deno.env.get("ZAPI_INSTANCE_TOKEN"); // Token da instância (usado na URL)
+    const clientToken = Deno.env.get("ZAPI_CLIENT_TOKEN");     // Token do cliente (usado no header)
     const baseUrl = Deno.env.get("ZAPI_BASE_URL") || "https://api.z-api.io";
 
     if (!instanceId || !instanceToken || !clientToken) {
