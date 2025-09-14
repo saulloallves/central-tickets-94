@@ -2,84 +2,59 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type"
 };
 
-serve(async (req: Request) => {
+serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log("🖼️ AUTOATENDIMENTO_MIDIAS - Recebendo requisição");
     const body = await req.json();
-    console.log("📦 Body parseado:", JSON.stringify(body, null, 2));
-    
+
+    // Identifica telefone (grupo ou individual)
     const phone = body?.body?.phone || body?.phone || body?.participantPhone;
-    console.log("📞 Telefone extraído:", phone);
-
     if (!phone) {
-      return new Response(JSON.stringify({ error: "Telefone não encontrado" }), {
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-        status: 400,
-      });
+      console.error("❌ Telefone não encontrado no body:", body);
+      return new Response(
+        JSON.stringify({ error: "Telefone não encontrado" }),
+        { headers: { "Content-Type": "application/json", ...corsHeaders }, status: 400 }
+      );
     }
 
-    // Verificar se é um grupo (contém -group) e extrair o número correto
-    let cleanPhone = phone;
-    if (phone.includes('-group')) {
-      console.log("📱 Detectado grupo WhatsApp, ignorando envio para grupo");
-      return new Response(JSON.stringify({ success: false, message: "Não enviamos mensagens para grupos" }), {
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-        status: 200,
-      });
-    }
+    const urlZApi = Deno.env.get("ZAPI_INSTANCE_URL");
+    const clientToken = Deno.env.get("ZAPI_TOKEN");
 
-    console.log("📞 Telefone limpo:", cleanPhone);
-
-    // Configurações Z-API
-    const instanceId = Deno.env.get("ZAPI_INSTANCE_ID");
-    const instanceToken = Deno.env.get("ZAPI_INSTANCE_TOKEN") || Deno.env.get("ZAPI_TOKEN");
-    const clientToken = Deno.env.get("ZAPI_CLIENT_TOKEN") || Deno.env.get("ZAPI_TOKEN");
-    const baseUrl = Deno.env.get("ZAPI_BASE_URL") || "https://api.z-api.io";
-
-    if (!instanceId || !instanceToken || !clientToken) {
-      console.error("❌ Configuração Z-API incompleta:", { instanceId: !!instanceId, instanceToken: !!instanceToken, clientToken: !!clientToken });
-      return new Response(JSON.stringify({ 
-        error: "Configuração Z-API incompleta", 
-        details: "ZAPI_INSTANCE_ID, ZAPI_INSTANCE_TOKEN e ZAPI_CLIENT_TOKEN são obrigatórios" 
-      }), {
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-        status: 500,
-      });
-    }
-
-    console.log("✅ Configurações Z-API:", { instanceId, baseUrl, hasToken: !!instanceToken, hasClientToken: !!clientToken });
-
+    // Payload conforme seu fluxo original no n8n
     const payload = {
-      phone: cleanPhone,
-      message: "🖼️ *Acessar Mídias Oficiais*\n\nTodos os materiais de comunicação, logos e mídias oficiais estão disponíveis em:\n\n🔗 https://crescieperdi.com.br/midias\n\n📱 Você encontrará:\n• Logos em alta resolução\n• Posts para redes sociais\n• Banners e materiais gráficos\n• Vídeos institucionais",
+      phone,
+      message: "🖼️ *Acessar Mídias*\n\n🟡 Todas as mídias estão disponíveis diretamente no *GiraBot.*\n\n⬇️ _*Clique no link abaixo para acessar o GiraBot*_",
+      image: "https://hryurntaljdisohawpqf.supabase.co/storage/v1/object/public/figurinhascresci/midias_girabot/CAPA%20GIRABOT%20COM%20FUNDO.png",
+      linkUrl: "https://fluxoapi.contatocrescieperdi.com.br/menu-midias",
+      title: "🖼️ Acessar Mídias",
+      linkDescription: "🟡 Todas as mídias estão disponíveis diretamente no GiraBot."
     };
 
-    const zapiUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}/send-text`;
-    console.log(`📤 Enviando midias info para Z-API: ${zapiUrl.replace(instanceToken, '****')}`);
+    console.log("📩 Enviando payload autoatendimento_midias:", payload);
 
-    const res = await fetch(zapiUrl, {
+    const res = await fetch(`${urlZApi}/send-link`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Client-Token": clientToken,
+        "Client-Token": clientToken || ""
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payload)
     });
 
     const data = await res.json();
-    console.log("📤 Resposta Z-API:", data);
+    console.log("📤 Resposta da Z-API (midias):", data);
 
     return new Response(JSON.stringify(data), {
       headers: { "Content-Type": "application/json", ...corsHeaders },
-      status: res.status,
+      status: res.status
     });
+
   } catch (err) {
     console.error("❌ Erro no autoatendimento_midias:", err);
     return new Response(
