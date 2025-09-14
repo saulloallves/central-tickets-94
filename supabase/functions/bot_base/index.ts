@@ -17,7 +17,9 @@ serve(async (req: Request) => {
     const message = (body?.text?.message || "").toLowerCase().trim();
     const phone = body?.body?.phone || body?.phone || body?.participantPhone;
 
-    console.log("📩 Mensagem recebida:", { buttonId, message, phone });
+    console.log("📩 WEBHOOK RECEBIDO - Body completo:", JSON.stringify(body, null, 2));
+    console.log("📩 Dados extraídos:", { buttonId, message, phone });
+    console.log("📩 ButtonId específico detectado:", buttonId);
 
     // Palavras-chave que disparam menu inicial
     const KEYWORDS = ["menu", "ola robo", "olá robô", "abacate"];
@@ -63,6 +65,7 @@ serve(async (req: Request) => {
       return await proxy(functionsBaseUrl, "autoatendimento_calendario", body);
     }
     if (buttonId === "autoatendimento_midias") {
+      console.log("🖼️ REDIRECIONANDO PARA autoatendimento_midias");
       return await proxy(functionsBaseUrl, "autoatendimento_midias", body);
     }
     if (buttonId === "autoatendimento_ticket") {
@@ -99,8 +102,9 @@ serve(async (req: Request) => {
     }
 
     // Caso não reconheça
-    console.log("⏭️ Ignorado");
-    return new Response(JSON.stringify({ success: true, ignored: true }), {
+    console.log("⏭️ NENHUMA CONDIÇÃO ATENDIDA - ButtonId:", buttonId, "Message:", message);
+    console.log("⏭️ Ignorando requisição");
+    return new Response(JSON.stringify({ success: true, ignored: true, buttonId, message }), {
       headers: { "Content-Type": "application/json", ...corsHeaders },
       status: 200,
     });
@@ -115,6 +119,9 @@ serve(async (req: Request) => {
 
 // 🔧 Função helper para redirecionar chamadas
 async function proxy(baseUrl: string, functionName: string, body: any) {
+  console.log(`🔀 PROXY: Redirecionando para ${functionName}`);
+  console.log(`🔀 URL completa: ${baseUrl}/${functionName}`);
+  
   const res = await fetch(`${baseUrl}/${functionName}`, {
     method: "POST",
     headers: {
@@ -124,7 +131,11 @@ async function proxy(baseUrl: string, functionName: string, body: any) {
     body: JSON.stringify(body),
   });
 
-  return new Response(await res.text(), {
+  console.log(`🔀 PROXY: Resposta de ${functionName} - Status: ${res.status}`);
+  const responseText = await res.text();
+  console.log(`🔀 PROXY: Response body: ${responseText}`);
+
+  return new Response(responseText, {
     headers: { "Content-Type": "application/json", ...corsHeaders },
     status: res.status,
   });
