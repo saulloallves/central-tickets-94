@@ -40,6 +40,15 @@ serve(async (req) => {
       });
     }
 
+    console.log("✅ Configurações Z-API:", { 
+      instanceId, 
+      baseUrl, 
+      hasInstanceToken: !!instanceToken, 
+      hasClientToken: !!clientToken,
+      instanceTokenLength: instanceToken?.length,
+      clientTokenLength: clientToken?.length
+    });
+
     // Payload conforme seu fluxo original no n8n
     const payload = {
       phone,
