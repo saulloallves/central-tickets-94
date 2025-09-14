@@ -44,43 +44,46 @@ export function AtendimentoCard({ atendimento, onClick, compact = false }: Atend
     <Card 
       className={cn(
         "cursor-pointer hover:shadow-md transition-all duration-200 hover:-translate-y-1",
-        compact ? "p-3" : "p-4"
+        compact ? "p-3" : "p-4",
+        "h-fit min-h-[120px] flex flex-col"
       )}
       onClick={onClick}
     >
-      <CardContent className={cn("space-y-3", compact ? "p-0" : "p-0")}>
-        {/* Header com status e tempo */}
-        <div className="flex items-center justify-between">
-          <Badge variant={statusConfig.variant} className="text-xs">
-            {statusConfig.emoji} {atendimento.status.replace('_', ' ')}
-          </Badge>
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Clock className="w-3 h-3" />
-            {formatTempo(atendimento.tempoEspera)}
+      <CardContent className={cn("flex flex-col justify-between h-full", compact ? "p-0" : "p-0")}>
+        <div className="space-y-3 flex-1">
+          {/* Header com status e tempo */}
+          <div className="flex items-center justify-between">
+            <Badge variant={statusConfig.variant} className="text-xs">
+              {statusConfig.emoji} {atendimento.status.replace('_', ' ')}
+            </Badge>
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Clock className="w-3 h-3" />
+              {formatTempo(atendimento.tempoEspera)}
+            </div>
           </div>
-        </div>
 
-        {/* Informações principais */}
-        <div className="space-y-2">
-          <div className="font-medium text-sm truncate">
-            {atendimento.unidade}
+          {/* Informações principais */}
+          <div className="space-y-2 flex-1">
+            <div className="font-medium text-sm truncate">
+              {atendimento.unidade}
+            </div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Phone className="w-3 h-3" />
+              <span>{atendimento.telefone}</span>
+            </div>
           </div>
+
+          {/* Última interação */}
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Phone className="w-3 h-3" />
-            <span>{atendimento.telefone}</span>
+            {getUltimaInteracaoIcon(atendimento.ultimaInteracao.tipo)}
+            <span className="truncate flex-1">{atendimento.ultimaInteracao.texto}</span>
+            <span>{atendimento.ultimaInteracao.tempo}</span>
           </div>
-        </div>
-
-        {/* Última interação */}
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          {getUltimaInteracaoIcon(atendimento.ultimaInteracao.tipo)}
-          <span className="truncate flex-1">{atendimento.ultimaInteracao.texto}</span>
-          <span>{atendimento.ultimaInteracao.tempo}</span>
         </div>
 
         {/* Ações rápidas - apenas em cards não compactos */}
         {!compact && (
-          <div className="flex gap-2 pt-2">
+          <div className="flex gap-2 pt-3 mt-auto">
             <Button
               size="sm"
               variant="outline"

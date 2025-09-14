@@ -20,15 +20,17 @@ export function FilaAtendimentos({ atendimentos, onSelectAtendimento }: FilaAten
           </div>
         ) : (
           atendimentos.map((atendimento, index) => (
-            <div key={atendimento.id} className="relative">
-              <div className="absolute -left-2 top-3 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-bold z-10">
+            <div key={atendimento.id} className="relative mb-4">
+              <div className="absolute -left-2 top-4 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-bold z-10">
                 {index + 1}
               </div>
-              <AtendimentoCard
-                atendimento={atendimento}
-                onClick={() => onSelectAtendimento(atendimento.id)}
-                compact
-              />
+              <div className="ml-4">
+                <AtendimentoCard
+                  atendimento={atendimento}
+                  onClick={() => onSelectAtendimento(atendimento.id)}
+                  compact
+                />
+              </div>
             </div>
           ))
         )}
