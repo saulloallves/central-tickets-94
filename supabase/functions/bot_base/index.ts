@@ -15,13 +15,24 @@ serve(async (req: Request) => {
     const body = await req.json();
     console.log("📦 Body parseado:", JSON.stringify(body, null, 2));
 
-    const buttonId = body?.buttonsResponseMessage?.buttonId || "";
+    // Tenta extrair buttonId de várias formas possíveis
+    const buttonId1 = body?.buttonsResponseMessage?.buttonId;
+    const buttonId2 = body?.buttonId;
+    const buttonId3 = body?.button?.id;
+    const buttonId4 = body?.selectedButtonId;
+    
+    console.log("🔍 TODAS as formas de buttonId:", {
+      buttonsResponseMessage: buttonId1,
+      direct: buttonId2,
+      button_id: buttonId3,
+      selectedButtonId: buttonId4
+    });
+
+    const buttonId = buttonId1 || buttonId2 || buttonId3 || buttonId4 || "";
     const message = (body?.text?.message || "").toLowerCase().trim();
     const phone = body?.body?.phone || body?.phone || body?.participantPhone;
 
-    console.log("📩 WEBHOOK RECEBIDO - Body completo:", JSON.stringify(body, null, 2));
-    console.log("📩 Dados extraídos:", { buttonId, message, phone });
-    console.log("📩 ButtonId específico detectado:", buttonId);
+    console.log("📩 DADOS FINAIS EXTRAÍDOS:", { buttonId, message, phone });
     
     // Log crítico para debugar
     if (buttonId === "autoatendimento_midias") {
