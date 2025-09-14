@@ -14,10 +14,27 @@ serve(async (req: Request) => {
       message: "🤖 Voltando para o GiraBot principal! Digite novamente *olá robô* para recomeçar.",
     };
 
-    await fetch(`${Deno.env.get("ZAPI_INSTANCE_URL")}/send-text`, {
+    // Configurações Z-API
+    const instanceId = Deno.env.get("ZAPI_INSTANCE_ID");
+    const instanceToken = Deno.env.get("ZAPI_TOKEN");
+    const clientToken = Deno.env.get("ZAPI_CLIENT_TOKEN") || Deno.env.get("ZAPI_TOKEN");
+    const baseUrl = Deno.env.get("ZAPI_BASE_URL") || "https://api.z-api.io";
+
+    const zapiUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}/send-link`;
+
+    const linkPayload = {
+      phone,
+      message: "🤖 Aqui está o link para o *GiraBot*:\n\nAcesse quando quiser fazer solicitações, consultar mídias, falar com a DFCom ou abrir tickets.\n\n⬇️ _*Clique no link abaixo para acessar o GiraBot*_\n",
+      image: "https://hryurntaljdisohawpqf.supabase.co/storage/v1/object/public/figurinhascresci/midias_girabot/CAPA%20GIRABOT%20COM%20FUNDO.png",
+      linkUrl: "https://girabot.com",
+      title: "🔗 Acessar GiraBot",
+      linkDescription: "Acesse quando quiser fazer solicitações, consultar mídias, falar com a DFCom ou abrir tickets."
+    };
+
+    await fetch(zapiUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "Client-Token": Deno.env.get("ZAPI_TOKEN") || "" },
-      body: JSON.stringify(payload),
+      headers: { "Content-Type": "application/json", "Client-Token": clientToken },
+      body: JSON.stringify(linkPayload),
     });
 
     return new Response(JSON.stringify({ success: true, step: "outras_opcoes" }), { headers: { "Content-Type": "application/json", ...corsHeaders }, status: 200 });

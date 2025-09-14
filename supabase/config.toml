@@ -48,6 +48,9 @@ verify_jwt = false
 [functions.bot_base]
 verify_jwt = false
 
+[functions.bot_base_1]
+verify_jwt = false
+
 [functions.colaborador-signup]
 verify_jwt = false
 

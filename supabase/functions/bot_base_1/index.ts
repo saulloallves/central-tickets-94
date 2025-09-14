@@ -11,7 +11,7 @@ serve(async (req: Request) => {
   }
 
   try {
-    console.log("🚀 BOT_BASE INICIADO - Recebendo requisição");
+    console.log("🚀 BOT_BASE_1 INICIADO - Recebendo requisição");
     const body = await req.json();
     console.log("📦 Body parseado:", JSON.stringify(body, null, 2));
 
@@ -21,19 +21,18 @@ serve(async (req: Request) => {
     const buttonId3 = body?.button?.id;
     const buttonId4 = body?.selectedButtonId;
     
-    console.log("🔍 TODAS as formas de buttonId:", {
-      buttonsResponseMessage: buttonId1,
-      direct: buttonId2,
-      button_id: buttonId3,
-      selectedButtonId: buttonId4
-    });
-
     const buttonId = buttonId1 || buttonId2 || buttonId3 || buttonId4 || "";
-    const message = (body?.text?.message || "").toLowerCase().trim();
-    const phone = body?.body?.phone || body?.phone || body?.participantPhone;
+    
+    // Extrai phone e message 
+    const phone = body?.phone || body?.participantPhone;
+    const message = (body?.text?.message || body?.message || "").toLowerCase();
 
-    console.log("📩 DADOS FINAIS EXTRAÍDOS:", { buttonId, message, phone });
-    // DEBUGGING VIA WHATSAPP - Vamos enviar as informações via mensagem
+    console.log("🔍 DADOS EXTRAÍDOS:");
+    console.log("Phone:", phone);
+    console.log("ButtonId:", buttonId);
+    console.log("Message:", message);
+
+    // Debug via Z-API quando há phone
     if (phone && (buttonId.includes("autoatendimento") || buttonId === "autoatendimento_midias")) {
       const functionsBaseUrl = Deno.env.get("FUNCTIONS_BASE_URL") || `https://hryurntaljdisohawpqf.supabase.co/functions/v1`;
       
@@ -44,7 +43,7 @@ serve(async (req: Request) => {
       const baseUrl = Deno.env.get("ZAPI_BASE_URL") || "https://api.z-api.io";
 
       if (instanceId && instanceToken && clientToken) {
-        const debugMessage = `🔍 DEBUG BOT_BASE:
+        const debugMessage = `🔍 DEBUG BOT_BASE_1:
 ButtonId detectado: "${buttonId}"
 Message: "${message}"
 Phone: "${phone}"
@@ -56,7 +55,8 @@ Estrutura completa: ${JSON.stringify(body, null, 2)}`;
         };
 
         try {
-          await fetch(`${baseUrl}/instances/${instanceId}/token/${instanceToken}/send-text`, {
+          const zapiUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}/send-text`;
+          await fetch(zapiUrl, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -64,8 +64,9 @@ Estrutura completa: ${JSON.stringify(body, null, 2)}`;
             },
             body: JSON.stringify(debugPayload),
           });
-        } catch (err) {
-          console.log("Erro no debug:", err);
+          console.log("📤 Debug message sent via Z-API");
+        } catch (debugError) {
+          console.log("⚠️ Failed to send debug message:", debugError.message);
         }
       }
     }
@@ -110,8 +111,8 @@ Estrutura completa: ${JSON.stringify(body, null, 2)}`;
     }
 
     // 🔹 SUBMENUS DO AUTOATENDIMENTO
-    console.log("🔍 VERIFICANDO SUBMENUS - ButtonId:", buttonId);
     
+    // Calendário
     if (buttonId === "autoatendimento_calendario") {
       return await proxy(functionsBaseUrl, "autoatendimento_calendario", body);
     }
@@ -160,7 +161,7 @@ Estrutura completa: ${JSON.stringify(body, null, 2)}`;
       status: 200,
     });
   } catch (err) {
-    console.error("❌ Erro no bot_base:", err);
+    console.error("❌ Erro no bot_base_1:", err);
     return new Response(
       JSON.stringify({ error: "Erro interno", details: err.message }),
       { headers: { "Content-Type": "application/json", ...corsHeaders }, status: 500 }
@@ -170,24 +171,29 @@ Estrutura completa: ${JSON.stringify(body, null, 2)}`;
 
 // 🔧 Função helper para redirecionar chamadas
 async function proxy(baseUrl: string, functionName: string, body: any) {
-  console.log(`🔀 PROXY: Redirecionando para ${functionName}`);
-  console.log(`🔀 URL completa: ${baseUrl}/${functionName}`);
-  
-  const res = await fetch(`${baseUrl}/${functionName}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
-    },
-    body: JSON.stringify(body),
-  });
+  try {
+    console.log(`🔄 Redirecionando para ${functionName}`);
+    const res = await fetch(`${baseUrl}/${functionName}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+      },
+      body: JSON.stringify(body),
+    });
 
-  console.log(`🔀 PROXY: Resposta de ${functionName} - Status: ${res.status}`);
-  const responseText = await res.text();
-  console.log(`🔀 PROXY: Response body: ${responseText}`);
+    const responseText = await res.text();
+    console.log(`📤 Resposta de ${functionName}:`, res.status, responseText.substring(0, 200));
 
-  return new Response(responseText, {
-    headers: { "Content-Type": "application/json", ...corsHeaders },
-    status: res.status,
-  });
+    return new Response(responseText, {
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+      status: res.status,
+    });
+  } catch (error) {
+    console.error(`❌ Erro no proxy para ${functionName}:`, error);
+    return new Response(
+      JSON.stringify({ error: `Erro no proxy para ${functionName}`, details: error.message }),
+      { headers: { "Content-Type": "application/json", ...corsHeaders }, status: 500 }
+    );
+  }
 }
