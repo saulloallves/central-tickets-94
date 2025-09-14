@@ -25,6 +25,18 @@ serve(async (req: Request) => {
       });
     }
 
+    // Verificar se é um grupo (contém -group) e extrair o número correto
+    let cleanPhone = phone;
+    if (phone.includes('-group')) {
+      console.log("📱 Detectado grupo WhatsApp, ignorando envio para grupo");
+      return new Response(JSON.stringify({ success: false, message: "Não enviamos mensagens para grupos" }), {
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+        status: 200,
+      });
+    }
+
+    console.log("📞 Telefone limpo:", cleanPhone);
+
     // Configurações Z-API
     const instanceId = Deno.env.get("ZAPI_INSTANCE_ID");
     const instanceToken = Deno.env.get("ZAPI_INSTANCE_TOKEN") || Deno.env.get("ZAPI_TOKEN");
@@ -45,7 +57,7 @@ serve(async (req: Request) => {
     console.log("✅ Configurações Z-API:", { instanceId, baseUrl, hasToken: !!instanceToken, hasClientToken: !!clientToken });
 
     const payload = {
-      phone,
+      phone: cleanPhone,
       message: "🖼️ *Acessar Mídias Oficiais*\n\nTodos os materiais de comunicação, logos e mídias oficiais estão disponíveis em:\n\n🔗 https://crescieperdi.com.br/midias\n\n📱 Você encontrará:\n• Logos em alta resolução\n• Posts para redes sociais\n• Banners e materiais gráficos\n• Vídeos institucionais",
     };
 
