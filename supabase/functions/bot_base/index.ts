@@ -80,6 +80,14 @@ serve(async (req: Request) => {
       return await proxy(functionsBaseUrl, "outras_opcoes", body);
     }
 
+    // 🔹 NOVOS MENUS PRINCIPAIS
+    if (buttonId === "personalizado_menu") {
+      return await proxy(functionsBaseUrl, "personalizado_menu", body);
+    }
+    if (buttonId === "emergencia_menu") {
+      return await proxy(functionsBaseUrl, "emergencia_menu", body);
+    }
+
     // ❌ Pula DFCom por enquanto
     if (buttonId === "autoatendimento_dfcom") {
       console.log("🚫 DFCom desativado por enquanto");

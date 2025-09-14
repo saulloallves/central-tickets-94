@@ -6,51 +6,58 @@ const corsHeaders = {
 };
 
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
 
   try {
     const body = await req.json();
-    const phone = body?.phone || body?.participantPhone;
 
-    console.log("📱 Enviando menu principal para:", phone);
+    const phone = body?.body?.phone || body?.phone;
+    if (!phone) {
+      return new Response(JSON.stringify({ error: "Telefone não encontrado" }), {
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+        status: 400,
+      });
+    }
 
-    const menuBody = {
+    const urlZApi = Deno.env.get("URL_ZAPI") || "https://api.z-api.io/instances/xxxx/token/yyyy";
+    const clientToken = Deno.env.get("CLIENT_TOKEN") || "";
+
+    // Monta o menu principal
+    const payload = {
       phone,
-      message: "🤖 *Olá! Sou o GiraBot da Cresci e Perdi!*\n\nEscolha uma das opções abaixo:",
+      message: "👋 Oi! Eu sou o *GiraBot*, seu assistente automático da *Cresci e Perdi*.\n\nAs opções de atendimento mudaram. Como prefere seguir?",
       buttonList: {
         buttons: [
-          {
-            id: "autoatendimento_menu",
-            text: "🔧 Autoatendimento"
-          },
-          {
-            id: "outras_opcoes",
-            text: "🔗 Outras Opções"
-          }
-        ]
-      }
+          { id: "autoatendimento_menu", label: "⚡ Autoatendimento" },
+          { id: "personalizado_menu", label: "🤵 Atendimento Personalizado" },
+          { id: "emergencia_menu", label: "🚨 Estou em Emergência" },
+        ],
+      },
     };
 
-    const response = await fetch(`${Deno.env.get("ZAPI_INSTANCE_URL")}/send-button-list`, {
+    const res = await fetch(`${urlZApi}/send-button-list`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Client-Token": Deno.env.get("ZAPI_TOKEN") || "",
+        "Client-Token": clientToken,
       },
-      body: JSON.stringify(menuBody),
+      body: JSON.stringify(payload),
     });
 
-    console.log("📤 Status do envio do menu:", response.status);
+    const data = await res.json();
+    console.log("📤 Menu Principal enviado:", data);
 
-    return new Response(JSON.stringify({ success: true, step: "menu_principal" }), {
+    return new Response(JSON.stringify(data), {
       headers: { "Content-Type": "application/json", ...corsHeaders },
-      status: 200,
+      status: res.status,
     });
   } catch (err) {
     console.error("❌ Erro no menu_principal:", err);
-    return new Response(JSON.stringify({ error: err.message }), {
-      headers: { "Content-Type": "application/json", ...corsHeaders },
-      status: 500,
-    });
+    return new Response(
+      JSON.stringify({ error: "Erro interno", details: err.message }),
+      { headers: { "Content-Type": "application/json", ...corsHeaders }, status: 500 }
+    );
   }
 });
