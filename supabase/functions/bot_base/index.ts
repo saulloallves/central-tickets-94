@@ -51,8 +51,8 @@ serve(async (req: Request) => {
       });
     }
 
-    // 🔹 AUTOATENDIMENTO
-    if (buttonId.startsWith("autoatendimento_menu")) {
+    // 🔹 AUTOATENDIMENTO (Menu principal)
+    if (buttonId === "autoatendimento_menu") {
       const res = await fetch(`${functionsBaseUrl}/autoatendimento`, {
         method: "POST",
         headers: {
