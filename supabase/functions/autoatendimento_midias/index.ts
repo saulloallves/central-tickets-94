@@ -11,7 +11,9 @@ serve(async (req) => {
   }
 
   try {
+    console.log("🖼️ AUTOATENDIMENTO_MIDIAS - INICIADO - Timestamp:", new Date().toISOString());
     const body = await req.json();
+    console.log("📦 Body recebido:", JSON.stringify(body, null, 2));
 
     // Identifica telefone (grupo ou individual)
     const phone = body?.body?.phone || body?.phone || body?.participantPhone;
