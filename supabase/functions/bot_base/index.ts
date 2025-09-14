@@ -11,7 +11,9 @@ serve(async (req: Request) => {
   }
 
   try {
+    console.log("🚀 BOT_BASE INICIADO - Recebendo requisição");
     const body = await req.json();
+    console.log("📦 Body parseado:", JSON.stringify(body, null, 2));
 
     const buttonId = body?.buttonsResponseMessage?.buttonId || "";
     const message = (body?.text?.message || "").toLowerCase().trim();
@@ -20,6 +22,11 @@ serve(async (req: Request) => {
     console.log("📩 WEBHOOK RECEBIDO - Body completo:", JSON.stringify(body, null, 2));
     console.log("📩 Dados extraídos:", { buttonId, message, phone });
     console.log("📩 ButtonId específico detectado:", buttonId);
+    
+    // Log crítico para debugar
+    if (buttonId === "autoatendimento_midias") {
+      console.log("🎯 MATCH DIRETO COM autoatendimento_midias DETECTADO!");
+    }
 
     // Palavras-chave que disparam menu inicial
     const KEYWORDS = ["menu", "ola robo", "olá robô", "abacate"];
