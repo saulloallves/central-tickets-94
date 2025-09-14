@@ -67,6 +67,9 @@ verify_jwt = false
 [functions.process-response]
 verify_jwt = false
 
+[functions.autoatendimento]
+verify_jwt = false
+
 [functions.bot_base]
 verify_jwt = false
 
