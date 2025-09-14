@@ -61,11 +61,13 @@ serve(async (req: Request) => {
     }
 
     // 🔹 SUBMENUS DO AUTOATENDIMENTO
+    console.log("🔍 VERIFICANDO SUBMENUS - ButtonId:", buttonId);
+    
     if (buttonId === "autoatendimento_calendario") {
       return await proxy(functionsBaseUrl, "autoatendimento_calendario", body);
     }
     if (buttonId === "autoatendimento_midias") {
-      console.log("🖼️ REDIRECIONANDO PARA autoatendimento_midias");
+      console.log("🖼️ MATCH! REDIRECIONANDO PARA autoatendimento_midias");
       return await proxy(functionsBaseUrl, "autoatendimento_midias", body);
     }
     if (buttonId === "autoatendimento_ticket") {
