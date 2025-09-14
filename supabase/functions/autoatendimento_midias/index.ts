@@ -32,6 +32,7 @@ serve(async (req: Request) => {
     const baseUrl = Deno.env.get("ZAPI_BASE_URL") || "https://api.z-api.io";
 
     if (!instanceId || !instanceToken || !clientToken) {
+      console.error("❌ Configuração Z-API incompleta:", { instanceId: !!instanceId, instanceToken: !!instanceToken, clientToken: !!clientToken });
       return new Response(JSON.stringify({ 
         error: "Configuração Z-API incompleta", 
         details: "ZAPI_INSTANCE_ID, ZAPI_INSTANCE_TOKEN e ZAPI_CLIENT_TOKEN são obrigatórios" 
@@ -40,6 +41,8 @@ serve(async (req: Request) => {
         status: 500,
       });
     }
+
+    console.log("✅ Configurações Z-API:", { instanceId, baseUrl, hasToken: !!instanceToken, hasClientToken: !!clientToken });
 
     const payload = {
       phone,
@@ -59,7 +62,7 @@ serve(async (req: Request) => {
     });
 
     const data = await res.json();
-    console.log("📤 Midias info enviado:", data);
+    console.log("📤 Resposta Z-API:", data);
 
     return new Response(JSON.stringify(data), {
       headers: { "Content-Type": "application/json", ...corsHeaders },
