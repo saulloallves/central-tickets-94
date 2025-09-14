@@ -13,6 +13,7 @@ import { PendingApproval } from "./pages/PendingApproval";
 import AdminLayout from "./pages/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
 import Tickets from "./pages/admin/Tickets";
+import Atendimentos from "./pages/admin/Atendimentos";
 import Unidades from "./pages/admin/Unidades";
 import Franqueados from "./pages/admin/Franqueados";
 import Colaboradores from "./pages/admin/Colaboradores";
@@ -54,6 +55,13 @@ const App = () => (
               <ProtectedRoute>
                 <AdminLayout>
                   <Tickets />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/atendimentos" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <Atendimentos />
                 </AdminLayout>
               </ProtectedRoute>
             } />

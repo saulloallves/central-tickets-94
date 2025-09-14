@@ -3,6 +3,7 @@ import {
   Building2, 
   UserCheck, 
   Ticket,
+  MessageSquare,
   Settings, 
   Home,
   Users2,
@@ -12,6 +13,7 @@ import {
 export const navigationItems = [
   { title: "Dashboard", url: "/admin", icon: Home, permission: 'access_dashboards' as const },
   { title: "Tickets", url: "/admin/tickets", icon: Ticket, permission: 'view_team_tickets' as const },
+  { title: "Atendimentos", url: "/admin/atendimentos", icon: MessageSquare, permission: 'view_team_tickets' as const },
   { title: "Unidades", url: "/admin/unidades", icon: Building2, permission: 'view_team_tickets' as const },
   { title: "Franqueados", url: "/admin/franqueados", icon: Users, permission: 'view_team_tickets' as const },
   { title: "Colaboradores", url: "/admin/colaboradores", icon: UserCheck, permission: 'view_all_tickets' as const },
