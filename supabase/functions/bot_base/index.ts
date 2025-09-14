@@ -15,8 +15,9 @@ serve(async (req: Request) => {
 
     const buttonId = body?.buttonsResponseMessage?.buttonId || "";
     const message = (body?.text?.message || "").toLowerCase().trim();
+    const phone = body?.body?.phone || body?.phone || body?.participantPhone;
 
-    console.log("📩 Mensagem recebida:", { buttonId, message });
+    console.log("📩 Mensagem recebida:", { buttonId, message, phone });
 
     // Palavras-chave que disparam menu inicial
     const KEYWORDS = ["menu", "ola robo", "olá robô", "abacate"];

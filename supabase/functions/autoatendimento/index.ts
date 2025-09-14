@@ -23,6 +23,22 @@ serve(async (req: Request) => {
 
     console.log("📲 Iniciando AUTOATENDIMENTO para:", phone);
 
+    // Configurações Z-API
+    const instanceId = Deno.env.get("ZAPI_INSTANCE_ID");
+    const instanceToken = Deno.env.get("ZAPI_INSTANCE_TOKEN") || Deno.env.get("ZAPI_TOKEN");
+    const clientToken = Deno.env.get("ZAPI_CLIENT_TOKEN") || Deno.env.get("ZAPI_TOKEN");
+    const baseUrl = Deno.env.get("ZAPI_BASE_URL") || "https://api.z-api.io";
+
+    if (!instanceId || !instanceToken || !clientToken) {
+      return new Response(JSON.stringify({ 
+        error: "Configuração Z-API incompleta", 
+        details: "ZAPI_INSTANCE_ID, ZAPI_INSTANCE_TOKEN e ZAPI_CLIENT_TOKEN são obrigatórios" 
+      }), {
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+        status: 500,
+      });
+    }
+
     // Monta menu de autoatendimento (igual ao n8n)
     const menuBody = {
       phone,
@@ -41,12 +57,15 @@ serve(async (req: Request) => {
       },
     };
 
+    const zapiUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}/send-button-list`;
+    console.log(`📤 Enviando menu autoatendimento para Z-API: ${zapiUrl.replace(instanceToken, '****')}`);
+
     // Envia via Z-API
-    const res = await fetch(`${Deno.env.get("ZAPI_INSTANCE_URL")}/send-button-list`, {
+    const res = await fetch(zapiUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Client-Token": Deno.env.get("ZAPI_TOKEN") || "",
+        "Client-Token": clientToken,
       },
       body: JSON.stringify(menuBody),
     });

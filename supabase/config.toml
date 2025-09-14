@@ -97,6 +97,15 @@ verify_jwt = false
 [functions.zapi-whatsapp]
 verify_jwt = false
 
+[functions.personalizado_menu]
+verify_jwt = false
+
+[functions.emergencia_menu]
+verify_jwt = false
+
+[functions.menu_principal]
+verify_jwt = false
+
 [db]
 port = 54322
 shadow_port = 54320
