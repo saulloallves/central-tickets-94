@@ -21,8 +21,8 @@ serve(async (req: Request) => {
       });
     }
 
-    const urlZApi = Deno.env.get("URL_ZAPI") || "https://api.z-api.io/instances/xxxx/token/yyyy";
-    const clientToken = Deno.env.get("CLIENT_TOKEN") || "";
+    const urlZApi = Deno.env.get("ZAPI_INSTANCE_URL");
+    const clientToken = Deno.env.get("ZAPI_TOKEN");
 
     // Monta o menu principal
     const payload = {
