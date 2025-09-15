@@ -52,6 +52,83 @@ serve(async (req) => {
     }
     console.log("✅ Unidade encontrada:", unidade);
 
+    // 1.5 Verificar se já existe um atendimento ativo para este telefone
+    const { data: chamadoExistente, error: chamadoError } = await supabase
+      .from("chamados")
+      .select("id, status, criado_em")
+      .eq("telefone", phone)
+      .eq("unidade_id", unidade.id)
+      .in("status", ["em_fila", "em_atendimento"])
+      .maybeSingle();
+
+    if (chamadoError) {
+      console.error("❌ Erro ao verificar chamados existentes:", chamadoError);
+    }
+
+    // Se já existe um atendimento ativo, não criar novo
+    if (chamadoExistente) {
+      console.log("⚠️ Atendimento já existe:", chamadoExistente);
+
+      // Buscar posição na fila se estiver em fila
+      let posicao = null;
+      if (chamadoExistente.status === "em_fila") {
+        const { data: fila } = await supabase
+          .from("chamados")
+          .select("id, criado_em")
+          .eq("status", "em_fila")
+          .eq("unidade_id", unidade.id)
+          .order("criado_em", { ascending: true });
+
+        if (fila) {
+          posicao = fila.findIndex((c) => c.id === chamadoExistente.id) + 1;
+        }
+      }
+
+      // Configurações Z-API
+      const instanceId = Deno.env.get("ZAPI_INSTANCE_ID");
+      const instanceToken = Deno.env.get("ZAPI_TOKEN");
+      const clientToken = Deno.env.get("ZAPI_CLIENT_TOKEN") || Deno.env.get("ZAPI_TOKEN");
+      const baseUrl = Deno.env.get("ZAPI_BASE_URL") || "https://api.z-api.io";
+      const zapiUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}`;
+
+      async function enviarZapi(endpoint: string, payload: any) {
+        try {
+          const res = await fetch(`${zapiUrl}/${endpoint}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Client-Token": clientToken },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json();
+          console.log("📤 Enviado:", endpoint, data);
+        } catch (err) {
+          console.error("❌ Erro ao enviar Z-API:", err);
+        }
+      }
+
+      // Enviar mensagem adequada baseada no status
+      if (chamadoExistente.status === "em_fila") {
+        await enviarZapi("send-text", {
+          phone,
+          message: `⏳ *Você já possui um atendimento personalizado na fila*\n\n📊 Sua posição: *#${posicao}*\n\nPor favor, aguarde sua vez. Você receberá uma mensagem quando for atendido.`,
+        });
+      } else if (chamadoExistente.status === "em_atendimento") {
+        await enviarZapi("send-text", {
+          phone,
+          message: `👥 *Você já está sendo atendido*\n\nVocê já possui um atendimento personalizado em andamento com nossa equipe.\n\nContinue a conversação aqui mesmo.`,
+        });
+      }
+
+      return new Response(JSON.stringify({ 
+        success: true, 
+        atendimento_existente: true,
+        chamado: chamadoExistente,
+        posicao 
+      }), {
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+        status: 200,
+      });
+    }
+
     // 2. Cria um novo chamado
     const { data: chamado, error: chamadoError } = await supabase
       .from("chamados")

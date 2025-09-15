@@ -110,6 +110,9 @@ serve(async (req: Request) => {
     if (buttonId === "falar_com_concierge") {
       return await proxy(functionsBaseUrl, "concierge_falar", body);
     }
+    if (buttonId === "acompanhar_chamado") {
+      return await proxy(functionsBaseUrl, "acompanhar_chamado", body);
+    }
     if (buttonId === "emergencia_menu") {
       return await proxy(functionsBaseUrl, "emergencia_menu", body);
     }
