@@ -10,13 +10,6 @@ interface AtendimentoKanbanProps {
 
 const KANBAN_COLUMNS = [
   { 
-    id: 'novo', 
-    title: 'Novo', 
-    emoji: '🔵',
-    bgColor: 'bg-blue-50 dark:bg-blue-950/20',
-    borderColor: 'border-blue-200 dark:border-blue-800'
-  },
-  { 
     id: 'em_fila', 
     title: 'Em Fila', 
     emoji: '🟡',
@@ -31,8 +24,8 @@ const KANBAN_COLUMNS = [
     borderColor: 'border-blue-200 dark:border-blue-800'
   },
   { 
-    id: 'concluido', 
-    title: 'Concluído', 
+    id: 'finalizado', 
+    title: 'Finalizado', 
     emoji: '🟢',
     bgColor: 'bg-green-50 dark:bg-green-950/20',
     borderColor: 'border-green-200 dark:border-green-800'
@@ -46,7 +39,7 @@ export function AtendimentoKanban({ atendimentos, onSelectAtendimento }: Atendim
 
   return (
     <div className="h-full">
-      <div className="grid grid-cols-4 gap-4 h-full">
+      <div className="grid grid-cols-3 gap-4 h-full">
         {KANBAN_COLUMNS.map((column) => {
           const columnAtendimentos = getAtendimentosByStatus(column.id);
           
