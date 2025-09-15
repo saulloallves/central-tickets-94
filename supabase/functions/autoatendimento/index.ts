@@ -47,8 +47,6 @@ serve(async (req: Request) => {
         buttons: [
           { id: "autoatendimento_calendario", label: "📆 Calendário Anual" },
           { id: "autoatendimento_midias", label: "🖼️ Acessar Mídias" },
-          { id: "autoatendimento_ticket", label: "🎫 Fazer uma solicitação (Ticket)" },
-          { id: "autoatendimento_dfcom", label: "🖥️ Falar com DFCom" },
           { id: "autoatendimento_nao_sei_senha", label: "🗝️ Senha Girabot" },
           { id: "autoatendimento_ouvidoria", label: "📢 Ouvidoria" },
           { id: "autoatendimento_manuais", label: "📚 Manuais de Franquia" },
