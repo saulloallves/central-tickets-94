@@ -99,6 +99,57 @@ export type Database = {
         }
         Relationships: []
       }
+      chamados: {
+        Row: {
+          atendente_id: string | null
+          atendente_nome: string | null
+          atualizado_em: string | null
+          categoria: string | null
+          criado_em: string | null
+          descricao: string
+          franqueado_nome: string
+          id: string
+          prioridade: string | null
+          resolucao: string | null
+          status: string
+          telefone: string
+          tipo_atendimento: string
+          unidade_id: string
+        }
+        Insert: {
+          atendente_id?: string | null
+          atendente_nome?: string | null
+          atualizado_em?: string | null
+          categoria?: string | null
+          criado_em?: string | null
+          descricao: string
+          franqueado_nome: string
+          id?: string
+          prioridade?: string | null
+          resolucao?: string | null
+          status?: string
+          telefone: string
+          tipo_atendimento: string
+          unidade_id: string
+        }
+        Update: {
+          atendente_id?: string | null
+          atendente_nome?: string | null
+          atualizado_em?: string | null
+          categoria?: string | null
+          criado_em?: string | null
+          descricao?: string
+          franqueado_nome?: string
+          id?: string
+          prioridade?: string | null
+          resolucao?: string | null
+          status?: string
+          telefone?: string
+          tipo_atendimento?: string
+          unidade_id?: string
+        }
+        Relationships: []
+      }
       colaboradores: {
         Row: {
           aceitou_termos: boolean
@@ -2744,12 +2795,11 @@ export type Database = {
             }
           | { p_periodo_dias?: number; p_user_id?: string }
         Returns: {
-          percentual_sla: number
+          sla_percentage: number
+          taxa_resolucao: number
           tempo_medio_resolucao: number
-          tickets_abertos: number
+          tickets_concluidos: number
           tickets_crise: number
-          tickets_resolvidos: number
-          tickets_sucesso: number
           total_tickets: number
           unidade_id: string
           unidade_nome: string
@@ -2937,10 +2987,13 @@ export type Database = {
         Returns: {
           categoria: string
           conteudo: Json
+          criado_em: string
+          final_score: number
           id: string
-          relevancia_semantica: number
-          score_final: number
-          similaridade: number
+          semantic_relevance: number
+          similarity_score: number
+          status: Database["public"]["Enums"]["article_status"]
+          tags: string[]
           titulo: string
           versao: number
         }[]
