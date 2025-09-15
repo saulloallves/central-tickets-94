@@ -42,7 +42,7 @@ class ZAPIClient {
         },
         body: JSON.stringify({
           groupId: groupId,
-          phone: phone,
+          phones: [phone],
         }),
       });
 
