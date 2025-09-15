@@ -42,24 +42,14 @@ serve(async (req: Request) => {
       phone,
       message: "⚫ *Suporte Imediato - DFCom*\n\n🚀 Para suporte técnico imediato com nossa equipe DFCom, você será direcionado para atendimento especializado.\n\n📞 Nossa equipe está pronta para resolver questões técnicas urgentes.\n\n👇 Selecione uma das opções abaixo:",
       image: "https://hryurntaljdisohawpqf.supabase.co/storage/v1/object/public/figurinhascresci/midias_girabot/CAPA%20GIRABOT%20COM%20FUNDO.png",
-      buttonList: [
-        {
-          buttonId: "falar_com_dfcom",
-          buttonText: "🛠️ Falar com DFCom"
-        },
-        {
-          buttonId: "finalizar_atendimento_dfcom",
-          buttonText: "📱 Finalizar Atendimento"
-        },
-        {
-          buttonId: "transferir_autoatendimento",
-          buttonText: "🔄 Transferir para Autoatendimento"
-        },
-        {
-          buttonId: "voltar_menu_inicial",
-          buttonText: "↩️ Voltar ao Menu Inicial"
-        }
-      ]
+      buttonList: {
+        buttons: [
+          { id: "falar_com_dfcom", label: "🛠️ Falar com DFCom" },
+          { id: "finalizar_atendimento_dfcom", label: "📱 Finalizar Atendimento" },
+          { id: "transferir_autoatendimento", label: "🔄 Transferir para Autoatendimento" },
+          { id: "voltar_menu_inicial", label: "↩️ Voltar ao Menu Inicial" }
+        ]
+      }
     };
 
     const zapiUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}/send-button-list`;
