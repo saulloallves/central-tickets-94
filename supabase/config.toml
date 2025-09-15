@@ -45,6 +45,9 @@ verify_jwt = false
 [functions.autoatendimento_ticket]
 verify_jwt = false
 
+[functions.autoatendimento_calendario_anual]
+verify_jwt = false
+
 [functions.bot_base_1]
 verify_jwt = false
 
