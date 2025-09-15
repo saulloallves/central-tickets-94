@@ -40,14 +40,29 @@ serve(async (req: Request) => {
 
     const payload = {
       phone,
-      message: "⚫ *Suporte Imediato - DFCom*\n\n🚀 Para suporte técnico imediato com nossa equipe DFCom, você será direcionado para atendimento especializado.\n\n📞 Nossa equipe está pronta para resolver questões técnicas urgentes.\n\n⬇️ _*Clique no link abaixo para conectar*_\n",
+      message: "⚫ *Suporte Imediato - DFCom*\n\n🚀 Para suporte técnico imediato com nossa equipe DFCom, você será direcionado para atendimento especializado.\n\n📞 Nossa equipe está pronta para resolver questões técnicas urgentes.\n\n👇 Selecione uma das opções abaixo:",
       image: "https://hryurntaljdisohawpqf.supabase.co/storage/v1/object/public/figurinhascresci/midias_girabot/CAPA%20GIRABOT%20COM%20FUNDO.png",
-      linkUrl: "https://fluxoapi.contatocrescieperdi.com.br/suporte-dfcom",
-      title: "⚫ Suporte DFCom",
-      linkDescription: "Suporte técnico imediato especializado"
+      buttonList: [
+        {
+          buttonId: "falar_com_dfcom",
+          buttonText: "🛠️ Falar com DFCom"
+        },
+        {
+          buttonId: "finalizar_atendimento_dfcom",
+          buttonText: "📱 Finalizar Atendimento"
+        },
+        {
+          buttonId: "transferir_autoatendimento",
+          buttonText: "🔄 Transferir para Autoatendimento"
+        },
+        {
+          buttonId: "voltar_menu_inicial",
+          buttonText: "↩️ Voltar ao Menu Inicial"
+        }
+      ]
     };
 
-    const zapiUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}/send-link`;
+    const zapiUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}/send-button-list`;
     console.log(`📤 Enviando suporte_dfcom para Z-API: ${zapiUrl.replace(instanceToken, '****')}`);
 
     const res = await fetch(zapiUrl, {

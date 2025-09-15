@@ -107,6 +107,25 @@ serve(async (req: Request) => {
     if (buttonId === "suporte_dfcom") {
       return await proxy(functionsBaseUrl, "suporte_dfcom", body);
     }
+    if (buttonId === "falar_com_dfcom") {
+      console.log("🛠️ Redirecionando para falar com DFCom");
+      // Aqui você pode implementar a lógica específica para falar com DFCom
+      return new Response(
+        JSON.stringify({ success: true, message: "Redirecionamento para DFCom implementado" }),
+        { headers: { "Content-Type": "application/json", ...corsHeaders }, status: 200 }
+      );
+    }
+    if (buttonId === "finalizar_atendimento_dfcom") {
+      console.log("📱 Finalizando atendimento DFCom");
+      return new Response(
+        JSON.stringify({ success: true, message: "Atendimento finalizado" }),
+        { headers: { "Content-Type": "application/json", ...corsHeaders }, status: 200 }
+      );
+    }
+    if (buttonId === "transferir_autoatendimento") {
+      console.log("🔄 Transferindo para autoatendimento");
+      return await proxy(functionsBaseUrl, "autoatendimento", body);
+    }
     if (buttonId === "emergencia_menu") {
       return await proxy(functionsBaseUrl, "emergencia_menu", body);
     }
