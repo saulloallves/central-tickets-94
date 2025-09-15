@@ -1,91 +1,213 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { X, Phone, Building2, Clock, MessageSquare, Bot, User, Send } from 'lucide-react';
+import { X, Phone, Building2, Clock, MessageSquare, User, Send, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface AtendimentoDetailProps {
   atendimentoId: string;
   onClose: () => void;
 }
 
+interface Atendimento {
+  id: string;
+  unidade_id: string;
+  franqueado_nome: string;
+  telefone: string;
+  descricao: string;
+  categoria?: string;
+  prioridade: string;
+  status: string;
+  tipo_atendimento: string;
+  atendente_id?: string;
+  atendente_nome?: string;
+  resolucao?: string;
+  criado_em: string;
+  atualizado_em?: string;
+}
+
+const STATUS_CONFIG = {
+  em_fila: { variant: 'warning' as const, emoji: '🟡', label: 'Em Fila' },
+  em_atendimento: { variant: 'info' as const, emoji: '🔵', label: 'Em Atendimento' },
+  finalizado: { variant: 'success' as const, emoji: '🟢', label: 'Finalizado' },
+};
+
 export function AtendimentoDetail({ atendimentoId, onClose }: AtendimentoDetailProps) {
+  const [atendimento, setAtendimento] = useState<Atendimento | null>(null);
   const [observacao, setObservacao] = useState('');
-  
-  // Mock data - será substituído por hook real
-  const atendimento = {
-    id: atendimentoId,
-    unidade: "Unidade Centro - SP",
-    codigo: "U001",
-    telefone: "(11) 99999-9999",
-    status: 'em_atendimento',
-    tempoEspera: 45,
-    contato: "Maria Silva",
-    ultimaInteracao: {
-      tipo: 'mensagem',
-      texto: 'Preciso de ajuda com meu pedido',
-      tempo: '2 min'
-    },
-    mensagens: [
-      {
-        id: 1,
-        tipo: 'cliente',
-        conteudo: 'Oi, preciso de ajuda com meu pedido',
-        timestamp: '14:30',
-        isBot: false
-      },
-      {
-        id: 2,
-        tipo: 'bot',
-        conteudo: 'Olá! Como posso ajudá-lo hoje?',
-        timestamp: '14:31',
-        isBot: true
-      },
-      {
-        id: 3,
-        tipo: 'cliente',
-        conteudo: 'Meu pedido #12345 não chegou ainda',
-        timestamp: '14:32',
-        isBot: false
-      },
-      {
-        id: 4,
-        tipo: 'bot',
-        conteudo: 'Vou verificar o status do seu pedido. Um momento...',
-        timestamp: '14:33',
-        isBot: true
-      },
-      {
-        id: 5,
-        tipo: 'sistema',
-        conteudo: 'Transferido para atendimento humano',
-        timestamp: '14:34',
-        isBot: false,
-        isSystem: true
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchAtendimento = async () => {
+      try {
+        setLoading(true);
+        
+        const { data, error } = await supabase
+          .from('chamados')
+          .select('*')
+          .eq('id', atendimentoId)
+          .single();
+
+        if (error) {
+          console.error('Erro ao buscar atendimento:', error);
+          toast({
+            title: "Erro ao carregar atendimento",
+            description: error.message,
+            variant: "destructive",
+          });
+          return;
+        }
+
+        setAtendimento(data);
+      } catch (error) {
+        console.error('Erro ao buscar atendimento:', error);
+        toast({
+          title: "Erro ao carregar atendimento",
+          description: "Erro inesperado ao carregar os dados",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
       }
-    ]
+    };
+
+    fetchAtendimento();
+  }, [atendimentoId]);
+
+  const formatTempo = (data: string) => {
+    try {
+      const dataObj = new Date(data);
+      return formatDistanceToNow(dataObj, { 
+        addSuffix: true, 
+        locale: ptBR 
+      });
+    } catch {
+      return 'há alguns instantes';
+    }
   };
 
-  const handleConcluir = () => {
-    // TODO: Implementar com edge function
-    console.log('Concluir atendimento:', atendimentoId);
+  const handleConcluir = async () => {
+    try {
+      const { error } = await supabase
+        .from('chamados')
+        .update({ 
+          status: 'finalizado',
+          atualizado_em: new Date().toISOString(),
+          resolucao: observacao || 'Atendimento finalizado'
+        })
+        .eq('id', atendimentoId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Atendimento finalizado",
+        description: "O atendimento foi finalizado com sucesso.",
+      });
+      
+      onClose();
+    } catch (error) {
+      console.error('Erro ao finalizar atendimento:', error);
+      toast({
+        title: "Erro ao finalizar atendimento",
+        description: "Não foi possível finalizar o atendimento.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleTransferir = () => {
-    // TODO: Implementar com edge function
-    console.log('Transferir atendimento:', atendimentoId);
+  const handleIniciarAtendimento = async () => {
+    try {
+      const { error } = await supabase
+        .from('chamados')
+        .update({ 
+          status: 'em_atendimento',
+          atualizado_em: new Date().toISOString(),
+        })
+        .eq('id', atendimentoId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Atendimento iniciado",
+        description: "O atendimento foi iniciado com sucesso.",
+      });
+      
+      // Atualizar estado local
+      if (atendimento) {
+        setAtendimento({ ...atendimento, status: 'em_atendimento' });
+      }
+    } catch (error) {
+      console.error('Erro ao iniciar atendimento:', error);
+      toast({
+        title: "Erro ao iniciar atendimento",
+        description: "Não foi possível iniciar o atendimento.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleSalvarObservacao = () => {
+  const handleSalvarObservacao = async () => {
     if (!observacao.trim()) return;
-    // TODO: Salvar observação no banco
-    console.log('Salvar observação:', observacao);
-    setObservacao('');
+    
+    try {
+      const { error } = await supabase
+        .from('chamados')
+        .update({ 
+          resolucao: observacao,
+          atualizado_em: new Date().toISOString()
+        })
+        .eq('id', atendimentoId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Observação salva",
+        description: "A observação foi salva com sucesso.",
+      });
+      
+      setObservacao('');
+    } catch (error) {
+      console.error('Erro ao salvar observação:', error);
+      toast({
+        title: "Erro ao salvar observação",
+        description: "Não foi possível salvar a observação.",
+        variant: "destructive",
+      });
+    }
   };
+
+  if (loading) {
+    return (
+      <Card className="h-full flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Carregando detalhes do atendimento...</p>
+        </div>
+      </Card>
+    );
+  }
+
+  if (!atendimento) {
+    return (
+      <Card className="h-full flex items-center justify-center">
+        <div className="text-center">
+          <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground">Atendimento não encontrado</p>
+        </div>
+      </Card>
+    );
+  }
+
+  const statusConfig = STATUS_CONFIG[atendimento.status] || STATUS_CONFIG.em_fila;
 
   return (
     <Card className="h-full flex flex-col">
@@ -109,8 +231,8 @@ export function AtendimentoDetail({ atendimentoId, onClose }: AtendimentoDetailP
           <div className="flex items-center gap-2">
             <Building2 className="w-4 h-4 text-muted-foreground" />
             <div>
-              <div className="font-medium">{atendimento.unidade}</div>
-              <div className="text-sm text-muted-foreground">Código: {atendimento.codigo}</div>
+              <div className="font-medium">{atendimento.unidade_id}</div>
+              <div className="text-sm text-muted-foreground">Franqueado: {atendimento.franqueado_nome}</div>
             </div>
           </div>
 
@@ -120,78 +242,62 @@ export function AtendimentoDetail({ atendimentoId, onClose }: AtendimentoDetailP
           </div>
 
           <div className="flex items-center gap-2">
-            <User className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm">{atendimento.contato}</span>
-          </div>
-
-          <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm">Em fila há {atendimento.tempoEspera} minutos</span>
+            <span className="text-sm">Criado {formatTempo(atendimento.criado_em)}</span>
           </div>
 
-          <Badge variant="info" className="w-fit">
-            🔵 Em Atendimento
+          {atendimento.atendente_nome && (
+            <div className="flex items-center gap-2">
+              <User className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm">Atendido por: {atendimento.atendente_nome}</span>
+            </div>
+          )}
+
+          <Badge variant={statusConfig.variant} className="w-fit">
+            {statusConfig.emoji} {statusConfig.label}
           </Badge>
         </div>
 
         <Separator />
 
-        {/* Histórico de mensagens */}
-        <div className="flex-1 flex flex-col px-6">
+        {/* Descrição do atendimento */}
+        <div className="px-6">
           <h4 className="font-medium mb-3 flex items-center gap-2">
             <MessageSquare className="w-4 h-4" />
-            Histórico de Mensagens
+            Descrição do Atendimento
           </h4>
+          <div className="text-sm text-muted-foreground bg-muted/30 p-3 rounded-lg">
+            {atendimento.descricao}
+          </div>
           
-          <ScrollArea className="flex-1 pr-4">
-            <div className="space-y-3">
-              {atendimento.mensagens.map((mensagem) => (
-                <div 
-                  key={mensagem.id}
-                  className={cn(
-                    "flex gap-3",
-                    mensagem.tipo === 'cliente' ? 'justify-start' : 'justify-end'
-                  )}
-                >
-                  {mensagem.tipo === 'cliente' && (
-                    <div className="flex-shrink-0 w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
-                      <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                    </div>
-                  )}
-                  
-                  <div className={cn(
-                    "max-w-[70%] rounded-lg p-3 text-sm",
-                    mensagem.isSystem ? 
-                      "bg-muted text-muted-foreground text-center italic" :
-                    mensagem.tipo === 'cliente' ? 
-                      "bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-100" :
-                      "bg-green-100 dark:bg-green-900 text-green-900 dark:text-green-100"
-                  )}>
-                    <div>{mensagem.conteudo}</div>
-                    <div className={cn(
-                      "text-xs mt-1 flex items-center gap-1",
-                      mensagem.isSystem ? "justify-center" : 
-                      mensagem.tipo === 'cliente' ? "justify-start" : "justify-end"
-                    )}>
-                      {mensagem.isBot && <Bot className="w-3 h-3" />}
-                      <span className="opacity-70">{mensagem.timestamp}</span>
-                    </div>
-                  </div>
-
-                  {mensagem.tipo !== 'cliente' && !mensagem.isSystem && (
-                    <div className="flex-shrink-0 w-8 h-8 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
-                      {mensagem.isBot ? (
-                        <Bot className="w-4 h-4 text-green-600 dark:text-green-400" />
-                      ) : (
-                        <User className="w-4 h-4 text-green-600 dark:text-green-400" />
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
+          {atendimento.categoria && (
+            <div className="mt-2">
+              <span className="text-xs text-muted-foreground">Categoria: </span>
+              <Badge variant="secondary" className="text-xs">
+                {atendimento.categoria}
+              </Badge>
             </div>
-          </ScrollArea>
+          )}
+          
+          <div className="mt-2">
+            <span className="text-xs text-muted-foreground">Tipo: </span>
+            <Badge variant="outline" className="text-xs">
+              {atendimento.tipo_atendimento}
+            </Badge>
+          </div>
         </div>
+
+        {atendimento.resolucao && (
+          <>
+            <Separator />
+            <div className="px-6">
+              <h4 className="font-medium mb-3">Resolução</h4>
+              <div className="text-sm text-muted-foreground bg-green-50 dark:bg-green-950/20 p-3 rounded-lg">
+                {atendimento.resolucao}
+              </div>
+            </div>
+          </>
+        )}
 
         <Separator />
 
@@ -200,7 +306,7 @@ export function AtendimentoDetail({ atendimentoId, onClose }: AtendimentoDetailP
           <h4 className="font-medium text-sm">Observação Interna</h4>
           <div className="flex gap-2">
             <Textarea
-              placeholder="Adicione uma observação interna (não visível para o cliente)..."
+              placeholder="Adicione uma observação interna..."
               value={observacao}
               onChange={(e) => setObservacao(e.target.value)}
               className="flex-1 min-h-[80px] resize-none"
@@ -220,12 +326,21 @@ export function AtendimentoDetail({ atendimentoId, onClose }: AtendimentoDetailP
         {/* Ações */}
         <div className="px-6 pb-6">
           <div className="flex gap-3">
-            <Button onClick={handleConcluir} className="flex-1">
-              ✅ Concluir Atendimento
-            </Button>
-            <Button variant="outline" onClick={handleTransferir} className="flex-1">
-              🔄 Transferir para Autoatendimento
-            </Button>
+            {atendimento.status === 'em_fila' && (
+              <Button onClick={handleIniciarAtendimento} className="flex-1">
+                🔵 Iniciar Atendimento
+              </Button>
+            )}
+            {atendimento.status === 'em_atendimento' && (
+              <Button onClick={handleConcluir} className="flex-1">
+                ✅ Finalizar Atendimento
+              </Button>
+            )}
+            {atendimento.status === 'finalizado' && (
+              <div className="flex-1 text-center text-sm text-muted-foreground py-2">
+                Atendimento finalizado
+              </div>
+            )}
           </div>
         </div>
       </CardContent>
