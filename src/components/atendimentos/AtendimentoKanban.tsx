@@ -10,13 +10,6 @@ interface AtendimentoKanbanProps {
 
 const KANBAN_COLUMNS = [
   { 
-    id: 'fila_atual', 
-    title: 'Fila Atual', 
-    emoji: '📋',
-    bgColor: 'bg-slate-50 dark:bg-slate-950/20',
-    borderColor: 'border-slate-200 dark:border-slate-800'
-  },
-  { 
     id: 'em_fila', 
     title: 'Em Fila', 
     emoji: '🟡',
@@ -46,7 +39,7 @@ export function AtendimentoKanban({ atendimentos, onSelectAtendimento }: Atendim
 
   return (
     <div className="h-full">
-      <div className="grid grid-cols-4 gap-4 h-full">
+      <div className="grid grid-cols-3 gap-4 h-full">
         {KANBAN_COLUMNS.map((column) => {
           const columnAtendimentos = getAtendimentosByStatus(column.id);
           
