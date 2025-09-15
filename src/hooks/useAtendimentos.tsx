@@ -83,7 +83,7 @@ export function useAtendimentos() {
 
     // Configurar realtime para atualizações da tabela chamados
     const channel = supabase
-      .channel('chamados-changes')
+      .channel('chamados-realtime')
       .on(
         'postgres_changes',
         {
@@ -91,14 +91,64 @@ export function useAtendimentos() {
           schema: 'public',
           table: 'chamados'
         },
-        () => {
-          console.log('Atualizando atendimentos devido a mudança na tabela chamados');
-          fetchAtendimentos();
+        (payload) => {
+          console.log('📡 Realtime atendimentos update:', payload);
+          
+          if (payload.eventType === 'INSERT') {
+            const novoAtendimento = {
+              id: payload.new.id,
+              unidade_id: payload.new.unidade_id,
+              franqueado_nome: payload.new.franqueado_nome,
+              telefone: payload.new.telefone,
+              descricao: payload.new.descricao,
+              categoria: payload.new.categoria,
+              prioridade: payload.new.prioridade || 'normal',
+              status: payload.new.status,
+              tipo_atendimento: payload.new.tipo_atendimento,
+              atendente_id: payload.new.atendente_id,
+              atendente_nome: payload.new.atendente_nome,
+              resolucao: payload.new.resolucao,
+              criado_em: payload.new.criado_em,
+              atualizado_em: payload.new.atualizado_em,
+            };
+            
+            setAtendimentos(prev => [novoAtendimento, ...prev]);
+          } else if (payload.eventType === 'UPDATE') {
+            const atendimentoAtualizado = {
+              id: payload.new.id,
+              unidade_id: payload.new.unidade_id,
+              franqueado_nome: payload.new.franqueado_nome,
+              telefone: payload.new.telefone,
+              descricao: payload.new.descricao,
+              categoria: payload.new.categoria,
+              prioridade: payload.new.prioridade || 'normal',
+              status: payload.new.status,
+              tipo_atendimento: payload.new.tipo_atendimento,
+              atendente_id: payload.new.atendente_id,
+              atendente_nome: payload.new.atendente_nome,
+              resolucao: payload.new.resolucao,
+              criado_em: payload.new.criado_em,
+              atualizado_em: payload.new.atualizado_em,
+            };
+            
+            setAtendimentos(prev => 
+              prev.map(atendimento => 
+                atendimento.id === payload.new.id ? atendimentoAtualizado : atendimento
+              )
+            );
+          } else if (payload.eventType === 'DELETE') {
+            setAtendimentos(prev => 
+              prev.filter(atendimento => atendimento.id !== payload.old.id)
+            );
+          }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('📡 Realtime subscription status:', status);
+      });
 
     return () => {
+      console.log('🔌 Cleaning up realtime subscription');
       supabase.removeChannel(channel);
     };
   }, []);
