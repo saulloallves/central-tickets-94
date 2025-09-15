@@ -171,7 +171,21 @@ export function AtendimentoKanban({ atendimentos, onSelectAtendimento }: Atendim
     }
 
     const atendimentoId = active.id as string;
-    const newStatus = over.id as string;
+    let newStatus = over.id as string;
+    
+    // Se o over.id for um UUID de outro atendimento, pegar o status da coluna pai
+    const validStatuses = ['em_fila', 'em_atendimento', 'finalizado'];
+    if (!validStatuses.includes(newStatus)) {
+      // Encontrar o atendimento que está sendo dropado
+      const targetAtendimento = atendimentos.find(a => a.id === newStatus);
+      if (targetAtendimento) {
+        newStatus = targetAtendimento.status;
+      } else {
+        console.error('❌ Invalid drop target:', newStatus);
+        setActiveAtendimento(null);
+        return;
+      }
+    }
     
     // Find the atendimento and its current status
     const atendimento = atendimentos.find(a => a.id === atendimentoId);
