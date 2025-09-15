@@ -80,6 +80,44 @@ export const useAtendimentoDragDrop = () => {
             variant: "destructive",
           });
         }
+      } else if (newStatus === 'finalizado') {
+        // Se o status mudou para 'finalizado', remover do grupo WhatsApp
+        try {
+          console.log('🔗 Removendo do grupo WhatsApp...');
+          
+          const { data: removeResult, error: removeError } = await supabase.functions.invoke('remove-from-whatsapp-group', {
+            body: { chamadoId: atendimentoId }
+          });
+
+          if (removeError) {
+            console.error('❌ Erro ao remover do grupo:', removeError);
+            toast({
+              title: "⚠️ Status Atualizado com Aviso",
+              description: `Atendimento finalizado, mas houve erro ao remover do grupo WhatsApp`,
+              variant: "destructive",
+            });
+          } else if (removeResult?.success) {
+            console.log('✅ Removido do grupo com sucesso:', removeResult);
+            toast({
+              title: "✅ Atendimento Finalizado",
+              description: `${removeResult.participant} removido do grupo e atendimento finalizado`,
+            });
+          } else {
+            console.error('❌ Falha ao remover do grupo:', removeResult);
+            toast({
+              title: "⚠️ Status Atualizado com Aviso", 
+              description: `Atendimento finalizado, mas falha ao remover do grupo WhatsApp`,
+              variant: "destructive",
+            });
+          }
+        } catch (error) {
+          console.error('❌ Erro inesperado ao remover do grupo:', error);
+          toast({
+            title: "⚠️ Status Atualizado com Aviso",
+            description: `Atendimento finalizado, mas erro inesperado ao remover do grupo`,
+            variant: "destructive",
+          });
+        }
       } else {
         toast({
           title: "✅ Status Atualizado",
