@@ -53,7 +53,7 @@ serve(async (req) => {
     console.log("✅ Unidade encontrada:", unidade);
 
     // 1.5 Verificar se já existe um atendimento ativo para este telefone
-    const { data: chamadoExistente, error: chamadoError } = await supabase
+    const { data: chamadoExistente, error: verificacaoError } = await supabase
       .from("chamados")
       .select("id, status, criado_em")
       .eq("telefone", phone)
@@ -61,8 +61,8 @@ serve(async (req) => {
       .in("status", ["em_fila", "em_atendimento"])
       .maybeSingle();
 
-    if (chamadoError) {
-      console.error("❌ Erro ao verificar chamados existentes:", chamadoError);
+    if (verificacaoError) {
+      console.error("❌ Erro ao verificar chamados existentes:", verificacaoError);
     }
 
     // Se já existe um atendimento ativo, não criar novo
