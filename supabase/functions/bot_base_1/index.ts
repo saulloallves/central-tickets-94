@@ -113,6 +113,9 @@ serve(async (req: Request) => {
     if (buttonId === "emergencia_menu") {
       return await proxy(functionsBaseUrl, "emergencia_menu", body);
     }
+    if (buttonId === "personalizado_finalizar") {
+      return await proxy(functionsBaseUrl, "personalizado_finalizar", body);
+    }
 
     // 🔹 VOLTAR AO MENU INICIAL
     if (buttonId === "voltar_menu_inicial") {
