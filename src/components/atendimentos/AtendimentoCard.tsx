@@ -6,6 +6,7 @@ import { CheckCircle, RotateCcw, FileText, Clock, MessageSquare, Bot, Phone, Use
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useAtendimentoActions } from '@/hooks/useAtendimentoActions';
 
 interface AtendimentoCardProps {
   atendimento: {
@@ -43,6 +44,7 @@ const PRIORIDADE_CONFIG = {
 export function AtendimentoCard({ atendimento, onClick, compact = false }: AtendimentoCardProps) {
   const statusConfig = STATUS_CONFIG[atendimento.status] || STATUS_CONFIG.em_fila;
   const prioridadeConfig = PRIORIDADE_CONFIG[atendimento.prioridade] || PRIORIDADE_CONFIG.normal;
+  const { iniciarAtendimento, finalizarAtendimento, reativarAtendimento, isLoading } = useAtendimentoActions();
   
   const formatTempo = (data: string) => {
     try {
@@ -54,6 +56,21 @@ export function AtendimentoCard({ atendimento, onClick, compact = false }: Atend
     } catch {
       return 'há alguns instantes';
     }
+  };
+
+  const handleIniciarAtendimento = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    await iniciarAtendimento(atendimento.id);
+  };
+
+  const handleFinalizarAtendimento = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    await finalizarAtendimento(atendimento.id);
+  };
+
+  const handleReativarAtendimento = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    await reativarAtendimento(atendimento.id);
   };
 
   return (
@@ -112,20 +129,18 @@ export function AtendimentoCard({ atendimento, onClick, compact = false }: Atend
         </div>
 
         {/* Ações rápidas - apenas em cards não compactos */}
-        {!compact && atendimento.status !== 'finalizado' && (
+        {!compact && (
           <div className="flex gap-2 pt-3 mt-auto">
             {atendimento.status === 'em_fila' && (
               <Button
                 size="sm"
                 variant="outline"
                 className="flex-1 h-8 text-xs"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  // TODO: Implementar ação iniciar atendimento
-                }}
+                onClick={handleIniciarAtendimento}
+                disabled={isLoading}
               >
                 <MessageSquare className="w-3 h-3 mr-1" />
-                Iniciar
+                {isLoading ? 'Iniciando...' : 'Iniciar'}
               </Button>
             )}
             {atendimento.status === 'em_atendimento' && (
@@ -133,13 +148,23 @@ export function AtendimentoCard({ atendimento, onClick, compact = false }: Atend
                 size="sm"
                 variant="outline"
                 className="flex-1 h-8 text-xs"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  // TODO: Implementar ação finalizar
-                }}
+                onClick={handleFinalizarAtendimento}
+                disabled={isLoading}
               >
                 <CheckCircle className="w-3 h-3 mr-1" />
-                Finalizar
+                {isLoading ? 'Finalizando...' : 'Finalizar'}
+              </Button>
+            )}
+            {atendimento.status === 'finalizado' && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex-1 h-8 text-xs"
+                onClick={handleReativarAtendimento}
+                disabled={isLoading}
+              >
+                <RotateCcw className="w-3 h-3 mr-1" />
+                {isLoading ? 'Reativando...' : 'Reativar'}
               </Button>
             )}
             <Button
@@ -148,7 +173,7 @@ export function AtendimentoCard({ atendimento, onClick, compact = false }: Atend
               className="h-8 px-2"
               onClick={(e) => {
                 e.stopPropagation();
-                // TODO: Implementar ver detalhes
+                onClick();
               }}
             >
               <FileText className="w-3 h-3" />
