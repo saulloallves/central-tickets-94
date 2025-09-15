@@ -27,8 +27,6 @@ verify_jwt = false
 [functions.autoatendimento]
 verify_jwt = false
 
-[functions.autoatendimento_calendario]
-verify_jwt = false
 
 [functions.autoatendimento_manuais]
 verify_jwt = false
@@ -45,7 +43,7 @@ verify_jwt = false
 [functions.autoatendimento_ticket]
 verify_jwt = false
 
-[functions.autoatendimento_calendario_anual]
+[functions.autoatendimento_calendario]
 verify_jwt = false
 
 [functions.bot_base_1]
