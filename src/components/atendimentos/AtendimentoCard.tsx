@@ -94,9 +94,9 @@ export function AtendimentoCard({ atendimento, onClick, compact = false }: Atend
           {/* Informações de atendimento */}
           <div className="space-y-1">
             {atendimento.atendente_nome && (
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2 text-xs text-primary font-medium">
                 <User className="w-3 h-3" />
-                <span>Atendido por: {atendimento.atendente_nome}</span>
+                <span>Responsável: {atendimento.atendente_nome}</span>
               </div>
             )}
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
