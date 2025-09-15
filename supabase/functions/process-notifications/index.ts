@@ -174,7 +174,7 @@ async function getZApiConfig(supabase: any): Promise<ZApiConfig | null> {
 
   // Fallback to environment secrets
   const instanceId = Deno.env.get('ZAPI_INSTANCE_ID');
-  const instanceToken = Deno.env.get('ZAPI_INSTANCE_TOKEN') || Deno.env.get('ZAPI_TOKEN');
+  const instanceToken = Deno.env.get('ZAPI_TOKEN');
   const clientToken = Deno.env.get('ZAPI_CLIENT_TOKEN');
   const baseUrl = Deno.env.get('ZAPI_BASE_URL') || 'https://api.z-api.io';
 

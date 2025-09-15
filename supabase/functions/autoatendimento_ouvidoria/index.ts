@@ -14,8 +14,8 @@ serve(async (req) => {
     if (!phone) return new Response(JSON.stringify({ error: "Telefone não encontrado" }), { headers: { "Content-Type": "application/json", ...corsHeaders }, status: 400 });
 
     const instanceId = Deno.env.get("ZAPI_INSTANCE_ID");
-    const instanceToken = Deno.env.get("ZAPI_INSTANCE_TOKEN");
-    const clientToken = Deno.env.get("ZAPI_CLIENT_TOKEN");
+    const instanceToken = Deno.env.get("ZAPI_TOKEN");
+    const clientToken = Deno.env.get("ZAPI_CLIENT_TOKEN") || Deno.env.get("ZAPI_TOKEN");
     const baseUrl = Deno.env.get("ZAPI_BASE_URL") || "https://api.z-api.io";
     if (!instanceId || !instanceToken || !clientToken) {
       return new Response(JSON.stringify({ error: "Configuração Z-API incompleta", details: "ZAPI_INSTANCE_ID, ZAPI_INSTANCE_TOKEN e ZAPI_CLIENT_TOKEN são obrigatórios" }), { headers: { "Content-Type": "application/json", ...corsHeaders }, status: 500 });
