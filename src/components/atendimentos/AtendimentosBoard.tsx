@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { FilaAtendimentos } from './FilaAtendimentos';
 import { AtendimentoKanban } from './AtendimentoKanban';
 import { AtendimentoDetail } from './AtendimentoDetail';
@@ -31,35 +32,43 @@ export function AtendimentosBoard() {
           atendimentos={atendimentos}
           onSelectAtendimento={handleSelectAtendimento}
         />
-        {selectedAtendimento && (
-          <AtendimentoDetail 
-            atendimentoId={selectedAtendimento}
-            onClose={handleCloseDetail}
-          />
-        )}
+        
+        {/* Modal para detalhes do atendimento */}
+        <Dialog open={!!selectedAtendimento} onOpenChange={(open) => !open && handleCloseDetail()}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            {selectedAtendimento && (
+              <AtendimentoDetail 
+                atendimentoId={selectedAtendimento}
+                onClose={handleCloseDetail}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-12 gap-6 h-[calc(100vh-200px)]">
-      {/* Kanban */}
-      <div className={selectedAtendimento ? "col-span-9" : "col-span-12"}>
+    <>
+      <div className="h-[calc(100vh-200px)]">
+        {/* Kanban ocupando toda a largura */}
         <AtendimentoKanban 
           atendimentos={atendimentos}
           onSelectAtendimento={handleSelectAtendimento}
         />
       </div>
 
-      {/* Detalhes (quando selecionado) */}
-      {selectedAtendimento && (
-        <div className="col-span-3">
-          <AtendimentoDetail 
-            atendimentoId={selectedAtendimento}
-            onClose={handleCloseDetail}
-          />
-        </div>
-      )}
-    </div>
+      {/* Modal para detalhes do atendimento */}
+      <Dialog open={!!selectedAtendimento} onOpenChange={(open) => !open && handleCloseDetail()}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          {selectedAtendimento && (
+            <AtendimentoDetail 
+              atendimentoId={selectedAtendimento}
+              onClose={handleCloseDetail}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
