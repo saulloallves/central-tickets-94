@@ -74,8 +74,32 @@ serve(async (req: Request) => {
       body: JSON.stringify(payload),
     });
 
-    const data = await res.json();
-    console.log("📤 Suporte DFCom enviado:", data);
+    console.log(`📊 Z-API Response Status: ${res.status} ${res.statusText}`);
+    
+    let data;
+    const responseText = await res.text();
+    
+    if (responseText.trim()) {
+      try {
+        data = JSON.parse(responseText);
+        console.log("📤 Suporte DFCom enviado:", data);
+      } catch (parseError) {
+        console.error("❌ Erro ao fazer parse da resposta Z-API:", parseError);
+        console.log("📜 Resposta Z-API raw:", responseText);
+        data = { 
+          success: false, 
+          error: "Resposta inválida da Z-API",
+          rawResponse: responseText
+        };
+      }
+    } else {
+      console.log("⚠️ Resposta Z-API vazia");
+      data = { 
+        success: res.ok, 
+        message: res.ok ? "Mensagem enviada" : "Erro na Z-API",
+        status: res.status
+      };
+    }
 
     return new Response(JSON.stringify(data), {
       headers: { "Content-Type": "application/json", ...corsHeaders },
