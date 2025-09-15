@@ -49,6 +49,12 @@ verify_jwt = false
 [functions.bot_base_1]
 verify_jwt = false
 
+[functions.ticket_equipes]
+verify_jwt = false
+
+[functions.suporte_dfcom]
+verify_jwt = false
+
 [functions.colaborador-signup]
 verify_jwt = false
 

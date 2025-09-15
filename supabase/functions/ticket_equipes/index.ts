@@ -11,9 +11,10 @@ serve(async (req: Request) => {
   }
 
   try {
+    console.log("🟡 TICKET_EQUIPES - INICIADO -", new Date().toISOString());
     const body = await req.json();
-
-    const phone = body?.body?.phone || body?.phone;
+    const phone = body?.body?.phone || body?.phone || body?.participantPhone;
+    
     if (!phone) {
       return new Response(JSON.stringify({ error: "Telefone não encontrado" }), {
         headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -37,23 +38,17 @@ serve(async (req: Request) => {
       });
     }
 
-    // Monta o menu principal
     const payload = {
       phone,
-      message: "👋 Oi! Eu sou o *GiraBot*, seu assistente automático da *Cresci e Perdi*.\n\nAs opções de atendimento mudaram. Como prefere seguir?",
-      buttonList: {
-        buttons: [
-          { id: "autoatendimento_menu", label: "🟢 GiraBot - Autoatendimento" },
-          { id: "ticket_equipes", label: "🟡 Ticket - Solicitações para Equipes" },
-          { id: "personalizado_menu", label: "🔵 Atendimento Personalizado - Concierge" },
-          { id: "suporte_dfcom", label: "⚫ Suporte Imediato - DFCom" },
-          { id: "emergencia_menu", label: "🔴 Estou em uma Emergência" },
-        ],
-      },
+      message: "🟡 *Ticket - Solicitações para Equipes*\n\nPara abrir um ticket para nossa equipe, vou te direcionar para o sistema especializado.\n\n✍️ Você poderá detalhar sua solicitação e acompanhar o andamento.\n\n⬇️ _*Clique no link abaixo para acessar*_\n",
+      image: "https://hryurntaljdisohawpqf.supabase.co/storage/v1/object/public/figurinhascresci/midias_girabot/CAPA%20GIRABOT%20COM%20FUNDO.png",
+      linkUrl: "https://fluxoapi.contatocrescieperdi.com.br/menu-ticket",
+      title: "🟡 Abrir Ticket",
+      linkDescription: "Sistema de solicitações para equipes"
     };
 
-    const zapiUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}/send-button-list`;
-    console.log(`📤 Enviando para Z-API: ${zapiUrl.replace(instanceToken, '****')}`);
+    const zapiUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}/send-link`;
+    console.log(`📤 Enviando ticket_equipes para Z-API: ${zapiUrl.replace(instanceToken, '****')}`);
 
     const res = await fetch(zapiUrl, {
       method: "POST",
@@ -65,14 +60,14 @@ serve(async (req: Request) => {
     });
 
     const data = await res.json();
-    console.log("📤 Menu Principal enviado:", data);
+    console.log("📤 Ticket equipes enviado:", data);
 
     return new Response(JSON.stringify(data), {
       headers: { "Content-Type": "application/json", ...corsHeaders },
       status: res.status,
     });
   } catch (err) {
-    console.error("❌ Erro no menu_principal:", err);
+    console.error("❌ Erro no ticket_equipes:", err);
     return new Response(
       JSON.stringify({ error: "Erro interno", details: err.message }),
       { headers: { "Content-Type": "application/json", ...corsHeaders }, status: 500 }
