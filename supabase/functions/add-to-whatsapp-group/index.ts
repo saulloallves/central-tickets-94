@@ -178,43 +178,87 @@ serve(async (req) => {
     // Adicionar participante ao grupo
     const result = await zapiClient.addParticipantToGroup(groupId, phoneToAdd);
 
-    // Log da operação
-    await supabase.from('logs_de_sistema').insert({
-      tipo_log: 'sistema',
-      entidade_afetada: 'chamados',
-      entidade_id: chamadoId,
-      acao_realizada: `Adição ao grupo WhatsApp - ${chamado.tipo_atendimento}`,
-      usuario_responsavel: null,
-      dados_novos: {
-        group_id: groupId,
-        participant_phone: phoneToAdd,
-        participant_name: participantName,
-        tipo_atendimento: chamado.tipo_atendimento,
-        zapi_result: result
-      },
-      canal: 'zapi'
-    });
-
+    // Se a adição foi bem-sucedida, enviar mensagem de boas-vindas
     if (result.value) {
       console.log('✅ Participant added successfully');
+
+      // Mensagem personalizada conforme tipo_atendimento
+      let welcomeMessage = "";
+      if (chamado.tipo_atendimento === "concierge") {
+        welcomeMessage = `👋 Olá pessoal!\n\n${participantName} foi adicionado ao grupo e dará continuidade ao *atendimento Concierge*.\n\n⏳ Aguarde que ele assumirá sua solicitação em instantes.`;
+      } else if (chamado.tipo_atendimento === "dfcom") {
+        welcomeMessage = `⚖️ *Atendimento DFCOM*\n\n${participantName} entrou no grupo e dará sequência ao seu atendimento jurídico.\n\n📌 Por favor, aguarde as orientações.`;
+      }
+
+      try {
+        const response = await fetch(
+          `${zapiClient.baseUrl}/instances/${zapiClient.instanceId}/token/${zapiClient.token}/send-text`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Client-Token": zapiClient.clientToken,
+            },
+            body: JSON.stringify({
+              phone: groupId,
+              message: welcomeMessage,
+            }),
+          }
+        );
+        const msgResult = await response.json();
+        console.log("📤 Mensagem de boas-vindas enviada:", msgResult);
+      } catch (msgError) {
+        console.error("❌ Erro ao enviar mensagem de boas-vindas:", msgError);
+      }
+
+      // Log da operação
+      await supabase.from('logs_de_sistema').insert({
+        tipo_log: 'sistema',
+        entidade_afetada: 'chamados',
+        entidade_id: chamadoId,
+        acao_realizada: `Adição ao grupo WhatsApp - ${chamado.tipo_atendimento}`,
+        usuario_responsavel: null,
+        dados_novos: {
+          group_id: groupId,
+          participant_phone: phoneToAdd,
+          participant_name: participantName,
+          tipo_atendimento: chamado.tipo_atendimento,
+          zapi_result: result,
+          welcome_message_sent: true
+        },
+        canal: 'zapi'
+      });
+
       return new Response(
-        JSON.stringify({ 
-          success: true, 
+        JSON.stringify({
+          success: true,
           message: `${participantName} adicionado ao grupo com sucesso`,
           participant: participantName,
           phone: phoneToAdd,
-          group: groupId
+          group: groupId,
         }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        {
+          status: 200,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+          },
+        }
       );
     } else {
-      console.error('❌ Failed to add participant:', result.error);
+      console.error("❌ Failed to add participant:", result.error);
       return new Response(
-        JSON.stringify({ 
-          error: 'Failed to add participant to group',
-          details: result.error || result.message
+        JSON.stringify({
+          error: "Failed to add participant to group",
+          details: result.error || result.message,
         }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        {
+          status: 500,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+          },
+        }
       );
     }
 
