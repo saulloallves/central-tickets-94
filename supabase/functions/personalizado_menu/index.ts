@@ -37,13 +37,20 @@ serve(async (req: Request) => {
       });
     }
 
-    // Mensagem de atendimento personalizado
+    // Menu de atendimento personalizado
     const payload = {
       phone,
-      message: "🤵 *Atendimento Personalizado*\n\nVocê será direcionado para um atendente humano em breve.\n\nPor favor, aguarde na fila ou descreva brevemente sua situação.",
+      message: "🔵 *Atendimento Personalizado - Concierge*\n\n😊 Selecione uma das opções abaixo pra continuar:",
+      buttonList: {
+        buttons: [
+          { id: "falar_com_concierge", label: "🔵 Falar com Concierge" },
+          { id: "acompanhar_chamado", label: "📞 Acompanhar Chamado" },
+          { id: "voltar_menu_inicial", label: "↩️ Voltar ao Menu Inicial" },
+        ],
+      },
     };
 
-    const zapiUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}/send-text`;
+    const zapiUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}/send-button-list`;
     console.log(`📤 Enviando atendimento personalizado para Z-API: ${zapiUrl.replace(instanceToken, '****')}`);
 
     const res = await fetch(zapiUrl, {
