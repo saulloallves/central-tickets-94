@@ -39,7 +39,7 @@ serve(async (req) => {
     // 1. Busca a unidade correspondente ao grupo no projeto externo
     const { data: unidade, error: unidadeError } = await externalSupabase
       .from("unidades")
-      .select("id, grupo, codigo_grupo")
+      .select("id, grupo, codigo_grupo, concierge_name, concierge_phone")
       .eq("id_grupo_branco", phone)
       .maybeSingle();
 
@@ -61,6 +61,7 @@ serve(async (req) => {
         status: "em_fila",
         telefone: phone,
         franqueado_nome: unidade.grupo,
+        atendente_nome: unidade.concierge_name,
         descricao: "Solicitação de atendimento via Concierge",
       })
       .select()
