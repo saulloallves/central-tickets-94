@@ -129,7 +129,7 @@ serve(async (req) => {
     // Buscar dados da unidade na tabela externa
     const { data: unidade, error: unidadeError } = await externalSupabase
       .from('unidades')
-      .select('*')
+      .select('id, grupo, concierge_name, concierge_phone, id_grupo_branco')
       .eq('id', chamado.unidade_id)
       .single();
 
@@ -144,7 +144,8 @@ serve(async (req) => {
     console.log(`🏢 Unidade data:`, {
       id: unidade.id,
       concierge_name: unidade.concierge_name,
-      concierge_phone: unidade.concierge_phone
+      concierge_phone: unidade.concierge_phone,
+      id_grupo_branco: unidade.id_grupo_branco
     });
 
     // Determinar qual telefone adicionar ao grupo baseado no tipo de atendimento
@@ -168,8 +169,8 @@ serve(async (req) => {
       );
     }
 
-    // Usar o telefone do chamado como groupId (baseado na estrutura atual)
-    const groupId = chamado.telefone;
+    // Usar o id_grupo_branco da unidade como groupId
+    const groupId = unidade.id_grupo_branco || chamado.telefone;
 
     console.log(`📞 Adding ${participantName} (${phoneToAdd}) to group ${groupId}`);
 
