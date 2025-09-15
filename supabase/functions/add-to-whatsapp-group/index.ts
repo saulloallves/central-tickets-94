@@ -157,9 +157,23 @@ serve(async (req) => {
       phoneToAdd = unidade.concierge_phone;
       participantName = unidade.concierge_name;
     } else if (chamado.tipo_atendimento === 'dfcom') {
-      // Para DFCOM, usar o telefone do atendente (pode precisar de ajuste conforme a estrutura)
-      phoneToAdd = chamado.atendente_id || ''; // Ajustar conforme necessário
-      participantName = chamado.atendente_nome || 'Atendente DFCOM';
+      // Para DFCOM, usar o número fixo configurado no sistema
+      const { data: dfcomConfig, error: configError } = await supabase
+        .from('system_settings')
+        .select('setting_value')
+        .eq('setting_key', 'dfcom_phone_number')
+        .single();
+
+      if (configError || !dfcomConfig) {
+        console.error('❌ DFCOM phone config not found:', configError);
+        return new Response(
+          JSON.stringify({ error: 'DFCOM phone configuration not found' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      phoneToAdd = dfcomConfig.setting_value;
+      participantName = 'Equipe DFCom';
     }
 
     if (!phoneToAdd) {
@@ -187,7 +201,7 @@ serve(async (req) => {
       if (chamado.tipo_atendimento === "concierge") {
         welcomeMessage = `👋 Olá pessoal!\n\n${participantName} foi adicionado ao grupo e dará continuidade ao *atendimento Concierge*.\n\n⏳ Aguarde que ele assumirá sua solicitação em instantes.`;
       } else if (chamado.tipo_atendimento === "dfcom") {
-        welcomeMessage = `⚖️ *Atendimento DFCOM*\n\n${participantName} entrou no grupo e dará sequência ao seu atendimento jurídico.\n\n📌 Por favor, aguarde as orientações.`;
+        welcomeMessage = `⚫ *Atendimento DFCOM Iniciado*\n\n${participantName} entrou no grupo e dará sequência ao seu atendimento técnico.\n\n🔧 Por favor, aguarde as orientações da nossa equipe especializada.`;
       }
 
       try {

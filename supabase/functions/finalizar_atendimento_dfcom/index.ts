@@ -80,7 +80,30 @@ serve(async (req) => {
 
     console.log("✅ Chamado DFCom encontrado:", chamado);
 
-    // 2. Finaliza o chamado DFCom
+    // 2. Remover do grupo WhatsApp antes de finalizar
+    try {
+      const functionsBaseUrl = Deno.env.get("FUNCTIONS_BASE_URL") || 
+        `https://hryurntaljdisohawpqf.supabase.co/functions/v1`;
+      
+      const removeFromGroupResponse = await fetch(`${functionsBaseUrl}/remove-from-whatsapp-group`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+        },
+        body: JSON.stringify({ chamadoId: chamado.id }),
+      });
+
+      if (removeFromGroupResponse.ok) {
+        console.log('✅ DFCom removido do grupo WhatsApp');
+      } else {
+        console.error('❌ Erro ao remover DFCom do grupo:', await removeFromGroupResponse.text());
+      }
+    } catch (groupError) {
+      console.error('❌ Erro na integração com grupo WhatsApp:', groupError);
+    }
+
+    // 3. Finaliza o chamado DFCom
     const { error: updateError } = await supabase
       .from("chamados")
       .update({
@@ -100,14 +123,14 @@ serve(async (req) => {
 
     console.log("✅ Chamado DFCom finalizado com sucesso");
 
-    // 3. Configurações Z-API
+    // 4. Configurações Z-API
     const instanceId = Deno.env.get("ZAPI_INSTANCE_ID");
     const instanceToken = Deno.env.get("ZAPI_TOKEN");
     const clientToken = Deno.env.get("ZAPI_CLIENT_TOKEN") || Deno.env.get("ZAPI_TOKEN");
     const baseUrl = Deno.env.get("ZAPI_BASE_URL") || "https://api.z-api.io";
     const zapiUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}`;
 
-    // 4. Envia mensagem de confirmação
+    // 5. Envia mensagem de confirmação
     try {
       const response = await fetch(`${zapiUrl}/send-text`, {
         method: "POST",

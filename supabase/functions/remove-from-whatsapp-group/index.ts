@@ -157,9 +157,23 @@ serve(async (req) => {
       phoneToRemove = unidade.concierge_phone;
       participantName = unidade.concierge_name;
     } else if (chamado.tipo_atendimento === 'dfcom') {
-      // Para DFCOM, usar o telefone do atendente (pode precisar de ajuste conforme a estrutura)
-      phoneToRemove = chamado.atendente_id || ''; // Ajustar conforme necessário
-      participantName = chamado.atendente_nome || 'Atendente DFCOM';
+      // Para DFCOM, usar o número fixo configurado no sistema
+      const { data: dfcomConfig, error: configError } = await supabase
+        .from('system_settings')
+        .select('setting_value')
+        .eq('setting_key', 'dfcom_phone_number')
+        .single();
+
+      if (configError || !dfcomConfig) {
+        console.error('❌ DFCOM phone config not found:', configError);
+        return new Response(
+          JSON.stringify({ error: 'DFCOM phone configuration not found' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      phoneToRemove = dfcomConfig.setting_value;
+      participantName = 'Equipe DFCom';
     }
 
     if (!phoneToRemove) {
@@ -187,7 +201,7 @@ serve(async (req) => {
       if (chamado.tipo_atendimento === "concierge") {
         farewellMessage = `👋 *Atendimento Concierge Finalizado*\n\n${participantName} finalizou o atendimento.\n\n✅ Obrigado pela preferência!`;
       } else if (chamado.tipo_atendimento === "dfcom") {
-        farewellMessage = `⚖️ *Atendimento DFCOM Finalizado*\n\n${participantName} finalizou o atendimento jurídico.\n\n✅ Obrigado pela confiança!`;
+        farewellMessage = `⚫ *Atendimento DFCOM Finalizado*\n\n${participantName} finalizou o atendimento técnico.\n\n✅ Obrigado pela confiança em nossa equipe!`;
       }
 
       try {
