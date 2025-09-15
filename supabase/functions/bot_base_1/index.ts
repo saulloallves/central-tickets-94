@@ -120,6 +120,14 @@ serve(async (req: Request) => {
       return await proxy(functionsBaseUrl, "personalizado_finalizar", body);
     }
 
+    // 🔹 DFCOM FUNCTIONS
+    if (buttonId === "falar_com_dfcom") {
+      return await proxy(functionsBaseUrl, "falar_com_dfcom", body);
+    }
+    if (buttonId === "finalizar_atendimento_dfcom") {
+      return await proxy(functionsBaseUrl, "finalizar_atendimento_dfcom", body);
+    }
+
     // 🔹 VOLTAR AO MENU INICIAL
     if (buttonId === "voltar_menu_inicial") {
       const res = await fetch(`${functionsBaseUrl}/menu_principal`, {
