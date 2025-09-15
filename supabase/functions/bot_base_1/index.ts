@@ -32,45 +32,6 @@ serve(async (req: Request) => {
     console.log("ButtonId:", buttonId);
     console.log("Message:", message);
 
-    // Debug via Z-API quando há phone
-    if (phone && (buttonId.includes("autoatendimento") || buttonId === "autoatendimento_midias")) {
-      const functionsBaseUrl = Deno.env.get("FUNCTIONS_BASE_URL") || `https://hryurntaljdisohawpqf.supabase.co/functions/v1`;
-      
-      // Configurações Z-API para debug
-      const instanceId = Deno.env.get("ZAPI_INSTANCE_ID");
-      const instanceToken = Deno.env.get("ZAPI_TOKEN");
-      const clientToken = Deno.env.get("ZAPI_CLIENT_TOKEN") || Deno.env.get("ZAPI_TOKEN");
-      const baseUrl = Deno.env.get("ZAPI_BASE_URL") || "https://api.z-api.io";
-
-      if (instanceId && instanceToken && clientToken) {
-        const debugMessage = `🔍 DEBUG BOT_BASE_1:
-ButtonId detectado: "${buttonId}"
-Message: "${message}"
-Phone: "${phone}"
-Estrutura completa: ${JSON.stringify(body, null, 2)}`;
-
-        const debugPayload = {
-          phone,
-          message: debugMessage,
-        };
-
-        try {
-          const zapiUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}/send-text`;
-          await fetch(zapiUrl, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Client-Token": clientToken,
-            },
-            body: JSON.stringify(debugPayload),
-          });
-          console.log("📤 Debug message sent via Z-API");
-        } catch (debugError) {
-          console.log("⚠️ Failed to send debug message:", debugError.message);
-        }
-      }
-    }
-
     // Palavras-chave que disparam menu inicial
     const KEYWORDS = ["menu", "ola robo", "olá robô", "abacate"];
 
@@ -137,8 +98,14 @@ Estrutura completa: ${JSON.stringify(body, null, 2)}`;
     }
 
     // 🔹 NOVOS MENUS PRINCIPAIS
+    if (buttonId === "ticket_equipes") {
+      return await proxy(functionsBaseUrl, "ticket_equipes", body);
+    }
     if (buttonId === "personalizado_menu") {
       return await proxy(functionsBaseUrl, "personalizado_menu", body);
+    }
+    if (buttonId === "suporte_dfcom") {
+      return await proxy(functionsBaseUrl, "suporte_dfcom", body);
     }
     if (buttonId === "emergencia_menu") {
       return await proxy(functionsBaseUrl, "emergencia_menu", body);
