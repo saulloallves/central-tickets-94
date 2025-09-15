@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AtendimentoCard } from './AtendimentoCard';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAtendimentoDragDrop } from '@/hooks/useAtendimentoDragDrop';
+import { Clock, UserCheck, CheckCircle2 } from 'lucide-react';
 
 interface AtendimentoKanbanProps {
   atendimentos: any[];
@@ -62,9 +63,7 @@ function SortableAtendimentoCard({ atendimento, onClick }: SortableAtendimentoCa
 interface DroppableColumnProps {
   id: string;
   title: string;
-  emoji: string;
-  bgColor: string;
-  borderColor: string;
+  icon: React.ComponentType<any>;
   atendimentos: any[];
   onSelectAtendimento: (id: string) => void;
 }
@@ -72,19 +71,17 @@ interface DroppableColumnProps {
 function DroppableColumn({
   id,
   title,
-  emoji,
-  bgColor,
-  borderColor,
+  icon: Icon,
   atendimentos,
   onSelectAtendimento
 }: DroppableColumnProps) {
   const { setNodeRef } = useDroppable({ id });
 
   return (
-    <Card className={`h-full ${bgColor} ${borderColor}`}>
+    <Card className="h-full">
       <CardHeader className="pb-3">
         <CardTitle className="text-sm flex items-center gap-2">
-          <span>{emoji}</span>
+          <Icon className="h-4 w-4" />
           <span>{title}</span>
           <span className="ml-auto bg-muted text-muted-foreground px-2 py-1 rounded-full text-xs">
             {atendimentos.length}
@@ -105,7 +102,7 @@ function DroppableColumn({
             </SortableContext>
             {atendimentos.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
-                <div className="text-2xl mb-2">{emoji}</div>
+                <Icon className="h-8 w-8 mx-auto mb-2" />
                 <p className="text-sm">Nenhum atendimento</p>
               </div>
             )}
@@ -120,23 +117,17 @@ const KANBAN_COLUMNS = [
   { 
     id: 'em_fila', 
     title: 'Em Fila', 
-    emoji: '🟡',
-    bgColor: 'bg-yellow-50 dark:bg-yellow-950/20',
-    borderColor: 'border-yellow-200 dark:border-yellow-800'
+    icon: Clock
   },
   { 
     id: 'em_atendimento', 
     title: 'Em Atendimento', 
-    emoji: '🔵',
-    bgColor: 'bg-blue-50 dark:bg-blue-950/20',
-    borderColor: 'border-blue-200 dark:border-blue-800'
+    icon: UserCheck
   },
   { 
     id: 'finalizado', 
     title: 'Finalizado', 
-    emoji: '🟢',
-    bgColor: 'bg-green-50 dark:bg-green-950/20',
-    borderColor: 'border-green-200 dark:border-green-800'
+    icon: CheckCircle2
   },
 ];
 
@@ -221,9 +212,7 @@ export function AtendimentoKanban({ atendimentos, onSelectAtendimento }: Atendim
                 key={column.id}
                 id={column.id}
                 title={column.title}
-                emoji={column.emoji}
-                bgColor={column.bgColor}
-                borderColor={column.borderColor}
+                icon={column.icon}
                 atendimentos={columnAtendimentos}
                 onSelectAtendimento={onSelectAtendimento}
               />
