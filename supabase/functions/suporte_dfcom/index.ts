@@ -41,7 +41,6 @@ serve(async (req: Request) => {
     const payload = {
       phone,
       message: "⚫ *Suporte Imediato - DFCom*\n\n🚀 Para suporte técnico imediato com nossa equipe DFCom, você será direcionado para atendimento especializado.\n\n📞 Nossa equipe está pronta para resolver questões técnicas urgentes.\n\n👇 Selecione uma das opções abaixo:",
-      image: "https://hryurntaljdisohawpqf.supabase.co/storage/v1/object/public/figurinhascresci/midias_girabot/CAPA%20GIRABOT%20COM%20FUNDO.png",
       buttonList: {
         buttons: [
           { id: "falar_com_dfcom", label: "🛠️ Falar com DFCom" },
