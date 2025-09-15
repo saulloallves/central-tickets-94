@@ -42,10 +42,50 @@ export const useAtendimentoDragDrop = () => {
 
       console.log('✅ Atendimento updated successfully:', data);
       
-      toast({
-        title: "✅ Status Atualizado",
-        description: `Atendimento movido para ${newStatus}`,
-      });
+      // Se o status mudou para 'em_atendimento', adicionar ao grupo WhatsApp
+      if (newStatus === 'em_atendimento') {
+        try {
+          console.log('🔗 Adicionando ao grupo WhatsApp...');
+          
+          const { data: groupResult, error: groupError } = await supabase.functions.invoke('add-to-whatsapp-group', {
+            body: { chamadoId: atendimentoId }
+          });
+
+          if (groupError) {
+            console.error('❌ Erro ao adicionar ao grupo:', groupError);
+            toast({
+              title: "⚠️ Status Atualizado com Aviso",
+              description: `Atendimento movido para ${newStatus}, mas houve erro ao adicionar ao grupo WhatsApp`,
+              variant: "destructive",
+            });
+          } else if (groupResult?.success) {
+            console.log('✅ Adicionado ao grupo com sucesso:', groupResult);
+            toast({
+              title: "✅ Status Atualizado",
+              description: `Atendimento movido para ${newStatus} e ${groupResult.participant} adicionado ao grupo`,
+            });
+          } else {
+            console.error('❌ Falha ao adicionar ao grupo:', groupResult);
+            toast({
+              title: "⚠️ Status Atualizado com Aviso", 
+              description: `Atendimento movido para ${newStatus}, mas falha ao adicionar ao grupo WhatsApp`,
+              variant: "destructive",
+            });
+          }
+        } catch (error) {
+          console.error('❌ Erro inesperado ao adicionar ao grupo:', error);
+          toast({
+            title: "⚠️ Status Atualizado com Aviso",
+            description: `Atendimento movido para ${newStatus}, mas erro inesperado ao adicionar ao grupo`,
+            variant: "destructive",
+          });
+        }
+      } else {
+        toast({
+          title: "✅ Status Atualizado",
+          description: `Atendimento movido para ${newStatus}`,
+        });
+      }
 
       return true;
     } catch (error) {
