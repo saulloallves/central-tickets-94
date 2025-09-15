@@ -24,18 +24,24 @@ serve(async (req) => {
       });
     }
 
-    // Conecta no Supabase
+    // Conecta no Supabase atual (para chamados)
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL"),
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),
     );
 
-    // 1. Busca a unidade correspondente ao grupo
-    const { data: unidade, error: unidadeError } = await supabase
+    // Conecta no Supabase externo (para unidades)
+    const externalSupabase = createClient(
+      Deno.env.get("EXTERNAL_SUPABASE_URL"),
+      Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY"),
+    );
+
+    // 1. Busca a unidade correspondente ao grupo no projeto externo
+    const { data: unidade, error: unidadeError } = await externalSupabase
       .from("unidades")
       .select("id, grupo, codigo_grupo")
       .eq("id_grupo_branco", phone)
-      .single();
+      .maybeSingle();
 
     if (unidadeError || !unidade) {
       console.error("❌ Unidade não encontrada:", unidadeError);
