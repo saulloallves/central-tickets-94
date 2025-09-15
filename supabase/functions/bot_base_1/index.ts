@@ -111,6 +111,22 @@ serve(async (req: Request) => {
       return await proxy(functionsBaseUrl, "emergencia_menu", body);
     }
 
+    // 🔹 VOLTAR AO MENU INICIAL
+    if (buttonId === "voltar_menu_inicial") {
+      const res = await fetch(`${functionsBaseUrl}/menu_principal`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+        },
+        body: JSON.stringify(body),
+      });
+      return new Response(await res.text(), {
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+        status: res.status,
+      });
+    }
+
     // ❌ Pula DFCom por enquanto
     if (buttonId === "autoatendimento_dfcom") {
       console.log("🚫 DFCom desativado por enquanto");
