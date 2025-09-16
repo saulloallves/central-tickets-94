@@ -315,6 +315,7 @@ async function listExternalAtendentes() {
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
+}
 
 async function updateStatus(id: string, status: string) {
   const { data, error } = await supabase
