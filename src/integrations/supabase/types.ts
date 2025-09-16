@@ -3119,6 +3119,10 @@ export type Database = {
         Args: { p_reason?: string; p_request_id: string }
         Returns: undefined
       }
+      remove_user_completely: {
+        Args: { p_user_id: string }
+        Returns: undefined
+      }
       resolve_crise_close_tickets: {
         Args: {
           p_by?: string

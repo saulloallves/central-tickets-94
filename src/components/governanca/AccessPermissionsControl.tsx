@@ -391,89 +391,31 @@ export function AccessPermissionsControl() {
     }
 
     try {
-      console.log('🗑️ Iniciando remoção do usuário:', userToRemove.email);
+      console.log('🗑️ Iniciando remoção completa do usuário:', userToRemove.email);
 
-      // 1. Remover todas as roles do usuário
-      const { error: rolesError } = await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', userToRemove.id);
-
-      if (rolesError) {
-        console.error('Erro ao remover roles:', rolesError);
-        throw rolesError;
-      }
-
-      // 2. Remover todas as permissões específicas do usuário
-      const { error: permsError } = await supabase
-        .from('user_permissions')
-        .delete()
-        .eq('user_id', userToRemove.id);
-
-      if (permsError) {
-        console.error('Erro ao remover permissões:', permsError);
-        throw permsError;
-      }
-
-      // 3. Remover solicitações de acesso interno
-      const { error: accessRequestsError } = await supabase
-        .from('internal_access_requests')
-        .delete()
-        .eq('user_id', userToRemove.id);
-
-      if (accessRequestsError) {
-        console.error('Erro ao remover solicitações de acesso:', accessRequestsError);
-      }
-
-      // 4. Remover membros de equipe
-      const { error: teamMembersError } = await supabase
-        .from('equipe_members')
-        .delete()
-        .eq('user_id', userToRemove.id);
-
-      if (teamMembersError) {
-        console.error('Erro ao remover membros de equipe:', teamMembersError);
-      }
-
-      // 5. Finalmente, remover o profile do usuário
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', userToRemove.id);
-
-      if (profileError) {
-        console.error('Erro ao remover profile:', profileError);
-        throw profileError;
-      }
-
-      // Log da ação crítica
-      await logSystemAction({
-        tipo_log: 'acao_humana' as any,
-        entidade_afetada: 'profiles',
-        entidade_id: userToRemove.id,
-        acao_realizada: `Usuário removido completamente: ${userToRemove.email}`,
-        dados_anteriores: { 
-          userId: userToRemove.id, 
-          userEmail: userToRemove.email,
-          nome_completo: userToRemove.nome_completo,
-          removed_by: 'admin_action',
-          timestamp: new Date().toISOString()
-        }
+      // Usar a nova função RPC para remoção completa
+      const { error } = await supabase.rpc('remove_user_completely', {
+        p_user_id: userToRemove.id
       });
 
-      console.log('✅ Usuário removido com sucesso');
+      if (error) {
+        console.error('💥 Erro na remoção completa:', error);
+        throw error;
+      }
+
+      console.log('✅ Usuário removido completamente com sucesso!');
       toast({
-        title: "Usuário Removido",
-        description: `O usuário ${userToRemove.email} foi removido completamente do sistema`,
+        title: "Usuário Removido Completamente",
+        description: `O usuário ${userToRemove.email} foi removido completamente do sistema. Todos os vínculos foram eliminados.`,
       });
 
       setUserToRemove(null);
       fetchData();
     } catch (error) {
-      console.error('💥 Error removing user:', error);
+      console.error('💥 Error removing user completely:', error);
       toast({
-        title: "Erro",
-        description: "Erro ao remover usuário. Verifique se não há dependências.",
+        title: "Erro na Remoção",
+        description: "Erro ao remover usuário completamente. Tente novamente.",
         variant: "destructive"
       });
       setUserToRemove(null);
