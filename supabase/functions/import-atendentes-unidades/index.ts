@@ -18,12 +18,17 @@ Deno.serve(async (req) => {
   try {
     console.log('🚀 Iniciando importação de atendentes das unidades...')
 
-    // 1. Buscar TODAS as unidades com dados do concierge (JOIN com franqueados)
-    const { data: unidades, error: unidadesError } = await supabase
+    // 1. Buscar unidades com dados dos concierges (JOIN com franqueados)
+    const { data: unidadesData, error: unidadesError } = await supabase
       .from('unidades')
       .select(`
-        id, grupo, codigo_grupo, email, uf, cidade, endereco,
-        franqueados!inner(name, phone, email)
+        id,
+        grupo,
+        codigo_grupo,
+        email,
+        uf,
+        cidade,
+        endereco
       `)
 
     if (unidadesError) {
@@ -31,32 +36,68 @@ Deno.serve(async (req) => {
       throw unidadesError
     }
 
-    if (!unidades || unidades.length === 0) {
+    if (!unidadesData || unidadesData.length === 0) {
       console.log('⚠️ Nenhuma unidade encontrada')
       return new Response(
         JSON.stringify({ 
           success: false,
           message: 'Nenhuma unidade encontrada',
-          stats: { total: 0, criados: 0, atualizados: 0, associacoes: 0, erros: [] }
+          stats: { total: 0, processadas: 0, criados: 0, atualizados: 0, associacoes: 0, sem_concierge: 0, erros: [] }
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    console.log(`📊 Encontradas ${unidades.length} unidades para processar`)
+    console.log(`📊 Encontradas ${unidadesData.length} unidades`)
+
+    // 2. Buscar franqueados para obter dados dos concierges
+    const { data: franqueadosData, error: franqueadosError } = await supabase
+      .from('franqueados')
+      .select('name, phone, email, unit_code')
+
+    if (franqueadosError) {
+      console.error('❌ Erro ao buscar franqueados:', franqueadosError)
+      throw franqueadosError
+    }
+
+    console.log(`📊 Encontrados ${franqueadosData?.length || 0} franqueados`)
+
+    // 3. Criar mapa de franqueados por unit_code
+    const franqueadosMap = new Map()
+    franqueadosData?.forEach(franqueado => {
+      if (franqueado.unit_code) {
+        // unit_code é um jsonb, pode conter múltiplos códigos
+        const unitCodes = Array.isArray(franqueado.unit_code) 
+          ? franqueado.unit_code 
+          : typeof franqueado.unit_code === 'object' 
+            ? Object.keys(franqueado.unit_code)
+            : [franqueado.unit_code]
+        
+        unitCodes.forEach(code => {
+          if (code && typeof code === 'string') {
+            franqueadosMap.set(code, franqueado)
+          }
+        })
+      }
+    })
 
     const stats = {
-      total: unidades.length,
+      total: unidadesData.length,
+      processadas: 0,
       criados: 0,
       atualizados: 0,
       associacoes: 0,
+      sem_concierge: 0,
+      duplicatas_telefone: 0,
+      duplicatas_email: 0,
       erros: []
     }
 
-    // 2. Processar cada unidade
-    for (const unidade of unidades) {
+    // 4. Processar cada unidade
+    for (const unidade of unidadesData) {
       try {
-        await processarUnidade(unidade, stats)
+        await processarUnidade(unidade, franqueadosMap, stats)
+        stats.processadas++
       } catch (error) {
         console.error(`❌ Erro processando unidade ${unidade.id}:`, error)
         stats.erros.push({
@@ -67,10 +108,10 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 3. Log final
+    // 5. Log final
     console.log('✅ Importação concluída:', stats)
 
-    // 4. Log de auditoria
+    // 6. Log de auditoria
     await supabase.functions.invoke('system-log', {
       body: {
         tipo_log: 'sistema',
@@ -102,46 +143,66 @@ Deno.serve(async (req) => {
   }
 })
 
-async function processarUnidade(unidade: any, stats: any) {
-  const { id: unidade_id, grupo, email, uf, cidade, franqueados } = unidade
+async function processarUnidade(unidade: any, franqueadosMap: Map<string, any>, stats: any) {
+  const { id: unidade_id, grupo, codigo_grupo, email, uf, cidade } = unidade
   
-  // Extrair dados do concierge do JOIN
-  const concierge = franqueados?.[0]
+  // 1. Buscar dados do concierge pelo código da unidade
+  const concierge = franqueadosMap.get(codigo_grupo) || franqueadosMap.get(unidade_id)
+  
   if (!concierge) {
-    console.log(`⚠️ Unidade ${grupo} sem concierge - pulando`)
+    console.log(`⚠️ Unidade ${grupo} (${codigo_grupo}) sem concierge - pulando`)
+    stats.sem_concierge++
     return
   }
 
   const { name: concierge_name, phone: concierge_phone, email: concierge_email } = concierge
+  
+  // 2. Definir nome do atendente
   const nomeAtendente = concierge_name?.trim() || `Atendente ${grupo || cidade || unidade_id}`.trim()
 
-  console.log(`🔄 Processando: ${nomeAtendente} (${unidade_id})`)
+  console.log(`🔄 Processando: ${nomeAtendente} (${unidade_id}) - Tel: ${concierge_phone}`)
 
-  // 1. Verificar se atendente já existe (por telefone primeiro, depois email)
+  // 3. Verificar se atendente já existe (por telefone primeiro, depois email)
   let atendenteExistente = null
+  let tipoMatch = null
   
   if (concierge_phone) {
-    const { data } = await supabase
-      .from('atendentes')
-      .select('id, nome')
-      .eq('telefone', concierge_phone)
-      .maybeSingle()
-    atendenteExistente = data
+    const normalizedPhone = concierge_phone.toString().replace(/\D/g, '')
+    if (normalizedPhone.length >= 10) {
+      const { data } = await supabase
+        .from('atendentes')
+        .select('id, nome, telefone')
+        .eq('telefone', concierge_phone)
+        .maybeSingle()
+      
+      if (data) {
+        atendenteExistente = data
+        tipoMatch = 'telefone'
+        stats.duplicatas_telefone++
+      }
+    }
   }
   
   if (!atendenteExistente && concierge_email) {
     const { data } = await supabase
       .from('atendentes')
-      .select('id, nome')
+      .select('id, nome, email')
       .eq('email', concierge_email)
       .maybeSingle()
-    atendenteExistente = data
+    
+    if (data) {
+      atendenteExistente = data
+      tipoMatch = 'email'
+      stats.duplicatas_email++
+    }
   }
 
   let atendenteId: string
 
   if (atendenteExistente) {
-    // Atualizar atendente existente
+    // 4. Atualizar atendente existente
+    console.log(`🔄 Atualizando atendente existente (match por ${tipoMatch}): ${atendenteExistente.nome}`)
+    
     const { data: updated, error: updateError } = await supabase
       .from('atendentes')
       .update({
@@ -150,7 +211,7 @@ async function processarUnidade(unidade: any, stats: any) {
         email: concierge_email || null,
         status: 'ativo',
         ativo: true,
-        observacoes: `Unidade: ${grupo || cidade || unidade_id} - ${uf || ''} - Atualizado automaticamente`,
+        observacoes: `Unidade: ${grupo || cidade || unidade_id} - ${uf || ''} - Atualizado automaticamente (match: ${tipoMatch})`,
         updated_at: new Date().toISOString()
       })
       .eq('id', atendenteExistente.id)
@@ -167,7 +228,9 @@ async function processarUnidade(unidade: any, stats: any) {
     console.log(`✅ Atendente atualizado: ${nomeAtendente}`)
 
   } else {
-    // Criar novo atendente
+    // 5. Criar novo atendente
+    console.log(`➕ Criando novo atendente: ${nomeAtendente}`)
+    
     const { data: created, error: createError } = await supabase
       .from('atendentes')
       .insert({
@@ -196,7 +259,7 @@ async function processarUnidade(unidade: any, stats: any) {
     console.log(`✅ Novo atendente criado: ${nomeAtendente}`)
   }
 
-  // 2. Criar associação simples com unidade (sem prioridade)
+  // 6. Criar associação com unidade (upsert para evitar duplicatas)
   const { error: associacaoError } = await supabase
     .from('atendente_unidades')
     .upsert({
@@ -213,5 +276,5 @@ async function processarUnidade(unidade: any, stats: any) {
   }
 
   stats.associacoes++
-  console.log(`✅ Associação criada: ${nomeAtendente} -> ${unidade_id}`)
+  console.log(`✅ Associação criada: ${nomeAtendente} -> ${grupo} (${unidade_id})`)
 }
