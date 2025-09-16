@@ -37,6 +37,8 @@ Deno.serve(async (req) => {
     switch (action) {
       case 'list':
         return await listAtendentes()
+      case 'list_external':
+        return await listExternalAtendentes()
       case 'get':
         return await getAtendente(id)
       case 'create':
@@ -251,6 +253,68 @@ async function deleteAtendente(id: string) {
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   )
 }
+
+async function listExternalAtendentes() {
+  try {
+    console.log('🔍 Buscando dados da tabela externa unidades...')
+    
+    // Buscar todas as unidades da tabela externa
+    const { data: unidades, error: unidadesError } = await supabase
+      .from('unidades')
+      .select('id, grupo, codigo_grupo, telefone, email')
+      .limit(100)
+
+    if (unidadesError) {
+      console.error('Error fetching unidades:', unidadesError)
+      throw unidadesError
+    }
+
+    if (!unidades || unidades.length === 0) {
+      console.log('⚠️ Nenhuma unidade encontrada na tabela externa')
+      return new Response(
+        JSON.stringify({ data: [] }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Converter dados das unidades em formato de atendentes
+    const atendentesExternos = unidades.map((unidade, index) => ({
+      id: `external_${unidade.id}`,
+      nome: `Atendente ${unidade.grupo || unidade.id}`,
+      telefone: unidade.telefone?.toString(),
+      email: unidade.email,
+      tipo: 'concierge',
+      status: 'ativo',
+      horario_inicio: '08:00:00',
+      horario_fim: '18:00:00', 
+      capacidade_maxima: 5,
+      capacidade_atual: 0,
+      foto_perfil: null,
+      observacoes: `Unidade externa: ${unidade.grupo}`,
+      ativo: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      atendente_unidades: [{
+        unidade_id: unidade.id,
+        is_preferencial: true,
+        prioridade: 1,
+        ativo: true
+      }]
+    }))
+
+    console.log(`✅ Convertidas ${atendentesExternos.length} unidades em atendentes`)
+    
+    return new Response(
+      JSON.stringify({ data: atendentesExternos }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  } catch (error) {
+    console.error('❌ Error in listExternalAtendentes:', error)
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
 
 async function updateStatus(id: string, status: string) {
   const { data, error } = await supabase

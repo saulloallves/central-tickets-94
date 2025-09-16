@@ -32,10 +32,11 @@ export const useAtendentes = () => {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
 
-  const fetchAtendentes = async () => {
+  const fetchAtendentes = async (useExternal = false) => {
     try {
+      const action = useExternal ? 'list_external' : 'list'
       const { data, error } = await supabase.functions.invoke('manage-atendentes', {
-        body: { action: 'list' }
+        body: { action }
       });
 
       if (error) throw error;
@@ -204,7 +205,7 @@ export const useAtendentes = () => {
   };
 
   useEffect(() => {
-    fetchAtendentes();
+    fetchAtendentes(true); // Use external data by default
     
     // Realtime subscription
     const channel = supabase
@@ -237,6 +238,6 @@ export const useAtendentes = () => {
     updateStatus,
     redistributeQueue,
     getCapacity,
-    refetch: fetchAtendentes
+    refetch: () => fetchAtendentes(true) // Use external data
   };
 };
