@@ -86,45 +86,26 @@ export const useEnhancedAtendimentoRealtime = ({
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*',
           schema: 'public',
           table: 'chamados'
         },
         (payload) => {
-          console.log('📡 Realtime INSERT atendimento:', payload);
-          const atendimento = formatAtendimento(payload.new);
+          console.log('📡 Realtime chamados event:', payload);
           
-          if (filterAtendimentoEvent(atendimento)) {
-            onAtendimentoInsert(atendimento);
+          if (payload.eventType === 'INSERT') {
+            const atendimento = formatAtendimento(payload.new);
+            if (filterAtendimentoEvent(atendimento)) {
+              onAtendimentoInsert(atendimento);
+            }
+          } else if (payload.eventType === 'UPDATE') {
+            const atendimento = formatAtendimento(payload.new);
+            if (filterAtendimentoEvent(atendimento)) {
+              onAtendimentoUpdate(atendimento);
+            }
+          } else if (payload.eventType === 'DELETE') {
+            onAtendimentoDelete(payload.old.id);
           }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'chamados'
-        },
-        (payload) => {
-          console.log('📡 Realtime UPDATE atendimento:', payload);
-          const atendimento = formatAtendimento(payload.new);
-          
-          if (filterAtendimentoEvent(atendimento)) {
-            onAtendimentoUpdate(atendimento);
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'DELETE',
-          schema: 'public',
-          table: 'chamados'
-        },
-        (payload) => {
-          console.log('📡 Realtime DELETE atendimento:', payload);
-          onAtendimentoDelete(payload.old.id);
         }
       )
       .subscribe((status, err) => {
