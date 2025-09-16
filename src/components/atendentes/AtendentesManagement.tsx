@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Users, Clock, Phone, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,11 +9,13 @@ import { AtendenteCard } from './AtendenteCard';
 import { CreateAtendenteDialog } from './CreateAtendenteDialog';
 import { AtendentesDashboard } from './AtendentesDashboard';
 import { SyncAtendentesExternos } from './SyncAtendentesExternos';
+import { supabase } from '@/integrations/supabase/client';
 
 export const AtendentesManagement = () => {
   const { atendentes, loading, updateStatus, redistributeQueue } = useAtendentes();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
+  const [initialSyncDone, setInitialSyncDone] = useState(false);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -51,6 +53,33 @@ export const AtendentesManagement = () => {
 
   const statsConcierge = calculateStats(atendentesConcierge);
   const statsDfcom = calculateStats(atendentesDfcom);
+
+  // Auto-sync on first load if no atendentes exist
+  useEffect(() => {
+    const runInitialSync = async () => {
+      if (!loading && atendentes.length === 0 && !initialSyncDone) {
+        console.log('🔄 Executando sincronização inicial automática...');
+        try {
+          const { data, error } = await supabase.functions.invoke('sync-atendentes', {
+            body: { action: 'sync' }
+          });
+          
+          if (!error && data?.stats?.criados > 0) {
+            console.log('✅ Sincronização inicial concluída:', data.stats);
+            // Refresh atendentes after sync
+            setTimeout(() => {
+              window.location.reload();
+            }, 1000);
+          }
+        } catch (error) {
+          console.error('❌ Erro na sincronização inicial:', error);
+        }
+        setInitialSyncDone(true);
+      }
+    };
+    
+    runInitialSync();
+  }, [loading, atendentes.length, initialSyncDone]);
 
   if (loading) {
     return (
