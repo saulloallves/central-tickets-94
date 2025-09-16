@@ -35,6 +35,17 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useSystemLogs } from '@/hooks/useSystemLogs';
 import { usePresence } from '@/hooks/usePresence';
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle, 
+  AlertDialogTrigger 
+} from '@/components/ui/alert-dialog';
 
 interface UserPermission {
   id: string;
@@ -364,6 +375,108 @@ export function AccessPermissionsControl() {
         description: "Erro ao revogar cargo", 
         variant: "destructive"
       });
+    }
+  };
+
+  const [userToRemove, setUserToRemove] = useState<{id: string, email: string, nome_completo: string} | null>(null);
+
+  const removeUser = async () => {
+    if (!userToRemove || !isAdmin && !hasRole('diretoria')) {
+      toast({
+        title: "Acesso Negado",
+        description: "Apenas administradores e diretoria podem remover usuários",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      console.log('🗑️ Iniciando remoção do usuário:', userToRemove.email);
+
+      // 1. Remover todas as roles do usuário
+      const { error: rolesError } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userToRemove.id);
+
+      if (rolesError) {
+        console.error('Erro ao remover roles:', rolesError);
+        throw rolesError;
+      }
+
+      // 2. Remover todas as permissões específicas do usuário
+      const { error: permsError } = await supabase
+        .from('user_permissions')
+        .delete()
+        .eq('user_id', userToRemove.id);
+
+      if (permsError) {
+        console.error('Erro ao remover permissões:', permsError);
+        throw permsError;
+      }
+
+      // 3. Remover solicitações de acesso interno
+      const { error: accessRequestsError } = await supabase
+        .from('internal_access_requests')
+        .delete()
+        .eq('user_id', userToRemove.id);
+
+      if (accessRequestsError) {
+        console.error('Erro ao remover solicitações de acesso:', accessRequestsError);
+      }
+
+      // 4. Remover membros de equipe
+      const { error: teamMembersError } = await supabase
+        .from('equipe_members')
+        .delete()
+        .eq('user_id', userToRemove.id);
+
+      if (teamMembersError) {
+        console.error('Erro ao remover membros de equipe:', teamMembersError);
+      }
+
+      // 5. Finalmente, remover o profile do usuário
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userToRemove.id);
+
+      if (profileError) {
+        console.error('Erro ao remover profile:', profileError);
+        throw profileError;
+      }
+
+      // Log da ação crítica
+      await logSystemAction({
+        tipo_log: 'acao_humana' as any,
+        entidade_afetada: 'profiles',
+        entidade_id: userToRemove.id,
+        acao_realizada: `Usuário removido completamente: ${userToRemove.email}`,
+        dados_anteriores: { 
+          userId: userToRemove.id, 
+          userEmail: userToRemove.email,
+          nome_completo: userToRemove.nome_completo,
+          removed_by: 'admin_action',
+          timestamp: new Date().toISOString()
+        }
+      });
+
+      console.log('✅ Usuário removido com sucesso');
+      toast({
+        title: "Usuário Removido",
+        description: `O usuário ${userToRemove.email} foi removido completamente do sistema`,
+      });
+
+      setUserToRemove(null);
+      fetchData();
+    } catch (error) {
+      console.error('💥 Error removing user:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao remover usuário. Verifique se não há dependências.",
+        variant: "destructive"
+      });
+      setUserToRemove(null);
     }
   };
 
@@ -706,14 +819,84 @@ export function AccessPermissionsControl() {
                           </TableCell>
                           
                           <TableCell>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => setSelectedUserForRole(user.id)}
-                            >
-                              <Crown className="h-4 w-4 mr-1" />
-                              Atribuir Cargo
-                            </Button>
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setSelectedUserForRole(user.id)}
+                              >
+                                <Crown className="h-4 w-4 mr-1" />
+                                Atribuir Cargo
+                              </Button>
+                              
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <Button
+                                          size="sm"
+                                          variant="destructive"
+                                          onClick={() => setUserToRemove({
+                                            id: user.id, 
+                                            email: user.email, 
+                                            nome_completo: user.nome_completo || 'Nome não informado'
+                                          })}
+                                          className="text-destructive hover:bg-destructive/10"
+                                        >
+                                          <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent className="liquid-glass-card">
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+                                            <AlertTriangle className="h-5 w-5" />
+                                            Confirmar Remoção de Usuário
+                                          </AlertDialogTitle>
+                                          <AlertDialogDescription className="space-y-2">
+                                            <p className="font-semibold">⚠️ ATENÇÃO: Esta ação é irreversível!</p>
+                                            <p>Você está prestes a remover completamente o usuário:</p>
+                                            <div className="p-3 bg-destructive/10 rounded-lg border border-destructive/20">
+                                              <p className="font-medium">{user.nome_completo || 'Nome não informado'}</p>
+                                              <p className="text-sm text-muted-foreground">{user.email}</p>
+                                            </div>
+                                            <div className="text-sm space-y-1">
+                                              <p className="font-medium">Será removido:</p>
+                                              <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                                                <li>Perfil do usuário</li>
+                                                <li>Todos os cargos/roles</li>
+                                                <li>Todas as permissões específicas</li>
+                                                <li>Solicitações de acesso</li>
+                                                <li>Membros de equipe</li>
+                                              </ul>
+                                            </div>
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel onClick={() => setUserToRemove(null)}>
+                                            Cancelar
+                                          </AlertDialogCancel>
+                                          <AlertDialogAction 
+                                            onClick={removeUser}
+                                            className="bg-destructive hover:bg-destructive/90"
+                                          >
+                                            <Trash2 className="h-4 w-4 mr-2" />
+                                            Sim, Remover Usuário
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <div className="text-center">
+                                      <p className="font-semibold text-destructive">⚠️ Remover Usuário</p>
+                                      <p className="text-xs">Remove completamente do sistema</p>
+                                      <p className="text-xs">(Roles, permissões, acessos)</p>
+                                    </div>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </div>
                           </TableCell>
                         </TableRow>
                       );
