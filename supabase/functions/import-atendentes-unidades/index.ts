@@ -27,6 +27,8 @@ Deno.serve(async (req) => {
     }
 
     console.log('🌐 Buscando dados da API externa...')
+    console.log(`🔗 URL: ${externalApiUrl.substring(0, 50)}...`)
+    console.log(`🔑 API Key presente: ${externalApiKey ? 'Sim' : 'Não'}`)
     
     const externalResponse = await fetch(externalApiUrl, {
       method: 'GET',
@@ -36,8 +38,12 @@ Deno.serve(async (req) => {
       }
     })
 
+    console.log(`📊 Status da resposta: ${externalResponse.status}`)
+    
     if (!externalResponse.ok) {
-      throw new Error(`Erro na API externa: ${externalResponse.status} - ${externalResponse.statusText}`)
+      const errorText = await externalResponse.text()
+      console.log(`❌ Erro na API externa: ${errorText}`)
+      throw new Error(`Erro na API externa: ${externalResponse.status} - ${externalResponse.statusText}. Resposta: ${errorText}`)
     }
 
     const externalData = await externalResponse.json()
