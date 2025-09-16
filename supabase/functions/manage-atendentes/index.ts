@@ -62,48 +62,54 @@ Deno.serve(async (req) => {
 })
 
 async function listAtendentes() {
-  const { data, error } = await supabase
+  const { data: atendentes, error: atendentesError } = await supabase
     .from('atendentes')
-    .select(`
-      *,
-      atendente_unidades:atendente_unidades!atendente_id(
-        unidade_id,
-        is_preferencial,
-        prioridade,
-        ativo
-      )
-    `)
+    .select('*')
     .eq('ativo', true)
     .order('tipo', { ascending: true })
     .order('nome', { ascending: true })
 
-  if (error) throw error
+  if (atendentesError) throw atendentesError
+
+  // Buscar associações separadamente para cada atendente
+  if (atendentes && atendentes.length > 0) {
+    for (const atendente of atendentes) {
+      const { data: unidades } = await supabase
+        .from('atendente_unidades')
+        .select('unidade_id, is_preferencial, prioridade, ativo')
+        .eq('atendente_id', atendente.id)
+        .eq('ativo', true)
+      
+      atendente.atendente_unidades = unidades || []
+    }
+  }
 
   return new Response(
-    JSON.stringify({ data }),
+    JSON.stringify({ data: atendentes }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   )
 }
 
 async function getAtendente(id: string) {
-  const { data, error } = await supabase
+  const { data: atendente, error: atendenteError } = await supabase
     .from('atendentes')
-    .select(`
-      *,
-      atendente_unidades:atendente_unidades!atendente_id(
-        unidade_id,
-        is_preferencial,
-        prioridade,
-        ativo
-      )
-    `)
+    .select('*')
     .eq('id', id)
     .single()
 
-  if (error) throw error
+  if (atendenteError) throw atendenteError
+
+  // Buscar associações separadamente
+  const { data: unidades } = await supabase
+    .from('atendente_unidades')
+    .select('unidade_id, is_preferencial, prioridade, ativo')
+    .eq('atendente_id', id)
+    .eq('ativo', true)
+  
+  atendente.atendente_unidades = unidades || []
 
   return new Response(
-    JSON.stringify({ data }),
+    JSON.stringify({ data: atendente }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   )
 }

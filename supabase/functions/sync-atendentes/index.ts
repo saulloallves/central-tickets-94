@@ -44,21 +44,20 @@ Deno.serve(async (req) => {
 async function previewSyncData() {
   console.log('👀 Buscando dados para preview...')
 
-  // Buscar todas as unidades com dados de atendentes
+  // Buscar todas as unidades com dados de concierge (apenas concierge por enquanto)
   const { data: unidades, error: unidadesError } = await externalSupabase
     .from('unidades')
-    .select('id, grupo, codigo_grupo, concierge_name, concierge_phone, dfcom_name, dfcom_phone')
+    .select('id, grupo, codigo_grupo, concierge_name, concierge_phone')
     .not('concierge_name', 'is', null)
-    .or('dfcom_name.not.is.null')
 
   if (unidadesError) throw unidadesError
 
   const preview = {
     total_unidades: unidades?.length || 0,
     atendentes_concierge: 0,
-    atendentes_dfcom: 0,
+    atendentes_dfcom: 0,  // Será sempre 0 por enquanto pois não temos dfcom_name na tabela externa
     unidades_com_concierge: [],
-    unidades_com_dfcom: [],
+    unidades_com_dfcom: [],  // Será sempre vazio por enquanto
     novos_atendentes: [],
     conflitos: []
   }
@@ -75,7 +74,7 @@ async function previewSyncData() {
     })
 
     for (const unidade of unidades) {
-      // Processar Concierge
+      // Processar apenas Concierge
       if (unidade.concierge_name) {
         preview.atendentes_concierge++
         preview.unidades_com_concierge.push({
@@ -101,33 +100,6 @@ async function previewSyncData() {
           })
         }
       }
-
-      // Processar DFCom
-      if (unidade.dfcom_name) {
-        preview.atendentes_dfcom++
-        preview.unidades_com_dfcom.push({
-          unidade_id: unidade.id,
-          grupo: unidade.grupo,
-          atendente: unidade.dfcom_name,
-          telefone: unidade.dfcom_phone
-        })
-
-        const key = `${unidade.dfcom_name}-dfcom`
-        if (existentes.has(key)) {
-          preview.conflitos.push({
-            nome: unidade.dfcom_name,
-            tipo: 'dfcom',
-            acao: 'atualizar'
-          })
-        } else {
-          preview.novos_atendentes.push({
-            nome: unidade.dfcom_name,
-            tipo: 'dfcom',
-            telefone: unidade.dfcom_phone,
-            unidade_id: unidade.id
-          })
-        }
-      }
     }
   }
 
@@ -142,12 +114,11 @@ async function previewSyncData() {
 async function syncAtendentes() {
   console.log('🔄 Iniciando sincronização de atendentes...')
 
-  // 1. Buscar todas as unidades com dados de atendentes
+  // 1. Buscar todas as unidades com dados de concierge
   const { data: unidades, error: unidadesError } = await externalSupabase
     .from('unidades')
-    .select('id, grupo, codigo_grupo, concierge_name, concierge_phone, dfcom_name, dfcom_phone')
+    .select('id, grupo, codigo_grupo, concierge_name, concierge_phone')
     .not('concierge_name', 'is', null)
-    .or('dfcom_name.not.is.null')
 
   if (unidadesError) throw unidadesError
 
@@ -177,23 +148,12 @@ async function syncAtendentes() {
     stats.processados++
 
     try {
-      // Processar Concierge
+      // Processar apenas Concierge
       if (unidade.concierge_name) {
         await processAtendente({
           nome: unidade.concierge_name,
           telefone: unidade.concierge_phone,
           tipo: 'concierge',
-          unidade_id: unidade.id,
-          grupo: unidade.grupo
-        }, stats)
-      }
-
-      // Processar DFCom
-      if (unidade.dfcom_name) {
-        await processAtendente({
-          nome: unidade.dfcom_name,
-          telefone: unidade.dfcom_phone,
-          tipo: 'dfcom',
           unidade_id: unidade.id,
           grupo: unidade.grupo
         }, stats)
