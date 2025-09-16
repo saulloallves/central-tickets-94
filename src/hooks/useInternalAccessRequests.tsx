@@ -129,6 +129,29 @@ export const useInternalAccessRequests = () => {
     try {
       console.log('Creating request:', { user_id: user.id, equipe_id: equipeId, desired_role: desiredRole });
       
+      // Primeiro, garantir que o usuário tem um profile
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (!existingProfile) {
+        console.log('Profile não existe, criando...');
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert([{
+            id: user.id,
+            email: user.email,
+            nome_completo: user.user_metadata?.nome_completo || user.email?.split('@')[0] || 'Usuário'
+          }]);
+
+        if (profileError) {
+          console.error('Error creating profile:', profileError);
+          throw new Error('Erro ao criar perfil de usuário');
+        }
+      }
+      
       const { error } = await supabase
         .from('internal_access_requests')
         .insert([{
