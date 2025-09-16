@@ -18,10 +18,13 @@ Deno.serve(async (req) => {
   try {
     console.log('🚀 Iniciando importação de atendentes das unidades...')
 
-    // 1. Buscar TODAS as unidades da tabela externa
+    // 1. Buscar TODAS as unidades com dados do concierge (JOIN com franqueados)
     const { data: unidades, error: unidadesError } = await supabase
       .from('unidades')
-      .select('id, grupo, codigo_grupo, concierge_name, concierge_phone, email, uf, cidade, endereco')
+      .select(`
+        id, grupo, codigo_grupo, email, uf, cidade, endereco,
+        franqueados!inner(name, phone, email)
+      `)
 
     if (unidadesError) {
       console.error('❌ Erro ao buscar unidades:', unidadesError)
@@ -100,27 +103,39 @@ Deno.serve(async (req) => {
 })
 
 async function processarUnidade(unidade: any, stats: any) {
-  const { id: unidade_id, grupo, concierge_name, concierge_phone, email, uf, cidade } = unidade
+  const { id: unidade_id, grupo, email, uf, cidade, franqueados } = unidade
   
-  // Usar o nome do concierge ou gerar nome baseado no grupo/cidade
-  const nomeAtendente = concierge_name 
-    ? concierge_name.trim()
-    : grupo 
-      ? `Atendente ${grupo}`.trim()
-      : `Atendente ${cidade || unidade_id}`.trim()
+  // Extrair dados do concierge do JOIN
+  const concierge = franqueados?.[0]
+  if (!concierge) {
+    console.log(`⚠️ Unidade ${grupo} sem concierge - pulando`)
+    return
+  }
+
+  const { name: concierge_name, phone: concierge_phone, email: concierge_email } = concierge
+  const nomeAtendente = concierge_name?.trim() || `Atendente ${grupo || cidade || unidade_id}`.trim()
 
   console.log(`🔄 Processando: ${nomeAtendente} (${unidade_id})`)
 
-  // 1. Verificar se atendente já existe (por nome E unidade)
-  const { data: atendenteExistente, error: searchError } = await supabase
-    .from('atendentes')
-    .select('id, nome')
-    .eq('nome', nomeAtendente)
-    .maybeSingle()
-
-  if (searchError) {
-    console.error('Erro buscando atendente existente:', searchError)
-    throw searchError
+  // 1. Verificar se atendente já existe (por telefone primeiro, depois email)
+  let atendenteExistente = null
+  
+  if (concierge_phone) {
+    const { data } = await supabase
+      .from('atendentes')
+      .select('id, nome')
+      .eq('telefone', concierge_phone)
+      .maybeSingle()
+    atendenteExistente = data
+  }
+  
+  if (!atendenteExistente && concierge_email) {
+    const { data } = await supabase
+      .from('atendentes')
+      .select('id, nome')
+      .eq('email', concierge_email)
+      .maybeSingle()
+    atendenteExistente = data
   }
 
   let atendenteId: string
@@ -130,8 +145,9 @@ async function processarUnidade(unidade: any, stats: any) {
     const { data: updated, error: updateError } = await supabase
       .from('atendentes')
       .update({
+        nome: nomeAtendente,
         telefone: concierge_phone?.toString() || null,
-        email: email || null,
+        email: concierge_email || null,
         status: 'ativo',
         ativo: true,
         observacoes: `Unidade: ${grupo || cidade || unidade_id} - ${uf || ''} - Atualizado automaticamente`,
@@ -157,10 +173,12 @@ async function processarUnidade(unidade: any, stats: any) {
       .insert({
         nome: nomeAtendente,
         telefone: concierge_phone?.toString() || null,
-        email: email || null,
+        email: concierge_email || null,
         tipo: 'concierge',
         status: 'ativo',
-        capacidade_maxima: 5,
+        horario_inicio: '09:00:00',
+        horario_fim: '18:00:00',
+        capacidade_maxima: 10,
         capacidade_atual: 0,
         ativo: true,
         observacoes: `Unidade: ${grupo || cidade || unidade_id} - ${uf || ''} - Importado automaticamente`
@@ -178,14 +196,12 @@ async function processarUnidade(unidade: any, stats: any) {
     console.log(`✅ Novo atendente criado: ${nomeAtendente}`)
   }
 
-  // 2. Criar/verificar associação com unidade
+  // 2. Criar associação simples com unidade (sem prioridade)
   const { error: associacaoError } = await supabase
     .from('atendente_unidades')
     .upsert({
       atendente_id: atendenteId,
       unidade_id: unidade_id,
-      is_preferencial: true,
-      prioridade: 1,
       ativo: true
     }, {
       onConflict: 'atendente_id,unidade_id'
