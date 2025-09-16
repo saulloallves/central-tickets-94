@@ -36,6 +36,12 @@ interface Atendente {
   capacidade_atual: number;
   foto_perfil?: string;
   observacoes?: string;
+  user_id?: string;
+  user?: {
+    id: string;
+    nome_completo?: string;
+    email?: string;
+  };
   atendente_unidades?: {
     unidade_id: string;
     is_preferencial: boolean;
@@ -215,6 +221,19 @@ export const AtendenteCard = ({ atendente, onStatusChange, onRedistribute }: Ate
                     {au.is_preferencial && " ★"}
                   </Badge>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* Usuário Vinculado */}
+          {atendente.user && (
+            <div className="space-y-1">
+              <span className="text-xs text-muted-foreground">Usuário Vinculado:</span>
+              <div className="flex items-center gap-2">
+                <Badge variant="default" className="text-xs">
+                  <User className="h-3 w-3 mr-1" />
+                  {atendente.user.nome_completo || atendente.user.email}
+                </Badge>
               </div>
             </div>
           )}

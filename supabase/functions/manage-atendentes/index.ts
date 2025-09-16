@@ -22,6 +22,7 @@ interface AtendenteData {
   foto_perfil?: string
   observacoes?: string
   ativo?: boolean
+  user_id?: string
   unidades?: string[]
 }
 
@@ -65,10 +66,17 @@ Deno.serve(async (req) => {
 
 async function listAtendentes() {
   try {
-    // First get all atendentes
+    // First get all atendentes with linked user data
     const { data: atendentes, error: atendentesError } = await supabase
       .from('atendentes')
-      .select('*')
+      .select(`
+        *,
+        user:user_id (
+          id,
+          nome_completo,
+          email
+        )
+      `)
       .eq('ativo', true)
       .order('tipo', { ascending: true })
       .order('nome', { ascending: true })
@@ -132,7 +140,14 @@ async function listAtendentes() {
 async function getAtendente(id: string) {
   const { data: atendente, error: atendenteError } = await supabase
     .from('atendentes')
-    .select('*')
+    .select(`
+      *,
+      user:user_id (
+        id,
+        nome_completo,
+        email
+      )
+    `)
     .eq('id', id)
     .single()
 
@@ -156,11 +171,42 @@ async function getAtendente(id: string) {
 async function createAtendente(data: AtendenteData) {
   const { unidades, ...atendenteData } = data
 
+  // Validar se user_id existe e é único
+  if (atendenteData.user_id) {
+    const { data: existingUser } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', atendenteData.user_id)
+      .single()
+
+    if (!existingUser) {
+      throw new Error('Usuário não encontrado')
+    }
+
+    const { data: existingAtendente } = await supabase
+      .from('atendentes')
+      .select('id')
+      .eq('user_id', atendenteData.user_id)
+      .eq('ativo', true)
+      .single()
+
+    if (existingAtendente) {
+      throw new Error('Este usuário já está vinculado a outro atendente')
+    }
+  }
+
   // 1. Criar atendente
   const { data: atendente, error: atendenteError } = await supabase
     .from('atendentes')
     .insert(atendenteData)
-    .select()
+    .select(`
+      *,
+      user:user_id (
+        id,
+        nome_completo,
+        email
+      )
+    `)
     .single()
 
   if (atendenteError) throw atendenteError
@@ -192,12 +238,44 @@ async function createAtendente(data: AtendenteData) {
 async function updateAtendente(id: string, data: Partial<AtendenteData>) {
   const { unidades, ...atendenteData } = data
 
+  // Validar se user_id existe e é único (se estiver sendo alterado)
+  if (atendenteData.user_id) {
+    const { data: existingUser } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', atendenteData.user_id)
+      .single()
+
+    if (!existingUser) {
+      throw new Error('Usuário não encontrado')
+    }
+
+    const { data: existingAtendente } = await supabase
+      .from('atendentes')
+      .select('id')
+      .eq('user_id', atendenteData.user_id)
+      .eq('ativo', true)
+      .neq('id', id)
+      .single()
+
+    if (existingAtendente) {
+      throw new Error('Este usuário já está vinculado a outro atendente')
+    }
+  }
+
   // 1. Atualizar dados do atendente
   const { data: atendente, error: atendenteError } = await supabase
     .from('atendentes')
     .update(atendenteData)
     .eq('id', id)
-    .select()
+    .select(`
+      *,
+      user:user_id (
+        id,
+        nome_completo,
+        email
+      )
+    `)
     .single()
 
   if (atendenteError) throw atendenteError

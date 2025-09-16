@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/select';
 import { useForm } from 'react-hook-form';
 import { useAtendentes } from '@/hooks/useAtendentes';
+import { useAtendenteUser } from '@/hooks/useAtendenteUser';
 import { useToast } from '@/hooks/use-toast';
 
 interface CreateAtendenteDialogProps {
@@ -43,10 +44,12 @@ interface FormData {
   horario_inicio?: string;
   horario_fim?: string;
   observacoes?: string;
+  user_id?: string;
 }
 
 export const CreateAtendenteDialog = ({ open, onOpenChange }: CreateAtendenteDialogProps) => {
   const { createAtendente, updating } = useAtendentes();
+  const { users } = useAtendenteUser();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -60,6 +63,7 @@ export const CreateAtendenteDialog = ({ open, onOpenChange }: CreateAtendenteDia
       horario_inicio: '08:00',
       horario_fim: '18:00',
       observacoes: '',
+      user_id: '',
     },
   });
 
@@ -220,6 +224,32 @@ export const CreateAtendenteDialog = ({ open, onOpenChange }: CreateAtendenteDia
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="user_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Vincular ao Usuário</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um usuário (opcional)" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="">Nenhum usuário</SelectItem>
+                      {users.map((user) => (
+                        <SelectItem key={user.id} value={user.id}>
+                          {user.nome_completo || user.email}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}

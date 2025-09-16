@@ -116,6 +116,7 @@ export type Database = {
           telefone: string | null
           tipo: Database["public"]["Enums"]["atendente_tipo"]
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           ativo?: boolean
@@ -133,6 +134,7 @@ export type Database = {
           telefone?: string | null
           tipo: Database["public"]["Enums"]["atendente_tipo"]
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           ativo?: boolean
@@ -150,8 +152,17 @@ export type Database = {
           telefone?: string | null
           tipo?: Database["public"]["Enums"]["atendente_tipo"]
           updated_at?: string
+          user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "atendentes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       audit_log: {
         Row: {

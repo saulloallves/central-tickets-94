@@ -18,6 +18,12 @@ interface Atendente {
   ativo: boolean;
   created_at: string;
   updated_at: string;
+  user_id?: string;
+  user?: {
+    id: string;
+    nome_completo?: string;
+    email?: string;
+  };
   atendente_unidades?: {
     unidade_id: string;
     is_preferencial: boolean;
