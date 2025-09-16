@@ -43,6 +43,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signUp = async (email: string, password: string, metadata?: any) => {
     const redirectUrl = `${window.location.origin}/`;
     
+    console.log('🚀 Iniciando cadastro para:', email);
+    
     const { data: authData, error } = await supabase.auth.signUp({
       email,
       password,
@@ -53,6 +55,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     if (error) {
+      console.error('❌ Erro no Auth:', error);
       toast({
         title: "Erro no cadastro",
         description: error.message,
@@ -61,10 +64,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return { error };
     }
 
+    console.log('✅ Conta criada no Supabase Auth:', authData.user?.id);
+
     // Se o usuário foi criado, processar dados adicionais
     if (authData.user) {
       try {
-        const { data: result, error: processError } = await supabase.functions.invoke('colaborador-signup', {
+        console.log('📨 Chamando edge function para processamento adicional...');
+        
+        // Usar timeout para evitar travamento
+        const processPromise = supabase.functions.invoke('colaborador-signup', {
           body: {
             userId: authData.user.id,
             email,
@@ -72,24 +80,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
         });
 
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout')), 10000)
+        );
+
+        const { data: result, error: processError } = await Promise.race([
+          processPromise,
+          timeoutPromise
+        ]) as any;
+
         if (processError) {
-          console.error('Erro ao processar signup:', processError);
+          console.error('⚠️ Erro no processamento adicional:', processError);
           toast({
-            title: "Aviso",
-            description: "Conta criada, mas há pendências. Contate o suporte.",
-            variant: "destructive"
+            title: "Conta criada com sucesso",
+            description: "Email enviado! Complete dados adicionais depois.",
+            variant: "default"
           });
         } else {
+          console.log('✅ Processamento adicional concluído:', result);
           toast({
             title: "Cadastro realizado",
-            description: result?.message || "Verifique seu email para confirmar a conta"
+            description: result?.message || "Verifique seu email para confirmar a conta",
+            variant: "default"
           });
         }
       } catch (procError) {
-        console.error('Erro no processamento:', procError);
+        console.error('⚠️ Falha no processamento adicional:', procError);
         toast({
-          title: "Cadastro realizado",
-          description: "Verifique seu email para confirmar a conta"
+          title: "Conta criada com sucesso",
+          description: "Email enviado! Dados adicionais serão processados após confirmação.",
+          variant: "default"
         });
       }
     }

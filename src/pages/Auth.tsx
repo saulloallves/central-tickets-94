@@ -118,6 +118,11 @@ const Auth = () => {
     e.preventDefault();
     
     if (signupData.password !== signupData.confirmPassword) {
+      toast({
+        title: "Erro",
+        description: "As senhas não coincidem",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -141,28 +146,37 @@ const Auth = () => {
 
     setIsSubmitting(true);
 
-    const { error } = await signUp(signupData.email, signupData.password, {
-      nome_completo: signupData.nomeCompleto,
-      role: signupData.role,
-      equipe_id: signupData.role === 'colaborador' ? signupData.equipeId : undefined
-    });
-
-    if (!error) {
-      // Primeiro mostrar tela de confirmação de email
-      setShowEmailConfirmation(true);
-      
-      // Reset form
-      setSignupData({
-        email: '',
-        password: '',
-        confirmPassword: '',
-        nomeCompleto: '',
-        role: '',
-        equipeId: ''
+    try {
+      const { error } = await signUp(signupData.email, signupData.password, {
+        nome_completo: signupData.nomeCompleto,
+        role: signupData.role,
+        equipe_id: signupData.role === 'colaborador' ? signupData.equipeId : undefined
       });
-    }
 
-    setIsSubmitting(false);
+      if (!error) {
+        // Sempre mostrar tela de confirmação se não houve erro
+        setShowEmailConfirmation(true);
+        
+        // Reset form
+        setSignupData({
+          email: '',
+          password: '',
+          confirmPassword: '',
+          nomeCompleto: '',
+          role: '',
+          equipeId: ''
+        });
+      }
+    } catch (catchError) {
+      console.error('Erro inesperado no cadastro:', catchError);
+      toast({
+        title: "Erro inesperado",
+        description: "Tente novamente em alguns momentos",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleFranqueadoLogin = async (e: React.FormEvent) => {

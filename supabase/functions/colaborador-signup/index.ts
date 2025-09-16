@@ -21,16 +21,27 @@ serve(async (req) => {
   }
 
   try {
+    console.log('🚀 Colaborador signup iniciado');
+    
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { userId, email, nome_completo, role, equipe_id }: SignupRequest = await req.json();
+    const requestBody = await req.json();
+    console.log('📦 Body recebido:', requestBody);
 
-    console.log('Processando signup de colaborador:', { userId, email, role, equipe_id });
+    const { userId, email, nome_completo, role, equipe_id }: SignupRequest = requestBody;
+
+    // Validações básicas
+    if (!userId || !email || !nome_completo || !role) {
+      throw new Error('Dados obrigatórios faltando');
+    }
+
+    console.log('✅ Dados validados:', { userId, email, role, equipe_id });
 
     // 1. Criar ou atualizar o profile (upsert)
+    console.log('📝 Criando/atualizando profile...');
     const { error: profileError } = await supabaseClient
       .from('profiles')
       .upsert({
@@ -42,12 +53,15 @@ serve(async (req) => {
       });
 
     if (profileError) {
-      console.error('Erro ao criar/atualizar profile:', profileError);
-      throw profileError;
+      console.error('❌ Erro ao criar/atualizar profile:', profileError);
+      throw new Error(`Erro no profile: ${profileError.message}`);
     }
+    console.log('✅ Profile criado/atualizado com sucesso');
 
     // 2. Se for colaborador e tiver equipe_id, criar solicitação de acesso
     if (role === 'colaborador' && equipe_id) {
+      console.log('👥 Processando colaborador com equipe...');
+      
       // Inserir ou atualizar role como colaborador (upsert)
       const { error: roleError } = await supabaseClient
         .from('user_roles')
@@ -59,11 +73,14 @@ serve(async (req) => {
         });
 
       if (roleError) {
-        console.error('Erro ao criar/atualizar role:', roleError);
+        console.error('⚠️ Aviso - erro ao criar role (pode já existir):', roleError);
         // Não falhar por isso, pode já existir
+      } else {
+        console.log('✅ Role colaborador criado/atualizado');
       }
 
       // Criar solicitação de acesso à equipe
+      console.log('📨 Criando solicitação de acesso à equipe...');
       const { error: requestError } = await supabaseClient
         .from('internal_access_requests')
         .insert({
@@ -74,12 +91,14 @@ serve(async (req) => {
         });
 
       if (requestError) {
-        console.error('Erro ao criar solicitação de acesso:', requestError);
-        throw requestError;
+        console.error('❌ Erro ao criar solicitação de acesso:', requestError);
+        throw new Error(`Erro na solicitação: ${requestError.message}`);
       }
 
-      console.log('Solicitação de acesso criada para equipe:', equipe_id);
+      console.log('✅ Solicitação de acesso criada para equipe:', equipe_id);
     } else {
+      console.log('👤 Processando usuário direto...');
+      
       // Para outros roles, inserir ou atualizar o role (upsert)
       const { error: roleError } = await supabaseClient
         .from('user_roles')
@@ -91,11 +110,14 @@ serve(async (req) => {
         });
 
       if (roleError) {
-        console.error('Erro ao criar/atualizar role:', roleError);
-        throw roleError;
+        console.error('❌ Erro ao criar/atualizar role:', roleError);
+        throw new Error(`Erro no role: ${roleError.message}`);
       }
+      console.log('✅ Role criado/atualizado:', role);
     }
 
+    console.log('🎉 Processamento concluído com sucesso!');
+    
     return new Response(
       JSON.stringify({ 
         success: true, 
@@ -106,15 +128,18 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
-  } catch (error) {
-    console.error('Erro no signup:', error);
+  } catch (error: any) {
+    console.error('💥 Erro no signup:', error);
+    console.error('Stack trace:', error.stack);
+    
     return new Response(
       JSON.stringify({ 
         error: error.message || 'Erro interno do servidor',
-        success: false 
+        success: false,
+        details: error.stack || 'Sem detalhes adicionais'
       }),
       { 
-        status: 400,
+        status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     );
