@@ -81,8 +81,11 @@ export const useEnhancedAtendimentoRealtime = ({
     console.log('📡 Setting up enhanced atendimento realtime with filters:', filters);
     setHasAttemptedRealtime(true);
 
+    const channelName = `atendimentos-realtime-${Math.random().toString(36).substr(2, 9)}`;
+    console.log('📡 Creating channel:', channelName);
+    
     const channel = supabase
-      .channel('enhanced-atendimentos-realtime')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
