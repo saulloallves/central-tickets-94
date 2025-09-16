@@ -217,13 +217,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       toast({
         title: "Logout realizado",
-        description: "Redirecionando para página principal..."
+        description: "Você foi desconectado do sistema."
       });
-      
-      // Redirecionar para centralticket.girabot.com.br após logout
-      setTimeout(() => {
-        window.location.href = 'https://centralticket.girabot.com.br';
-      }, 1000);
       
     } catch (error) {
       console.error('Erro durante logout:', error);
