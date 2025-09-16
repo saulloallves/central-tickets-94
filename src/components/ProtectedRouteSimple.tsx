@@ -13,6 +13,15 @@ export const ProtectedRoute = ({ children, requiredRole, requiredRoles }: Protec
   const { hasRole, loading: roleLoading, hasPendingAccess } = useRole();
   const location = useLocation();
 
+  console.log('🛡️ ProtectedRoute check:', { 
+    user: user?.id, 
+    loading, 
+    roleLoading, 
+    hasPendingAccess,
+    requiredRole,
+    requiredRoles 
+  });
+
   if (loading || roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-hero">

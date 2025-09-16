@@ -21,23 +21,82 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+    
+    console.log('🔐 Setting up auth state management...');
+    
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
+        if (!isMounted) return;
+        
+        console.log('🔐 Auth state change:', event, session?.user?.id);
+        
+        // Handle session cleanup for invalid tokens
+        if (event === 'TOKEN_REFRESHED' && !session) {
+          console.log('🔐 Token refresh failed, clearing session');
+          localStorage.clear();
+          setSession(null);
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+        
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+        
+        // Trigger role refresh for authenticated users
+        if (session?.user && event === 'SIGNED_IN') {
+          setTimeout(() => {
+            if (isMounted) {
+              console.log('🔐 Triggering role refresh after sign in');
+              window.dispatchEvent(new CustomEvent('roles-updated'));
+            }
+          }, 100);
+        }
       }
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    const checkSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('🔐 Session check error:', error);
+          localStorage.clear();
+          if (isMounted) {
+            setSession(null);
+            setUser(null);
+            setLoading(false);
+          }
+          return;
+        }
+        
+        if (isMounted) {
+          console.log('🔐 Initial session check:', session?.user?.id);
+          setSession(session);
+          setUser(session?.user ?? null);
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('🔐 Session check failed:', error);
+        if (isMounted) {
+          localStorage.clear();
+          setSession(null);
+          setUser(null);
+          setLoading(false);
+        }
+      }
+    };
+    
+    checkSession();
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signUp = async (email: string, password: string, metadata?: any) => {

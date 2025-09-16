@@ -9,16 +9,30 @@ export const useRole = () => {
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasPendingAccess, setHasPendingAccess] = useState(false);
+  const [roleCache, setRoleCache] = useState<{ [key: string]: { roles: AppRole[], timestamp: number, pending: boolean } }>({});
 
   useEffect(() => {
     if (!user) {
       setRoles([]);
       setLoading(false);
+      setHasPendingAccess(false);
       return;
     }
 
     const fetchRoles = async () => {
       try {
+        console.log('🔑 Fetching roles for user:', user.id);
+        
+        // Check cache first (5 minute TTL)
+        const cachedData = roleCache[user.id];
+        if (cachedData && (Date.now() - cachedData.timestamp) < 300000) {
+          console.log('🔑 Using cached roles:', cachedData.roles);
+          setRoles(cachedData.roles);
+          setHasPendingAccess(cachedData.pending);
+          setLoading(false);
+          return;
+        }
+
         // Verificar roles aprovadas
         const { data, error } = await supabase
           .from('user_roles')
@@ -34,7 +48,7 @@ export const useRole = () => {
           .maybeSingle();
 
         if (error) {
-          console.error('Error fetching roles:', error);
+          console.error('🔑 Error fetching roles:', error);
           setRoles([]);
         } else {
           // Filtrar apenas roles aprovadas
@@ -53,13 +67,24 @@ export const useRole = () => {
             }
           }
           
+          console.log('🔑 User roles found:', userRoles);
           setRoles(userRoles);
+          
+          // Cache the results
+          setRoleCache(prev => ({
+            ...prev,
+            [user.id]: {
+              roles: userRoles,
+              pending: !!pendingRequest,
+              timestamp: Date.now()
+            }
+          }));
         }
 
         // Definir se há acesso pendente
         setHasPendingAccess(!!pendingRequest);
       } catch (error) {
-        console.error('Error fetching roles:', error);
+        console.error('🔑 Error fetching roles:', error);
         setRoles([]);
       } finally {
         setLoading(false);
@@ -71,6 +96,14 @@ export const useRole = () => {
     // Listener para refresh automático de roles
     const handleRolesUpdate = () => {
       console.log('🔄 Roles update event received, refreshing...');
+      // Clear cache for this user
+      if (user?.id) {
+        setRoleCache(prev => {
+          const newCache = { ...prev };
+          delete newCache[user.id];
+          return newCache;
+        });
+      }
       fetchRoles();
     };
 
@@ -79,7 +112,7 @@ export const useRole = () => {
     return () => {
       window.removeEventListener('roles-updated', handleRolesUpdate);
     };
-  }, [user]);
+  }, [user, roleCache]);
 
   const hasRole = (role: AppRole): boolean => {
     return roles.includes(role);

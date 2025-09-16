@@ -55,38 +55,81 @@ const Auth = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (user && !loading) {
-      // Verificar se é franqueado para redirecionar corretamente
+      console.log('🔐 Auth page: User is authenticated, checking redirect...');
+      
+      // Add a small delay to allow role fetching to complete
       const checkUserRole = async () => {
         try {
+          // Wait a bit for roles to load
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
           const { data: roles, error } = await supabase
             .from('user_roles')
-            .select('role')
+            .select('role, approved')
             .eq('user_id', user.id);
           
           if (error) throw error;
           
-          const userRoles = roles?.map(r => r.role) || [];
+          const userRoles = roles?.filter(r => r.approved).map(r => r.role) || [];
+          console.log('🔐 Auth page: User roles found:', userRoles);
           
-          // Se não tem roles, usar fallback do localStorage
+          // Check if user has any active roles
           if (userRoles.length === 0) {
+            // Check if it's a franqueado by email
+            if (user.email) {
+              const { data: franqueadoData } = await supabase
+                .from('franqueados')
+                .select('id')
+                .eq('email', user.email)
+                .maybeSingle();
+              
+              if (franqueadoData) {
+                console.log('🔐 Auth page: Redirecting franqueado to dashboard');
+                navigate('/franqueado/dashboard');
+                return;
+              }
+            }
+            
+            // Fallback to localStorage if no roles found
             const lastLoginOrigin = localStorage.getItem('last_login_origin');
+            console.log('🔐 Auth page: No roles, using fallback:', lastLoginOrigin);
+            
             if (lastLoginOrigin === 'franqueado') {
               navigate('/franqueado/dashboard');
             } else {
+              // Check for pending access before redirecting to admin
+              const { data: pendingRequest } = await supabase
+                .from('internal_access_requests')
+                .select('id')
+                .eq('user_id', user.id)
+                .eq('status', 'pending')
+                .maybeSingle();
+              
+              if (pendingRequest) {
+                console.log('🔐 Auth page: User has pending access, showing pending approval');
+                setShowPendingApproval(true);
+                return;
+              }
+              
               navigate('/admin');
             }
             return;
           }
           
+          // Redirect based on roles
           if (userRoles.includes('franqueado' as any)) {
+            console.log('🔐 Auth page: Redirecting franqueado to dashboard');
             navigate('/franqueado/dashboard');
           } else {
+            console.log('🔐 Auth page: Redirecting admin/collaborator to dashboard');
             navigate('/admin');
           }
         } catch (error) {
-          console.error('Error checking roles:', error);
+          console.error('🔐 Auth page: Error checking roles:', error);
           // Fallback usando localStorage
           const lastLoginOrigin = localStorage.getItem('last_login_origin');
+          console.log('🔐 Auth page: Error fallback to:', lastLoginOrigin);
+          
           if (lastLoginOrigin === 'franqueado') {
             navigate('/franqueado/dashboard');
           } else {
