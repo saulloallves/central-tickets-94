@@ -8,6 +8,7 @@ import { useAtendentes } from '@/hooks/useAtendentes';
 import { AtendenteCard } from './AtendenteCard';
 import { CreateAtendenteDialog } from './CreateAtendenteDialog';
 import { AtendentesDashboard } from './AtendentesDashboard';
+import { SyncAtendentesExternos } from './SyncAtendentesExternos';
 
 export const AtendentesManagement = () => {
   const { atendentes, loading, updateStatus, redistributeQueue } = useAtendentes();
@@ -136,6 +137,9 @@ export const AtendentesManagement = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Sync External Data */}
+      <SyncAtendentesExternos />
 
       {/* Concierge Section */}
       <Card>
