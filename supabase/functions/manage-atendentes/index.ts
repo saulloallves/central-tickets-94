@@ -62,32 +62,69 @@ Deno.serve(async (req) => {
 })
 
 async function listAtendentes() {
-  const { data: atendentes, error: atendentesError } = await supabase
-    .from('atendentes')
-    .select('*')
-    .eq('ativo', true)
-    .order('tipo', { ascending: true })
-    .order('nome', { ascending: true })
+  try {
+    // First get all atendentes
+    const { data: atendentes, error: atendentesError } = await supabase
+      .from('atendentes')
+      .select('*')
+      .eq('ativo', true)
+      .order('tipo', { ascending: true })
+      .order('nome', { ascending: true })
 
-  if (atendentesError) throw atendentesError
-
-  // Buscar associações separadamente para cada atendente
-  if (atendentes && atendentes.length > 0) {
-    for (const atendente of atendentes) {
-      const { data: unidades } = await supabase
-        .from('atendente_unidades')
-        .select('unidade_id, is_preferencial, prioridade, ativo')
-        .eq('atendente_id', atendente.id)
-        .eq('ativo', true)
-      
-      atendente.atendente_unidades = unidades || []
+    if (atendentesError) {
+      console.error('Error fetching atendentes:', atendentesError)
+      throw atendentesError
     }
-  }
 
-  return new Response(
-    JSON.stringify({ data: atendentes }),
-    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-  )
+    // If no atendentes found, return empty array
+    if (!atendentes || atendentes.length === 0) {
+      console.log('No atendentes found')
+      return new Response(
+        JSON.stringify({ data: [] }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Try to get all atendente_unidades associations at once
+    try {
+      const atendenteIds = atendentes.map(a => a.id)
+      const { data: allUnidades, error: unidadesError } = await supabase
+        .from('atendente_unidades')
+        .select('atendente_id, unidade_id, is_preferencial, prioridade, ativo')
+        .in('atendente_id', atendenteIds)
+        .eq('ativo', true)
+
+      if (unidadesError) {
+        console.error('Error fetching atendente_unidades:', unidadesError)
+        // Continue without associations if there's an error
+      }
+
+      // Map associations to atendentes
+      for (const atendente of atendentes) {
+        atendente.atendente_unidades = allUnidades 
+          ? allUnidades.filter(u => u.atendente_id === atendente.id)
+          : []
+      }
+    } catch (error) {
+      console.error('Error processing atendente_unidades:', error)
+      // Continue without associations if there's an error
+      for (const atendente of atendentes) {
+        atendente.atendente_unidades = []
+      }
+    }
+
+    console.log(`✅ Found ${atendentes.length} atendentes`)
+    return new Response(
+      JSON.stringify({ data: atendentes }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  } catch (error) {
+    console.error('❌ Error in listAtendentes:', error)
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
 }
 
 async function getAtendente(id: string) {
