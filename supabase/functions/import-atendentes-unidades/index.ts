@@ -27,12 +27,19 @@ Deno.serve(async (req) => {
     }
 
     console.log('🌐 Buscando dados da API externa...')
-    console.log(`🔗 URL: ${externalApiUrl.substring(0, 50)}...`)
-    console.log(`🔑 API Key presente: ${externalApiKey ? 'Sim' : 'Não'}`)
+    console.log(`🔗 URL: ${externalApiUrl}`)
     
-    const externalResponse = await fetch(externalApiUrl, {
+    // Construir URL completa para a tabela unidades
+    const fullUrl = externalApiUrl.endsWith('/') 
+      ? `${externalApiUrl}rest/v1/unidades`
+      : `${externalApiUrl}/rest/v1/unidades`;
+    
+    console.log(`🔗 URL completa: ${fullUrl}`)
+    
+    const externalResponse = await fetch(fullUrl, {
       method: 'GET',
       headers: {
+        'apikey': externalApiKey,
         'Authorization': `Bearer ${externalApiKey}`,
         'Content-Type': 'application/json'
       }
