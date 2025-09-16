@@ -66,6 +66,93 @@ export type Database = {
           },
         ]
       }
+      atendente_unidades: {
+        Row: {
+          atendente_id: string
+          ativo: boolean
+          created_at: string
+          id: string
+          is_preferencial: boolean
+          prioridade: number | null
+          unidade_id: string
+          updated_at: string
+        }
+        Insert: {
+          atendente_id: string
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          is_preferencial?: boolean
+          prioridade?: number | null
+          unidade_id: string
+          updated_at?: string
+        }
+        Update: {
+          atendente_id?: string
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          is_preferencial?: boolean
+          prioridade?: number | null
+          unidade_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      atendentes: {
+        Row: {
+          ativo: boolean
+          capacidade_atual: number
+          capacidade_maxima: number
+          created_at: string
+          email: string | null
+          foto_perfil: string | null
+          horario_fim: string | null
+          horario_inicio: string | null
+          id: string
+          nome: string
+          observacoes: string | null
+          status: Database["public"]["Enums"]["atendente_status"]
+          telefone: string | null
+          tipo: Database["public"]["Enums"]["atendente_tipo"]
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          capacidade_atual?: number
+          capacidade_maxima?: number
+          created_at?: string
+          email?: string | null
+          foto_perfil?: string | null
+          horario_fim?: string | null
+          horario_inicio?: string | null
+          id?: string
+          nome: string
+          observacoes?: string | null
+          status?: Database["public"]["Enums"]["atendente_status"]
+          telefone?: string | null
+          tipo: Database["public"]["Enums"]["atendente_tipo"]
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          capacidade_atual?: number
+          capacidade_maxima?: number
+          created_at?: string
+          email?: string | null
+          foto_perfil?: string | null
+          horario_fim?: string | null
+          horario_inicio?: string | null
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          status?: Database["public"]["Enums"]["atendente_status"]
+          telefone?: string | null
+          tipo?: Database["public"]["Enums"]["atendente_tipo"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       audit_log: {
         Row: {
           action: string
@@ -2745,6 +2832,13 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      get_available_capacity: {
+        Args: {
+          p_tipo: Database["public"]["Enums"]["atendente_tipo"]
+          p_unidade_id: string
+        }
+        Returns: number
+      }
       get_realtime_kpis: {
         Args: {
           p_equipe_filter?: string
@@ -3138,6 +3232,13 @@ export type Database = {
         | "arquivado"
         | "substituido"
       article_type: "permanente" | "temporario"
+      atendente_status:
+        | "ativo"
+        | "pausa"
+        | "almoco"
+        | "indisponivel"
+        | "inativo"
+      atendente_tipo: "concierge" | "dfcom"
       canal_origem: "typebot" | "whatsapp_zapi" | "web"
       canal_resposta: "web" | "whatsapp" | "typebot" | "interno"
       cargo:
@@ -3348,6 +3449,8 @@ export const Constants = {
         "substituido",
       ],
       article_type: ["permanente", "temporario"],
+      atendente_status: ["ativo", "pausa", "almoco", "indisponivel", "inativo"],
+      atendente_tipo: ["concierge", "dfcom"],
       canal_origem: ["typebot", "whatsapp_zapi", "web"],
       canal_resposta: ["web", "whatsapp", "typebot", "interno"],
       cargo: [

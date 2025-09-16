@@ -2,7 +2,7 @@
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings, Brain, BookOpen, TrendingUp, AlertTriangle, Image, Bell, Users, MessageSquare } from "lucide-react";
+import { Settings, Brain, BookOpen, TrendingUp, AlertTriangle, Image, Bell, Users, MessageSquare, Headphones } from "lucide-react";
 import { IASettingsTab } from "@/components/configuracoes/IASettingsTab";
 import KnowledgeHubTab from "@/components/configuracoes/KnowledgeHubTab";
 import { RelatoriosTab } from "@/components/configuracoes/RelatoriosTab";
@@ -14,6 +14,7 @@ import { LogoSettings } from "@/components/configuracoes/LogoSettingsTab";
 import { WhatsAppManagementTab } from '@/components/configuracoes/WhatsAppManagementTab';
 import { AIAlertsTestTab } from '@/components/configuracoes/AIAlertsTestTab';
 import CrisisAISettingsTab from '@/components/configuracoes/CrisisAISettingsTab';
+import { AtendentesTab } from '@/components/configuracoes/AtendentesTab';
 
 export default function Configuracoes() {
   return (
@@ -38,7 +39,7 @@ export default function Configuracoes() {
         </div>
 
         <Tabs defaultValue="ia" className="w-full">
-          <TabsList className="grid w-full grid-cols-9 mb-6">
+          <TabsList className="grid w-full grid-cols-10 mb-6">
             <TabsTrigger value="logo" className="flex items-center gap-2">
               <Image className="h-4 w-4" />
               Logo
@@ -74,6 +75,10 @@ export default function Configuracoes() {
             <TabsTrigger value="crisis-ai" className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4" />
               IA Crises
+            </TabsTrigger>
+            <TabsTrigger value="atendentes" className="flex items-center gap-2">
+              <Headphones className="h-4 w-4" />
+              Atendentes
             </TabsTrigger>
           </TabsList>
 
@@ -112,6 +117,10 @@ export default function Configuracoes() {
 
           <TabsContent value="crisis-ai" className="space-y-6 animate-fade-in">
             <CrisisAISettingsTab />
+          </TabsContent>
+
+          <TabsContent value="atendentes" className="space-y-6 animate-fade-in">
+            <AtendentesTab />
           </TabsContent>
 
         </Tabs>
