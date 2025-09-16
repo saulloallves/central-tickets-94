@@ -9,6 +9,7 @@ import { AtendenteCard } from './AtendenteCard';
 import { CreateAtendenteDialog } from './CreateAtendenteDialog';
 import { AtendentesDashboard } from './AtendentesDashboard';
 import { SyncAtendentesExternos } from './SyncAtendentesExternos';
+import { ImportAtendentesButton } from './ImportAtendentesButton';
 import { supabase } from '@/integrations/supabase/client';
 
 export const AtendentesManagement = () => {
@@ -100,6 +101,7 @@ export const AtendentesManagement = () => {
           </p>
         </div>
         <div className="flex gap-2">
+          <ImportAtendentesButton />
           <Button 
             variant="outline" 
             onClick={() => setShowDashboard(true)}
