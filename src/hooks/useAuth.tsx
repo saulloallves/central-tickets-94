@@ -145,20 +145,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     try {
-      // Limpar estado imediatamente
-      setUser(null);
-      setSession(null);
-      
-      // Limpar dados do localStorage
-      localStorage.removeItem('last_login_origin');
-      localStorage.clear(); // Limpar todo o localStorage para garantir
-      
-      // Executar signOut do Supabase
+      // Executar signOut do Supabase primeiro
       const { error } = await supabase.auth.signOut();
       
       if (error) {
         console.error('Erro no logout:', error);
       }
+      
+      // Limpar dados do localStorage
+      localStorage.removeItem('last_login_origin');
+      localStorage.clear();
       
       toast({
         title: "Logout realizado",
@@ -167,11 +163,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
     } catch (error) {
       console.error('Erro durante logout:', error);
-    } finally {
-      // Garantir redirecionamento mesmo com erro
-      setTimeout(() => {
-        window.location.href = '/auth';
-      }, 100);
     }
   };
 
