@@ -379,6 +379,48 @@ export function AccessPermissionsControl() {
   };
 
   const [userToRemove, setUserToRemove] = useState<{id: string, email: string, nome_completo: string} | null>(null);
+  const [isCleaningAllUsers, setIsCleaningAllUsers] = useState(false);
+
+  const cleanupAllUsers = async () => {
+    if (!isAdmin && !hasRole('diretoria')) {
+      toast({
+        title: "Acesso Negado",
+        description: "Apenas administradores e diretoria podem limpar usuários",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsCleaningAllUsers(true);
+      console.log('🧹 Iniciando limpeza de todos os usuários...');
+
+      const { data, error } = await supabase.rpc('cleanup_all_users_except_current');
+
+      if (error) {
+        console.error('💥 Erro na limpeza:', error);
+        throw error;
+      }
+
+      console.log('✅ Limpeza concluída:', data);
+      const result = data as any;
+      toast({
+        title: "Limpeza Concluída",
+        description: `${result.removed_count || 0} usuários foram removidos. Apenas você permanece no sistema.`,
+      });
+
+      fetchData();
+    } catch (error) {
+      console.error('💥 Error cleaning up users:', error);
+      toast({
+        title: "Erro na Limpeza",
+        description: "Erro ao limpar usuários. Tente novamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCleaningAllUsers(false);
+    }
+  };
 
   const removeUser = async () => {
     if (!userToRemove || !isAdmin && !hasRole('diretoria')) {
@@ -487,14 +529,63 @@ export function AccessPermissionsControl() {
           <h2 className="text-2xl font-bold text-foreground">Controle de Acessos & Permissões</h2>
           <p className="text-muted-foreground">Gerenciamento completo de usuários, cargos e permissões</p>
         </div>
-        <Button
-          onClick={fetchData}
-          disabled={loading}
-          className="liquid-glass-button"
-        >
-          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-          Atualizar
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={fetchData}
+            disabled={loading}
+            variant="outline"
+            size="sm"
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Atualizar
+          </Button>
+          
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button 
+                variant="destructive" 
+                size="sm"
+                className="flex items-center gap-2"
+                disabled={isCleaningAllUsers}
+              >
+                <UserX className="h-4 w-4" />
+                {isCleaningAllUsers ? 'Limpando...' : 'Limpar Todos'}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+                  <AlertTriangle className="h-5 w-5" />
+                  Confirmar Limpeza Total
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  <div className="space-y-3">
+                    <p className="font-semibold">⚠️ ATENÇÃO: Esta ação é IRREVERSÍVEL!</p>
+                    <p>Você está prestes a:</p>
+                    <ul className="list-disc list-inside space-y-1 text-sm">
+                      <li>Remover TODOS os usuários exceto você</li>
+                      <li>Eliminar todas as permissões e cargos deles</li>
+                      <li>Limpar todos os vínculos e dependências</li>
+                      <li>Permitir que se cadastrem novamente do zero</li>
+                    </ul>
+                    <p className="text-destructive font-medium">
+                      Apenas SEU usuário permanecerá no sistema.
+                    </p>
+                  </div>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={cleanupAllUsers}
+                  className="bg-destructive hover:bg-destructive/90"
+                >
+                  Confirmar Limpeza Total
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </div>
 
       {/* Summary Cards */}

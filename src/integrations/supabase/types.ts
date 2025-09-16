@@ -2798,6 +2798,10 @@ export type Database = {
           | { ticket_unidade_id: string }
         Returns: boolean
       }
+      cleanup_all_users_except_current: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       cleanup_old_notifications: {
         Args: Record<PropertyKey, never>
         Returns: undefined
