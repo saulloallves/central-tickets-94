@@ -44,13 +44,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const redirectUrl = `${window.location.origin}/`;
     
     console.log('🚀 Iniciando cadastro para:', email);
+    console.log('📦 Metadata recebido:', metadata);
     
     const { data: authData, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: redirectUrl,
-        data: metadata
+        data: {
+          nome_completo: metadata?.nome_completo,
+          ...metadata
+        }
       }
     });
 

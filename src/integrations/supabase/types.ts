@@ -3107,6 +3107,10 @@ export type Database = {
         Args: { p_unidade_id: string }
         Returns: string
       }
+      refresh_user_permissions: {
+        Args: { p_user_id: string }
+        Returns: Json
+      }
       regenerate_single_document_embedding: {
         Args: { doc_id: string }
         Returns: undefined

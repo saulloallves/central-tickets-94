@@ -67,6 +67,18 @@ export const useRole = () => {
     };
 
     fetchRoles();
+
+    // Listener para refresh automático de roles
+    const handleRolesUpdate = () => {
+      console.log('🔄 Roles update event received, refreshing...');
+      fetchRoles();
+    };
+
+    window.addEventListener('roles-updated', handleRolesUpdate);
+    
+    return () => {
+      window.removeEventListener('roles-updated', handleRolesUpdate);
+    };
   }, [user]);
 
   const hasRole = (role: AppRole): boolean => {

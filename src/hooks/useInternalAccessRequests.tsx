@@ -203,7 +203,15 @@ export const useInternalAccessRequests = () => {
         description: "O usuário foi adicionado à equipe com sucesso."
       });
 
+      // Refresh automático dos dados após aprovação
       await fetchAllRequests();
+      
+      // Forçar refresh das permissões via função do banco
+      await supabase.rpc('refresh_user_permissions', {
+        p_user_id: requests.find(r => r.id === requestId)?.user_id
+      });
+      
+      console.log('✅ Solicitação aprovada e permissões atualizadas');
     } catch (error: any) {
       console.error('Error approving request:', error);
       toast({

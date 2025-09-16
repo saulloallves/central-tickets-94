@@ -31,7 +31,18 @@ serve(async (req) => {
     const requestBody = await req.json();
     console.log('📦 Body recebido:', requestBody);
 
-    const { userId, email, nome_completo, role, equipe_id }: SignupRequest = requestBody;
+    // Buscar metadata do usuário se nome_completo não foi fornecido
+    let { userId, email, nome_completo, role, equipe_id }: SignupRequest = requestBody;
+    
+    if (!nome_completo) {
+      console.log('🔍 Buscando nome_completo nos metadados do usuário...');
+      const { data: userData, error: userError } = await supabaseClient.auth.admin.getUserById(userId);
+      
+      if (!userError && userData.user?.user_metadata?.nome_completo) {
+        nome_completo = userData.user.user_metadata.nome_completo;
+        console.log('✅ Nome encontrado nos metadados:', nome_completo);
+      }
+    }
 
     // Validações básicas
     if (!userId || !email || !nome_completo || !role) {

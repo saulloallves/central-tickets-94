@@ -269,17 +269,6 @@ const Auth = () => {
               </div>
             </div>
             <Button 
-              onClick={() => {
-                setShowEmailConfirmation(false);
-                if (signupData.role === 'colaborador') {
-                  setShowPendingApproval(true);
-                }
-              }} 
-              className="w-full h-11 bg-gradient-primary hover:opacity-90"
-            >
-              Email Confirmado - Continuar
-            </Button>
-            <Button 
               variant="outline"
               onClick={() => setShowEmailConfirmation(false)} 
               className="w-full h-11"
