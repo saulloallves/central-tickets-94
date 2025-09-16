@@ -32,11 +32,10 @@ export const useAtendentes = () => {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
 
-  const fetchAtendentes = async (useExternal = false) => {
+  const fetchAtendentes = async () => {
     try {
-      const action = useExternal ? 'list_external' : 'list'
       const { data, error } = await supabase.functions.invoke('manage-atendentes', {
-        body: { action }
+        body: { action: 'list' }
       });
 
       if (error) throw error;
@@ -44,7 +43,7 @@ export const useAtendentes = () => {
     } catch (error) {
       console.error('Error fetching atendentes:', error);
       toast({
-        title: "Erro",
+        title: "Erro", 
         description: "Não foi possível carregar os atendentes",
         variant: "destructive",
       });
@@ -205,7 +204,7 @@ export const useAtendentes = () => {
   };
 
   useEffect(() => {
-    fetchAtendentes(true); // Use external data by default
+    fetchAtendentes();
     
     // Realtime subscription
     const channel = supabase
@@ -238,6 +237,6 @@ export const useAtendentes = () => {
     updateStatus,
     redistributeQueue,
     getCapacity,
-    refetch: () => fetchAtendentes(true) // Use external data
+    refetch: fetchAtendentes
   };
 };

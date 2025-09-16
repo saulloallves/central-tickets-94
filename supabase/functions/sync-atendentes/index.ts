@@ -10,10 +10,6 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 )
 
-const externalSupabase = createClient(
-  Deno.env.get('EXTERNAL_SUPABASE_URL') ?? '',
-  Deno.env.get('EXTERNAL_SUPABASE_SERVICE_KEY') ?? ''
-)
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -44,150 +40,172 @@ Deno.serve(async (req) => {
 async function previewSyncData() {
   console.log('👀 Buscando dados para preview...')
 
-  // Buscar todas as unidades com dados de concierge (apenas concierge por enquanto)
-  const { data: unidades, error: unidadesError } = await externalSupabase
-    .from('unidades')
-    .select('id, grupo, codigo_grupo, concierge_name, concierge_phone')
-    .not('concierge_name', 'is', null)
+  try {
+    // Buscar todas as unidades com dados de contato da tabela local
+    const { data: unidades, error: unidadesError } = await supabase
+      .from('unidades')
+      .select('id, grupo, codigo_grupo, telefone, email')
+      .not('telefone', 'is', null)
 
-  if (unidadesError) throw unidadesError
+    if (unidadesError) {
+      console.error('Error fetching unidades:', unidadesError)
+      throw unidadesError
+    }
 
-  const preview = {
-    total_unidades: unidades?.length || 0,
-    atendentes_concierge: 0,
-    atendentes_dfcom: 0,  // Será sempre 0 por enquanto pois não temos dfcom_name na tabela externa
-    unidades_com_concierge: [],
-    unidades_com_dfcom: [],  // Será sempre vazio por enquanto
-    novos_atendentes: [],
-    conflitos: []
-  }
+    const preview = {
+      total_unidades: unidades?.length || 0,
+      atendentes_encontrados: 0,
+      unidades_com_atendente: [],
+      novos_atendentes: [],
+      conflitos: []
+    }
 
-  if (unidades) {
-    // Buscar atendentes existentes para detectar conflitos
-    const { data: atendentesExistentes } = await supabase
-      .from('atendentes')
-      .select('nome, telefone, email, tipo')
+    if (unidades && unidades.length > 0) {
+      // Buscar atendentes existentes para detectar conflitos
+      const { data: atendentesExistentes } = await supabase
+        .from('atendentes')
+        .select('nome, telefone, email, tipo')
 
-    const existentes = new Map()
-    atendentesExistentes?.forEach(a => {
-      existentes.set(`${a.nome}-${a.tipo}`, a)
-    })
+      const existentes = new Map()
+      atendentesExistentes?.forEach(a => {
+        existentes.set(`${a.nome}-${a.tipo}`, a)
+      })
 
-    for (const unidade of unidades) {
-      // Processar apenas Concierge
-      if (unidade.concierge_name) {
-        preview.atendentes_concierge++
-        preview.unidades_com_concierge.push({
+      for (const unidade of unidades) {
+        const nomeAtendente = `Atendente ${unidade.grupo || unidade.id}`
+        
+        preview.atendentes_encontrados++
+        preview.unidades_com_atendente.push({
           unidade_id: unidade.id,
           grupo: unidade.grupo,
-          atendente: unidade.concierge_name,
-          telefone: unidade.concierge_phone
+          atendente: nomeAtendente,
+          telefone: unidade.telefone,
+          email: unidade.email
         })
 
-        const key = `${unidade.concierge_name}-concierge`
+        const key = `${nomeAtendente}-concierge`
         if (existentes.has(key)) {
           preview.conflitos.push({
-            nome: unidade.concierge_name,
+            nome: nomeAtendente,
             tipo: 'concierge',
             acao: 'atualizar'
           })
         } else {
           preview.novos_atendentes.push({
-            nome: unidade.concierge_name,
+            nome: nomeAtendente,
             tipo: 'concierge',
-            telefone: unidade.concierge_phone,
+            telefone: unidade.telefone,
+            email: unidade.email,
             unidade_id: unidade.id
           })
         }
       }
     }
+
+    console.log('📊 Preview gerado:', preview)
+
+    return new Response(
+      JSON.stringify({ preview }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  } catch (error) {
+    console.error('❌ Error in previewSyncData:', error)
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
   }
-
-  console.log('📊 Preview gerado:', preview)
-
-  return new Response(
-    JSON.stringify({ preview }),
-    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-  )
 }
 
 async function syncAtendentes() {
   console.log('🔄 Iniciando sincronização de atendentes...')
 
-  // 1. Buscar todas as unidades com dados de concierge
-  const { data: unidades, error: unidadesError } = await externalSupabase
-    .from('unidades')
-    .select('id, grupo, codigo_grupo, concierge_name, concierge_phone')
-    .not('concierge_name', 'is', null)
+  try {
+    // 1. Buscar todas as unidades com dados de contato
+    const { data: unidades, error: unidadesError } = await supabase
+      .from('unidades')
+      .select('id, grupo, codigo_grupo, telefone, email')
+      .not('telefone', 'is', null)
 
-  if (unidadesError) throw unidadesError
+    if (unidadesError) {
+      console.error('Error fetching unidades:', unidadesError)
+      throw unidadesError
+    }
 
-  if (!unidades || unidades.length === 0) {
-    console.log('⚠️ Nenhuma unidade com atendentes encontrada')
-    return new Response(
-      JSON.stringify({ 
-        message: 'Nenhuma unidade com atendentes encontrada',
-        synced: 0 
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-  }
+    if (!unidades || unidades.length === 0) {
+      console.log('⚠️ Nenhuma unidade com dados de atendente encontrada')
+      return new Response(
+        JSON.stringify({ 
+          message: 'Nenhuma unidade com dados de atendente encontrada',
+          synced: 0 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
-  console.log(`📋 Encontradas ${unidades.length} unidades com atendentes`)
+    console.log(`📋 Encontradas ${unidades.length} unidades com dados de atendente`)
 
-  const stats = {
-    processados: 0,
-    criados: 0,
-    atualizados: 0,
-    associacoes_criadas: 0,
-    erros: []
-  }
+    const stats = {
+      processados: 0,
+      criados: 0,
+      atualizados: 0,
+      associacoes_criadas: 0,
+      erros: []
+    }
 
-  // 2. Processar cada unidade
-  for (const unidade of unidades) {
-    stats.processados++
+    // 2. Processar cada unidade
+    for (const unidade of unidades) {
+      stats.processados++
 
-    try {
-      // Processar apenas Concierge
-      if (unidade.concierge_name) {
+      try {
+        // Criar nome baseado no grupo ou ID da unidade
+        const nomeAtendente = `Atendente ${unidade.grupo || unidade.id}`
+        
         await processAtendente({
-          nome: unidade.concierge_name,
-          telefone: unidade.concierge_phone,
+          nome: nomeAtendente,
+          telefone: unidade.telefone?.toString(),
+          email: unidade.email,
           tipo: 'concierge',
           unidade_id: unidade.id,
           grupo: unidade.grupo
         }, stats)
+
+      } catch (error) {
+        console.error(`❌ Erro processando unidade ${unidade.id}:`, error)
+        stats.erros.push({
+          unidade_id: unidade.id,
+          erro: error.message
+        })
       }
-
-    } catch (error) {
-      console.error(`❌ Erro processando unidade ${unidade.id}:`, error)
-      stats.erros.push({
-        unidade_id: unidade.id,
-        erro: error.message
-      })
     }
+
+    // 3. Log de auditoria
+    await supabase.functions.invoke('system-log', {
+      body: {
+        tipo_log: 'sistema',
+        entidade_afetada: 'atendentes',
+        entidade_id: 'sync_external',
+        acao_realizada: 'Sincronização de atendentes da tabela externa',
+        dados_novos: stats
+      }
+    })
+
+    console.log('✅ Sincronização concluída:', stats)
+
+    return new Response(
+      JSON.stringify({ 
+        message: 'Sincronização concluída',
+        stats 
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  } catch (error) {
+    console.error('❌ Error in syncAtendentes:', error)
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
   }
-
-  // 3. Log de auditoria
-  await supabase.functions.invoke('system-log', {
-    body: {
-      tipo_log: 'sistema',
-      entidade_afetada: 'atendentes',
-      entidade_id: 'sync_external',
-      acao_realizada: 'Sincronização de atendentes da tabela externa',
-      dados_novos: stats
-    }
-  })
-
-  console.log('✅ Sincronização concluída:', stats)
-
-  return new Response(
-    JSON.stringify({ 
-      message: 'Sincronização concluída',
-      stats 
-    }),
-    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-  )
 }
 
 async function processAtendente(data: any, stats: any) {

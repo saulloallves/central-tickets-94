@@ -16,24 +16,19 @@ import {
 
 interface SyncPreview {
   total_unidades: number;
-  atendentes_concierge: number;
-  atendentes_dfcom: number;
-  unidades_com_concierge: Array<{
+  atendentes_encontrados: number;
+  unidades_com_atendente: Array<{
     unidade_id: string;
     grupo: string;
     atendente: string;
     telefone?: string;
-  }>;
-  unidades_com_dfcom: Array<{
-    unidade_id: string;
-    grupo: string;
-    atendente: string;
-    telefone?: string;
+    email?: string;
   }>;
   novos_atendentes: Array<{
     nome: string;
     tipo: string;
     telefone?: string;
+    email?: string;
     unidade_id: string;
   }>;
   conflitos: Array<{
@@ -157,12 +152,12 @@ export const SyncAtendentesExternos = () => {
                 <div className="text-sm text-blue-700">Unidades Total</div>
               </div>
               <div className="text-center p-4 bg-green-50 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">{preview.atendentes_concierge}</div>
-                <div className="text-sm text-green-700">Concierge</div>
+                <div className="text-2xl font-bold text-green-600">{preview.atendentes_encontrados}</div>
+                <div className="text-sm text-green-700">Atendentes</div>
               </div>
               <div className="text-center p-4 bg-purple-50 rounded-lg">
-                <div className="text-2xl font-bold text-purple-600">{preview.atendentes_dfcom}</div>
-                <div className="text-sm text-purple-700">DFCom</div>
+                <div className="text-2xl font-bold text-purple-600">{preview.novos_atendentes?.length || 0}</div>
+                <div className="text-sm text-purple-700">Novos</div>
               </div>
             </div>
           )}
@@ -192,12 +187,12 @@ export const SyncAtendentesExternos = () => {
                   <div className="text-xs text-yellow-700">Atualizações</div>
                 </div>
                 <div className="text-center p-3 bg-green-50 rounded-lg">
-                  <div className="text-xl font-bold text-green-600">{preview.atendentes_concierge}</div>
-                  <div className="text-xs text-green-700">Concierge</div>
+                  <div className="text-xl font-bold text-green-600">{preview.atendentes_encontrados}</div>
+                  <div className="text-xs text-green-700">Atendentes</div>
                 </div>
                 <div className="text-center p-3 bg-purple-50 rounded-lg">
-                  <div className="text-xl font-bold text-purple-600">{preview.atendentes_dfcom}</div>
-                  <div className="text-xs text-purple-700">DFCom</div>
+                  <div className="text-xl font-bold text-purple-600">{preview.total_unidades}</div>
+                  <div className="text-xs text-purple-700">Unidades</div>
                 </div>
               </div>
 
