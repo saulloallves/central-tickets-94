@@ -82,6 +82,7 @@ export function useAtendimentos() {
   // Enhanced realtime subscription
   const { isConnected } = useAtendimentosRealtime({
     onAtendimentoUpdate: (atendimento) => {
+      console.log('📡 Real-time UPDATE received:', atendimento);
       setAtendimentos(prev => 
         prev.map(item => 
           item.id === atendimento.id ? atendimento : item
@@ -89,14 +90,36 @@ export function useAtendimentos() {
       );
     },
     onAtendimentoInsert: (atendimento) => {
+      console.log('📡 Real-time INSERT received:', atendimento);
       setAtendimentos(prev => [atendimento, ...prev]);
     },
     onAtendimentoDelete: (atendimentoId) => {
+      console.log('📡 Real-time DELETE received:', atendimentoId);
       setAtendimentos(prev => 
         prev.filter(item => item.id !== atendimentoId)
       );
     },
   });
+
+  // Optimistic updates listener
+  useEffect(() => {
+    const handleOptimisticUpdate = (event: CustomEvent) => {
+      const { atendimento } = event.detail;
+      console.log('⚡ Optimistic update:', atendimento);
+      
+      setAtendimentos(prev => 
+        prev.map(item => 
+          item.id === atendimento.id ? atendimento : item
+        )
+      );
+    };
+
+    window.addEventListener('atendimento-optimistic-update', handleOptimisticUpdate as EventListener);
+    
+    return () => {
+      window.removeEventListener('atendimento-optimistic-update', handleOptimisticUpdate as EventListener);
+    };
+  }, []);
 
   useEffect(() => {
     fetchAtendimentos();

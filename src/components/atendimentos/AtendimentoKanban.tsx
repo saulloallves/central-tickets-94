@@ -189,7 +189,30 @@ export function AtendimentoKanban({ atendimentos, onSelectAtendimento }: Atendim
     
     if (oldStatus !== newStatus) {
       console.log(`Moving atendimento ${atendimentoId} from ${oldStatus} to ${newStatus}`);
-      await updateAtendimentoStatus(atendimentoId, newStatus);
+      
+      // ATUALIZAÇÃO OTIMÍSTICA: atualizar o estado local imediatamente
+      // Chamar o callback para atualizar o atendimento no estado pai
+      const updatedAtendimento = { ...atendimento, status: newStatus };
+      
+      // Como não temos acesso direto ao setter, vamos tentar forçar uma re-renderização
+      // através do sistema de real-time simulado
+      if (window.dispatchEvent) {
+        window.dispatchEvent(new CustomEvent('atendimento-optimistic-update', {
+          detail: { atendimento: updatedAtendimento }
+        }));
+      }
+      
+      try {
+        await updateAtendimentoStatus(atendimentoId, newStatus);
+      } catch (error) {
+        console.error('❌ Erro ao atualizar status:', error);
+        // Em caso de erro, reverter a mudança otimística
+        if (window.dispatchEvent) {
+          window.dispatchEvent(new CustomEvent('atendimento-optimistic-update', {
+            detail: { atendimento: atendimento } // reverter para o original
+          }));
+        }
+      }
     }
 
     setActiveAtendimento(null);
