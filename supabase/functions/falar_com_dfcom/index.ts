@@ -175,28 +175,8 @@ serve(async (req) => {
     const posicao = fila.findIndex((c) => c.id === chamado.id) + 1;
     console.log(`📊 Posição na fila DFCom: ${posicao}`);
 
-    // 4. Adicionar ao grupo WhatsApp
-    try {
-      const functionsBaseUrl = Deno.env.get("FUNCTIONS_BASE_URL") || 
-        `https://hryurntaljdisohawpqf.supabase.co/functions/v1`;
-      
-      const addToGroupResponse = await fetch(`${functionsBaseUrl}/add-to-whatsapp-group`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-        },
-        body: JSON.stringify({ chamadoId: chamado.id }),
-      });
-
-      if (addToGroupResponse.ok) {
-        console.log('✅ DFCom adicionado ao grupo WhatsApp');
-      } else {
-        console.error('❌ Erro ao adicionar DFCom ao grupo:', await addToGroupResponse.text());
-      }
-    } catch (groupError) {
-      console.error('❌ Erro na integração com grupo WhatsApp:', groupError);
-    }
+    // 4. Log do chamado criado (grupo será adicionado quando atendente aceitar)
+    console.log('📋 Chamado DFCom criado para fila, aguardando atendente aceitar no kanban');
 
     // Configurações Z-API
     const instanceId = Deno.env.get("ZAPI_INSTANCE_ID");
