@@ -16,85 +16,57 @@ Deno.serve(async (req) => {
   }
 
   try {
-    console.log('🚀 Iniciando importação de atendentes das unidades...')
+    console.log('🚀 Iniciando importação de atendentes da API externa...')
 
-    // 1. Buscar unidades com dados dos concierges (JOIN com franqueados)
-    const { data: unidadesData, error: unidadesError } = await supabase
-      .from('unidades')
-      .select(`
-        id,
-        grupo,
-        codigo_grupo,
-        email,
-        uf,
-        cidade,
-        endereco
-      `)
-
-    if (unidadesError) {
-      console.error('❌ Erro ao buscar unidades:', unidadesError)
-      throw unidadesError
+    // 1. Buscar dados da API externa
+    const externalApiUrl = Deno.env.get('EXTERNAL_API_URL')
+    const externalApiKey = Deno.env.get('EXTERNAL_API_KEY')
+    
+    if (!externalApiUrl || !externalApiKey) {
+      throw new Error('URL ou chave da API externa não configuradas')
     }
 
-    if (!unidadesData || unidadesData.length === 0) {
-      console.log('⚠️ Nenhuma unidade encontrada')
+    console.log('🌐 Buscando dados da API externa...')
+    
+    const externalResponse = await fetch(externalApiUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${externalApiKey}`,
+        'Content-Type': 'application/json'
+      }
+    })
+
+    if (!externalResponse.ok) {
+      throw new Error(`Erro na API externa: ${externalResponse.status} - ${externalResponse.statusText}`)
+    }
+
+    const externalData = await externalResponse.json()
+    console.log(`📊 Recebidos ${Array.isArray(externalData) ? externalData.length : 'dados'} registros da API externa`)
+
+    // 2. Validar estrutura dos dados
+    if (!Array.isArray(externalData) || externalData.length === 0) {
+      console.log('⚠️ Nenhum dado válido recebido da API externa')
       return new Response(
         JSON.stringify({ 
           success: false,
-          message: 'Nenhuma unidade encontrada',
+          message: 'Nenhum dado válido recebido da API externa',
           stats: { total: 0, processadas: 0, criados: 0, atualizados: 0, associacoes: 0, sem_concierge: 0, erros: [] }
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    console.log(`📊 Encontradas ${unidadesData.length} unidades`)
+    // 3. Filtrar registros que têm dados de concierge
+    const unidadesComConcierge = externalData.filter(record => 
+      record.concierge_name && 
+      (record.concierge_phone || record.concierge_email) &&
+      (record.id || record.codigo_grupo)
+    )
 
-    // 2. Buscar franqueados para obter dados dos concierges
-    const { data: franqueadosData, error: franqueadosError } = await supabase
-      .from('franqueados')
-      .select('name, phone, email, unit_code')
-
-    if (franqueadosError) {
-      console.error('❌ Erro ao buscar franqueados:', franqueadosError)
-      throw franqueadosError
-    }
-
-    console.log(`📊 Encontrados ${franqueadosData?.length || 0} franqueados`)
-
-    // 3. Criar mapa de franqueados por unit_code
-    const franqueadosMap = new Map()
-    franqueadosData?.forEach(franqueado => {
-      if (franqueado.unit_code) {
-        // unit_code é um array JSON, precisa extrair os valores
-        let unitCodes = []
-        
-        try {
-          if (Array.isArray(franqueado.unit_code)) {
-            unitCodes = franqueado.unit_code
-          } else if (typeof franqueado.unit_code === 'string') {
-            unitCodes = JSON.parse(franqueado.unit_code)
-          } else {
-            unitCodes = [franqueado.unit_code]
-          }
-        } catch (e) {
-          console.warn(`Erro ao processar unit_code do franqueado ${franqueado.id}:`, e)
-          return
-        }
-        
-        unitCodes.forEach(code => {
-          // Converter para string para fazer comparação consistente
-          const codeStr = code.toString()
-          franqueadosMap.set(codeStr, franqueado)
-          console.log(`📍 Mapeando código ${codeStr} -> ${franqueado.name || 'Sem nome'}`)
-        })
-      }
-    })
-
-    console.log(`🗺️ Mapa de franqueados criado com ${franqueadosMap.size} códigos`)
+    console.log(`🎯 Encontradas ${unidadesComConcierge.length} unidades com dados de concierge válidos`)
 
     const stats = {
-      total: unidadesData.length,
+      total: unidadesComConcierge.length,
       processadas: 0,
       criados: 0,
       atualizados: 0,
@@ -105,16 +77,16 @@ Deno.serve(async (req) => {
       erros: []
     }
 
-    // 4. Processar cada unidade
-    for (const unidade of unidadesData) {
+    // 4. Processar cada registro da API externa
+    for (const record of unidadesComConcierge) {
       try {
-        await processarUnidade(unidade, franqueadosMap, stats)
+        await processarRegistroExterno(record, stats)
         stats.processadas++
       } catch (error) {
-        console.error(`❌ Erro processando unidade ${unidade.id}:`, error)
+        console.error(`❌ Erro processando registro ${record.id || record.codigo_grupo}:`, error)
         stats.erros.push({
-          unidade_id: unidade.id,
-          grupo: unidade.grupo,
+          registro_id: record.id || record.codigo_grupo,
+          grupo: record.grupo || record.cidade,
           erro: error.message
         })
       }
@@ -155,22 +127,18 @@ Deno.serve(async (req) => {
   }
 })
 
-async function processarUnidade(unidade: any, franqueadosMap: Map<string, any>, stats: any) {
-  const { id: unidade_id, grupo, codigo_grupo, email, uf, cidade } = unidade
+async function processarRegistroExterno(record: any, stats: any) {
+  // 1. Extrair dados do registro da API externa
+  const unidade_id = record.id || record.codigo_grupo?.toString()
+  const { grupo, codigo_grupo, cidade, uf, concierge_name, concierge_phone, concierge_email } = record
   
-  // 1. Buscar dados do concierge pelo código da unidade (converter para string)
-  const codigoStr = codigo_grupo?.toString()
-  const concierge = franqueadosMap.get(codigoStr)
+  console.log(`🔍 Processando unidade ${grupo || cidade} (ID: ${unidade_id})`)
   
-  console.log(`🔍 Buscando concierge para unidade ${grupo} (código: ${codigoStr})`)
-  
-  if (!concierge) {
-    console.log(`⚠️ Unidade ${grupo} (código: ${codigoStr}) sem concierge - pulando`)
+  if (!concierge_name) {
+    console.log(`⚠️ Registro ${unidade_id} sem nome do concierge - pulando`)
     stats.sem_concierge++
     return
   }
-
-  const { name: concierge_name, phone: concierge_phone, email: concierge_email } = concierge
   
   // 2. Definir nome do atendente
   const nomeAtendente = concierge_name?.trim() || `Atendente ${grupo || cidade || unidade_id}`.trim()
@@ -274,13 +242,33 @@ async function processarUnidade(unidade: any, franqueadosMap: Map<string, any>, 
     console.log(`✅ Novo atendente criado: ${nomeAtendente}`)
   }
 
-  // 6. Criar associação com unidade (upsert para evitar duplicatas)
+  // 6. Verificar se unidade existe no sistema local
+  const { data: unidadeLocal, error: unidadeError } = await supabase
+    .from('unidades')
+    .select('id')
+    .or(`id.eq.${unidade_id},codigo_grupo.eq.${codigo_grupo || unidade_id}`)
+    .maybeSingle()
+
+  if (unidadeError) {
+    console.error('Erro verificando unidade local:', unidadeError)
+    throw unidadeError
+  }
+
+  if (!unidadeLocal) {
+    console.log(`⚠️ Unidade ${unidade_id} não encontrada no sistema local - criando associação com ID da API`)
+  }
+
+  const unidadeIdFinal = unidadeLocal?.id || unidade_id
+
+  // 7. Criar associação com unidade (upsert para evitar duplicatas)
   const { error: associacaoError } = await supabase
     .from('atendente_unidades')
     .upsert({
       atendente_id: atendenteId,
-      unidade_id: unidade_id,
-      ativo: true
+      unidade_id: unidadeIdFinal,
+      ativo: true,
+      is_preferencial: true,
+      prioridade: 1
     }, {
       onConflict: 'atendente_id,unidade_id'
     })
@@ -291,5 +279,5 @@ async function processarUnidade(unidade: any, franqueadosMap: Map<string, any>, 
   }
 
   stats.associacoes++
-  console.log(`✅ Associação criada: ${nomeAtendente} -> ${grupo} (${unidade_id})`)
+  console.log(`✅ Associação criada: ${nomeAtendente} -> ${grupo || cidade} (${unidadeIdFinal})`)
 }
