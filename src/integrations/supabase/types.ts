@@ -2847,6 +2847,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      get_all_users_except_current: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          user_email: string
+          user_id: string
+          user_name: string
+        }[]
+      }
       get_available_capacity: {
         Args: {
           p_tipo: Database["public"]["Enums"]["atendente_tipo"]

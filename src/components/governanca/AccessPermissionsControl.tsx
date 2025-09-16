@@ -393,33 +393,71 @@ export function AccessPermissionsControl() {
 
     try {
       setIsCleaningAllUsers(true);
-      console.log('🧹 Iniciando limpeza completa de todos os usuários...');
+      console.log('🧹 Iniciando limpeza de todos os usuários...');
 
-      // Usar edge function que remove do Auth também
-      const { data, error } = await supabase.functions.invoke('cleanup-all-users');
+      // 1. Buscar todos os usuários exceto o atual
+      const { data: usersToRemove, error: getUsersError } = await supabase.rpc('get_all_users_except_current');
 
-      if (error) {
-        console.error('💥 Erro na edge function:', error);
-        throw error;
+      if (getUsersError) {
+        console.error('💥 Erro ao buscar usuários:', getUsersError);
+        throw getUsersError;
       }
 
-      if (!data.success) {
-        throw new Error(data.error || 'Erro desconhecido na limpeza');
+      if (!usersToRemove || usersToRemove.length === 0) {
+        toast({
+          title: "Nenhum Usuário para Remover",
+          description: "Não há outros usuários no sistema além de você.",
+        });
+        return;
       }
 
-      console.log('✅ Limpeza completa concluída:', data);
+      console.log(`📊 Encontrados ${usersToRemove.length} usuários para remover`);
+
+      // 2. Remover cada usuário individualmente usando nossa função
+      let removedCount = 0;
+      const errors: string[] = [];
+
+      for (const user of usersToRemove) {
+        try {
+          console.log(`🗑️ Removendo usuário: ${user.user_email}`);
+          
+          const { error } = await supabase.rpc('remove_user_completely', {
+            p_user_id: user.user_id
+          });
+
+          if (error) {
+            console.error(`Erro ao remover ${user.user_email}:`, error);
+            errors.push(`${user.user_email}: ${error.message}`);
+          } else {
+            console.log(`✅ Usuário removido: ${user.user_email}`);
+            removedCount++;
+          }
+        } catch (error) {
+          console.error(`💥 Erro inesperado ao remover ${user.user_email}:`, error);
+          errors.push(`${user.user_email}: Erro inesperado`);
+        }
+      }
+
+      console.log(`✅ Limpeza concluída: ${removedCount} removidos, ${errors.length} erros`);
+      
       toast({
-        title: "Limpeza Completa Realizada",
-        description: data.message,
-        variant: data.errors?.length > 0 ? "destructive" : "default"
+        title: "Limpeza Concluída",
+        description: errors.length > 0 
+          ? `${removedCount} usuários removidos com ${errors.length} erros. Verifique o console para detalhes.`
+          : `${removedCount} usuários foram removidos completamente do sistema.`,
+        variant: errors.length > 0 ? "destructive" : "default"
       });
+
+      if (errors.length > 0) {
+        console.warn('⚠️ Erros durante a limpeza:', errors);
+      }
 
       fetchData();
     } catch (error) {
-      console.error('💥 Error in complete cleanup:', error);
+      console.error('💥 Error in cleanup:', error);
       toast({
-        title: "Erro na Limpeza Completa",
-        description: "Erro ao limpar usuários completamente. Tente novamente.",
+        title: "Erro na Limpeza",
+        description: "Erro ao limpar usuários. Tente novamente.",
         variant: "destructive"
       });
     } finally {
@@ -569,12 +607,12 @@ export function AccessPermissionsControl() {
                     <p>Você está prestes a:</p>
                     <ul className="list-disc list-inside space-y-1 text-sm">
                       <li>Remover TODOS os usuários exceto você</li>
-                      <li>Eliminar do banco de dados E do Supabase Auth</li>
+                      <li>Eliminar do banco de dados público (profiles)</li>
                       <li>Limpar todas as permissões, cargos e vínculos</li>
                       <li>Permitir recadastro completo do zero</li>
                     </ul>
-                    <p className="text-destructive font-medium">
-                      Os usuários sumirão completamente do painel de Auth do Supabase.
+                    <p className="text-amber-600 dark:text-amber-400 font-medium text-sm">
+                      ⚠️ Nota: Os usuários ainda aparecerão no painel Auth do Supabase, mas não terão acesso ao sistema.
                     </p>
                   </div>
                 </AlertDialogDescription>
