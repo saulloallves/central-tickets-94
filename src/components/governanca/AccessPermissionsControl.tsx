@@ -393,28 +393,33 @@ export function AccessPermissionsControl() {
 
     try {
       setIsCleaningAllUsers(true);
-      console.log('🧹 Iniciando limpeza de todos os usuários...');
+      console.log('🧹 Iniciando limpeza completa de todos os usuários...');
 
-      const { data, error } = await supabase.rpc('cleanup_all_users_except_current');
+      // Usar edge function que remove do Auth também
+      const { data, error } = await supabase.functions.invoke('cleanup-all-users');
 
       if (error) {
-        console.error('💥 Erro na limpeza:', error);
+        console.error('💥 Erro na edge function:', error);
         throw error;
       }
 
-      console.log('✅ Limpeza concluída:', data);
-      const result = data as any;
+      if (!data.success) {
+        throw new Error(data.error || 'Erro desconhecido na limpeza');
+      }
+
+      console.log('✅ Limpeza completa concluída:', data);
       toast({
-        title: "Limpeza Concluída",
-        description: `${result.removed_count || 0} usuários foram removidos. Apenas você permanece no sistema.`,
+        title: "Limpeza Completa Realizada",
+        description: data.message,
+        variant: data.errors?.length > 0 ? "destructive" : "default"
       });
 
       fetchData();
     } catch (error) {
-      console.error('💥 Error cleaning up users:', error);
+      console.error('💥 Error in complete cleanup:', error);
       toast({
-        title: "Erro na Limpeza",
-        description: "Erro ao limpar usuários. Tente novamente.",
+        title: "Erro na Limpeza Completa",
+        description: "Erro ao limpar usuários completamente. Tente novamente.",
         variant: "destructive"
       });
     } finally {
@@ -564,12 +569,12 @@ export function AccessPermissionsControl() {
                     <p>Você está prestes a:</p>
                     <ul className="list-disc list-inside space-y-1 text-sm">
                       <li>Remover TODOS os usuários exceto você</li>
-                      <li>Eliminar todas as permissões e cargos deles</li>
-                      <li>Limpar todos os vínculos e dependências</li>
-                      <li>Permitir que se cadastrem novamente do zero</li>
+                      <li>Eliminar do banco de dados E do Supabase Auth</li>
+                      <li>Limpar todas as permissões, cargos e vínculos</li>
+                      <li>Permitir recadastro completo do zero</li>
                     </ul>
                     <p className="text-destructive font-medium">
-                      Apenas SEU usuário permanecerá no sistema.
+                      Os usuários sumirão completamente do painel de Auth do Supabase.
                     </p>
                   </div>
                 </AlertDialogDescription>
