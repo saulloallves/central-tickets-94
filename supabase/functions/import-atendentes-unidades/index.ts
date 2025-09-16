@@ -66,20 +66,32 @@ Deno.serve(async (req) => {
     const franqueadosMap = new Map()
     franqueadosData?.forEach(franqueado => {
       if (franqueado.unit_code) {
-        // unit_code é um jsonb, pode conter múltiplos códigos
-        const unitCodes = Array.isArray(franqueado.unit_code) 
-          ? franqueado.unit_code 
-          : typeof franqueado.unit_code === 'object' 
-            ? Object.keys(franqueado.unit_code)
-            : [franqueado.unit_code]
+        // unit_code é um array JSON, precisa extrair os valores
+        let unitCodes = []
+        
+        try {
+          if (Array.isArray(franqueado.unit_code)) {
+            unitCodes = franqueado.unit_code
+          } else if (typeof franqueado.unit_code === 'string') {
+            unitCodes = JSON.parse(franqueado.unit_code)
+          } else {
+            unitCodes = [franqueado.unit_code]
+          }
+        } catch (e) {
+          console.warn(`Erro ao processar unit_code do franqueado ${franqueado.id}:`, e)
+          return
+        }
         
         unitCodes.forEach(code => {
-          if (code && typeof code === 'string') {
-            franqueadosMap.set(code, franqueado)
-          }
+          // Converter para string para fazer comparação consistente
+          const codeStr = code.toString()
+          franqueadosMap.set(codeStr, franqueado)
+          console.log(`📍 Mapeando código ${codeStr} -> ${franqueado.name || 'Sem nome'}`)
         })
       }
     })
+
+    console.log(`🗺️ Mapa de franqueados criado com ${franqueadosMap.size} códigos`)
 
     const stats = {
       total: unidadesData.length,
@@ -146,11 +158,14 @@ Deno.serve(async (req) => {
 async function processarUnidade(unidade: any, franqueadosMap: Map<string, any>, stats: any) {
   const { id: unidade_id, grupo, codigo_grupo, email, uf, cidade } = unidade
   
-  // 1. Buscar dados do concierge pelo código da unidade
-  const concierge = franqueadosMap.get(codigo_grupo) || franqueadosMap.get(unidade_id)
+  // 1. Buscar dados do concierge pelo código da unidade (converter para string)
+  const codigoStr = codigo_grupo?.toString()
+  const concierge = franqueadosMap.get(codigoStr)
+  
+  console.log(`🔍 Buscando concierge para unidade ${grupo} (código: ${codigoStr})`)
   
   if (!concierge) {
-    console.log(`⚠️ Unidade ${grupo} (${codigo_grupo}) sem concierge - pulando`)
+    console.log(`⚠️ Unidade ${grupo} (código: ${codigoStr}) sem concierge - pulando`)
     stats.sem_concierge++
     return
   }

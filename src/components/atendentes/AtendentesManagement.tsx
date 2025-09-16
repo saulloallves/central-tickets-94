@@ -10,6 +10,7 @@ import { CreateAtendenteDialog } from './CreateAtendenteDialog';
 import { AtendentesDashboard } from './AtendentesDashboard';
 import { SyncAtendentesExternos } from './SyncAtendentesExternos';
 import { ImportAtendentesButton } from './ImportAtendentesButton';
+import { CleanupAtendentesButton } from './CleanupAtendentesButton';
 import { supabase } from '@/integrations/supabase/client';
 
 export const AtendentesManagement = () => {
@@ -55,7 +56,10 @@ export const AtendentesManagement = () => {
   const statsConcierge = calculateStats(atendentesConcierge);
   const statsDfcom = calculateStats(atendentesDfcom);
 
-  // Auto-sync on first load if no atendentes exist
+  // REMOVIDO: Auto-sync que criava atendentes com nomes de unidades
+  // Esta função estava criando automaticamente atendentes com nomes como
+  // "Atendente AGUAÍ", "Atendente ADAMANTINA" ao invés de usar dados reais dos concierges
+  /*
   useEffect(() => {
     const runInitialSync = async () => {
       if (!loading && atendentes.length === 0 && !initialSyncDone) {
@@ -67,7 +71,6 @@ export const AtendentesManagement = () => {
           
           if (!error && data?.stats?.criados > 0) {
             console.log('✅ Sincronização inicial concluída:', data.stats);
-            // Refresh atendentes after sync
             setTimeout(() => {
               window.location.reload();
             }, 1000);
@@ -81,6 +84,7 @@ export const AtendentesManagement = () => {
     
     runInitialSync();
   }, [loading, atendentes.length, initialSyncDone]);
+  */
 
   if (loading) {
     return (
@@ -101,6 +105,7 @@ export const AtendentesManagement = () => {
           </p>
         </div>
         <div className="flex gap-2">
+          <CleanupAtendentesButton />
           <ImportAtendentesButton />
           <Button 
             variant="outline" 
