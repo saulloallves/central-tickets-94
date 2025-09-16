@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
     // 1. Buscar TODAS as unidades da tabela externa
     const { data: unidades, error: unidadesError } = await supabase
       .from('unidades')
-      .select('id, grupo, codigo_grupo, telefone, email, uf, cidade, endereco')
+      .select('id, grupo, codigo_grupo, concierge_name, concierge_phone, email, uf, cidade, endereco')
 
     if (unidadesError) {
       console.error('❌ Erro ao buscar unidades:', unidadesError)
@@ -100,12 +100,14 @@ Deno.serve(async (req) => {
 })
 
 async function processarUnidade(unidade: any, stats: any) {
-  const { id: unidade_id, grupo, telefone, email, uf, cidade } = unidade
+  const { id: unidade_id, grupo, concierge_name, concierge_phone, email, uf, cidade } = unidade
   
-  // Gerar nome do atendente baseado no grupo ou cidade
-  const nomeAtendente = grupo 
-    ? `Atendente ${grupo}`.trim()
-    : `Atendente ${cidade || unidade_id}`.trim()
+  // Usar o nome do concierge ou gerar nome baseado no grupo/cidade
+  const nomeAtendente = concierge_name 
+    ? concierge_name.trim()
+    : grupo 
+      ? `Atendente ${grupo}`.trim()
+      : `Atendente ${cidade || unidade_id}`.trim()
 
   console.log(`🔄 Processando: ${nomeAtendente} (${unidade_id})`)
 
@@ -128,7 +130,7 @@ async function processarUnidade(unidade: any, stats: any) {
     const { data: updated, error: updateError } = await supabase
       .from('atendentes')
       .update({
-        telefone: telefone?.toString() || null,
+        telefone: concierge_phone?.toString() || null,
         email: email || null,
         status: 'ativo',
         ativo: true,
@@ -154,7 +156,7 @@ async function processarUnidade(unidade: any, stats: any) {
       .from('atendentes')
       .insert({
         nome: nomeAtendente,
-        telefone: telefone?.toString() || null,
+        telefone: concierge_phone?.toString() || null,
         email: email || null,
         tipo: 'concierge',
         status: 'ativo',
