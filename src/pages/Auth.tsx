@@ -13,12 +13,14 @@ import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 
 const Auth = () => {
-  const { user, signIn, signUp, loading } = useAuth();
+  const { user, signIn, signUp, resetPassword, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPendingApproval, setShowPendingApproval] = useState(false);
   const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
 
   // Form states
   const [loginData, setLoginData] = useState({ email: '', password: '' });
@@ -264,6 +266,29 @@ const Auth = () => {
     setIsSubmitting(false);
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!resetEmail) {
+      toast({
+        title: "Erro",
+        description: "Digite seu email para redefinir a senha",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    const { error } = await resetPassword(resetEmail);
+    
+    if (!error) {
+      setShowForgotPassword(false);
+      setResetEmail('');
+    }
+    
+    setIsSubmitting(false);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-hero">
@@ -366,6 +391,59 @@ const Auth = () => {
             >
               Voltar ao Login
             </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Tela de esqueceu a senha
+  if (showForgotPassword) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-hero">
+        <Card className="w-full max-w-md shadow-lg border-0 bg-white/95 backdrop-blur-sm">
+          <CardHeader className="text-center pb-6">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
+                <ClipboardList className="h-4 w-4 text-white" />
+              </div>
+              <span className="text-xl font-bold">Central de Tickets</span>
+            </div>
+            <CardTitle className="text-2xl font-bold text-primary">Redefinir Senha</CardTitle>
+            <CardDescription>Digite seu email para receber o link de redefinição</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleForgotPassword} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="reset-email">Email</Label>
+                <Input
+                  id="reset-email"
+                  type="email"
+                  placeholder="seu@email.com"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  className="h-11"
+                  required
+                />
+              </div>
+              <Button 
+                type="submit" 
+                disabled={isSubmitting} 
+                className="w-full h-11 bg-gradient-primary hover:opacity-90"
+              >
+                {isSubmitting ? "Enviando..." : "Enviar Link de Redefinição"}
+              </Button>
+            </form>
+            
+            <div className="mt-4 text-center">
+              <button
+                type="button"
+                onClick={() => setShowForgotPassword(false)}
+                className="text-sm text-muted-foreground hover:text-primary"
+              >
+                Voltar ao login
+              </button>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -478,6 +556,16 @@ const Auth = () => {
                     {isSubmitting ? 'Entrando...' : 'Entrar no Sistema'}
                   </Button>
                 </form>
+                
+                <div className="mt-4 text-center">
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotPassword(true)}
+                    className="text-sm text-primary hover:underline"
+                  >
+                    Esqueceu sua senha?
+                  </button>
+                </div>
               </TabsContent>
 
               <TabsContent value="signup" className="space-y-4">

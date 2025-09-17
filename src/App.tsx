@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import { PendingApproval } from "./pages/PendingApproval";
+import ResetPassword from "./pages/ResetPassword";
 import AdminLayout from "./pages/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
 import Tickets from "./pages/admin/Tickets";
@@ -40,9 +41,10 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/pending-approval" element={<PendingApproval />} />
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/pending-approval" element={<PendingApproval />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="/admin/dashboard" element={
               <ProtectedRoute>
