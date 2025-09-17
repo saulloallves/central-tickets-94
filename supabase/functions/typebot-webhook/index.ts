@@ -428,6 +428,33 @@ serve(async (req) => {
       };
     }
 
+    // Enviar notificação de criação de ticket
+    try {
+      console.log('📨 Enviando notificação de criação de ticket...');
+      const notificationResponse = await fetch(`${supabaseUrl}/functions/v1/send-ticket-notification`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseServiceKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ticket_id: ticket.id,
+          template_key: 'ticket_created'
+        })
+      });
+
+      if (notificationResponse.ok) {
+        const notificationResult = await notificationResponse.json();
+        console.log('✅ Notificação enviada:', notificationResult);
+      } else {
+        const errorText = await notificationResponse.text();
+        console.error('❌ Falha ao enviar notificação:', errorText);
+      }
+    } catch (notificationError) {
+      console.error('❌ Erro ao chamar send-ticket-notification:', notificationError);
+      // Continue without failing ticket creation
+    }
+
     return new Response(JSON.stringify({
       success: true,
       action: 'ticket_created',
