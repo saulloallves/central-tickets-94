@@ -11,6 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useTicketMessages } from '@/hooks/useTickets';
 import { useAISuggestion } from '@/hooks/useAISuggestion';
 import { useResponseProcessor } from '@/hooks/useResponseProcessor';
+import { useAuth } from '@/hooks/useAuth';
+import { useRole } from '@/hooks/useRole';
+import { useOptimisticTicketActions } from '@/hooks/useOptimisticTicketActions';
 import { ImageModal } from '@/components/ui/image-modal';
 
 
@@ -38,6 +41,9 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
   const { messages, sendMessage, loading: messagesLoading } = useTicketMessages(ticketId);
   const { suggestion, loading: suggestionLoading, generateSuggestion, markSuggestionUsed } = useAISuggestion(ticketId);
   const { processResponse, isProcessing: responseProcessing } = useResponseProcessor();
+  const { user } = useAuth();
+  const { loading: isLoadingRole } = useRole();
+  const { optimisticStartAttendance, isTicketPending } = useOptimisticTicketActions();
   
   const { toast } = useToast();
 
@@ -503,51 +509,50 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
   const slaStatus = getSLAStatus();
 
   const handleStartAttendance = async () => {
-    try {
-      const { data: userData } = await supabase.auth.getUser();
+    if (!ticket || isTicketPending(ticketId)) return;
+
+    // Dispatch optimistic update event to sync with Kanban
+    const optimisticUpdate = (ticketId: string, updates: Partial<any>) => {
+      // Update local state
+      setTicket(prev => prev ? { ...prev, ...updates } : prev);
       
-      const { error } = await supabase
-        .from('tickets')
-        .update({ 
-          status: 'em_atendimento',
-          atendimento_iniciado_por: userData.user?.id,
-          atendimento_iniciado_em: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', ticketId);
-
-      if (error) {
-        throw error;
-      }
-
-      // Update local ticket state immediately
-      setTicket(prev => ({
-        ...prev,
-        status: 'em_atendimento',
-        atendimento_iniciado_por: userData.user?.id,
-        atendimento_iniciado_em: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+      // Dispatch event for Kanban synchronization
+      window.dispatchEvent(new CustomEvent('ticket-optimistic-update', {
+        detail: { ticketId, updates }
       }));
+    };
 
-      toast({
-        title: "Atendimento Iniciado",
-        description: "Status alterado para 'em atendimento'",
-      });
+    const rollback = (ticketId: string, originalStatus: string) => {
+      setTicket(prev => prev ? { ...prev, status: originalStatus } : prev);
+      
+      // Dispatch rollback event
+      window.dispatchEvent(new CustomEvent('ticket-optimistic-rollback', {
+        detail: { ticketId, originalStatus }
+      }));
+    };
 
-      // Refresh ticket details to show updated view
-      fetchTicketDetails();
-    } catch (error) {
-      console.error('Error starting attendance:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao iniciar atendimento",
-        variant: "destructive"
-      });
-    }
+    await optimisticStartAttendance(
+      ticketId,
+      ticket.equipe_responsavel_id || '',
+      ticket,
+      optimisticUpdate,
+      rollback
+    );
   };
 
   const handleStatusChange = async (newStatus: 'aberto' | 'em_atendimento' | 'escalonado' | 'concluido') => {
+    if (!ticket || isTicketPending(ticketId)) return;
+
     try {
+      // Optimistic update
+      const originalStatus = ticket.status;
+      setTicket(prev => prev ? { ...prev, status: newStatus } : prev);
+      
+      // Dispatch event for Kanban synchronization
+      window.dispatchEvent(new CustomEvent('ticket-optimistic-update', {
+        detail: { ticketId, updates: { status: newStatus } }
+      }));
+
       const { error } = await supabase
         .from('tickets')
         .update({ 
@@ -557,22 +562,19 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
         .eq('id', ticketId);
 
       if (error) {
+        // Rollback on error
+        setTicket(prev => prev ? { ...prev, status: originalStatus } : prev);
+        window.dispatchEvent(new CustomEvent('ticket-optimistic-rollback', {
+          detail: { ticketId, originalStatus }
+        }));
         throw error;
       }
-
-      // Update local ticket state immediately
-      setTicket(prev => ({
-        ...prev,
-        status: newStatus,
-        updated_at: new Date().toISOString()
-      }));
 
       toast({
         title: "Status Atualizado",
         description: `Status alterado para '${newStatus}'`,
       });
 
-      fetchTicketDetails();
     } catch (error) {
       console.error('Error updating status:', error);
       toast({

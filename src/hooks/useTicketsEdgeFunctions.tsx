@@ -350,6 +350,35 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
     calculateStats(tickets);
   }, [tickets, calculateStats]);
 
+  // Listen for optimistic updates from TicketDetail
+  useEffect(() => {
+    const handleOptimisticUpdate = (event: CustomEvent) => {
+      const { ticketId, updates } = event.detail;
+      console.log('⚡ Received optimistic update from TicketDetail:', { ticketId, updates });
+      
+      setTickets(prev => prev.map(ticket => 
+        ticket.id === ticketId ? { ...ticket, ...updates } : ticket
+      ));
+    };
+
+    const handleOptimisticRollback = (event: CustomEvent) => {
+      const { ticketId, originalStatus } = event.detail;
+      console.log('🔄 Received optimistic rollback from TicketDetail:', { ticketId, originalStatus });
+      
+      setTickets(prev => prev.map(ticket => 
+        ticket.id === ticketId ? { ...ticket, status: originalStatus } : ticket
+      ));
+    };
+
+    window.addEventListener('ticket-optimistic-update', handleOptimisticUpdate as EventListener);
+    window.addEventListener('ticket-optimistic-rollback', handleOptimisticRollback as EventListener);
+
+    return () => {
+      window.removeEventListener('ticket-optimistic-update', handleOptimisticUpdate as EventListener);
+      window.removeEventListener('ticket-optimistic-rollback', handleOptimisticRollback as EventListener);
+    };
+  }, []);
+
   // Enhanced cleanup
   useEffect(() => {
     return () => {
