@@ -3026,6 +3026,10 @@ export type Database = {
         Args: { "": string } | { "": unknown } | { "": unknown }
         Returns: string
       }
+      log_sla_action: {
+        Args: { p_action: string; p_details?: Json; p_ticket_id: string }
+        Returns: string
+      }
       log_system_action: {
         Args: {
           p_acao_realizada: string
@@ -3115,6 +3119,10 @@ export type Database = {
       next_ticket_code: {
         Args: { p_unidade_id: string }
         Returns: string
+      }
+      process_overdue_slas: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       refresh_user_permissions: {
         Args: { p_user_id: string }
