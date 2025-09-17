@@ -3104,13 +3104,10 @@ export type Database = {
         Returns: {
           categoria: string
           conteudo: Json
-          criado_em: string
-          final_score: number
           id: string
-          semantic_relevance: number
-          similarity_score: number
-          status: Database["public"]["Enums"]["article_status"]
-          tags: string[]
+          relevancia_semantica: number
+          score_final: number
+          similaridade: number
           titulo: string
           versao: number
         }[]
