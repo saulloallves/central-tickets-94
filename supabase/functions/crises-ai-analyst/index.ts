@@ -54,8 +54,6 @@ serve(async (req) => {
     const ticketData: TicketAnalysisRequest = await req.json();
     console.log('🔍 Analisando ticket individual:', ticketData.ticket_id, 'da equipe:', ticketData.equipe_id);
 
-    // NOVA LÓGICA: Primeiro verificar se já existe crise ativa para vincular
-
     // Buscar configurações de IA para crises
     const { data: settingsData, error: settingsError } = await supabase
       .from('crisis_ai_settings')
@@ -99,7 +97,41 @@ Responda APENAS com um JSON válido:
       keywords_count: settings.keywords_base.length 
     });
 
-    // 1. PRIMEIRO: Buscar crises ativas da mesma equipe para tentar vincular
+    // 1. Filtrar categorias rotineiras que não devem gerar crises
+    const routineCategories = ['midia', 'comunicacao', 'comunicação', 'design', 'redes_sociais', 'conteudo', 'marketing'];
+    if (ticketData.categoria && routineCategories.includes(ticketData.categoria.toLowerCase())) {
+      console.log(`🚫 Categoria rotineira detectada: ${ticketData.categoria}. Não criará crise.`);
+      return new Response(JSON.stringify({
+        action: "no_action",
+        similar_tickets_count: 0,
+        reason: "routine_category",
+        threshold: settings.threshold_similares
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // 2. Verificar cooldown por equipe (evitar múltiplas crises em 30 minutos)
+    const { data: recentTeamCrises } = await supabase
+      .from('crises')
+      .select('id, created_at')
+      .eq('equipe_id', ticketData.equipe_id)
+      .eq('is_active', true)
+      .gte('created_at', new Date(Date.now() - 30 * 60 * 1000).toISOString());
+
+    if (recentTeamCrises && recentTeamCrises.length > 0) {
+      console.log(`🚫 Cooldown ativo. Equipe já tem ${recentTeamCrises.length} crise(s) ativa(s) nos últimos 30 minutos.`);
+      return new Response(JSON.stringify({
+        action: "no_action",
+        similar_tickets_count: 0,
+        reason: "team_cooldown",
+        threshold: settings.threshold_similares
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // 3. Buscar crises ativas da mesma equipe para tentar vincular
     const { data: activeProblems, error: problemsError } = await supabase
       .from('crises')
       .select('id, titulo, problem_signature, tickets_count, similar_terms')
@@ -114,7 +146,7 @@ Responda APENAS com um JSON válido:
 
     console.log(`🔍 Crises ativas encontradas: ${activeProblems?.length || 0}`);
 
-    // 2. Verificar se alguma crise ativa é similar ao ticket atual
+    // 4. Verificar se alguma crise ativa é similar ao ticket atual
     if (activeProblems && activeProblems.length > 0) {
       // Análise simples por palavras-chave primeiro
       const currentDescription = ticketData.descricao_problema.toLowerCase();
@@ -165,45 +197,7 @@ Responda APENAS com um JSON válido:
       }
     }
 
-    // 3. Se não há crises ativas similares, verificar se deve criar nova crise
-
-    // 2. Verificar se já existe uma crise ativa para este tipo de problema
-    let existingCrisisForSimilarProblem = null;
-    if (activeProblems && activeProblems.length > 0) {
-      // Buscar por palavras-chave similares primeiro
-      const currentProblemKeywords = ticketData.descricao_problema.toLowerCase().split(' ');
-      
-      for (const crisis of activeProblems) {
-        if (crisis.similar_terms) {
-          const hasMatchingTerms = crisis.similar_terms.some(term => 
-            currentProblemKeywords.some(keyword => 
-              keyword.includes(term.toLowerCase()) || term.toLowerCase().includes(keyword)
-            )
-          );
-          
-          if (hasMatchingTerms) {
-            console.log(`🎯 Crise similar encontrada: ${crisis.titulo}`);
-            existingCrisisForSimilarProblem = crisis;
-            break;
-          }
-        }
-      }
-    }
-
-    // 3. Se encontrou crise similar, vincular o ticket a ela
-    if (existingCrisisForSimilarProblem) {
-      await linkTicketToCrise(supabase, ticketData.ticket_id, existingCrisisForSimilarProblem.id);
-      
-      return new Response(JSON.stringify({
-        action: "linked_to_existing",
-        crise_id: existingCrisisForSimilarProblem.id,
-        reasoning: `Ticket vinculado à crise existente: ${existingCrisisForSimilarProblem.titulo}`
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Buscar tickets similares recentes da mesma equipe (últimas 2 horas, não apenas 1)
+    // 5. Buscar tickets similares recentes da mesma equipe (últimas 2 horas)
     const { data: allTickets, error: ticketsError } = await supabase
       .from('tickets')
       .select('id, titulo, descricao_problema')
@@ -217,7 +211,7 @@ Responda APENAS com um JSON válido:
       throw new Error(`Erro ao buscar tickets individuais: ${ticketsError.message}`);
     }
 
-    // 5. Filtrar tickets que não estão vinculados a crises ativas
+    // 6. Filtrar tickets que não estão vinculados a crises ativas
     let individualTickets = [];
     if (allTickets) {
       const { data: linkedTickets } = await supabase
@@ -236,13 +230,16 @@ Responda APENAS com um JSON válido:
 
     console.log(`Encontrados ${allTickets?.length || 0} tickets da equipe, ${individualTickets.length} não vinculados a crises`);
 
-    // 4. Contar tickets similares (usando lógica mais liberal para detecção)
+    // 7. Contar tickets similares (usando lógica mais restritiva)
     const similarResult = await countSimilarTickets(supabase, ticketData, individualTickets, settings);
     const { count: similarCount, similarTickets } = similarResult;
     
-    // MUDANÇA: Reduzir threshold para 2 tickets similares (mais sensível)
-    const effectiveThreshold = Math.min(settings.threshold_similares, 2);
+    // USAR O THRESHOLD REAL DA CONFIGURAÇÃO (não override para 2)
+    const effectiveThreshold = settings.threshold_similares;
     
+    console.log(`📊 Análise de similaridade: ${similarCount} tickets similares encontrados. Threshold necessário: ${effectiveThreshold}`);
+    
+    // CORRIGIR: Só criar crise se tiver tickets similares ALÉM do atual (count > threshold)
     if (similarCount >= effectiveThreshold) {
       // DUPLA VERIFICAÇÃO: Buscar se já existe crise recente para esta equipe
       const { data: recentCrises } = await supabase
@@ -453,11 +450,11 @@ async function countSimilarTickets(
   const currentDescription = newTicket.descricao_problema.toLowerCase();
   const currentTitle = (newTicket.titulo || '').toLowerCase();
   
-  // Usar palavras-chave das configurações + análise semântica
+  // Usar palavras-chave das configurações
   const systemIssueKeywords = settings.keywords_base;
   
   // Extrair palavras-chave principais do ticket atual (palavras com 4+ letras, excluindo comuns)
-  const stopWords = ['para', 'com', 'uma', 'por', 'das', 'dos', 'que', 'quando', 'onde', 'como', 'este', 'esta', 'isso', 'aqui', 'ali'];
+  const stopWords = ['para', 'com', 'uma', 'por', 'das', 'dos', 'que', 'quando', 'onde', 'como', 'este', 'esta', 'isso', 'aqui', 'ali', 'preciso', 'vetor', 'evento', 'midias'];
   const currentSpecificKeywords = currentDescription
     .split(/\s+/)
     .filter(word => word.length >= 4 && !stopWords.includes(word))
@@ -472,54 +469,45 @@ async function countSimilarTickets(
   
   console.log('🎯 Palavras-chave do sistema encontradas:', currentSystemKeywords);
   
-  // Se não tem palavras do sistema MAS tem palavras específicas, ainda pode ser crise
-  if (currentSystemKeywords.length === 0 && currentSpecificKeywords.length === 0) {
-    console.log('❌ Nenhuma palavra-chave relevante encontrada no ticket atual');
-    return { count: 1, similarTickets: [] }; // Apenas o ticket atual
-  }
-
+  // CONTAR APENAS tickets similares (NÃO incluir o atual)
+  let count = 0;
+  const similarTickets = [];
   
-  // Contar tickets similares usando análise híbrida
-  const similarTickets = individualTickets.filter(ticket => {
+  for (const ticket of individualTickets) {
     const description = (ticket.descricao_problema || '').toLowerCase();
     const title = (ticket.titulo || '').toLowerCase();
     
     // 1. Verificar palavras-chave do sistema
-    const matchingSystemKeywords = currentSystemKeywords.filter(keyword => 
+    const systemMatches = currentSystemKeywords.filter(keyword => 
       description.includes(keyword) || title.includes(keyword)
-    );
+    ).length;
     
-    // 2. Verificar palavras específicas (para casos como "girabot", "fluxo")
-    const matchingSpecificKeywords = currentSpecificKeywords.filter(keyword => 
+    // 2. Verificar palavras específicas
+    const specificMatches = currentSpecificKeywords.filter(keyword => 
       description.includes(keyword) || title.includes(keyword)
-    );
+    ).length;
     
-    // 3. Análise de similaridade textual (Levenshtein simplificado)
-    const similarity = calculateTextSimilarity(currentDescription, description);
+    // 3. Análise de similaridade textual
+    const textSimilarity = calculateTextSimilarity(currentDescription, description);
     
-    // Considerar similar se:
-    // - Tem pelo menos 1 palavra do sistema + 1 específica, OU
-    // - Tem 2+ palavras específicas em comum, OU  
-    // - Tem alta similaridade textual (>70%)
-    const isSystemSimilar = matchingSystemKeywords.length >= 1 && matchingSpecificKeywords.length >= 1;
-    const isSpecificSimilar = matchingSpecificKeywords.length >= 2;
-    const isTextSimilar = similarity > 0.7;
+    console.log(`   - Sistema: ${systemMatches}, Específicas: ${specificMatches}, Similaridade: ${(textSimilarity * 100).toFixed(1)}%`);
     
-    if (isSystemSimilar || isSpecificSimilar || isTextSimilar) {
-      console.log(`✅ Ticket similar encontrado: "${ticket.titulo || ticket.descricao_problema}"`);
-      console.log(`   - Sistema: ${matchingSystemKeywords.length}, Específicas: ${matchingSpecificKeywords.length}, Similaridade: ${(similarity * 100).toFixed(1)}%`);
-      return true;
+    // Critério MAIS RESTRITIVO: Precisa de múltiplos indicadores
+    const isSystemIssue = systemMatches >= 2; // Pelo menos 2 palavras-chave do sistema
+    const isSpecificMatch = specificMatches >= 3; // Pelo menos 3 palavras específicas
+    const isHighSimilarity = textSimilarity > (settings.similarity_threshold + 0.1); // Threshold mais alto
+    
+    if (isSystemIssue || (isSpecificMatch && textSimilarity > settings.similarity_threshold) || isHighSimilarity) {
+      count++;
+      similarTickets.push(ticket);
+      console.log(`✅ Ticket similar encontrado: "${ticket.titulo}"`);
     }
-    
-    return false;
-  });
+  }
   
-  console.log(`📊 Total de tickets similares: ${similarTickets.length + 1} (incluindo atual)`);
+  console.log(`📊 Total de tickets similares: ${count} (NÃO incluindo o atual)`);
+  console.log(`🎯 Threshold necessário: ${settings.threshold_similares} tickets similares`);
   
-  return { 
-    count: similarTickets.length + 1, // +1 para incluir o ticket atual
-    similarTickets 
-  };
+  return { count, similarTickets };
 }
 
 // Função auxiliar para calcular similaridade textual básica
@@ -541,54 +529,60 @@ async function createNewCrise(
   similarTickets: any[],
   settings: CrisisAISettings
 ): Promise<string> {
-  // Extrair palavras-chave para categorizar a crise
+  // Extrair palavras-chave principais do problema
   const problemKeywords = ticket.descricao_problema
     .toLowerCase()
-    .split(' ')
-    .filter(word => word.length > 3)
-    .slice(0, 3); // Primeiras 3 palavras significativas
-  
-  // Criar descrição detalhada incluindo tickets similares
-  let descricaoDetalhada = `Crise detectada automaticamente devido a ${similarTickets.length + 1} tickets similares:\n\n`;
-  descricaoDetalhada += `TICKET PRINCIPAL:\n- ${ticket.titulo}: ${ticket.descricao_problema}\n\n`;
-  
-  if (similarTickets.length > 0) {
-    descricaoDetalhada += "TICKETS SIMILARES:\n";
-    similarTickets.forEach((t, index) => {
-      descricaoDetalhada += `- ${t.titulo || 'Sem título'}: ${t.descricao_problema || 'Sem descrição'}\n`;
-    });
-  }
+    .split(/\s+/)
+    .filter(word => word.length >= 4 && !['para', 'com', 'uma', 'por', 'das', 'dos'].includes(word))
+    .slice(0, 5);
 
+  const titulo = `Incidente ${ticket.categoria || 'Sistema'}: ${problemKeywords.slice(0, 3).join(' ')}`;
+  
+  const descricao = `Crise detectada automaticamente baseada em ${similarTickets.length + 1} tickets similares:
+
+TICKET INICIAL:
+- ${ticket.titulo}
+- ${ticket.descricao_problema}
+
+TICKETS RELACIONADOS:
+${similarTickets.map(t => `- ${t.titulo}: ${t.descricao_problema}`).join('\n')}
+
+Esta crise foi criada automaticamente pelo sistema de detecção baseado nos critérios configurados.`;
+
+  // Inserir nova crise
   const { data: newCrise, error: criseError } = await supabase
     .from('crises')
     .insert({
-      titulo: `Crise automática: ${ticket.titulo}`,
-      descricao: descricaoDetalhada,
+      titulo,
+      descricao,
+      palavras_chave: problemKeywords,
+      similar_terms: problemKeywords,
       equipe_id: ticket.equipe_id,
       problem_signature: `${ticket.equipe_id}_${ticket.categoria || 'geral'}_sistema`,
-      similar_terms: problemKeywords,
       status: 'aberto',
-      is_active: true,
-      tickets_count: 1,
-      abriu_por: null
+      abriu_por: null,
+      tickets_count: similarTickets.length + 1
     })
-    .select('id')
+    .select()
     .single();
 
   if (criseError) {
+    console.error('Erro ao criar crise:', criseError);
     throw new Error(`Erro ao criar crise: ${criseError.message}`);
   }
 
-  // Vincular o ticket atual à nova crise
+  console.log(`🆕 Nova crise criada: ${newCrise.id} com ${similarTickets.length + 1} tickets similares`);
+
+  // Vincular o ticket inicial
   await linkTicketToCrise(supabase, ticket.ticket_id, newCrise.id);
 
-  // Vincular tickets similares à crise
-  for (const similarTicket of similarTickets) {
-    await linkTicketToCrise(supabase, similarTicket.id, newCrise.id);
+  // Vincular tickets similares
+  const ticketsToLink = [ticket.ticket_id, ...similarTickets.map(t => t.id)];
+  console.log('📋 Tickets vinculados:', ticketsToLink);
+
+  for (const ticketId of similarTickets.map(t => t.id)) {
+    await linkTicketToCrise(supabase, ticketId, newCrise.id);
   }
 
-  console.log(`🆕 Nova crise criada: ${newCrise.id} com ${similarTickets.length + 1} tickets similares`);
-  console.log(`📋 Tickets vinculados: [${ticket.ticket_id}, ${similarTickets.map(t => t.id).join(', ')}]`);
-  
   return newCrise.id;
 }
