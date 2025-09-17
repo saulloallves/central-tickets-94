@@ -363,6 +363,33 @@ serve(async (req) => {
 
     console.log('✅ Ticket created successfully:', ticket.codigo_ticket);
 
+    // Enviar notificação direta do ticket criado
+    try {
+      console.log('📨 Enviando notificação de ticket criado...');
+      
+      const notificationResponse = await fetch(`${supabaseUrl}/functions/v1/send-ticket-notification`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseServiceKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ticket_id: ticket.id,
+          template_key: 'ticket_created'
+        })
+      });
+
+      if (notificationResponse.ok) {
+        const notificationResult = await notificationResponse.json();
+        console.log('✅ Notificação enviada:', notificationResult);
+      } else {
+        console.error('❌ Falha no envio da notificação:', await notificationResponse.text());
+      }
+    } catch (notificationError) {
+      console.error('❌ Erro ao enviar notificação:', notificationError);
+      // Continue sem falhar a criação do ticket
+    }
+
     // Chamar análise de crises inteligente se o ticket tem equipe responsável
     let crisisAnalysisResult = null;
     if (ticket.equipe_responsavel_id) {
