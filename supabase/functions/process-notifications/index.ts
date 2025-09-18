@@ -494,10 +494,13 @@ serve(async (req) => {
       }
     }
 
-    // For other notification types, fetch ticket data (only if ticketId is provided)
+    // For ticket-based notifications, fetch ticket data (only if ticketId is provided)
     let ticket: any = null;
     
-    if (ticketId && ticketId !== 'null') {
+    // Types that require ticket data
+    const ticketRequiredTypes = ['ticket_created', 'ticket_criado', 'sla_half', 'sla_breach', 'resposta_ticket'];
+    
+    if (ticketId && ticketId !== 'null' && ticketRequiredTypes.includes(type)) {
       console.log('Fetching ticket data for ID:', ticketId);
       try {
         const { data: ticketData, error: ticketError } = await supabase
@@ -546,7 +549,24 @@ serve(async (req) => {
         franqueado_id: ticket.franqueado_id
       });
     } else {
-      console.log('No ticket data needed for this notification type');
+      console.log(`No ticket data fetched for type ${type} - either no ticketId provided or type doesn't require ticket data`);
+    }
+
+    // Validate that we have ticket data when required
+    if (ticketRequiredTypes.includes(type) && !ticket) {
+      const errorMsg = `Ticket data is required for ${type} notifications but not found. TicketId: ${ticketId}`;
+      console.error('❌', errorMsg);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: errorMsg,
+          error: 'TICKET_DATA_REQUIRED' 
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400 
+        }
+      );
     }
 
     // Função para buscar franqueado (solicitante) baseado no ticket
@@ -677,6 +697,7 @@ serve(async (req) => {
     let destinoFinal: string = '';
 
     // Get destination number based on new source configuration system
+    console.log('🎯 About to call getDestinationNumber with:', { type, ticketExists: !!ticket, ticketId: ticket?.id });
     const customDestination = await getDestinationNumber(supabase, type, ticket);
 
     switch (type) {
