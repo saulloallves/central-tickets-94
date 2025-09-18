@@ -72,10 +72,10 @@ function formatDisplayValue(key: string, value: any): string {
     },
     status: (val) => {
       const statusMap: Record<string, string> = {
-        'aberto': '🆕 Aberto',
-        'em_andamento': '⏳ Em Andamento',
-        'aguardando': '⏸️ Aguardando',
-        'concluido': '✅ Concluído'
+        'aberto': 'Aberto',
+        'em_atendimento': 'Em Atendimento',
+        'escalonado': 'Escalonado',
+        'concluido': 'Concluído'
       };
       return statusMap[val] || val;
     },

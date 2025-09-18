@@ -505,13 +505,7 @@ export const useTickets = (filters: TicketFilters) => {
           }
         });
 
-        // Disparar notificação de novo ticket
-        await supabase.functions.invoke('process-notifications', {
-          body: {
-            ticketId: data.id,
-            type: 'ticket_criado'
-          }
-        });
+        // Notificação será enviada automaticamente pelo trigger de banco
       } catch (aiError) {
         console.error('Error in AI analysis or notifications:', aiError);
       }
