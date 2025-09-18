@@ -1,5 +1,4 @@
-import { useEffect } from 'react';
-import { useEnhancedTicketRealtime } from './useEnhancedTicketRealtime';
+import { useSimpleTicketsRealtime } from './useSimpleTicketsRealtime';
 import { Ticket } from './useTickets';
 
 interface UseTicketsRealtimeProps {
@@ -16,16 +15,14 @@ interface UseTicketsRealtimeProps {
 export const useTicketsRealtime = ({
   onTicketUpdate,
   onTicketInsert,
-  onTicketDelete,
-  filters
-}: UseTicketsRealtimeProps) => {
+  onTicketDelete
+}: Omit<UseTicketsRealtimeProps, 'filters'>) => {
   
-  // Use the enhanced realtime hook
-  const { isConnected } = useEnhancedTicketRealtime({
+  // Use simple realtime - direct mirror of database
+  const { isConnected } = useSimpleTicketsRealtime({
     onTicketUpdate,
     onTicketInsert,
-    onTicketDelete,
-    filters
+    onTicketDelete
   });
 
   return {
