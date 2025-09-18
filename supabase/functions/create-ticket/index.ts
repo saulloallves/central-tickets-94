@@ -134,6 +134,39 @@ Deno.serve(async (req) => {
 
     console.log('✅ Ticket created successfully:', newTicket.codigo_ticket);
 
+    // Enviar notificação de ticket criado imediatamente
+    try {
+      console.log('📤 Enviando notificação de ticket criado...');
+      
+      const notificationResult = await fetch(`${supabaseUrl}/functions/v1/process-notifications`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseServiceKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ticketId: newTicket.id,
+          type: 'ticket_created',
+          payload: {
+            unidade_id: newTicket.unidade_id,
+            codigo_ticket: newTicket.codigo_ticket,
+            categoria: newTicket.categoria,
+            prioridade: newTicket.prioridade
+          }
+        })
+      });
+
+      if (notificationResult.ok) {
+        const notificationData = await notificationResult.json();
+        console.log('✅ Notificação de ticket criado enviada:', notificationData);
+      } else {
+        console.error('❌ Erro ao enviar notificação:', await notificationResult.text());
+      }
+    } catch (notificationError) {
+      console.error('❌ Erro ao processar notificação:', notificationError);
+      // Continue sem falhar a criação do ticket
+    }
+
     // Call crisis AI analyst after ticket creation (if has team)
     if (newTicket.equipe_responsavel_id) {
       try {

@@ -363,7 +363,38 @@ serve(async (req) => {
 
     console.log('✅ Ticket created successfully:', ticket.codigo_ticket);
 
-    // Notificação será enviada automaticamente pelo trigger após inserção do ticket
+    // Enviar notificação de ticket criado imediatamente
+    try {
+      console.log('📤 Enviando notificação de ticket criado...');
+      
+      const notificationResult = await fetch(`${supabaseUrl}/functions/v1/process-notifications`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseServiceKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ticketId: ticket.id,
+          type: 'ticket_created',
+          payload: {
+            unidade_id: ticket.unidade_id,
+            codigo_ticket: ticket.codigo_ticket,
+            categoria: ticket.categoria,
+            prioridade: ticket.prioridade
+          }
+        })
+      });
+
+      if (notificationResult.ok) {
+        const notificationData = await notificationResult.json();
+        console.log('✅ Notificação de ticket criado enviada:', notificationData);
+      } else {
+        console.error('❌ Erro ao enviar notificação:', await notificationResult.text());
+      }
+    } catch (notificationError) {
+      console.error('❌ Erro ao processar notificação:', notificationError);
+      // Continue sem falhar a criação do ticket
+    }
 
     // Chamar análise de crises inteligente se o ticket tem equipe responsável
     let crisisAnalysisResult = null;
