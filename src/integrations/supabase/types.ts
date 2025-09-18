@@ -3092,32 +3092,25 @@ export type Database = {
         }[]
       }
       match_documentos_semantico: {
-        Args:
-          | {
-              categoria_filtro?: string
-              match_count?: number
-              match_threshold?: number
-              query_embedding: string
-              query_text?: string
-              require_category_match?: boolean
-            }
-          | {
-              match_count?: number
-              match_threshold?: number
-              query_embedding: string
-            }
+        Args: {
+          categoria_filtro?: string
+          match_count?: number
+          match_threshold?: number
+          query_embedding: string
+          query_text?: string
+          require_category_match?: boolean
+        }
         Returns: {
           categoria: string
           conteudo: Json
           criado_em: string
-          final_score: number
+          criado_por: string
+          ia_modelo: string
           id: string
-          semantic_relevance: number
-          similarity_score: number
-          status: Database["public"]["Enums"]["article_status"]
+          profiles: Json
+          similarity: number
           tags: string[]
           titulo: string
-          versao: number
         }[]
       }
       next_ticket_code: {
