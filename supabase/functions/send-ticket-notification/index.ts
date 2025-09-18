@@ -17,13 +17,13 @@ interface ZApiConfig {
 async function getMessageTemplate(supabase: any, templateKey: string): Promise<string> {
   const { data: template } = await supabase
     .from('message_templates')
-    .select('template')
+    .select('template_content')
     .eq('template_key', templateKey)
-    .eq('ativo', true)
+    .eq('is_active', true)
     .single();
 
-  if (template?.template) {
-    return template.template;
+  if (template?.template_content) {
+    return template.template_content;
   }
 
   // Template padrão para ticket_created
@@ -249,8 +249,13 @@ serve(async (req) => {
       unidade_id: ticket.unidade_id,
       unidade_nome: ticket.unidades?.grupo || ticket.unidade_id,
       equipe_nome: ticket.equipes?.nome || 'Não definida',
+      equipe_responsavel: ticket.equipes?.nome || 'Não definida',
       colaborador_nome: ticket.colaboradores?.nome_completo || 'Não definido',
-      data_criacao: new Date(ticket.created_at).toLocaleString('pt-BR')
+      colaborador_responsavel: ticket.colaboradores?.nome_completo || 'Não definido',
+      descricao_problema: ticket.descricao_problema || 'Não informado',
+      data_criacao: new Date(ticket.created_at).toLocaleString('pt-BR'),
+      data_abertura: new Date(ticket.data_abertura || ticket.created_at).toLocaleString('pt-BR'),
+      data_limite_sla: ticket.data_limite_sla ? new Date(ticket.data_limite_sla).toLocaleString('pt-BR') : 'Não definido'
     };
 
     // 4. Processar template
