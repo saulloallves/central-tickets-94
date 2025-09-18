@@ -2810,6 +2810,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      cleanup_unconfirmed_access_requests: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       create_crise: {
         Args: {
           p_abriu_por?: string
@@ -3112,6 +3116,10 @@ export type Database = {
           tags: string[]
           titulo: string
         }[]
+      }
+      monitor_unconfirmed_users: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
       next_ticket_code: {
         Args: { p_unidade_id: string }
