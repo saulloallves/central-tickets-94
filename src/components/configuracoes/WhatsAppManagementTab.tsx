@@ -1,13 +1,64 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Trash2, MessageSquare, Loader2 } from "lucide-react";
+import { Trash2, MessageSquare, Loader2, Settings, TestTube, CheckCircle, XCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
 export function WhatsAppManagementTab() {
   const [isLoading, setIsLoading] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
+  const [instanceStatus, setInstanceStatus] = useState<'idle' | 'connected' | 'disconnected' | 'testing'>('idle');
+  const [zapiConfig, setZapiConfig] = useState({
+    instanceId: '',
+    token: '',
+    clientToken: '',
+    baseUrl: 'https://api.z-api.io'
+  });
+
+  const testZAPIConnection = async () => {
+    setIsTesting(true);
+    setInstanceStatus('testing');
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('zapi-whatsapp', {
+        body: { action: 'health_check' }
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (data?.zapi_configured) {
+        setInstanceStatus('connected');
+        toast({
+          title: "Conexão Z-API testada com sucesso!",
+          description: "A instância está configurada e respondendo.",
+        });
+      } else {
+        setInstanceStatus('disconnected');
+        toast({
+          title: "Configuração Z-API incompleta",
+          description: "Verifique as credenciais da instância.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao testar Z-API:', error);
+      setInstanceStatus('disconnected');
+      toast({
+        title: "Erro ao testar conexão",
+        description: "Não foi possível conectar com a instância Z-API.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsTesting(false);
+    }
+  };
 
   const handleClearConversations = async () => {
     setIsLoading(true);
@@ -45,6 +96,66 @@ export function WhatsAppManagementTab() {
 
   return (
     <div className="space-y-6">
+      {/* Status da Instância Z-API */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Settings className="h-5 w-5" />
+            Status da Instância Z-API
+          </CardTitle>
+          <CardDescription>
+            Monitore e teste a conexão com a instância WhatsApp
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border">
+            <div className="flex items-center gap-3">
+              {instanceStatus === 'connected' && <CheckCircle className="h-5 w-5 text-green-500" />}
+              {instanceStatus === 'disconnected' && <XCircle className="h-5 w-5 text-red-500" />}
+              {instanceStatus === 'testing' && <Loader2 className="h-5 w-5 animate-spin text-blue-500" />}
+              {instanceStatus === 'idle' && <MessageSquare className="h-5 w-5 text-muted-foreground" />}
+              
+              <div>
+                <p className="font-medium">
+                  {instanceStatus === 'connected' && 'Instância Conectada'}
+                  {instanceStatus === 'disconnected' && 'Instância Desconectada'}
+                  {instanceStatus === 'testing' && 'Testando Conexão...'}
+                  {instanceStatus === 'idle' && 'Status Desconhecido'}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {instanceStatus === 'connected' && 'A instância está respondendo normalmente'}
+                  {instanceStatus === 'disconnected' && 'Verifique as configurações da instância'}
+                  {instanceStatus === 'testing' && 'Verificando conectividade...'}
+                  {instanceStatus === 'idle' && 'Clique em testar para verificar o status'}
+                </p>
+              </div>
+            </div>
+            
+            <Button 
+              onClick={testZAPIConnection}
+              disabled={isTesting}
+              variant="outline"
+              size="sm"
+            >
+              {isTesting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Testando...
+                </>
+              ) : (
+                <>
+                  <TestTube className="h-4 w-4 mr-2" />
+                  Testar Conexão
+                </>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Separator />
+
+      {/* Gerenciamento de Conversas */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">

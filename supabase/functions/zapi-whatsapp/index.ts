@@ -104,26 +104,45 @@ serve(async (req) => {
     });
   }
 
-  if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-      status: 405,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+  // Handle POST requests for health checks from UI
+  if (req.method === 'POST') {
+    try {
+      const payload = await req.json();
+      
+      // Handle health check action
+      if (payload.action === 'health_check') {
+        return new Response(JSON.stringify({ 
+          status: 'ok', 
+          timestamp: new Date().toISOString(),
+          zapi_configured: zapiClient.isConfigured(),
+          instance_details: {
+            has_instance_id: !!Deno.env.get('ZAPI_INSTANCE_ID'),
+            has_token: !!Deno.env.get('ZAPI_TOKEN'),
+            has_client_token: !!Deno.env.get('ZAPI_CLIENT_TOKEN'),
+            base_url: Deno.env.get('ZAPI_BASE_URL') || 'https://api.z-api.io'
+          }
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
+      // Handle webhook payload (existing logic)
+      const result = await handleWebhook(payload as ZAPIMessage);
+      return new Response(JSON.stringify(result), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+      
+    } catch (error) {
+      console.error('Error in zapi-whatsapp function:', error);
+      return new Response(JSON.stringify({ error: error.message }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
   }
 
-  try {
-    const payload: ZAPIMessage = await req.json();
-    const result = await handleWebhook(payload);
-
-    return new Response(JSON.stringify(result), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-
-  } catch (error) {
-    console.error('Error in zapi-whatsapp function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
+  return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+    status: 405,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
 });
