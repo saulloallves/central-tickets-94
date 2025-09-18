@@ -647,17 +647,17 @@ CATEGORIA: ${categoria || 'Geral'}
       userId = user?.id;
     }
 
-    // Se não há usuário autenticado, usar um fallback
+    // Se não há usuário autenticado, usar um fallback UUID
     if (!userId) {
-      console.log('Usuário não encontrado, usando fallback system');
-      // Usar um valor texto padrão já que a coluna criado_por é do tipo text
-      userId = 'system';
+      console.log('Usuário não encontrado, usando fallback UUID');
+      // Usar UUID padrão para sistema já que a coluna criado_por é do tipo UUID
+      userId = '00000000-0000-0000-0000-000000000000';
     }
     
     console.log('UserId final para criado_por:', userId);
     
-    // Garantir que criado_por não seja null ou undefined
-    const criadoPor = userId || 'system';
+    // Garantir que criado_por seja um UUID válido
+    const criadoPor = userId || '00000000-0000-0000-0000-000000000000';
 
     // Inserir documento novo
     const documentData = {
