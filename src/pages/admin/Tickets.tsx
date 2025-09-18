@@ -15,7 +15,7 @@ import { CreateTicketDialog } from '@/components/tickets/CreateTicketDialog';
 import { TicketDetail } from '@/components/tickets/TicketDetail';
 import { CrisisBanner } from '@/components/tickets/CrisisBanner';
 import { NotificationButton } from '@/components/notifications/NotificationButton';
-import { useSimpleTickets } from '@/hooks/useSimpleTickets';
+import { useTicketsEdgeFunctions } from '@/hooks/useTicketsEdgeFunctions';
 import { BulkAnalysisDialog } from '@/components/tickets/BulkAnalysisDialog';
 import { useUserEquipes } from '@/hooks/useUserEquipes';
 import { supabase } from '@/integrations/supabase/client';
@@ -73,23 +73,14 @@ const Tickets = () => {
   const {
     tickets,
     loading,
-    refetch
-  } = useSimpleTickets(filters);
-
-  // Add back missing functions and data
-  const createTicket = async () => null;
-  const updateTicket = async () => null;
-  const deleteTicket = async () => null;
-  const moveTicket = async (ticketId: string, toStatus: string, beforeId?: string, afterId?: string) => {
-    console.log('Move ticket:', ticketId, toStatus);
-    return true;
-  };
-  const ticketStats = {
-    total: tickets.length,
-    sla_vencido: tickets.filter(t => t.status_sla === 'vencido').length,
-    em_atendimento: tickets.filter(t => t.status === 'em_atendimento').length
-  };
-  const lastUpdate = Date.now();
+    ticketStats,
+    lastUpdate,
+    refetch,
+    createTicket,
+    updateTicket,
+    deleteTicket,
+    moveTicket,
+  } = useTicketsEdgeFunctions(filters);
 
   // Fetch available teams and start auto detection
   useEffect(() => {

@@ -210,8 +210,37 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
     setTicketStats(stats);
   }, []);
 
-  // Setup realtime subscription with better error handling
+  // Simple realtime - just mirror the database
   const setupRealtime = useCallback(() => {
+    if (!user) return;
+
+    console.log('🔄 Setting up simple realtime for tickets');
+    
+    // Clean up existing subscription
+    if (realtimeChannelRef.current) {
+      supabase.removeChannel(realtimeChannelRef.current);
+    }
+
+    const channel = supabase
+      .channel('simple-tickets')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tickets',
+        },
+        (payload) => {
+          console.log('📡 Simple realtime event:', payload.eventType);
+          // Always refetch to keep as simple mirror
+          fetchTickets(true);
+        }
+      )
+      .subscribe((status) => {
+        console.log('📡 Simple realtime status:', status);
+      });
+
+    realtimeChannelRef.current = channel;
     if (!user) return;
 
     console.log('🔄 Setting up ROBUST realtime subscription for tickets');
@@ -222,7 +251,7 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
     }
 
     const channelName = `tickets-realtime-${user.id}`;
-    const channel = supabase
+    const channel2 = supabase
       .channel(channelName, {
         config: {
           broadcast: { self: true },
