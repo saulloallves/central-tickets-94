@@ -608,6 +608,7 @@ CATEGORIA: ${categoria || 'Geral'}
 
       console.log('Dados para atualização de embedding:', JSON.stringify(updateData, null, 2));
 
+      // Usar o service role client já configurado para bypasser RLS policies
       const { data, error } = await supabase
         .from('documentos')
         .update(updateData)
@@ -693,6 +694,7 @@ CATEGORIA: ${categoria || 'Geral'}
     console.log('  finalTitulo variável:', finalTitulo);
     console.log('  documentData completo:', JSON.stringify(documentData, null, 2));
 
+    // Usar o service role client já configurado para bypasser RLS policies
     const { data, error } = await supabase
       .from('documentos')
       .insert(documentData)
