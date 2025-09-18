@@ -17,7 +17,7 @@ const zapiClient = new ZAPIClient();
 const aiProcessor = new AIProcessor(supabase, zapiClient, conversationManager);
 
 function shouldSkipMessage(payload: ZAPIMessage): boolean {
-  return payload.isStatusReply || !payload.text?.message || payload.isGroup;
+  return payload.isStatusReply || !payload.text?.message;
 }
 
 function createMessageData(payload: ZAPIMessage): ConversationMessageData {
@@ -40,7 +40,7 @@ async function handleWebhook(payload: ZAPIMessage) {
   console.log('Received Z-API webhook:', JSON.stringify(payload, null, 2));
 
   if (shouldSkipMessage(payload)) {
-    console.log('Skipping message: status reply, no text, or group message');
+    console.log('Skipping message: status reply or no text');
     return { ok: true, skipped: true };
   }
 
