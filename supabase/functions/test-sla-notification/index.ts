@@ -90,16 +90,57 @@ serve(async (req) => {
       base_url: zapiConfig.base_url
     });
 
-    // Step 3: Check destination number
-    console.log('📞 Step 3: Checking destination...');
-    const destination = ticket.unidades?.id_grupo_branco;
+    // Step 3: Check destination number from notification config
+    console.log('📞 Step 3: Checking destination from notification settings...');
     
-    if (!destination) {
-      console.error('❌ No id_grupo_branco found for unit');
+    // Get source configuration for sla_breach notification type
+    const { data: sourceConfig, error: configError } = await supabase
+      .from('notification_source_config')
+      .select('*')
+      .eq('notification_type', 'sla_breach')
+      .eq('is_active', true)
+      .maybeSingle();
+
+    let destination = null;
+    
+    if (configError) {
+      console.error('❌ Error fetching source config:', configError);
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'No WhatsApp group configured for this unit',
+          error: 'Error fetching notification configuration',
+          details: configError 
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500 
+        }
+      );
+    }
+
+    if (sourceConfig) {
+      console.log('✅ Using notification config:', sourceConfig);
+      
+      if (sourceConfig.source_type === 'fixed' && sourceConfig.fixed_value) {
+        destination = sourceConfig.fixed_value;
+        console.log('📱 Using fixed destination from config:', destination);
+      } else if (sourceConfig.source_type === 'column' && sourceConfig.source_table === 'unidades' && sourceConfig.source_column === 'id_grupo_branco') {
+        destination = ticket.unidades?.id_grupo_branco;
+        console.log('📱 Using column destination:', destination);
+      }
+    } else {
+      // Fallback to legacy
+      destination = ticket.unidades?.id_grupo_branco;
+      console.log('📱 Using legacy fallback destination:', destination);
+    }
+    
+    if (!destination) {
+      console.error('❌ No destination found for SLA notification');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'No destination configured for SLA notifications',
+          config: sourceConfig,
           unit_data: ticket.unidades 
         }),
         { 
@@ -109,7 +150,7 @@ serve(async (req) => {
       );
     }
 
-    console.log('✅ Destination found:', destination);
+    console.log('✅ Final destination:', destination);
 
     // Step 4: Prepare SLA breach message
     console.log('📝 Step 4: Preparing SLA breach message...');
