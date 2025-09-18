@@ -48,7 +48,7 @@ export function AppSidebar() {
       className={cn(
         "fixed left-0 top-0 z-40 transition-all duration-300 h-full",
         // Área total da sidebar incluindo o espaço branco
-        isExpanded ? "w-60" : "w-20"
+        isExpanded ? "w-72" : "w-24"
       )}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -57,7 +57,7 @@ export function AppSidebar() {
       <div className={cn(
         "absolute top-1/2 -translate-y-1/2 transition-all duration-300",
         "left-4 h-[calc(100vh-8rem)]",
-        isExpanded ? "w-52" : "w-12"
+        isExpanded ? "w-64" : "w-16"
       )}>
         {/* Modern liquid glass sidebar container */}
         <div className="relative h-full bg-gradient-to-b from-primary via-primary/95 to-primary/90 rounded-3xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.1)] border border-white/10">
