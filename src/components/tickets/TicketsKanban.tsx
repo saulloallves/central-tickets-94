@@ -64,6 +64,7 @@ interface TicketsKanbanProps {
   equipes: Array<{ id: string; nome: string }>;
   showFilters?: boolean;
   onToggleFilters?: () => void;
+  lastUpdate?: number; // Timestamp para forçar re-renders
   onChangeStatus: (
     ticketId: string, 
     fromStatus: string, 
@@ -473,7 +474,7 @@ const getSLATime = (ticket: Ticket) => {
   return formatTimeRemaining(ticket.data_limite_sla, 'Resolver');
 };
 
-export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicketId, equipes, showFilters, onToggleFilters, onChangeStatus }: TicketsKanbanProps) => {
+export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicketId, equipes, showFilters, onToggleFilters, lastUpdate, onChangeStatus }: TicketsKanbanProps) => {
   const [activeTicket, setActiveTicket] = useState<Ticket | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [draggedOverColumn, setDraggedOverColumn] = useState<string | null>(null);
@@ -485,6 +486,21 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
   const { toast } = useToast();
   
   // Sistema de crises removido - sem agrupamento
+
+  // Força re-renderização quando tickets mudarem (para realtime)
+  useEffect(() => {
+    console.log('🔄 TicketsKanban: Tickets prop changed, updating display', {
+      ticketsLength: tickets.length,
+      lastUpdate,
+      timestamp: new Date().toISOString()
+    });
+    
+    // Reset optimistic state quando recebemos novos dados do servidor
+    if (tickets.length > 0) {
+      setOptimisticTickets([]);
+      setPendingMoves(new Set());
+    }
+  }, [tickets, lastUpdate]);
 
   // Use optimistic tickets se existirem, senão use os tickets normais
   const displayTickets = optimisticTickets.length > 0 ? optimisticTickets : tickets;

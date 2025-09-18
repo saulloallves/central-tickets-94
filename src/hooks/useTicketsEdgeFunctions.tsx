@@ -78,6 +78,7 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [ticketStats, setTicketStats] = useState<TicketStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [lastUpdate, setLastUpdate] = useState(Date.now()); // Força re-renders
   const fetchedRef = useRef(false);
   const realtimeChannelRef = useRef<any>(null);
   const realtimeDebounceRef = useRef<NodeJS.Timeout | null>(null);
@@ -165,6 +166,7 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
       
       console.log('Visible tickets (after filtering crises):', visibleTickets.length);
       setTickets(visibleTickets);
+      setLastUpdate(Date.now()); // Força re-render no Kanban
       
     } catch (error) {
       console.error('Error fetching tickets:', error);
@@ -268,15 +270,21 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
             }
           }
           
-          // Debounce realtime refetches to prevent excessive updates
-          if (realtimeDebounceRef.current) {
-            clearTimeout(realtimeDebounceRef.current);
+          // Para eventos INSERT, refetch imediatamente sem debounce
+          if (payload.eventType === 'INSERT') {
+            console.log('🔄 Novo ticket - refetch imediato sem debounce');
+            fetchTickets(true);
+          } else {
+            // Para outros eventos, usar debounce
+            if (realtimeDebounceRef.current) {
+              clearTimeout(realtimeDebounceRef.current);
+            }
+            
+            realtimeDebounceRef.current = setTimeout(() => {
+              console.log('🔄 Triggering ticket refetch due to realtime event');
+              fetchTickets(true);
+            }, 150); // Reduzido de 300ms para 150ms
           }
-          
-          realtimeDebounceRef.current = setTimeout(() => {
-            console.log('🔄 Triggering ticket refetch due to realtime event');
-            fetchTickets(true); // Mark as refetch to avoid loading state
-          }, 300); // Reduced debounce time for better responsiveness
         }
       )
       .subscribe((status) => {
@@ -299,7 +307,7 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
     const pollInterval = setInterval(() => {
       console.log('🔄 Backup polling triggered');
       fetchTickets(true); // Mark as refetch to avoid loading state
-    }, 30000); // Poll every 30 seconds as backup
+    }, 15000); // Reduzido de 30s para 15s para melhor responsividade
 
     return () => {
       clearInterval(pollInterval);
@@ -359,6 +367,7 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
       setTickets(prev => prev.map(ticket => 
         ticket.id === ticketId ? { ...ticket, ...updates } : ticket
       ));
+      setLastUpdate(Date.now()); // Força re-render no Kanban
     };
 
     const handleOptimisticRollback = (event: CustomEvent) => {
@@ -368,6 +377,7 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
       setTickets(prev => prev.map(ticket => 
         ticket.id === ticketId ? { ...ticket, status: originalStatus } : ticket
       ));
+      setLastUpdate(Date.now()); // Força re-render no Kanban
     };
 
     window.addEventListener('ticket-optimistic-update', handleOptimisticUpdate as EventListener);
@@ -559,6 +569,7 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
     tickets,
     loading,
     ticketStats,
+    lastUpdate, // Timestamp para forçar re-renders
     refetch: () => fetchTickets(true),
     createTicket,
     updateTicket,

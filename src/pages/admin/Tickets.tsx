@@ -74,6 +74,7 @@ const Tickets = () => {
     tickets,
     loading,
     ticketStats,
+    lastUpdate,
     refetch,
     createTicket,
     updateTicket,
@@ -243,10 +244,20 @@ const Tickets = () => {
           </Card>}
 
         {/* Main Content */}
-        <TicketsKanban tickets={tickets} loading={loading} onTicketSelect={handleTicketSelect} selectedTicketId={selectedTicketId} equipes={equipes} showFilters={showFilters} onToggleFilters={() => setShowFilters(!showFilters)} onChangeStatus={async (ticketId, fromStatus, toStatus, beforeId, afterId) => {
-        const success = await moveTicket(ticketId, toStatus, beforeId, afterId);
-        return success;
-      }} />
+        <TicketsKanban 
+          tickets={tickets} 
+          loading={loading} 
+          onTicketSelect={handleTicketSelect} 
+          selectedTicketId={selectedTicketId} 
+          equipes={equipes} 
+          showFilters={showFilters} 
+          onToggleFilters={() => setShowFilters(!showFilters)} 
+          lastUpdate={lastUpdate}
+          onChangeStatus={async (ticketId, fromStatus, toStatus, beforeId, afterId) => {
+            const success = await moveTicket(ticketId, toStatus, beforeId, afterId);
+            return success;
+          }} 
+        />
 
         <CreateTicketDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} onCreateTicket={createTicket} />
 
