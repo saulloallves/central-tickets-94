@@ -17,15 +17,15 @@ import { SystemLogo } from "@/components/SystemLogo";
 import { NotificationButton } from "@/components/notifications/NotificationButton";
 import { navigationItems } from "@/constants/navigation";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useSidebarContext } from "@/contexts/SidebarContext";
 
 export function AppSidebar() {
   const { signOut, user } = useAuth();
   const { profile } = useProfile();
   const location = useLocation();
   const isMobile = useIsMobile();
-  const [isExpanded, setIsExpanded] = useState(false);
+  const { isExpanded, setIsExpanded, isLocked, setIsLocked } = useSidebarContext();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isLocked, setIsLocked] = useState(false); // Estado para travar a sidebar
 
   const handleSignOut = async () => {
     await signOut();

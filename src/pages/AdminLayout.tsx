@@ -12,6 +12,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
 import PageTransition from "@/components/PageTransition";
+import { SidebarProvider, useSidebarContext } from "@/contexts/SidebarContext";
 
 interface AdminLayoutProps {
   children: React.ReactNode
@@ -78,6 +79,18 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   // User has access - render normal admin layout
   return (
+    <SidebarProvider>
+      <AdminLayoutContent isMobile={isMobile}>
+        {children}
+      </AdminLayoutContent>
+    </SidebarProvider>
+  )
+}
+
+function AdminLayoutContent({ children, isMobile }: { children: React.ReactNode, isMobile: boolean }) {
+  const { isExpanded } = useSidebarContext();
+  
+  return (
     <div className="h-screen w-full bg-gradient-subtle overflow-hidden">
       {/* Desktop sidebar - FIXA */}
       {!isMobile && <AppSidebar />}
@@ -85,7 +98,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       <div 
         className={cn(
           "h-full transition-all duration-300", 
-          isMobile ? "pb-20" : "ml-24"
+          isMobile ? "pb-20" : isExpanded ? "ml-72" : "ml-24"
         )} 
         data-main-content
       >
