@@ -596,7 +596,7 @@ export type Database = {
           classificacao: Json | null
           conteudo: Json | null
           criado_em: string
-          criado_por: string
+          criado_por: string | null
           embedding: string | null
           estilo: Database["public"]["Enums"]["article_estilo"] | null
           ia_modelo: string | null
@@ -618,7 +618,7 @@ export type Database = {
           classificacao?: Json | null
           conteudo?: Json | null
           criado_em?: string
-          criado_por: string
+          criado_por?: string | null
           embedding?: string | null
           estilo?: Database["public"]["Enums"]["article_estilo"] | null
           ia_modelo?: string | null
@@ -640,7 +640,7 @@ export type Database = {
           classificacao?: Json | null
           conteudo?: Json | null
           criado_em?: string
-          criado_por?: string
+          criado_por?: string | null
           embedding?: string | null
           estilo?: Database["public"]["Enums"]["article_estilo"] | null
           ia_modelo?: string | null

@@ -647,17 +647,15 @@ CATEGORIA: ${categoria || 'Geral'}
       userId = user?.id;
     }
 
-    // Se não há usuário autenticado, usar um fallback UUID
+    // Se não há usuário autenticado, usar NULL (coluna agora é nullable)
     if (!userId) {
-      console.log('Usuário não encontrado, usando fallback UUID');
-      // Usar UUID padrão para sistema já que a coluna criado_por é do tipo UUID
-      userId = '00000000-0000-0000-0000-000000000000';
+      console.log('Usuário não encontrado, usando NULL para criado_por');
     }
     
-    console.log('UserId final para criado_por:', userId);
+    console.log('UserId final para criado_por:', userId || 'NULL');
     
-    // Garantir que criado_por seja um UUID válido
-    const criadoPor = userId || '00000000-0000-0000-0000-000000000000';
+    // criado_por pode ser null se não há usuário autenticado
+    const criadoPor = userId || null;
 
     // Inserir documento novo
     const documentData = {
