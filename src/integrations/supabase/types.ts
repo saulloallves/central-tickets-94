@@ -2912,11 +2912,12 @@ export type Database = {
             }
           | { p_periodo_dias?: number; p_user_id?: string }
         Returns: {
-          sla_percentage: number
-          taxa_resolucao: number
+          percentual_sla: number
           tempo_medio_resolucao: number
-          tickets_concluidos: number
+          tickets_abertos: number
           tickets_crise: number
+          tickets_resolvidos: number
+          tickets_sucesso: number
           total_tickets: number
           unidade_id: string
           unidade_nome: string
@@ -3024,7 +3025,7 @@ export type Database = {
       }
       l2_normalize: {
         Args: { "": string } | { "": unknown } | { "": unknown }
-        Returns: string
+        Returns: unknown
       }
       log_sla_action: {
         Args: { p_action: string; p_details?: Json; p_ticket_id: string }
@@ -3108,10 +3109,13 @@ export type Database = {
         Returns: {
           categoria: string
           conteudo: Json
+          criado_em: string
+          final_score: number
           id: string
-          relevancia_semantica: number
-          score_final: number
-          similaridade: number
+          semantic_relevance: number
+          similarity_score: number
+          status: Database["public"]["Enums"]["article_status"]
+          tags: string[]
           titulo: string
           versao: number
         }[]
