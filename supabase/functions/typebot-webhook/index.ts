@@ -363,32 +363,7 @@ serve(async (req) => {
 
     console.log('✅ Ticket created successfully:', ticket.codigo_ticket);
 
-    // Enviar notificação direta do ticket criado
-    try {
-      console.log('📨 Enviando notificação de ticket criado...');
-      
-      const notificationResponse = await fetch(`${supabaseUrl}/functions/v1/send-ticket-notification`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${supabaseServiceKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ticket_id: ticket.id,
-          template_key: 'ticket_created'
-        })
-      });
-
-      if (notificationResponse.ok) {
-        const notificationResult = await notificationResponse.json();
-        console.log('✅ Notificação enviada:', notificationResult);
-      } else {
-        console.error('❌ Falha no envio da notificação:', await notificationResponse.text());
-      }
-    } catch (notificationError) {
-      console.error('❌ Erro ao enviar notificação:', notificationError);
-      // Continue sem falhar a criação do ticket
-    }
+    // Notificação será enviada automaticamente pelo trigger após inserção do ticket
 
     // Chamar análise de crises inteligente se o ticket tem equipe responsável
     let crisisAnalysisResult = null;
@@ -428,32 +403,7 @@ serve(async (req) => {
       };
     }
 
-    // Enviar notificação de criação de ticket
-    try {
-      console.log('📨 Enviando notificação de criação de ticket...');
-      const notificationResponse = await fetch(`${supabaseUrl}/functions/v1/send-ticket-notification`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${supabaseServiceKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ticket_id: ticket.id,
-          template_key: 'ticket_created'
-        })
-      });
-
-      if (notificationResponse.ok) {
-        const notificationResult = await notificationResponse.json();
-        console.log('✅ Notificação enviada:', notificationResult);
-      } else {
-        const errorText = await notificationResponse.text();
-        console.error('❌ Falha ao enviar notificação:', errorText);
-      }
-    } catch (notificationError) {
-      console.error('❌ Erro ao chamar send-ticket-notification:', notificationError);
-      // Continue without failing ticket creation
-    }
+    // Notificação já foi enviada automaticamente pelo trigger do banco
 
     return new Response(JSON.stringify({
       success: true,
