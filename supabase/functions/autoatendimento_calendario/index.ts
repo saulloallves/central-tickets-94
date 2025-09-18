@@ -8,7 +8,7 @@ const corsHeaders = {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
-    console.log("📆 AUTOATENDIMENTO_CALENDARIO_ANUAL - INICIADO -", new Date().toISOString());
+    console.log("📆 AUTOATENDIMENTO_CALENDARIO - INICIADO -", new Date().toISOString());
     const body = await req.json();
     const phone = body?.body?.phone || body?.phone || body?.participantPhone;
     if (!phone) return new Response(JSON.stringify({ error: "Telefone não encontrado" }), { headers: { "Content-Type": "application/json", ...corsHeaders }, status: 400 });
