@@ -78,19 +78,19 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   // User has access - render normal admin layout
   return (
-    <div className="h-screen flex w-full bg-gradient-subtle overflow-hidden">
+    <div className="h-screen w-full bg-gradient-subtle overflow-hidden">
       {/* Desktop sidebar - FIXA */}
       {!isMobile && <AppSidebar />}
       
       <div 
         className={cn(
-          "flex-1 flex flex-col h-full transition-all duration-300", 
-          isMobile ? "pb-20" : "ml-20"
+          "h-full transition-all duration-300", 
+          isMobile ? "pb-20" : "ml-24"
         )} 
         data-main-content
       >
         {/* Main content area - SCROLLÁVEL */}
-        <main className={cn("flex-1 overflow-y-auto", isMobile ? "p-4" : "p-6")}>
+        <main className={cn("h-full overflow-y-auto", isMobile ? "p-4" : "p-6")}>
           <PageTransition>
             <div className="w-full space-y-6">
               {children}
