@@ -28,15 +28,9 @@ export const useSimpleTickets = (filters: TicketFilters) => {
         .from('tickets')
         .select(`
           *,
-          unidades!fk_tickets_unidade (id, grupo, cidade, uf),
-          colaboradores!fk_tickets_colaborador (nome_completo),
-          equipes!fk_tickets_equipe_responsavel (id, nome),
-          atendimento_iniciado_por_profile:profiles!tickets_atendimento_iniciado_por_fkey(nome_completo),
-          created_by_profile:profiles!tickets_criado_por_fkey(nome_completo),
-          crise_links:crise_ticket_links!crise_ticket_links_ticket_id_fkey(
-            id,
-            crises!crise_ticket_links_crise_id_fkey(id, is_active, status)
-          )
+          unidades (id, grupo, cidade, uf),
+          colaboradores (nome_completo),
+          equipes (id, nome)
         `)
         .order('created_at', { ascending: false });
 
@@ -70,18 +64,8 @@ export const useSimpleTickets = (filters: TicketFilters) => {
         return;
       }
 
-      // Filter out crisis tickets if needed
-      const visibleTickets = (data || []).filter((ticket: any) => {
-        if (!ticket.crise_links || ticket.crise_links.length === 0) {
-          return true;
-        }
-        return !ticket.crise_links.some((link: any) => 
-          link.crises && link.crises.is_active
-        );
-      });
-
-      console.log('Tickets fetched:', visibleTickets.length);
-      setTickets(visibleTickets as unknown as Ticket[]);
+      console.log('Tickets fetched:', (data || []).length);
+      setTickets((data || []) as unknown as Ticket[]);
     } catch (error) {
       console.error('Error in fetchTickets:', error);
     } finally {
