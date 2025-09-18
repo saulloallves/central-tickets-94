@@ -466,6 +466,10 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
       // Force immediate refetch to ensure UI consistency
       console.log('🔄 Force refetching tickets after creation');
       await fetchTickets(true);
+      
+      // Also force a last update timestamp to trigger Kanban re-render
+      setLastUpdate(Date.now());
+      
       return data.ticket;
     } catch (error) {
       console.error('Error creating ticket:', error);
