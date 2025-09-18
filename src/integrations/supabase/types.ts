@@ -3120,10 +3120,6 @@ export type Database = {
         Args: { p_unidade_id: string }
         Returns: string
       }
-      process_overdue_slas: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
       refresh_user_permissions: {
         Args: { p_user_id: string }
         Returns: Json
