@@ -149,7 +149,20 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
       }
 
       const allTickets = (data as any) || [];
-      console.log('Tickets fetched successfully:', allTickets.length);
+      console.log('🎫 Tickets fetched successfully:', allTickets.length);
+      
+      // Debug: Log newest tickets
+      const sortedByDate = allTickets.sort((a: any, b: any) => 
+        new Date(b.data_abertura).getTime() - new Date(a.data_abertura).getTime()
+      );
+      if (sortedByDate.length > 0) {
+        console.log('🆕 Most recent tickets:', sortedByDate.slice(0, 3).map((t: any) => ({
+          id: t.id,
+          codigo: t.codigo_ticket,
+          created: t.data_abertura,
+          hasCreatedInLast5Min: (Date.now() - new Date(t.data_abertura).getTime()) < 5 * 60 * 1000
+        })));
+      }
       
       // Filter out tickets that are linked to active crises
       const visibleTickets = allTickets.filter((ticket: any) => {
@@ -159,12 +172,19 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
         }
         
         // Hide ticket if it's linked to any active crisis
-        return !ticket.crise_links.some((link: any) => 
+        const hasActiveCrisis = ticket.crise_links.some((link: any) => 
           link.crises && link.crises.is_active
         );
+        
+        if (hasActiveCrisis) {
+          console.log('🚫 Hiding ticket due to active crisis:', ticket.codigo_ticket);
+        }
+        
+        return !hasActiveCrisis;
       });
       
-      console.log('Visible tickets (after filtering crises):', visibleTickets.length);
+      console.log('✅ Visible tickets (after filtering crises):', visibleTickets.length);
+      console.log('🔄 Setting lastUpdate to force Kanban re-render...');
       setTickets(visibleTickets);
       setLastUpdate(Date.now()); // Força re-render no Kanban
       
@@ -210,48 +230,20 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
     setTicketStats(stats);
   }, []);
 
-  // Simple realtime - just mirror the database
+  // Optimized realtime setup - single channel only
   const setupRealtime = useCallback(() => {
     if (!user) return;
 
-    console.log('🔄 Setting up simple realtime for tickets');
+    console.log('🔄 Setting up optimized realtime subscription for tickets');
     
     // Clean up existing subscription
     if (realtimeChannelRef.current) {
       supabase.removeChannel(realtimeChannelRef.current);
+      realtimeChannelRef.current = null;
     }
 
+    const channelName = `tickets-realtime-${user.id}-${Math.random().toString(36).substr(2, 9)}`;
     const channel = supabase
-      .channel('simple-tickets')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'tickets',
-        },
-        (payload) => {
-          console.log('📡 Simple realtime event:', payload.eventType);
-          // Always refetch to keep as simple mirror
-          fetchTickets(true);
-        }
-      )
-      .subscribe((status) => {
-        console.log('📡 Simple realtime status:', status);
-      });
-
-    realtimeChannelRef.current = channel;
-    if (!user) return;
-
-    console.log('🔄 Setting up ROBUST realtime subscription for tickets');
-    
-    // Clean up existing subscription
-    if (realtimeChannelRef.current) {
-      supabase.removeChannel(realtimeChannelRef.current);
-    }
-
-    const channelName = `tickets-realtime-${user.id}`;
-    const channel2 = supabase
       .channel(channelName, {
         config: {
           broadcast: { self: true },
@@ -266,11 +258,21 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
           table: 'tickets',
         },
         (payload) => {
-          console.log('🔄 REALTIME EVENT RECEIVED:', {
+          console.log('🚀 REALTIME EVENT RECEIVED:', {
             event: payload.eventType,
             table: payload.table,
-            new: payload.new ? { id: (payload.new as any)?.id, codigo_ticket: (payload.new as any)?.codigo_ticket } : null,
-            old: payload.old ? { id: (payload.old as any)?.id, codigo_ticket: (payload.old as any)?.codigo_ticket } : null
+            timestamp: new Date().toISOString(),
+            new: payload.new ? { 
+              id: (payload.new as any)?.id, 
+              codigo_ticket: (payload.new as any)?.codigo_ticket,
+              status: (payload.new as any)?.status,
+              created_at: (payload.new as any)?.data_abertura
+            } : null,
+            old: payload.old ? { 
+              id: (payload.old as any)?.id, 
+              codigo_ticket: (payload.old as any)?.codigo_ticket,
+              status: (payload.old as any)?.status 
+            } : null
           });
           
           // Handle new ticket notifications
@@ -299,7 +301,7 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
             }
           }
           
-          // Para eventos INSERT, refetch imediatamente sem debounce
+          // Para eventos INSERT, refetch imediatamente sem debounce para máxima responsividade
           if (payload.eventType === 'INSERT') {
             console.log('🎯 NOVO TICKET DETECTADO - Refetch imediato!');
             fetchTickets(true);
@@ -314,7 +316,7 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
               console.log('🔄 Triggering ticket refetch due to realtime event');
               fetchTickets(true);
               setLastUpdate(Date.now()); // Força re-render do Kanban
-            }, 100); // Reduzido para 100ms para máxima responsividade
+            }, 50); // Reduzido para 50ms para máxima responsividade
           }
         }
       )
@@ -325,8 +327,18 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
           console.log('✅ Successfully subscribed to tickets realtime');
         } else if (status === 'CHANNEL_ERROR') {
           console.error('❌ Channel error in realtime subscription');
+          // Tentar reconectar após erro
+          setTimeout(() => {
+            console.log('🔁 Retrying realtime connection...');
+            setupRealtime();
+          }, 3000);
         } else if (status === 'TIMED_OUT') {
           console.error('❌ Realtime subscription timed out');
+          // Tentar reconectar após timeout
+          setTimeout(() => {
+            console.log('🔁 Retrying realtime connection...');
+            setupRealtime();
+          }, 3000);
         } else if (status === 'CLOSED') {
           console.warn('⚠️ Realtime subscription closed');
         }
@@ -338,35 +350,34 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
     const pollInterval = setInterval(() => {
       console.log('🔄 Backup polling triggered');
       fetchTickets(true); // Mark as refetch to avoid loading state
-    }, 15000); // Reduzido de 30s para 15s para melhor responsividade
+    }, 10000); // Reduzido para 10s para melhor backup
 
     return () => {
       clearInterval(pollInterval);
     };
   }, [user, fetchTickets]);
 
-  // Initial setup with session persistence to avoid re-initialization
+  // Simplified initialization - always fresh setup for realtime reliability
   useEffect(() => {
-    const sessionKey = `tickets_initialized_${user?.id}`;
-    const wasInitialized = sessionStorage.getItem(sessionKey) === 'true';
-    
-    if (user && !roleLoading && !fetchedRef.current && !wasInitialized) {
-      console.log('🚀 Initializing tickets system for user:', user.id);
-      fetchedRef.current = true;
-      sessionStorage.setItem(sessionKey, 'true');
-      
-      const initialize = async () => {
-        await fetchTickets();
-        setupRealtime();
-      };
-      
-      initialize();
-    } else if (wasInitialized && !fetchedRef.current) {
-      // Re-hydrate from session but with minimal initialization
-      fetchedRef.current = true;
-      fetchTickets(true); // Silent refetch
+    if (!user || roleLoading) {
+      console.log('🚫 Waiting for user and role loading...');
+      return;
     }
-  }, [user?.id, roleLoading]);
+    
+    console.log('🚀 Initializing tickets system for user:', user.id);
+    
+    // Force fresh initialization each time for realtime reliability
+    fetchedRef.current = true;
+    
+    const initialize = async () => {
+      console.log('📊 Fetching fresh tickets...');
+      await fetchTickets();
+      console.log('📡 Setting up realtime connection...');
+      setupRealtime();
+    };
+    
+    initialize();
+  }, [user?.id, roleLoading, fetchTickets, setupRealtime]);
 
   // Filter-based refetch with improved debouncing
   useEffect(() => {
