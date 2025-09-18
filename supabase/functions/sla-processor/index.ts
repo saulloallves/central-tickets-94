@@ -65,7 +65,7 @@ serve(async (req) => {
         // Chamar a função process-notifications
         const { error: processError } = await supabaseClient.functions.invoke('process-notifications', {
           body: {
-            ticket_id: notification.ticket_id,
+            ticketId: notification.ticket_id,
             type: notification.type,
             payload: notification.payload
           }
