@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTicketNotifications } from '@/hooks/useTicketNotifications';
+import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import { Plus, Filter, Calendar, Users, Clock, AlertTriangle, Brain } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -41,6 +42,7 @@ const Tickets = () => {
   } = useToast();
 
   // Initialize notification system but disable its realtime (we'll handle it ourselves)
+  useRealtimeNotifications(); // Hook para notificações em tempo real
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [ticketModalOpen, setTicketModalOpen] = useState(false);
   const [bulkAnalysisOpen, setBulkAnalysisOpen] = useState(false);

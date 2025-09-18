@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 import { calculateTimeRemaining } from '@/lib/date-utils';
 import { useToast } from '@/hooks/use-toast';
 
