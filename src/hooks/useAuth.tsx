@@ -2,6 +2,7 @@ import { useState, useEffect, createContext, useContext, ReactNode } from 'react
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { translateAuthError } from '@/lib/auth-error-messages';
 
 interface AuthContextType {
   user: User | null;
@@ -127,7 +128,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error('❌ Erro no Auth:', error);
       toast({
         title: "Erro no cadastro",
-        description: error.message,
+        description: translateAuthError(error),
         variant: "destructive"
       });
       return { error };
@@ -195,7 +196,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (error) {
       toast({
         title: "Erro no login",
-        description: error.message,
+        description: translateAuthError(error),
         variant: "destructive"
       });
     } else {
@@ -241,7 +242,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (error) {
       toast({
         title: "Erro",
-        description: error.message,
+        description: translateAuthError(error),
         variant: "destructive"
       });
     } else {
@@ -262,7 +263,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (error) {
       toast({
         title: "Erro",
-        description: error.message,
+        description: translateAuthError(error),
         variant: "destructive"
       });
     } else {

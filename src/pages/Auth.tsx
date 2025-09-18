@@ -11,6 +11,7 @@ import { ClipboardList, Sparkles, Shield, Zap, Phone } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
+import { translateAuthError } from '@/lib/auth-error-messages';
 
 const Auth = () => {
   const { user, signIn, signUp, resetPassword, loading } = useAuth();
@@ -258,7 +259,7 @@ const Auth = () => {
     } catch (error: any) {
       toast({
         title: "Erro no login",
-        description: error.message || 'Telefone ou senha incorretos',
+        description: translateAuthError(error),
         variant: "destructive"
       });
     }
