@@ -67,7 +67,7 @@ export function AppSidebar() {
           {/* Content wrapper - sempre vertical no desktop */}
           <div className={cn(
             "relative z-20 h-full flex flex-col overflow-hidden",
-            isExpanded ? "py-6 px-4" : "py-4 px-2"
+            isExpanded ? "py-6 px-4" : "py-4 px-0"
           )}>
             {/* System Logo Section */}
             <div className="flex justify-center mb-4">
@@ -75,7 +75,10 @@ export function AppSidebar() {
             </div>
 
             {/* Navigation Icons - sempre vertical */}
-            <div className="flex-1 flex flex-col space-y-1 overflow-y-auto scrollbar-hide py-2">
+            <div className={cn(
+              "flex-1 flex flex-col overflow-y-auto scrollbar-hide py-2",
+              isExpanded ? "space-y-1 px-0" : "space-y-2 px-0"
+            )}>
               {navigationItems.map((item) => (
                 <PermissionGuard key={item.title} requiredPermission={item.permission}>
                   <TooltipProvider delayDuration={0}>
@@ -117,15 +120,16 @@ export function AppSidebar() {
                     ) : (
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <NavLink
-                            to={item.url}
-                            end
-                            className={({ isActive }) => cn(
-                              "group relative flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-300 mx-auto",
-                              isActive 
-                                ? "bg-white/10 backdrop-blur-sm text-white" 
-                                : "hover:bg-white/5 hover:backdrop-blur-sm hover:text-white/95"
-                            )}
+                          <div className="w-full flex justify-center">
+                            <NavLink
+                              to={item.url}
+                              end
+                              className={({ isActive }) => cn(
+                                "group relative flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-300",
+                                isActive 
+                                  ? "bg-white/10 backdrop-blur-sm text-white" 
+                                  : "hover:bg-white/5 hover:backdrop-blur-sm hover:text-white/95"
+                              )}
                           >
                             {({ isActive }) => (
                               <>
@@ -141,7 +145,8 @@ export function AppSidebar() {
                                 )}
                               </>
                             )}
-                          </NavLink>
+                            </NavLink>
+                          </div>
                         </TooltipTrigger>
                         <TooltipContent 
                           side="right" 
@@ -157,7 +162,10 @@ export function AppSidebar() {
             </div>
 
             {/* Bottom Section - sempre vertical */}
-            <div className="flex flex-col space-y-2 mt-auto">
+            <div className={cn(
+              "flex flex-col mt-auto",
+              isExpanded ? "space-y-2" : "space-y-3"
+            )}>
               {/* Notifications Section */}
               <div className="flex justify-center">
                 <NotificationButton 
