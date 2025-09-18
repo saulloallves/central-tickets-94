@@ -421,6 +421,44 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
     }
   };
 
+  const handleSLAChange = async (newSLADate: string) => {
+    try {
+      const { error } = await supabase
+        .from('tickets')
+        .update({ 
+          data_limite_sla: newSLADate,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', ticketId);
+
+      if (error) {
+        throw error;
+      }
+
+      // Update local ticket state immediately
+      setTicket(prev => ({
+        ...prev,
+        data_limite_sla: newSLADate,
+        updated_at: new Date().toISOString()
+      }));
+
+      toast({
+        title: "Sucesso",
+        description: "Prazo do SLA atualizado",
+      });
+
+      // Refresh ticket details to get latest data
+      fetchTicketDetails();
+    } catch (error) {
+      console.error('Error updating SLA:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar prazo do SLA",
+        variant: "destructive"
+      });
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'aberto': return 'bg-blue-500';
@@ -1317,6 +1355,27 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                         ))}
                       </SelectContent>
                     </Select>
+                  </div>
+
+                  {/* SLA Control */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Prazo do SLA</Label>
+                    <Input
+                      type="datetime-local"
+                      value={ticket.data_limite_sla ? new Date(ticket.data_limite_sla).toISOString().slice(0, 16) : ''}
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          const newDate = new Date(e.target.value).toISOString();
+                          handleSLAChange(newDate);
+                        }
+                      }}
+                      className="h-9"
+                    />
+                    {ticket.data_limite_sla && (
+                      <div className="text-xs text-muted-foreground">
+                        Atual: {new Date(ticket.data_limite_sla).toLocaleString('pt-BR')}
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
