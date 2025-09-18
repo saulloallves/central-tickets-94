@@ -12,6 +12,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ConfiguracaoOrigemTab } from "./ConfiguracaoOrigemTab";
+import { SLANotificationTest } from "./SLANotificationTest";
+import { NotificationQueueManager } from './NotificationQueueManager';
 
 interface ZApiConfig {
   id?: string;
@@ -242,6 +244,12 @@ export function NotificacoesTab() {
 
   return (
     <div className="space-y-6">
+      {/* Seção 0: Teste de Notificação SLA */}
+      <SLANotificationTest />
+
+      {/* Seção 0.5: Fila de Notificações */}
+      <NotificationQueueManager />
+
       {/* Seção 1: Origem dos Números */}
       <Card>
         <CardHeader>

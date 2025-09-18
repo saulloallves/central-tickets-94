@@ -26,6 +26,13 @@ interface NotificationRoute {
 // Get destination number based on notification source configuration
 async function getDestinationNumber(supabase: any, type: string, ticket: any): Promise<string | null> {
   try {
+    console.log(`🔍 Getting destination for notification type: ${type}`);
+    console.log(`📋 Ticket data:`, { 
+      unidade_id: ticket.unidade_id, 
+      unidades: ticket.unidades,
+      id_grupo_branco: ticket.unidades?.id_grupo_branco 
+    });
+
     // Get source configuration for this notification type
     const { data: sourceConfig, error: configError } = await supabase
       .from('notification_source_config')
@@ -35,16 +42,18 @@ async function getDestinationNumber(supabase: any, type: string, ticket: any): P
       .maybeSingle();
 
     if (configError) {
-      console.error('Error fetching source config:', configError);
+      console.error('❌ Error fetching source config:', configError);
       return null;
     }
 
     if (!sourceConfig) {
-      console.log(`No source configuration found for ${type}, using legacy fallback`);
-      return getLegacyDestination(type, ticket);
+      console.log(`⚠️ No source configuration found for ${type}, using legacy fallback`);
+      const legacyDest = getLegacyDestination(type, ticket);
+      console.log(`📞 Legacy destination found: ${legacyDest}`);
+      return legacyDest;
     }
 
-    console.log(`Using source config for ${type}:`, sourceConfig);
+    console.log(`✅ Using source config for ${type}:`, sourceConfig);
 
     switch (sourceConfig.source_type) {
       case 'fixed':
@@ -136,15 +145,20 @@ async function getNumberFromColumn(supabase: any, table: string, column: string,
 
 // Legacy fallback for when no source configuration is found
 function getLegacyDestination(type: string, ticket: any): string | null {
+  console.log(`🔙 Using legacy destination for type: ${type}`);
+  console.log(`📞 Available id_grupo_branco: ${ticket.unidades?.id_grupo_branco}`);
+  
   switch (type) {
     case 'resposta_ticket':
     case 'ticket_created':
     case 'sla_half':
     case 'sla_breach':
-    case 'sla_breach':
-      return ticket.unidades?.id_grupo_branco || null;
+      const destination = ticket.unidades?.id_grupo_branco || null;
+      console.log(`📱 Legacy destination result: ${destination}`);
+      return destination;
     
     default:
+      console.log(`❌ No legacy destination configured for type: ${type}`);
       return null;
   }
 }
@@ -410,11 +424,20 @@ serve(async (req) => {
         console.log('Sending test message to:', testPhone);
         const normalizePhoneNumber = (phone: any): string | null => {
           if (!phone) return null;
-          let phoneStr = phone.toString().replace(/\D/g, '');
-          if (phoneStr.length === 13 && phoneStr.startsWith('55')) return phoneStr;
-          if (phoneStr.length === 11) return '55' + phoneStr;
-          if (phoneStr.length === 10) return '55' + phoneStr.charAt(0) + phoneStr.charAt(1) + '9' + phoneStr.substring(2);
-          return phoneStr.length >= 10 ? phoneStr : null;
+          const phoneStr = phone.toString();
+          
+          // If it's already a group ID (contains '-group'), return as is
+          if (phoneStr.includes('-group')) {
+            console.log(`📱 Group ID detected: ${phoneStr}`);
+            return phoneStr;
+          }
+          
+          // Otherwise, normalize as phone number
+          let cleanPhone = phoneStr.replace(/\D/g, '');
+          if (cleanPhone.length === 13 && cleanPhone.startsWith('55')) return cleanPhone;
+          if (cleanPhone.length === 11) return '55' + cleanPhone;
+          if (cleanPhone.length === 10) return '55' + cleanPhone.charAt(0) + cleanPhone.charAt(1) + '9' + cleanPhone.substring(2);
+          return cleanPhone.length >= 10 ? cleanPhone : null;
         };
 
         const endpoint = `${zapiConfig.baseUrl}/instances/${zapiConfig.instanceId}/token/${zapiConfig.instanceToken}/send-text`;
@@ -866,7 +889,15 @@ serve(async (req) => {
         break;
 
       case 'sla_breach':
-        console.log('Processing sla_breach');
+        console.log('🚨 Processing sla_breach notification');
+        console.log('📋 Ticket details:', {
+          id: ticket?.id,
+          codigo_ticket: ticket?.codigo_ticket,
+          unidade_id: ticket?.unidade_id,
+          status: ticket?.status,
+          has_unidades: !!ticket?.unidades,
+          id_grupo_branco: ticket?.unidades?.id_grupo_branco
+        });
         
         if (!ticket) {
           throw new Error('Ticket data is required for sla_breach notifications');
@@ -874,7 +905,7 @@ serve(async (req) => {
         
         // First, escalate the ticket automatically if not already concluded
         if (ticket.status !== 'concluido') {
-          console.log(`Auto-escalating ticket ${ticket.codigo_ticket} due to SLA breach`);
+          console.log(`🔼 Auto-escalating ticket ${ticket.codigo_ticket} due to SLA breach`);
           
           const { error: escalationError } = await supabase
             .from('tickets')
@@ -886,9 +917,9 @@ serve(async (req) => {
             .eq('id', ticket.id);
 
           if (escalationError) {
-            console.error('Error escalating ticket:', escalationError);
+            console.error('❌ Error escalating ticket:', escalationError);
           } else {
-            console.log(`Ticket ${ticket.codigo_ticket} successfully escalated`);
+            console.log(`✅ Ticket ${ticket.codigo_ticket} successfully escalated`);
             
             // Log the escalation action
             await supabase
@@ -903,10 +934,14 @@ serve(async (req) => {
           }
         }
         
+        console.log(`📞 Custom destination from getDestinationNumber: ${customDestination}`);
+        
         if (customDestination) {
           destinoFinal = customDestination;
-          console.log(`Using configured destination for sla_breach: ${destinoFinal}`);
+          console.log(`✅ Using configured destination for sla_breach: ${destinoFinal}`);
         } else {
+          console.error(`❌ No destination configuration found for sla_breach in unit ${ticket.unidade_id}`);
+          console.error(`🔍 Available unit data:`, ticket.unidades);
           throw new Error(`Nenhuma configuração de origem encontrada para sla_breach na unidade ${ticket.unidade_id}`);
         }
 
@@ -925,6 +960,7 @@ serve(async (req) => {
           .eq('id', ticket.equipe_responsavel_id)
           .single();
 
+        console.log('📝 Preparing SLA breach message...');
         const mensagemSLABreach = processTemplate(templateSLABreach, {
           codigo_ticket: formatTicketTitle(ticket),
           titulo_ticket: ticket.titulo || 'Ticket sem título',
@@ -939,11 +975,28 @@ serve(async (req) => {
           data_limite_sla: new Date(ticket.data_limite_sla).toLocaleString('pt-BR')
         });
 
+        console.log('📱 Normalizing destination phone for SLA breach...');
+        console.log(`📞 Raw destination: ${destinoFinal}`);
+        
         const normalizedPhone = normalizePhoneNumber(destinoFinal);
+        console.log(`📞 Normalized phone: ${normalizedPhone}`);
+        
         if (!normalizedPhone) {
+          console.error(`❌ Failed to normalize phone number: ${destinoFinal}`);
           throw new Error(`Número de telefone inválido: ${destinoFinal}`);
         }
+        
+        console.log('📤 Sending SLA breach message...');
+        console.log(`📱 To: ${normalizedPhone}`);
+        console.log(`📝 Message preview: ${mensagemSLABreach.substring(0, 100)}...`);
+        
         resultadoEnvio = await sendZapiMessage(normalizedPhone, mensagemSLABreach);
+        
+        console.log('📨 SLA breach notification result:', {
+          success: resultadoEnvio.success,
+          destination: normalizedPhone,
+          response_preview: JSON.stringify(resultadoEnvio.data).substring(0, 200)
+        });
         break;
 
       case 'crisis_broadcast':
