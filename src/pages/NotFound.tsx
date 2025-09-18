@@ -1,4 +1,4 @@
-import { useLocation } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import { useEffect } from "react";
 import { Home, ArrowLeft, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -50,10 +50,10 @@ const NotFound = () => {
                 className="flex-1 liquid-glass-button"
                 variant="default"
               >
-                <a href="/">
+                <Link to="/">
                   <Home className="w-4 h-4 mr-2" />
                   Voltar ao Início
-                </a>
+                </Link>
               </Button>
               
               <Button 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
@@ -10,15 +10,16 @@ interface PageTransitionProps {
 const PageTransition: React.FC<PageTransitionProps> = ({ children, className }) => {
   const location = useLocation();
   const [displayLocation, setDisplayLocation] = useState(location);
-  const [transitionStage, setTransitionStage] = useState("fadeIn");
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   useEffect(() => {
     if (location !== displayLocation) {
-      setTransitionStage("fadeOut");
+      setIsTransitioning(true);
+      // Wait for new content to be ready before transitioning
       const timer = setTimeout(() => {
         setDisplayLocation(location);
-        setTransitionStage("fadeIn");
-      }, 100);
+        setIsTransitioning(false);
+      }, 50);
       return () => clearTimeout(timer);
     }
   }, [location, displayLocation]);
@@ -26,13 +27,19 @@ const PageTransition: React.FC<PageTransitionProps> = ({ children, className }) 
   return (
     <div 
       className={cn(
-        "animate__animated animate-fast",
-        transitionStage === "fadeIn" ? "animate__fadeIn" : "animate__fadeOut",
+        "transition-opacity duration-200 ease-in-out",
+        isTransitioning ? "opacity-0" : "opacity-100",
         className
       )}
       key={displayLocation.pathname}
     >
-      {children}
+      <Suspense fallback={
+        <div className="min-h-[400px] flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent"></div>
+        </div>
+      }>
+        {children}
+      </Suspense>
     </div>
   );
 };
