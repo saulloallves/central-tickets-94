@@ -60,84 +60,54 @@ export function AppSidebar() {
   return (
     <div
       className={cn(
-        "fixed left-4 top-1/2 -translate-y-1/2 z-40 transition-all duration-300",
-        // No desktop: sempre vertical, altura menor
-        "h-[calc(100vh-16rem)]",
-        isExpanded ? "w-56" : "w-16"
+        "fixed left-0 top-0 z-40 transition-all duration-300 h-full",
+        // Área total da sidebar incluindo o espaço branco
+        isExpanded ? "w-60" : "w-20"
       )}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Modern liquid glass sidebar container */}
-      <div className="relative h-full bg-gradient-to-b from-primary via-primary/95 to-primary/90 rounded-3xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.1)] border border-white/10">
-        {/* Liquid glass overlay effect */}
-        <div className="absolute inset-0 liquid-glass-sidebar rounded-3xl"></div>
-        
-        {/* Content wrapper - sempre vertical no desktop */}
-        <div className={cn(
-          "relative z-20 h-full flex flex-col overflow-hidden",
-          isExpanded ? "py-6 px-4" : "py-4 px-2"
-        )}>
-          {/* System Logo Section */}
-          <div className="flex justify-center mb-4">
-            <SystemLogo />
-          </div>
+      {/* Área visual da sidebar com margem interna */}
+      <div className={cn(
+        "absolute top-1/2 -translate-y-1/2 transition-all duration-300",
+        "left-4 h-[calc(100vh-8rem)]",
+        isExpanded ? "w-52" : "w-12"
+      )}>
+        {/* Modern liquid glass sidebar container */}
+        <div className="relative h-full bg-gradient-to-b from-primary via-primary/95 to-primary/90 rounded-3xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.1)] border border-white/10">
+          {/* Liquid glass overlay effect */}
+          <div className="absolute inset-0 liquid-glass-sidebar rounded-3xl"></div>
+          
+          {/* Content wrapper - sempre vertical no desktop */}
+          <div className={cn(
+            "relative z-20 h-full flex flex-col overflow-hidden",
+            isExpanded ? "py-6 px-4" : "py-4 px-2"
+          )}>
+            {/* System Logo Section */}
+            <div className="flex justify-center mb-4">
+              <SystemLogo />
+            </div>
 
-          {/* Navigation Icons - sempre vertical */}
-          <div className="flex-1 flex flex-col space-y-1 overflow-y-auto scrollbar-hide py-2">
-            {navigationItems.map((item) => (
-              <PermissionGuard key={item.title} requiredPermission={item.permission}>
-                <TooltipProvider delayDuration={0}>
-                  {isExpanded ? (
-                    <NavLink
-                      to={item.url}
-                      end
-                      className={({ isActive }) => cn(
-                        "group flex items-center px-3 py-2 rounded-xl transition-all duration-300",
-                        "hover:scale-[1.02]",
-                        isActive 
-                          ? "bg-white/10 backdrop-blur-sm text-white border border-white/20" 
-                          : "hover:bg-white/5 hover:backdrop-blur-sm hover:text-white/95"
-                      )}
-                    >
-                      {({ isActive }) => (
-                        <>
-                          <div className="relative flex items-center justify-center w-6 h-6 mr-3">
-                            <item.icon 
-                               className={cn(
-                                 "h-5 w-5 text-white transition-all duration-300 drop-shadow-md",
-                                 isActive ? "drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" : "opacity-90"
-                               )}
-                              strokeWidth={1.5}
-                            />
-                            {isActive && (
-                              <div className="absolute -right-1 -top-1 w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_4px_rgba(255,255,255,0.8)] animate-pulse"></div>
-                            )}
-                          </div>
-                          <span className={cn(
-                            "text-white text-sm font-medium transition-all duration-300 drop-shadow-md whitespace-nowrap",
-                            isActive ? "opacity-100" : "opacity-90"
-                          )}>
-                            {item.title}
-                          </span>
-                        </>
-                      )}
-                    </NavLink>
-                  ) : (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <NavLink
-                          to={item.url}
-                          end
-                          className={({ isActive }) => cn(
-                            "group relative flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-300 mx-auto",
-                            isActive 
-                              ? "bg-white/10 backdrop-blur-sm text-white" 
-                              : "hover:bg-white/5 hover:backdrop-blur-sm hover:text-white/95"
-                          )}
-                        >
-                          {({ isActive }) => (
-                            <>
+            {/* Navigation Icons - sempre vertical */}
+            <div className="flex-1 flex flex-col space-y-1 overflow-y-auto scrollbar-hide py-2">
+              {navigationItems.map((item) => (
+                <PermissionGuard key={item.title} requiredPermission={item.permission}>
+                  <TooltipProvider delayDuration={0}>
+                    {isExpanded ? (
+                      <NavLink
+                        to={item.url}
+                        end
+                        className={({ isActive }) => cn(
+                          "group flex items-center px-3 py-2 rounded-xl transition-all duration-300",
+                          "hover:scale-[1.02]",
+                          isActive 
+                            ? "bg-white/10 backdrop-blur-sm text-white border border-white/20" 
+                            : "hover:bg-white/5 hover:backdrop-blur-sm hover:text-white/95"
+                        )}
+                      >
+                        {({ isActive }) => (
+                          <>
+                            <div className="relative flex items-center justify-center w-6 h-6 mr-3">
                               <item.icon 
                                  className={cn(
                                    "h-5 w-5 text-white transition-all duration-300 drop-shadow-md",
@@ -146,121 +116,157 @@ export function AppSidebar() {
                                 strokeWidth={1.5}
                               />
                               {isActive && (
-                                <div className="absolute -top-1 -right-1 w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_4px_rgba(255,255,255,0.8)] animate-pulse"></div>
+                                <div className="absolute -right-1 -top-1 w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_4px_rgba(255,255,255,0.8)] animate-pulse"></div>
                               )}
-                            </>
-                          )}
-                        </NavLink>
-                      </TooltipTrigger>
-                      <TooltipContent 
-                        side="right" 
-                        className="liquid-glass-card text-white ml-2"
-                      >
-                        {item.title}
-                      </TooltipContent>
-                    </Tooltip>
-                  )}
-                </TooltipProvider>
-              </PermissionGuard>
-            ))}
-          </div>
-
-          {/* Bottom Section - sempre vertical */}
-          <div className="flex flex-col space-y-2 mt-auto">
-            {/* Notifications Section */}
-            <div className="flex justify-center">
-              <NotificationButton 
-                isExpanded={isExpanded} 
-                variant="sidebar" 
-                onNotificationOpen={() => {
-                  setIsLocked(true);
-                  setIsExpanded(true);
-                }}
-                onNotificationClose={() => {
-                  setIsLocked(false);
-                }}
-              />
+                            </div>
+                            <span className={cn(
+                              "text-white text-sm font-medium transition-all duration-300 drop-shadow-md whitespace-nowrap",
+                              isActive ? "opacity-100" : "opacity-90"
+                            )}>
+                              {item.title}
+                            </span>
+                          </>
+                        )}
+                      </NavLink>
+                    ) : (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <NavLink
+                            to={item.url}
+                            end
+                            className={({ isActive }) => cn(
+                              "group relative flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-300 mx-auto",
+                              isActive 
+                                ? "bg-white/10 backdrop-blur-sm text-white" 
+                                : "hover:bg-white/5 hover:backdrop-blur-sm hover:text-white/95"
+                            )}
+                          >
+                            {({ isActive }) => (
+                              <>
+                                <item.icon 
+                                   className={cn(
+                                     "h-5 w-5 text-white transition-all duration-300 drop-shadow-md",
+                                     isActive ? "drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" : "opacity-90"
+                                   )}
+                                  strokeWidth={1.5}
+                                />
+                                {isActive && (
+                                  <div className="absolute -top-1 -right-1 w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_4px_rgba(255,255,255,0.8)] animate-pulse"></div>
+                                )}
+                              </>
+                            )}
+                          </NavLink>
+                        </TooltipTrigger>
+                        <TooltipContent 
+                          side="right" 
+                          className="liquid-glass-card text-white ml-2"
+                        >
+                          {item.title}
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                  </TooltipProvider>
+                </PermissionGuard>
+              ))}
             </div>
-            {/* User Profile Section */}
-            <div className="flex justify-center">
-            {isExpanded ? (
-              <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen} modal={false}>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    className="group w-full flex items-center justify-between px-4 py-3 text-white hover:bg-white/5 transition-all duration-450 rounded-xl"
-                  >
-                     <div className="flex items-center space-x-3 min-w-0">
-                       <Avatar className="h-8 w-8 flex-shrink-0">
-                         <AvatarImage src={profile?.avatar_url || user?.user_metadata?.avatar_url} />
-                          <AvatarFallback className="bg-white/20 text-white text-sm">
-                            {profile?.nome_completo?.charAt(0)?.toUpperCase() ||
-                             user?.user_metadata?.display_name?.charAt(0)?.toUpperCase() || 
-                             user?.email?.charAt(0)?.toUpperCase() || 'U'}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex flex-col items-start min-w-0 flex-1">
-                          <span className="text-sm font-medium truncate w-full drop-shadow-md">
-                            {profile?.nome_completo || user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'Usuário'}
-                          </span>
-                         <div className="flex items-center space-x-1">
-                           <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_4px_rgba(34,197,94,0.6)]"></div>
-                           <span className="text-xs opacity-70 drop-shadow-sm">Online</span>
-                         </div>
+
+            {/* Bottom Section - sempre vertical */}
+            <div className="flex flex-col space-y-2 mt-auto">
+              {/* Notifications Section */}
+              <div className="flex justify-center">
+                <NotificationButton 
+                  isExpanded={isExpanded} 
+                  variant="sidebar" 
+                  onNotificationOpen={() => {
+                    setIsLocked(true);
+                    setIsExpanded(true);
+                  }}
+                  onNotificationClose={() => {
+                    setIsLocked(false);
+                  }}
+                />
+              </div>
+              {/* User Profile Section */}
+              <div className="flex justify-center">
+              {isExpanded ? (
+                <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen} modal={false}>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      className="group w-full flex items-center justify-between px-4 py-3 text-white hover:bg-white/5 transition-all duration-450 rounded-xl"
+                    >
+                       <div className="flex items-center space-x-3 min-w-0">
+                         <Avatar className="h-8 w-8 flex-shrink-0">
+                           <AvatarImage src={profile?.avatar_url || user?.user_metadata?.avatar_url} />
+                            <AvatarFallback className="bg-white/20 text-white text-sm">
+                              {profile?.nome_completo?.charAt(0)?.toUpperCase() ||
+                               user?.user_metadata?.display_name?.charAt(0)?.toUpperCase() || 
+                               user?.email?.charAt(0)?.toUpperCase() || 'U'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex flex-col items-start min-w-0 flex-1">
+                            <span className="text-sm font-medium truncate w-full drop-shadow-md">
+                              {profile?.nome_completo || user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'Usuário'}
+                            </span>
+                           <div className="flex items-center space-x-1">
+                             <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_4px_rgba(34,197,94,0.6)]"></div>
+                             <span className="text-xs opacity-70 drop-shadow-sm">Online</span>
+                           </div>
+                        </div>
                       </div>
-                    </div>
-                    <ChevronDown className="h-4 w-4 opacity-60 flex-shrink-0" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent 
-                  side="bottom" 
-                  align="start"
-                  className="z-[100] bg-white dark:bg-gray-900 shadow-2xl rounded-lg border border-gray-200 dark:border-gray-700 w-40 sm:w-48"
-                  sideOffset={8}
-                  avoidCollisions={true}
-                >
-                   <DropdownMenuItem asChild className="text-gray-700 dark:text-gray-200 focus:bg-gray-100 dark:focus:bg-gray-800 cursor-pointer">
-                     <NavLink to="/admin/profile" className="flex items-center">
-                       <User className="h-4 w-4 mr-2" />
-                       Meu Perfil
-                     </NavLink>
-                   </DropdownMenuItem>
-                  <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-700" />
-                  <DropdownMenuItem 
-                    className="text-red-600 focus:bg-red-50 dark:focus:bg-red-900/20 cursor-pointer" 
-                    onClick={handleSignOut}
+                      <ChevronDown className="h-4 w-4 opacity-60 flex-shrink-0" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent 
+                    side="bottom" 
+                    align="start"
+                    className="z-[100] bg-white dark:bg-gray-900 shadow-2xl rounded-lg border border-gray-200 dark:border-gray-700 w-40 sm:w-48"
+                    sideOffset={8}
+                    avoidCollisions={true}
                   >
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Sair do Sistema
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <TooltipProvider delayDuration={0}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                     <div className="relative">
-                        <Avatar className="h-8 w-8 mx-auto cursor-pointer hover:scale-[1.02] transition-all duration-450">
-                          <AvatarImage src={profile?.avatar_url || user?.user_metadata?.avatar_url} />
-                          <AvatarFallback className="bg-white/20 text-white text-sm">
-                            {profile?.nome_completo?.charAt(0)?.toUpperCase() ||
-                             user?.user_metadata?.display_name?.charAt(0)?.toUpperCase() || 
-                             user?.email?.charAt(0)?.toUpperCase() || 'U'}
-                          </AvatarFallback>
-                        </Avatar>
-                        {/* Online status indicator */}
-                        <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-white/50 shadow-[0_0_4px_rgba(34,197,94,0.6)]"></div>
-                      </div>
-                   </TooltipTrigger>
-                   <TooltipContent 
-                     side="right" 
-                     className="liquid-glass-card text-white ml-2"
-                   >
-                     {profile?.nome_completo || user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'Usuário'} • Online
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
+                     <DropdownMenuItem asChild className="text-gray-700 dark:text-gray-200 focus:bg-gray-100 dark:focus:bg-gray-800 cursor-pointer">
+                       <NavLink to="/admin/profile" className="flex items-center">
+                         <User className="h-4 w-4 mr-2" />
+                         Meu Perfil
+                       </NavLink>
+                     </DropdownMenuItem>
+                    <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-700" />
+                    <DropdownMenuItem 
+                      className="text-red-600 focus:bg-red-50 dark:focus:bg-red-900/20 cursor-pointer" 
+                      onClick={handleSignOut}
+                    >
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Sair do Sistema
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <TooltipProvider delayDuration={0}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                       <div className="relative">
+                          <Avatar className="h-8 w-8 mx-auto cursor-pointer hover:scale-[1.02] transition-all duration-450">
+                            <AvatarImage src={profile?.avatar_url || user?.user_metadata?.avatar_url} />
+                            <AvatarFallback className="bg-white/20 text-white text-sm">
+                              {profile?.nome_completo?.charAt(0)?.toUpperCase() ||
+                               user?.user_metadata?.display_name?.charAt(0)?.toUpperCase() || 
+                               user?.email?.charAt(0)?.toUpperCase() || 'U'}
+                            </AvatarFallback>
+                          </Avatar>
+                          {/* Online status indicator */}
+                          <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-white/50 shadow-[0_0_4px_rgba(34,197,94,0.6)]"></div>
+                        </div>
+                     </TooltipTrigger>
+                     <TooltipContent 
+                       side="right" 
+                       className="liquid-glass-card text-white ml-2"
+                     >
+                       {profile?.nome_completo || user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'Usuário'} • Online
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+              </div>
             </div>
           </div>
         </div>
