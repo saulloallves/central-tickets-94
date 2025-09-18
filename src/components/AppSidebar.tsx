@@ -34,26 +34,12 @@ export function AppSidebar() {
   const handleMouseEnter = () => {
     if (!isLocked) {
       setIsExpanded(true);
-      // Ajustar margin do conteúdo principal apenas no desktop
-      if (!isMobile) {
-        const mainContent = document.querySelector('[data-main-content]') as HTMLElement;
-        if (mainContent) {
-          mainContent.style.marginLeft = '240px';
-        }
-      }
     }
   };
 
   const handleMouseLeave = () => {
     if (!isLocked) {
       setIsExpanded(false);
-      // Restaurar margin original apenas no desktop
-      if (!isMobile) {
-        const mainContent = document.querySelector('[data-main-content]') as HTMLElement;
-        if (mainContent) {
-          mainContent.style.marginLeft = '80px';
-        }
-      }
     }
   };
 

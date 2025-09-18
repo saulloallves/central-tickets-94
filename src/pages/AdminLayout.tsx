@@ -84,11 +84,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       
       <div 
         className={cn(
-          "flex-1 flex flex-col h-full", 
-          isMobile ? "pb-20" : ""
+          "flex-1 flex flex-col h-full transition-all duration-300", 
+          isMobile ? "pb-20" : "ml-20"
         )} 
-        data-main-content 
-        style={{ marginLeft: isMobile ? '0' : '80px' }}
+        data-main-content
       >
         {/* Main content area - SCROLLÁVEL */}
         <main className={cn("flex-1 overflow-y-auto", isMobile ? "p-4" : "p-6")}>
