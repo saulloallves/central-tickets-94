@@ -46,6 +46,7 @@ import {
   AlertDialogTitle, 
   AlertDialogTrigger 
 } from '@/components/ui/alert-dialog';
+import { AdminRoleApprovals } from './AdminRoleApprovals';
 
 interface UserPermission {
   id: string;
@@ -566,6 +567,9 @@ export function AccessPermissionsControl() {
 
   return (
     <div className="space-y-6">
+      {/* Admin Role Approvals */}
+      <AdminRoleApprovals />
+      
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
