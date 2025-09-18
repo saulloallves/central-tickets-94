@@ -301,10 +301,11 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
           
           // Para eventos INSERT, refetch imediatamente sem debounce
           if (payload.eventType === 'INSERT') {
-            console.log('🔄 Novo ticket - refetch imediato sem debounce');
+            console.log('🎯 NOVO TICKET DETECTADO - Refetch imediato!');
             fetchTickets(true);
+            setLastUpdate(Date.now()); // Força re-render do Kanban
           } else {
-            // Para outros eventos, usar debounce
+            // Para outros eventos, usar debounce mínimo
             if (realtimeDebounceRef.current) {
               clearTimeout(realtimeDebounceRef.current);
             }
@@ -312,7 +313,8 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
             realtimeDebounceRef.current = setTimeout(() => {
               console.log('🔄 Triggering ticket refetch due to realtime event');
               fetchTickets(true);
-            }, 150); // Reduzido de 300ms para 150ms
+              setLastUpdate(Date.now()); // Força re-render do Kanban
+            }, 100); // Reduzido para 100ms para máxima responsividade
           }
         }
       )

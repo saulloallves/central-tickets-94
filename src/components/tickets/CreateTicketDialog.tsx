@@ -301,7 +301,8 @@ export const CreateTicketDialog = ({ open, onOpenChange, onCreateTicket }: Creat
       });
 
       if (ticket) {
-        console.log('Ticket created successfully:', ticket);
+        console.log('🎉 Ticket created successfully:', ticket);
+        console.log('🔄 Expecting realtime event to update Kanban automatically');
         
         // If we have FAQ response, log it with the ticket ID
         if (faqResponse) {
