@@ -181,6 +181,12 @@ verify_jwt = false
 [functions.sla-processor]
 verify_jwt = false
 
+[functions.test-group-notification]
+verify_jwt = false
+
+[functions.debug-notifications]
+verify_jwt = false
+
 [db]
 port = 54322
 shadow_port = 54320

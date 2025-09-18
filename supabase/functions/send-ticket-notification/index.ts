@@ -127,7 +127,7 @@ async function getZApiConfig(supabase: any): Promise<ZApiConfig | null> {
   try {
     const { data: config } = await supabase
       .from('messaging_providers')
-      .select('instance_id, base_url, token, client_token')
+      .select('instance_id, base_url, instance_token, client_token')
       .eq('provider_name', 'zapi')
       .eq('is_active', true)
       .single();
@@ -135,7 +135,7 @@ async function getZApiConfig(supabase: any): Promise<ZApiConfig | null> {
     if (config?.instance_id) {
       return {
         instanceId: config.instance_id,
-        token: config.token || '',
+        token: config.instance_token || '',
         clientToken: config.client_token || '',
         baseUrl: config.base_url || 'https://api.z-api.io'
       };
