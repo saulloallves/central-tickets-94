@@ -661,6 +661,10 @@ serve(async (req) => {
       case 'ticket_criado':
         console.log('Processing ticket_created/ticket_criado');
         
+        if (!ticket) {
+          throw new Error('Ticket data is required for ticket_created notifications');
+        }
+        
         if (customDestination) {
           destinoFinal = customDestination;
           console.log(`Using configured destination for ticket_created: ${destinoFinal}`);
@@ -703,11 +707,19 @@ serve(async (req) => {
           data_limite_sla: ticket.data_limite_sla ? new Date(ticket.data_limite_sla).toLocaleString('pt-BR') : 'Não definido'
         });
 
-        resultadoEnvio = await sendZapiMessage(normalizePhoneNumber(destinoFinal), mensagemTicket);
+        const normalizedPhoneTicket = normalizePhoneNumber(destinoFinal);
+        if (!normalizedPhoneTicket) {
+          throw new Error(`Número de telefone inválido para ticket_created: ${destinoFinal}`);
+        }
+        resultadoEnvio = await sendZapiMessage(normalizedPhoneTicket, mensagemTicket);
         break;
 
       case 'resposta_ticket':
         console.log('Processing resposta_ticket');
+        
+        if (!ticket) {
+          throw new Error('Ticket data is required for resposta_ticket notifications');
+        }
         
         if (customDestination) {
           destinoFinal = customDestination;
@@ -744,12 +756,20 @@ serve(async (req) => {
           timestamp: new Date().toLocaleString('pt-BR')
         });
 
-        resultadoEnvio = await sendZapiMessage(normalizePhoneNumber(destinoFinal), mensagemResposta);
+        const normalizedPhoneResp = normalizePhoneNumber(destinoFinal);
+        if (!normalizedPhoneResp) {
+          throw new Error(`Número de telefone inválido para resposta_ticket: ${destinoFinal}`);
+        }
+        resultadoEnvio = await sendZapiMessage(normalizedPhoneResp, mensagemResposta);
         break;
 
       case 'resposta_ticket_franqueado':
       case 'resposta_ticket_privado':
         console.log(`Processing ${type} - sending to franqueado (solicitante) phone`);
+        
+        if (!ticket) {
+          throw new Error(`Ticket data is required for ${type} notifications`);
+        }
         
         // For franqueado responses, we always send to the original requester
         // regardless of source configuration
@@ -798,6 +818,10 @@ serve(async (req) => {
       case 'sla_half':
         console.log('Processing sla_half');
         
+        if (!ticket) {
+          throw new Error('Ticket data is required for sla_half notifications');
+        }
+        
         if (customDestination) {
           destinoFinal = customDestination;
           console.log(`Using configured destination for sla_half: ${destinoFinal}`);
@@ -834,11 +858,19 @@ serve(async (req) => {
           data_limite_sla: new Date(ticket.data_limite_sla).toLocaleString('pt-BR')
         });
 
-        resultadoEnvio = await sendZapiMessage(normalizePhoneNumber(destinoFinal), mensagemSLAHalf);
+        const normalizedPhoneSLAHalf = normalizePhoneNumber(destinoFinal);
+        if (!normalizedPhoneSLAHalf) {
+          throw new Error(`Número de telefone inválido para sla_half: ${destinoFinal}`);
+        }
+        resultadoEnvio = await sendZapiMessage(normalizedPhoneSLAHalf, mensagemSLAHalf);
         break;
 
       case 'sla_breach':
         console.log('Processing sla_breach');
+        
+        if (!ticket) {
+          throw new Error('Ticket data is required for sla_breach notifications');
+        }
         
         // First, escalate the ticket automatically if not already concluded
         if (ticket.status !== 'concluido') {
@@ -907,7 +939,11 @@ serve(async (req) => {
           data_limite_sla: new Date(ticket.data_limite_sla).toLocaleString('pt-BR')
         });
 
-        resultadoEnvio = await sendZapiMessage(normalizePhoneNumber(destinoFinal), mensagemSLABreach);
+        const normalizedPhone = normalizePhoneNumber(destinoFinal);
+        if (!normalizedPhone) {
+          throw new Error(`Número de telefone inválido: ${destinoFinal}`);
+        }
+        resultadoEnvio = await sendZapiMessage(normalizedPhone, mensagemSLABreach);
         break;
 
       case 'crisis_broadcast':
@@ -921,7 +957,11 @@ serve(async (req) => {
           throw new Error('Phone and message are required for crisis_broadcast');
         }
         
-        resultadoEnvio = await sendZapiMessage(normalizePhoneNumber(phone), message);
+        const normalizedPhoneCrisis = normalizePhoneNumber(phone);
+        if (!normalizedPhoneCrisis) {
+          throw new Error(`Número de telefone inválido para crisis_broadcast: ${phone}`);
+        }
+        resultadoEnvio = await sendZapiMessage(normalizedPhoneCrisis, message);
         destinoFinal = phone;
         break;
 
@@ -931,7 +971,7 @@ serve(async (req) => {
 
     // Log the result
     console.log(`Notification sent to: ${destinoFinal.replace(/(\d{4})\d+(\d{4})/, '$1***$2')}`);
-    console.log('Send result:', { success: resultadoEnvio.success, status: resultadoEnvio.status });
+    console.log('Send result:', { success: resultadoEnvio?.success || false, status: resultadoEnvio?.status || 'undefined' });
 
     // Registrar log do envio (only if ticketId exists)
     if (ticketId && ticketId !== 'null') {
@@ -953,16 +993,16 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({
-        success: resultadoEnvio.success,
-        message: resultadoEnvio.success 
+        success: resultadoEnvio?.success || false,
+        message: resultadoEnvio?.success 
           ? `Mensagem enviada com sucesso para ${destinoFinal.replace(/(\d{4})\d+(\d{4})/, '$1***$2')}` 
-          : resultadoEnvio.error || 'Erro ao enviar mensagem',
-        data: resultadoEnvio.data,
+          : resultadoEnvio?.error || 'Erro ao enviar mensagem',
+        data: resultadoEnvio?.data || null,
         destination: destinoFinal.replace(/(\d{4})\d+(\d{4})/, '$1***$2')
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: resultadoEnvio.success ? 200 : 400
+        status: resultadoEnvio?.success ? 200 : 400
       }
     );
 
@@ -974,6 +1014,10 @@ serve(async (req) => {
       message: error.message,
       cause: error.cause
     });
+    
+    // Additional debugging info
+    console.error('Request type:', type);
+    console.error('Ticket ID:', ticketId);
     
     return new Response(
       JSON.stringify({ 
