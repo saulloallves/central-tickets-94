@@ -84,7 +84,11 @@ const Tickets = () => {
     console.log('Move ticket:', ticketId, toStatus);
     return true;
   };
-  const ticketStats = null;
+  const ticketStats = {
+    total: tickets.length,
+    sla_vencido: tickets.filter(t => t.status_sla === 'vencido').length,
+    em_atendimento: tickets.filter(t => t.status === 'em_atendimento').length
+  };
   const lastUpdate = Date.now();
 
   // Fetch available teams and start auto detection
