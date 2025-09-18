@@ -1,6 +1,7 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useRole, AppRole } from '@/hooks/useRole';
 import { Navigate, useLocation } from 'react-router-dom';
+import { EmailConfirmationRequired } from '@/components/EmailConfirmationRequired';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -9,7 +10,7 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute = ({ children, requiredRole, requiredRoles }: ProtectedRouteProps) => {
-  const { user, loading } = useAuth();
+  const { user, loading, emailConfirmed } = useAuth();
   const { hasRole, loading: roleLoading, hasPendingAccess } = useRole();
   const location = useLocation();
 
@@ -35,6 +36,11 @@ export const ProtectedRoute = ({ children, requiredRole, requiredRoles }: Protec
 
   if (!user) {
     return <Navigate to="/auth" state={{ from: location }} replace />;
+  }
+
+  // Verificar se o email está confirmado
+  if (!emailConfirmed) {
+    return <EmailConfirmationRequired />;
   }
 
   // Se o usuário tem solicitação pendente e não tem nenhuma role aprovada

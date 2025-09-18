@@ -12,6 +12,7 @@ interface AuthContextType {
   resetPassword: (email: string) => Promise<{ error: any }>;
   updatePassword: (password: string) => Promise<{ error: any }>;
   loading: boolean;
+  emailConfirmed: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,6 +22,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [emailConfirmed, setEmailConfirmed] = useState<boolean>(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -46,6 +48,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         setSession(session);
         setUser(session?.user ?? null);
+        setEmailConfirmed(!!session?.user?.email_confirmed_at);
         setLoading(false);
         
         // Trigger role refresh for authenticated users
@@ -78,9 +81,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         if (isMounted) {
           console.log('🔐 Initial session check:', session?.user?.id);
-          setSession(session);
-          setUser(session?.user ?? null);
-          setLoading(false);
+        setSession(session);
+        setUser(session?.user ?? null);
+        setEmailConfirmed(!!session?.user?.email_confirmed_at);
+        setLoading(false);
         }
       } catch (error) {
         console.error('🔐 Session check failed:', error);
@@ -280,7 +284,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       signOut,
       resetPassword,
       updatePassword,
-      loading
+      loading,
+      emailConfirmed
     }}>
       {children}
     </AuthContext.Provider>
