@@ -622,34 +622,59 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
   };
 
   const handleResolveTicket = async () => {
+    if (!ticket || isTicketPending(ticketId)) return;
+
     try {
+      // Optimistic update first
+      const originalStatus = ticket.status;
+      const originalResolvido = ticket.resolvido_em;
+      const newResolvidoEm = new Date().toISOString();
+      
+      setTicket(prev => prev ? { 
+        ...prev, 
+        status: 'concluido',
+        resolvido_em: newResolvidoEm,
+        updated_at: new Date().toISOString()
+      } : prev);
+
+      // Dispatch event for Kanban synchronization
+      window.dispatchEvent(new CustomEvent('ticket-optimistic-update', {
+        detail: { 
+          ticketId, 
+          updates: { 
+            status: 'concluido',
+            resolvido_em: newResolvidoEm
+          } 
+        }
+      }));
+
       const { error } = await supabase
         .from('tickets')
         .update({ 
           status: 'concluido',
-          resolvido_em: new Date().toISOString(),
+          resolvido_em: newResolvidoEm,
           updated_at: new Date().toISOString()
         })
         .eq('id', ticketId);
 
       if (error) {
+        // Rollback on error
+        setTicket(prev => prev ? { 
+          ...prev, 
+          status: originalStatus,
+          resolvido_em: originalResolvido
+        } : prev);
+        window.dispatchEvent(new CustomEvent('ticket-optimistic-rollback', {
+          detail: { ticketId, originalStatus }
+        }));
         throw error;
       }
-
-      // Update local ticket state immediately
-      setTicket(prev => ({
-        ...prev,
-        status: 'concluido',
-        resolvido_em: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }));
 
       toast({
         title: "Ticket Concluído",
         description: "Ticket marcado como concluído",
       });
 
-      fetchTicketDetails();
     } catch (error) {
       console.error('Error resolving ticket:', error);
       toast({
