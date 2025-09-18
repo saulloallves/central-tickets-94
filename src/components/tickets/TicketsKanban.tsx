@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { SLATimer } from './SLATimer';
 import { Button } from '@/components/ui/button';
 import { 
   Dialog, 
@@ -296,21 +297,13 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
             </div>
           )
         ) : (
-          /* SLA countdown para tickets não concluídos */
-          ticket.data_limite_sla && (
-            <div className="space-y-1 text-[10px] md:text-xs">
-              {/* SLA countdown */}
-              {(() => {
-                const slaTime = getSLATime(ticket);
-                return slaTime && (
-                  <div className={cn("flex items-center gap-1", slaTime.color)}>
-                    <Clock className="h-2.5 w-2.5 md:h-3 md:w-3" />
-                    <span className="font-mono">{slaTime.text}</span>
-                  </div>
-                );
-              })()}
-            </div>
-          )
+          /* SLA Timer em tempo real */
+          <SLATimer
+            ticketId={ticket.id}
+            codigoTicket={ticket.codigo_ticket}
+            dataLimiteSLA={ticket.data_limite_sla}
+            status={ticket.status}
+          />
         )}
       </CardContent>
     </Card>

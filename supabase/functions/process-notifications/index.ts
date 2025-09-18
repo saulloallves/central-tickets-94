@@ -476,28 +476,43 @@ serve(async (req) => {
     
     if (ticketId && ticketId !== 'null') {
       console.log('Fetching ticket data for ID:', ticketId);
-      const { data: ticketData, error: ticketError } = await supabase
-        .from('tickets')
-        .select(`
-          *,
-          unidades (id, grupo, id_grupo_azul, id_grupo_branco, id_grupo_vermelho, telefone),
-          colaboradores (nome_completo)
-        `)
-        .eq('id', ticketId)
-        .single();
+      try {
+        const { data: ticketData, error: ticketError } = await supabase
+          .from('tickets')
+          .select(`
+            *,
+            unidades (id, grupo, id_grupo_azul, id_grupo_branco, id_grupo_vermelho, telefone),
+            colaboradores (nome_completo)
+          `)
+          .eq('id', ticketId)
+          .single();
 
-      if (ticketError || !ticketData) {
-        console.error('Ticket error:', ticketError);
+        if (ticketError) {
+          console.error('Ticket fetch error:', ticketError);
+          throw new Error(`Error fetching ticket: ${ticketError.message}`);
+        }
+
+        if (!ticketData) {
+          console.error('No ticket data found for ID:', ticketId);
+          throw new Error('Ticket não encontrado');
+        }
+        
+        ticket = ticketData;
+        console.log('Ticket data loaded successfully:', ticket.codigo_ticket);
+      } catch (fetchError) {
+        console.error('Error in ticket fetch:', fetchError);
         return new Response(
-          JSON.stringify({ success: false, message: 'Ticket não encontrado' }),
+          JSON.stringify({ 
+            success: false, 
+            message: `Erro ao buscar ticket: ${fetchError.message}`,
+            error: fetchError.message 
+          }),
           { 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 400 
           }
         );
       }
-      
-      ticket = ticketData;
     }
     
     // Only log ticket details if ticket exists
@@ -918,16 +933,23 @@ serve(async (req) => {
     console.log(`Notification sent to: ${destinoFinal.replace(/(\d{4})\d+(\d{4})/, '$1***$2')}`);
     console.log('Send result:', { success: resultadoEnvio.success, status: resultadoEnvio.status });
 
-    // Registrar log do envio
-    await supabase
-      .from('escalation_logs')
-      .insert({
-        ticket_id: ticketId,
-        event_type: type,
-        message: `WhatsApp notification sent to ${destinoFinal}`,
-        response: resultadoEnvio,
-        canal: 'zapi'
-      });
+    // Registrar log do envio (only if ticketId exists)
+    if (ticketId && ticketId !== 'null') {
+      try {
+        await supabase
+          .from('escalation_logs')
+          .insert({
+            ticket_id: ticketId,
+            event_type: type,
+            message: `WhatsApp notification sent to ${destinoFinal}`,
+            response: resultadoEnvio,
+            canal: 'zapi'
+          });
+      } catch (logError) {
+        console.error('Error logging escalation:', logError);
+        // Don't fail the whole operation if logging fails
+      }
+    }
 
     return new Response(
       JSON.stringify({
@@ -946,11 +968,20 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in process-notifications:', error);
+    console.error('Error stack:', error.stack);
+    console.error('Error details:', {
+      name: error.name,
+      message: error.message,
+      cause: error.cause
+    });
+    
     return new Response(
       JSON.stringify({ 
         success: false, 
         error: error.message,
-        message: `Erro no processamento: ${error.message}`
+        message: `Erro no processamento: ${error.message}`,
+        details: error.stack,
+        type: error.name
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
