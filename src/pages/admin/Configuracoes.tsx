@@ -39,46 +39,46 @@ export default function Configuracoes() {
         </div>
 
         <Tabs defaultValue="ia" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 lg:grid-cols-10 mb-6 h-auto">
-            <TabsTrigger value="logo" className="flex items-center gap-2 text-xs lg:text-sm">
+          <TabsList className="flex w-full overflow-x-auto mb-6 h-auto p-1 gap-1">
+            <TabsTrigger value="logo" className="flex items-center gap-2">
               <Image className="h-4 w-4" />
-              <span className="hidden sm:inline">Logo</span>
+              Logo
             </TabsTrigger>
-            <TabsTrigger value="ia" className="flex items-center gap-2 text-xs lg:text-sm">
+            <TabsTrigger value="ia" className="flex items-center gap-2">
               <Brain className="h-4 w-4" />
-              <span className="hidden sm:inline">IA</span>
+              IA
             </TabsTrigger>
-            <TabsTrigger value="conhecimento" className="flex items-center gap-2 text-xs lg:text-sm">
+            <TabsTrigger value="conhecimento" className="flex items-center gap-2">
               <BookOpen className="h-4 w-4" />
-              <span className="hidden sm:inline">Hub de Conhecimento</span>
+              Hub de Conhecimento
             </TabsTrigger>
-            <TabsTrigger value="notificacoes" className="flex items-center gap-2 text-xs lg:text-sm">
+            <TabsTrigger value="notificacoes" className="flex items-center gap-2">
               <Bell className="h-4 w-4" />
-              <span className="hidden sm:inline">Notificações</span>
+              Notificações
             </TabsTrigger>
-            <TabsTrigger value="relatorios" className="flex items-center gap-2 text-xs lg:text-sm">
+            <TabsTrigger value="relatorios" className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4" />
-              <span className="hidden sm:inline">Relatórios</span>
+              Relatórios
             </TabsTrigger>
-            <TabsTrigger value="whatsapp" className="flex items-center gap-2 text-xs lg:text-sm">
+            <TabsTrigger value="whatsapp" className="flex items-center gap-2">
               <MessageSquare className="h-4 w-4" />
-              <span className="hidden sm:inline">WhatsApp</span>
+              WhatsApp
             </TabsTrigger>
-            <TabsTrigger value="ai-alerts" className="flex items-center gap-2 text-xs lg:text-sm">
+            <TabsTrigger value="ai-alerts" className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4" />
-              <span className="hidden sm:inline">Alertas IA</span>
+              Alertas IA
             </TabsTrigger>
-            <TabsTrigger value="auto-approvals" className="flex items-center gap-2 text-xs lg:text-sm">
+            <TabsTrigger value="auto-approvals" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">Aprovações</span>
+              Aprovações
             </TabsTrigger>
-            <TabsTrigger value="crisis-ai" className="flex items-center gap-2 text-xs lg:text-sm">
+            <TabsTrigger value="crisis-ai" className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4" />
-              <span className="hidden sm:inline">IA Crises</span>
+              IA Crises
             </TabsTrigger>
-            <TabsTrigger value="atendentes" className="flex items-center gap-2 text-xs lg:text-sm">
+            <TabsTrigger value="atendentes" className="flex items-center gap-2">
               <Headphones className="h-4 w-4" />
-              <span className="hidden sm:inline">Atendentes</span>
+              Atendentes
             </TabsTrigger>
           </TabsList>
 
