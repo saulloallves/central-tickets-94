@@ -11,7 +11,7 @@ import LoadingSpinner from "./components/LoadingSpinner";
 
 // Lazy load pages for better performance
 const Index = lazy(() => import("./pages/Index"));
-const Auth = lazy(() => import("./pages/Auth"));
+const Auth = lazy(() => import("./pages/Auth").then(module => ({ default: module.default })));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const PendingApproval = lazy(() => import("./pages/PendingApproval").then(module => ({ default: module.PendingApproval })));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));

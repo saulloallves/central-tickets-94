@@ -736,4 +736,5 @@ const Auth = () => {
   );
 };
 
+// Ensure proper default export for dynamic imports
 export default Auth;
