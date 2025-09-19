@@ -123,19 +123,44 @@ export function NotificationQueueManager() {
               )}
             </div>
 
-            <Button
-              onClick={processPendingNotifications}
-              disabled={processing}
-              className="w-full"
-              size="sm"
-            >
-              {processing ? (
-                <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-              ) : (
-                <Send className="h-4 w-4 mr-2" />
-              )}
-              {processing ? 'Processando...' : 'Processar Agora'}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={processPendingNotifications}
+                disabled={processing}
+                className="flex-1"
+                size="sm"
+              >
+                {processing ? (
+                  <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Send className="h-4 w-4 mr-2" />
+                )}
+                {processing ? 'Processando...' : 'Processar Agora'}
+              </Button>
+              <Button
+                onClick={async () => {
+                  try {
+                    await supabase.functions.invoke('notification-scheduler');
+                    toast({
+                      title: "Agendador executado",
+                      description: "Verificação automática de notificações executada",
+                    });
+                    refetch();
+                  } catch (error) {
+                    console.error('Error running scheduler:', error);
+                    toast({
+                      title: "Erro",
+                      description: "Erro ao executar agendador",
+                      variant: "destructive",
+                    });
+                  }
+                }}
+                variant="outline"
+                size="sm"
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         )}
 

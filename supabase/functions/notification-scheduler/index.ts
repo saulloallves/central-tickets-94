@@ -137,6 +137,15 @@ serve(async (req) => {
               })
               .eq('id', notification.id);
           }
+        } else {
+          // Marcar como enviada com sucesso
+          await supabase
+            .from('notifications_queue')
+            .update({ 
+              status: 'sent',
+              processed_at: new Date().toISOString()
+            })
+            .eq('id', notification.id);
         }
       } catch (error) {
         console.error(`Error processing notification ${notification.id}:`, error);
