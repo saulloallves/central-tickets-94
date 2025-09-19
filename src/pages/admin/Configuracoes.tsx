@@ -2,7 +2,7 @@
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings, Brain, BookOpen, TrendingUp, AlertTriangle, Image, Bell, Users, MessageSquare, Headphones } from "lucide-react";
+import { Settings, Brain, BookOpen, TrendingUp, AlertTriangle, Image, Bell, Users, MessageSquare, Headphones, Zap } from "lucide-react";
 import { IASettingsTab } from "@/components/configuracoes/IASettingsTab";
 import KnowledgeHubTab from "@/components/configuracoes/KnowledgeHubTab";
 import { RelatoriosTab } from "@/components/configuracoes/RelatoriosTab";
@@ -15,6 +15,7 @@ import { WhatsAppManagementTab } from '@/components/configuracoes/WhatsAppManage
 import { AIAlertsTestTab } from '@/components/configuracoes/AIAlertsTestTab';
 import CrisisAISettingsTab from '@/components/configuracoes/CrisisAISettingsTab';
 import { AtendentesTab } from '@/components/configuracoes/AtendentesTab';
+import { AIClassifierTab } from '@/components/configuracoes/AIClassifierTab';
 
 export default function Configuracoes() {
   return (
@@ -47,6 +48,10 @@ export default function Configuracoes() {
             <TabsTrigger value="ia" className="flex items-center gap-2">
               <Brain className="h-4 w-4" />
               IA
+            </TabsTrigger>
+            <TabsTrigger value="ai-classifier" className="flex items-center gap-2">
+              <Zap className="h-4 w-4" />
+              IA Classifier
             </TabsTrigger>
             <TabsTrigger value="conhecimento" className="flex items-center gap-2">
               <BookOpen className="h-4 w-4" />
@@ -88,6 +93,10 @@ export default function Configuracoes() {
 
           <TabsContent value="ia" className="space-y-6 animate-fade-in">
             <IASettingsTab />
+          </TabsContent>
+
+          <TabsContent value="ai-classifier" className="space-y-6 animate-fade-in">
+            <AIClassifierTab />
           </TabsContent>
 
           <TabsContent value="conhecimento" className="space-y-6 animate-fade-in">
