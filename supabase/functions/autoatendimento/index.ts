@@ -39,24 +39,17 @@ serve(async (req: Request) => {
       });
     }
 
-    // Monta menu de autoatendimento (igual ao n8n)
-    const menuBody = {
-      phone,
-      message: "⚡ *Menu de Autoatendimento*\n\n😊 Selecione uma das opções abaixo pra continuar:",
-      buttonList: {
-        buttons: [
-          { id: "autoatendimento_calendario", label: "📆 Calendário Anual" },
-          { id: "autoatendimento_midias", label: "🖼️ Acessar Mídias" },
-          { id: "autoatendimento_nao_sei_senha", label: "🗝️ Senha Girabot" },
-          { id: "autoatendimento_ouvidoria", label: "📢 Ouvidoria" },
-          { id: "autoatendimento_manuais", label: "📚 Manuais de Franquia" },
-          { id: "outras_opcoes", label: "🤖 Acessar GiraBot" },
-        ],
-      },
-    };
+    // Usar a mesma mensagem do outras_opcoes
+    const zapiUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}/send-link`;
 
-    const zapiUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}/send-button-list`;
-    console.log(`📤 Enviando menu autoatendimento para Z-API: ${zapiUrl.replace(instanceToken, '****')}`);
+    const linkPayload = {
+      phone,
+      message: "🤖 Aqui está o link para o *GiraBot*:\n\nAcesse quando quiser fazer solicitações, consultar mídias, falar com a DFCom ou abrir tickets.\n\n⬇️ _*Clique no link abaixo para acessar o GiraBot*_\n",
+      image: "https://hryurntaljdisohawpqf.supabase.co/storage/v1/object/public/figurinhascresci/midias_girabot/CAPA%20GIRABOT%20COM%20FUNDO.png",
+      linkUrl: "https://girabot.com",
+      title: "🔗 Acessar GiraBot",
+      linkDescription: "Acesse quando quiser fazer solicitações, consultar mídias, falar com a DFCom ou abrir tickets."
+    };
 
     // Envia via Z-API
     const res = await fetch(zapiUrl, {
@@ -65,7 +58,7 @@ serve(async (req: Request) => {
         "Content-Type": "application/json",
         "Client-Token": clientToken,
       },
-      body: JSON.stringify(menuBody),
+      body: JSON.stringify(linkPayload),
     });
 
     console.log("📤 Menu Autoatendimento enviado:", res.status);
