@@ -13,8 +13,11 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // Initialize services
 const conversationManager = new ConversationManager(supabase);
-const zapiClient = new ZAPIClient();
+const zapiClient = new ZAPIClient(supabase);
 const aiProcessor = new AIProcessor(supabase, zapiClient, conversationManager);
+
+// Load Z-API configuration from database
+await zapiClient.loadConfig();
 
 function shouldSkipMessage(payload: ZAPIMessage): boolean {
   // Skip if it's a status reply or no text
