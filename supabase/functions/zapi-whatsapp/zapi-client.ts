@@ -20,13 +20,27 @@ export class ZAPIClient {
     try {
       console.log('🔍 Loading Z-API config from database for zapi_whatsapp...');
       
-      // Load configuration from database first
-      const { data, error } = await this.supabase
+      // Try to load zapi_whatsapp first, then fallback to 'zapi'
+      let { data, error } = await this.supabase
         .from('messaging_providers')
         .select('*')
         .eq('provider_name', 'zapi_whatsapp')
         .eq('is_active', true)
         .maybeSingle();
+
+      // If no zapi_whatsapp found, try 'zapi' (legacy)
+      if (!data) {
+        console.log('⚠️ No zapi_whatsapp config found, trying legacy "zapi" config...');
+        const fallbackResult = await this.supabase
+          .from('messaging_providers')
+          .select('*')
+          .eq('provider_name', 'zapi')
+          .eq('is_active', true)
+          .maybeSingle();
+        
+        data = fallbackResult.data;
+        error = fallbackResult.error;
+      }
 
       if (error) {
         console.error('❌ Error querying database for Z-API config:', error);
@@ -35,8 +49,9 @@ export class ZAPIClient {
       console.log('📊 Database query result:', data ? 'Found config' : 'No config found');
 
       if (data) {
-        console.log('✅ Loading Z-API config from database for zapi_whatsapp');
+        console.log('✅ Loading Z-API config from database');
         console.log('📋 Database config:', {
+          provider_name: data.provider_name,
           instance_id: data.instance_id?.substring(0, 8) + '...',
           has_token: !!data.instance_token,
           has_client_token: !!data.client_token,
@@ -55,7 +70,7 @@ export class ZAPIClient {
           base_url: this.baseUrl
         });
       } else {
-        console.log('⚠️ No database config found for zapi_whatsapp, using environment variables');
+        console.log('⚠️ No database config found, using environment variables');
         console.log('🌍 Environment config:', {
           instance_id: this.instanceId?.substring(0, 8) + '...',
           has_token: !!this.token,
