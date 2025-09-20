@@ -160,6 +160,29 @@ export function ZAPIInstancesTab() {
 
   const saveConfig = async (config: ZAPIConfig) => {
     setSaving(config.provider_name);
+    
+    console.log('🔄 Iniciando salvamento de configuração:', config.provider_name);
+    console.log('📝 Dados a serem salvos:', {
+      provider_name: config.provider_name,
+      instance_id: config.instance_id?.substring(0, 8) + '...',
+      has_instance_token: !!config.instance_token,
+      has_client_token: !!config.client_token,
+      base_url: config.base_url,
+      is_active: config.is_active,
+      has_id: !!config.id
+    });
+
+    // Validação básica
+    if (!config.instance_id || !config.instance_token || !config.client_token) {
+      toast({
+        title: "Erro de Validação",
+        description: "Preencha todos os campos obrigatórios (Instance ID, Instance Token, Client Token)",
+        variant: "destructive",
+      });
+      setSaving(null);
+      return;
+    }
+
     try {
       const configData = {
         provider_name: config.provider_name,
@@ -170,17 +193,33 @@ export function ZAPIInstancesTab() {
         is_active: config.is_active
       };
 
+      console.log('🗄️ Dados finais para salvamento:', configData);
+
       if (config.id) {
-        const { error } = await supabase
+        console.log('🔄 Atualizando configuração existente com ID:', config.id);
+        const { data, error } = await supabase
           .from('messaging_providers')
           .update(configData)
-          .eq('id', config.id);
-        if (error) throw error;
+          .eq('id', config.id)
+          .select();
+        
+        if (error) {
+          console.error('❌ Erro na atualização:', error);
+          throw error;
+        }
+        console.log('✅ Configuração atualizada:', data);
       } else {
-        const { error } = await supabase
+        console.log('🆕 Inserindo nova configuração');
+        const { data, error } = await supabase
           .from('messaging_providers')
-          .insert(configData);
-        if (error) throw error;
+          .insert(configData)
+          .select();
+        
+        if (error) {
+          console.error('❌ Erro na inserção:', error);
+          throw error;
+        }
+        console.log('✅ Configuração inserida:', data);
       }
 
       toast({
@@ -188,12 +227,13 @@ export function ZAPIInstancesTab() {
         description: `Configuração ${config.display_name} salva com sucesso`,
       });
 
+      console.log('🔄 Recarregando configurações...');
       loadConfigs();
     } catch (error) {
-      console.error('Erro ao salvar configuração:', error);
+      console.error('❌ Erro ao salvar configuração:', error);
       toast({
         title: "Erro",
-        description: "Erro ao salvar configuração",
+        description: `Erro ao salvar configuração: ${error.message}`,
         variant: "destructive",
       });
     } finally {
