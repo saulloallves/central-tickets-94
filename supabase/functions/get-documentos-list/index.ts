@@ -29,6 +29,7 @@ serve(async (req) => {
         id,
         artigo_id,
         titulo,
+        conteudo,
         categoria,
         versao,
         tipo,
