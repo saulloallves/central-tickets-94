@@ -202,3 +202,6 @@ port = 54323
 [inbucket]
 enabled = true
 port = 54324
+
+[functions.test-ticket-notification]
+verify_jwt = false

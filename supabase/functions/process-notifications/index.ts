@@ -704,59 +704,89 @@ serve(async (req) => {
     switch (type) {
       case 'ticket_created':
       case 'ticket_criado':
-        console.log('Processing ticket_created/ticket_criado');
+        console.log('Processing ticket_created/ticket_criado with buttons');
         
         if (!ticket) {
           throw new Error('Ticket data is required for ticket_created notifications');
         }
         
-        if (customDestination) {
-          destinoFinal = customDestination;
-          console.log(`Using configured destination for ticket_created: ${destinoFinal}`);
-        } else {
-          throw new Error(`Nenhuma configuração de origem encontrada para ticket_created na unidade ${ticket.unidade_id}`);
+        // Para ticket_created, usar nossa função com botões
+        console.log(`📤 Calling send-ticket-notification for ticket: ${ticket.id}`);
+        
+        try {
+          const { data: buttonResult, error: buttonError } = await supabase.functions.invoke('send-ticket-notification', {
+            body: {
+              ticket_id: ticket.id,
+              template_key: 'ticket_created'
+            }
+          });
+
+          if (buttonError) {
+            console.error('❌ Error calling send-ticket-notification:', buttonError);
+            throw new Error(`Erro ao enviar notificação com botões: ${buttonError.message}`);
+          }
+
+          if (buttonResult?.success) {
+            console.log('✅ Notification with buttons sent successfully');
+            destinoFinal = buttonResult.destination || 'unknown';
+            resultadoEnvio = { success: true, data: buttonResult };
+          } else {
+            console.error('❌ send-ticket-notification failed:', buttonResult);
+            throw new Error(`Falha ao enviar notificação: ${buttonResult?.error || 'Erro desconhecido'}`);
+          }
+        } catch (invokeError) {
+          console.error('❌ Failed to invoke send-ticket-notification:', invokeError);
+          
+          // Fallback: enviar mensagem simples sem botões
+          console.log('⚠️ Fallback: Enviando notificação simples sem botões');
+          
+          if (customDestination) {
+            destinoFinal = customDestination;
+            console.log(`Using configured destination for ticket_created fallback: ${destinoFinal}`);
+          } else {
+            throw new Error(`Nenhuma configuração de origem encontrada para ticket_created na unidade ${ticket.unidade_id}`);
+          }
+
+          const templateTicket = await getMessageTemplate(supabase, 'ticket_created');
+          const { data: unidadeData } = await supabase
+            .from('unidades')
+            .select('nome')
+            .eq('id', ticket.unidade_id)
+            .single();
+
+          const { data: equipeData } = await supabase
+            .from('equipes')
+            .select('nome')
+            .eq('id', ticket.equipe_responsavel_id)
+            .single();
+
+          const { data: colaboradorData } = await supabase
+            .from('colaboradores')
+            .select('nome_completo')
+            .eq('id', ticket.colaborador_id)
+            .single();
+
+          const mensagemTicket = processTemplate(templateTicket, {
+            codigo_ticket: formatTicketTitle(ticket),
+            titulo_ticket: ticket.titulo || 'Ticket sem título',
+            unidade_id: ticket.unidade_id,
+            unidade_nome: unidadeData?.nome || ticket.unidade_id,
+            categoria: ticket.categoria || 'Não informada',
+            prioridade: ticket.prioridade,
+            descricao_problema: ticket.descricao_problema,
+            data_abertura: new Date(ticket.data_abertura).toLocaleString('pt-BR'),
+            equipe_responsavel: equipeData?.nome || 'Não atribuída',
+            colaborador_responsavel: colaboradorData?.nome_completo || 'Não atribuído',
+            status: ticket.status,
+            data_limite_sla: ticket.data_limite_sla ? new Date(ticket.data_limite_sla).toLocaleString('pt-BR') : 'Não definido'
+          });
+
+          const normalizedPhoneTicket = normalizePhoneNumber(destinoFinal);
+          if (!normalizedPhoneTicket) {
+            throw new Error(`Número de telefone inválido para ticket_created: ${destinoFinal}`);
+          }
+          resultadoEnvio = await sendZapiMessage(normalizedPhoneTicket, mensagemTicket);
         }
-
-        const templateTicket = await getMessageTemplate(supabase, 'ticket_created');
-        // Get additional ticket information for richer variables
-        const { data: unidadeData } = await supabase
-          .from('unidades')
-          .select('nome')
-          .eq('id', ticket.unidade_id)
-          .single();
-
-        const { data: equipeData } = await supabase
-          .from('equipes')
-          .select('nome')
-          .eq('id', ticket.equipe_responsavel_id)
-          .single();
-
-        const { data: colaboradorData } = await supabase
-          .from('colaboradores')
-          .select('nome_completo')
-          .eq('id', ticket.colaborador_id)
-          .single();
-
-        const mensagemTicket = processTemplate(templateTicket, {
-          codigo_ticket: formatTicketTitle(ticket),
-          titulo_ticket: ticket.titulo || 'Ticket sem título',
-          unidade_id: ticket.unidade_id,
-          unidade_nome: unidadeData?.nome || ticket.unidade_id,
-          categoria: ticket.categoria || 'Não informada',
-          prioridade: ticket.prioridade,
-          descricao_problema: ticket.descricao_problema,
-          data_abertura: new Date(ticket.data_abertura).toLocaleString('pt-BR'),
-          equipe_responsavel: equipeData?.nome || 'Não atribuída',
-          colaborador_responsavel: colaboradorData?.nome_completo || 'Não atribuído',
-          status: ticket.status,
-          data_limite_sla: ticket.data_limite_sla ? new Date(ticket.data_limite_sla).toLocaleString('pt-BR') : 'Não definido'
-        });
-
-        const normalizedPhoneTicket = normalizePhoneNumber(destinoFinal);
-        if (!normalizedPhoneTicket) {
-          throw new Error(`Número de telefone inválido para ticket_created: ${destinoFinal}`);
-        }
-        resultadoEnvio = await sendZapiMessage(normalizedPhoneTicket, mensagemTicket);
         break;
 
       case 'resposta_ticket':
