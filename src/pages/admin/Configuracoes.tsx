@@ -16,6 +16,7 @@ import { AIAlertsTestTab } from '@/components/configuracoes/AIAlertsTestTab';
 import CrisisAISettingsTab from '@/components/configuracoes/CrisisAISettingsTab';
 import { AtendentesTab } from '@/components/configuracoes/AtendentesTab';
 import { AIClassifierAdvancedTab } from '@/components/configuracoes/AIClassifierAdvancedTab';
+import { ZAPIInstancesTab } from '@/components/configuracoes/ZAPIInstancesTab';
 
 export default function Configuracoes() {
   return (
@@ -85,6 +86,10 @@ export default function Configuracoes() {
               <Headphones className="h-4 w-4" />
               Atendentes
             </TabsTrigger>
+            <TabsTrigger value="zapi-instances" className="flex items-center gap-2">
+              <Zap className="h-4 w-4" />
+              Z-API Instâncias
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="logo" className="space-y-6 animate-fade-in">
@@ -130,6 +135,10 @@ export default function Configuracoes() {
 
           <TabsContent value="atendentes" className="space-y-6 animate-fade-in">
             <AtendentesTab />
+          </TabsContent>
+
+          <TabsContent value="zapi-instances" className="space-y-6 animate-fade-in">
+            <ZAPIInstancesTab />
           </TabsContent>
 
         </Tabs>
