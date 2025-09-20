@@ -29,19 +29,51 @@ serve(async (req) => {
 
   try {
     console.log('🚀 === Z-API SEND MEDIA FUNCTION CALLED ===');
-    console.log('Request body:', JSON.stringify(await req.clone().json(), null, 2));
     
-    const { ticketId, attachments } = await req.json();
+    const requestBody = await req.json();
+    console.log('📨 Full request body:', JSON.stringify(requestBody, null, 2));
     
-    console.log('📋 Parsed request:', { ticketId, attachmentsCount: attachments?.length });
+    const { ticketId, attachments } = requestBody;
     
-    if (!ticketId || !attachments || !Array.isArray(attachments)) {
-      console.error('❌ Invalid request data:', { ticketId, attachments });
+    console.log('🔍 Validation check:');
+    console.log('  - ticketId:', ticketId, '(type:', typeof ticketId, ')');
+    console.log('  - attachments:', attachments, '(type:', typeof attachments, ')');
+    console.log('  - is array:', Array.isArray(attachments));
+    console.log('  - attachments length:', attachments?.length);
+    
+    if (!ticketId) {
+      console.error('❌ ticketId is missing or falsy:', ticketId);
       return new Response(
-        JSON.stringify({ error: 'ticketId and attachments array are required' }), 
+        JSON.stringify({ error: 'ticketId is required' }), 
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    
+    if (!attachments) {
+      console.error('❌ attachments is missing or falsy:', attachments);
+      return new Response(
+        JSON.stringify({ error: 'attachments is required' }), 
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    if (!Array.isArray(attachments)) {
+      console.error('❌ attachments is not an array:', typeof attachments, attachments);
+      return new Response(
+        JSON.stringify({ error: 'attachments must be an array' }), 
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    if (attachments.length === 0) {
+      console.error('❌ attachments array is empty');
+      return new Response(
+        JSON.stringify({ error: 'attachments array cannot be empty' }), 
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    console.log('✅ Validation passed - proceeding with media upload');
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
