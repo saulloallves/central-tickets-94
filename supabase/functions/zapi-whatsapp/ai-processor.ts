@@ -55,12 +55,12 @@ export class AIProcessor {
       
       let formattedResponse: string;
       try {
+        // Try to parse as JSON first
         const payload = JSON.parse(respostaRAG);
-        // Send the AI response exactly as generated, without any formatting
-        formattedResponse = payload.texto;
+        formattedResponse = payload.texto || payload.response || respostaRAG;
       } catch (e) {
-        console.error('Error parsing RAG JSON response:', e);
-        // If parsing fails, use the raw response without formatting
+        // If parsing fails, treat as plain text response
+        console.log('RAG response is plain text (not JSON), using directly');
         formattedResponse = respostaRAG;
       }
 
