@@ -83,13 +83,23 @@ export async function addInitialMessage(ticketId: string, message: string, attac
 
 export async function findUnitByCode(codigo_unidade: string) {
   const supabase = getSupabaseClient();
+  
+  // Convert string to number since codigo_grupo is bigint
+  const codigoNumerico = parseInt(codigo_unidade, 10);
+  
+  if (isNaN(codigoNumerico)) {
+    throw new Error('Código da unidade deve ser um número válido');
+  }
+  
   const { data: unidade, error: unidadeError } = await supabase
     .from('unidades')
     .select('id')
-    .eq('codigo_grupo', codigo_unidade)
+    .eq('codigo_grupo', codigoNumerico)
     .single();
 
   if (unidadeError || !unidade) {
+    console.error('Erro ao buscar unidade:', unidadeError);
+    console.log('Código procurado:', codigoNumerico);
     throw new Error('Código da unidade não encontrado');
   }
 
