@@ -39,6 +39,12 @@ function shouldSkipMessage(payload: ZAPIMessage): boolean {
     }
   }
   
+  // Filtrar palavras de ativação do bot_base_1 para evitar conflitos
+  const BOT_ACTIVATION_KEYWORDS = ['menu', 'ola robo', 'olá robô', 'abacate'];
+  if (BOT_ACTIVATION_KEYWORDS.some(keyword => messageText.includes(keyword))) {
+    console.log('Skipping message: Contains bot_base_1 activation keyword');
+    return true;
+  }
   // NOVOS FILTROS: Não processar mensagens que são templates de sistema
   const messageText = payload.text?.message?.toLowerCase() || '';
   
