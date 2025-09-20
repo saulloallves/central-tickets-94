@@ -99,6 +99,14 @@ function createMessageData(payload: ZAPIMessage): ConversationMessageData {
 }
 
 async function handleWebhook(payload: ZAPIMessage) {
+  console.log('🔍 Webhook recebido:', {
+    phone: payload.phone,
+    fromMe: payload.fromMe,
+    isGroup: payload.isGroup,
+    hasText: !!payload.text?.message,
+    senderName: payload.senderName,
+    messagePreview: payload.text?.message?.substring(0, 50) + '...'
+  });
   console.log('Received Z-API webhook:', JSON.stringify(payload, null, 2));
   console.log('Message details:', {
     isGroup: payload.isGroup,
@@ -162,63 +170,73 @@ async function handleWebhook(payload: ZAPIMessage) {
     }
   }
 
-  // If it's an incoming message (not from us), check for ticket response state
+  // If it's an incoming message (not from us), check for ticket response state FIRST
   if (!payload.fromMe && payload.text?.message) {
-    // Verificar se usuário está aguardando responder ticket
+    // Verificar se usuário está aguardando responder ticket ANTES de qualquer processamento
     const conversationState = conversation.meta as any;
     
     if (conversationState?.awaiting_response_for_ticket) {
       const expiresAt = new Date(conversationState.expires_at);
       const now = new Date();
       
+      console.log(`🔍 Verificando estado do ticket: ${conversationState.awaiting_response_for_ticket}`);
+      console.log(`⏰ Expira em: ${expiresAt}, Agora: ${now}`);
+      
+      if (now <= expiresAt) {
+      
       if (now <= expiresAt) {
         // Processar como resposta ao ticket
         console.log(`🎫 Processando resposta ao ticket: ${conversationState.awaiting_response_for_ticket}`);
         
-        const ticketId = conversationState.awaiting_response_for_ticket;
-        const userMessage = payload.text.message;
-        
-        // Salvar resposta no ticket
-        const { error: messageError } = await supabase
-          .from('ticket_mensagens')
-          .insert({
-            ticket_id: ticketId,
-            direcao: 'entrada',
-            mensagem: userMessage,
-            canal: 'whatsapp',
-            usuario_id: null,
-            created_at: new Date().toISOString()
-          });
+         const ticketId = conversationState.awaiting_response_for_ticket;
+         const userMessage = payload.text.message;
+         
+         console.log(`💾 Salvando resposta: "${userMessage}" para ticket ${ticketId}`);
+         console.log(`👤 Usuário: ${payload.senderName} (${payload.participantPhone || payload.phone})`);
+         
+         // Salvar resposta no ticket
+         const { error: messageError } = await supabase
+           .from('ticket_mensagens')
+           .insert({
+             ticket_id: ticketId,
+             direcao: 'entrada',
+             mensagem: userMessage,
+             canal: 'whatsapp',
+             usuario_id: null, // TODO: vincular ao usuário correto se necessário
+             created_at: new Date().toISOString()
+           });
 
-        if (!messageError) {
-          // Buscar dados do ticket para confirmação
-          const { data: ticket } = await supabase
-            .from('tickets')
-            .select('codigo_ticket, titulo')
-            .eq('id', ticketId)
-            .single();
+         if (messageError) {
+           console.error('❌ Erro ao salvar mensagem:', messageError);
+           sentReply = await zapiClient.sendTextMessage(
+             payload.phone,
+             payload.instanceId,
+             "❌ Erro ao processar sua resposta. Tente novamente."
+           );
+         } else {
+           console.log('✅ Mensagem salva com sucesso no ticket');
+           
+           // Buscar dados do ticket para confirmação
+           const { data: ticket } = await supabase
+             .from('tickets')
+             .select('codigo_ticket, titulo')
+             .eq('id', ticketId)
+             .single();
 
-          // Enviar confirmação
-          const confirmationMessage = `✅ *Resposta registrada com sucesso!*
+           // Enviar confirmação
+           const confirmationMessage = `✅ *Resposta registrada com sucesso!*
 
 📋 Ticket #${ticket?.codigo_ticket}
 📄 ${ticket?.titulo}
 
 Sua mensagem foi adicionada ao histórico do atendimento.`;
 
-          sentReply = await zapiClient.sendTextMessage(
-            payload.phone,
-            payload.instanceId,
-            confirmationMessage
-          );
-        } else {
-          console.error('Erro ao salvar resposta do ticket:', messageError);
-          sentReply = await zapiClient.sendTextMessage(
-            payload.phone,
-            payload.instanceId,
-            "❌ Erro ao processar sua resposta. Tente novamente."
-          );
-        }
+           sentReply = await zapiClient.sendTextMessage(
+             payload.phone,
+             payload.instanceId,
+             confirmationMessage
+           );
+         }
 
         // Limpar estado conversacional
         await supabase
