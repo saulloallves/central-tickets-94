@@ -1061,6 +1061,59 @@ export const useTicketMessages = (ticketId: string) => {
     }
   };
 
+  // Setup real-time subscription for messages
+  useEffect(() => {
+    if (!ticketId) return;
+
+    const channel = supabase
+      .channel(`ticket-messages-${ticketId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'ticket_mensagens',
+          filter: `ticket_id=eq.${ticketId}`
+        },
+        async (payload) => {
+          console.log('📨 New message received via realtime:', payload);
+          
+          // Fetch the full message with profile data
+          const { data, error } = await supabase
+            .from('ticket_mensagens')
+            .select(`
+              *,
+              profiles:usuario_id (nome_completo)
+            `)
+            .eq('id', payload.new.id)
+            .single();
+
+          if (!error && data) {
+            setMessages(prev => {
+              // Check if message already exists to avoid duplicates
+              const exists = prev.find(msg => msg.id === data.id);
+              if (exists) return prev;
+              
+              // Add new message and sort by created_at
+              const newMessages = [...prev, data as any];
+              return newMessages.sort((a, b) => 
+                new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+              );
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    // Initial fetch
+    fetchMessages();
+
+    return () => {
+      console.log('🔌 Unsubscribing from ticket messages channel');
+      supabase.removeChannel(channel);
+    };
+  }, [ticketId]);
+
   const sendMessage = async (mensagem: string, anexos: any[] = []) => {
     if (!ticketId || (!mensagem.trim() && (!anexos || anexos.length === 0))) return false;
 
@@ -1088,8 +1141,8 @@ export const useTicketMessages = (ticketId: string) => {
         return false;
       }
 
-      // Don't add optimistically - let realtime handle it
-      // The realtime subscription will trigger fetchMessages() and update the state
+      // Message will be added via real-time subscription
+      console.log('✅ Message sent successfully:', data);
       
       // Sempre enviar notificação WhatsApp se há texto
       if (mensagem.trim()) {
@@ -1132,19 +1185,43 @@ export const useTicketMessages = (ticketId: string) => {
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
           schema: 'public',
           table: 'ticket_mensagens',
           filter: `ticket_id=eq.${ticketId}`
         },
-        (payload) => {
-          console.log('Realtime message change:', payload);
-          fetchMessages();
+        async (payload) => {
+          console.log('📨 New message received via realtime:', payload);
+          
+          // Fetch the full message with profile data
+          const { data, error } = await supabase
+            .from('ticket_mensagens')
+            .select(`
+              *,
+              profiles:usuario_id (nome_completo)
+            `)
+            .eq('id', payload.new.id)
+            .single();
+
+          if (!error && data) {
+            setMessages(prev => {
+              // Check if message already exists to avoid duplicates
+              const exists = prev.find(msg => msg.id === data.id);
+              if (exists) return prev;
+              
+              // Add new message and sort by created_at
+              const newMessages = [...prev, data as any];
+              return newMessages.sort((a, b) => 
+                new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+              );
+            });
+          }
         }
       )
       .subscribe();
 
     return () => {
+      console.log('🔌 Unsubscribing from ticket messages channel');
       supabase.removeChannel(channel);
     };
   }, [ticketId]);

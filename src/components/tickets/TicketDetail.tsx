@@ -924,7 +924,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
         {/* Tab Content */}
         <div className="p-6">
           {activeTab === 'chat' && (
-            <div className="space-y-6">
+            <div className="flex flex-col gap-4 min-h-[700px]">
               {/* Sugestão IA Section */}
               <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50">
                 <CardHeader className="pb-3">
@@ -1019,7 +1019,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4 max-h-[300px] overflow-y-auto">
+                  <div className="space-y-4 max-h-[500px] overflow-y-auto">
                     {messages.length === 0 ? (
                       <div className="text-center py-8">
                         <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
