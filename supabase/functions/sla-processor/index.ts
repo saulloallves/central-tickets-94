@@ -42,12 +42,13 @@ serve(async (req) => {
 
     console.log(`✅ Avisos de 50% SLA processados: ${halfResult} notificações`);
 
-    // 3. Processar notificações pendentes
+    // 3. Processar notificações pendentes (apenas das últimas 2 horas)
     const { data: pendingNotifications, error: notificationError } = await supabaseClient
       .from('notifications_queue')
       .select('*')
       .eq('status', 'pending')
       .in('type', ['sla_breach', 'sla_half'])
+      .gte('created_at', new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()) // Apenas últimas 2 horas
       .limit(10);
 
     if (notificationError) {
