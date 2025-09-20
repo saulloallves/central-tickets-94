@@ -88,19 +88,114 @@ async function handleWebhook(payload: ZAPIMessage) {
 
   let sentReply = null;
 
-  // If it's an incoming message (not from us), generate and send AI response
+  // If it's an incoming message (not from us), check for ticket response state
   if (!payload.fromMe && payload.text?.message) {
-    sentReply = await aiProcessor.processIncomingMessage(
-      payload.text.message,
-      payload.phone,
-      payload.instanceId,
-      payload.connectedPhone,
-      payload.chatName,
-      payload.senderName,
-      payload.senderLid,
-      payload.senderPhoto,
-      payload.isGroup
-    );
+    // Verificar se usuário está aguardando responder ticket
+    const conversationState = conversation.meta as any;
+    
+    if (conversationState?.awaiting_response_for_ticket) {
+      const expiresAt = new Date(conversationState.expires_at);
+      const now = new Date();
+      
+      if (now <= expiresAt) {
+        // Processar como resposta ao ticket
+        console.log(`🎫 Processando resposta ao ticket: ${conversationState.awaiting_response_for_ticket}`);
+        
+        const ticketId = conversationState.awaiting_response_for_ticket;
+        const userMessage = payload.text.message;
+        
+        // Salvar resposta no ticket
+        const { error: messageError } = await supabase
+          .from('ticket_mensagens')
+          .insert({
+            ticket_id: ticketId,
+            direcao: 'entrada',
+            mensagem: userMessage,
+            canal: 'whatsapp',
+            usuario_id: null,
+            created_at: new Date().toISOString()
+          });
+
+        if (!messageError) {
+          // Buscar dados do ticket para confirmação
+          const { data: ticket } = await supabase
+            .from('tickets')
+            .select('codigo_ticket, titulo')
+            .eq('id', ticketId)
+            .single();
+
+          // Enviar confirmação
+          const confirmationMessage = `✅ *Resposta registrada com sucesso!*
+
+📋 Ticket #${ticket?.codigo_ticket}
+📄 ${ticket?.titulo}
+
+Sua mensagem foi adicionada ao histórico do atendimento.`;
+
+          sentReply = await zapiClient.sendTextMessage(
+            payload.phone,
+            payload.instanceId,
+            confirmationMessage
+          );
+        } else {
+          console.error('Erro ao salvar resposta do ticket:', messageError);
+          sentReply = await zapiClient.sendTextMessage(
+            payload.phone,
+            payload.instanceId,
+            "❌ Erro ao processar sua resposta. Tente novamente."
+          );
+        }
+
+        // Limpar estado conversacional
+        await supabase
+          .from('whatsapp_conversas')
+          .update({
+            meta: {},
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', conversation.id);
+
+        console.log('🧹 Estado conversacional limpo');
+        
+      } else {
+        // Estado expirado, limpar e processar normalmente
+        console.log('⏰ Estado conversacional expirado, processando com IA');
+        
+        await supabase
+          .from('whatsapp_conversas')
+          .update({
+            meta: {},
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', conversation.id);
+
+        // Processar com IA normalmente
+        sentReply = await aiProcessor.processIncomingMessage(
+          payload.text.message,
+          payload.phone,
+          payload.instanceId,
+          payload.connectedPhone,
+          payload.chatName,
+          payload.senderName,
+          payload.senderLid,
+          payload.senderPhoto,
+          payload.isGroup
+        );
+      }
+    } else {
+      // Processar com IA normalmente
+      sentReply = await aiProcessor.processIncomingMessage(
+        payload.text.message,
+        payload.phone,
+        payload.instanceId,
+        payload.connectedPhone,
+        payload.chatName,
+        payload.senderName,
+        payload.senderLid,
+        payload.senderPhoto,
+        payload.isGroup
+      );
+    }
   }
 
   return { 

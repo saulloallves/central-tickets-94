@@ -28,16 +28,13 @@ async function getMessageTemplate(supabase: any, templateKey: string): Promise<s
 
   // Template padrão para ticket_created
   const defaultTemplates: Record<string, string> = {
-    'ticket_created': `🎫 *Novo ticket criado!*
+    'ticket_created': `🎫 *Ticket #{{codigo_ticket}}*
+📂 {{categoria}} | ⚡ {{prioridade}}
+📄 {{titulo_ticket}}
 
-📋 *Código:* {{codigo_ticket}}
-📂 *Categoria:* {{categoria}}
-⚡ *Prioridade:* {{prioridade}}
 🏢 *Unidade:* {{unidade_id}}
 
-{{titulo_ticket}}
-
-#NovoTicket #Suporte`
+*Ações disponíveis:*`
   };
 
   return defaultTemplates[templateKey] || 'Novo ticket: {{codigo_ticket}}';
@@ -158,19 +155,46 @@ async function getZApiConfig(supabase: any): Promise<ZApiConfig | null> {
   }
 }
 
-// Função para enviar mensagem via Z-API
-async function sendZapiMessage(phone: string, message: string, config: ZApiConfig): Promise<boolean> {
+// Função para enviar mensagem com botões via Z-API
+async function sendZapiMessage(phone: string, message: string, config: ZApiConfig, ticketId?: string): Promise<boolean> {
   try {
-    const response = await fetch(`${config.baseUrl}/instances/${config.instanceId}/token/${config.token}/send-text`, {
+    let body;
+
+    if (ticketId) {
+      // Enviar com botões para resposta ao ticket
+      body = JSON.stringify({
+        phone: phone,
+        message: message,
+        optionsList: {
+          title: "Ações disponíveis",
+          buttonText: "Ver opções",
+          options: [
+            {
+              id: `responder_ticket_${ticketId}`,
+              title: "📝 Responder"
+            },
+            {
+              id: `finalizar_ticket_${ticketId}`,
+              title: "✅ Finalizar"
+            }
+          ]
+        }
+      });
+    } else {
+      // Mensagem simples sem botões
+      body = JSON.stringify({
+        phone: phone,
+        message: message,
+      });
+    }
+
+    const response = await fetch(`${config.baseUrl}/instances/${config.instanceId}/token/${config.token}/send-option`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Client-Token': config.clientToken,
       },
-      body: JSON.stringify({
-        phone: phone,
-        message: message,
-      }),
+      body: body,
     });
 
     if (!response.ok) {
@@ -290,8 +314,9 @@ serve(async (req) => {
       });
     }
 
-    // 7. Enviar mensagem
-    const sent = await sendZapiMessage(destination, message, zapiConfig);
+    // 7. Enviar mensagem (com botões se for ticket_created)
+    const sent = await sendZapiMessage(destination, message, zapiConfig, 
+      template_key === 'ticket_created' ? ticket_id : undefined);
 
     // 8. Log do resultado
     await supabase.from('escalation_logs').insert({

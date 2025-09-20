@@ -144,6 +144,16 @@ serve(async (req: Request) => {
       });
     }
 
+    // 🔹 RESPONDER TICKET
+    if (buttonId.startsWith("responder_ticket_")) {
+      return await proxy(functionsBaseUrl, "process-ticket-response", body);
+    }
+
+    // 🔹 FINALIZAR TICKET
+    if (buttonId.startsWith("finalizar_ticket_")) {
+      return await proxy(functionsBaseUrl, "process-ticket-response", body);
+    }
+
     // ❌ Pula DFCom por enquanto
     if (buttonId === "autoatendimento_dfcom") {
       console.log("🚫 DFCom desativado por enquanto");
