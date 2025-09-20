@@ -32,7 +32,39 @@ function shouldSkipMessage(payload: ZAPIMessage): boolean {
       return true;
     }
   }
-  // Se não é grupo (mensagem privada), processar normalmente
+  
+  // NOVOS FILTROS: Não processar mensagens que são templates de sistema
+  const messageText = payload.text?.message?.toLowerCase() || '';
+  
+  // Filtrar templates de SLA
+  if (messageText.includes('sla') || messageText.includes('vencido') || messageText.includes('prazo')) {
+    console.log('Skipping message: SLA template detected');
+    return true;
+  }
+  
+  // Filtrar templates de ticket criado
+  if (messageText.includes('ticket #') || messageText.includes('🎫')) {
+    console.log('Skipping message: Ticket creation template detected');
+    return true;
+  }
+  
+  // Filtrar templates de resposta com botões
+  if (messageText.includes('responder') && messageText.includes('finalizar') && payload.text?.message?.includes('📝')) {
+    console.log('Skipping message: Response template with buttons detected');
+    return true;
+  }
+  
+  // Filtrar mensagens que vêm do próprio sistema (fromMe = true)
+  if (payload.fromMe) {
+    console.log('Skipping message: Message sent from our system');
+    return true;
+  }
+  
+  // Filtrar respostas automáticas conhecidas
+  if (messageText.includes('✅ resposta registrada') || messageText.includes('ticket foi criado')) {
+    console.log('Skipping message: Automated system response detected');
+    return true;
+  }
   
   return false;
 }

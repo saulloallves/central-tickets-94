@@ -5,6 +5,67 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Configuração Z-API específica para BOT
+class BotZAPIClient {
+  private instanceId: string;
+  private token: string;
+  private clientToken: string;
+  private baseUrl: string;
+
+  constructor() {
+    this.instanceId = Deno.env.get('BOT_ZAPI_INSTANCE_ID') || Deno.env.get('ZAPI_INSTANCE_ID') || '';
+    this.token = Deno.env.get('BOT_ZAPI_TOKEN') || Deno.env.get('ZAPI_TOKEN') || '';
+    this.clientToken = Deno.env.get('BOT_ZAPI_CLIENT_TOKEN') || Deno.env.get('ZAPI_CLIENT_TOKEN') || '';
+    this.baseUrl = Deno.env.get('BOT_ZAPI_BASE_URL') || Deno.env.get('ZAPI_BASE_URL') || 'https://api.z-api.io';
+  }
+
+  async sendMessage(phone: string, message: string, buttons?: any[]): Promise<boolean> {
+    if (!this.instanceId || !this.token || !this.clientToken) {
+      console.error('BOT Z-API credentials not configured');
+      return false;
+    }
+
+    try {
+      let endpoint = 'send-text';
+      let body: any = {
+        phone: phone,
+        message: message
+      };
+
+      if (buttons && buttons.length > 0) {
+        endpoint = 'send-button-list';
+        body.buttonList = { buttons };
+      }
+
+      const response = await fetch(`${this.baseUrl}/instances/${this.instanceId}/token/${this.token}/${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Client-Token': this.clientToken,
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to send BOT Z-API message:', await response.text());
+        return false;
+      }
+
+      console.log('✅ BOT message sent successfully via Z-API');
+      return true;
+    } catch (error) {
+      console.error('Error sending BOT Z-API message:', error);
+      return false;
+    }
+  }
+
+  isConfigured(): boolean {
+    return !!(this.instanceId && this.token && this.clientToken);
+  }
+}
+
+const botZapi = new BotZAPIClient();
+
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });

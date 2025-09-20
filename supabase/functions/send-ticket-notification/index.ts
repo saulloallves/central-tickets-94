@@ -119,13 +119,13 @@ async function getDestinationNumber(supabase: any, type: string, ticket: any): P
   }
 }
 
-// Função para buscar configuração Z-API
+// Função para buscar configuração Z-API - NOTIFICAÇÕES
 async function getZApiConfig(supabase: any): Promise<ZApiConfig | null> {
   try {
     const { data: config } = await supabase
       .from('messaging_providers')
       .select('instance_id, base_url, instance_token, client_token')
-      .eq('provider_name', 'zapi')
+      .eq('provider_name', 'zapi_notifications')
       .eq('is_active', true)
       .single();
 
@@ -138,19 +138,20 @@ async function getZApiConfig(supabase: any): Promise<ZApiConfig | null> {
       };
     }
 
-    // Fallback para env vars
-    const instanceId = Deno.env.get('ZAPI_INSTANCE_ID');
-    const token = Deno.env.get('ZAPI_TOKEN');
-    const clientToken = Deno.env.get('ZAPI_CLIENT_TOKEN');
-    const baseUrl = Deno.env.get('ZAPI_BASE_URL') || 'https://api.z-api.io';
+    // Fallback para env vars de notificação específicas
+    const instanceId = Deno.env.get('NOTIFICATION_ZAPI_INSTANCE_ID') || Deno.env.get('ZAPI_INSTANCE_ID');
+    const token = Deno.env.get('NOTIFICATION_ZAPI_TOKEN') || Deno.env.get('ZAPI_TOKEN');
+    const clientToken = Deno.env.get('NOTIFICATION_ZAPI_CLIENT_TOKEN') || Deno.env.get('ZAPI_CLIENT_TOKEN');
+    const baseUrl = Deno.env.get('NOTIFICATION_ZAPI_BASE_URL') || Deno.env.get('ZAPI_BASE_URL') || 'https://api.z-api.io';
 
     if (instanceId && token && clientToken) {
+      console.log('✅ Using NOTIFICATION Z-API instance:', instanceId);
       return { instanceId, token, clientToken, baseUrl };
     }
 
     return null;
   } catch (error) {
-    console.error('Erro ao buscar config Z-API:', error);
+    console.error('Erro ao buscar config Z-API de notificação:', error);
     return null;
   }
 }
