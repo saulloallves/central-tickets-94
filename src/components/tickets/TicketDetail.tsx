@@ -365,21 +365,12 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
 
       console.log('✅ Grupo configurado para aguardar resposta:', configResult);
 
-      // 2. Depois: enviar mensagem para o grupo via Z-API
-      const { data: zapiResult, error: zapiError } = await supabase.functions.invoke('zapi-send-media', {
+      // 2. Depois: enviar mensagem para o grupo via Z-API (sem botões)
+      const { data: zapiResult, error: zapiError } = await supabase.functions.invoke('send-ticket-notification', {
         body: {
-          ticketId: ticketId,
-          attachments: [{
-            type: 'text',
-            content: `📝 *Responder Ticket #${ticket?.codigo_ticket}*
-
-${newMessage}
-
-Digite sua resposta para este ticket. Sua mensagem será adicionada ao histórico do atendimento.
-
-⏰ _Esta sessão expira em 5 minutos._`,
-            name: 'Mensagem do Ticket'
-          }]
+          ticket_id: ticketId,
+          template_key: 'resposta_ticket',
+          resposta_real: newMessage
         }
       });
 

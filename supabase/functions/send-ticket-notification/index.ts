@@ -156,18 +156,12 @@ async function getZApiConfig(supabase: any): Promise<ZApiConfig | null> {
   }
 }
 
-// Função para enviar mensagem com botões via Z-API
-async function sendZapiMessage(phone: string, message: string, config: ZApiConfig, ticketId?: string): Promise<boolean> {
+// Função para enviar mensagem via Z-API (sem botões)
+async function sendZapiMessage(phone: string, message: string, config: ZApiConfig): Promise<boolean> {
   try {
-    let endpoint = 'send-text';
-    let body;
-
-    if (ticketId) {
-      // Enviar com botões usando formato correto do send-button-list
-      endpoint = 'send-button-list';
-      body = JSON.stringify({
-        phone: phone,
-        message: message,
+    const body = JSON.stringify({
+      phone: phone,
+      message: message,
         buttonList: {
           buttons: [
             {
@@ -246,7 +240,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { ticket_id, template_key = 'ticket_created' } = await req.json();
+    const { ticket_id, template_key = 'ticket_created', resposta_real } = await req.json();
 
     if (!ticket_id) {
       return new Response(JSON.stringify({ 
@@ -305,8 +299,16 @@ serve(async (req) => {
       data_abertura: new Date(ticket.data_abertura || ticket.created_at).toLocaleString('pt-BR'),
       data_limite_sla: ticket.data_limite_sla ? new Date(ticket.data_limite_sla).toLocaleString('pt-BR') : 'Não definido',
       // Variáveis específicas para resposta_ticket
-      texto_resposta: 'Resposta disponível no sistema de atendimento',
-      timestamp: new Date().toLocaleString('pt-BR')
+      texto_resposta: resposta_real || 'Resposta disponível no sistema de atendimento',
+      timestamp: new Date().toLocaleString('pt-BR', { 
+        timeZone: 'America/Sao_Paulo',
+        day: '2-digit',
+        month: '2-digit', 
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      })
     };
 
     // 4. Processar template
@@ -341,9 +343,8 @@ serve(async (req) => {
       });
     }
 
-    // 7. Enviar mensagem (com botões se for resposta_ticket)
-    const sent = await sendZapiMessage(destination, message, zapiConfig, 
-      template_key === 'resposta_ticket' ? ticket_id : undefined);
+    // 7. Enviar mensagem (sempre sem botões)
+    const sent = await sendZapiMessage(destination, message, zapiConfig);
 
     // 8. Log do resultado
     await supabase.from('escalation_logs').insert({
