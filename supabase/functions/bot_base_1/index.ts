@@ -92,6 +92,24 @@ serve(async (req: Request) => {
     console.log("Phone:", phone);
     console.log("ButtonId:", buttonId);
     console.log("Message:", message);
+    
+    // FILTRO ESPECÍFICO: Só processar mensagens do grupo específico
+    const ALLOWED_GROUP = '120363421372736067-group';
+    const isGroup = body?.isGroup;
+    const chatId = body?.phone;
+    
+    if (isGroup && chatId !== ALLOWED_GROUP) {
+      console.log(`🚫 BOT_BASE_1: Skipping - not from allowed group (${chatId})`);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        message: "Bot only processes messages from specific group" 
+      }), {
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+        status: 200
+      });
+    }
+    
+    console.log("✅ BOT_BASE_1: Group validation passed");
 
     // Palavras-chave que disparam menu inicial
     const KEYWORDS = ["menu", "ola robo", "olá robô", "abacate"];
