@@ -38,7 +38,7 @@ export function ZAPIInstancesTab() {
       client_token: '',
       base_url: 'https://api.z-api.io',
       is_active: true,
-      description: 'Instância para receber e processar conversas naturais do WhatsApp',
+      description: 'Instância principal para receber e processar conversas naturais do WhatsApp (usa ZAPI_INSTANCE_ID)',
       icon: <MessageSquare className="h-4 w-4" />
     },
     {
@@ -49,7 +49,7 @@ export function ZAPIInstancesTab() {
       client_token: '',
       base_url: 'https://api.z-api.io',
       is_active: true,
-      description: 'Instância para envio de botões e respostas do bot',
+      description: 'Instância específica para envio de botões e respostas do bot (configura BOT_ZAPI_INSTANCE_ID)',
       icon: <Bot className="h-4 w-4" />
     },
     {
@@ -60,7 +60,7 @@ export function ZAPIInstancesTab() {
       client_token: '',
       base_url: 'https://api.z-api.io',
       is_active: true,
-      description: 'Instância para envio de notificações automáticas de tickets',
+      description: 'Instância específica para envio de notificações automáticas (configura NOTIFICATION_ZAPI_INSTANCE_ID)',
       icon: <Bell className="h-4 w-4" />
     }
   ];
@@ -104,29 +104,45 @@ export function ZAPIInstancesTab() {
           };
         }
 
-        // Senão, tentar pegar das env vars via currentConfig
-        let envConfig: any = {};
+        // Se não encontrou no banco, carregar das env vars específicas
+        let configData = { ...defaultConfig };
+        
         if (currentConfig?.configurations) {
           switch (defaultConfig.provider_name) {
             case 'zapi_whatsapp':
-              envConfig = currentConfig.configurations.zapi_whatsapp || {};
+              const whatsappConfig = currentConfig.configurations.zapi_whatsapp || {};
+              configData = {
+                ...defaultConfig,
+                instance_id: whatsappConfig.instanceId || '',
+                instance_token: whatsappConfig.token || '',
+                client_token: whatsappConfig.clientToken || '',
+                base_url: whatsappConfig.baseUrl || 'https://api.z-api.io'
+              };
               break;
             case 'zapi_bot':
-              envConfig = currentConfig.configurations.bot_base_1 || {};
+              const botConfig = currentConfig.configurations.bot_base_1 || {};
+              configData = {
+                ...defaultConfig,
+                instance_id: botConfig.instanceId || '',
+                instance_token: botConfig.token || '',
+                client_token: botConfig.clientToken || '',
+                base_url: botConfig.baseUrl || 'https://api.z-api.io'
+              };
               break;
             case 'zapi_notifications':
-              envConfig = currentConfig.configurations.send_ticket_notification || {};
+              const notificationConfig = currentConfig.configurations.send_ticket_notification || {};
+              configData = {
+                ...defaultConfig,
+                instance_id: notificationConfig.instanceId || '',
+                instance_token: notificationConfig.token || '',
+                client_token: notificationConfig.clientToken || '',
+                base_url: notificationConfig.baseUrl || 'https://api.z-api.io'
+              };
               break;
           }
         }
 
-        return {
-          ...defaultConfig,
-          instance_id: envConfig.instanceId || defaultConfig.instance_id,
-          instance_token: envConfig.token || defaultConfig.instance_token,
-          client_token: envConfig.clientToken || defaultConfig.client_token,
-          base_url: envConfig.baseUrl || defaultConfig.base_url
-        };
+        return configData;
       });
 
       setConfigs(mergedConfigs);
@@ -345,13 +361,13 @@ export function ZAPIInstancesTab() {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="text-sm text-muted-foreground">
-            <p><strong>WhatsApp Conversas:</strong> Responsável por receber mensagens dos usuários e processar conversas naturais com IA.</p>
-            <p><strong>Bot Automatizado:</strong> Envia botões, menus e respostas automáticas do sistema de bot.</p>
-            <p><strong>Notificações de Tickets:</strong> Envia notificações automáticas quando tickets são criados, atualizados ou precisam de atenção.</p>
+            <p><strong>WhatsApp Conversas:</strong> Usa variável ZAPI_INSTANCE_ID (principal). Responsável por receber mensagens dos usuários e processar conversas naturais com IA.</p>
+            <p><strong>Bot Automatizado:</strong> Usa variável BOT_ZAPI_INSTANCE_ID (se configurada) ou fallback para ZAPI_INSTANCE_ID. Envia botões, menus e respostas automáticas do sistema de bot.</p>
+            <p><strong>Notificações de Tickets:</strong> Usa variável NOTIFICATION_ZAPI_INSTANCE_ID (se configurada) ou fallback para ZAPI_INSTANCE_ID. Envia notificações automáticas quando tickets são criados, atualizados ou precisam de atenção.</p>
           </div>
           <Separator />
           <div className="text-sm text-amber-600">
-            <p><strong>⚠️ Importante:</strong> Use instâncias diferentes para cada função para evitar conflitos de roteamento de mensagens.</p>
+            <p><strong>⚠️ Status Atual:</strong> {configs.filter(c => c.instance_id).length > 0 ? "Todas as funções estão usando a mesma instância principal. Recomendamos configurar instâncias separadas." : "Nenhuma configuração encontrada."}</p>
           </div>
         </CardContent>
       </Card>
