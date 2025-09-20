@@ -71,6 +71,7 @@ export const useRAGDocuments = () => {
 
   const fetchDocuments = async (filters?: DocumentFilters) => {
     setLoading(true);
+    console.log('🔍 Fetching RAG documents with filters:', filters);
     try {
       const { data, error } = await supabase.functions.invoke('get-documentos-list', {
         body: {
@@ -84,6 +85,7 @@ export const useRAGDocuments = () => {
         }
       });
 
+      console.log('📊 RAG documents response:', { data, error });
       if (error) throw error;
       
       if (data && typeof data === 'object' && 'data' in data) {
