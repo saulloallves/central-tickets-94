@@ -760,52 +760,83 @@ serve(async (req) => {
         break;
 
       case 'resposta_ticket':
-        console.log('Processing resposta_ticket');
+        console.log('📤 Calling send-ticket-notification for resposta_ticket with buttons');
         
         if (!ticket) {
           throw new Error('Ticket data is required for resposta_ticket notifications');
         }
         
-        if (customDestination) {
-          destinoFinal = customDestination;
-          console.log(`Using configured destination for resposta_ticket: ${destinoFinal}`);
-        } else {
-          throw new Error(`Nenhuma configuração de origem encontrada para resposta_ticket na unidade ${ticket.unidade_id}`);
+        // Call send-ticket-notification with buttons for resposta_ticket
+        try {
+          const functionsBaseUrl = `https://${Deno.env.get('SUPABASE_URL')?.split('//')[1]}/functions/v1` || 'https://hryurntaljdisohawpqf.supabase.co/functions/v1';
+          const notificationResponse = await fetch(`${functionsBaseUrl}/send-ticket-notification`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
+            },
+            body: JSON.stringify({
+              ticket_id: ticketId,
+              template_key: 'resposta_ticket'
+            })
+          });
+
+          if (notificationResponse.ok) {
+            const notificationResult = await notificationResponse.json();
+            console.log('✅ Notification with buttons sent successfully');
+            resultadoEnvio = { success: true, status: 'notification_sent_with_buttons' };
+          } else {
+            console.log('⚠️ Button notification failed, trying fallback...');
+            throw new Error('Failed to send with buttons, using fallback');
+          }
+        } catch (error) {
+          console.error('Error calling send-ticket-notification:', error);
+          console.log('📝 Using fallback text message without buttons');
+          
+          // Fallback to simple text message
+          if (customDestination) {
+            destinoFinal = customDestination;
+            console.log(`Using configured destination for resposta_ticket fallback: ${destinoFinal}`);
+          } else {
+            throw new Error(`Nenhuma configuração de origem encontrada para resposta_ticket na unidade ${ticket.unidade_id}`);
+          }
+
+          const templateResposta = await getMessageTemplate(supabase, 'resposta_ticket');
+          
+          // Get additional ticket information for richer variables
+          const { data: unidadeDataResp } = await supabase
+            .from('unidades')
+            .select('nome')
+            .eq('id', ticket.unidade_id)
+            .single();
+
+          const { data: equipeDataResp } = await supabase
+            .from('equipes')
+            .select('nome')
+            .eq('id', ticket.equipe_responsavel_id)
+            .single();
+
+          const textoResposta = payload?.texto_resposta || payload?.message || 'Resposta disponível no sistema';
+
+          const mensagemResposta = processTemplate(templateResposta, {
+            codigo_ticket: formatTicketTitle(ticket),
+            titulo_ticket: ticket.titulo || 'Ticket sem título',
+            unidade_id: ticket.unidade_id,
+            unidade_nome: unidadeDataResp?.nome || ticket.unidade_id,
+            categoria: ticket.categoria || 'Não informada',
+            prioridade: ticket.prioridade,
+            status: ticket.status,
+            equipe_responsavel: equipeDataResp?.nome || 'Não atribuída',
+            texto_resposta: textoResposta,
+            timestamp: new Date().toLocaleString('pt-BR')
+          });
+
+          const normalizedPhoneResp = normalizePhoneNumber(destinoFinal);
+          if (!normalizedPhoneResp) {
+            throw new Error(`Número de telefone inválido para resposta_ticket: ${destinoFinal}`);
+          }
+          resultadoEnvio = await sendZapiMessage(normalizedPhoneResp, mensagemResposta);
         }
-
-        const templateResposta = await getMessageTemplate(supabase, 'resposta_ticket');
-        
-        // Get additional ticket information for richer variables
-        const { data: unidadeDataResp } = await supabase
-          .from('unidades')
-          .select('nome')
-          .eq('id', ticket.unidade_id)
-          .single();
-
-        const { data: equipeDataResp } = await supabase
-          .from('equipes')
-          .select('nome')
-          .eq('id', ticket.equipe_responsavel_id)
-          .single();
-
-        const mensagemResposta = processTemplate(templateResposta, {
-          codigo_ticket: formatTicketTitle(ticket),
-          titulo_ticket: ticket.titulo || 'Ticket sem título',
-          unidade_id: ticket.unidade_id,
-          unidade_nome: unidadeDataResp?.nome || ticket.unidade_id,
-          categoria: ticket.categoria || 'Não informada',
-          prioridade: ticket.prioridade,
-          status: ticket.status,
-          equipe_responsavel: equipeDataResp?.nome || 'Não atribuída',
-          texto_resposta: textoResposta,
-          timestamp: new Date().toLocaleString('pt-BR')
-        });
-
-        const normalizedPhoneResp = normalizePhoneNumber(destinoFinal);
-        if (!normalizedPhoneResp) {
-          throw new Error(`Número de telefone inválido para resposta_ticket: ${destinoFinal}`);
-        }
-        resultadoEnvio = await sendZapiMessage(normalizedPhoneResp, mensagemResposta);
         break;
 
       case 'resposta_ticket_franqueado':
