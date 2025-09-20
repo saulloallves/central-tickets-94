@@ -3465,12 +3465,7 @@ export type Database = {
         | "rh"
         | "financeiro"
         | "outro"
-      ticket_prioridade:
-        | "imediato"
-        | "ate_1_hora"
-        | "ainda_hoje"
-        | "posso_esperar"
-        | "crise"
+      ticket_prioridade: "baixo" | "medio" | "alto" | "imediato" | "crise"
       ticket_sla_status: "dentro_prazo" | "alerta" | "vencido"
       ticket_status: "aberto" | "em_atendimento" | "escalonado" | "concluido"
     }
@@ -3681,13 +3676,7 @@ export const Constants = {
         "financeiro",
         "outro",
       ],
-      ticket_prioridade: [
-        "imediato",
-        "ate_1_hora",
-        "ainda_hoje",
-        "posso_esperar",
-        "crise",
-      ],
+      ticket_prioridade: ["baixo", "medio", "alto", "imediato", "crise"],
       ticket_sla_status: ["dentro_prazo", "alerta", "vencido"],
       ticket_status: ["aberto", "em_atendimento", "escalonado", "concluido"],
     },
