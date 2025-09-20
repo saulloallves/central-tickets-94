@@ -549,10 +549,20 @@ const KnowledgeHubTab = () => {
                           </div>}
 
                         <p className="text-sm text-muted-foreground mb-2">
-                          {typeof doc.conteudo === 'string' ? 
-                            (doc.conteudo?.substring(0, 200) || '') + '...' : 
-                            (doc.conteudo ? JSON.stringify(doc.conteudo).substring(0, 200) + '...' : 'Sem conteúdo')
-                          }
+                          {(() => {
+                            if (!doc.conteudo) return 'Sem conteúdo';
+                            
+                            let texto = '';
+                            if (typeof doc.conteudo === 'string') {
+                              texto = doc.conteudo;
+                            } else if (doc.conteudo.texto) {
+                              texto = doc.conteudo.texto;
+                            } else {
+                              texto = JSON.stringify(doc.conteudo);
+                            }
+                            
+                            return texto.substring(0, 200) + (texto.length > 200 ? '...' : '');
+                          })()}
                         </p>
 
                         <div className="text-xs text-muted-foreground">
@@ -851,9 +861,22 @@ const KnowledgeHubTab = () => {
                 <CardContent className="p-4">
                   <h4 className="font-medium mb-2">Conteúdo</h4>
                   <div className="text-sm bg-muted p-4 rounded-lg max-h-96 overflow-y-auto">
-                    {typeof selectedDocument.conteudo === 'string' ? <pre className="whitespace-pre-wrap font-mono">{selectedDocument.conteudo}</pre> : <pre className="whitespace-pre-wrap font-mono">
-                        {JSON.stringify(selectedDocument.conteudo, null, 2)}
-                      </pre>}
+                    {(() => {
+                      if (!selectedDocument.conteudo) {
+                        return <div className="text-muted-foreground italic">Nenhum conteúdo disponível</div>;
+                      }
+                      
+                      let conteudo = '';
+                      if (typeof selectedDocument.conteudo === 'string') {
+                        conteudo = selectedDocument.conteudo;
+                      } else if (selectedDocument.conteudo.texto) {
+                        conteudo = selectedDocument.conteudo.texto;
+                      } else {
+                        conteudo = JSON.stringify(selectedDocument.conteudo, null, 2);
+                      }
+                      
+                      return <pre className="whitespace-pre-wrap font-mono">{conteudo}</pre>;
+                    })()}
                   </div>
                 </CardContent>
               </Card>
