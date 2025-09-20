@@ -115,76 +115,58 @@ serve(async (req) => {
       base_url: zapiBaseUrl
     };
 
-    // Get ticket details to determine destination
+    // Get ticket and unidade to find the WhatsApp group
     const { data: ticket, error: ticketError } = await supabase
       .from('tickets')
       .select(`
         id,
         unidade_id,
-        franqueado_id
+        unidades!inner(id_grupo_branco, grupo)
       `)
       .eq('id', ticketId)
       .single();
 
     if (ticketError || !ticket) {
-      console.error('Error fetching ticket:', ticketError);
+      console.error('❌ Ticket não encontrado:', ticketError);
       return new Response(
         JSON.stringify({ error: 'Ticket not found' }), 
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Get franqueado details using the franqueado_id
-    let destinationPhone = null;
+    const grupoWhatsApp = ticket.unidades?.id_grupo_branco;
     
-    console.log('Ticket details:', { ticketId, franqueado_id: ticket.franqueado_id, unidade_id: ticket.unidade_id });
-    
-    if (ticket.franqueado_id) {
-      const { data: franqueado, error: franqueadoError } = await supabase
-        .from('franqueados')
-        .select('phone, normalized_phone')
-        .eq('id', ticket.franqueado_id)
-        .single();
-        
-      console.log('Franqueado lookup:', { 
-        franqueado_id: ticket.franqueado_id, 
-        found: !!franqueado,
-        error: franqueadoError,
-        phone: franqueado?.phone,
-        normalized_phone: franqueado?.normalized_phone
-      });
-        
-      if (!franqueadoError && franqueado) {
-        destinationPhone = franqueado.normalized_phone || franqueado.phone;
-      }
-    }
-    
-    if (!destinationPhone) {
-      console.error('No phone number found for ticket');
+    if (!grupoWhatsApp) {
+      console.error('❌ Unidade não tem id_grupo_branco configurado');
       return new Response(
-        JSON.stringify({ error: 'No destination phone number found' }), 
+        JSON.stringify({ error: 'Unidade sem grupo WhatsApp configurado' }), 
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`=== SENDING ATTACHMENTS ===`);
-    console.log(`Ticket ID: ${ticketId}`);
-    console.log(`Destination Phone: ${destinationPhone}`);
-    console.log(`Number of attachments: ${attachments.length}`);
-    console.log(`Attachments details:`, JSON.stringify(attachments, null, 2));
+    console.log('✅ Enviando para grupo:', grupoWhatsApp, '(unidade:', ticket.unidades?.grupo, ')');
+
+    console.log(`📤 Enviando ${attachments.length} anexo(s) para grupo:`, grupoWhatsApp);
 
     const results = [];
 
     // Process each attachment
     for (const attachment of attachments as AttachmentFile[]) {
       try {
-        const endpoint = getZApiEndpoint(attachment.type, zapiConfig);
-        const payload = buildZApiPayload(attachment, destinationPhone);
+        // Construir URL diretamente para send-image
+        const endpoint = `${zapiConfig.base_url}/instances/${zapiConfig.instance_id}/token/${zapiConfig.instance_token}/send-image`;
+        
+        const payload = {
+          phone: grupoWhatsApp,
+          image: attachment.url,
+          caption: attachment.caption || attachment.name
+        };
 
-        console.log(`Sending ${attachment.type} via ${endpoint}:`, { 
-          name: attachment.name, 
-          size: attachment.size,
-          payload: JSON.stringify(payload, null, 2)
+        console.log(`📷 Enviando imagem:`, {
+          endpoint,
+          phone: grupoWhatsApp,
+          image: attachment.url,
+          name: attachment.name
         });
 
         const response = await fetch(endpoint, {
@@ -278,71 +260,4 @@ serve(async (req) => {
   }
 });
 
-function getZApiEndpoint(fileType: string, config: ZApiConfig): string {
-  const baseUrl = `${config.base_url}/instances/${config.instance_id}/token/${config.instance_token}`;
-  
-  if (fileType.startsWith('image/')) {
-    return `${baseUrl}/send-image`;
-  } else if (fileType.startsWith('video/')) {
-    return `${baseUrl}/send-video`;
-  } else {
-    // For documents and audio (as documents for now)
-    const extension = getFileExtension(fileType);
-    return `${baseUrl}/send-document/${extension}`;
-  }
-}
-
-function buildZApiPayload(attachment: AttachmentFile, phone: string): any {
-  console.log(`=== BUILDING Z-API PAYLOAD ===`);
-  console.log(`Phone: ${phone}`);
-  console.log(`Attachment Type: ${attachment.type}`);
-  console.log(`Attachment URL: ${attachment.url}`);
-  console.log(`Attachment Name: ${attachment.name}`);
-
-  if (attachment.type.startsWith('image/')) {
-    const payload = {
-      phone: phone,
-      image: attachment.url,
-      caption: attachment.caption || attachment.name,
-      viewOnce: false
-    };
-    console.log(`Image payload:`, JSON.stringify(payload, null, 2));
-    return payload;
-  } else if (attachment.type.startsWith('video/')) {
-    const payload = {
-      phone: phone,
-      video: attachment.url,
-      caption: attachment.caption || attachment.name,
-      viewOnce: false
-    };
-    console.log(`Video payload:`, JSON.stringify(payload, null, 2));
-    return payload;
-  } else {
-    // Documents and audio
-    const payload = {
-      phone: phone,
-      document: attachment.url,
-      fileName: attachment.name,
-      caption: attachment.caption
-    };
-    console.log(`Document payload:`, JSON.stringify(payload, null, 2));
-    return payload;
-  }
-}
-
-function getFileExtension(mimeType: string): string {
-  const extensions: { [key: string]: string } = {
-    'application/pdf': 'pdf',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
-    'application/vnd.ms-excel': 'xls',
-    'application/msword': 'doc',
-    'text/plain': 'txt',
-    'audio/mpeg': 'mp3',
-    'audio/wav': 'wav',
-    'audio/ogg': 'ogg',
-    'audio/mp4': 'm4a'
-  };
-
-  return extensions[mimeType] || 'bin';
-}
+// Funções removidas - agora fazemos tudo direto no loop principal
