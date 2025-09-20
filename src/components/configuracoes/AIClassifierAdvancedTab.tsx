@@ -102,6 +102,7 @@ export function AIClassifierAdvancedTab() {
   const [metrics, setMetrics] = useState<ClassifierMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [newKeywords, setNewKeywords] = useState<Record<string, string>>({});
   const { toast } = useToast();
 
   const availableModels = [
@@ -478,8 +479,8 @@ export function AIClassifierAdvancedTab() {
                 
                 <div className="space-y-4">
                   {Object.entries(settings.emergency_keywords).map(([priority, keywords]) => {
-                    const [newKeyword, setNewKeyword] = useState('');
                     const keywordsList = keywords as string[];
+                    const currentKeyword = newKeywords[priority] || '';
                     
                     return (
                       <div key={priority} className="space-y-2">
@@ -492,20 +493,20 @@ export function AIClassifierAdvancedTab() {
                         <div className="flex gap-2">
                           <Input
                             placeholder="Nova palavra-chave..."
-                            value={newKeyword}
-                            onChange={(e) => setNewKeyword(e.target.value)}
+                            value={currentKeyword}
+                            onChange={(e) => setNewKeywords(prev => ({ ...prev, [priority]: e.target.value }))}
                             onKeyPress={(e) => {
                               if (e.key === 'Enter') {
-                                addKeyword(priority, newKeyword);
-                                setNewKeyword('');
+                                addKeyword(priority, currentKeyword);
+                                setNewKeywords(prev => ({ ...prev, [priority]: '' }));
                               }
                             }}
                           />
                           <Button
                             size="sm"
                             onClick={() => {
-                              addKeyword(priority, newKeyword);
-                              setNewKeyword('');
+                              addKeyword(priority, currentKeyword);
+                              setNewKeywords(prev => ({ ...prev, [priority]: '' }));
                             }}
                           >
                             <Plus className="h-4 w-4" />
