@@ -241,7 +241,6 @@ async function sendZapiMessage(phone: string, message: string, config: ZApiConfi
     return false;
   }
 }
-}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
