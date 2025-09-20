@@ -231,6 +231,13 @@ Sua mensagem foi adicionada ao histórico do atendimento.`;
 
         console.log('🧹 Estado conversacional limpo');
         
+        // Retornar sem processar com IA, pois já processamos a resposta do ticket
+        return { 
+          ok: true, 
+          conversation_id: conversation.id,
+          sent_reply: sentReply,
+          ticket_response_processed: true
+        };
       } else {
         // Estado expirado, limpar e processar normalmente
         console.log('⏰ Estado conversacional expirado, processando com IA');
