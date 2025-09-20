@@ -344,28 +344,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
     setIsSendingToFranqueado(true);
     
     try {
-      // 1. Primeiro: configurar grupo para aguardar resposta ao ticket
-      const { data: configResult, error: configError } = await supabase.functions.invoke('set-ticket-response-mode', {
-        body: {
-          group_phone: '120363421372736067-group', // ID do grupo principal 
-          ticket_id: ticketId,
-          action: 'start'
-        }
-      });
-
-      if (configError) {
-        console.error('❌ Erro ao configurar modo de resposta:', configError);
-        toast({
-          title: "Erro na configuração",
-          description: "Erro ao preparar o sistema para receber a resposta",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      console.log('✅ Grupo configurado para aguardar resposta:', configResult);
-
-      // 2. Depois: enviar mensagem para o grupo via Z-API (sem botões)
+      // Enviar mensagem diretamente para o grupo via Z-API
       const { data: zapiResult, error: zapiError } = await supabase.functions.invoke('send-ticket-notification', {
         body: {
           ticket_id: ticketId,
@@ -381,28 +360,19 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
           description: "Erro ao enviar mensagem para o WhatsApp",
           variant: "destructive",
         });
-        
-        // Tentar limpar estado do grupo em caso de erro
-        await supabase.functions.invoke('set-ticket-response-mode', {
-          body: {
-            group_phone: '120363421372736067-group',
-            ticket_id: ticketId,
-            action: 'stop'
-          }
-        });
         return;
       }
 
       console.log('✅ Mensagem enviada via Z-API:', zapiResult);
 
-      // 3. Salvar mensagem no histórico do ticket como saída
-      const success = await sendMessage(`[AGUARDANDO RESPOSTA] ${newMessage}`);
+      // Salvar mensagem no histórico do ticket como saída
+      const success = await sendMessage(newMessage);
       
       if (success) {
         setNewMessage('');
         toast({
           title: "✅ Mensagem enviada com sucesso!",
-          description: "Mensagem enviada para o WhatsApp. Aguardando resposta do franqueado.",
+          description: "Mensagem enviada para o WhatsApp.",
         });
       }
 
