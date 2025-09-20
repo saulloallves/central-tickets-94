@@ -26,7 +26,21 @@ serve(async (req) => {
     let query = supabase
       .from('documentos')
       .select(`
-        *,
+        id,
+        artigo_id,
+        titulo,
+        categoria,
+        versao,
+        tipo,
+        valido_ate,
+        tags,
+        status,
+        justificativa,
+        criado_por,
+        criado_em,
+        estilo,
+        processado_por_ia,
+        ia_modelo,
         profile:profiles!criado_por(nome_completo, email)
       `, { count: 'exact' })
       .order('criado_em', { ascending: false });
