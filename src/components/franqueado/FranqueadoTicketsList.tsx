@@ -177,9 +177,9 @@ export function FranqueadoTicketsList({ onTicketSelect, selectedTicketId, filter
     switch (prioridade) {
       case 'crise': return 'destructive';
       case 'imediato': return 'destructive';
-      case 'ate_1_hora': return 'secondary';
-      case 'ainda_hoje': return 'outline';
-      case 'posso_esperar': return 'outline';
+      case 'alto': return 'secondary';
+      case 'medio': return 'outline';
+      case 'baixo': return 'outline';
       default: return 'outline';
     }
   };
@@ -188,9 +188,9 @@ export function FranqueadoTicketsList({ onTicketSelect, selectedTicketId, filter
     switch (prioridade) {
       case 'crise': return 'Crise';
       case 'imediato': return 'Imediato';
-      case 'ate_1_hora': return 'Até 1h';
-      case 'ainda_hoje': return 'Ainda hoje';
-      case 'posso_esperar': return 'Posso esperar';
+      case 'alto': return 'Alto';
+      case 'medio': return 'Médio';
+      case 'baixo': return 'Baixo';
       default: return prioridade;
     }
   };

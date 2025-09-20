@@ -272,8 +272,8 @@ export function BottleneckDetection() {
     switch (priority) {
       case 'crise': return 'destructive';
       case 'imediato': return 'destructive';
-      case 'ate_1_hora': return 'destructive';
-      case 'ainda_hoje': return 'warning';
+      case 'alto': return 'destructive';
+      case 'medio': return 'warning';
       default: return 'secondary';
     }
   };

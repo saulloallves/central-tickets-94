@@ -473,9 +473,9 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
     switch (prioridade) {
       case 'crise': return 'destructive';
       case 'imediato': return 'destructive';
-      case 'ate_1_hora': return 'outline';
-      case 'ainda_hoje': return 'secondary';
-      case 'posso_esperar': return 'secondary';
+      case 'alto': return 'outline';
+      case 'medio': return 'secondary';
+      case 'baixo': return 'secondary';
       default: return 'secondary';
     }
   };

@@ -45,7 +45,7 @@ const defaultSettings: AIClassifierSettings = {
   timeout_requests: 30,
   api_provider: 'openai',
   categorias_disponiveis: ['juridico', 'sistema', 'midia', 'operacoes', 'rh', 'financeiro', 'outro'],
-  prioridades_disponiveis: ['imediato', 'ate_1_hora', 'ainda_hoje', 'posso_esperar'],
+  prioridades_disponiveis: ['imediato', 'alto', 'medio', 'baixo'],
   system_prompt: 'Você é um especialista em classificação de tickets de suporte técnico. Analise sempre em português brasileiro e seja preciso nas classificações.',
   user_prompt_template: `Você é um especialista em classificação de tickets de suporte técnico da Cresci & Perdi.
 
@@ -60,9 +60,9 @@ Analise este ticket e forneça:
 
 3. PRIORIDADE (OBRIGATÓRIO escolher uma): {{PRIORIDADES}}
    - imediato: problemas críticos que impedem funcionamento
-   - ate_1_hora: problemas urgentes que afetam produtividade  
-   - ainda_hoje: problemas importantes mas não bloqueiam trabalho
-   - posso_esperar: dúvidas, solicitações, problemas menores
+    - alto: problemas urgentes que afetam produtividade  
+    - medio: problemas importantes mas não bloqueiam trabalho
+    - baixo: dúvidas, solicitações, problemas menores
 
 4. EQUIPE SUGERIDA: Escolha a melhor equipe baseado nas especialidades:
 
@@ -83,13 +83,13 @@ CRÍTICO: Use APENAS estas prioridades: {{PRIORIDADES}}`,
   validacao_prioridade: true,
   mapeamento_prioridades: {
     'urgente': 'imediato',
-    'alta': 'ate_1_hora',
-    'hoje_18h': 'ainda_hoje',
-    'padrao_24h': 'posso_esperar'
+     'alta': 'alto',
+     'hoje_18h': 'medio',
+     'padrao_24h': 'baixo'
   },
   limite_titulo_palavras: 3,
   fallback_categoria: 'outro',
-  fallback_prioridade: 'posso_esperar',
+  fallback_prioridade: 'medio',
   log_detalhado: true,
   modo_debug: false
 };
@@ -155,7 +155,7 @@ export function AIClassifierTab() {
           mapeamento_prioridades: defaultSettings.mapeamento_prioridades,
           limite_titulo_palavras: 3,
           fallback_categoria: 'outro',
-          fallback_prioridade: 'posso_esperar',
+          fallback_prioridade: 'medio',
           log_detalhado: data.log_detalhado || true,
           modo_debug: data.modo_debug || false
         };

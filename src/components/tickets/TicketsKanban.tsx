@@ -143,9 +143,9 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
     switch (prioridade) {
       case 'crise': return <AlertTriangle className="h-2 w-2 text-critical" />;
       case 'imediato': return <Clock className="h-2 w-2 text-critical" />;
-      case 'ate_1_hora': return <ArrowUp className="h-2 w-2 text-warning" />;
-      case 'ainda_hoje': return <ArrowUp className="h-2 w-2 text-warning" />;
-      case 'posso_esperar': return null;
+      case 'alto': return <ArrowUp className="h-2 w-2 text-warning" />;
+      case 'medio': return <ArrowUp className="h-2 w-2 text-warning" />;
+      case 'baixo': return null;
       default: return null;
     }
   };
@@ -177,9 +177,9 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
     switch (prioridade) {
       case 'crise': return 'CRISE';
       case 'imediato': return 'Imediato';
-      case 'ate_1_hora': return 'Até 1h';
-      case 'ainda_hoje': return 'Ainda Hoje';
-      case 'posso_esperar': return 'Posso Esperar';
+      case 'alto': return 'Alto';
+      case 'medio': return 'Médio';
+      case 'baixo': return 'Baixo';
       default: return 'Posso esperar';
     }
   };
@@ -188,9 +188,9 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
     switch (prioridade) {
       case 'crise': return 'critical';
       case 'imediato': return 'critical';
-      case 'ate_1_hora': return 'warning';
-      case 'ainda_hoje': return 'outline';
-      case 'posso_esperar': return 'outline';
+      case 'alto': return 'warning';
+      case 'medio': return 'outline';
+      case 'baixo': return 'outline';
       default: return 'outline';
     }
   };
@@ -275,8 +275,8 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
             ticket.status === 'concluido' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
             ticket.prioridade === 'crise' ? 'bg-red-50 text-red-700 border border-red-200' :
             ticket.prioridade === 'imediato' ? 'bg-red-50 text-red-700 border border-red-200' :
-            ticket.prioridade === 'ate_1_hora' ? 'bg-orange-50 text-orange-700 border border-orange-200' :
-            ticket.prioridade === 'ainda_hoje' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+            ticket.prioridade === 'alto' ? 'bg-orange-50 text-orange-700 border border-orange-200' :
+            ticket.prioridade === 'medio' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
             'bg-slate-50 text-slate-700 border border-slate-200'
           )}>
             {ticket.status === 'concluido' ? 'OK' : getPriorityLabel(ticket.prioridade)}

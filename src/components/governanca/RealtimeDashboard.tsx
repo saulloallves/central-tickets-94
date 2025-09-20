@@ -362,7 +362,7 @@ export function RealtimeDashboard({ periodDays = 30 }: RealtimeDashboardProps) {
                           variant={
                             ticket.prioridade === 'crise' ? 'destructive' :
                             ticket.prioridade === 'imediato' ? 'destructive' :
-                            ticket.prioridade === 'ate_1_hora' ? 'destructive' :
+                            ticket.prioridade === 'alto' ? 'destructive' :
                             'secondary'
                           }
                           className="text-xs"
@@ -563,7 +563,7 @@ export function RealtimeDashboard({ periodDays = 30 }: RealtimeDashboardProps) {
                     variant={
                       selectedTicket.prioridade === 'crise' ? 'destructive' :
                       selectedTicket.prioridade === 'imediato' ? 'destructive' :
-                      selectedTicket.prioridade === 'ate_1_hora' ? 'destructive' :
+                      selectedTicket.prioridade === 'alto' ? 'destructive' :
                       'secondary'
                     }
                   >

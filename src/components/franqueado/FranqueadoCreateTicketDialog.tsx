@@ -51,7 +51,7 @@ export function FranqueadoCreateTicketDialog({ open, onOpenChange }: FranqueadoC
           codigo_ticket: '', // Will be generated automatically
           descricao_problema: formData.descricao_problema,
           titulo: formData.titulo,
-          prioridade: 'posso_esperar' as any, // Default until AI analysis
+          prioridade: 'medio' as any, // Default until AI analysis
           unidade_id: formData.unidade_id,
           canal_origem: 'web' as any,
           criado_por: user.id,

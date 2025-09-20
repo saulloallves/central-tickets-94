@@ -17,7 +17,7 @@ export interface Ticket {
   status: 'aberto' | 'em_atendimento' | 'escalonado' | 'concluido';
   categoria?: 'juridico' | 'sistema' | 'midia' | 'operacoes' | 'rh' | 'financeiro' | 'outro';
   subcategoria?: string;
-  prioridade: 'imediato' | 'ate_1_hora' | 'ainda_hoje' | 'posso_esperar' | 'crise';
+  prioridade: 'baixo' | 'medio' | 'alto' | 'imediato' | 'crise';
   data_abertura: string;
   data_limite_sla?: string;
   equipe_responsavel_id?: string;

@@ -245,9 +245,9 @@ export function FranqueadoTicketDetail({ ticketId, onClose }: FranqueadoTicketDe
     switch (prioridade) {
       case 'crise': return 'destructive';
       case 'imediato': return 'destructive';
-      case 'ate_1_hora': return 'secondary';
-      case 'ainda_hoje': return 'outline';
-      case 'posso_esperar': return 'outline';
+      case 'alto': return 'secondary';
+      case 'medio': return 'outline';
+      case 'baixo': return 'outline';
       default: return 'outline';
     }
   };

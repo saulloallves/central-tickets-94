@@ -48,16 +48,16 @@ export const CreateTicketDialog = ({ open, onOpenChange, onCreateTicket }: Creat
     unidade_id: '',
     descricao_problema: '',
     equipe_responsavel_id: '',
-    prioridade: 'posso_esperar' as const,
+    prioridade: 'medio' as const,
     subcategoria: ''
   });
 
   // Force check on every render
   useEffect(() => {
-    const validPriorities = ['imediato', 'ate_1_hora', 'ainda_hoje', 'posso_esperar', 'crise'];
+    const validPriorities = ['baixo', 'medio', 'alto', 'imediato', 'crise'];
     if (!validPriorities.includes(formData.prioridade)) {
       console.error('🚨 INVALID PRIORITY IN STATE, FORCING RESET');
-      setFormData(prev => ({ ...prev, prioridade: 'posso_esperar' }));
+      setFormData(prev => ({ ...prev, prioridade: 'medio' }));
     }
   }, [formData.prioridade]);
 
@@ -74,7 +74,7 @@ export const CreateTicketDialog = ({ open, onOpenChange, onCreateTicket }: Creat
           console.log('📊 Parsed localStorage data:', parsed);
           
           // Validate and fix legacy priority values
-          const validPriorities = ['imediato', 'ate_1_hora', 'ainda_hoje', 'posso_esperar', 'crise'];
+          const validPriorities = ['baixo', 'medio', 'alto', 'imediato', 'crise'];
           if (parsed.prioridade && !validPriorities.includes(parsed.prioridade)) {
             console.log('❌ Found legacy priority value:', parsed.prioridade, '- clearing localStorage and using default');
             // Clear localStorage completely to remove legacy data
@@ -107,7 +107,7 @@ export const CreateTicketDialog = ({ open, onOpenChange, onCreateTicket }: Creat
       unidade_id: unidades.length === 1 ? unidades[0].id : '',
       descricao_problema: '',
       equipe_responsavel_id: '',
-      prioridade: 'posso_esperar',
+      prioridade: 'medio',
       subcategoria: ''
     });
     setFaqResponse(null);
@@ -484,9 +484,9 @@ export const CreateTicketDialog = ({ open, onOpenChange, onCreateTicket }: Creat
                   <SelectContent>
                     <SelectItem value="crise">Crise</SelectItem>
                     <SelectItem value="imediato">Imediato (15min)</SelectItem>
-                    <SelectItem value="ate_1_hora">Até 1 hora</SelectItem>
-                    <SelectItem value="ainda_hoje">Ainda Hoje (18h)</SelectItem>
-                    <SelectItem value="posso_esperar">Posso Esperar (24h)</SelectItem>
+                    <SelectItem value="alto">Alto (1 hora)</SelectItem>
+                    <SelectItem value="medio">Médio (10 horas)</SelectItem>
+                    <SelectItem value="baixo">Baixo (24 horas)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

@@ -18,7 +18,7 @@ export interface Ticket {
   status: 'aberto' | 'em_atendimento' | 'escalonado' | 'concluido';
   categoria?: 'juridico' | 'sistema' | 'midia' | 'operacoes' | 'rh' | 'financeiro' | 'outro';
   subcategoria?: string;
-  prioridade: 'imediato' | 'ate_1_hora' | 'ainda_hoje' | 'posso_esperar' | 'crise';
+  prioridade: 'baixo' | 'medio' | 'alto' | 'imediato' | 'crise';
   data_abertura: string;
   data_limite_sla?: string;
   equipe_responsavel_id?: string;
@@ -286,7 +286,7 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
               // Play sound based on priority
               if (newTicket.prioridade === 'crise' || newTicket.prioridade === 'imediato') {
                 NotificationSounds.playCriticalAlert();
-              } else if (newTicket.prioridade === 'ate_1_hora') {
+              } else if (newTicket.prioridade === 'alto') {
                 NotificationSounds.playNotificationSound('warning');
               } else {
                 NotificationSounds.playNotificationSound('info');

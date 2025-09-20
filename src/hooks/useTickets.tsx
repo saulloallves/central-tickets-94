@@ -17,7 +17,7 @@ export interface Ticket {
   status: 'aberto' | 'em_atendimento' | 'escalonado' | 'concluido';
   categoria?: 'juridico' | 'sistema' | 'midia' | 'operacoes' | 'rh' | 'financeiro' | 'outro';
   subcategoria?: string;
-  prioridade: 'imediato' | 'ate_1_hora' | 'ainda_hoje' | 'posso_esperar' | 'crise';
+  prioridade: 'baixo' | 'medio' | 'alto' | 'imediato' | 'crise';
   data_abertura: string;
   data_limite_sla?: string;
   equipe_responsavel_id?: string;
@@ -445,8 +445,8 @@ export const useTickets = (filters: TicketFilters) => {
       }
 
       // Validate priority before inserting - AGGRESSIVE CLEANUP
-      const validPriorities = ['imediato', 'ate_1_hora', 'ainda_hoje', 'posso_esperar', 'crise'];
-      let finalPriority = ticketData.prioridade || 'posso_esperar';
+      const validPriorities = ['baixo', 'medio', 'alto', 'imediato', 'crise'];
+      let finalPriority = ticketData.prioridade || 'medio';
       
       console.log('🔧 PRIORITY VALIDATION:');
       console.log('  - Original priority:', finalPriority);
@@ -454,8 +454,8 @@ export const useTickets = (filters: TicketFilters) => {
       
       // FORCE CLEANUP - if ANY invalid priority, use default
       if (!validPriorities.includes(finalPriority)) {
-        console.warn(`❌ INVALID PRIORITY DETECTED: "${finalPriority}" - FORCING to "posso_esperar"`);
-        finalPriority = 'posso_esperar';
+        console.warn(`❌ INVALID PRIORITY DETECTED: "${finalPriority}" - FORCING to "medio"`);
+        finalPriority = 'medio';
       }
       
       // Extra safety check - convert invalid priority
@@ -704,7 +704,7 @@ export const useTickets = (filters: TicketFilters) => {
           
           // Special handling for enum fields - only include if they have valid values
           if (key === 'prioridade') {
-            const validPrioridades = ['imediato', 'ate_1_hora', 'ainda_hoje', 'posso_esperar', 'crise'];
+            const validPrioridades = ['baixo', 'medio', 'alto', 'imediato', 'crise'];
             const isValid = validPrioridades.includes(value as string);
             console.log(`Prioridade validation for "${value}":`, isValid);
             return isValid;
