@@ -38,6 +38,14 @@ function createMessageData(payload: ZAPIMessage): ConversationMessageData {
 
 async function handleWebhook(payload: ZAPIMessage) {
   console.log('Received Z-API webhook:', JSON.stringify(payload, null, 2));
+  console.log('Message details:', {
+    isGroup: payload.isGroup,
+    fromMe: payload.fromMe,
+    hasText: !!payload.text?.message,
+    phone: payload.phone,
+    chatName: payload.chatName,
+    senderName: payload.senderName
+  });
 
   if (shouldSkipMessage(payload)) {
     console.log('Skipping message: status reply or no text');
