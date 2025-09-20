@@ -38,7 +38,6 @@ interface AISettings {
   prompt_typebot?: string;
   prompt_zapi_whatsapp?: string;
   prompt_ticket_suggestions?: string;
-  prompt_format_response?: string;
   
   // Configurações gerais
   estilo_resposta: string;
@@ -155,25 +154,6 @@ INSTRUÇÕES IMPORTANTES:
 - NÃO invente informações
 - Se não encontrar informações suficientes, diga isso claramente
 - Retorne apenas JSON: {"texto": "sua resposta", "fontes": ["id1", "id2"]}`,
-  prompt_format_response: `Você é um assistente para formatação de respostas profissionais da Cresci & Perdi.
-
-OBJETIVO: Transformar respostas técnicas em comunicação profissional e empática para clientes.
-
-FORMATAÇÃO OBRIGATÓRIA:
-- Mantenha um tom cordial e profissional
-- Use linguagem clara e acessível
-- Evite jargões técnicos desnecessários
-- Estruture a informação de forma didática
-- Demonstre empatia e disponibilidade para ajudar
-
-EXEMPLO DE RESPOSTA FORMATADA:
-"Olá! Agradecemos seu contato. Informamos que, até o momento, enviamos o link conforme solicitado. Aproveitamos para reforçar que seguimos diretrizes específicas para divulgação de avaliações e novidades em nossas redes sociais. Priorizamos postagens criativas e estratégicas, evitando divulgar informações sensíveis como valores negociados, tamanhos ou detalhes sobre a negociação. Assim, garantimos a privacidade e o melhor relacionamento com nossos clientes e parceiros. Estamos à disposição para qualquer outra dúvida!"
-
-INSTRUÇÕES:
-- Transforme respostas diretas em comunicação empática
-- Mantenha o profissionalismo sem ser frio
-- Use frases de cortesia apropriadas
-- Finalize sempre com disponibilidade para ajudar`,
   auto_classificacao: true,
   usar_busca_semantica: true,
   temperatura_chat: 0.3,
@@ -435,7 +415,6 @@ export function IASettingsTab() {
           prompt_typebot: data.prompt_typebot || defaultSettings.prompt_typebot,
           prompt_zapi_whatsapp: data.prompt_zapi_whatsapp || defaultSettings.prompt_zapi_whatsapp,
           prompt_ticket_suggestions: data.prompt_ticket_suggestions || defaultSettings.prompt_ticket_suggestions,
-          prompt_format_response: data.prompt_format_response || defaultSettings.prompt_format_response,
           auto_classificacao: data.auto_classificacao ?? defaultSettings.auto_classificacao,
           usar_busca_semantica: data.usar_busca_semantica ?? defaultSettings.usar_busca_semantica,
           temperatura_chat: data.temperatura_chat ?? defaultSettings.temperatura_chat,
@@ -1196,39 +1175,6 @@ export function IASettingsTab() {
               </Dialog>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 mt-4">
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="outline" className="h-auto p-4 flex flex-col items-start gap-2 hover:bg-muted/50">
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="h-4 w-4" />
-                      <span className="font-medium">Formatação de Respostas</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground text-left">
-                      Configurar prompt para formatação profissional de respostas
-                    </p>
-                    <Edit className="h-3 w-3 self-end" />
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>✨ Prompt para Formatação de Respostas</DialogTitle>
-                    <DialogDescription>
-                      Configure as instruções para transformar respostas técnicas em comunicação profissional e empática
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <Textarea
-                      value={settings.prompt_format_response || ''}
-                      onChange={(e) => setSettings(prev => ({...prev, prompt_format_response: e.target.value}))}
-                      rows={15}
-                      placeholder="Instruções específicas para formatação profissional de respostas..."
-                      className="min-h-[400px]"
-                    />
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
           </div>
         </CardContent>
       </Card>
