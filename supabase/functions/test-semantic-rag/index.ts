@@ -232,6 +232,14 @@ serve(async (req) => {
     console.log('- Texto completo length:', textoCompleto.length);
     console.log('- Primeiros 200 chars:', textoCompleto.substring(0, 200));
 
+    // Truncar texto para evitar exceder limite de tokens (8192)
+    // Estimativa: ~4 caracteres por token, então limitamos a ~6000 caracteres para ter margem
+    const textoParaEmbedding = textoCompleto.length > 6000 
+      ? textoCompleto.substring(0, 6000) + '...'
+      : textoCompleto;
+
+    console.log('- Texto truncado length:', textoParaEmbedding.length);
+
     // Gerar embedding usando OpenAI
     const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
       method: 'POST',
@@ -240,7 +248,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        input: textoCompleto,
+        input: textoParaEmbedding,
         model: 'text-embedding-3-small'
       }),
     });
