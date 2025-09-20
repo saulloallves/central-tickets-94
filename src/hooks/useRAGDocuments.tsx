@@ -35,6 +35,17 @@ interface DocumentFilters {
   categoria?: string;
   search?: string;
   estilo?: string;
+  page?: number;
+  limit?: number;
+}
+
+interface PaginationInfo {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
 }
 
 interface SimilarDocument {
@@ -48,6 +59,14 @@ interface SimilarDocument {
 export const useRAGDocuments = () => {
   const [documents, setDocuments] = useState<RAGDocument[]>([]);
   const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState<PaginationInfo>({
+    page: 1,
+    limit: 20,
+    total: 0,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false
+  });
   const { toast } = useToast();
 
   const fetchDocuments = async (filters?: DocumentFilters) => {
@@ -59,12 +78,28 @@ export const useRAGDocuments = () => {
           tipo_filter: filters?.tipo || null,
           categoria_filter: filters?.categoria || null,
           search_term: filters?.search || null,
-          estilo_filter: filters?.estilo || null
+          estilo_filter: filters?.estilo || null,
+          page: filters?.page || 1,
+          limit: filters?.limit || 20
         }
       });
 
       if (error) throw error;
-      setDocuments((data as RAGDocument[]) || []);
+      
+      if (data && typeof data === 'object' && 'data' in data) {
+        setDocuments(data.data || []);
+        setPagination(data.pagination || {
+          page: 1,
+          limit: 20,
+          total: 0,
+          totalPages: 0,
+          hasNext: false,
+          hasPrev: false
+        });
+      } else {
+        // Fallback for old response format
+        setDocuments((data as RAGDocument[]) || []);
+      }
     } catch (error) {
       console.error('Error fetching documents:', error);
       toast({
@@ -264,6 +299,7 @@ export const useRAGDocuments = () => {
   return {
     documents,
     loading,
+    pagination,
     fetchDocuments,
     createDocument,
     updateDocument,

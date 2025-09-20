@@ -10,7 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Search, FileText, AlertTriangle, Database, TrendingUp, Shield, CheckCircle, Bot, Sparkles, Settings, FileUp, FilePlus, X, Info, Eye } from 'lucide-react';
+import { Plus, Search, FileText, AlertTriangle, Database, TrendingUp, Shield, CheckCircle, Bot, Sparkles, Settings, FileUp, FilePlus, X, Info, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from '@/components/ui/pagination';
 import { useRAGDocuments } from '@/hooks/useRAGDocuments';
 import { SimilarDocumentsModal } from './SimilarDocumentsModal';
 import { SemanticAnalysisModal } from './SemanticAnalysisModal';
@@ -22,6 +23,7 @@ const KnowledgeHubTab = () => {
   const {
     documents,
     loading,
+    pagination,
     fetchDocuments,
     createDocument,
     updateDocument,
@@ -36,6 +38,7 @@ const KnowledgeHubTab = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [estiloFilter, setEstiloFilter] = useState('');
   const [categoriaFilter, setCategoriaFilter] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [auditResults, setAuditResults] = useState(null);
   const [showSimilarDocumentsModal, setShowSimilarDocumentsModal] = useState(false);
@@ -149,13 +152,29 @@ const KnowledgeHubTab = () => {
       setAuditResults(results);
     }
   };
-  const filteredDocuments = documents.filter(doc => {
-    const matchesSearch = doc.titulo.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = !statusFilter || statusFilter === 'all' || doc.status === statusFilter;
-    const matchesEstilo = !estiloFilter || estiloFilter === 'all' || doc.estilo === estiloFilter;
-    const matchesCategoria = !categoriaFilter || categoriaFilter === 'all' || doc.categoria === categoriaFilter;
-    return matchesSearch && matchesStatus && matchesEstilo && matchesCategoria;
-  });
+  // Apply filters and fetch documents with pagination
+  const applyFilters = async (page: number = 1) => {
+    const filters = {
+      search: searchTerm || undefined,
+      status: (statusFilter && statusFilter !== 'all') ? statusFilter : undefined,
+      estilo: (estiloFilter && estiloFilter !== 'all') ? estiloFilter : undefined,
+      categoria: (categoriaFilter && categoriaFilter !== 'all') ? categoriaFilter : undefined,
+      page,
+      limit: 20
+    };
+    await fetchDocuments(filters);
+    setCurrentPage(page);
+  };
+
+  // Handle filter changes
+  const handleFilterChange = () => {
+    setCurrentPage(1);
+    applyFilters(1);
+  };
+
+  const handlePageChange = (page: number) => {
+    applyFilters(page);
+  };
   const statusColors = {
     ativo: 'bg-green-500',
     vencido: 'bg-red-500',
@@ -168,7 +187,8 @@ const KnowledgeHubTab = () => {
     diretriz: 'bg-purple-100 text-purple-800'
   };
   const getStats = () => {
-    const total = documents.length;
+    // Use pagination total for accurate counts
+    const total = pagination.total;
     const ativos = documents.filter(d => d.status === 'ativo').length;
     const temporarios = documents.filter(d => d.tipo === 'temporario').length;
     const vencidos = documents.filter(d => d.status === 'vencido').length;
@@ -183,7 +203,7 @@ const KnowledgeHubTab = () => {
   };
   const stats = getStats();
 
-  // Buscar categorias existentes
+  // Buscar categorias existentes e aplicar filtros iniciais
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -201,7 +221,17 @@ const KnowledgeHubTab = () => {
       }
     };
     fetchCategories();
-  }, [documents]); // Re-buscar quando documents mudarem
+    applyFilters(1);
+  }, []); // Fetch initial data
+
+  // Apply filters when they change
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      handleFilterChange();
+    }, 500); // Debounce search
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, statusFilter, estiloFilter, categoriaFilter]);
 
   return <div className="space-y-6">
       {/* Header com estatísticas RAG */}
@@ -489,9 +519,9 @@ const KnowledgeHubTab = () => {
           </div>
 
           <div className="space-y-4">
-            {loading ? <div className="text-center py-8">Carregando documentos RAG...</div> : filteredDocuments.length === 0 ? <div className="text-center py-8 text-muted-foreground">
+            {loading ? <div className="text-center py-8">Carregando documentos RAG...</div> : documents.length === 0 ? <div className="text-center py-8 text-muted-foreground">
                 Nenhum documento encontrado
-              </div> : filteredDocuments.map(doc => <Card key={doc.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setSelectedDocument(doc)}>
+              </div> : documents.map(doc => <Card key={doc.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setSelectedDocument(doc)}>
                   <CardContent className="p-4">
                     <div className="flex justify-between items-start gap-4">
                       <div className="flex-1">
@@ -542,6 +572,122 @@ const KnowledgeHubTab = () => {
                   </CardContent>
                 </Card>)}
           </div>
+
+          {/* Paginação */}
+          {pagination.totalPages > 1 && (
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6">
+              <div className="text-sm text-muted-foreground">
+                Mostrando {((pagination.page - 1) * pagination.limit) + 1} a {Math.min(pagination.page * pagination.limit, pagination.total)} de {pagination.total} documentos
+              </div>
+              
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      href="#" 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (pagination.hasPrev) handlePageChange(pagination.page - 1);
+                      }}
+                      className={!pagination.hasPrev ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                    />
+                  </PaginationItem>
+                  
+                  {/* First page */}
+                  {pagination.page > 2 && (
+                    <>
+                      <PaginationItem>
+                        <PaginationLink 
+                          href="#" 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handlePageChange(1);
+                          }}
+                          className="cursor-pointer"
+                        >
+                          1
+                        </PaginationLink>
+                      </PaginationItem>
+                      {pagination.page > 3 && <PaginationEllipsis />}
+                    </>
+                  )}
+                  
+                  {/* Previous page */}
+                  {pagination.page > 1 && (
+                    <PaginationItem>
+                      <PaginationLink 
+                        href="#" 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handlePageChange(pagination.page - 1);
+                        }}
+                        className="cursor-pointer"
+                      >
+                        {pagination.page - 1}
+                      </PaginationLink>
+                    </PaginationItem>
+                  )}
+                  
+                  {/* Current page */}
+                  <PaginationItem>
+                    <PaginationLink 
+                      href="#" 
+                      isActive
+                      className="cursor-default"
+                    >
+                      {pagination.page}
+                    </PaginationLink>
+                  </PaginationItem>
+                  
+                  {/* Next page */}
+                  {pagination.page < pagination.totalPages && (
+                    <PaginationItem>
+                      <PaginationLink 
+                        href="#" 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handlePageChange(pagination.page + 1);
+                        }}
+                        className="cursor-pointer"
+                      >
+                        {pagination.page + 1}
+                      </PaginationLink>
+                    </PaginationItem>
+                  )}
+                  
+                  {/* Last page */}
+                  {pagination.page < pagination.totalPages - 1 && (
+                    <>
+                      {pagination.page < pagination.totalPages - 2 && <PaginationEllipsis />}
+                      <PaginationItem>
+                        <PaginationLink 
+                          href="#" 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handlePageChange(pagination.totalPages);
+                          }}
+                          className="cursor-pointer"
+                        >
+                          {pagination.totalPages}
+                        </PaginationLink>
+                      </PaginationItem>
+                    </>
+                  )}
+                  
+                  <PaginationItem>
+                    <PaginationNext 
+                      href="#" 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (pagination.hasNext) handlePageChange(pagination.page + 1);
+                      }}
+                      className={!pagination.hasNext ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </CardContent>
       </Card>
 

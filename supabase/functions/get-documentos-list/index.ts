@@ -18,14 +18,17 @@ serve(async (req) => {
   }
 
   try {
-    const { status_filter, tipo_filter, categoria_filter, search_term, estilo_filter } = await req.json();
+    const { status_filter, tipo_filter, categoria_filter, search_term, estilo_filter, page = 1, limit = 20 } = await req.json();
+    
+    // Calculate offset for pagination
+    const offset = (page - 1) * limit;
     
     let query = supabase
       .from('documentos')
       .select(`
         *,
         profile:profiles!criado_por(nome_completo, email)
-      `)
+      `, { count: 'exact' })
       .order('criado_em', { ascending: false });
 
     if (status_filter) {
@@ -44,12 +47,30 @@ serve(async (req) => {
       query = query.ilike('titulo', `%${search_term}%`);
     }
 
-    const { data, error } = await query;
+    // Apply pagination
+    query = query.range(offset, offset + limit - 1);
+
+    const { data, error, count } = await query;
 
     if (error) throw error;
 
+    // Calculate pagination metadata
+    const totalPages = Math.ceil((count || 0) / limit);
+    const hasNext = page < totalPages;
+    const hasPrev = page > 1;
+
     return new Response(
-      JSON.stringify(data || []),
+      JSON.stringify({
+        data: data || [],
+        pagination: {
+          page,
+          limit,
+          total: count || 0,
+          totalPages,
+          hasNext,
+          hasPrev
+        }
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
