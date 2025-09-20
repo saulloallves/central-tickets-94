@@ -3019,6 +3019,10 @@ export type Database = {
         }
         Returns: Json
       }
+      get_sla_minutes_for_priority: {
+        Args: { p_prioridade: Database["public"]["Enums"]["ticket_prioridade"] }
+        Returns: number
+      }
       get_team_metrics: {
         Args: {
           p_periodo_dias?: number
