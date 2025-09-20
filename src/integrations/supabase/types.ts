@@ -14,6 +14,147 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_classifier_adjustments: {
+        Row: {
+          adjustment_type: string
+          applied_at: string
+          applied_by: string | null
+          confidence_score: number
+          id: string
+          new_value: Json
+          old_value: Json
+          reason: string
+        }
+        Insert: {
+          adjustment_type: string
+          applied_at?: string
+          applied_by?: string | null
+          confidence_score: number
+          id?: string
+          new_value: Json
+          old_value: Json
+          reason: string
+        }
+        Update: {
+          adjustment_type?: string
+          applied_at?: string
+          applied_by?: string | null
+          confidence_score?: number
+          id?: string
+          new_value?: Json
+          old_value?: Json
+          reason?: string
+        }
+        Relationships: []
+      }
+      ai_classifier_advanced_settings: {
+        Row: {
+          ai_model_settings: Json
+          ativo: boolean
+          auto_adjustment_enabled: boolean
+          classification_prompt_template: string
+          continuous_learning_enabled: boolean
+          created_at: string
+          created_by: string | null
+          dynamic_sla_enabled: boolean
+          emergency_keywords: Json
+          feedback_threshold: number
+          id: string
+          load_balancing_enabled: boolean
+          priority_matrix: Json
+          priority_prompt_template: string
+          sla_adjustment_factors: Json
+          sla_prompt_template: string
+          team_capacity_weights: Json
+          updated_at: string
+        }
+        Insert: {
+          ai_model_settings?: Json
+          ativo?: boolean
+          auto_adjustment_enabled?: boolean
+          classification_prompt_template?: string
+          continuous_learning_enabled?: boolean
+          created_at?: string
+          created_by?: string | null
+          dynamic_sla_enabled?: boolean
+          emergency_keywords?: Json
+          feedback_threshold?: number
+          id?: string
+          load_balancing_enabled?: boolean
+          priority_matrix?: Json
+          priority_prompt_template?: string
+          sla_adjustment_factors?: Json
+          sla_prompt_template?: string
+          team_capacity_weights?: Json
+          updated_at?: string
+        }
+        Update: {
+          ai_model_settings?: Json
+          ativo?: boolean
+          auto_adjustment_enabled?: boolean
+          classification_prompt_template?: string
+          continuous_learning_enabled?: boolean
+          created_at?: string
+          created_by?: string | null
+          dynamic_sla_enabled?: boolean
+          emergency_keywords?: Json
+          feedback_threshold?: number
+          id?: string
+          load_balancing_enabled?: boolean
+          priority_matrix?: Json
+          priority_prompt_template?: string
+          sla_adjustment_factors?: Json
+          sla_prompt_template?: string
+          team_capacity_weights?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ai_classifier_metrics: {
+        Row: {
+          accuracy_rate: number
+          average_response_time: number
+          average_sla_adherence: number
+          correct_classifications: number
+          created_at: string
+          date: string
+          id: string
+          priority_accuracy: Json
+          sla_breaches: number
+          sla_compliance_rate: number
+          team_load_distribution: Json
+          total_tickets_classified: number
+        }
+        Insert: {
+          accuracy_rate?: number
+          average_response_time?: number
+          average_sla_adherence?: number
+          correct_classifications?: number
+          created_at?: string
+          date?: string
+          id?: string
+          priority_accuracy?: Json
+          sla_breaches?: number
+          sla_compliance_rate?: number
+          team_load_distribution?: Json
+          total_tickets_classified?: number
+        }
+        Update: {
+          accuracy_rate?: number
+          average_response_time?: number
+          average_sla_adherence?: number
+          correct_classifications?: number
+          created_at?: string
+          date?: string
+          id?: string
+          priority_accuracy?: Json
+          sla_breaches?: number
+          sla_compliance_rate?: number
+          team_load_distribution?: Json
+          total_tickets_classified?: number
+        }
+        Relationships: []
+      }
       ai_feedback: {
         Row: {
           created_at: string
@@ -901,6 +1042,7 @@ export type Database = {
           profundidade_historico: number | null
           prompt_chat: string | null
           prompt_classificacao: string | null
+          prompt_format_response: string | null
           prompt_sugestao: string | null
           prompt_ticket_suggestions: string | null
           prompt_typebot: string | null
@@ -954,6 +1096,7 @@ export type Database = {
           profundidade_historico?: number | null
           prompt_chat?: string | null
           prompt_classificacao?: string | null
+          prompt_format_response?: string | null
           prompt_sugestao?: string | null
           prompt_ticket_suggestions?: string | null
           prompt_typebot?: string | null
@@ -1007,6 +1150,7 @@ export type Database = {
           profundidade_historico?: number | null
           prompt_chat?: string | null
           prompt_classificacao?: string | null
+          prompt_format_response?: string | null
           prompt_sugestao?: string | null
           prompt_ticket_suggestions?: string | null
           prompt_typebot?: string | null
