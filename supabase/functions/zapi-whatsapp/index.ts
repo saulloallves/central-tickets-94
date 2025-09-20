@@ -172,127 +172,150 @@ async function handleWebhook(payload: ZAPIMessage) {
 
   // If it's an incoming message (not from us), check for ticket response state FIRST
   if (!payload.fromMe && payload.text?.message) {
-    // Verificar se usuário está aguardando responder ticket ANTES de qualquer processamento
-    const conversationState = conversation.meta as any;
+    // PRIMEIRA PRIORIDADE: Verificar se grupo está aguardando resposta ao ticket
+    console.log(`🔍 Verificando estado do grupo: ${payload.phone}`);
     
-    if (conversationState?.awaiting_response_for_ticket) {
-      const expiresAt = new Date(conversationState.expires_at);
-      const now = new Date();
+    const { data: groupState, error: groupStateError } = await supabase
+      .from('whatsapp_group_states')
+      .select('*')
+      .eq('group_phone', payload.phone)
+      .eq('awaiting_ticket_response', true)
+      .maybeSingle();
+
+    if (groupStateError) {
+      console.error('❌ Erro ao consultar estado do grupo:', groupStateError);
+    } else if (groupState) {
+      console.log(`📋 Grupo está aguardando resposta ao ticket:`, groupState);
       
-      console.log(`🔍 Verificando estado do ticket: ${conversationState.awaiting_response_for_ticket}`);
-      console.log(`⏰ Expira em: ${expiresAt}, Agora: ${now}`);
+      const now = new Date();
+      const expiresAt = new Date(groupState.expires_at);
+      
+      console.log(`⏰ Expira em: ${expiresAt.toISOString()}, Agora: ${now.toISOString()}`);
       
       if (now <= expiresAt) {
         // Processar como resposta ao ticket
-        console.log(`🎫 Processando resposta ao ticket: ${conversationState.awaiting_response_for_ticket}`);
+        console.log(`📝 Processando como resposta ao ticket: ${groupState.ticket_id}`);
         
-         const ticketId = conversationState.awaiting_response_for_ticket;
-         const userMessage = payload.text.message;
-         
-         console.log(`💾 Salvando resposta: "${userMessage}" para ticket ${ticketId}`);
-         console.log(`👤 Usuário: ${payload.senderName} (${payload.participantPhone || payload.phone})`);
-         
-         // Salvar resposta no ticket
-         const { error: messageError } = await supabase
-           .from('ticket_mensagens')
-           .insert({
-             ticket_id: ticketId,
-             direcao: 'entrada',
-             mensagem: userMessage,
-             canal: 'whatsapp',
-             usuario_id: null, // TODO: vincular ao usuário correto se necessário
-             created_at: new Date().toISOString()
-           });
+        try {
+          // Salvar mensagem como resposta ao ticket
+          const { error: insertError } = await supabase
+            .from('ticket_mensagens')
+            .insert({
+              ticket_id: groupState.ticket_id,
+              usuario_id: null, // Será definido pelo RLS ou trigger
+              mensagem: payload.text.message,
+              direcao: 'entrada',
+              canal: 'whatsapp',
+              meta: {
+                whatsapp_message_id: payload.messageId,
+                sender_name: payload.senderName,
+                sender_phone: payload.participantPhone || payload.phone,
+                group_phone: payload.isGroup ? payload.phone : null,
+                timestamp: new Date(payload.momment).toISOString(),
+                processed_as_ticket_response: true
+              }
+            });
 
-         if (messageError) {
-           console.error('❌ Erro ao salvar mensagem:', messageError);
-           sentReply = await zapiClient.sendTextMessage(
-             payload.phone,
-             payload.instanceId,
-             "❌ Erro ao processar sua resposta. Tente novamente."
-           );
-         } else {
-           console.log('✅ Mensagem salva com sucesso no ticket');
-           
-           // Buscar dados do ticket para confirmação
-           const { data: ticket } = await supabase
-             .from('tickets')
-             .select('codigo_ticket, titulo')
-             .eq('id', ticketId)
-             .single();
+          if (insertError) {
+            console.error('❌ Erro ao salvar resposta do ticket:', insertError);
+            sentReply = await zapiClient.sendTextMessage(
+              payload.phone,
+              payload.instanceId,
+              "❌ Erro ao processar sua resposta. Tente novamente."
+            );
+          } else {
+            console.log('✅ Resposta do ticket salva com sucesso');
+            
+            // Buscar dados do ticket para confirmação
+            const { data: ticket } = await supabase
+              .from('tickets')
+              .select('codigo_ticket, titulo')
+              .eq('id', groupState.ticket_id)
+              .maybeSingle();
 
-           // Enviar confirmação
-           const confirmationMessage = `✅ *Resposta registrada com sucesso!*
+            // Enviar confirmação
+            const confirmationMessage = `✅ *Resposta registrada com sucesso!*
 
-📋 Ticket #${ticket?.codigo_ticket}
-📄 ${ticket?.titulo}
+📋 Ticket #${ticket?.codigo_ticket || 'N/A'}
+📄 ${ticket?.titulo || 'Ticket'}
 
 Sua mensagem foi adicionada ao histórico do atendimento.`;
 
-           sentReply = await zapiClient.sendTextMessage(
-             payload.phone,
-             payload.instanceId,
-             confirmationMessage
-           );
-         }
+            sentReply = await zapiClient.sendTextMessage(
+              payload.phone,
+              payload.instanceId,
+              confirmationMessage
+            );
+          }
 
-        // Limpar estado conversacional
-        await supabase
-          .from('whatsapp_conversas')
-          .update({
-            meta: {},
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', conversation.id);
+          // Limpar estado de aguardar resposta
+          const { error: clearError } = await supabase
+            .from('whatsapp_group_states')
+            .update({
+              awaiting_ticket_response: false,
+              ticket_id: null,
+              expires_at: null,
+              updated_at: new Date().toISOString()
+            })
+            .eq('group_phone', payload.phone);
 
-        console.log('🧹 Estado conversacional limpo');
-        
-        // Retornar sem processar com IA, pois já processamos a resposta do ticket
-        return { 
-          ok: true, 
-          conversation_id: conversation.id,
-          sent_reply: sentReply,
-          ticket_response_processed: true
-        };
+          if (clearError) {
+            console.error('❌ Erro ao limpar estado do grupo:', clearError);
+          } else {
+            console.log('✅ Estado de resposta ao ticket limpo');
+          }
+
+          // Retornar SEM processar com IA
+          return { 
+            ok: true, 
+            conversation_id: conversation.id,
+            sent_reply: sentReply,
+            ticket_response_processed: true
+          };
+          
+        } catch (error) {
+          console.error('❌ Erro ao processar resposta do ticket:', error);
+          // Limpar estado mesmo em caso de erro
+          await supabase
+            .from('whatsapp_group_states')
+            .update({
+              awaiting_ticket_response: false,
+              ticket_id: null,
+              expires_at: null,
+              updated_at: new Date().toISOString()
+            })
+            .eq('group_phone', payload.phone);
+        }
       } else {
-        // Estado expirado, limpar e processar normalmente
-        console.log('⏰ Estado conversacional expirado, processando com IA');
-        
+        // Estado expirado, limpar
+        console.log('⏰ Estado de resposta ao ticket expirado, limpando...');
         await supabase
-          .from('whatsapp_conversas')
+          .from('whatsapp_group_states')
           .update({
-            meta: {},
+            awaiting_ticket_response: false,
+            ticket_id: null,
+            expires_at: null,
             updated_at: new Date().toISOString()
           })
-          .eq('id', conversation.id);
-
-        // Processar com IA normalmente
-        sentReply = await aiProcessor.processIncomingMessage(
-          payload.text.message,
-          payload.phone,
-          payload.instanceId,
-          payload.connectedPhone,
-          payload.chatName,
-          payload.senderName,
-          payload.senderLid,
-          payload.senderPhoto,
-          payload.isGroup
-        );
+          .eq('group_phone', payload.phone);
       }
     } else {
-      // Processar com IA normalmente
-      sentReply = await aiProcessor.processIncomingMessage(
-        payload.text.message,
-        payload.phone,
-        payload.instanceId,
-        payload.connectedPhone,
-        payload.chatName,
-        payload.senderName,
-        payload.senderLid,
-        payload.senderPhoto,
-        payload.isGroup
-      );
+      console.log(`📍 Grupo não está aguardando resposta ao ticket, processando normalmente`);
     }
+
+    // Process with AI if not a ticket response or if ticket state expired
+    console.log('Generating AI response using RAG v4 for message:', payload.text.message);
+    sentReply = await aiProcessor.processIncomingMessage(
+      payload.text.message,
+      payload.phone,
+      payload.instanceId,
+      payload.connectedPhone,
+      payload.chatName,
+      payload.senderName,
+      payload.senderLid,
+      payload.senderPhoto,
+      payload.isGroup
+    );
   }
 
   return { 

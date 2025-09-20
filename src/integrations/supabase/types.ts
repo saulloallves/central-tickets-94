@@ -2819,6 +2819,36 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_group_states: {
+        Row: {
+          awaiting_ticket_response: boolean
+          created_at: string
+          expires_at: string | null
+          group_phone: string
+          id: string
+          ticket_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          awaiting_ticket_response?: boolean
+          created_at?: string
+          expires_at?: string | null
+          group_phone: string
+          id?: string
+          ticket_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          awaiting_ticket_response?: boolean
+          created_at?: string
+          expires_at?: string | null
+          group_phone?: string
+          id?: string
+          ticket_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       v_kb_articles_usage: {

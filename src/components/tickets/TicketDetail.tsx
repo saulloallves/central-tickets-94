@@ -344,37 +344,82 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
     setIsSendingToFranqueado(true);
     
     try {
-      const { data, error } = await supabase.functions.invoke('process-notifications', {
+      // 1. Primeiro: configurar grupo para aguardar resposta ao ticket
+      const { data: configResult, error: configError } = await supabase.functions.invoke('set-ticket-response-mode', {
         body: {
-          ticketId: ticket.id,
-          type: 'resposta_ticket_franqueado',
-          textoResposta: newMessage
+          group_phone: '120363421372736067-group', // ID do grupo principal 
+          ticket_id: ticketId,
+          action: 'start'
         }
       });
 
-      if (error) {
-        throw error;
-      }
-
-      if (data && !data.success) {
+      if (configError) {
+        console.error('❌ Erro ao configurar modo de resposta:', configError);
         toast({
-          title: "Aviso",
-          description: data.message,
-          variant: "destructive"
+          title: "Erro na configuração",
+          description: "Erro ao preparar o sistema para receber a resposta",
+          variant: "destructive",
         });
         return;
       }
 
-      toast({
-        title: "Sucesso",
-        description: "Mensagem enviada por WhatsApp ao franqueado",
+      console.log('✅ Grupo configurado para aguardar resposta:', configResult);
+
+      // 2. Depois: enviar mensagem para o grupo via Z-API
+      const { data: zapiResult, error: zapiError } = await supabase.functions.invoke('zapi-send-media', {
+        body: {
+          ticketId: ticketId,
+          attachments: [{
+            type: 'text',
+            content: `📝 *Responder Ticket #${ticket?.codigo_ticket}*
+
+${newMessage}
+
+Digite sua resposta para este ticket. Sua mensagem será adicionada ao histórico do atendimento.
+
+⏰ _Esta sessão expira em 5 minutos._`,
+            name: 'Mensagem do Ticket'
+          }]
+        }
       });
+
+      if (zapiError) {
+        console.error('❌ Erro ao enviar mensagem via Z-API:', zapiError);
+        toast({
+          title: "Erro no envio",
+          description: "Erro ao enviar mensagem para o WhatsApp",
+          variant: "destructive",
+        });
+        
+        // Tentar limpar estado do grupo em caso de erro
+        await supabase.functions.invoke('set-ticket-response-mode', {
+          body: {
+            group_phone: '120363421372736067-group',
+            ticket_id: ticketId,
+            action: 'stop'
+          }
+        });
+        return;
+      }
+
+      console.log('✅ Mensagem enviada via Z-API:', zapiResult);
+
+      // 3. Salvar mensagem no histórico do ticket como saída
+      const success = await sendMessage(`[AGUARDANDO RESPOSTA] ${newMessage}`);
+      
+      if (success) {
+        setNewMessage('');
+        toast({
+          title: "✅ Mensagem enviada com sucesso!",
+          description: "Mensagem enviada para o WhatsApp. Aguardando resposta do franqueado.",
+        });
+      }
 
     } catch (error) {
       console.error('Error sending to franqueado:', error);
       toast({
         title: "Erro",
-        description: "Erro ao enviar mensagem ao franqueado",
+        description: "Erro ao enviar mensagem para franqueado",
         variant: "destructive"
       });
     } finally {
