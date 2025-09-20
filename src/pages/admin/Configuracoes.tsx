@@ -16,6 +16,7 @@ import { AIAlertsTestTab } from '@/components/configuracoes/AIAlertsTestTab';
 import CrisisAISettingsTab from '@/components/configuracoes/CrisisAISettingsTab';
 import { AtendentesTab } from '@/components/configuracoes/AtendentesTab';
 import { AIClassifierTab } from '@/components/configuracoes/AIClassifierTab';
+import { AIClassifierAdvancedTab } from '@/components/configuracoes/AIClassifierAdvancedTab';
 
 export default function Configuracoes() {
   return (
@@ -52,6 +53,10 @@ export default function Configuracoes() {
             <TabsTrigger value="ai-classifier" className="flex items-center gap-2">
               <Zap className="h-4 w-4" />
               IA Classifier
+            </TabsTrigger>
+            <TabsTrigger value="ai-classifier-advanced" className="flex items-center gap-2">
+              <Brain className="h-4 w-4" />
+              IA Classifier Avançado
             </TabsTrigger>
             <TabsTrigger value="conhecimento" className="flex items-center gap-2">
               <BookOpen className="h-4 w-4" />
@@ -97,6 +102,10 @@ export default function Configuracoes() {
 
           <TabsContent value="ai-classifier" className="space-y-6 animate-fade-in">
             <AIClassifierTab />
+          </TabsContent>
+
+          <TabsContent value="ai-classifier-advanced" className="space-y-6 animate-fade-in">
+            <AIClassifierAdvancedTab />
           </TabsContent>
 
           <TabsContent value="conhecimento" className="space-y-6 animate-fade-in">
