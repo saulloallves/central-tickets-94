@@ -80,11 +80,12 @@ Analise este ticket e forneça:
 
 2. CATEGORIA: juridico, sistema, midia, operacoes, rh, financeiro, outro
 
-3. PRIORIDADE (OBRIGATÓRIO escolher uma): imediato, ate_1_hora, ainda_hoje, posso_esperar
+3. PRIORIDADE (OBRIGATÓRIO escolher uma): baixo, medio, alto, imediato, crise
+   - baixo: dúvidas, solicitações, problemas menores
+   - medio: problemas importantes mas não bloqueiam trabalho
+   - alto: problemas urgentes que afetam produtividade  
    - imediato: problemas críticos que impedem funcionamento
-   - ate_1_hora: problemas urgentes que afetam produtividade  
-   - ainda_hoje: problemas importantes mas não bloqueiam trabalho
-   - posso_esperar: dúvidas, solicitações, problemas menores
+   - crise: problemas que afetam múltiplas unidades
 
 4. EQUIPE SUGERIDA: Escolha a melhor equipe baseado nas especialidades:
 
@@ -95,13 +96,13 @@ ANÁLISE: "${message}"
 Responda APENAS em JSON válido:
 {
   "categoria": "uma_das_categorias_definidas",
-  "prioridade": "uma_das_4_prioridades_definidas",
+  "prioridade": "uma_das_5_prioridades_definidas",
   "titulo": "Título de 3 palavras descritivo",
   "equipe_sugerida": "id_da_equipe_mais_apropriada_ou_null",
   "justificativa": "Breve explicação da análise e por que escolheu esta equipe"
 }
 
-CRÍTICO: Use APENAS estas 4 prioridades: imediato, ate_1_hora, ainda_hoje, posso_esperar
+CRÍTICO: Use APENAS estas 5 prioridades: baixo, medio, alto, imediato, crise
 `;
 
         const requestBody = {
@@ -161,22 +162,25 @@ CRÍTICO: Use APENAS estas 4 prioridades: imediato, ate_1_hora, ainda_hoje, poss
               console.log('IA retornou:', aiResult);
               
               // Validar e corrigir prioridade
-              const validPriorities = ['imediato', 'ate_1_hora', 'ainda_hoje', 'posso_esperar'];
+              const validPriorities = ['baixo', 'medio', 'alto', 'imediato', 'crise'];
               if (!validPriorities.includes(aiResult.prioridade)) {
                 console.log(`❌ INVALID PRIORITY: AI suggested "${aiResult.prioridade}", mapping to valid priority`);
                 switch (aiResult.prioridade) {
+                  case 'posso_esperar':
+                  case 'padrao_24h':
+                    aiResult.prioridade = 'baixo';
+                    break;
+                  case 'ainda_hoje':
+                  case 'hoje_18h':
+                    aiResult.prioridade = 'medio';
+                    break;
+                  case 'ate_1_hora':
+                  case 'alta':
+                    aiResult.prioridade = 'alto';
+                    break;
                   case 'urgente':
                     aiResult.prioridade = 'imediato';
                     break;
-                  case 'alta':
-                    aiResult.prioridade = 'ate_1_hora';
-                    break;
-                  case 'hoje_18h':
-                    aiResult.prioridade = 'ainda_hoje';
-                    break;
-                  case 'padrao_24h':
-                  default:
-                    aiResult.prioridade = 'posso_esperar';
                     break;
                 }
               }
@@ -233,7 +237,7 @@ export function generateFallbackClassification(message: string): ClassificationR
 
   return {
     categoria: 'outro',
-    prioridade: 'posso_esperar', 
+    prioridade: 'baixo',
     titulo: generateFallbackTitle(message),
     equipe_responsavel: null,
     justificativa: 'Análise automática com fallback'

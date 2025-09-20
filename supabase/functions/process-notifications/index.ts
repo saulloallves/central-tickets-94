@@ -344,10 +344,11 @@ function formatDisplayValue(key: string, value: any): string {
   // Format priority values
   if (key === 'prioridade') {
     const prioridadeMap: Record<string, string> = {
+      'baixo': 'Baixo',
+      'medio': 'Médio', 
+      'alto': 'Alto',
       'imediato': 'Imediato',
-      'ate_1_hora': 'Até 1 Hora',
-      'ainda_hoje': 'Ainda Hoje',
-      'posso_esperar': 'Posso Esperar',
+      'crise': 'Crise',
       'urgente': 'Urgente',
       'alta': 'Alta',
       'media': 'Média',

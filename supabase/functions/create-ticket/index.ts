@@ -79,12 +79,12 @@ Deno.serve(async (req) => {
     }
 
     // Validate and normalize priority
-    const validPriorities = ['imediato', 'ate_1_hora', 'ainda_hoje', 'posso_esperar'];
-    let finalPriority = ticketData.prioridade || 'posso_esperar';
+    const validPriorities = ['baixo', 'medio', 'alto', 'imediato', 'crise'];
+    let finalPriority = ticketData.prioridade || 'baixo';
     
     if (!validPriorities.includes(finalPriority)) {
       console.warn(`Invalid priority "${finalPriority}", using default`);
-      finalPriority = 'posso_esperar';
+      finalPriority = 'baixo';
     }
 
     // Prepare ticket data

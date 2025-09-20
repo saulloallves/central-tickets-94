@@ -153,11 +153,12 @@ Analise este ticket e forneça:
 
 2. CATEGORIA: juridico, sistema, midia, operacoes, rh, financeiro, outro
 
-3. PRIORIDADE (OBRIGATÓRIO escolher uma): imediato, ate_1_hora, ainda_hoje, posso_esperar
+3. PRIORIDADE (OBRIGATÓRIO escolher uma): baixo, medio, alto, imediato, crise
+   - baixo: dúvidas, solicitações, problemas menores
+   - medio: problemas importantes mas não bloqueiam trabalho
+   - alto: problemas urgentes que afetam produtividade  
    - imediato: problemas críticos que impedem funcionamento
-   - ate_1_hora: problemas urgentes que afetam produtividade  
-   - ainda_hoje: problemas importantes mas não bloqueiam trabalho
-   - posso_esperar: dúvidas, solicitações, problemas menores
+   - crise: problemas que afetam múltiplas unidades
 
 4. EQUIPE_SUGERIDA: Analise cuidadosamente qual equipe deve atender baseado nas ESPECIALIDADES de cada equipe:
 
@@ -177,12 +178,12 @@ Responda APENAS em formato JSON válido:
 {
   "titulo": "Título Descritivo Criativo",
   "categoria": "categoria_sugerida", 
-  "prioridade": "imediato_ou_ate_1_hora_ou_ainda_hoje_ou_posso_esperar",
+  "prioridade": "baixo_ou_medio_ou_alto_ou_imediato_ou_crise",
   "equipe_sugerida": "nome_exato_da_equipe_ou_null",
   "justificativa": "Breve explicação da análise e por que escolheu esta equipe"
 }
 
-CRÍTICO: Use APENAS estas 4 prioridades: imediato, ate_1_hora, ainda_hoje, posso_esperar
+CRÍTICO: Use APENAS estas 5 prioridades: baixo, medio, alto, imediato, crise
 `
 
     console.log('Calling AI API for ticket analysis with provider:', settings.api_provider, 'model:', model)
@@ -240,25 +241,29 @@ CRÍTICO: Use APENAS estas 4 prioridades: imediato, ate_1_hora, ainda_hoje, poss
         analysis.titulo = limitTitleToThreeWords(analysis.titulo);
       }
       
-      // Validar e corrigir prioridade para usar apenas as 4 novas opções
-      const validPriorities = ['imediato', 'ate_1_hora', 'ainda_hoje', 'posso_esperar'];
+      // Validar e corrigir prioridade para usar apenas as 5 opções válidas
+      const validPriorities = ['baixo', 'medio', 'alto', 'imediato', 'crise'];
       if (!validPriorities.includes(analysis.prioridade)) {
         console.log(`❌ INVALID PRIORITY: AI suggested "${analysis.prioridade}", mapping to valid priority`);
         // Mapear prioridades antigas para novas se necessário
         switch (analysis.prioridade) {
-          case 'urgente':
+          case 'posso_esperar':
+          case 'padrao_24h':
+            analysis.prioridade = 'baixo';
+            break;
+          case 'ainda_hoje':
+          case 'hoje_18h':
+            analysis.prioridade = 'medio';
+            break;
+          case 'ate_1_hora':
+          case 'alta':
+            analysis.prioridade = 'alto';
+            break;
           case 'urgente':
             analysis.prioridade = 'imediato';
             break;
-          case 'alta':
-            analysis.prioridade = 'ate_1_hora';
-            break;
-          case 'hoje_18h':
-            analysis.prioridade = 'ainda_hoje';
-            break;
-          case 'padrao_24h':
           default:
-            analysis.prioridade = 'posso_esperar';
+            analysis.prioridade = 'baixo';
             break;
         }
       }
