@@ -330,39 +330,6 @@ export function AIClassifierAdvancedTab() {
         </CardHeader>
       </Card>
 
-      {/* Métricas de Performance */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Métricas de Performance (Últimas 24h)
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-6 text-center">
-            <div>
-              <div className="text-2xl font-bold text-blue-500">15</div>
-              <div className="text-xs text-muted-foreground">Tickets Classificados</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-emerald-500">100.0%</div>
-              <div className="text-xs text-muted-foreground">Precisão</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-blue-500">0.0%</div>
-              <div className="text-xs text-muted-foreground">Conformidade SLA</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-amber-500">0min</div>
-              <div className="text-xs text-muted-foreground">Tempo Médio</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-red-500">0</div>
-              <div className="text-xs text-muted-foreground">SLAs Quebrados</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Tabs de Configuração */}
       <Card>

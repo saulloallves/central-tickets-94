@@ -15,7 +15,6 @@ import { WhatsAppManagementTab } from '@/components/configuracoes/WhatsAppManage
 import { AIAlertsTestTab } from '@/components/configuracoes/AIAlertsTestTab';
 import CrisisAISettingsTab from '@/components/configuracoes/CrisisAISettingsTab';
 import { AtendentesTab } from '@/components/configuracoes/AtendentesTab';
-import { AIClassifierTab } from '@/components/configuracoes/AIClassifierTab';
 import { AIClassifierAdvancedTab } from '@/components/configuracoes/AIClassifierAdvancedTab';
 
 export default function Configuracoes() {
@@ -49,10 +48,6 @@ export default function Configuracoes() {
             <TabsTrigger value="ia" className="flex items-center gap-2">
               <Brain className="h-4 w-4" />
               IA
-            </TabsTrigger>
-            <TabsTrigger value="ai-classifier" className="flex items-center gap-2">
-              <Zap className="h-4 w-4" />
-              IA Classifier
             </TabsTrigger>
             <TabsTrigger value="ai-classifier-advanced" className="flex items-center gap-2">
               <Brain className="h-4 w-4" />
@@ -98,10 +93,6 @@ export default function Configuracoes() {
 
           <TabsContent value="ia" className="space-y-6 animate-fade-in">
             <IASettingsTab />
-          </TabsContent>
-
-          <TabsContent value="ai-classifier" className="space-y-6 animate-fade-in">
-            <AIClassifierTab />
           </TabsContent>
 
           <TabsContent value="ai-classifier-advanced" className="space-y-6 animate-fade-in">
