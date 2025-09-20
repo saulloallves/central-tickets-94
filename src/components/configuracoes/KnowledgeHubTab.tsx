@@ -549,12 +549,15 @@ const KnowledgeHubTab = () => {
                           </div>}
 
                         <p className="text-sm text-muted-foreground mb-2">
-                          {typeof doc.conteudo === 'string' ? doc.conteudo.substring(0, 200) + '...' : JSON.stringify(doc.conteudo).substring(0, 200) + '...'}
+                          {typeof doc.conteudo === 'string' ? 
+                            (doc.conteudo?.substring(0, 200) || '') + '...' : 
+                            (doc.conteudo ? JSON.stringify(doc.conteudo).substring(0, 200) + '...' : 'Sem conteúdo')
+                          }
                         </p>
 
                         <div className="text-xs text-muted-foreground">
                           Criado em: {new Date(doc.criado_em).toLocaleDateString()} | 
-                          Justificativa: {doc.justificativa.substring(0, 50)}...
+                          Justificativa: {doc.justificativa?.substring(0, 50) || 'Sem justificativa'}...
                           {doc.valido_ate && <> | Válido até: {new Date(doc.valido_ate).toLocaleDateString()}</>}
                           {doc.ia_modelo && <> | IA: {doc.ia_modelo}</>}
                         </div>
