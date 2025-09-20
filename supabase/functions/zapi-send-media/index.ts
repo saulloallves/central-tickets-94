@@ -171,8 +171,8 @@ serve(async (req) => {
         
         const payload = {
           phone: grupoWhatsApp,
-          image: attachment.url,
-          caption: attachment.caption || attachment.name
+          image: attachment.url
+          // Removido caption para não aparecer texto no rodapé
         };
 
         console.log(`📷 Preparing to send image:`, {
