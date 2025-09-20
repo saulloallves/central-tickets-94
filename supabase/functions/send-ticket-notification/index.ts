@@ -302,7 +302,10 @@ serve(async (req) => {
       descricao_problema: ticket.descricao_problema || 'Não informado',
       data_criacao: new Date(ticket.created_at).toLocaleString('pt-BR'),
       data_abertura: new Date(ticket.data_abertura || ticket.created_at).toLocaleString('pt-BR'),
-      data_limite_sla: ticket.data_limite_sla ? new Date(ticket.data_limite_sla).toLocaleString('pt-BR') : 'Não definido'
+      data_limite_sla: ticket.data_limite_sla ? new Date(ticket.data_limite_sla).toLocaleString('pt-BR') : 'Não definido',
+      // Variáveis específicas para resposta_ticket
+      texto_resposta: 'Resposta disponível no sistema de atendimento',
+      timestamp: new Date().toLocaleString('pt-BR')
     };
 
     // 4. Processar template

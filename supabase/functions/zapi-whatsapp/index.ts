@@ -23,7 +23,7 @@ function shouldSkipMessage(payload: ZAPIMessage): boolean {
   }
   
   // FILTRO ESPECÍFICO: Processar mensagens do grupo específico OU mensagens privadas
-  const TARGET_GROUP_ID = '120363421372736067-group';
+  const TARGET_GROUP_ID = '120363258963635302-group';
   
   if (payload.isGroup) {
     // Se é grupo, só processar se for o grupo específico
@@ -87,6 +87,35 @@ async function handleWebhook(payload: ZAPIMessage) {
   console.log('Conversation upserted:', conversation.id);
 
   let sentReply = null;
+
+  // Check for button clicks first
+  if (!payload.fromMe && payload.buttonsResponseMessage?.buttonId) {
+    console.log(`🔘 Button clicked: ${payload.buttonsResponseMessage.buttonId}`);
+    
+    // Call bot_base_1 to handle button clicks
+    try {
+      const functionsBaseUrl = `https://${Deno.env.get('SUPABASE_URL')?.split('//')[1]}/functions/v1` || 'https://hryurntaljdisohawpqf.supabase.co/functions/v1';
+      
+      const botResponse = await fetch(`${functionsBaseUrl}/bot_base_1`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (botResponse.ok) {
+        const botResult = await botResponse.json();
+        console.log('✅ Button handled by bot_base_1:', botResult);
+        return { ok: true, button_handled: true, result: botResult };
+      } else {
+        console.error('❌ Bot failed to handle button:', await botResponse.text());
+      }
+    } catch (error) {
+      console.error('❌ Error calling bot_base_1:', error);
+    }
+  }
 
   // If it's an incoming message (not from us), check for ticket response state
   if (!payload.fromMe && payload.text?.message) {
