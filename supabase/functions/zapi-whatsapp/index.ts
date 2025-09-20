@@ -22,16 +22,17 @@ function shouldSkipMessage(payload: ZAPIMessage): boolean {
     return true;
   }
   
-  // FILTRO RÁPIDO: Só processar mensagens do grupo "ESCALONAMENTO"
-  if (payload.isGroup && payload.chatName) {
-    const isEscalonamentoGroup = payload.chatName.toUpperCase().includes('ESCALONAMENTO');
-    if (!isEscalonamentoGroup) {
-      console.log(`Skipping message: not from ESCALONAMENTO group (${payload.chatName})`);
+  // FILTRO ESPECÍFICO: Só processar mensagens do grupo específico
+  const TARGET_GROUP_ID = '120363421372736067-group';
+  
+  if (payload.isGroup) {
+    if (payload.phone !== TARGET_GROUP_ID) {
+      console.log(`Skipping message: not from target group (${payload.phone})`);
       return true;
     }
-  } else if (payload.isGroup) {
-    // Se é grupo mas não tem chatName, skip
-    console.log('Skipping message: group without chat name');
+  } else {
+    // Se não é grupo, skip (só queremos processar o grupo específico)
+    console.log('Skipping message: not a group message');
     return true;
   }
   
