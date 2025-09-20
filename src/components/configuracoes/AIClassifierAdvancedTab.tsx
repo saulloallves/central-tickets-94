@@ -57,16 +57,18 @@ interface ClassifierMetrics {
 
 const defaultSettings: AdvancedSettings = {
   priority_matrix: {
+    "imediato": { "impact": "alto", "urgency": "alta", "sla_minutes": 15 },
     "alto": { "impact": "alto", "urgency": "media", "sla_minutes": 60 },
-    "baixo": { "impact": "baixo", "urgency": "baixa", "sla_minutes": 1440 },
-    "medio": { "impact": "medio", "urgency": "media", "sla_minutes": 240 },
-    "critico": { "impact": "alto", "urgency": "alta", "sla_minutes": 15 }
+    "medio": { "impact": "medio", "urgency": "media", "sla_minutes": 600 }, // 10 horas
+    "baixo": { "impact": "baixo", "urgency": "baixa", "sla_minutes": 1440 }, // 24 horas
+    "crise": { "impact": "critico", "urgency": "critica", "sla_minutes": 5 }
   },
   emergency_keywords: {
+    "imediato": ["urgentissimo", "imediato", "agora", "parou tudo", "travou tudo"],
     "alto": ["lento", "travando", "erro critico", "nao funciona", "urgente"],
-    "baixo": ["duvida", "orientacao", "informacao", "sugestao"],
     "medio": ["problema", "dificuldade", "demora", "instavel"],
-    "critico": ["sistema caiu", "fora do ar", "parou completamente", "emergencia", "critico"]
+    "baixo": ["duvida", "orientacao", "informacao", "sugestao"],
+    "crise": ["sistema caiu", "fora do ar", "parou completamente", "emergencia", "critico", "crise"]
   },
   dynamic_sla_enabled: true,
   sla_adjustment_factors: {
