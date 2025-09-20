@@ -44,7 +44,7 @@ function shouldSkipMessage(payload: ZAPIMessage): boolean {
   
   // Filtrar palavras de ativação do bot_base_1 para evitar conflitos
   const BOT_ACTIVATION_KEYWORDS = ['menu', 'ola robo', 'olá robô', 'abacate'];
-  if (BOT_ACTIVATION_KEYWORDS.some(keyword => messageText.includes(keyword))) {
+  if (BOT_ACTIVATION_KEYWORDS.some(keyword => messageText && messageText.includes(keyword))) {
     console.log('Skipping message: Contains bot_base_1 activation keyword');
     return true;
   }
