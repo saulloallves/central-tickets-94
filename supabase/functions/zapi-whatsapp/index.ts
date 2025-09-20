@@ -95,6 +95,8 @@ async function handleWebhook(payload: ZAPIMessage) {
 
 serve(async (req) => {
   console.log(`${req.method} ${req.url}`);
+  console.log('Headers:', Object.fromEntries(req.headers.entries()));
+  console.log('User-Agent:', req.headers.get('user-agent'));
 
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
