@@ -18,26 +18,54 @@ export class ZAPIClient {
 
   async loadConfig(): Promise<void> {
     try {
+      console.log('🔍 Loading Z-API config from database for zapi_whatsapp...');
+      
       // Load configuration from database first
-      const { data } = await this.supabase
+      const { data, error } = await this.supabase
         .from('messaging_providers')
         .select('*')
         .eq('provider_name', 'zapi_whatsapp')
         .eq('is_active', true)
         .maybeSingle();
 
+      if (error) {
+        console.error('❌ Error querying database for Z-API config:', error);
+      }
+
+      console.log('📊 Database query result:', data ? 'Found config' : 'No config found');
+
       if (data) {
-        console.log('Loading Z-API config from database for zapi_whatsapp');
+        console.log('✅ Loading Z-API config from database for zapi_whatsapp');
+        console.log('📋 Database config:', {
+          instance_id: data.instance_id?.substring(0, 8) + '...',
+          has_token: !!data.instance_token,
+          has_client_token: !!data.client_token,
+          base_url: data.base_url
+        });
+        
         this.instanceId = data.instance_id || this.instanceId;
         this.token = data.instance_token || this.token;
         this.clientToken = data.client_token || this.clientToken;
         this.baseUrl = data.base_url || this.baseUrl;
+        
+        console.log('🔧 Final config loaded:', {
+          instance_id: this.instanceId?.substring(0, 8) + '...',
+          has_token: !!this.token,
+          has_client_token: !!this.clientToken,
+          base_url: this.baseUrl
+        });
       } else {
-        console.log('No database config found for zapi_whatsapp, using environment variables');
+        console.log('⚠️ No database config found for zapi_whatsapp, using environment variables');
+        console.log('🌍 Environment config:', {
+          instance_id: this.instanceId?.substring(0, 8) + '...',
+          has_token: !!this.token,
+          has_client_token: !!this.clientToken,
+          base_url: this.baseUrl
+        });
       }
     } catch (error) {
-      console.error('Error loading Z-API config from database:', error);
-      console.log('Falling back to environment variables');
+      console.error('❌ Error loading Z-API config from database:', error);
+      console.log('🔄 Falling back to environment variables');
     }
   }
 
