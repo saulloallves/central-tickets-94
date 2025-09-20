@@ -450,16 +450,22 @@ export function AIClassifierAdvancedTab() {
                           <Label>SLA (minutos)</Label>
                           <Input
                             type="number"
-                            value={configData.sla_minutes}
+                            min="1"
+                            step="1"
+                            value={configData.sla_minutes || 0}
                             onChange={(e) => {
+                              const value = e.target.value;
+                              const minutes = value === '' ? 0 : parseInt(value) || 0;
                               setSettings(prev => ({
                                 ...prev,
                                 priority_matrix: {
                                   ...prev.priority_matrix,
-                                  [priority]: { ...configData, sla_minutes: parseInt(e.target.value) || 0 }
+                                  [priority]: { ...configData, sla_minutes: minutes }
                                 }
                               }));
                             }}
+                            placeholder="Minutos para SLA"
+                            className="w-full"
                           />
                         </div>
                       </div>
