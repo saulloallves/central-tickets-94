@@ -183,8 +183,6 @@ async function handleWebhook(payload: ZAPIMessage) {
       console.log(`⏰ Expira em: ${expiresAt}, Agora: ${now}`);
       
       if (now <= expiresAt) {
-      
-      if (now <= expiresAt) {
         // Processar como resposta ao ticket
         console.log(`🎫 Processando resposta ao ticket: ${conversationState.awaiting_response_for_ticket}`);
         
