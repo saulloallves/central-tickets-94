@@ -68,8 +68,9 @@ export class ConversationManager {
     contactName: string,
     senderPhoto: string
   ): Promise<WhatsAppConversation> {
-    // Append message to existing conversation
-    const updatedConversa = [...(existingConversation.conversa || []), messageData];
+    // Append message to existing conversation and keep only last 20 messages to avoid memory issues
+    const currentConversa = existingConversation.conversa || [];
+    const updatedConversa = [...currentConversa, messageData].slice(-20);
     
     const { data, error } = await this.supabase
       .from('whatsapp_conversas')

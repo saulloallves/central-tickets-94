@@ -118,7 +118,7 @@ export async function gerarRespostaComContexto(docs: any[], pergunta: string, co
       `**${doc.titulo}**\n${JSON.stringify(doc.conteudo)}`
     ).join('\n\n');
 
-    // Buscar histórico da conversa se fornecido o contactPhone
+    // Buscar histórico da conversa se fornecido o contactPhone (apenas últimas 5 mensagens para otimizar)
     let conversaCompleta = conversationHistory;
     if (!conversaCompleta && contactPhone) {
       const { data: conversaData } = await supabase
@@ -130,10 +130,10 @@ export async function gerarRespostaComContexto(docs: any[], pergunta: string, co
       conversaCompleta = conversaData?.conversa || [];
     }
 
-    // Formatar histórico da conversa (últimas 10 mensagens)
+    // Formatar histórico da conversa (apenas últimas 5 mensagens para evitar overhead)
     let historicoConversa = '';
     if (conversaCompleta && conversaCompleta.length > 0) {
-      const ultimasMensagens = conversaCompleta.slice(-10);
+      const ultimasMensagens = conversaCompleta.slice(-5);
       historicoConversa = ultimasMensagens.map((msg: any) => {
         const autor = msg.from_me ? 'Suporte' : 'Cliente';
         return `${autor}: ${msg.text}`;
