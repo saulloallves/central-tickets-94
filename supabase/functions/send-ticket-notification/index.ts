@@ -337,9 +337,9 @@ serve(async (req) => {
       });
     }
 
-    // 7. Enviar mensagem (com botões se for ticket_created)
+    // 7. Enviar mensagem (com botões se for resposta_ticket)
     const sent = await sendZapiMessage(destination, message, zapiConfig, 
-      template_key === 'ticket_created' ? ticket_id : undefined);
+      template_key === 'resposta_ticket' ? ticket_id : undefined);
 
     // 8. Log do resultado
     await supabase.from('escalation_logs').insert({
