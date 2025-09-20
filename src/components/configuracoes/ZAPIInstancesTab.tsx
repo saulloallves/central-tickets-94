@@ -72,21 +72,61 @@ export function ZAPIInstancesTab() {
   const loadConfigs = async () => {
     setLoading(true);
     try {
+      // Primeiro, buscar configurações do banco
       const { data, error } = await supabase
         .from('messaging_providers')
         .select('*')
-        .in('provider_name', ['zapi_whatsapp', 'zapi_bot', 'zapi_notifications'])
+        .in('provider_name', ['zapi_whatsapp', 'zapi_bot', 'zapi_notifications', 'zapi'])
         .order('provider_name');
 
       if (error) throw error;
 
+      // Buscar configurações atuais via edge function para pegar env vars
+      const { data: currentConfig } = await supabase.functions.invoke('test-instance-routing', {
+        body: { action: 'get_configs' }
+      });
+
+      console.log('Configurações atuais:', currentConfig);
+
       // Merge com configurações padrão
       const mergedConfigs = defaultConfigs.map(defaultConfig => {
-        const existingConfig = data?.find(d => d.provider_name === defaultConfig.provider_name);
-        return existingConfig ? {
+        const existingConfig = data?.find(d => 
+          d.provider_name === defaultConfig.provider_name || 
+          (d.provider_name === 'zapi' && defaultConfig.provider_name === 'zapi_whatsapp')
+        );
+
+        // Se encontrou no banco, usar essas configurações
+        if (existingConfig) {
+          return {
+            ...defaultConfig,
+            ...existingConfig,
+            id: existingConfig.id
+          };
+        }
+
+        // Senão, tentar pegar das env vars via currentConfig
+        let envConfig: any = {};
+        if (currentConfig?.configurations) {
+          switch (defaultConfig.provider_name) {
+            case 'zapi_whatsapp':
+              envConfig = currentConfig.configurations.zapi_whatsapp || {};
+              break;
+            case 'zapi_bot':
+              envConfig = currentConfig.configurations.bot_base_1 || {};
+              break;
+            case 'zapi_notifications':
+              envConfig = currentConfig.configurations.send_ticket_notification || {};
+              break;
+          }
+        }
+
+        return {
           ...defaultConfig,
-          ...existingConfig
-        } : defaultConfig;
+          instance_id: envConfig.instanceId || defaultConfig.instance_id,
+          instance_token: envConfig.token || defaultConfig.instance_token,
+          client_token: envConfig.clientToken || defaultConfig.client_token,
+          base_url: envConfig.baseUrl || defaultConfig.base_url
+        };
       });
 
       setConfigs(mergedConfigs);
