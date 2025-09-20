@@ -1172,60 +1172,6 @@ export const useTicketMessages = (ticketId: string) => {
     }
   };
 
-  useEffect(() => {
-    fetchMessages();
-  }, [ticketId]);
-
-  // Realtime subscription for ticket messages
-  useEffect(() => {
-    if (!ticketId) return;
-
-    const channel = supabase
-      .channel(`ticket-messages-${ticketId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'ticket_mensagens',
-          filter: `ticket_id=eq.${ticketId}`
-        },
-        async (payload) => {
-          console.log('📨 New message received via realtime:', payload);
-          
-          // Fetch the full message with profile data
-          const { data, error } = await supabase
-            .from('ticket_mensagens')
-            .select(`
-              *,
-              profiles:usuario_id (nome_completo)
-            `)
-            .eq('id', payload.new.id)
-            .single();
-
-          if (!error && data) {
-            setMessages(prev => {
-              // Check if message already exists to avoid duplicates
-              const exists = prev.find(msg => msg.id === data.id);
-              if (exists) return prev;
-              
-              // Add new message and sort by created_at
-              const newMessages = [...prev, data as any];
-              return newMessages.sort((a, b) => 
-                new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-              );
-            });
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      console.log('🔌 Unsubscribing from ticket messages channel');
-      supabase.removeChannel(channel);
-    };
-  }, [ticketId]);
-
   return {
     messages,
     loading,
