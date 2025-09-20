@@ -158,11 +158,6 @@ async function getZApiConfig(supabase: any): Promise<ZApiConfig | null> {
 // Função para enviar mensagem com botões via Z-API
 async function sendZapiMessage(phone: string, message: string, config: ZApiConfig, ticketId?: string): Promise<boolean> {
   try {
-    let body;
-
-// Função para enviar mensagem com botões via Z-API
-async function sendZapiMessage(phone: string, message: string, config: ZApiConfig, ticketId?: string): Promise<boolean> {
-  try {
     let endpoint = 'send-text';
     let body;
 
