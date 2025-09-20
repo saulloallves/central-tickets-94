@@ -310,29 +310,29 @@ serve(async (req) => {
       }
     }
 
-    console.log('🔍 TESTANDO BUSCA HÍBRIDA');
+    console.log('🔍 USANDO BUSCA SEMÂNTICA DISPONÍVEL');
     
-    // Usa a mesma função híbrida dos outros sistemas com parâmetros corretos
-    const { data: candidatos, error } = await supabase.rpc('match_documentos_hibrido', {
+    // Usar a função disponível match_documentos_semantico
+    const { data: candidatos, error } = await supabase.rpc('match_documentos_semantico', {
       query_embedding: queryEmbedding,
       query_text: textoCompleto,
-      match_count: MAXIMO_DE_DOCUMENTOS,
-      alpha: 0.85 // Peso da busca vetorial (85%) vs textual (15%)
+      match_threshold: 0.1,
+      match_count: MAXIMO_DE_DOCUMENTOS
     });
 
-    console.log('📋 BUSCA HÍBRIDA - Resultado:');
+    console.log('📋 BUSCA SEMÂNTICA - Resultado:');
     console.log('- error:', error);
     console.log('- candidatos encontrados:', candidatos?.length || 0);
     
     if (candidatos && candidatos.length > 0) {
-      console.log('✅ HÍBRIDA - Documentos encontrados:');
+      console.log('✅ SEMÂNTICA - Documentos encontrados:');
       candidatos.forEach((c, i) => {
         console.log(`  ${i+1}. ${c.titulo} (similarity: ${c.similarity})`);
       });
     } else {
-      console.log('❌ BUSCA HÍBRIDA NÃO ENCONTROU NADA');
+      console.log('❌ BUSCA SEMÂNTICA NÃO ENCONTROU NADA');
       if (error) {
-        console.error('Erro na busca híbrida:', error);
+        console.error('Erro na busca semântica:', error);
       }
     }
 
