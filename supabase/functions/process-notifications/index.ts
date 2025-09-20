@@ -760,13 +760,13 @@ serve(async (req) => {
         break;
 
       case 'resposta_ticket':
-        console.log('📤 Calling send-ticket-notification for resposta_ticket with buttons');
+        console.log('📤 Calling send-ticket-notification for resposta_ticket as plain text');
         
         if (!ticket) {
           throw new Error('Ticket data is required for resposta_ticket notifications');
         }
         
-        // Call send-ticket-notification with buttons for resposta_ticket
+        // Call send-ticket-notification as plain text (no buttons)
         try {
           const functionsBaseUrl = `https://${Deno.env.get('SUPABASE_URL')?.split('//')[1]}/functions/v1` || 'https://hryurntaljdisohawpqf.supabase.co/functions/v1';
           const notificationResponse = await fetch(`${functionsBaseUrl}/send-ticket-notification`, {

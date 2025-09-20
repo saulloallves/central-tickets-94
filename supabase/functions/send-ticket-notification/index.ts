@@ -156,34 +156,16 @@ async function getZApiConfig(supabase: any): Promise<ZApiConfig | null> {
   }
 }
 
-// Função para enviar mensagem via Z-API (sem botões)
+// Função para enviar mensagem via Z-API (sempre texto simples)
 async function sendZapiMessage(phone: string, message: string, config: ZApiConfig): Promise<boolean> {
   try {
+    // Sempre enviar como texto simples, sem botões
     const body = JSON.stringify({
       phone: phone,
       message: message,
-        buttonList: {
-          buttons: [
-            {
-              id: `responder_ticket_${ticketId}`,
-              label: "📝 Responder"
-            },
-            {
-              id: `finalizar_ticket_${ticketId}`,
-              label: "✅ Finalizar"
-            }
-          ]
-        }
-      });
-    } else {
-      // Mensagem simples sem botões
-      body = JSON.stringify({
-        phone: phone,
-        message: message,
-      });
-    }
+    });
 
-    const response = await fetch(`${config.baseUrl}/instances/${config.instanceId}/token/${config.token}/${endpoint}`, {
+    const response = await fetch(`${config.baseUrl}/instances/${config.instanceId}/token/${config.token}/send-text`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -193,29 +175,6 @@ async function sendZapiMessage(phone: string, message: string, config: ZApiConfi
     });
 
     if (!response.ok) {
-      // Se falhou com botões, tentar novamente sem botões
-      if (endpoint === 'send-button-list' && ticketId) {
-        console.log('⚠️ Fallback: Enviando sem botões');
-        const fallbackBody = JSON.stringify({
-          phone: phone,
-          message: message + '\n\n_Para responder, envie uma mensagem direta._',
-        });
-
-        const fallbackResponse = await fetch(`${config.baseUrl}/instances/${config.instanceId}/token/${config.token}/send-text`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Client-Token': config.clientToken,
-          },
-          body: fallbackBody,
-        });
-
-        if (fallbackResponse.ok) {
-          console.log('✅ Mensagem enviada via Z-API (fallback text)');
-          return true;
-        }
-      }
-      
       const errorText = await response.text();
       console.error('Erro ao enviar via Z-API:', errorText);
       return false;
