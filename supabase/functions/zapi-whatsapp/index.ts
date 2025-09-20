@@ -25,14 +25,8 @@ function shouldSkipMessage(payload: ZAPIMessage): boolean {
     return true;
   }
   
-  // FILTRO ESPECÍFICO: Processar mensagens do grupo específico OU mensagens privadas
-  const TARGET_GROUP_ID = '120363258963635302-group';
-  
-  if (payload.isGroup) {
-    // Se é grupo, só processar se for o grupo específico
-    if (payload.phone !== TARGET_GROUP_ID) {
-      console.log(`Skipping message: not from target group (${payload.phone})`);
-      return true;
+  // Processar tanto mensagens privadas quanto de grupos
+  // Removido o filtro específico de grupo para permitir processamento de qualquer grupo
     }
   }
   
