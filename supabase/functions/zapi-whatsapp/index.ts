@@ -17,7 +17,25 @@ const zapiClient = new ZAPIClient();
 const aiProcessor = new AIProcessor(supabase, zapiClient, conversationManager);
 
 function shouldSkipMessage(payload: ZAPIMessage): boolean {
-  return payload.isStatusReply || !payload.text?.message;
+  // Skip if it's a status reply or no text
+  if (payload.isStatusReply || !payload.text?.message) {
+    return true;
+  }
+  
+  // FILTRO RÁPIDO: Só processar mensagens do grupo "ESCALONAMENTO"
+  if (payload.isGroup && payload.chatName) {
+    const isEscalonamentoGroup = payload.chatName.toUpperCase().includes('ESCALONAMENTO');
+    if (!isEscalonamentoGroup) {
+      console.log(`Skipping message: not from ESCALONAMENTO group (${payload.chatName})`);
+      return true;
+    }
+  } else if (payload.isGroup) {
+    // Se é grupo mas não tem chatName, skip
+    console.log('Skipping message: group without chat name');
+    return true;
+  }
+  
+  return false;
 }
 
 function createMessageData(payload: ZAPIMessage): ConversationMessageData {
