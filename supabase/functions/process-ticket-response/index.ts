@@ -23,19 +23,23 @@ async function saveConversationState(
     expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString() // 5 minutos
   };
 
-  await supabase
-    .from('whatsapp_conversas')
-    .upsert({
-      instance_id: instanceId,
-      contact_phone: phone,
-      connected_phone: Deno.env.get('ZAPI_INSTANCE_ID') || '',
-      meta: state,
-      updated_at: new Date().toISOString()
-    }, {
-      onConflict: 'instance_id,contact_phone,connected_phone'
-    });
+  try {
+    await supabase
+      .from('whatsapp_conversas')
+      .upsert({
+        instance_id: instanceId,
+        contact_phone: phone,
+        connected_phone: Deno.env.get('ZAPI_INSTANCE_ID') || '',
+        meta: state,
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'instance_id,contact_phone,connected_phone'
+      });
 
-  console.log(`💾 Estado salvo para ${phone}: aguardando resposta do ticket ${ticketId}`);
+    console.log(`💾 Estado salvo para ${phone}: aguardando resposta do ticket ${ticketId}`);
+  } catch (error) {
+    console.error('Erro ao salvar estado:', error);
+  }
 }
 
 // Função para enviar mensagem via Z-API

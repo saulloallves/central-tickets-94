@@ -160,22 +160,30 @@ async function sendZapiMessage(phone: string, message: string, config: ZApiConfi
   try {
     let body;
 
+// Função para enviar mensagem com botões via Z-API
+async function sendZapiMessage(phone: string, message: string, config: ZApiConfig, ticketId?: string): Promise<boolean> {
+  try {
+    let endpoint = 'send-text';
+    let body;
+
     if (ticketId) {
-      // Enviar com botões para resposta ao ticket
+      // Tentar enviar com lista de opções primeiro
+      endpoint = 'send-option-list';
       body = JSON.stringify({
         phone: phone,
         message: message,
         optionsList: {
           title: "Ações disponíveis",
-          buttonText: "Ver opções",
           options: [
             {
               id: `responder_ticket_${ticketId}`,
-              title: "📝 Responder"
+              title: "📝 Responder",
+              description: "Enviar resposta para este ticket"
             },
             {
               id: `finalizar_ticket_${ticketId}`,
-              title: "✅ Finalizar"
+              title: "✅ Finalizar", 
+              description: "Marcar ticket como concluído"
             }
           ]
         }
@@ -188,7 +196,7 @@ async function sendZapiMessage(phone: string, message: string, config: ZApiConfi
       });
     }
 
-    const response = await fetch(`${config.baseUrl}/instances/${config.instanceId}/token/${config.token}/send-option`, {
+    const response = await fetch(`${config.baseUrl}/instances/${config.instanceId}/token/${config.token}/${endpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -198,6 +206,29 @@ async function sendZapiMessage(phone: string, message: string, config: ZApiConfi
     });
 
     if (!response.ok) {
+      // Se falhou com lista de opções, tentar novamente sem botões
+      if (endpoint === 'send-option-list' && ticketId) {
+        console.log('⚠️ Fallback: Enviando sem botões');
+        const fallbackBody = JSON.stringify({
+          phone: phone,
+          message: message + '\n\n_Para responder, envie uma mensagem direta._',
+        });
+
+        const fallbackResponse = await fetch(`${config.baseUrl}/instances/${config.instanceId}/token/${config.token}/send-text`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Client-Token': config.clientToken,
+          },
+          body: fallbackBody,
+        });
+
+        if (fallbackResponse.ok) {
+          console.log('✅ Mensagem enviada via Z-API (fallback text)');
+          return true;
+        }
+      }
+      
       const errorText = await response.text();
       console.error('Erro ao enviar via Z-API:', errorText);
       return false;
@@ -209,6 +240,7 @@ async function sendZapiMessage(phone: string, message: string, config: ZApiConfi
     console.error('Erro no envio Z-API:', error);
     return false;
   }
+}
 }
 
 serve(async (req) => {
