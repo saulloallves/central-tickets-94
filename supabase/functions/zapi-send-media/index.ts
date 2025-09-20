@@ -90,7 +90,6 @@ serve(async (req) => {
     console.log('All env vars:', Object.keys(Deno.env.toObject()).filter(k => k.startsWith('ZAPI')));
     console.log('ZAPI_INSTANCE_ID:', zapiInstanceId ? `Found (${zapiInstanceId.substring(0, 8)}...)` : 'NOT FOUND');
     console.log('ZAPI_TOKEN:', Deno.env.get('ZAPI_TOKEN') ? 'Found' : 'NOT FOUND');
-    console.log('ZAPI_TOKEN:', Deno.env.get('ZAPI_TOKEN') ? 'Found' : 'NOT FOUND');
     console.log('ZAPI_CLIENT_TOKEN:', zapiClientToken ? `Found (${zapiClientToken.substring(0, 8)}...)` : 'NOT FOUND');
 
     console.log('Z-API Configuration Check:', {
@@ -101,7 +100,7 @@ serve(async (req) => {
     });
 
     if (!zapiInstanceId || !zapiToken || !zapiClientToken) {
-      console.error('Missing Z-API configuration');
+      console.error('❌ Missing Z-API configuration');
       return new Response(
         JSON.stringify({ error: 'Z-API configuration not found' }), 
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -121,6 +120,7 @@ serve(async (req) => {
       .select(`
         id,
         unidade_id,
+        codigo_ticket,
         unidades!inner(id_grupo_branco, grupo)
       `)
       .eq('id', ticketId)
@@ -134,7 +134,20 @@ serve(async (req) => {
       );
     }
 
+    console.log('📋 Ticket details:', {
+      ticketId: ticket.id,
+      codigo_ticket: ticket.codigo_ticket,
+      unidade_id: ticket.unidade_id,
+      grupo_nome: ticket.unidades?.grupo
+    });
+
     const grupoWhatsApp = ticket.unidades?.id_grupo_branco;
+    
+    console.log('🔍 WhatsApp Group Info:', {
+      id_grupo_branco: grupoWhatsApp,
+      unidade_grupo: ticket.unidades?.grupo,
+      has_group: !!grupoWhatsApp
+    });
     
     if (!grupoWhatsApp) {
       console.error('❌ Unidade não tem id_grupo_branco configurado');
@@ -162,12 +175,45 @@ serve(async (req) => {
           caption: attachment.caption || attachment.name
         };
 
-        console.log(`📷 Enviando imagem:`, {
+        console.log(`📷 Preparing to send image:`, {
           endpoint,
           phone: grupoWhatsApp,
           image: attachment.url,
-          name: attachment.name
+          name: attachment.name,
+          size: attachment.size,
+          type: attachment.type
         });
+
+        console.log('🚀 Making Z-API request:', {
+          endpoint,
+          payload,
+          headers: {
+            'Content-Type': 'application/json',
+            'Client-Token': zapiConfig.client_token.substring(0, 8) + '...'
+          }
+        });
+
+        // Test image URL accessibility first
+        try {
+          const imageTest = await fetch(attachment.url, { method: 'HEAD' });
+          console.log(`🖼️ Image accessibility test for ${attachment.url}:`, {
+            status: imageTest.status,
+            contentType: imageTest.headers.get('content-type'),
+            contentLength: imageTest.headers.get('content-length')
+          });
+          
+          if (!imageTest.ok) {
+            throw new Error(`Image not accessible: ${imageTest.status} ${imageTest.statusText}`);
+          }
+        } catch (imageError) {
+          console.error(`❌ Image accessibility error for ${attachment.url}:`, imageError);
+          results.push({
+            file: attachment.name,
+            success: false,
+            error: `Image not accessible: ${imageError.message}`
+          });
+          continue;
+        }
 
         const response = await fetch(endpoint, {
           method: 'POST',
@@ -179,7 +225,7 @@ serve(async (req) => {
         });
 
         const responseText = await response.text();
-        console.log(`Z-API Response for ${attachment.name}:`, {
+        console.log(`📲 Z-API Response for ${attachment.name}:`, {
           status: response.status,
           statusText: response.statusText,
           headers: Object.fromEntries(response.headers.entries()),
@@ -194,27 +240,36 @@ serve(async (req) => {
         }
 
         if (response.ok) {
-          console.log(`Successfully sent ${attachment.name}:`, responseData);
+          console.log(`✅ Successfully sent ${attachment.name}:`, responseData);
           results.push({
             file: attachment.name,
             success: true,
             zaapId: responseData.zaapId,
-            messageId: responseData.messageId
+            messageId: responseData.messageId,
+            response: responseData
           });
         } else {
-          console.error(`Failed to send ${attachment.name}:`, responseData);
+          console.error(`❌ Failed to send ${attachment.name}:`, {
+            status: response.status,
+            statusText: response.statusText,
+            response: responseData,
+            payload: payload
+          });
           results.push({
             file: attachment.name,
             success: false,
-            error: responseData.error || responseText || 'Unknown error'
+            error: responseData.error || responseData.message || responseText || `HTTP ${response.status}: ${response.statusText}`,
+            status: response.status,
+            response: responseData
           });
         }
       } catch (error) {
-        console.error(`Error sending ${attachment.name}:`, error);
+        console.error(`❌ Exception sending ${attachment.name}:`, error);
         results.push({
           file: attachment.name,
           success: false,
-          error: error.message
+          error: error.message,
+          exception: error.name
         });
       }
     }
@@ -235,6 +290,8 @@ serve(async (req) => {
     const successCount = results.filter(r => r.success).length;
     const failureCount = results.length - successCount;
 
+    console.log(`📊 Final results: ${successCount} success, ${failureCount} failed`);
+
     return new Response(
       JSON.stringify({ 
         success: true,
@@ -249,7 +306,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error in zapi-send-media:', error);
+    console.error('❌ Error in zapi-send-media:', error);
     return new Response(
       JSON.stringify({ error: error.message }), 
       { 
@@ -259,5 +316,3 @@ serve(async (req) => {
     );
   }
 });
-
-// Funções removidas - agora fazemos tudo direto no loop principal
