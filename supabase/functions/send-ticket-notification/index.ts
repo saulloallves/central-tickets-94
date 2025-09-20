@@ -167,23 +167,20 @@ async function sendZapiMessage(phone: string, message: string, config: ZApiConfi
     let body;
 
     if (ticketId) {
-      // Tentar enviar com lista de opções primeiro
-      endpoint = 'send-option-list';
+      // Enviar com botões usando formato correto do send-button-list
+      endpoint = 'send-button-list';
       body = JSON.stringify({
         phone: phone,
         message: message,
-        optionsList: {
-          title: "Ações disponíveis",
-          options: [
+        buttonList: {
+          buttons: [
             {
               id: `responder_ticket_${ticketId}`,
-              title: "📝 Responder",
-              description: "Enviar resposta para este ticket"
+              label: "📝 Responder"
             },
             {
               id: `finalizar_ticket_${ticketId}`,
-              title: "✅ Finalizar", 
-              description: "Marcar ticket como concluído"
+              label: "✅ Finalizar"
             }
           ]
         }
@@ -206,8 +203,8 @@ async function sendZapiMessage(phone: string, message: string, config: ZApiConfi
     });
 
     if (!response.ok) {
-      // Se falhou com lista de opções, tentar novamente sem botões
-      if (endpoint === 'send-option-list' && ticketId) {
+      // Se falhou com botões, tentar novamente sem botões
+      if (endpoint === 'send-button-list' && ticketId) {
         console.log('⚠️ Fallback: Enviando sem botões');
         const fallbackBody = JSON.stringify({
           phone: phone,
