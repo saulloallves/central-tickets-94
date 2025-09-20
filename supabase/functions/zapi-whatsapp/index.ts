@@ -28,7 +28,7 @@ function shouldSkipMessage(payload: ZAPIMessage): boolean {
   // FILTRO ESPECÍFICO: Processar mensagens de grupos específicos OU mensagens privadas
   const ALLOWED_GROUPS = [
     '120363258963635302-group',  // Grupo principal
-    // Adicione outros IDs de grupos aqui conforme necessário
+    '120363421372736067-group',  // Grupo adicional
   ];
   
   if (payload.isGroup) {
