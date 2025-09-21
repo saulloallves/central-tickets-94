@@ -84,9 +84,12 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
   const realtimeDebounceRef = useRef<NodeJS.Timeout | null>(null);
   const backupPollingRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Fetch tickets using regular supabase query (read-only)
-  const fetchTickets = useCallback(async (isRefetch = false) => {
+  // Fetch tickets using regular supabase query (read-only) with retry logic
+  const fetchTickets = useCallback(async (isRefetch = false, retryCount = 0) => {
     if (!user || roleLoading) return;
+    
+    const maxRetries = 3;
+    const retryDelay = Math.min(1000 * Math.pow(2, retryCount), 5000); // Exponential backoff
     
     try {
       // Only set loading on initial fetch, not on refetches
@@ -139,13 +142,7 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
       const { data, error } = await query;
 
       if (error) {
-        console.error('Error fetching tickets:', error);
-        toast({
-          title: "Erro",
-          description: "Não foi possível carregar os tickets",
-          variant: "destructive",
-        });
-        return;
+        throw error;
       }
 
       const allTickets = (data as any) || [];
@@ -189,12 +186,39 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
       setLastUpdate(Date.now()); // Força re-render no Kanban
       
     } catch (error) {
-      console.error('Error fetching tickets:', error);
-      toast({
-        title: "Erro",
-        description: "Erro inesperado ao carregar tickets",
-        variant: "destructive",
+      console.error('Error fetching tickets:', {
+        message: error instanceof Error ? error.message : String(error),
+        details: error instanceof Error ? error.stack : 'Unknown error',
+        hint: '',
+        code: ''
       });
+      
+      // Retry logic for network errors
+      if (retryCount < maxRetries && 
+          (error instanceof Error && 
+           (error.message.includes('Failed to fetch') || 
+            error.message.includes('NetworkError') ||
+            error.message.includes('fetch')))) {
+        
+        console.log(`🔄 Retrying fetch tickets (attempt ${retryCount + 1}/${maxRetries}) in ${retryDelay}ms`);
+        
+        setTimeout(() => {
+          fetchTickets(isRefetch, retryCount + 1);
+        }, retryDelay);
+        
+        return;
+      }
+      
+      // Only show toast error after all retries failed or for non-network errors
+      if (retryCount >= maxRetries || !isRefetch) {
+        toast({
+          title: "Erro",
+          description: retryCount >= maxRetries ? 
+            "Não foi possível carregar os tickets após várias tentativas" :
+            "Não foi possível carregar os tickets",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
