@@ -777,7 +777,8 @@ serve(async (req) => {
             },
             body: JSON.stringify({
               ticket_id: ticketId,
-              template_key: 'resposta_ticket'
+              template_key: 'resposta_ticket',
+              resposta_real: textoResposta
             })
           });
 
