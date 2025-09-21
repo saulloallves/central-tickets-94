@@ -79,6 +79,23 @@ function shouldSkipMessage(payload: ZAPIMessage): boolean {
     return true;
   }
   
+  // Filtrar notificações de resposta de ticket (template específico)
+  if (messageText.includes('💬 resposta do ticket') || 
+      messageText.includes('resposta do ticket') ||
+      messageText.includes('📋 título:') ||
+      (messageText.includes('equipe:') && messageText.includes('prioridade:') && messageText.includes('status:'))) {
+    console.log('Skipping message: Ticket response notification template detected');
+    return true;
+  }
+  
+  // Filtrar mensagens que contêm o formato do template de resposta
+  if (messageText.includes('respondido em:') || 
+      messageText.includes('texto_resposta') ||
+      (messageText.includes('título:') && messageText.includes('equipe:') && messageText.includes('status:'))) {
+    console.log('Skipping message: System notification template detected');
+    return true;
+  }
+
   return false;
 }
 
