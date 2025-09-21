@@ -685,6 +685,22 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
   const getTicketsByStatus = (status: keyof typeof COLUMN_STATUS) => {
     let filteredTickets = displayTickets.filter(ticket => ticket.status === status);
     
+    // Debug log para verificar o que está acontecendo
+    if (status === 'aberto' && displayTickets.length > 0) {
+      console.log('🔍 Debug Kanban filtering:', {
+        status,
+        totalTickets: displayTickets.length,
+        filteredCount: filteredTickets.length,
+        sampleTickets: displayTickets.slice(0, 3).map(t => ({
+          id: t.id,
+          codigo: t.codigo_ticket,
+          status: t.status,
+          matchesFilter: t.status === status
+        })),
+        allStatuses: [...new Set(displayTickets.map(t => t.status))]
+      });
+    }
+    
     // For completed tickets, filter out old ones unless showing archived
     if (status === 'concluido' && !showArchivedTickets) {
       filteredTickets = filteredTickets.filter(ticket => !isFromPreviousBusinessDay(ticket.created_at));
