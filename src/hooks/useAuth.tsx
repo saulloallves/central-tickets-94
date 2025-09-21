@@ -67,6 +67,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // THEN check for existing session
     const checkSession = async () => {
       try {
+        console.log('🔐 Starting session check...');
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -81,11 +82,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         
         if (isMounted) {
-          console.log('🔐 Initial session check:', session?.user?.id);
-        setSession(session);
-        setUser(session?.user ?? null);
-        setEmailConfirmed(!!session?.user?.email_confirmed_at);
-        setLoading(false);
+          console.log('🔐 Initial session check:', session?.user?.id || 'No user');
+          setSession(session);
+          setUser(session?.user ?? null);
+          setEmailConfirmed(!!session?.user?.email_confirmed_at);
+          setLoading(false);
         }
       } catch (error) {
         console.error('🔐 Session check failed:', error);
@@ -98,10 +99,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     };
     
+    // Add timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      if (isMounted && loading) {
+        console.error('🔐 Session check timeout - forcing loading to false');
+        setLoading(false);
+      }
+    }, 5000); // 5 second timeout
+    
     checkSession();
 
     return () => {
       isMounted = false;
+      clearTimeout(timeoutId);
       subscription.unsubscribe();
     };
   }, []);
