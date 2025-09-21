@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAIAlertSystem } from '@/hooks/useAIAlertSystem';
@@ -30,9 +30,10 @@ export const useAISuggestion = (ticketId: string) => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { wrapAIFunction } = useAIAlertSystem();
+  const isMountedRef = useRef(true);
 
   const getLatestSuggestion = async () => {
-    if (!ticketId) return;
+    if (!ticketId || !isMountedRef.current) return;
 
     try {
       const { data, error } = await supabase
@@ -45,10 +46,12 @@ export const useAISuggestion = (ticketId: string) => {
 
       if (error) throw error;
 
-      if (data && data.length > 0) {
-        setSuggestion(data[0] as AISuggestion);
-      } else {
-        setSuggestion(null);
+      if (isMountedRef.current) {
+        if (data && data.length > 0) {
+          setSuggestion(data[0] as AISuggestion);
+        } else {
+          setSuggestion(null);
+        }
       }
     } catch (error) {
       console.error('Error fetching suggestion:', error);
@@ -56,9 +59,9 @@ export const useAISuggestion = (ticketId: string) => {
   };
 
   const generateSuggestion = async () => {
-    if (!ticketId) return;
+    if (!ticketId || !isMountedRef.current) return;
     
-    setLoading(true);
+    if (isMountedRef.current) setLoading(true);
     console.log('🤖 Iniciando geração de sugestão para ticket:', ticketId);
     
     try {
@@ -192,7 +195,7 @@ export const useAISuggestion = (ticketId: string) => {
       });
       return null;
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) setLoading(false);
     }
   };
 
@@ -230,6 +233,10 @@ export const useAISuggestion = (ticketId: string) => {
 
   useEffect(() => {
     getLatestSuggestion();
+    
+    return () => {
+      isMountedRef.current = false;
+    };
   }, [ticketId]);
 
   return {
