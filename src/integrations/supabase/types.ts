@@ -2341,6 +2341,7 @@ export type Database = {
           canal_origem: Database["public"]["Enums"]["canal_origem"]
           canal_resposta: Database["public"]["Enums"]["canal_resposta"] | null
           categoria: Database["public"]["Enums"]["ticket_categoria"] | null
+          codigo_grupo: number | null
           codigo_ticket: string
           colaborador_id: string | null
           conversa: Json
@@ -2375,6 +2376,7 @@ export type Database = {
           canal_origem: Database["public"]["Enums"]["canal_origem"]
           canal_resposta?: Database["public"]["Enums"]["canal_resposta"] | null
           categoria?: Database["public"]["Enums"]["ticket_categoria"] | null
+          codigo_grupo?: number | null
           codigo_ticket: string
           colaborador_id?: string | null
           conversa?: Json
@@ -2409,6 +2411,7 @@ export type Database = {
           canal_origem?: Database["public"]["Enums"]["canal_origem"]
           canal_resposta?: Database["public"]["Enums"]["canal_resposta"] | null
           categoria?: Database["public"]["Enums"]["ticket_categoria"] | null
+          codigo_grupo?: number | null
           codigo_ticket?: string
           colaborador_id?: string | null
           conversa?: Json
