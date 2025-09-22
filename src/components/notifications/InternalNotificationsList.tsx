@@ -130,8 +130,16 @@ export const InternalNotificationsList = () => {
         markAsRead(notification.id);
       }
       
-      // Navigate to ticket
-      navigate(`/admin/tickets?ticket=${ticketId}`);
+      // For ticket-related notifications, open modal instead of navigating
+      if (notification.type === 'ticket' || notification.type === 'franqueado_respondeu' || notification.type === 'sla') {
+        // Dispatch custom event to open ticket modal
+        window.dispatchEvent(new CustomEvent('openTicketModal', {
+          detail: { ticketId }
+        }));
+      } else {
+        // For other notifications, navigate normally
+        navigate(`/admin/tickets?ticket=${ticketId}`);
+      }
     }
   };
 
