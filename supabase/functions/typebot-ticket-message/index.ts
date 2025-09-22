@@ -40,10 +40,20 @@ Deno.serve(async (req) => {
       usuarioId = null
     } = body;
 
-    // Verify ticket exists
+    // Verify ticket exists and get complete data for notification
     const { data: ticket, error: ticketError } = await supabase
       .from('tickets')
-      .select('id, codigo_ticket')
+      .select(`
+        id, 
+        codigo_ticket, 
+        equipe_responsavel_id,
+        unidade_id,
+        status,
+        prioridade,
+        titulo,
+        data_abertura,
+        updated_at
+      `)
       .eq('id', ticketId)
       .single();
 
@@ -81,13 +91,46 @@ Deno.serve(async (req) => {
 
     console.log('typebot-ticket-message: Mensagem adicionada com sucesso');
 
+    // Send notification to responsible team about franchisee response
+    try {
+      console.log('🔔 Enviando notificação para equipe responsável...');
+      
+      const notificationResponse = await supabase.functions.invoke('send-ticket-notification', {
+        body: {
+          ticket_id: ticketId,
+          template_key: 'resposta_ticket_franqueado',
+          extra_data: {
+            texto_resposta: texto,
+            timestamp: new Date().toLocaleString('pt-BR', {
+              timeZone: 'America/Sao_Paulo',
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            })
+          }
+        }
+      });
+
+      if (notificationResponse.error) {
+        console.error('⚠️ Erro ao enviar notificação:', notificationResponse.error);
+      } else {
+        console.log('✅ Notificação enviada com sucesso:', notificationResponse.data);
+      }
+    } catch (notificationError) {
+      console.error('❌ Falha ao enviar notificação:', notificationError);
+      // Não falhar a operação principal por causa da notificação
+    }
+
     const lastMessage = mensagemResult;
 
     const response = {
       ok: true,
       ticketId: ticketId,
       codigo_ticket: ticket.codigo_ticket,
-      added: lastMessage
+      added: lastMessage,
+      notification_sent: true
     };
 
     console.log('typebot-ticket-message: Resposta enviada com sucesso');
