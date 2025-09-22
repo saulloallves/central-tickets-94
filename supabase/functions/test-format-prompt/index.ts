@@ -29,7 +29,7 @@ serve(async (req) => {
       .maybeSingle();
 
     if (settingsError) {
-      console.error('Error fetching AI settings:', settingsError);
+      console.error('❌ Error fetching AI settings:', settingsError);
       return new Response(JSON.stringify({ 
         success: false, 
         error: 'Failed to fetch AI settings' 
@@ -39,7 +39,11 @@ serve(async (req) => {
       });
     }
 
-    console.log('Current prompt_format_response:', aiSettings?.prompt_format_response ? 'Configured' : 'Using default');
+    console.log('🔧 AI Settings found:', {
+      hasCustomPrompt: !!aiSettings?.prompt_format_response,
+      promptLength: aiSettings?.prompt_format_response?.length || 0,
+      promptPreview: aiSettings?.prompt_format_response?.substring(0, 150) + '...'
+    });
 
     // Get a recent ticket to test with
     const { data: tickets, error: ticketsError } = await supabase
@@ -87,10 +91,22 @@ serve(async (req) => {
     return new Response(JSON.stringify({ 
       success: true,
       message: 'Format response test completed',
-      ticket_tested: testTicket.codigo_ticket,
-      original_message: testMessage,
-      formatted_response: result.message || result,
-      using_custom_prompt: !!aiSettings?.prompt_format_response
+      test_details: {
+        ticket_tested: testTicket.codigo_ticket,
+        original_message: testMessage,
+        formatted_response: result.resposta_corrigida || result.message || result,
+        using_custom_prompt: !!aiSettings?.prompt_format_response,
+        prompt_info: {
+          exists: !!aiSettings?.prompt_format_response,
+          length: aiSettings?.prompt_format_response?.length || 0
+        },
+        process_result: {
+          success: result.success,
+          pode_virar_documento: result.pode_virar_documento,
+          documentos_encontrados: result.documentos_encontrados,
+          rag_version: result.rag_version
+        }
+      }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
