@@ -189,7 +189,7 @@ export const useInternalNotifications = () => {
     console.log('🔔 Setting up internal notifications realtime for user:', user.id);
 
     const channel = supabase
-      .channel('internal-notification-updates')
+      .channel(`internal-notification-updates-${user.id}`)
       .on(
         'postgres_changes',
         {
@@ -211,9 +211,13 @@ export const useInternalNotifications = () => {
 
           console.log('🔔 Full notification details:', notificationDetails);
           
-          // Force immediate refetch - use refetchQueries instead of invalidateQueries
-          await queryClient.refetchQueries({ 
-            queryKey: ['internal-notifications', user.id] 
+          // Update query cache immediately
+          queryClient.setQueryData(['internal-notifications', user.id], (old: InternalNotification[] = []) => {
+            // Fetch the updated data directly instead of relying on cache
+            queryClient.refetchQueries({ 
+              queryKey: ['internal-notifications', user.id] 
+            });
+            return old;
           });
 
           // Show specific toast for franqueado response
@@ -252,7 +256,7 @@ export const useInternalNotifications = () => {
           console.log('🔔 Internal notification updated:', payload);
           console.log('🔔 Update payload:', payload.new);
           // Force immediate refetch
-          await queryClient.refetchQueries({ 
+          queryClient.refetchQueries({ 
             queryKey: ['internal-notifications', user.id] 
           });
         }
@@ -263,7 +267,7 @@ export const useInternalNotifications = () => {
       console.log('🔔 Cleaning up internal notifications realtime for user:', user.id);
       supabase.removeChannel(channel);
     };
-  }, [user?.id, queryClient, toast]);
+  }, [user?.id]);
 
   // Get unread count
   const unreadCount = notifications.filter(
