@@ -60,14 +60,16 @@ function formatDisplayValue(key: string, value: any): string {
   const formatters: Record<string, (val: any) => string> = {
     prioridade: (val) => {
       const prioMap: Record<string, string> = {
-        'baixa': '🟢 Baixa',
-        'baixo': '🟢 Baixo',
-        'normal': '🟡 Normal', 
-        'alta': '🟠 Alta',
-        'alto': '🟠 Alto',
-        'critica': '🔴 Crítica',
-        'critico': '🔴 Crítico',
-        'crise': '🆘 Crise'
+        'baixa': 'Baixa',
+        'baixo': 'Baixo',
+        'normal': 'Normal', 
+        'alta': 'Alta',
+        'alto': 'Alto',
+        'medio': 'Médio',
+        'imediato': 'Imediato',
+        'critica': 'Crítica',
+        'critico': 'Crítico',
+        'crise': 'Crise'
       };
       return prioMap[val?.toLowerCase()] || val;
     },
