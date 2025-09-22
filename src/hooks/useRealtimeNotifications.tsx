@@ -41,7 +41,12 @@ export const useRealtimeNotifications = () => {
           handleProcessedNotification(payload.new);
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('🔔 Notifications queue subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('🔔 ✅ Notifications queue realtime CONNECTED');
+        }
+      });
 
     // Canal para SLAs vencidos em tickets
     const slaChannel = supabase
@@ -72,7 +77,12 @@ export const useRealtimeNotifications = () => {
           handleTicketEscalation(payload.new);
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('🔔 SLA subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('🔔 ✅ SLA realtime CONNECTED');
+        }
+      });
 
     return () => {
       console.log('🔕 Desconectando notificações em tempo real...');

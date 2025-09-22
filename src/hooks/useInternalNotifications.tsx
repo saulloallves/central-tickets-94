@@ -279,7 +279,12 @@ export const useInternalNotifications = () => {
         }
       )
       .subscribe((status) => {
-        console.log('🔔 Subscription status:', status);
+        console.log('🔔 Internal notifications subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('🔔 ✅ Internal notifications realtime CONNECTED');
+        } else if (status === 'CLOSED') {
+          console.log('🔔 ❌ Internal notifications realtime DISCONNECTED');
+        }
       });
 
     return () => {
