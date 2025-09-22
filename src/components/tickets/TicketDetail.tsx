@@ -1068,7 +1068,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                                       ? 'text-orange-600' 
                                       : 'text-blue-600'
                                 }`}>
-                                  {message.profiles?.nome_completo || 'Sistema'}
+                                  {message.profiles?.nome_completo || 'Franqueado'}
                                   {isFranqueado && <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full ml-2">Franqueado</span>}
                                   {!isSystem && !isFranqueado && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full ml-2">Suporte</span>}
                                 </span>
