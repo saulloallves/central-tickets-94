@@ -202,27 +202,28 @@ export const InternalNotificationsList = () => {
                     </div>
                     
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center space-x-1 mb-1">
-                        <h4 className={`font-medium text-sm truncate ${
+                      <div className="flex flex-wrap items-center gap-1 mb-1">
+                        <h4 className={`font-medium text-sm ${
                           notification.recipient_status?.is_read 
                             ? 'text-muted-foreground' 
                             : 'text-foreground'
                         }`}>
                           {notification.title}
                         </h4>
-                        <Badge 
-                          variant={getNotificationVariant(notification.type)}
-                          className="text-xs h-4"
-                        >
-                          {notification.type}
-                        </Badge>
+                        <div className="flex gap-1">
+                          <Badge 
+                            variant={getNotificationVariant(notification.type)}
+                            className="text-xs h-4 shrink-0"
+                          >
+                            {notification.type === 'franqueado_respondeu' ? 'Resposta' : notification.type}
+                          </Badge>
+                          {notification.equipe?.nome && (
+                            <Badge variant="outline" className="text-xs h-4 shrink-0">
+                              {notification.equipe.nome}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
-                      
-                      {notification.equipe?.nome && (
-                        <Badge variant="outline" className="text-xs h-4 mb-1">
-                          {notification.equipe.nome}
-                        </Badge>
-                      )}
                       
                       {notification.message && (
                         <p className="text-xs text-muted-foreground line-clamp-2 mb-1">
