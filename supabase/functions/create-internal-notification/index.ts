@@ -25,7 +25,7 @@ serve(async (req) => {
       throw new Error('Title and type are required')
     }
 
-    if (!['ticket', 'sla', 'alert', 'info', 'crisis'].includes(type)) {
+    if (!['ticket', 'sla', 'alert', 'info', 'crisis', 'franqueado_respondeu'].includes(type)) {
       throw new Error('Invalid notification type')
     }
 

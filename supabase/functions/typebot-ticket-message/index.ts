@@ -98,18 +98,8 @@ Deno.serve(async (req) => {
       const notificationResponse = await supabase.functions.invoke('send-ticket-notification', {
         body: {
           ticket_id: ticketId,
-          template_key: 'resposta_ticket_franqueado',
-          extra_data: {
-            texto_resposta: texto,
-            timestamp: new Date().toLocaleString('pt-BR', {
-              timeZone: 'America/Sao_Paulo',
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
-            })
-          }
+          template_key: 'franqueado_respondeu_ticket',
+          resposta_real: texto
         }
       });
 
@@ -132,7 +122,7 @@ Deno.serve(async (req) => {
           type: 'franqueado_respondeu',
           title: 'Franqueado Respondeu!',
           message: `Franqueado respondeu o ticket ${ticket.codigo_ticket}`,
-          alert_level: 'high',
+          equipe_id: ticket.equipe_responsavel_id,
           payload: {
             ticket_id: ticketId,
             codigo_ticket: ticket.codigo_ticket,
