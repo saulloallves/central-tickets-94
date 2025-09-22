@@ -155,13 +155,22 @@ async function corrigirRespostaComRAGv4(mensagem: string, documentos: any[]) {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { data: aiSettings } = await supabase
+    const { data: aiSettings, error: settingsError } = await supabase
       .from('faq_ai_settings')
       .select('prompt_format_response')
       .eq('ativo', true)
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
+
+    if (settingsError) {
+      console.error('❌ Erro ao buscar configurações de IA:', settingsError);
+    }
+
+    console.log('🔧 Configurações carregadas:', { 
+      temPromptCustomizado: !!aiSettings?.prompt_format_response,
+      promptLength: aiSettings?.prompt_format_response?.length || 0
+    });
 
     const contexto = documentos.map(doc => 
       `**${doc.titulo}**\n${JSON.stringify(doc.conteudo)}`
