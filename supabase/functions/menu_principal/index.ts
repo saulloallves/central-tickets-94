@@ -44,7 +44,6 @@ serve(async (req: Request) => {
       buttonList: {
         buttons: [
           { id: "autoatendimento_menu", label: "🟢 GiraBot - Autoatendimento" },
-          { id: "ticket_equipes", label: "🟡 Ticket - Solicitações para Equipes" },
           { id: "personalizado_menu", label: "🔵 Atendimento Personalizado - Concierge" },
           { id: "suporte_dfcom", label: "⚫ Suporte Imediato - DFCom" },
           { id: "emergencia_menu", label: "🔴 Estou em uma Emergência" },

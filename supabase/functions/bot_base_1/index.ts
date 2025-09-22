@@ -177,9 +177,6 @@ serve(async (req: Request) => {
     }
 
     // 🔹 NOVOS MENUS PRINCIPAIS
-    if (buttonId === "ticket_equipes") {
-      return await proxy(functionsBaseUrl, "ticket_equipes", body);
-    }
     if (buttonId === "personalizado_menu") {
       return await proxy(functionsBaseUrl, "personalizado_menu", body);
     }
