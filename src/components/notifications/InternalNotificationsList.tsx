@@ -7,6 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useInternalNotifications, InternalNotification } from '@/hooks/useInternalNotifications';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useNavigate } from 'react-router-dom';
 
 const getNotificationIcon = (type: string) => {
   switch (type) {
@@ -115,6 +116,24 @@ const NotificationItem = ({ notification, onMarkAsRead }: NotificationItemProps)
 
 export const InternalNotificationsList = () => {
   const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead } = useInternalNotifications();
+  const navigate = useNavigate();
+
+  const handleNotificationClick = (notification: InternalNotification) => {
+    // Extract ticket ID from payload or message
+    const ticketId = notification.payload?.ticket_id || 
+                     notification.payload?.ticketId ||
+                     notification.message?.match(/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/)?.[0];
+    
+    if (ticketId) {
+      // Mark as read if not already
+      if (!notification.recipient_status?.is_read) {
+        markAsRead(notification.id);
+      }
+      
+      // Navigate to ticket
+      navigate(`/admin/tickets?ticket=${ticketId}`);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -167,7 +186,8 @@ export const InternalNotificationsList = () => {
             {notifications.map((notification) => (
               <div
                 key={notification.id}
-                className={`p-3 rounded-lg mb-2 last:mb-0 transition-colors ${
+                onClick={() => handleNotificationClick(notification)}
+                className={`p-3 rounded-lg mb-2 last:mb-0 transition-colors cursor-pointer hover:bg-muted/50 ${
                   notification.recipient_status?.is_read 
                     ? 'bg-muted/30' 
                     : 'bg-background border border-primary/20'
@@ -231,7 +251,10 @@ export const InternalNotificationsList = () => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => markAsRead(notification.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        markAsRead(notification.id);
+                      }}
                       className="h-6 w-6 p-0 shrink-0"
                     >
                       <Check className="h-3 w-3" />
