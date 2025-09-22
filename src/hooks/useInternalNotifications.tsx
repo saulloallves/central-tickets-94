@@ -183,14 +183,20 @@ export const useInternalNotifications = () => {
     }
   };
 
-  // Set up real-time subscription  
+  // SISTEMA DE NOTIFICAÇÕES EM TEMPO REAL SEMPRE ATIVO
   useEffect(() => {
-    if (!user?.id) return;
+    console.log('🔔 ⚡ INICIANDO SISTEMA REALTIME - SEMPRE ATIVO!');
+    console.log('🔔 ⚡ User ID:', user?.id);
+    
+    if (!user?.id) {
+      console.log('🔔 ❌ Sem usuário logado - sistema desligado');
+      return;
+    }
 
-    console.log('🔔 Setting up internal notifications realtime for user:', user.id);
+    console.log('🔔 🚀 CONFIGURANDO CANAL REALTIME PARA:', user.id);
 
     const channel = supabase
-      .channel(`internal-notification-updates-${user.id}`)
+      .channel(`always-on-notifications-${user.id}`)
       .on(
         'postgres_changes',
         {
@@ -200,74 +206,80 @@ export const useInternalNotifications = () => {
           filter: `user_id=eq.${user.id}`,
         },
         async (payload) => {
-          console.log('🔔 🆕 NOVA NOTIFICAÇÃO RECEBIDA!');
-          console.log('🔔 Payload completo:', payload);
-          console.log('🔔 Dados da nova notificação:', payload.new);
+          console.log('🔔 🎯 NOVA NOTIFICAÇÃO INTERCEPTADA!', payload);
           
-          // Fetch the full notification details immediately
-          const { data: notificationDetails, error } = await supabase
-            .from('internal_notifications')
-            .select('*')
-            .eq('id', payload.new.notification_id)
-            .single();
+          try {
+            // Buscar detalhes completos da notificação
+            const { data: notificationDetails, error } = await supabase
+              .from('internal_notifications')
+              .select('*')
+              .eq('id', payload.new.notification_id)
+              .single();
 
-          if (error) {
-            console.error('🔔 ❌ Erro ao buscar detalhes da notificação:', error);
-            return;
-          }
-
-          console.log('🔔 ✅ Detalhes completos da notificação:', notificationDetails);
-          
-          // Update cache directly with the new notification
-          queryClient.setQueryData(['internal-notifications', user.id], (oldData: InternalNotification[] | undefined) => {
-            if (!notificationDetails) return oldData || [];
-            
-            const newNotification: InternalNotification = {
-              id: notificationDetails.id,
-              title: notificationDetails.title,
-              message: notificationDetails.message,
-              type: notificationDetails.type as 'ticket' | 'sla' | 'alert' | 'info' | 'crisis' | 'franqueado_respondeu',
-              ticket_id: (notificationDetails.payload as any)?.ticket_id || null,
-              created_at: payload.new.created_at,
-              payload: notificationDetails.payload as Record<string, any> || null,
-              recipient_status: {
-                is_read: false,
-                read_at: null
-              }
-            };
-            
-            console.log('🔔 ✅ Adicionando notificação ao cache:', newNotification);
-            const updatedData = [newNotification, ...(oldData || [])];
-            console.log('🔔 📊 Cache atualizado, total de notificações:', updatedData.length);
-            return updatedData;
-          });
-
-          // Show toast notification
-          if (notificationDetails?.type === 'franqueado_respondeu') {
-            console.log('🔔 💬 Exibindo toast para resposta de franqueado');
-            toast({
-              title: "💬 Franqueado Respondeu!",
-              description: notificationDetails.message || "Nova resposta recebida",
-              duration: 5000,
-            });
-            
-            // Play notification sound
-            try {
-              const audio = new Audio('/notification-sound.mp3');
-              audio.volume = 0.7;
-              console.log('🔔 🔊 Reproduzindo som de notificação');
-              audio.play().catch(e => console.log('🔔 ❌ Erro ao reproduzir som:', e));
-            } catch (error) {
-              console.log('🔔 ❌ Erro ao criar áudio:', error);
+            if (error) {
+              console.error('🔔 ❌ Erro ao buscar notificação:', error);
+              return;
             }
-          } else {
-            // Generic notification toast
-            console.log('🔔 📢 Exibindo toast genérico');
-            toast({
-              title: "🔔 Nova Notificação",
-              description: notificationDetails.title || "Você tem uma nova notificação",
-              duration: 4000,
+
+            console.log('🔔 ✅ Detalhes da notificação:', notificationDetails);
+            
+            // FORÇAR REFETCH da query principal
+            console.log('🔔 🔄 FORÇANDO REFETCH...');
+            queryClient.invalidateQueries({ 
+              queryKey: ['internal-notifications', user.id] 
             });
+            
+            // Também atualizar cache direto
+            queryClient.setQueryData(['internal-notifications', user.id], (oldData: InternalNotification[] | undefined) => {
+              if (!notificationDetails) return oldData || [];
+              
+              const newNotification: InternalNotification = {
+                id: notificationDetails.id,
+                title: notificationDetails.title,
+                message: notificationDetails.message,
+                type: notificationDetails.type as 'ticket' | 'sla' | 'alert' | 'info' | 'crisis' | 'franqueado_respondeu',
+                ticket_id: (notificationDetails.payload as any)?.ticket_id || null,
+                created_at: payload.new.created_at,
+                payload: notificationDetails.payload as Record<string, any> || null,
+                recipient_status: {
+                  is_read: false,
+                  read_at: null
+                }
+              };
+              
+              console.log('🔔 ➕ Adicionando ao cache:', newNotification);
+              const updatedData = [newNotification, ...(oldData || [])];
+              console.log('🔔 📊 Novo total no cache:', updatedData.length);
+              return updatedData;
+            });
+
+            // Toast
+            if (notificationDetails?.type === 'franqueado_respondeu') {
+              console.log('🔔 💬 Toast franqueado respondeu');
+              toast({
+                title: "💬 Franqueado Respondeu!",
+                description: notificationDetails.message || "Nova resposta recebida",
+                duration: 6000,
+              });
+              
+              // Som
+              try {
+                const audio = new Audio('/notification-sound.mp3');
+                audio.volume = 0.8;
+                audio.play().catch(e => console.log('🔔 ❌ Erro som:', e));
+              } catch (e) {
+                console.log('🔔 ❌ Erro criar audio:', e);
+              }
+            } else {
+              console.log('🔔 📢 Toast genérico');
+              toast({
+                title: "🔔 Nova Notificação",
+                description: notificationDetails.title || "Nova notificação",
+                duration: 4000,
+              });
+            }
+          } catch (error) {
+            console.error('🔔 ❌ Erro processar notificação:', error);
           }
         }
       )
@@ -280,29 +292,48 @@ export const useInternalNotifications = () => {
           filter: `user_id=eq.${user.id}`,
         },
         async (payload) => {
-          console.log('🔔 📝 Notificação atualizada (lida/não lida):', payload);
-          // Force immediate refetch when notifications are marked as read
-          queryClient.refetchQueries({ 
+          console.log('🔔 📝 Notificação marcada como lida:', payload);
+          // Refetch para atualizar contador
+          queryClient.invalidateQueries({ 
             queryKey: ['internal-notifications', user.id] 
           });
         }
       )
       .subscribe((status) => {
-        console.log('🔔 📡 STATUS DA CONEXÃO REALTIME:', status);
+        console.log('🔔 📡 STATUS CONEXÃO REALTIME:', status);
         if (status === 'SUBSCRIBED') {
-          console.log('🔔 ✅ REALTIME CONECTADO COM SUCESSO!');
+          console.log('🔔 ✅ SISTEMA REALTIME ATIVO E CONECTADO!');
         } else if (status === 'CLOSED') {
-          console.log('🔔 ❌ CONEXÃO REALTIME PERDIDA!');
+          console.log('🔔 ❌ CONEXÃO PERDIDA!');
         } else if (status === 'CHANNEL_ERROR') {
-          console.log('🔔 ⚠️ ERRO NO CANAL REALTIME!');
+          console.log('🔔 ⚠️ ERRO NO CANAL!');
         }
       });
 
     return () => {
-      console.log('🔔 🧹 Limpando conexão realtime para user:', user.id);
+      console.log('🔔 🧹 Limpando sistema realtime para:', user.id);
       supabase.removeChannel(channel);
     };
   }, [user?.id, queryClient, toast]);
+
+  // Set up a polling backup as well
+  useEffect(() => {
+    if (!user?.id) return;
+    
+    console.log('🔔 ⏰ Configurando polling backup a cada 30s');
+    
+    const interval = setInterval(() => {
+      console.log('🔔 🔄 Polling backup - refetch notifications');
+      queryClient.invalidateQueries({ 
+        queryKey: ['internal-notifications', user.id] 
+      });
+    }, 30000);
+
+    return () => {
+      console.log('🔔 🧹 Limpando polling backup');
+      clearInterval(interval);
+    };
+  }, [user?.id, queryClient]);
 
   // Get unread count
   const unreadCount = notifications.filter(
