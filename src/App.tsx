@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "./components/ProtectedRouteSimple";
 import LoadingSpinner from "./components/LoadingSpinner";
+import { GlobalNotificationListener } from "./components/GlobalNotificationListener";
 
 // Lazy load pages for better performance
 const Index = lazy(() => import("./pages/Index"));
@@ -45,6 +46,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        <GlobalNotificationListener />
         <BrowserRouter>
           <Suspense fallback={<LoadingSpinner />}>
             <Routes>
