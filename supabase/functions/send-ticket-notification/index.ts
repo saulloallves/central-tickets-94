@@ -61,11 +61,15 @@ function formatDisplayValue(key: string, value: any): string {
     prioridade: (val) => {
       const prioMap: Record<string, string> = {
         'baixa': '🟢 Baixa',
+        'baixo': '🟢 Baixo',
         'normal': '🟡 Normal', 
         'alta': '🟠 Alta',
-        'critica': '🔴 Crítica'
+        'alto': '🟠 Alto',
+        'critica': '🔴 Crítica',
+        'critico': '🔴 Crítico',
+        'crise': '🆘 Crise'
       };
-      return prioMap[val] || val;
+      return prioMap[val?.toLowerCase()] || val;
     },
     status: (val) => {
       const statusMap: Record<string, string> = {
@@ -76,7 +80,8 @@ function formatDisplayValue(key: string, value: any): string {
       };
       return statusMap[val] || val;
     },
-    categoria: (val) => val || 'Não categorizado'
+    categoria: (val) => val || 'Não categorizado',
+    timestamp: (val) => val // Preservar timestamp já formatado
   };
   
   return formatters[key] ? formatters[key](value) : String(value);
@@ -271,8 +276,9 @@ serve(async (req) => {
     };
 
     // 4. Processar template
+    console.log('🕐 Timestamp gerado:', variables.timestamp);
     const message = processTemplate(template, variables);
-    console.log('💬 Mensagem processada:', message.substring(0, 100) + '...');
+    console.log('💬 Mensagem processada:', message.substring(0, 200) + '...');
 
     // 5. Buscar destino
     const destination = await getDestinationNumber(supabase, template_key, ticket);

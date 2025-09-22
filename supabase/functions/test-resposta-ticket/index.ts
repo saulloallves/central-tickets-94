@@ -39,35 +39,31 @@ serve(async (req) => {
     const testTicket = tickets[0];
     console.log(`📋 Testing with ticket: ${testTicket.codigo_ticket}`);
 
-    // Call process-notifications to send resposta_ticket
+    // Call send-ticket-notification directly
     const functionsBaseUrl = `https://${Deno.env.get('SUPABASE_URL')?.split('//')[1]}/functions/v1` || 'https://hryurntaljdisohawpqf.supabase.co/functions/v1';
     
-    const response = await fetch(`${functionsBaseUrl}/process-notifications`, {
+    const response = await fetch(`${functionsBaseUrl}/send-ticket-notification`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
       },
       body: JSON.stringify({
-        ticketId: testTicket.id,
-        type: 'resposta_ticket',
-        textoResposta: 'Teste de resposta do sistema com botões de ação.',
-        payload: {
-          texto_resposta: 'Teste de resposta do sistema com botões de ação.',
-          message: 'Teste de resposta do sistema com botões de ação.'
-        }
+        ticket_id: testTicket.id,
+        template_key: 'resposta_ticket',
+        texto_resposta: 'Teste de resposta do sistema com timestamp correto.'
       })
     });
 
     const result = await response.json();
     
-    console.log('📤 Response from process-notifications:', result);
+    console.log('📤 Response from send-ticket-notification:', result);
 
     return new Response(JSON.stringify({ 
       success: true,
       message: 'Test completed',
       ticket_tested: testTicket.codigo_ticket,
-      process_result: result
+      result: result
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
