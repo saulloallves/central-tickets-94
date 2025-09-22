@@ -308,6 +308,10 @@ export const useInternalNotifications = () => {
   const unreadCount = notifications.filter(
     n => !n.recipient_status?.is_read
   ).length;
+  
+  console.log('🔔 📊 HOOK: Total notificações:', notifications.length);
+  console.log('🔔 📊 HOOK: Não lidas:', unreadCount);
+  console.log('🔔 📊 HOOK: Detalhes não lidas:', notifications.filter(n => !n.recipient_status?.is_read).map(n => ({ id: n.id, type: n.type, is_read: n.recipient_status?.is_read })));
 
   return {
     notifications,
