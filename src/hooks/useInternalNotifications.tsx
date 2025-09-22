@@ -187,6 +187,11 @@ export const useInternalNotifications = () => {
     if (!user?.id) return;
 
     console.log('🔔 Setting up internal notifications realtime for user:', user.id);
+    
+    // Force immediate refetch to ensure we have latest data
+    queryClient.invalidateQueries({ 
+      queryKey: ['internal-notifications', user.id] 
+    });
 
     const channel = supabase
       .channel('internal-notification-updates')
@@ -211,8 +216,8 @@ export const useInternalNotifications = () => {
 
           console.log('🔔 Full notification details:', notificationDetails);
           
-          // Invalidate queries to refetch
-          queryClient.invalidateQueries({ 
+          // Force immediate refetch - use refetchQueries instead of invalidateQueries
+          await queryClient.refetchQueries({ 
             queryKey: ['internal-notifications', user.id] 
           });
 
@@ -248,11 +253,11 @@ export const useInternalNotifications = () => {
           table: 'internal_notification_recipients',
           filter: `user_id=eq.${user.id}`,
         },
-        (payload) => {
+        async (payload) => {
           console.log('🔔 Internal notification updated:', payload);
           console.log('🔔 Update payload:', payload.new);
-          // Invalidate queries to refetch
-          queryClient.invalidateQueries({ 
+          // Force immediate refetch
+          await queryClient.refetchQueries({ 
             queryKey: ['internal-notifications', user.id] 
           });
         }
