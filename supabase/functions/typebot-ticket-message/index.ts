@@ -52,8 +52,7 @@ Deno.serve(async (req) => {
         prioridade,
         titulo,
         data_abertura,
-        updated_at,
-        franqueado_nome
+        updated_at
       `)
       .eq('id', ticketId)
       .single();

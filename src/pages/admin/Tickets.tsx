@@ -21,6 +21,7 @@ import { BulkAnalysisDialog } from '@/components/tickets/BulkAnalysisDialog';
 import { useUserEquipes } from '@/hooks/useUserEquipes';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import { TestFranqueadoNotification } from '@/components/notifications/TestFranqueadoNotification';
 interface Equipe {
   id: string;
   nome: string;

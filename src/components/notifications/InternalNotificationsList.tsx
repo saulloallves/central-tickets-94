@@ -1,4 +1,4 @@
-import { Bell, Check, CheckCheck, Clock, AlertTriangle, Info, Ticket } from 'lucide-react';
+import { Bell, Check, CheckCheck, Clock, AlertTriangle, Info, Ticket, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -17,6 +17,8 @@ const getNotificationIcon = (type: string) => {
     case 'alert':
     case 'crisis':
       return <AlertTriangle className="h-4 w-4" />;
+    case 'franqueado_respondeu':
+      return <MessageSquare className="h-4 w-4" />;
     default:
       return <Info className="h-4 w-4" />;
   }
@@ -30,6 +32,8 @@ const getNotificationVariant = (type: string) => {
     case 'sla':
       return 'secondary';
     case 'ticket':
+      return 'default';
+    case 'franqueado_respondeu':
       return 'default';
     default:
       return 'outline';

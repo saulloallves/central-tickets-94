@@ -9,7 +9,7 @@ export interface InternalNotification {
   id: string;
   title: string;
   message: string;
-  type: 'ticket' | 'sla' | 'alert' | 'info' | 'crisis';
+  type: 'ticket' | 'sla' | 'alert' | 'info' | 'crisis' | 'franqueado_respondeu';
   equipe_id: string | null;
   created_by: string | null;
   created_at: string;
@@ -201,19 +201,46 @@ export const useInternalNotifications = () => {
           table: 'internal_notification_recipients',
           filter: `user_id=eq.${user.id}`,
         },
-        (payload) => {
+        async (payload) => {
           console.log('🔔 New internal notification received:', payload);
           console.log('🔔 Payload new data:', payload.new);
+          
+          // Fetch the full notification details
+          const { data: notificationDetails } = await supabase
+            .from('internal_notifications')
+            .select('*')
+            .eq('id', payload.new.notification_id)
+            .single();
+
+          console.log('🔔 Full notification details:', notificationDetails);
+          
           // Invalidate queries to refetch
           queryClient.invalidateQueries({ 
             queryKey: ['internal-notifications', user.id] 
           });
 
-          // Show toast notification
-          toast({
-            title: "Nova notificação",
-            description: "Você tem uma nova notificação",
-          });
+          // Show specific toast for franqueado response
+          if (notificationDetails?.type === 'franqueado_respondeu') {
+            toast({
+              title: "💬 Franqueado Respondeu!",
+              description: notificationDetails.message || "Nova resposta recebida",
+            });
+            
+            // Play notification sound
+            try {
+              const audio = new Audio('/notification-sound.mp3');
+              audio.volume = 0.5;
+              audio.play().catch(e => console.log('Erro ao reproduzir som:', e));
+            } catch (error) {
+              console.log('Erro ao criar áudio:', error);
+            }
+          } else {
+            // Generic notification
+            toast({
+              title: "Nova notificação",
+              description: "Você tem uma nova notificação",
+            });
+          }
         }
       )
       .on(
