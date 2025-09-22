@@ -222,6 +222,7 @@ export const useInternalNotifications = () => {
 
           // Show specific toast for franqueado response
           if (notificationDetails?.type === 'franqueado_respondeu') {
+            console.log('🔔 Showing franqueado toast');
             toast({
               title: "💬 Franqueado Respondeu!",
               description: notificationDetails.message || "Nova resposta recebida",
@@ -231,12 +232,14 @@ export const useInternalNotifications = () => {
             try {
               const audio = new Audio('/notification-sound.mp3');
               audio.volume = 0.5;
+              console.log('🔔 Playing notification sound');
               audio.play().catch(e => console.log('Erro ao reproduzir som:', e));
             } catch (error) {
               console.log('Erro ao criar áudio:', error);
             }
           } else {
             // Generic notification
+            console.log('🔔 Showing generic toast');
             toast({
               title: "Nova notificação",
               description: "Você tem uma nova notificação",
@@ -261,7 +264,9 @@ export const useInternalNotifications = () => {
           });
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('🔔 Subscription status:', status);
+      });
 
     return () => {
       console.log('🔔 Cleaning up internal notifications realtime for user:', user.id);

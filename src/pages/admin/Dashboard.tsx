@@ -37,9 +37,9 @@ const Dashboard = () => {
     refetch 
   } = useTeamDashboardMetrics();
   
-  // Initialize notification systems
+  // Initialize notification systems - only internal notifications here
   const { notifications, unreadCount } = useInternalNotifications();
-  useRealtimeNotifications(); // Para toasts em tempo real
+  // Remove useRealtimeNotifications from here to avoid conflicts
   
   // Debug log to verify data structure
   console.log('Dashboard metrics:', { teamMetrics, crisisMetrics, loading, primaryEquipe });

@@ -16,7 +16,8 @@ interface NotificationButtonProps {
 
 export const NotificationButton = ({ isExpanded, variant = 'tickets', onNotificationOpen, onNotificationClose }: NotificationButtonProps) => {
   const { unreadCount } = useInternalNotifications();
-  useRealtimeNotifications(); // Para toasts em tempo real
+  // Keep useRealtimeNotifications only here to centralize realtime toasts
+  useRealtimeNotifications();
 
   const getButtonStyles = () => {
     if (variant === 'sidebar') {
