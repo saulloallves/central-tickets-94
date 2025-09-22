@@ -38,7 +38,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
   const [attachments, setAttachments] = useState<File[]>([]);
   const [isUploadingAttachments, setIsUploadingAttachments] = useState(false);
   
-  const { messages, sendMessage, loading: messagesLoading } = useTicketMessages(ticketId);
+  const { messages, sendMessage, loading: messagesLoading, refetch: refetchMessages } = useTicketMessages(ticketId);
   const { suggestion, loading: suggestionLoading, generateSuggestion, markSuggestionUsed } = useAISuggestion(ticketId);
   const { processResponse, isProcessing: responseProcessing } = useResponseProcessor();
   const { user } = useAuth();
@@ -285,6 +285,11 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
 
         setNewMessage('');
         setAttachments([]);
+        
+        // Force refresh messages to show the new message immediately
+        setTimeout(() => {
+          refetchMessages();
+        }, 500);
         
         toast({
           title: "Sucesso",
