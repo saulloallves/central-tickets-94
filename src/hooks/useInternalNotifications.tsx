@@ -10,10 +10,11 @@ export interface InternalNotification {
   title: string;
   message: string;
   type: 'ticket' | 'sla' | 'alert' | 'info' | 'crisis' | 'franqueado_respondeu';
-  equipe_id: string | null;
-  created_by: string | null;
+  equipe_id?: string | null;
+  created_by?: string | null;
   created_at: string;
-  payload: Record<string, any>;
+  payload?: Record<string, any> | null;
+  ticket_id?: string | null;
   recipient_status?: {
     is_read: boolean;
     read_at: string | null;
@@ -211,13 +212,26 @@ export const useInternalNotifications = () => {
 
           console.log('🔔 Full notification details:', notificationDetails);
           
-          // Update query cache immediately
-          queryClient.setQueryData(['internal-notifications', user.id], (old: InternalNotification[] = []) => {
-            // Fetch the updated data directly instead of relying on cache
-            queryClient.refetchQueries({ 
-              queryKey: ['internal-notifications', user.id] 
-            });
-            return old;
+          // Update cache directly with the new notification instead of refetching
+          queryClient.setQueryData(['internal-notifications', user.id], (oldData: InternalNotification[] | undefined) => {
+            if (!notificationDetails) return oldData || [];
+            
+            const newNotification: InternalNotification = {
+              id: notificationDetails.id,
+              title: notificationDetails.title,
+              message: notificationDetails.message,
+              type: notificationDetails.type as 'ticket' | 'sla' | 'alert' | 'info' | 'crisis' | 'franqueado_respondeu',
+              ticket_id: (notificationDetails.payload as any)?.ticket_id || null,
+              created_at: payload.new.created_at,
+              payload: notificationDetails.payload as Record<string, any> || null,
+              recipient_status: {
+                is_read: false,
+                read_at: null
+              }
+            };
+            
+            console.log('🔔 Adding notification to cache:', newNotification);
+            return [newNotification, ...(oldData || [])];
           });
 
           // Show specific toast for franqueado response
