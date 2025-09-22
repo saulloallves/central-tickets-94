@@ -149,18 +149,29 @@ async function corrigirRespostaComRAGv4(mensagem: string, documentos: any[]) {
   }
 
   try {
+    // Buscar configurações de IA para obter o prompt customizável
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    const { data: aiSettings } = await supabase
+      .from('faq_ai_settings')
+      .select('prompt_format_response')
+      .eq('ativo', true)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
     const contexto = documentos.map(doc => 
       `**${doc.titulo}**\n${JSON.stringify(doc.conteudo)}`
     ).join('\n\n');
 
     console.log(`🧠 RAG v4 - Usando GPT-4.1 com ${documentos.length} documentos de contexto`);
 
-    const response = await openAI('chat/completions', {
-      model: 'gpt-4.1-2025-04-14',
-      messages: [
-        {
-          role: 'system',
-          content: `Você é um especialista em atendimento ao cliente da Cresci & Perdi. 
+    // Usar prompt configurável ou fallback para o padrão
+    const customPrompt = aiSettings?.prompt_format_response;
+    const defaultPrompt = `Você é um especialista em atendimento ao cliente da Cresci & Perdi. 
 
 IMPORTANTE: Você deve corrigir e padronizar a resposta do atendente seguindo estas regras:
 
@@ -181,7 +192,16 @@ IMPORTANTE: Você deve corrigir e padronizar a resposta do atendente seguindo es
 - Incorpore as informações de forma natural sem referenciar a fonte
 
 📋 FORMATO DE SAÍDA:
-Retorne apenas a versão corrigida e padronizada da resposta, sem explicações adicionais ou referências a documentos.`
+Retorne apenas a versão corrigida e padronizada da resposta, sem explicações adicionais ou referências a documentos.`;
+
+    console.log(`🎯 Usando prompt ${customPrompt ? 'personalizado' : 'padrão'} para formatação`);
+
+    const response = await openAI('chat/completions', {
+      model: 'gpt-4.1-2025-04-14',
+      messages: [
+        {
+          role: 'system',
+          content: customPrompt || defaultPrompt
         },
         {
           role: 'user',
