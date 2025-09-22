@@ -92,30 +92,7 @@ Deno.serve(async (req) => {
 
     console.log('typebot-ticket-message: Mensagem adicionada com sucesso');
 
-    // Send notification to responsible team about franchisee response
-    try {
-      console.log('🔔 Enviando notificação para equipe responsável...');
-      
-      const notificationResponse = await supabase.functions.invoke('send-ticket-notification', {
-        body: {
-          ticket_id: ticketId,
-          template_key: 'franqueado_respondeu_ticket',
-          resposta_real: texto,
-          extra_data: {
-            franqueado_nome: ticket.franqueado_nome || 'Franqueado'
-          }
-        }
-      });
-
-      if (notificationResponse.error) {
-        console.error('⚠️ Erro ao enviar notificação:', notificationResponse.error);
-      } else {
-        console.log('✅ Notificação enviada com sucesso:', notificationResponse.data);
-      }
-    } catch (notificationError) {
-      console.error('❌ Falha ao enviar notificação:', notificationError);
-      // Não falhar a operação principal por causa da notificação
-    }
+    // Criar notificação interna no sistema para emitir som e alerta
 
     // Criar notificação interna no sistema para emitir som
     try {
