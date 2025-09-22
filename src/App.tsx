@@ -43,123 +43,15 @@ const FranqueadoProfile = lazy(() => import("./pages/franqueado/Profile"));
 
 const queryClient = new QueryClient();
 
-// Sistema de notificações sempre ativo
-const RealtimeNotificationSystem = () => {
-  const { user } = useAuth();
-  const { toast } = useToast();
-
+// Sistema de notificações simplificado
+const TestNotifications = () => {
   useEffect(() => {
-    if (!user?.id) {
-      console.log('🔔 📴 Usuario não logado - notificações desabilitadas');
-      return;
-    }
-
-    console.log('🔔 🚀 SISTEMA DE NOTIFICAÇÕES INICIADO PARA:', user.id);
-    console.log('🔔 📡 Configurando escuta em tempo real para TODAS as notificações...');
-
-    // Canal principal para notificações internas (mais importante)
-    const internalChannel = supabase
-      .channel(`app-notifications-${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'internal_notification_recipients',
-          filter: `user_id=eq.${user.id}`,
-        },
-        async (payload) => {
-          console.log('🔔 🎯 NOTIFICAÇÃO INTERCEPTADA NO APP!', payload);
-          
-          try {
-            // Buscar detalhes completos da notificação
-            const { data: notification } = await supabase
-              .from('internal_notifications')
-              .select('*')
-              .eq('id', payload.new.notification_id)
-              .single();
-
-            if (notification) {
-              console.log('🔔 ✅ Notificação processada:', notification);
-              
-              // Toast específico para franqueado respondeu
-              if (notification.type === 'franqueado_respondeu') {
-                toast({
-                  title: "💬 Franqueado Respondeu!",
-                  description: notification.message || "Nova resposta recebida",
-                  duration: 6000,
-                });
-                
-                // Som de notificação
-                try {
-                  const audio = new Audio('/notification-sound.mp3');
-                  audio.volume = 0.8;
-                  audio.play().catch(e => console.log('🔔 ❌ Erro no som:', e));
-                } catch (e) {
-                  console.log('🔔 ❌ Erro ao criar audio:', e);
-                }
-              } else {
-                // Toast genérico para outros tipos
-                toast({
-                  title: "🔔 Nova Notificação",
-                  description: notification.title || notification.message || "Você tem uma nova notificação",
-                  duration: 5000,
-                });
-              }
-            }
-          } catch (error) {
-            console.error('🔔 ❌ Erro ao processar notificação:', error);
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications_queue',
-          filter: `status=eq.pending`
-        },
-        (payload) => {
-          console.log('🔔 📬 Notificação da fila interceptada:', payload);
-          
-          const { type, payload: notificationPayload } = payload.new;
-          
-          if (type === 'sla_breach') {
-            toast({
-              title: '🚨 SLA Vencido!',
-              description: `Ticket ${notificationPayload?.codigo_ticket} teve o SLA vencido`,
-              variant: 'destructive',
-              duration: 8000,
-            });
-          } else if (type === 'crisis') {
-            toast({
-              title: '🔥 Crise Detectada!',
-              description: `Ticket ${notificationPayload?.codigo_ticket} foi marcado como crise`,
-              variant: 'destructive',
-              duration: 8000,
-            });
-          }
-        }
-      )
-      .subscribe((status) => {
-        console.log('🔔 📡 STATUS CONEXÃO PRINCIPAL:', status);
-        if (status === 'SUBSCRIBED') {
-          console.log('🔔 ✅ SISTEMA DE NOTIFICAÇÕES CONECTADO COM SUCESSO!');
-        } else if (status === 'CLOSED') {
-          console.log('🔔 ❌ CONEXÃO PERDIDA! Tentando reconectar...');
-        } else if (status === 'CHANNEL_ERROR') {
-          console.log('🔔 ⚠️ ERRO NO CANAL! Verificar configuração...');
-        }
-      });
-
+    console.log('🔔 🔔 🔔 SISTEMA DE NOTIFICAÇÕES CARREGADO!!!');
     return () => {
-      console.log('🔔 🧹 Limpando sistema de notificações para:', user.id);
-      supabase.removeChannel(internalChannel);
+      console.log('🔔 🧹 Sistema de notificações desmontado');
     };
-  }, [user?.id, toast]);
-
-  return null; // Componente invisível
+  }, []);
+  return null;
 };
 
 const App = () => (
@@ -168,7 +60,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <RealtimeNotificationSystem />
+        <TestNotifications />
         <GlobalNotificationListener />
         <BrowserRouter>
           <Suspense fallback={<LoadingSpinner />}>
