@@ -130,21 +130,17 @@ export const InternalNotificationsList = () => {
         markAsRead(notification.id);
       }
       
-      // For ticket-related notifications, try to open modal first
+      // For ticket-related notifications, navigate to tickets page and open modal
       if (notification.type === 'ticket' || notification.type === 'franqueado_respondeu' || notification.type === 'sla') {
-        // Check if we're on a page that supports ticket modals
-        const currentPath = window.location.pathname;
-        const isOnTicketsPage = currentPath.includes('/tickets') || currentPath.includes('/dashboard');
+        // Always navigate to tickets page
+        navigate(`/admin/tickets?ticket=${ticketId}`);
         
-        if (isOnTicketsPage) {
-          // Dispatch custom event to open ticket modal on current page
+        // Also dispatch event to open modal
+        setTimeout(() => {
           window.dispatchEvent(new CustomEvent('openTicketModal', {
             detail: { ticketId }
           }));
-        } else {
-          // Navigate to tickets page with modal open
-          navigate(`/admin/tickets?ticket=${ticketId}`);
-        }
+        }, 100);
       } else {
         // For other notifications, navigate normally
         navigate(`/admin/tickets?ticket=${ticketId}`);
