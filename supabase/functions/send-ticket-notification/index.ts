@@ -125,7 +125,7 @@ async function getZApiConfig(supabase: any): Promise<ZApiConfig | null> {
     const { data: config } = await supabase
       .from('messaging_providers')
       .select('instance_id, base_url, instance_token, client_token')
-      .eq('provider_name', 'zapi_notifications')
+      .eq('provider_name', 'send_ticket_notification')
       .eq('is_active', true)
       .single();
 

@@ -166,6 +166,26 @@ function getLegacyDestination(type: string, ticket: any): string | null {
 // Get Z-API configuration from database or fallback to secrets
 async function getZApiConfig(supabase: any): Promise<ZApiConfig | null> {
   try {
+    // First, try to get the notification-specific configuration
+    const { data: notificationData, error: notificationError } = await supabase
+      .from('messaging_providers')
+      .select('instance_id, instance_token, client_token, base_url')
+      .eq('provider_name', 'send_ticket_notification')
+      .eq('is_active', true)
+      .single();
+
+    if (!notificationError && notificationData) {
+      console.log('✅ Using notification-specific Z-API configuration from database');
+      return {
+        instanceId: notificationData.instance_id,
+        instanceToken: notificationData.instance_token,
+        clientToken: notificationData.client_token,
+        baseUrl: notificationData.base_url
+      };
+    }
+
+    // Fallback to the legacy 'zapi' configuration
+    console.log('⚠️ Notification config not found, falling back to legacy zapi config');
     const { data, error } = await supabase
       .from('messaging_providers')
       .select('instance_id, instance_token, client_token, base_url')
@@ -174,7 +194,7 @@ async function getZApiConfig(supabase: any): Promise<ZApiConfig | null> {
       .single();
 
     if (!error && data) {
-      console.log('Using Z-API configuration from database');
+      console.log('📡 Using legacy Z-API configuration from database');
       return {
         instanceId: data.instance_id,
         instanceToken: data.instance_token,
