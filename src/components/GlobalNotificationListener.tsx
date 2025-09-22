@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useInternalNotifications } from '@/hooks/useInternalNotifications';
+import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import { useToast } from '@/hooks/use-toast';
 
 /**
@@ -9,10 +10,12 @@ import { useToast } from '@/hooks/use-toast';
  */
 export const GlobalNotificationListener = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
   
-  // Este hook já gerencia as notificações em tempo real, toasts e sons
+  // Escuta notificações internas (internal_notifications)
   const { unreadCount } = useInternalNotifications();
+  
+  // Escuta notificações da fila e SLAs
+  useRealtimeNotifications();
 
   useEffect(() => {
     if (user) {
