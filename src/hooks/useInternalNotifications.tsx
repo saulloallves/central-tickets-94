@@ -187,11 +187,6 @@ export const useInternalNotifications = () => {
     if (!user?.id) return;
 
     console.log('🔔 Setting up internal notifications realtime for user:', user.id);
-    
-    // Force immediate refetch to ensure we have latest data
-    queryClient.invalidateQueries({ 
-      queryKey: ['internal-notifications', user.id] 
-    });
 
     const channel = supabase
       .channel('internal-notification-updates')

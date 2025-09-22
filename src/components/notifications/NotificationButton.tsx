@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useInternalNotifications } from '@/hooks/useInternalNotifications';
+import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import { InternalNotificationsList } from './InternalNotificationsList';
 
 interface NotificationButtonProps {
@@ -15,6 +16,7 @@ interface NotificationButtonProps {
 
 export const NotificationButton = ({ isExpanded, variant = 'tickets', onNotificationOpen, onNotificationClose }: NotificationButtonProps) => {
   const { unreadCount } = useInternalNotifications();
+  useRealtimeNotifications(); // Para toasts em tempo real
 
   const getButtonStyles = () => {
     if (variant === 'sidebar') {

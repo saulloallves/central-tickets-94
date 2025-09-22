@@ -42,8 +42,8 @@ const Tickets = () => {
     toast
   } = useToast();
 
-  // Initialize notification system but disable its realtime (we'll handle it ourselves)
-  useRealtimeNotifications(); // Hook para notificações em tempo real
+  // Initialize realtime notifications
+  useRealtimeNotifications();
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [ticketModalOpen, setTicketModalOpen] = useState(false);
   const [bulkAnalysisOpen, setBulkAnalysisOpen] = useState(false);

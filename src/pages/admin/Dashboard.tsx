@@ -9,6 +9,7 @@ import { InternalAlertsPanel } from "@/components/dashboard/InternalAlertsPanel"
 import { TicketDetail } from "@/components/tickets/TicketDetail";
 import { useTeamDashboardMetrics } from "@/hooks/useTeamDashboardMetrics";
 import { useInternalNotifications } from "@/hooks/useInternalNotifications";
+import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { useRole } from "@/hooks/useRole";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -36,8 +37,9 @@ const Dashboard = () => {
     refetch 
   } = useTeamDashboardMetrics();
   
-  // Initialize internal notifications system
+  // Initialize notification systems
   const { notifications, unreadCount } = useInternalNotifications();
+  useRealtimeNotifications(); // Para toasts em tempo real
   
   // Debug log to verify data structure
   console.log('Dashboard metrics:', { teamMetrics, crisisMetrics, loading, primaryEquipe });
