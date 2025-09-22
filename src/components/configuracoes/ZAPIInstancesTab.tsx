@@ -53,7 +53,7 @@ export function ZAPIInstancesTab() {
       icon: <Bot className="h-4 w-4" />
     },
     {
-      provider_name: 'zapi_notifications',
+      provider_name: 'send_ticket_notification',
       display_name: 'Notificações de Tickets',
       instance_id: '',
       instance_token: '',
