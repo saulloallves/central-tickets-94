@@ -123,6 +123,34 @@ Deno.serve(async (req) => {
       // Não falhar a operação principal por causa da notificação
     }
 
+    // Criar notificação interna no sistema para emitir som
+    try {
+      console.log('🔔 Criando notificação interna no sistema...');
+      
+      const internalNotificationResult = await supabase.functions.invoke('create-internal-notification', {
+        body: {
+          type: 'franqueado_respondeu',
+          title: 'Franqueado Respondeu!',
+          message: `Franqueado respondeu o ticket ${ticket.codigo_ticket}`,
+          alert_level: 'high',
+          payload: {
+            ticket_id: ticketId,
+            codigo_ticket: ticket.codigo_ticket,
+            texto_resposta: texto
+          }
+        }
+      });
+
+      if (internalNotificationResult.error) {
+        console.error('❌ Erro ao criar notificação interna:', internalNotificationResult.error);
+      } else {
+        console.log('✅ Notificação interna criada com sucesso');
+      }
+    } catch (internalError) {
+      console.error('❌ Falha ao criar notificação interna:', internalError);
+      // Não falhar a operação principal por causa da notificação
+    }
+
     const lastMessage = mensagemResult;
 
     const response = {

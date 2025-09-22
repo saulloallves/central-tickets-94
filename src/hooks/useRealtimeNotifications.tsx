@@ -117,6 +117,22 @@ export const useRealtimeNotifications = () => {
         });
         break;
 
+      case 'franqueado_respondeu':
+        toast({
+          title: '💬 Franqueado Respondeu!',
+          description: `Ticket ${payload?.codigo_ticket} teve uma nova resposta`,
+          variant: 'default',
+        });
+        // Emitir som de notificação
+        try {
+          const audio = new Audio('/notification-sound.mp3');
+          audio.volume = 0.5;
+          audio.play().catch(e => console.log('Erro ao reproduzir som:', e));
+        } catch (error) {
+          console.log('Erro ao criar áudio:', error);
+        }
+        break;
+
       default:
         if (alert_level === 'critical') {
           toast({
