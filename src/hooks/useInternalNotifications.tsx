@@ -262,20 +262,40 @@ export const useInternalNotifications = () => {
                 duration: 6000,
               });
               
-              // Som
-              try {
-                const audio = new Audio('/notification-sound.mp3');
-                audio.volume = 0.8;
-                audio.play().catch(e => console.log('🔔 ❌ Erro som:', e));
-              } catch (e) {
-                console.log('🔔 ❌ Erro criar audio:', e);
-              }
+              // Som - IMPLEMENTAÇÃO ROBUSTA
+              console.log('🔔 🔊 TENTANDO REPRODUZIR SOM...');
+              
+              // Importar o manager de áudio
+              import('@/lib/audio-manager').then(async ({ playNotificationSound }) => {
+                const success = await playNotificationSound(0.8);
+                if (!success) {
+                  console.log('🔔 ⚠️ Som não reproduzido - mostrando aviso ao usuário');
+                  toast({
+                    title: "🔊 Som Bloqueado",
+                    description: "Clique em qualquer lugar da página para habilitar sons de notificação",
+                    duration: 5000,
+                  });
+                }
+              }).catch(error => {
+                console.log('🔔 ❌ Erro ao carregar audio manager:', error);
+              });
             } else {
+              // Toast genérico para outros tipos
               console.log('🔔 📢 Toast genérico');
               toast({
                 title: "🔔 Nova Notificação",
                 description: notificationDetails.title || "Nova notificação",
                 duration: 4000,
+              });
+              
+              // Som também para outros tipos de notificação
+              console.log('🔔 🔊 Som para notificação genérica...');
+              
+              // Usar o manager de áudio
+              import('@/lib/audio-manager').then(async ({ playNotificationSound }) => {
+                await playNotificationSound(0.5); // Volume menor para notificações gerais
+              }).catch(error => {
+                console.log('🔔 ❌ Erro ao carregar audio manager para notificação genérica:', error);
               });
             }
           } catch (error) {

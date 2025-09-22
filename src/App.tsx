@@ -47,6 +47,13 @@ const queryClient = new QueryClient();
 const TestNotifications = () => {
   useEffect(() => {
     console.log('🔔 🔔 🔔 SISTEMA DE NOTIFICAÇÕES CARREGADO!!!');
+    
+    // Inicializar o sistema de áudio
+    import('@/lib/audio-manager').then(({ audioManager }) => {
+      console.log('🔔 🎵 AudioManager carregado');
+      console.log('🔔 🎵 Status:', audioManager.getStatus());
+    });
+    
     return () => {
       console.log('🔔 🧹 Sistema de notificações desmontado');
     };
