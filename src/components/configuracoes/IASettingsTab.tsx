@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Save, RotateCcw, Info, Zap, MessageCircle, Sparkles, Settings, Brain, RefreshCw, CheckCircle, Edit, Bot, Phone, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { TestRAGFormattingButton } from "@/components/tickets/TestRAGFormattingButton";
 
 interface AISettings {
   id?: string;
@@ -54,6 +55,7 @@ interface AISettings {
   // Configurações de comportamento
   auto_classificacao: boolean;
   usar_busca_semantica: boolean;
+  usar_base_conhecimento_formatacao: boolean;
   
   ativo: boolean;
 }
@@ -176,6 +178,7 @@ INSTRUÇÕES:
 - Finalize sempre com disponibilidade para ajudar`,
   auto_classificacao: true,
   usar_busca_semantica: true,
+  usar_base_conhecimento_formatacao: true,
   temperatura_chat: 0.3,
   temperatura_sugestao: 0.7,
   temperatura_classificacao: 0.1,
@@ -438,6 +441,7 @@ export function IASettingsTab() {
           prompt_format_response: data.prompt_format_response || defaultSettings.prompt_format_response,
           auto_classificacao: data.auto_classificacao ?? defaultSettings.auto_classificacao,
           usar_busca_semantica: data.usar_busca_semantica ?? defaultSettings.usar_busca_semantica,
+          usar_base_conhecimento_formatacao: data.usar_base_conhecimento_formatacao ?? defaultSettings.usar_base_conhecimento_formatacao,
           temperatura_chat: data.temperatura_chat ?? defaultSettings.temperatura_chat,
           temperatura_sugestao: data.temperatura_sugestao ?? defaultSettings.temperatura_sugestao,
           temperatura_classificacao: data.temperatura_classificacao ?? defaultSettings.temperatura_classificacao,
@@ -1000,6 +1004,24 @@ export function IASettingsTab() {
                     onCheckedChange={(checked) => setSettings(prev => ({...prev, usar_busca_semantica: checked}))}
                   />
                 </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <Label htmlFor="usar_base_conhecimento_formatacao">Base de Conhecimento na Formatação</Label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {settings.usar_base_conhecimento_formatacao 
+                        ? "Ativo: usa RAG + correção" 
+                        : "Desativo: apenas gramática"}
+                    </p>
+                    <div className="mt-2">
+                      <TestRAGFormattingButton />
+                    </div>
+                  </div>
+                  <Switch
+                    id="usar_base_conhecimento_formatacao"
+                    checked={settings.usar_base_conhecimento_formatacao}
+                    onCheckedChange={(checked) => setSettings(prev => ({...prev, usar_base_conhecimento_formatacao: checked}))}
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -1031,6 +1053,12 @@ export function IASettingsTab() {
                   <span className="font-medium text-muted-foreground">Busca Semântica:</span>
                   <Badge variant={settings.usar_busca_semantica ? "default" : "outline"}>
                     {settings.usar_busca_semantica ? "Ativo" : "Inativo"}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-muted-foreground">Formatação RAG:</span>
+                  <Badge variant={settings.usar_base_conhecimento_formatacao ? "default" : "outline"}>
+                    {settings.usar_base_conhecimento_formatacao ? "RAG + Gramática" : "Só Gramática"}
                   </Badge>
                 </div>
               </div>

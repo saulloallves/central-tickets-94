@@ -157,7 +157,7 @@ async function corrigirRespostaComRAGv4(mensagem: string, documentos: any[]) {
 
     const { data: aiSettings, error: settingsError } = await supabase
       .from('faq_ai_settings')
-      .select('prompt_format_response')
+      .select('prompt_format_response, usar_base_conhecimento_formatacao')
       .eq('ativo', true)
       .order('created_at', { ascending: false })
       .limit(1)
@@ -167,10 +167,19 @@ async function corrigirRespostaComRAGv4(mensagem: string, documentos: any[]) {
       console.error('❌ Erro ao buscar configurações de IA:', settingsError);
     }
 
+    const usarBaseConhecimento = aiSettings?.usar_base_conhecimento_formatacao ?? true;
+    
     console.log('🔧 Configurações carregadas:', { 
       temPromptCustomizado: !!aiSettings?.prompt_format_response,
-      promptLength: aiSettings?.prompt_format_response?.length || 0
+      promptLength: aiSettings?.prompt_format_response?.length || 0,
+      usarBaseConhecimento
     });
+
+    // Se não usar base de conhecimento, fazer apenas correção gramatical
+    if (!usarBaseConhecimento) {
+      console.log('📝 Modo: Apenas correção gramatical (sem RAG)');
+      return await corrigirApenasGramatica(mensagem, aiSettings?.prompt_format_response);
+    }
 
     const contexto = documentos.map(doc => 
       `**${doc.titulo}**\n${JSON.stringify(doc.conteudo)}`
@@ -234,6 +243,63 @@ Corrija e padronize esta resposta usando as informações da base de conheciment
     return data.choices[0].message.content;
   } catch (error) {
     console.error('Erro ao corrigir resposta:', error);
+    return mensagem; // Retorna original em caso de erro
+  }
+}
+
+/**
+ * Correção apenas gramatical (sem base de conhecimento)
+ */
+async function corrigirApenasGramatica(mensagem: string, customPrompt?: string) {
+  if (!openaiApiKey) {
+    console.log('⚠️ OpenAI API key não configurada, retornando mensagem original');
+    return mensagem;
+  }
+
+  try {
+    console.log('✏️ Corrigindo apenas gramática e formatação');
+
+    const defaultGrammarPrompt = `Você é um assistente especializado em correção de textos para atendimento ao cliente.
+
+OBJETIVO: Corrigir APENAS gramática, ortografia e formatação da resposta, mantendo o conteúdo exato.
+
+INSTRUÇÕES:
+1. Corrija erros de português (ortografia, gramática, concordância)
+2. Melhore a formatação e clareza do texto
+3. Use tom profissional e educado
+4. NÃO adicione ou remova informações do conteúdo
+5. NÃO use conhecimento externo - apenas corrija o que está escrito
+6. Mantenha exatamente o mesmo significado e informações
+
+FORMATO DE SAÍDA:
+Retorne apenas a versão corrigida da resposta, sem explicações adicionais.`;
+
+    const response = await openAI('chat/completions', {
+      model: 'gpt-4.1-2025-04-14',
+      messages: [
+        {
+          role: 'system',
+          content: customPrompt || defaultGrammarPrompt
+        },
+        {
+          role: 'user',
+          content: `TEXTO PARA CORRIGIR APENAS GRAMÁTICA E FORMATAÇÃO:
+${mensagem}
+
+Corrija apenas gramática, ortografia e formatação, mantendo o conteúdo exato:`
+        }
+      ],
+      max_completion_tokens: 1000
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+  } catch (error) {
+    console.error('Erro na correção gramatical:', error);
     return mensagem; // Retorna original em caso de erro
   }
 }
@@ -322,18 +388,41 @@ serve(async (req) => {
       });
     }
 
-    // 1. RAG v4 - Buscar documentos relacionados usando busca híbrida
-    console.log('📚 RAG v4 - Buscando documentos na base de conhecimento...');
-    const documentosCandidatos = await encontrarDocumentosRelacionados(mensagem, 12);
+    // Verificar configurações primeiro para decidir o modo
+    const { data: aiSettings } = await supabase
+      .from('faq_ai_settings')
+      .select('usar_base_conhecimento_formatacao')
+      .eq('ativo', true)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-    // 2. RAG v4 - Re-ranking com LLM para selecionar os melhores
-    console.log('🧠 RAG v4 - Re-ranking com LLM...');
-    const documentosRanqueados = await rerankComLLM(documentosCandidatos, mensagem);
+    const usarRAG = aiSettings?.usar_base_conhecimento_formatacao ?? true;
+    console.log(`🎯 Modo de formatação: ${usarRAG ? 'RAG v4 + Base de Conhecimento' : 'Apenas Correção Gramatical'}`);
 
-    // 3. Corrigir resposta usando RAG v4
-    console.log('🔄 RAG v4 - Corrigindo resposta com base de conhecimento...');
-    const respostaCorrigida = await corrigirRespostaComRAGv4(mensagem, documentosRanqueados);
-    console.log('✅ Resposta corrigida com RAG v4');
+    let documentosCandidatos = [];
+    let documentosRanqueados = [];
+    let respostaCorrigida;
+
+    if (usarRAG) {
+      // 1. RAG v4 - Buscar documentos relacionados usando busca híbrida
+      console.log('📚 RAG v4 - Buscando documentos na base de conhecimento...');
+      documentosCandidatos = await encontrarDocumentosRelacionados(mensagem, 12);
+
+      // 2. RAG v4 - Re-ranking com LLM para selecionar os melhores
+      console.log('🧠 RAG v4 - Re-ranking com LLM...');
+      documentosRanqueados = await rerankComLLM(documentosCandidatos, mensagem);
+
+      // 3. Corrigir resposta usando RAG v4
+      console.log('🔄 RAG v4 - Corrigindo resposta com base de conhecimento...');
+      respostaCorrigida = await corrigirRespostaComRAGv4(mensagem, documentosRanqueados);
+      console.log('✅ Resposta corrigida com RAG v4');
+    } else {
+      // Modo apenas correção gramatical
+      console.log('✏️ Corrigindo apenas gramática sem base de conhecimento...');
+      respostaCorrigida = await corrigirRespostaComRAGv4(mensagem, []); // Vai usar o modo gramatical
+      console.log('✅ Resposta corrigida (apenas gramática)');
+    }
 
     // 4. Avaliar se pode ser documentação
     console.log('📋 Avaliando para documentação...');
@@ -378,7 +467,8 @@ serve(async (req) => {
       documentos_encontrados: documentosCandidatos.length,
       documentos_usados: documentosRanqueados.length,
       pode_virar_documento: avaliacao.pode_documentar,
-      rag_version: "v4"
+      rag_version: "v4",
+      modo_formatacao: usarRAG ? "rag_completo" : "apenas_gramatica"
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });

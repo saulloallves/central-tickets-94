@@ -1054,6 +1054,7 @@ export type Database = {
           timeout_requests: number | null
           top_p: number
           updated_at: string
+          usar_base_conhecimento_formatacao: boolean
           usar_busca_semantica: boolean | null
           usar_feedback_loop: boolean | null
           usar_historico_conversa: boolean | null
@@ -1108,6 +1109,7 @@ export type Database = {
           timeout_requests?: number | null
           top_p?: number
           updated_at?: string
+          usar_base_conhecimento_formatacao?: boolean
           usar_busca_semantica?: boolean | null
           usar_feedback_loop?: boolean | null
           usar_historico_conversa?: boolean | null
@@ -1162,6 +1164,7 @@ export type Database = {
           timeout_requests?: number | null
           top_p?: number
           updated_at?: string
+          usar_base_conhecimento_formatacao?: boolean
           usar_busca_semantica?: boolean | null
           usar_feedback_loop?: boolean | null
           usar_historico_conversa?: boolean | null
