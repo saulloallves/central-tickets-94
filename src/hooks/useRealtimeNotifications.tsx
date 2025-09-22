@@ -10,7 +10,7 @@ export const useRealtimeNotifications = () => {
   useEffect(() => {
     if (!user) return;
 
-    console.log('🔔 Configurando notificações em tempo real...');
+    console.log('🔔 📡 CONFIGURANDO NOTIFICAÇÕES EM TEMPO REAL - NOTIFICATIONS QUEUE...');
 
     // Canal para notificações da fila
     const notificationsChannel = supabase
@@ -24,7 +24,7 @@ export const useRealtimeNotifications = () => {
           filter: `status=eq.pending`
         },
         (payload) => {
-          console.log('📱 Nova notificação recebida:', payload);
+          console.log('📱 🆕 NOVA NOTIFICAÇÃO NA FILA RECEBIDA:', payload);
           handleNotification(payload.new);
         }
       )
@@ -37,14 +37,16 @@ export const useRealtimeNotifications = () => {
           filter: `status=eq.processed`
         },
         (payload) => {
-          console.log('✅ Notificação processada:', payload);
+          console.log('✅ 📝 NOTIFICAÇÃO PROCESSADA:', payload);
           handleProcessedNotification(payload.new);
         }
       )
       .subscribe((status) => {
-        console.log('🔔 Notifications queue subscription status:', status);
+        console.log('🔔 📡 STATUS NOTIFICATIONS QUEUE:', status);
         if (status === 'SUBSCRIBED') {
-          console.log('🔔 ✅ Notifications queue realtime CONNECTED');
+          console.log('🔔 ✅ NOTIFICATIONS QUEUE REALTIME CONECTADO!');
+        } else if (status === 'CLOSED') {
+          console.log('🔔 ❌ NOTIFICATIONS QUEUE REALTIME DESCONECTADO!');
         }
       });
 
@@ -60,7 +62,7 @@ export const useRealtimeNotifications = () => {
           filter: `status_sla=eq.vencido`
         },
         (payload) => {
-          console.log('⏰ SLA vencido detectado:', payload);
+          console.log('⏰ 🚨 SLA VENCIDO DETECTADO:', payload);
           handleSLABreach(payload.new);
         }
       )
@@ -73,19 +75,21 @@ export const useRealtimeNotifications = () => {
           filter: `status=eq.escalonado`
         },
         (payload) => {
-          console.log('📈 Ticket escalado:', payload);
+          console.log('📈 ⬆️ TICKET ESCALADO:', payload);
           handleTicketEscalation(payload.new);
         }
       )
       .subscribe((status) => {
-        console.log('🔔 SLA subscription status:', status);
+        console.log('🔔 📡 STATUS SLA REALTIME:', status);
         if (status === 'SUBSCRIBED') {
-          console.log('🔔 ✅ SLA realtime CONNECTED');
+          console.log('🔔 ✅ SLA REALTIME CONECTADO!');
+        } else if (status === 'CLOSED') {
+          console.log('🔔 ❌ SLA REALTIME DESCONECTADO!');
         }
       });
 
     return () => {
-      console.log('🔕 Desconectando notificações em tempo real...');
+      console.log('🔕 🧹 DESCONECTANDO NOTIFICAÇÕES EM TEMPO REAL...');
       supabase.removeChannel(notificationsChannel);
       supabase.removeChannel(slaChannel);
     };
