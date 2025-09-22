@@ -222,7 +222,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { ticket_id, template_key = 'ticket_created', resposta_real } = await req.json();
+    const { ticket_id, template_key = 'ticket_created', resposta_real, extra_data } = await req.json();
 
     if (!ticket_id) {
       return new Response(JSON.stringify({ 
@@ -282,6 +282,7 @@ serve(async (req) => {
       data_limite_sla: ticket.data_limite_sla ? new Date(ticket.data_limite_sla).toLocaleString('pt-BR') : 'Não definido',
       // Variáveis específicas para resposta_ticket
       texto_resposta: resposta_real || 'Resposta disponível no sistema de atendimento',
+      franqueado_nome: extra_data?.franqueado_nome || ticket.franqueado_nome || 'Franqueado',
       timestamp: new Date().toLocaleString('pt-BR', { 
         timeZone: 'America/Sao_Paulo',
         day: '2-digit',

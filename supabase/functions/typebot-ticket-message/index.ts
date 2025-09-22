@@ -52,7 +52,8 @@ Deno.serve(async (req) => {
         prioridade,
         titulo,
         data_abertura,
-        updated_at
+        updated_at,
+        franqueado_nome
       `)
       .eq('id', ticketId)
       .single();
@@ -99,7 +100,10 @@ Deno.serve(async (req) => {
         body: {
           ticket_id: ticketId,
           template_key: 'franqueado_respondeu_ticket',
-          resposta_real: texto
+          resposta_real: texto,
+          extra_data: {
+            franqueado_nome: ticket.franqueado_nome || 'Franqueado'
+          }
         }
       });
 
