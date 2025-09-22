@@ -109,6 +109,8 @@ export const useInternalNotifications = () => {
     if (!user?.id) return;
 
     try {
+      console.log('🔔 📝 Marcando notificação como lida:', notificationId);
+      
       const { error } = await supabase
         .from('internal_notification_recipients')
         .update({ 
@@ -119,6 +121,8 @@ export const useInternalNotifications = () => {
         .eq('user_id', user.id);
 
       if (error) throw error;
+
+      console.log('🔔 ✅ Notificação marcada no banco');
 
       // Optimistically update the cache
       queryClient.setQueryData(['internal-notifications', user.id], (old: InternalNotification[] = []) =>
@@ -134,12 +138,28 @@ export const useInternalNotifications = () => {
             : notification
         )
       );
+      
+      console.log('🔔 🔄 Cache atualizado otimisticamente');
+      
+      // Force refresh after a small delay to ensure consistency
+      setTimeout(() => {
+        console.log('🔔 🔄 Forçando refetch para garantir consistência');
+        queryClient.invalidateQueries({ 
+          queryKey: ['internal-notifications', user.id] 
+        });
+      }, 500);
+      
     } catch (error) {
       console.error('Error marking notification as read:', error);
       toast({
         title: "Erro",
         description: "Não foi possível marcar notificação como lida",
         variant: "destructive",
+      });
+      
+      // Refresh data on error to ensure consistency
+      queryClient.invalidateQueries({ 
+        queryKey: ['internal-notifications', user.id] 
       });
     }
   };
@@ -355,6 +375,27 @@ export const useInternalNotifications = () => {
     };
   }, [user?.id, queryClient]);
 
+  // Verificação automática de inconsistências
+  useEffect(() => {
+    if (notifications.length === 0) return;
+    
+    const inconsistentNotifications = notifications.filter(n => {
+      const isMarkedRead = n.recipient_status?.is_read;
+      const hasReadTime = !!n.recipient_status?.read_at;
+      return isMarkedRead !== hasReadTime;
+    });
+    
+    if (inconsistentNotifications.length > 0) {
+      console.log('🔔 🔧 AUTO-CORRIGINDO inconsistências:', inconsistentNotifications.length);
+      // Auto-corrigir após 2 segundos
+      setTimeout(() => {
+        queryClient.invalidateQueries({ 
+          queryKey: ['internal-notifications', user?.id] 
+        });
+      }, 2000);
+    }
+  }, [notifications, queryClient, user?.id]);
+
   // Get unread count
   const unreadCount = notifications.filter(
     n => !n.recipient_status?.is_read
@@ -362,7 +403,37 @@ export const useInternalNotifications = () => {
   
   console.log('🔔 📊 HOOK: Total notificações:', notifications.length);
   console.log('🔔 📊 HOOK: Não lidas:', unreadCount);
-  console.log('🔔 📊 HOOK: Detalhes não lidas:', notifications.filter(n => !n.recipient_status?.is_read).map(n => ({ id: n.id, type: n.type, is_read: n.recipient_status?.is_read })));
+  console.log('🔔 📊 HOOK: Detalhes não lidas:', notifications.filter(n => !n.recipient_status?.is_read).map(n => ({ 
+    id: n.id, 
+    type: n.type, 
+    title: n.title,
+    is_read: n.recipient_status?.is_read,
+    read_at: n.recipient_status?.read_at 
+  })));
+  
+  // VERIFICAÇÃO DE CONSISTÊNCIA - debug
+  const inconsistentNotifications = notifications.filter(n => {
+    const isMarkedRead = n.recipient_status?.is_read;
+    const hasReadTime = !!n.recipient_status?.read_at;
+    return isMarkedRead !== hasReadTime; // Se está marcada como lida mas não tem timestamp ou vice-versa
+  });
+  
+  if (inconsistentNotifications.length > 0) {
+    console.log('🔔 ⚠️ INCONSISTÊNCIA DETECTADA:', inconsistentNotifications.map(n => ({
+      id: n.id,
+      is_read: n.recipient_status?.is_read,
+      read_at: n.recipient_status?.read_at,
+      title: n.title
+    })));
+  }
+
+  // Force sync function for debugging
+  const forceSync = async () => {
+    console.log('🔔 🔄 FORÇA SINCRONIZAÇÃO INICIADA');
+    queryClient.removeQueries({ queryKey: ['internal-notifications', user?.id] });
+    await queryClient.refetchQueries({ queryKey: ['internal-notifications', user?.id] });
+    console.log('🔔 ✅ FORÇA SINCRONIZAÇÃO CONCLUÍDA');
+  };
 
   return {
     notifications,
@@ -370,6 +441,7 @@ export const useInternalNotifications = () => {
     isLoading,
     markAsRead,
     markAllAsRead,
+    forceSync,
     refetch: () => queryClient.invalidateQueries({ 
       queryKey: ['internal-notifications', user?.id] 
     }),

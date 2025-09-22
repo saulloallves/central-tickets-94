@@ -115,7 +115,7 @@ const NotificationItem = ({ notification, onMarkAsRead }: NotificationItemProps)
 };
 
 export const InternalNotificationsList = () => {
-  const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead } = useInternalNotifications();
+  const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, forceSync } = useInternalNotifications();
   const navigate = useNavigate();
 
   const handleNotificationClick = (notification: InternalNotification) => {
@@ -174,17 +174,28 @@ export const InternalNotificationsList = () => {
             )}
           </div>
           
-          {unreadCount > 0 && (
+          <div className="flex gap-1">
+            {unreadCount > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={markAllAsRead}
+                className="h-6 px-2 text-xs"
+              >
+                <CheckCheck className="h-3 w-3 mr-1" />
+                Marcar todas
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="sm"
-              onClick={markAllAsRead}
-              className="h-6 px-2 text-xs"
+              onClick={forceSync}
+              className="h-6 px-2 text-xs opacity-50 hover:opacity-100"
+              title="Forçar sincronização"
             >
-              <CheckCheck className="h-3 w-3 mr-1" />
-              Marcar todas
+              🔄
             </Button>
-          )}
+          </div>
         </div>
       </div>
       
