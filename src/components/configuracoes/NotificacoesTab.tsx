@@ -92,7 +92,6 @@ export function NotificacoesTab() {
       const { data, error } = await supabase
         .from('message_templates')
         .select('*')
-        .eq('is_active', true)
         .order('template_key');
 
       if (error) {
