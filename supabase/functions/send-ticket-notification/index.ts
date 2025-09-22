@@ -44,10 +44,26 @@ async function getMessageTemplate(supabase: any, templateKey: string): Promise<s
 function processTemplate(template: string, variables: Record<string, any>): string {
   let processed = template;
   
+  // Debug log para verificar se o timestamp está sendo processado
+  console.log('🔧 Variáveis para processamento:', Object.keys(variables));
+  console.log('🕐 Timestamp a ser usado:', variables.timestamp);
+  
   for (const [key, value] of Object.entries(variables)) {
     const placeholder = `{{${key}}}`;
     const displayValue = formatDisplayValue(key, value);
+    
+    // Log específico para timestamp
+    if (key === 'timestamp') {
+      console.log(`🔄 Substituindo ${placeholder} por ${displayValue}`);
+    }
+    
     processed = processed.replace(new RegExp(placeholder, 'g'), displayValue);
+  }
+  
+  // Verificar se ainda tem placeholder não substituído
+  const remainingPlaceholders = processed.match(/\{\{[^}]+\}\}/g);
+  if (remainingPlaceholders) {
+    console.warn('⚠️ Placeholders não substituídos:', remainingPlaceholders);
   }
   
   return processed;
