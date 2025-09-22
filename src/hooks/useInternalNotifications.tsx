@@ -40,29 +40,26 @@ export const useInternalNotifications = () => {
 
       console.log('🔔 Fetching notifications for user:', user.id);
 
+      // Query com ordem correta para pegar as mais recentes
       const { data, error } = await supabase
-        .from('internal_notification_recipients')
+        .from('internal_notifications')
         .select(`
-          notification_id,
-          is_read,
-          read_at,
-          internal_notifications!inner(
-            id,
-            title,
-            message,
-            type,
-            equipe_id,
-            created_by,
-            created_at,
-            payload,
-            equipes(nome)
+          id,
+          title,
+          message,
+          type,
+          equipe_id,
+          created_by,
+          created_at,
+          payload,
+          equipes(nome),
+          internal_notification_recipients!inner(
+            is_read,
+            read_at
           )
         `)
-        .eq('user_id', user.id)
-        .order('created_at', { 
-          ascending: false,
-          referencedTable: 'internal_notifications'
-        })
+        .eq('internal_notification_recipients.user_id', user.id)
+        .order('created_at', { ascending: false })
         .limit(50);
 
       if (error) {
@@ -73,19 +70,19 @@ export const useInternalNotifications = () => {
       console.log('🔔 Fetched notifications raw data:', data?.length, 'items');
 
       const mappedNotifications = data.map(item => ({
-        id: item.internal_notifications.id,
-        title: item.internal_notifications.title,
-        message: item.internal_notifications.message,
-        type: item.internal_notifications.type,
-        equipe_id: item.internal_notifications.equipe_id,
-        created_by: item.internal_notifications.created_by,
-        created_at: item.internal_notifications.created_at,
-        payload: item.internal_notifications.payload,
+        id: item.id,
+        title: item.title,
+        message: item.message,
+        type: item.type,
+        equipe_id: item.equipe_id,
+        created_by: item.created_by,
+        created_at: item.created_at,
+        payload: item.payload,
         recipient_status: {
-          is_read: item.is_read,
-          read_at: item.read_at,
+          is_read: item.internal_notification_recipients[0]?.is_read || false,
+          read_at: item.internal_notification_recipients[0]?.read_at || null,
         },
-        equipe: item.internal_notifications.equipes
+        equipe: item.equipes
       })) as InternalNotification[];
 
       console.log('🔔 Mapped notifications:', mappedNotifications.length, 'items');
