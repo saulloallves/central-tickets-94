@@ -61,7 +61,32 @@ serve(async (req: Request) => {
 
     console.log("📤 Menu Autoatendimento enviado:", res.status);
 
-    return new Response(JSON.stringify({ success: true, step: "menu_autoatendimento" }), {
+    // Trigger password flow after sending GiraBot link
+    console.log("🔐 Iniciando fluxo de envio de senha...");
+    
+    try {
+      const passwordFlowUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/send-password-flow`;
+      const passwordFlowPayload = {
+        participantPhone: body?.participantPhone,
+        phone: phone
+      };
+
+      const passwordRes = await fetch(passwordFlowUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`,
+        },
+        body: JSON.stringify(passwordFlowPayload),
+      });
+
+      console.log("🔐 Fluxo de senha executado:", passwordRes.status);
+    } catch (passwordError) {
+      console.error("⚠️ Erro no fluxo de senha (não crítico):", passwordError);
+      // Don't fail the main flow if password flow fails
+    }
+
+    return new Response(JSON.stringify({ success: true, step: "menu_autoatendimento_with_password" }), {
       headers: { "Content-Type": "application/json", ...corsHeaders },
       status: 200,
     });
