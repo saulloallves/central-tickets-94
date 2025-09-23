@@ -93,16 +93,16 @@ serve(async (req: Request) => {
     console.log("ButtonId:", buttonId);
     console.log("Message:", message);
     
-    // FILTRO ESPECÍFICO: Só processar mensagens do grupo específico
-    const ALLOWED_GROUP = '120363421372736067-group';
+    // FILTRO ESPECÍFICO: Só processar mensagens dos grupos específicos
+    const ALLOWED_GROUPS = ['120363421372736067-group', '120363420372480204-group'];
     const isGroup = body?.isGroup;
     const chatId = body?.phone;
     
-    if (isGroup && chatId !== ALLOWED_GROUP) {
+    if (isGroup && !ALLOWED_GROUPS.includes(chatId)) {
       console.log(`🚫 BOT_BASE_1: Skipping - not from allowed group (${chatId})`);
       return new Response(JSON.stringify({ 
         success: false, 
-        message: "Bot only processes messages from specific group" 
+        message: "Bot only processes messages from specific groups" 
       }), {
         headers: { "Content-Type": "application/json", ...corsHeaders },
         status: 200
