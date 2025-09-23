@@ -27,6 +27,84 @@ export interface ClassificationResult {
   justificativa: string;
 }
 
+export async function classifyTeamOnly(message: string, equipes: any[], existingData: Partial<ClassificationResult> = {}): Promise<{ equipe_responsavel: string | null; justificativa: string; } | null> {
+  if (!openaiApiKey || !equipes || equipes.length === 0) {
+    return null;
+  }
+
+  return await wrapAIFunction(
+    'TypebotClassifier-AI',
+    'typebot-webhook/ai-classifier/classifyTeamOnly',
+    async () => {
+      try {
+        console.log('Iniciando análise IA apenas para equipe...');
+        
+        const supabase = getSupabaseClient();
+        const { data: aiSettings } = await supabase
+          .from('faq_ai_settings')
+          .select('*')
+          .eq('ativo', true)
+          .maybeSingle();
+
+        const modelToUse = aiSettings?.modelo_classificacao || 'gpt-4o-mini';
+        
+        const equipesInfo = equipes.map(e => 
+          `- ${e.nome}: ${e.descricao || 'Sem descrição'} (Introdução: ${e.introducao || 'N/A'})`
+        ).join('\n');
+
+        const existingInfo = Object.keys(existingData).length > 0 ? 
+          `\nDados já definidos: ${JSON.stringify(existingData, null, 2)}` : '';
+
+        const prompt = `Você é um especialista em classificação de tickets de suporte.
+
+Analise a descrição do problema e determine APENAS qual equipe é mais adequada para resolver este ticket.
+
+Descrição do problema: "${message}"${existingInfo}
+
+Equipes disponíveis:
+${equipesInfo}
+
+Responda APENAS com um JSON válido no formato:
+{
+  "equipe_responsavel": "nome_da_equipe_escolhida",
+  "justificativa": "explicação de 1-2 frases do porquê desta equipe"
+}
+
+Escolha a equipe que melhor se adequa ao problema descrito.`;
+
+        const response = await openAI('chat/completions', {
+          model: modelToUse,
+          messages: [
+            { role: 'system', content: 'Você é um especialista em classificação de tickets. Responda apenas com JSON válido.' },
+            { role: 'user', content: prompt }
+          ],
+          max_completion_tokens: 300,
+        });
+
+        const data = await response.json();
+        const content = data.choices?.[0]?.message?.content;
+
+        if (!content) {
+          throw new Error('Resposta vazia da IA');
+        }
+
+        const result = JSON.parse(content.trim());
+        
+        if (!result.equipe_responsavel) {
+          throw new Error('IA não retornou equipe válida');
+        }
+
+        console.log('Resultado da classificação de equipe:', result);
+        return result;
+
+      } catch (error) {
+        console.error('Erro na classificação de equipe por IA:', error);
+        return null;
+      }
+    }
+  );
+}
+
 export async function classifyTicket(message: string, equipes: any[]): Promise<ClassificationResult | null> {
   if (!openaiApiKey || !equipes || equipes.length === 0) {
     return null;

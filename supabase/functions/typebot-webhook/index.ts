@@ -5,7 +5,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { prepararMensagemParaFranqueado } from './text-utils.ts';
 import { encontrarDocumentosRelacionados, rerankComLLM, gerarRespostaComContexto } from './rag-engine.ts';
 import { searchKnowledgeBase } from './knowledge-base.ts';
-import { classifyTicket, generateFallbackClassification, applyIntelligentFallback, generateFallbackTitle } from './ai-classifier.ts';
+import { classifyTicket, classifyTeamOnly, generateFallbackClassification, applyIntelligentFallback, generateFallbackTitle } from './ai-classifier.ts';
 import { 
   createTicket, 
   addInitialMessage, 
@@ -305,6 +305,9 @@ serve(async (req) => {
     let analysisResult = null;
     let equipeResponsavelId = null;
 
+    // Cenário 1: Se dados específicos foram fornecidos (categoria, prioridade, titulo), usar apenas para definir equipe
+    const hasSpecificData = categoria || prioridade || titulo;
+    
     // Verificar se foi fornecido nome da equipe no payload
     if (equipe_responsavel_nome) {
       console.log('🔍 Buscando equipe por nome:', equipe_responsavel_nome);
@@ -313,7 +316,7 @@ serve(async (req) => {
         equipeResponsavelId = equipeEncontrada.id;
         console.log('✅ Equipe encontrada:', equipeEncontrada.nome);
         
-        // Criar análise básica sem IA quando equipe é especificada
+        // Usar dados fornecidos diretamente
         analysisResult = {
           categoria: categoria || 'outro',
           prioridade: prioridade || 'baixo',
@@ -322,13 +325,83 @@ serve(async (req) => {
           justificativa: 'Equipe especificada diretamente no payload'
         };
       } else {
-        return new Response(JSON.stringify({
-          success: false,
-          error: `Equipe "${equipe_responsavel_nome}" não encontrada ou inativa`
-        }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+        // Equipe fornecida mas não encontrada - usar IA apenas para equipe
+        console.log('❌ Equipe não encontrada, usando IA para definir equipe...');
+        
+        const existingData = {
+          categoria: categoria || undefined,
+          prioridade: prioridade || undefined,
+          titulo: titulo || undefined
+        };
+        
+        const teamClassification = await classifyTeamOnly(message, equipes, existingData);
+        
+        if (teamClassification) {
+          // Buscar equipe sugerida pela IA
+          const equipeEncontrada = await findTeamByNameDirect(teamClassification.equipe_responsavel);
+          if (equipeEncontrada) {
+            equipeResponsavelId = equipeEncontrada.id;
+            console.log('✅ Equipe definida pela IA:', equipeEncontrada.nome);
+          }
+          
+          analysisResult = {
+            categoria: categoria || 'outro',
+            prioridade: prioridade || 'baixo', 
+            titulo: titulo || generateFallbackTitle(message),
+            equipe_responsavel: teamClassification.equipe_responsavel,
+            justificativa: teamClassification.justificativa
+          };
+        } else {
+          // Fallback se IA falhou
+          const fallback = applyIntelligentFallback(message, equipes);
+          analysisResult = {
+            categoria: categoria || fallback.categoria,
+            prioridade: prioridade || 'baixo',
+            titulo: titulo || generateFallbackTitle(message),
+            equipe_responsavel: fallback.equipeId ? equipes.find(e => e.id === fallback.equipeId)?.nome || null : null,
+            justificativa: 'Equipe definida por fallback inteligente'
+          };
+          equipeResponsavelId = fallback.equipeId;
+        }
+      }
+    } else if (hasSpecificData) {
+      // Cenário 2: Dados fornecidos mas sem equipe - usar IA apenas para equipe
+      console.log('📋 Usando dados fornecidos e IA apenas para equipe...');
+      
+      const existingData = {
+        categoria: categoria || undefined,
+        prioridade: prioridade || undefined,
+        titulo: titulo || undefined
+      };
+      
+      const teamClassification = await classifyTeamOnly(message, equipes, existingData);
+      
+      if (teamClassification) {
+        // Buscar equipe sugerida pela IA
+        const equipeEncontrada = await findTeamByNameDirect(teamClassification.equipe_responsavel);
+        if (equipeEncontrada) {
+          equipeResponsavelId = equipeEncontrada.id;
+          console.log('✅ Equipe definida pela IA:', equipeEncontrada.nome);
+        }
+        
+        analysisResult = {
+          categoria: categoria || 'outro',
+          prioridade: prioridade || 'baixo',
+          titulo: titulo || generateFallbackTitle(message),
+          equipe_responsavel: teamClassification.equipe_responsavel,
+          justificativa: teamClassification.justificativa
+        };
+      } else {
+        // Fallback se IA falhou
+        const fallback = applyIntelligentFallback(message, equipes);
+        analysisResult = {
+          categoria: categoria || fallback.categoria,
+          prioridade: prioridade || 'baixo',
+          titulo: titulo || generateFallbackTitle(message),
+          equipe_responsavel: fallback.equipeId ? equipes.find(e => e.id === fallback.equipeId)?.nome || null : null,
+          justificativa: 'Equipe definida por fallback inteligente'
+        };
+        equipeResponsavelId = fallback.equipeId;
       }
     } else {
       // Análise IA completa se equipe não foi especificada
