@@ -5,7 +5,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { prepararMensagemParaFranqueado } from './text-utils.ts';
 import { encontrarDocumentosRelacionados, rerankComLLM, gerarRespostaComContexto } from './rag-engine.ts';
 import { searchKnowledgeBase } from './knowledge-base.ts';
-import { classifyTicket, generateFallbackClassification, applyIntelligentFallback } from './ai-classifier.ts';
+import { classifyTicket, generateFallbackClassification, applyIntelligentFallback, generateFallbackTitle } from './ai-classifier.ts';
 import { 
   createTicket, 
   addInitialMessage, 
@@ -13,6 +13,7 @@ import {
   findFranqueadoByPassword, 
   getActiveTeams, 
   findTeamByName,
+  findTeamByNameDirect,
   getSupabaseClient
 } from './ticket-creator.ts';
 
@@ -300,43 +301,70 @@ serve(async (req) => {
     let analysisResult = null;
     let equipeResponsavelId = null;
 
-    // Análise IA completa
-    if (equipes && equipes.length > 0) {
-      analysisResult = await classifyTicket(message, equipes);
-      
-      if (analysisResult) {
-        console.log('Classificação final da IA:', analysisResult);
+    // Verificar se foi fornecido nome da equipe no payload
+    if (requestData.equipe_responsavel_nome) {
+      console.log('🔍 Buscando equipe por nome:', requestData.equipe_responsavel_nome);
+      const equipeEncontrada = await findTeamByNameDirect(requestData.equipe_responsavel_nome);
+      if (equipeEncontrada) {
+        equipeResponsavelId = equipeEncontrada.id;
+        console.log('✅ Equipe encontrada:', equipeEncontrada.nome);
         
-        // Buscar equipe por nome se foi sugerida
-        if (analysisResult.equipe_responsavel) {
-          console.log('Procurando equipe:', analysisResult.equipe_responsavel);
-          const equipeEncontrada = await findTeamByName(analysisResult.equipe_responsavel, equipes);
+        // Criar análise básica sem IA quando equipe é especificada
+        analysisResult = {
+          categoria: requestData.categoria || 'outro',
+          prioridade: requestData.prioridade || 'baixo',
+          titulo: requestData.titulo || generateFallbackTitle(message),
+          equipe_responsavel: equipeEncontrada.nome,
+          justificativa: 'Equipe especificada diretamente no payload'
+        };
+      } else {
+        return new Response(JSON.stringify({
+          success: false,
+          error: `Equipe "${requestData.equipe_responsavel_nome}" não encontrada ou inativa`
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    } else {
+      // Análise IA completa se equipe não foi especificada
+      if (equipes && equipes.length > 0) {
+        analysisResult = await classifyTicket(message, equipes);
+        
+        if (analysisResult) {
+          console.log('Classificação final da IA:', analysisResult);
           
-          if (equipeEncontrada) {
-            equipeResponsavelId = equipeEncontrada.id;
-            console.log(`Equipe encontrada: ${equipeEncontrada.nome} (ID: ${equipeEncontrada.id})`);
-          } else {
-            console.log('Nenhuma equipe encontrada para:', analysisResult.equipe_responsavel);
+          // Buscar equipe por nome se foi sugerida
+          if (analysisResult.equipe_responsavel) {
+            console.log('Procurando equipe:', analysisResult.equipe_responsavel);
+            const equipeEncontrada = await findTeamByName(analysisResult.equipe_responsavel, equipes);
+            
+            if (equipeEncontrada) {
+              equipeResponsavelId = equipeEncontrada.id;
+              console.log(`Equipe encontrada: ${equipeEncontrada.nome} (ID: ${equipeEncontrada.id})`);
+            } else {
+              console.log('Nenhuma equipe encontrada para:', analysisResult.equipe_responsavel);
+            }
           }
         }
       }
-    }
 
-    // Fallback se análise falhou
-    if (!analysisResult) {
-      analysisResult = generateFallbackClassification(message);
-    }
-
-    // Aplicar fallbacks inteligentes se necessário
-    if (!analysisResult.categoria || !analysisResult.equipe_responsavel) {
-      console.log('AI analysis incomplete, applying fallbacks...');
-      const fallback = applyIntelligentFallback(message, equipes);
-      
-      if (!analysisResult.categoria) {
-        analysisResult.categoria = fallback.categoria;
+      // Fallback se análise falhou
+      if (!analysisResult) {
+        analysisResult = generateFallbackClassification(message);
       }
-      if (!equipeResponsavelId) {
-        equipeResponsavelId = fallback.equipeId;
+
+      // Aplicar fallbacks inteligentes se necessário
+      if (!analysisResult.categoria || !analysisResult.equipe_responsavel) {
+        console.log('AI analysis incomplete, applying fallbacks...');
+        const fallback = applyIntelligentFallback(message, equipes);
+        
+        if (!analysisResult.categoria) {
+          analysisResult.categoria = fallback.categoria;
+        }
+        if (!equipeResponsavelId) {
+          equipeResponsavelId = fallback.equipeId;
+        }
       }
     }
 

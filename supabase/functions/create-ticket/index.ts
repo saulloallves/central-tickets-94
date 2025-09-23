@@ -78,6 +78,45 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Resolve team name to ID if provided
+    let finalTeamId = ticketData.equipe_responsavel_id || null;
+    
+    if (ticketData.equipe_responsavel_nome && !finalTeamId) {
+      console.log('🔍 Resolving team name to ID:', ticketData.equipe_responsavel_nome);
+      
+      // First try exact match
+      let { data: equipe } = await supabase
+        .from('equipes')
+        .select('id, nome')
+        .eq('ativo', true)
+        .ilike('nome', ticketData.equipe_responsavel_nome)
+        .maybeSingle();
+      
+      // If not found, try partial match
+      if (!equipe) {
+        const { data: equipes } = await supabase
+          .from('equipes')
+          .select('id, nome')
+          .eq('ativo', true)
+          .ilike('nome', `%${ticketData.equipe_responsavel_nome}%`)
+          .limit(1);
+        
+        equipe = equipes?.[0] || null;
+      }
+      
+      if (equipe) {
+        finalTeamId = equipe.id;
+        console.log('✅ Team found:', equipe.nome, '(ID:', equipe.id, ')');
+      } else {
+        return new Response(JSON.stringify({ 
+          error: `Equipe "${ticketData.equipe_responsavel_nome}" não encontrada ou inativa` 
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
     // Validate and normalize priority
     const validPriorities = ['baixo', 'medio', 'alto', 'imediato', 'crise'];
     let finalPriority = ticketData.prioridade || 'baixo';
@@ -99,7 +138,7 @@ Deno.serve(async (req) => {
       status: 'aberto',
       criado_por: user.id,
       colaborador_id,
-      equipe_responsavel_id: ticketData.equipe_responsavel_id || null,
+      equipe_responsavel_id: finalTeamId,
       arquivos: ticketData.arquivos || [],
       log_ia: {},
       conversa: [],

@@ -144,3 +144,31 @@ export async function findTeamByName(teamName: string, equipes: any[]) {
   
   return equipeEncontrada;
 }
+
+export async function findTeamByNameDirect(teamName: string) {
+  const supabase = getSupabaseClient();
+  
+  // First try exact match
+  let { data: equipe } = await supabase
+    .from('equipes')
+    .select('id, nome')
+    .eq('ativo', true)
+    .ilike('nome', teamName)
+    .maybeSingle();
+  
+  // If not found, try partial match
+  if (!equipe) {
+    const { data: equipes } = await supabase
+      .from('equipes')
+      .select('id, nome')
+      .eq('ativo', true)
+      .ilike('nome', `%${teamName}%`)
+      .limit(1);
+    
+    equipe = equipes?.[0] || null;
+  }
+  
+  return equipe;
+}
+
+export { getSupabaseClient };
