@@ -346,10 +346,28 @@ Para mais detalhes, acesse o sistema.`,
 function processTemplate(template: string, variables: Record<string, any>): string {
   let processed = template;
   
+  // Debug log para verificar variáveis
+  console.log('🔧 Processando template com variáveis:', Object.keys(variables));
+  if (variables.timestamp) {
+    console.log('🕐 Timestamp original:', variables.timestamp, 'Tipo:', typeof variables.timestamp);
+  }
+  
   for (const [key, value] of Object.entries(variables)) {
     const placeholder = `{{${key}}}`;
     const formattedValue = formatDisplayValue(key, value);
+    
+    // Log específico para timestamp
+    if (key === 'timestamp') {
+      console.log(`🔄 Substituindo ${placeholder} por: "${formattedValue}"`);
+    }
+    
     processed = processed.replace(new RegExp(placeholder, 'g'), String(formattedValue || ''));
+  }
+  
+  // Verificar se ainda restam placeholders não substituídos
+  const remainingPlaceholders = processed.match(/\{\{[^}]+\}\}/g);
+  if (remainingPlaceholders) {
+    console.warn('⚠️ Placeholders não substituídos:', remainingPlaceholders);
   }
   
   return processed;
@@ -360,6 +378,45 @@ function formatDisplayValue(key: string, value: any): string {
   if (!value) return '';
   
   const valueStr = String(value);
+  
+  // Format timestamp values
+  if (key === 'timestamp') {
+    try {
+      // Se for um objeto Date, formatar diretamente
+      if (value instanceof Date) {
+        return value.toLocaleString('pt-BR', {
+          day: '2-digit',
+          month: '2-digit', 
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          timeZone: 'America/Sao_Paulo'
+        });
+      }
+      // Se for uma string que parece timestamp, tentar converter
+      if (typeof value === 'string' && value.includes('/')) {
+        return value; // Já está formatado
+      }
+      // Tentar criar date from string/number
+      const date = new Date(value);
+      if (!isNaN(date.getTime())) {
+        return date.toLocaleString('pt-BR', {
+          day: '2-digit',
+          month: '2-digit', 
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          timeZone: 'America/Sao_Paulo'
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao formatar timestamp:', error);
+    }
+    // Fallback para valor original se não conseguir formatar
+    return valueStr;
+  }
   
   // Format priority values
   if (key === 'prioridade') {
