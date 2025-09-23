@@ -66,7 +66,11 @@ serve(async (req) => {
       attachments,
       category_hint,
       force_create = false,
-      metadata
+      metadata,
+      equipe_responsavel_nome,
+      categoria,
+      prioridade,
+      titulo
     } = body;
 
     // Helper function to validate URL
@@ -302,25 +306,25 @@ serve(async (req) => {
     let equipeResponsavelId = null;
 
     // Verificar se foi fornecido nome da equipe no payload
-    if (requestData.equipe_responsavel_nome) {
-      console.log('🔍 Buscando equipe por nome:', requestData.equipe_responsavel_nome);
-      const equipeEncontrada = await findTeamByNameDirect(requestData.equipe_responsavel_nome);
+    if (equipe_responsavel_nome) {
+      console.log('🔍 Buscando equipe por nome:', equipe_responsavel_nome);
+      const equipeEncontrada = await findTeamByNameDirect(equipe_responsavel_nome);
       if (equipeEncontrada) {
         equipeResponsavelId = equipeEncontrada.id;
         console.log('✅ Equipe encontrada:', equipeEncontrada.nome);
         
         // Criar análise básica sem IA quando equipe é especificada
         analysisResult = {
-          categoria: requestData.categoria || 'outro',
-          prioridade: requestData.prioridade || 'baixo',
-          titulo: requestData.titulo || generateFallbackTitle(message),
+          categoria: categoria || 'outro',
+          prioridade: prioridade || 'baixo',
+          titulo: titulo || generateFallbackTitle(message),
           equipe_responsavel: equipeEncontrada.nome,
           justificativa: 'Equipe especificada diretamente no payload'
         };
       } else {
         return new Response(JSON.stringify({
           success: false,
-          error: `Equipe "${requestData.equipe_responsavel_nome}" não encontrada ou inativa`
+          error: `Equipe "${equipe_responsavel_nome}" não encontrada ou inativa`
         }), {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
