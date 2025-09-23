@@ -1,9 +1,16 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Cliente Supabase para buscar configurações
+const supabase = createClient(
+  Deno.env.get('SUPABASE_URL') ?? '',
+  Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+)
 
 // Configuração Z-API específica para BOT
 class BotZAPIClient {
@@ -13,10 +20,45 @@ class BotZAPIClient {
   private baseUrl: string;
 
   constructor() {
+    this.instanceId = '';
+    this.token = '';
+    this.clientToken = '';
+    this.baseUrl = 'https://api.z-api.io';
+  }
+
+  async loadConfig() {
+    console.log('🔧 Carregando configuração do bot...');
+    
+    // Primeiro, tenta buscar da configuração do banco
+    try {
+      const { data: config, error } = await supabase
+        .from('messaging_providers')
+        .select('*')
+        .eq('provider_name', 'zapi_bot')
+        .eq('is_active', true)
+        .single();
+
+      if (!error && config) {
+        console.log('✅ Configuração encontrada no banco:', config.instance_id?.substring(0, 8) + '...');
+        this.instanceId = config.instance_id;
+        this.token = config.instance_token;
+        this.clientToken = config.client_token;
+        this.baseUrl = config.base_url || 'https://api.z-api.io';
+        return;
+      } else {
+        console.log('⚠️ Configuração não encontrada no banco, usando env vars');
+      }
+    } catch (error) {
+      console.error('❌ Erro ao buscar configuração no banco:', error);
+    }
+
+    // Fallback para variáveis de ambiente
     this.instanceId = Deno.env.get('BOT_ZAPI_INSTANCE_ID') || Deno.env.get('ZAPI_INSTANCE_ID') || '';
     this.token = Deno.env.get('BOT_ZAPI_TOKEN') || Deno.env.get('ZAPI_TOKEN') || '';
     this.clientToken = Deno.env.get('BOT_ZAPI_CLIENT_TOKEN') || Deno.env.get('ZAPI_CLIENT_TOKEN') || '';
     this.baseUrl = Deno.env.get('BOT_ZAPI_BASE_URL') || Deno.env.get('ZAPI_BASE_URL') || 'https://api.z-api.io';
+    
+    console.log('📝 Usando configuração das env vars:', this.instanceId?.substring(0, 8) + '...');
   }
 
   async sendMessage(phone: string, message: string, buttons?: any[]): Promise<boolean> {
@@ -70,6 +112,9 @@ serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+
+  // Carrega configuração do banco primeiro
+  await botZapi.loadConfig();
 
   try {
     console.log("🚀 BOT_BASE_1 INICIADO - Recebendo requisição");
