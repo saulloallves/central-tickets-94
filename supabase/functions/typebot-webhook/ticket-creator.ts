@@ -134,11 +134,21 @@ export async function getActiveTeams() {
 }
 
 export async function findTeamByName(teamName: string, equipes: any[]) {
+  // Clean team name by removing extra characters like ": S", ": N", etc.
+  const cleanTeamName = teamName.replace(/:\s*[A-Z]$/, '').trim();
+  
+  // Try exact match first
   let equipeEncontrada = equipes.find(eq => eq.nome === teamName);
   
+  // Try exact match with cleaned name
+  if (!equipeEncontrada) {
+    equipeEncontrada = equipes.find(eq => eq.nome === cleanTeamName);
+  }
+  
+  // Try partial match
   if (!equipeEncontrada) {
     equipeEncontrada = equipes.find(eq => 
-      eq.nome.toLowerCase().includes(teamName.toLowerCase())
+      eq.nome.toLowerCase().includes(cleanTeamName.toLowerCase())
     );
   }
   
@@ -148,7 +158,10 @@ export async function findTeamByName(teamName: string, equipes: any[]) {
 export async function findTeamByNameDirect(teamName: string) {
   const supabase = getSupabaseClient();
   
-  // First try exact match
+  // Clean team name by removing extra characters like ": S", ": N", etc.
+  const cleanTeamName = teamName.replace(/:\s*[A-Z]$/, '').trim();
+  
+  // First try exact match with original name
   let { data: equipe } = await supabase
     .from('equipes')
     .select('id, nome')
@@ -156,13 +169,25 @@ export async function findTeamByNameDirect(teamName: string) {
     .ilike('nome', teamName)
     .maybeSingle();
   
-  // If not found, try partial match
+  // Try exact match with cleaned name
+  if (!equipe) {
+    const { data: equipeClean } = await supabase
+      .from('equipes')
+      .select('id, nome')
+      .eq('ativo', true)
+      .ilike('nome', cleanTeamName)
+      .maybeSingle();
+    
+    equipe = equipeClean;
+  }
+  
+  // If not found, try partial match with cleaned name
   if (!equipe) {
     const { data: equipes } = await supabase
       .from('equipes')
       .select('id, nome')
       .eq('ativo', true)
-      .ilike('nome', `%${teamName}%`)
+      .ilike('nome', `%${cleanTeamName}%`)
       .limit(1);
     
     equipe = equipes?.[0] || null;
