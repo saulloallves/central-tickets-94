@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -33,12 +33,12 @@ class BotZAPIClient {
     try {
       const { data: config, error } = await supabase
         .from('messaging_providers')
-        .select('*')
+        .select('instance_id, instance_token, client_token, base_url')
         .eq('provider_name', 'zapi_bot')
         .eq('is_active', true)
         .single();
 
-      if (!error && config) {
+      if (!error && config && config.instance_id) {
         console.log('✅ Configuração encontrada no banco:', config.instance_id?.substring(0, 8) + '...');
         this.instanceId = config.instance_id;
         this.token = config.instance_token;
@@ -46,7 +46,7 @@ class BotZAPIClient {
         this.baseUrl = config.base_url || 'https://api.z-api.io';
         return;
       } else {
-        console.log('⚠️ Configuração não encontrada no banco, usando env vars');
+        console.log('⚠️ Configuração não encontrada no banco, usando env vars:', error?.message || 'Config não encontrada');
       }
     } catch (error) {
       console.error('❌ Erro ao buscar configuração no banco:', error);
