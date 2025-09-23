@@ -209,7 +209,6 @@ serve(async (req) => {
       
       // Log da remoção sem duplicar mensagem (a função específica de finalização envia a mensagem)
       console.log(`📤 ${participantName} removido do grupo com sucesso. Mensagem de finalização será enviada pela função específica.`);
-    }
 
       // Log da operação
       await supabase.from('logs_de_sistema').insert({
