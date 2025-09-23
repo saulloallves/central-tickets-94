@@ -243,7 +243,7 @@ serve(async (req: Request) => {
     if (buttonId === "suporte_dfcom") {
       return await proxy(functionsBaseUrl, "suporte_dfcom", body);
     }
-    if (buttonId === "falar_com_concierge") {
+    if (buttonId === "falar_com_concierge" || buttonId === "concierge_falar") {
       return await proxy(functionsBaseUrl, "concierge_falar", body);
     }
     if (buttonId === "acompanhar_chamado") {
