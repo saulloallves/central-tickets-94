@@ -1280,21 +1280,44 @@ export function IASettingsTab() {
                         size="sm"
                         onClick={async () => {
                           try {
-                            const { data, error } = await supabase.functions.invoke('test-format-prompt');
+                            console.log('🧪 Testando processo de formatação...');
+                            
+                            // Buscar um ticket real para teste
+                            const { data: tickets } = await supabase
+                              .from('tickets')
+                              .select('id')
+                              .order('data_abertura', { ascending: false })
+                              .limit(1);
+                              
+                            if (!tickets || tickets.length === 0) {
+                              throw new Error('Nenhum ticket encontrado para teste');
+                            }
+                            
+                            const { data: user } = await supabase.auth.getUser();
+                            
+                            const { data, error } = await supabase.functions.invoke('process-response', {
+                              body: {
+                                mensagem: "sim, pode mandar",
+                                ticket_id: tickets[0].id,
+                                usuario_id: user.user?.id
+                              }
+                            });
+                            
                             if (error) throw error;
+                            
+                            console.log('✅ Resultado do teste:', data);
                             
                             toast({
                               title: "✅ Teste Concluído",
-                              description: `Mensagem original: "${data.teste_executado.mensagem_original}" → Formatada: "${data.teste_executado.mensagem_formatada?.substring(0, 100)}..."`,
-                              duration: 8000,
+                              description: `Original: "sim, pode mandar" → Formatado: "${data.resposta_corrigida?.substring(0, 100)}..."`,
+                              duration: 10000,
                             });
                             
-                            console.log('🧪 Resultado do teste:', data);
                           } catch (error) {
-                            console.error('Erro no teste:', error);
+                            console.error('❌ Erro no teste:', error);
                             toast({
                               title: "Erro no teste",
-                              description: "Falha ao testar o prompt de formatação",
+                              description: "Falha ao testar o prompt: " + error.message,
                               variant: "destructive",
                             });
                           }

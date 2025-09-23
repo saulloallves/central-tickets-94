@@ -172,12 +172,14 @@ async function corrigirRespostaComRAGv4(mensagem: string, documentos: any[]) {
     console.log('🔧 Configurações carregadas:', { 
       temPromptCustomizado: !!aiSettings?.prompt_format_response,
       promptLength: aiSettings?.prompt_format_response?.length || 0,
-      usarBaseConhecimento
+      usarBaseConhecimento,
+      promptPreview: aiSettings?.prompt_format_response?.substring(0, 150) || 'SEM PROMPT PERSONALIZADO'
     });
 
     // Se não usar base de conhecimento, fazer apenas correção gramatical
     if (!usarBaseConhecimento) {
       console.log('📝 Modo: Apenas correção gramatical (sem RAG)');
+      console.log('🎯 Prompt que será usado:', aiSettings?.prompt_format_response ? 'PROMPT PERSONALIZADO' : 'PROMPT PADRÃO');
       return await corrigirApenasGramatica(mensagem, aiSettings?.prompt_format_response);
     }
 
@@ -258,6 +260,7 @@ async function corrigirApenasGramatica(mensagem: string, customPrompt?: string) 
 
   try {
     console.log('✏️ Corrigindo apenas gramática e formatação');
+    console.log('🎯 Prompt recebido:', customPrompt ? 'PERSONALIZADO (' + customPrompt.length + ' chars)' : 'PADRÃO');
 
     const defaultGrammarPrompt = `Você é um assistente especializado em correção de textos para atendimento ao cliente.
 
@@ -274,12 +277,15 @@ INSTRUÇÕES:
 FORMATO DE SAÍDA:
 Retorne apenas a versão corrigida da resposta, sem explicações adicionais.`;
 
+    const promptParaUsar = customPrompt || defaultGrammarPrompt;
+    console.log('📝 Usando prompt:', customPrompt ? 'PERSONALIZADO' : 'PADRÃO (fallback)');
+
     const response = await openAI('chat/completions', {
       model: 'gpt-4.1-2025-04-14',
       messages: [
         {
           role: 'system',
-          content: customPrompt || defaultGrammarPrompt
+          content: promptParaUsar
         },
         {
           role: 'user',

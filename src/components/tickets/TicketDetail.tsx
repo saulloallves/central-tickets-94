@@ -260,15 +260,25 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
       let finalMessage = newMessage.trim() || (uploadedAttachments.length > 0 ? '' : 'Mensagem vazia');
       
       if (finalMessage.trim()) {
+        console.log('🤖 Processando resposta com IA:', finalMessage);
         const { data: userData } = await supabase.auth.getUser();
         const processed = await processResponse(finalMessage, ticketId, userData.user?.id || '');
+        
+        console.log('📤 Resultado do processamento:', processed);
+        
         if (processed?.respostaFinal && processed.respostaFinal !== finalMessage) {
+          console.log('✅ Mensagem foi alterada pela IA:', {
+            original: finalMessage,
+            processada: processed.respostaFinal
+          });
           finalMessage = processed.respostaFinal;
           
           toast({
-            title: "Resposta processada",
-            description: "Sua mensagem foi corrigida e padronizada automaticamente",
+            title: "Resposta processada pela IA",
+            description: "Sua mensagem foi formatada usando o prompt personalizado",
           });
+        } else {
+          console.log('⚠️ Mensagem não foi alterada:', processed);
         }
       }
 
