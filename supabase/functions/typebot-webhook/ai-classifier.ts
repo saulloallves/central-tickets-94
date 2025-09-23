@@ -219,22 +219,22 @@ CRÍTICO: Use APENAS estas 5 prioridades: baixo, medio, alto, imediato, crise
   );
 }
 
-export function generateFallbackClassification(message: string): ClassificationResult {
-  const generateFallbackTitle = (description: string): string => {
-    const desc = description.toLowerCase();
-    if (desc.includes('áudio') || desc.includes('audio') || desc.includes('som')) return 'Problema Áudio';
-    if (desc.includes('planfeto') || desc.includes('panfleto') || desc.includes('mídia')) return 'Criação Mídia';
-    if (desc.includes('solicitar') || desc.includes('preciso') || desc.includes('gostaria')) return 'Solicitação Material';
-    if (desc.includes('sistema') || desc.includes('erro') || desc.includes('bug')) return 'Erro Sistema';
-    if (desc.includes('evento')) return 'Evento Dúvida';
-    
-    const words = description.trim().split(/\s+/).filter(word => 
-      word.length > 3 && 
-      !['preciso', 'gostaria', 'solicitar', 'favor', 'olá', 'ola'].includes(word.toLowerCase())
-    );
-    return words.slice(0, 3).join(' ') || 'Novo Ticket';
-  };
+export function generateFallbackTitle(description: string): string {
+  const desc = description.toLowerCase();
+  if (desc.includes('áudio') || desc.includes('audio') || desc.includes('som')) return 'Problema Áudio';
+  if (desc.includes('planfeto') || desc.includes('panfleto') || desc.includes('mídia')) return 'Criação Mídia';
+  if (desc.includes('solicitar') || desc.includes('preciso') || desc.includes('gostaria')) return 'Solicitação Material';
+  if (desc.includes('sistema') || desc.includes('erro') || desc.includes('bug')) return 'Erro Sistema';
+  if (desc.includes('evento')) return 'Evento Dúvida';
+  
+  const words = description.trim().split(/\s+/).filter(word => 
+    word.length > 3 && 
+    !['preciso', 'gostaria', 'solicitar', 'favor', 'olá', 'ola'].includes(word.toLowerCase())
+  );
+  return words.slice(0, 3).join(' ') || 'Novo Ticket';
+}
 
+export function generateFallbackClassification(message: string): ClassificationResult {
   return {
     categoria: 'outro',
     prioridade: 'baixo',
