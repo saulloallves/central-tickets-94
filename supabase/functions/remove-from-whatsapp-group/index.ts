@@ -203,38 +203,13 @@ serve(async (req) => {
     // Remover participante do grupo
     const result = await zapiClient.removeParticipantFromGroup(groupId, phoneToRemove);
 
-    // Se a remoção foi bem-sucedida, enviar mensagem de despedida
+    // Se a remoção foi bem-sucedida, apenas logar (mensagem de finalização será enviada pela função específica)
     if (result.value) {
       console.log('✅ Participant removed successfully');
-
-      // Mensagem personalizada conforme tipo_atendimento
-      let farewellMessage = "";
-      if (chamado.tipo_atendimento === "concierge") {
-        farewellMessage = `👋 *Atendimento Concierge Finalizado*\n\n${participantName} finalizou o atendimento.\n\n✅ Obrigado pela preferência!`;
-      } else if (chamado.tipo_atendimento === "dfcom") {
-        farewellMessage = `⚫ *Atendimento DFCOM Finalizado*\n\n${participantName} finalizou o atendimento técnico.\n\n✅ Obrigado pela confiança em nossa equipe!`;
-      }
-
-      try {
-        const response = await fetch(
-          `${zapiClient.baseUrl}/instances/${zapiClient.instanceId}/token/${zapiClient.token}/send-text`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Client-Token": zapiClient.clientToken,
-            },
-            body: JSON.stringify({
-              phone: groupId,
-              message: farewellMessage,
-            }),
-          }
-        );
-        const msgResult = await response.json();
-        console.log("📤 Mensagem de despedida enviada:", msgResult);
-      } catch (msgError) {
-        console.error("❌ Erro ao enviar mensagem de despedida:", msgError);
-      }
+      
+      // Log da remoção sem duplicar mensagem (a função específica de finalização envia a mensagem)
+      console.log(`📤 ${participantName} removido do grupo com sucesso. Mensagem de finalização será enviada pela função específica.`);
+    }
 
       // Log da operação
       await supabase.from('logs_de_sistema').insert({
