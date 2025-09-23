@@ -118,8 +118,14 @@ serve(async (req: Request) => {
       Deno.env.get("FUNCTIONS_BASE_URL") ||
       `https://hryurntaljdisohawpqf.supabase.co/functions/v1`;
 
-    // 🔹 MENU INICIAL
-    if (KEYWORDS.some((k) => message.includes(k))) {
+    // 🔹 MENU INICIAL - Verificação com debug
+    console.log("🔍 Verificando keywords:", KEYWORDS);
+    console.log("🔍 Message para verificar:", `"${message}"`);
+    const keywordMatch = KEYWORDS.some((k) => message.includes(k.toLowerCase()));
+    console.log("🔍 Keyword match encontrado:", keywordMatch);
+    
+    if (keywordMatch) {
+      console.log("📞 Chamando menu_principal...");
       const res = await fetch(`${functionsBaseUrl}/menu_principal`, {
         method: "POST",
         headers: {
@@ -128,7 +134,11 @@ serve(async (req: Request) => {
         },
         body: JSON.stringify(body),
       });
-      return new Response(await res.text(), {
+      
+      const responseText = await res.text();
+      console.log("📤 Resposta do menu_principal:", responseText);
+      
+      return new Response(responseText, {
         headers: { "Content-Type": "application/json", ...corsHeaders },
         status: res.status,
       });
