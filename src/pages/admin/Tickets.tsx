@@ -139,17 +139,7 @@ const Tickets = () => {
           
           <div className="flex flex-wrap gap-1 md:gap-2">
             <NotificationButton isExpanded={false} variant="tickets" />
-            {(isAdmin || isSupervisor) && equipes.length > 0 && (
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setBulkAnalysisOpen(true)}
-                className="gap-2"
-              >
-                <Brain className="h-4 w-4" />
-                <span className="hidden md:inline">Análise IA</span>
-              </Button>
-            )}
+            {/* Botão removido por solicitação do usuário */}
           </div>
         </div>
 
