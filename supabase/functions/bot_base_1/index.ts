@@ -36,7 +36,7 @@ class BotZAPIClient {
         .select('instance_id, instance_token, client_token, base_url')
         .eq('provider_name', 'zapi_bot')
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
 
       if (!error && config && config.instance_id) {
         console.log('✅ Configuração encontrada no banco:', config.instance_id?.substring(0, 8) + '...');

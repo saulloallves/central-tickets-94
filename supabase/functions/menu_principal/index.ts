@@ -20,13 +20,13 @@ async function loadZAPIConfig() {
   try {
     const { data: config, error } = await supabase
       .from('messaging_providers')
-      .select('*')
+      .select('instance_id, instance_token, client_token, base_url')
       .eq('provider_name', 'zapi_bot')
       .eq('is_active', true)
-      .single();
+      .maybeSingle();
 
-    if (!error && config) {
-      console.log('✅ Configuração do bot encontrada no banco:', config.instance_id?.substring(0, 8) + '...');
+    if (!error && config && config.instance_id) {
+      console.log('✅ Configuração zapi_bot encontrada no banco:', config.instance_id?.substring(0, 8) + '...');
       return {
         instanceId: config.instance_id,
         instanceToken: config.instance_token,
@@ -34,10 +34,10 @@ async function loadZAPIConfig() {
         baseUrl: config.base_url || 'https://api.z-api.io'
       };
     } else {
-      console.log('⚠️ Configuração do bot não encontrada, usando env vars');
+      console.log('⚠️ Configuração zapi_bot não encontrada, usando env vars:', error?.message || 'Config não encontrada');
     }
   } catch (error) {
-    console.error('❌ Erro ao buscar configuração no banco:', error);
+    console.error('❌ Erro ao buscar configuração zapi_bot no banco:', error);
   }
 
   // Fallback para variáveis de ambiente
