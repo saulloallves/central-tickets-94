@@ -1,54 +1,24 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
-const supabase = createClient(
-  Deno.env.get('SUPABASE_URL') ?? '',
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-);
-
 // Helper function to load Z-API configuration
 export async function loadZAPIConfig() {
-  console.log('🔧 Carregando configuração Z-API...');
+  console.log('🔧 Carregando configuração Z-API dos secrets...');
   
-  // First try to get from database (zapi_bot configuration)
-  try {
-    console.log('🔍 Buscando configuração zapi_bot no banco...');
-    console.log('🔑 Usando Supabase URL:', Deno.env.get('SUPABASE_URL')?.substring(0, 30) + '...');
-    console.log('🔑 Service role key presente:', !!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'));
-    const { data: config, error } = await supabase
-      .from('messaging_providers')
-      .select('instance_id, instance_token, client_token, base_url')
-      .eq('provider_name', 'zapi_bot')
-      .eq('is_active', true)
-      .maybeSingle();
-
-    console.log('📊 Resultado da query:', { config, error });
-
-    if (!error && config && config.instance_id) {
-      console.log('✅ Configuração zapi_bot encontrada no banco:', config.instance_id?.substring(0, 8) + '...');
-      return {
-        instanceId: config.instance_id,
-        instanceToken: config.instance_token,
-        clientToken: config.client_token,
-        baseUrl: config.base_url || 'https://api.z-api.io'
-      };
-    } else {
-      console.log('⚠️ Configuração zapi_bot não encontrada. Error:', error);
-      console.log('⚠️ Config retornado:', config);
-      console.log('⚠️ Fallback para env vars');
-    }
-  } catch (error) {
-    console.error('❌ Erro ao buscar configuração zapi_bot no banco:', error);
-    console.error('❌ Stack trace:', error.stack);
-  }
-
-  // Fallback to environment variables
+  // Use bot-specific secrets first, fallback to general ones
   const config = {
-    instanceId: Deno.env.get("ZAPI_INSTANCE_ID"),
-    instanceToken: Deno.env.get("ZAPI_TOKEN"),
-    clientToken: Deno.env.get("ZAPI_CLIENT_TOKEN") || Deno.env.get("ZAPI_TOKEN"),
-    baseUrl: Deno.env.get("ZAPI_BASE_URL") || "https://api.z-api.io"
+    instanceId: Deno.env.get("BOT_ZAPI_INSTANCE_ID") || Deno.env.get("ZAPI_INSTANCE_ID"),
+    instanceToken: Deno.env.get("BOT_ZAPI_TOKEN") || Deno.env.get("ZAPI_TOKEN"),
+    clientToken: Deno.env.get("BOT_ZAPI_CLIENT_TOKEN") || Deno.env.get("ZAPI_CLIENT_TOKEN") || Deno.env.get("BOT_ZAPI_TOKEN") || Deno.env.get("ZAPI_TOKEN"),
+    baseUrl: Deno.env.get("BOT_ZAPI_BASE_URL") || Deno.env.get("ZAPI_BASE_URL") || "https://api.z-api.io"
   };
   
-  console.log('📝 Usando configuração das env vars:', config.instanceId?.substring(0, 8) + '...');
+  if (config.instanceId && config.instanceToken && config.clientToken) {
+    console.log('✅ Configuração bot Z-API encontrada nos secrets:', config.instanceId?.substring(0, 8) + '...');
+  } else {
+    console.log('⚠️ Configuração bot Z-API incompleta nos secrets:', {
+      instanceId: !!config.instanceId,
+      instanceToken: !!config.instanceToken,
+      clientToken: !!config.clientToken
+    });
+  }
+  
   return config;
 }
