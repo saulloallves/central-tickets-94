@@ -114,10 +114,15 @@ serve(async (req: Request) => {
   }
 
   // Carrega configuração do banco primeiro
+  console.log("🔧 Carregando configuração do bot...");
   await botZapi.loadConfig();
+  console.log("✅ Configuração carregada, bot está configurado:", botZapi.isConfigured());
 
   try {
     console.log("🚀 BOT_BASE_1 INICIADO - Recebendo requisição");
+    console.log("🌍 Request URL:", req.url);
+    console.log("📝 Request method:", req.method);
+    
     const body = await req.json();
     console.log("📦 Body parseado:", JSON.stringify(body, null, 2));
 
