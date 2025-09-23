@@ -289,10 +289,10 @@ Retorne apenas a versão corrigida da resposta, sem explicações adicionais.`;
         },
         {
           role: 'user',
-          content: `TEXTO PARA CORRIGIR APENAS GRAMÁTICA E FORMATAÇÃO:
+          content: `TEXTO PARA PROCESSAR:
 ${mensagem}
 
-Corrija apenas gramática, ortografia e formatação, mantendo o conteúdo exato:`
+Formate este texto conforme as instruções do prompt:`
         }
       ],
       max_completion_tokens: 1000
