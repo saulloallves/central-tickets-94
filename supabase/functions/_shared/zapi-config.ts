@@ -12,6 +12,8 @@ export async function loadZAPIConfig() {
   // First try to get from database (zapi_bot configuration)
   try {
     console.log('🔍 Buscando configuração zapi_bot no banco...');
+    console.log('🔑 Usando Supabase URL:', Deno.env.get('SUPABASE_URL')?.substring(0, 30) + '...');
+    console.log('🔑 Service role key presente:', !!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'));
     const { data: config, error } = await supabase
       .from('messaging_providers')
       .select('instance_id, instance_token, client_token, base_url')
@@ -30,10 +32,13 @@ export async function loadZAPIConfig() {
         baseUrl: config.base_url || 'https://api.z-api.io'
       };
     } else {
-      console.log('⚠️ Configuração zapi_bot não encontrada, usando env vars:', error?.message || 'Config não encontrada');
+      console.log('⚠️ Configuração zapi_bot não encontrada. Error:', error);
+      console.log('⚠️ Config retornado:', config);
+      console.log('⚠️ Fallback para env vars');
     }
   } catch (error) {
     console.error('❌ Erro ao buscar configuração zapi_bot no banco:', error);
+    console.error('❌ Stack trace:', error.stack);
   }
 
   // Fallback to environment variables
