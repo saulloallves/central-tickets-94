@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { loadZAPIConfig } from "../_shared/zapi-config.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,10 +20,19 @@ class ZAPIClient {
   private baseUrl: string;
 
   constructor() {
-    this.instanceId = Deno.env.get('ZAPI_INSTANCE_ID') || '';
-    this.token = Deno.env.get('ZAPI_TOKEN') || '';
-    this.clientToken = Deno.env.get('ZAPI_CLIENT_TOKEN') || '';
-    this.baseUrl = Deno.env.get('ZAPI_BASE_URL') || 'https://api.z-api.io';
+    // As configurações serão carregadas dinamicamente
+    this.instanceId = '';
+    this.token = '';
+    this.clientToken = '';
+    this.baseUrl = '';
+  }
+
+  async loadConfig() {
+    const config = await loadZAPIConfig();
+    this.instanceId = config.instanceId || '';
+    this.token = config.instanceToken || '';
+    this.clientToken = config.clientToken || '';
+    this.baseUrl = config.baseUrl || '';
   }
 
   async addParticipantToGroup(groupId: string, phone: string): Promise<ZAPIResponse> {
@@ -84,6 +94,7 @@ serve(async (req) => {
     );
 
     const zapiClient = new ZAPIClient();
+    await zapiClient.loadConfig();
 
     if (!zapiClient.isConfigured()) {
       console.error('❌ Z-API not configured');
