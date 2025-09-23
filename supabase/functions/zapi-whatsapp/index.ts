@@ -29,6 +29,7 @@ function shouldSkipMessage(payload: ZAPIMessage): boolean {
   const ALLOWED_GROUPS = [
     '120363258963635302-group',  // Grupo principal
     '120363421372736067-group',  // Grupo adicional
+    '120363420372480204-group',  // Grupo teste robo
   ];
   
   if (payload.isGroup) {
@@ -42,11 +43,11 @@ function shouldSkipMessage(payload: ZAPIMessage): boolean {
   // NOVOS FILTROS: Não processar mensagens que são templates de sistema
   const messageText = payload.text?.message?.toLowerCase() || '';
   
-  // Filtrar palavras de ativação do bot_base_1 para evitar conflitos
+  // Detectar palavras de ativação do bot_base_1 e encaminhar
   const BOT_ACTIVATION_KEYWORDS = ['menu', 'ola robo', 'olá robô', 'abacate'];
   if (BOT_ACTIVATION_KEYWORDS.some(keyword => messageText && messageText.includes(keyword))) {
-    console.log('Skipping message: Contains bot_base_1 activation keyword');
-    return true;
+    console.log('Detected bot_base_1 activation keyword, will forward to bot_base_1');
+    // Não pular, deixar continuar para ser processado e encaminhado para bot_base_1
   }
   
   // Filtrar templates de SLA
@@ -187,8 +188,38 @@ async function handleWebhook(payload: ZAPIMessage) {
     }
   }
 
-  // If it's an incoming message (not from us), check for ticket response state FIRST
+  // If it's an incoming message (not from us), check for bot activation keywords FIRST
   if (!payload.fromMe && payload.text?.message) {
+    const messageText = payload.text.message.toLowerCase();
+    const BOT_ACTIVATION_KEYWORDS = ['menu', 'ola robo', 'olá robô', 'abacate'];
+    
+    if (BOT_ACTIVATION_KEYWORDS.some(keyword => messageText.includes(keyword))) {
+      console.log(`🤖 Bot keyword detected: "${messageText}" - forwarding to bot_base_1`);
+      
+      try {
+        const functionsBaseUrl = `https://${Deno.env.get('SUPABASE_URL')?.split('//')[1]}/functions/v1` || 'https://hryurntaljdisohawpqf.supabase.co/functions/v1';
+        
+        const botResponse = await fetch(`${functionsBaseUrl}/bot_base_1`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (botResponse.ok) {
+          const botResult = await botResponse.json();
+          console.log('✅ Keyword handled by bot_base_1:', botResult);
+          return { ok: true, bot_keyword_handled: true, result: botResult };
+        } else {
+          console.error('❌ Bot failed to handle keyword:', await botResponse.text());
+        }
+      } catch (error) {
+        console.error('❌ Error calling bot_base_1 for keyword:', error);
+      }
+    }
+
     // PRIMEIRA PRIORIDADE: Verificar se grupo está aguardando resposta ao ticket
     console.log(`🔍 Verificando estado do grupo: ${payload.phone}`);
     
