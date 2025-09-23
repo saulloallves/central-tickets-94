@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { loadZAPIConfig } from "../_shared/zapi-config.ts";
 
 const corsHeaders = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type" };
 
@@ -14,11 +15,8 @@ serve(async (req: Request) => {
       message: "🤖 Voltando para o GiraBot principal! Digite novamente *olá robô* para recomeçar.",
     };
 
-    // Configurações Z-API
-    const instanceId = Deno.env.get("ZAPI_INSTANCE_ID");
-    const instanceToken = Deno.env.get("ZAPI_TOKEN");
-    const clientToken = Deno.env.get("ZAPI_CLIENT_TOKEN") || Deno.env.get("ZAPI_TOKEN");
-    const baseUrl = Deno.env.get("ZAPI_BASE_URL") || "https://api.z-api.io";
+    // Carrega configurações Z-API
+    const { instanceId, instanceToken, clientToken, baseUrl } = await loadZAPIConfig();
 
     const zapiUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}/send-link`;
 

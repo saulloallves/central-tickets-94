@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { loadZAPIConfig } from "../_shared/zapi-config.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -51,11 +52,8 @@ serve(async (req) => {
     if (!chamado) {
       console.log("❌ Nenhum chamado ativo encontrado para:", phone);
       
-      // Configurações Z-API para enviar mensagem mesmo sem chamado ativo
-      const instanceId = Deno.env.get("ZAPI_INSTANCE_ID");
-      const instanceToken = Deno.env.get("ZAPI_TOKEN");
-      const clientToken = Deno.env.get("ZAPI_CLIENT_TOKEN") || Deno.env.get("ZAPI_TOKEN");
-      const baseUrl = Deno.env.get("ZAPI_BASE_URL") || "https://api.z-api.io";
+      // Carrega configurações Z-API para enviar mensagem mesmo sem chamado ativo
+      const { instanceId, instanceToken, clientToken, baseUrl } = await loadZAPIConfig();
       const zapiUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}`;
 
       try {
@@ -99,11 +97,8 @@ serve(async (req) => {
 
     console.log("✅ Chamado finalizado com sucesso");
 
-    // 3. Configurações Z-API
-    const instanceId = Deno.env.get("ZAPI_INSTANCE_ID");
-    const instanceToken = Deno.env.get("ZAPI_TOKEN");
-    const clientToken = Deno.env.get("ZAPI_CLIENT_TOKEN") || Deno.env.get("ZAPI_TOKEN");
-    const baseUrl = Deno.env.get("ZAPI_BASE_URL") || "https://api.z-api.io";
+    // 3. Carrega configurações Z-API
+    const { instanceId, instanceToken, clientToken, baseUrl } = await loadZAPIConfig();
     const zapiUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}`;
 
     // 4. Envia mensagem de confirmação
