@@ -1229,30 +1229,51 @@ export function IASettingsTab() {
                 <DialogTrigger asChild>
                   <Button variant="outline" className="h-auto p-4 flex flex-col items-start gap-2 hover:bg-muted/50">
                     <div className="flex items-center gap-2">
-                      <Sparkles className="h-4 w-4" />
-                      <span className="font-medium">Formatação de Respostas</span>
+                      <FileText className="h-4 w-4" />
+                      <span className="font-medium">Formatação Gramatical</span>
                     </div>
                     <p className="text-xs text-muted-foreground text-left">
-                      Configurar prompt para formatação profissional de respostas
+                      Prompt usado APENAS para correção gramatical (sem base de conhecimento)
                     </p>
+                    <div className="flex items-center gap-1 mt-1">
+                      <Badge variant={settings.usar_base_conhecimento_formatacao ? "secondary" : "default"} className="text-xs">
+                        {settings.usar_base_conhecimento_formatacao ? "RAG + Gramática" : "Somente Gramática"}
+                      </Badge>
+                    </div>
                     <Edit className="h-3 w-3 self-end" />
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
                   <DialogHeader>
-                    <DialogTitle>✨ Prompt para Formatação de Respostas</DialogTitle>
+                    <DialogTitle className="flex items-center gap-2">
+                      <FileText className="h-5 w-5" />
+                      Prompt para Formatação Gramatical
+                    </DialogTitle>
                     <DialogDescription>
-                      Configure as instruções para transformar respostas técnicas em comunicação profissional e empática
+                      Configure as instruções APENAS para correção gramatical e formatação das respostas (sem usar base de conhecimento)
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4">
-                    <Textarea
-                      value={settings.prompt_format_response || ''}
-                      onChange={(e) => setSettings(prev => ({...prev, prompt_format_response: e.target.value}))}
-                      rows={15}
-                      placeholder="Instruções específicas para formatação profissional de respostas..."
-                      className="min-h-[400px]"
-                    />
+                    <Alert>
+                      <Info className="h-4 w-4" />
+                      <AlertDescription>
+                        <strong>Modo Gramática:</strong> Este prompt é usado quando "Base de Conhecimento na Formatação" está {settings.usar_base_conhecimento_formatacao ? 'ATIVO (RAG + correção)' : 'DESATIVO (apenas gramática)'}.
+                      </AlertDescription>
+                    </Alert>
+                    <div>
+                      <Label htmlFor="grammar_prompt">Prompt de Correção Gramatical</Label>
+                      <Textarea
+                        id="grammar_prompt"
+                        value={settings.prompt_format_response || ''}
+                        onChange={(e) => setSettings(prev => ({...prev, prompt_format_response: e.target.value}))}
+                        rows={15}
+                        placeholder="Instruções específicas para correção gramatical e formatação..."
+                        className="min-h-[400px] font-mono text-sm"
+                      />
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Este prompt é usado na edge function "process-response" para corrigir apenas gramática, ortografia e formatação das respostas.
+                      </p>
+                    </div>
                   </div>
                 </DialogContent>
               </Dialog>
