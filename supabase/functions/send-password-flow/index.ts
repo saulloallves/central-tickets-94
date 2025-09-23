@@ -8,8 +8,8 @@ const corsHeaders = {
 };
 
 // External Supabase configuration for franchising_owners table
-const EXTERNAL_SUPABASE_URL = "https://hryurntaljdisohawpqf.supabase.co";
-const EXTERNAL_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhyeXVybnRhbGpkaXNvaGF3cHFmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NzA4ODczOSwiZXhwIjoyMDYyNjY0NzM5fQ.RWpwN7FYh5vbkKFnRw6p-QGU63z-bhQ7Kp843vYR6pQ";
+const EXTERNAL_SUPABASE_URL = "https://liovmltalaicwrixigjb.supabase.co";
+const EXTERNAL_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxpb3ZtbHRhbGFpY3dyaXhpZ2piIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzMwNTI1MSwiZXhwIjoyMDY4ODgxMjUxfQ.vt2jHKJc-tBh-DQ222YnEI6DfurenC8DQID8jovrstI";
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
