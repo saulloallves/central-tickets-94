@@ -5,17 +5,18 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const supabase = createClient(
-  Deno.env.get('SUPABASE_URL') ?? '',
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-)
-
 Deno.serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
+
     console.log('🚀 Iniciando importação de atendentes da API externa...')
 
     // 1. Buscar dados da API externa
@@ -93,7 +94,7 @@ Deno.serve(async (req) => {
     // 4. Processar cada registro da API externa
     for (const record of unidadesComConcierge) {
       try {
-        await processarRegistroExterno(record, stats)
+        await processarRegistroExterno(record, stats, supabase)
         stats.processadas++
       } catch (error) {
         console.error(`❌ Erro processando registro ${record.id || record.codigo_grupo}:`, error)
@@ -140,7 +141,7 @@ Deno.serve(async (req) => {
   }
 })
 
-async function processarRegistroExterno(record: any, stats: any) {
+async function processarRegistroExterno(record: any, stats: any, supabase: any) {
   // 1. Extrair dados do registro da API externa
   const unidade_id = record.id || record.codigo_grupo?.toString()
   const { grupo, codigo_grupo, cidade, uf, concierge_name, concierge_phone, concierge_email } = record
