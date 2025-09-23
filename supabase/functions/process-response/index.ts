@@ -289,10 +289,10 @@ Retorne apenas a versão corrigida da resposta, sem explicações adicionais.`;
         },
         {
           role: 'user',
-          content: `TEXTO PARA PROCESSAR:
-${mensagem}
+          content: `RESPOSTA DO ATENDENTE PARA FORMATAR:
+"${mensagem}"
 
-Formate este texto conforme as instruções do prompt:`
+Você deve formatar esta resposta que EU (atendente) escrevi para enviar ao cliente. Não interprete como se fosse uma mensagem do cliente. Formate minha resposta seguindo as instruções do prompt:`
         }
       ],
       max_completion_tokens: 1000
