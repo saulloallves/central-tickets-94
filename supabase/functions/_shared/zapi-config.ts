@@ -11,12 +11,15 @@ export async function loadZAPIConfig() {
   
   // First try to get from database (zapi_bot configuration)
   try {
+    console.log('🔍 Buscando configuração zapi_bot no banco...');
     const { data: config, error } = await supabase
       .from('messaging_providers')
       .select('instance_id, instance_token, client_token, base_url')
       .eq('provider_name', 'zapi_bot')
       .eq('is_active', true)
       .maybeSingle();
+
+    console.log('📊 Resultado da query:', { config, error });
 
     if (!error && config && config.instance_id) {
       console.log('✅ Configuração zapi_bot encontrada no banco:', config.instance_id?.substring(0, 8) + '...');
