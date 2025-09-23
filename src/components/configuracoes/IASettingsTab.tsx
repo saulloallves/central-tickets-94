@@ -11,7 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Save, RotateCcw, Info, Zap, MessageCircle, Sparkles, Settings, Brain, RefreshCw, CheckCircle, Edit, Bot, Phone, FileText } from "lucide-react";
+import { Save, RotateCcw, Info, Zap, MessageCircle, Sparkles, Settings, Brain, RefreshCw, CheckCircle, Edit, Bot, Phone, FileText, TestTube } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { TestRAGFormattingButton } from "@/components/tickets/TestRAGFormattingButton";
@@ -1273,6 +1273,41 @@ export function IASettingsTab() {
                       <p className="text-xs text-muted-foreground mt-2">
                         Este prompt é usado na edge function "process-response" para corrigir apenas gramática, ortografia e formatação das respostas.
                       </p>
+                    </div>
+                    <div className="flex items-center gap-2 mt-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          try {
+                            const { data, error } = await supabase.functions.invoke('test-format-prompt');
+                            if (error) throw error;
+                            
+                            toast({
+                              title: "✅ Teste Concluído",
+                              description: `Mensagem original: "${data.teste_executado.mensagem_original}" → Formatada: "${data.teste_executado.mensagem_formatada?.substring(0, 100)}..."`,
+                              duration: 8000,
+                            });
+                            
+                            console.log('🧪 Resultado do teste:', data);
+                          } catch (error) {
+                            console.error('Erro no teste:', error);
+                            toast({
+                              title: "Erro no teste",
+                              description: "Falha ao testar o prompt de formatação",
+                              variant: "destructive",
+                            });
+                          }
+                        }}
+                        disabled={!settings.prompt_format_response}
+                        className="gap-2"
+                      >
+                        <TestTube className="h-4 w-4" />
+                        Testar Prompt Agora
+                      </Button>
+                      <Badge variant="outline" className="text-xs">
+                        Teste: "sim, pode mandar"
+                      </Badge>
                     </div>
                   </div>
                 </DialogContent>

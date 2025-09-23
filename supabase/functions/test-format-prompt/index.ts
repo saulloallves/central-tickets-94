@@ -65,47 +65,41 @@ serve(async (req) => {
     const testTicket = tickets[0];
     console.log(`📋 Testing format response with ticket: ${testTicket.codigo_ticket}`);
 
-    // Test with a sample response that needs formatting
-    const testMessage = "ola voce precisa informar os dados corretos pra gente poder ajudar ok?";
+    // Test with simple message that needs formatting
+    const testMessage = "sim, pode mandar";
     
-    // Call process-response function
-    const functionsBaseUrl = `https://${Deno.env.get('SUPABASE_URL')?.split('//')[1]}/functions/v1` || 'https://hryurntaljdisohawpqf.supabase.co/functions/v1';
+    console.log('🚀 Calling process-response with test message...');
     
-    const response = await fetch(`${functionsBaseUrl}/process-response`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
-      },
-      body: JSON.stringify({
+    // Call process-response function directly via Supabase client
+    const { data: processResult, error: processError } = await supabase.functions.invoke('process-response', {
+      body: {
         ticket_id: testTicket.id,
         usuario_id: '870c6202-d3fc-4b3d-a21a-381eff731740', // Admin user
         mensagem: testMessage
-      })
+      }
     });
 
-    const result = await response.json();
+    if (processError) {
+      console.error('❌ Error calling process-response:', processError);
+      throw processError;
+    }
     
-    console.log('📤 Response from process-response:', result);
-
+    console.log('✅ Process result:', processResult);
+    
     return new Response(JSON.stringify({ 
       success: true,
-      message: 'Format response test completed',
-      test_details: {
-        ticket_tested: testTicket.codigo_ticket,
-        original_message: testMessage,
-        formatted_response: result.resposta_corrigida || result.message || result,
-        using_custom_prompt: !!aiSettings?.prompt_format_response,
-        prompt_info: {
-          exists: !!aiSettings?.prompt_format_response,
-          length: aiSettings?.prompt_format_response?.length || 0
-        },
-        process_result: {
-          success: result.success,
-          pode_virar_documento: result.pode_virar_documento,
-          documentos_encontrados: result.documentos_encontrados,
-          rag_version: result.rag_version
-        }
+      message: 'Teste de formatação concluído com sucesso',
+      configuracoes_ai: {
+        prompt_personalizado_ativo: !!aiSettings?.prompt_format_response,
+        tamanho_prompt: aiSettings?.prompt_format_response?.length || 0,
+        preview_prompt: aiSettings?.prompt_format_response?.substring(0, 200) + '...'
+      },
+      teste_executado: {
+        ticket_usado: testTicket.codigo_ticket,
+        mensagem_original: testMessage,
+        mensagem_formatada: processResult.resposta_corrigida || 'Erro no processamento',
+        foi_processado: !!processResult.resposta_corrigida,
+        detalhes_resultado: processResult
       }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
