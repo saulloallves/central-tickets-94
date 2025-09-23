@@ -56,12 +56,15 @@ serve(async (req: Request) => {
 
     // Step 1: Search for existing user in franchising_owners table
     console.log("🔍 Buscando usuário na tabela franchising_owners...");
+    console.log("📞 Telefone para busca:", participantPhone);
     
     const { data: existingUser, error: searchError } = await externalSupabase
       .from('franchising_owners')
       .select('*')
       .eq('phone', participantPhone)
-      .single();
+      .maybeSingle();
+    
+    console.log("🔍 Resultado da busca:", { existingUser, searchError });
 
     let userPassword = null;
 
