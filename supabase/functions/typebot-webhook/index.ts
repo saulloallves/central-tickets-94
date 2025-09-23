@@ -12,7 +12,8 @@ import {
   findUnitByCode, 
   findFranqueadoByPassword, 
   getActiveTeams, 
-  findTeamByName 
+  findTeamByName,
+  getSupabaseClient
 } from './ticket-creator.ts';
 
 const corsHeaders = {
@@ -436,6 +437,23 @@ serve(async (req) => {
 
     // Notificação já foi enviada automaticamente pelo trigger do banco
 
+    // Buscar nome da equipe se houver equipe responsável
+    let equipeNome = null;
+    if (ticket.equipe_responsavel_id) {
+      try {
+        const supabase = getSupabaseClient();
+        const { data: equipe } = await supabase
+          .from('equipes')
+          .select('nome')
+          .eq('id', ticket.equipe_responsavel_id)
+          .single();
+        
+        equipeNome = equipe?.nome || null;
+      } catch (error) {
+        console.warn('⚠️ Erro ao buscar nome da equipe:', error);
+      }
+    }
+
     return new Response(JSON.stringify({
       success: true,
       action: 'ticket_created',
@@ -447,7 +465,8 @@ serve(async (req) => {
         prioridade: ticket.prioridade,
         status: ticket.status,
         data_abertura: ticket.data_abertura,
-        equipe_responsavel_id: ticket.equipe_responsavel_id
+        equipe_responsavel_id: ticket.equipe_responsavel_id,
+        equipe_responsavel_nome: equipeNome
       },
       ai_analysis: crisisAnalysisResult,
       message: `Ticket ${ticket.codigo_ticket} criado com sucesso`
