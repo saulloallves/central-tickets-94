@@ -63,6 +63,41 @@ serve(async (req) => {
         console.error('Error fetching team members:', membersError)
       } else {
         finalRecipients = teamMembers.map(member => member.user_id)
+        console.log(`Found ${finalRecipients.length} team members for equipe_id: ${equipe_id}`)
+      }
+
+      // Se a equipe não tem membros, notificar administradores
+      if (finalRecipients.length === 0) {
+        console.log('No team members found, notifying admins...')
+        
+        const { data: admins, error: adminsError } = await supabase
+          .from('user_roles')
+          .select('user_id')
+          .eq('role', 'admin')
+          .eq('active', true)
+
+        if (adminsError) {
+          console.error('Error fetching admins:', adminsError)
+        } else {
+          finalRecipients = admins.map(admin => admin.user_id)
+          console.log(`Notifying ${finalRecipients.length} admins instead`)
+        }
+      }
+    }
+
+    // Se ainda não há destinatários, notificar todos os administradores
+    if (!recipients && finalRecipients.length === 0) {
+      console.log('No recipients found, falling back to all admins...')
+      
+      const { data: admins, error: adminsError } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'admin')
+        .eq('active', true)
+
+      if (!adminsError && admins) {
+        finalRecipients = admins.map(admin => admin.user_id)
+        console.log(`Fallback: notifying ${finalRecipients.length} admins`)
       }
     }
 

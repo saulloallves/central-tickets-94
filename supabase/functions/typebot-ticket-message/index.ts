@@ -92,10 +92,9 @@ Deno.serve(async (req) => {
     console.log('typebot-ticket-message: Mensagem adicionada com sucesso');
 
     // Criar notificação interna no sistema para emitir som e alerta
-
-    // Criar notificação interna no sistema para emitir som
     try {
       console.log('🔔 Criando notificação interna no sistema...');
+      console.log('🎯 Equipe responsável:', ticket.equipe_responsavel_id);
       
       const internalNotificationResult = await supabase.functions.invoke('create-internal-notification', {
         body: {
@@ -114,11 +113,37 @@ Deno.serve(async (req) => {
       if (internalNotificationResult.error) {
         console.error('❌ Erro ao criar notificação interna:', internalNotificationResult.error);
       } else {
-        console.log('✅ Notificação interna criada com sucesso');
+        console.log('✅ Notificação interna criada com sucesso:', internalNotificationResult.data);
       }
     } catch (internalError) {
       console.error('❌ Falha ao criar notificação interna:', internalError);
       // Não falhar a operação principal por causa da notificação
+    }
+
+    // Também adicionar à fila de notificações para garantir que chegue
+    try {
+      console.log('🔔 Adicionando notificação à fila...');
+      
+      const { error: queueError } = await supabase
+        .from('notifications_queue')
+        .insert({
+          type: 'franqueado_respondeu',
+          ticket_id: ticketId,
+          payload: {
+            ticket_id: ticketId,
+            codigo_ticket: ticket.codigo_ticket,
+            texto_resposta: texto
+          },
+          status: 'pending'
+        });
+
+      if (queueError) {
+        console.error('❌ Erro ao adicionar à fila:', queueError);
+      } else {
+        console.log('✅ Notificação adicionada à fila com sucesso');
+      }
+    } catch (queueError) {
+      console.error('❌ Falha ao adicionar à fila:', queueError);
     }
 
     const lastMessage = mensagemResult;
