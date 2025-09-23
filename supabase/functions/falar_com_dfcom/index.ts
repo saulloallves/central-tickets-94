@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { loadZAPIConfig } from "../_shared/zapi-config.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -86,11 +87,8 @@ serve(async (req) => {
         }
       }
 
-      // Configurações Z-API
-      const instanceId = Deno.env.get("ZAPI_INSTANCE_ID");
-      const instanceToken = Deno.env.get("ZAPI_TOKEN");
-      const clientToken = Deno.env.get("ZAPI_CLIENT_TOKEN") || Deno.env.get("ZAPI_TOKEN");
-      const baseUrl = Deno.env.get("ZAPI_BASE_URL") || "https://api.z-api.io";
+      // Carrega configurações Z-API
+      const { instanceId, instanceToken, clientToken, baseUrl } = await loadZAPIConfig();
       const zapiUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}`;
 
       async function enviarZapi(endpoint: string, payload: any) {
@@ -178,11 +176,8 @@ serve(async (req) => {
     // 4. Log do chamado criado (grupo será adicionado quando atendente aceitar)
     console.log('📋 Chamado DFCom criado para fila, aguardando atendente aceitar no kanban');
 
-    // Configurações Z-API
-    const instanceId = Deno.env.get("ZAPI_INSTANCE_ID");
-    const instanceToken = Deno.env.get("ZAPI_TOKEN");
-    const clientToken = Deno.env.get("ZAPI_CLIENT_TOKEN") || Deno.env.get("ZAPI_TOKEN");
-    const baseUrl = Deno.env.get("ZAPI_BASE_URL") || "https://api.z-api.io";
+    // Carrega configurações Z-API
+    const { instanceId, instanceToken, clientToken, baseUrl } = await loadZAPIConfig();
     const zapiUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}`;
 
     async function enviarZapi(endpoint: string, payload: any) {
