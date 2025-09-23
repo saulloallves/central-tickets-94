@@ -6,6 +6,7 @@ import {
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { PermissionGuard } from "@/components/PermissionGuard";
+import { AtendenteGuard } from "@/components/AtendenteGuard";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -79,60 +80,30 @@ export function AppSidebar() {
               "flex-1 flex flex-col overflow-y-auto scrollbar-hide py-2",
               isExpanded ? "space-y-1 px-0" : "space-y-2 px-0"
             )}>
-              {navigationItems.map((item) => (
-                <PermissionGuard key={item.title} requiredPermission={item.permission}>
-                  <TooltipProvider delayDuration={0}>
-                    {isExpanded ? (
-                      <NavLink
-                        to={item.url}
-                        end
-                        className={({ isActive }) => cn(
-                          "group flex items-center px-3 py-2 rounded-xl transition-all duration-300",
-                          "hover:scale-[1.02]",
-                          isActive 
-                            ? "bg-white/10 backdrop-blur-sm text-white border border-white/20" 
-                            : "hover:bg-white/5 hover:backdrop-blur-sm hover:text-white/95"
-                        )}
-                      >
-                        {({ isActive }) => (
-                          <>
-                            <div className="relative flex items-center justify-center w-6 h-6 mr-3">
-                              <item.icon 
-                                 className={cn(
-                                   "h-5 w-5 text-white transition-all duration-300 drop-shadow-md",
-                                   isActive ? "drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" : "opacity-90"
-                                 )}
-                                strokeWidth={1.5}
-                              />
-                              {isActive && (
-                                <div className="absolute -right-1 -top-1 w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_4px_rgba(255,255,255,0.8)] animate-pulse"></div>
-                              )}
-                            </div>
-                            <span className={cn(
-                              "text-white text-sm font-medium transition-all duration-300 drop-shadow-md whitespace-nowrap",
-                              isActive ? "opacity-100" : "opacity-90"
-                            )}>
-                              {item.title}
-                            </span>
-                          </>
-                        )}
-                      </NavLink>
-                    ) : (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="w-full flex justify-center">
-                            <NavLink
-                              to={item.url}
-                              end
-                              className={({ isActive }) => cn(
-                                "group relative flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-300",
-                                isActive 
-                                  ? "bg-white/10 backdrop-blur-sm text-white" 
-                                  : "hover:bg-white/5 hover:backdrop-blur-sm hover:text-white/95"
-                              )}
-                          >
-                            {({ isActive }) => (
-                              <>
+              {navigationItems.map((item) => {
+                const GuardComponent = item.requireAtendente ? AtendenteGuard : PermissionGuard;
+                const guardProps = item.requireAtendente 
+                  ? { fallback: null }
+                  : { requiredPermission: item.permission, fallback: null };
+
+                return (
+                  <GuardComponent key={item.title} {...guardProps}>
+                    <TooltipProvider delayDuration={0}>
+                      {isExpanded ? (
+                        <NavLink
+                          to={item.url}
+                          end
+                          className={({ isActive }) => cn(
+                            "group flex items-center px-3 py-2 rounded-xl transition-all duration-300",
+                            "hover:scale-[1.02]",
+                            isActive 
+                              ? "bg-white/10 backdrop-blur-sm text-white border border-white/20" 
+                              : "hover:bg-white/5 hover:backdrop-blur-sm hover:text-white/95"
+                          )}
+                        >
+                          {({ isActive }) => (
+                            <>
+                              <div className="relative flex items-center justify-center w-6 h-6 mr-3">
                                 <item.icon 
                                    className={cn(
                                      "h-5 w-5 text-white transition-all duration-300 drop-shadow-md",
@@ -141,24 +112,61 @@ export function AppSidebar() {
                                   strokeWidth={1.5}
                                 />
                                 {isActive && (
-                                  <div className="absolute -top-1 -right-1 w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_4px_rgba(255,255,255,0.8)] animate-pulse"></div>
+                                  <div className="absolute -right-1 -top-1 w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_4px_rgba(255,255,255,0.8)] animate-pulse"></div>
                                 )}
-                              </>
-                            )}
-                            </NavLink>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent 
-                          side="right" 
-                          className="liquid-glass-card text-white ml-2"
-                        >
-                          {item.title}
-                        </TooltipContent>
-                      </Tooltip>
-                    )}
-                  </TooltipProvider>
-                </PermissionGuard>
-              ))}
+                              </div>
+                              <span className={cn(
+                                "text-white text-sm font-medium transition-all duration-300 drop-shadow-md whitespace-nowrap",
+                                isActive ? "opacity-100" : "opacity-90"
+                              )}>
+                                {item.title}
+                              </span>
+                            </>
+                          )}
+                        </NavLink>
+                      ) : (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="w-full flex justify-center">
+                              <NavLink
+                                to={item.url}
+                                end
+                                className={({ isActive }) => cn(
+                                  "group relative flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-300",
+                                  isActive 
+                                    ? "bg-white/10 backdrop-blur-sm text-white" 
+                                    : "hover:bg-white/5 hover:backdrop-blur-sm hover:text-white/95"
+                                )}
+                            >
+                              {({ isActive }) => (
+                                <>
+                                  <item.icon 
+                                     className={cn(
+                                       "h-5 w-5 text-white transition-all duration-300 drop-shadow-md",
+                                       isActive ? "drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" : "opacity-90"
+                                     )}
+                                    strokeWidth={1.5}
+                                  />
+                                  {isActive && (
+                                    <div className="absolute -top-1 -right-1 w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_4px_rgba(255,255,255,0.8)] animate-pulse"></div>
+                                  )}
+                                </>
+                              )}
+                              </NavLink>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent 
+                            side="right" 
+                            className="liquid-glass-card text-white ml-2"
+                          >
+                            {item.title}
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                    </TooltipProvider>
+                  </GuardComponent>
+                );
+              })}
             </div>
 
             {/* Bottom Section - sempre vertical */}
