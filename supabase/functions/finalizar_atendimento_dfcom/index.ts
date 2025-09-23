@@ -14,7 +14,8 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    console.log("📩 Finalizando atendimento DFCom:", body);
+    const uniqueId = Math.random().toString(36).substring(7);
+    console.log(`📩 [${uniqueId}] Finalizando atendimento DFCom:`, body);
 
     // Extrai o phone do grupo
     const phone = body?.phone || body?.participantPhone;
