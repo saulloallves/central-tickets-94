@@ -32,6 +32,34 @@ serve(async (req) => {
 
     const zapiUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}/send-link`;
     const res = await fetch(zapiUrl, { method: "POST", headers: { "Content-Type": "application/json", "Client-Token": clientToken }, body: JSON.stringify(payload) });
+    
+    console.log("📤 GiraBot link enviado:", res.status);
+
+    // Trigger password flow after sending GiraBot link
+    console.log("🔐 Iniciando fluxo de envio de senha...");
+    
+    try {
+      const passwordFlowUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/send-password-flow`;
+      const passwordFlowPayload = {
+        participantPhone: body?.participantPhone,
+        phone: phone
+      };
+
+      const passwordRes = await fetch(passwordFlowUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`,
+        },
+        body: JSON.stringify(passwordFlowPayload),
+      });
+
+      console.log("🔐 Fluxo de senha executado:", passwordRes.status);
+    } catch (passwordError) {
+      console.error("⚠️ Erro no fluxo de senha (não crítico):", passwordError);
+      // Don't fail the main flow if password flow fails
+    }
+
     return new Response(await res.text(), { headers: { "Content-Type": "application/json", ...corsHeaders }, status: res.status });
   } catch (err) {
     console.error("❌ Erro no autoatendimento_ticket:", err);
