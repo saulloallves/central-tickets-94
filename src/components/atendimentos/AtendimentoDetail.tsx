@@ -9,6 +9,7 @@ import { X, Phone, Building2, Clock, MessageSquare, User, Send, FileText } from 
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAtendimentoActions } from '@/hooks/useAtendimentoActions';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -45,6 +46,7 @@ export function AtendimentoDetail({ atendimentoId, onClose }: AtendimentoDetailP
   const [observacao, setObservacao] = useState('');
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { iniciarAtendimento, finalizarAtendimento, isLoading: actionsLoading } = useAtendimentoActions();
 
   useEffect(() => {
     const fetchAtendimento = async () => {
@@ -96,62 +98,16 @@ export function AtendimentoDetail({ atendimentoId, onClose }: AtendimentoDetailP
   };
 
   const handleConcluir = async () => {
-    try {
-      const { error } = await supabase
-        .from('chamados')
-        .update({ 
-          status: 'finalizado',
-          atualizado_em: new Date().toISOString(),
-          resolucao: observacao || 'Atendimento finalizado'
-        })
-        .eq('id', atendimentoId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Atendimento finalizado",
-        description: "O atendimento foi finalizado com sucesso.",
-      });
-      
+    const success = await finalizarAtendimento(atendimentoId, observacao || 'Atendimento finalizado');
+    if (success) {
       onClose();
-    } catch (error) {
-      console.error('Erro ao finalizar atendimento:', error);
-      toast({
-        title: "Erro ao finalizar atendimento",
-        description: "Não foi possível finalizar o atendimento.",
-        variant: "destructive",
-      });
     }
   };
 
   const handleIniciarAtendimento = async () => {
-    try {
-      const { error } = await supabase
-        .from('chamados')
-        .update({ 
-          status: 'em_atendimento',
-          atualizado_em: new Date().toISOString(),
-        })
-        .eq('id', atendimentoId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Atendimento iniciado",
-        description: "O atendimento foi iniciado com sucesso.",
-      });
-      
-      // Atualizar estado local
-      if (atendimento) {
-        setAtendimento({ ...atendimento, status: 'em_atendimento' });
-      }
-    } catch (error) {
-      console.error('Erro ao iniciar atendimento:', error);
-      toast({
-        title: "Erro ao iniciar atendimento",
-        description: "Não foi possível iniciar o atendimento.",
-        variant: "destructive",
-      });
+    const success = await iniciarAtendimento(atendimentoId);
+    if (success && atendimento) {
+      setAtendimento({ ...atendimento, status: 'em_atendimento' });
     }
   };
 
@@ -327,12 +283,20 @@ export function AtendimentoDetail({ atendimentoId, onClose }: AtendimentoDetailP
         <div className="px-6 pb-6">
           <div className="flex gap-3">
             {atendimento.status === 'em_fila' && (
-              <Button onClick={handleIniciarAtendimento} className="flex-1">
+              <Button 
+                onClick={handleIniciarAtendimento} 
+                className="flex-1"
+                disabled={actionsLoading}
+              >
                 🔵 Iniciar Atendimento
               </Button>
             )}
             {atendimento.status === 'em_atendimento' && (
-              <Button onClick={handleConcluir} className="flex-1">
+              <Button 
+                onClick={handleConcluir} 
+                className="flex-1"
+                disabled={actionsLoading}
+              >
                 ✅ Finalizar Atendimento
               </Button>
             )}
