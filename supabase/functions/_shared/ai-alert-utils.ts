@@ -122,9 +122,9 @@ export async function wrapAIFunction<T>(
       assistantName,
       errorType,
       location,
-      errorDetails: error?.message || 'Erro desconhecido',
+      errorDetails: (error as any)?.message || error?.toString() || 'Erro desconhecido',
       requestPayload,
-      responseData: error?.response || null,
+      responseData: (error as any)?.response || null,
       ticketId,
       userId
     });

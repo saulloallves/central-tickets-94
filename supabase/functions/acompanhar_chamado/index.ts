@@ -27,14 +27,14 @@ serve(async (req) => {
 
     // Conecta no Supabase atual (para chamados)
     const supabase = createClient(
-      Deno.env.get("SUPABASE_URL"),
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),
+      Deno.env.get("SUPABASE_URL") ?? '',
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? '',
     );
 
     // Conecta no Supabase externo (para unidades)
     const externalSupabase = createClient(
-      Deno.env.get("EXTERNAL_SUPABASE_URL"),
-      Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY"),
+      Deno.env.get("EXTERNAL_SUPABASE_URL") ?? '',
+      Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") ?? '',
     );
 
     // 1. Busca a unidade correspondente ao grupo no projeto externo
@@ -55,7 +55,7 @@ serve(async (req) => {
         try {
           const res = await fetch(`${zapiUrl}/${endpoint}`, {
             method: "POST",
-            headers: { "Content-Type": "application/json", "Client-Token": clientToken },
+            headers: { "Content-Type": "application/json", "Client-Token": clientToken ?? '' },
             body: JSON.stringify(payload),
           });
           const data = await res.json();
@@ -103,7 +103,7 @@ serve(async (req) => {
       try {
         const res = await fetch(`${zapiUrl}/${endpoint}`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", "Client-Token": clientToken },
+          headers: { "Content-Type": "application/json", "Client-Token": clientToken ?? '' },
           body: JSON.stringify(payload),
         });
         const data = await res.json();
@@ -197,7 +197,7 @@ serve(async (req) => {
 
   } catch (err) {
     console.error("❌ Erro interno:", err);
-    return new Response(JSON.stringify({ error: err.message }), {
+    return new Response(JSON.stringify({ error: (err as any)?.message || 'Erro interno' }), {
       headers: { "Content-Type": "application/json", ...corsHeaders },
       status: 500,
     });
