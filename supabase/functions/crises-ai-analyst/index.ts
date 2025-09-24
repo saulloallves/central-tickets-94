@@ -220,8 +220,8 @@ Responda APENAS com um JSON válido:
         .in('ticket_id', allTickets.map(t => t.id));
 
       const linkedTicketIds = linkedTickets
-        ?.filter(link => link.crises?.is_active)
-        ?.map(link => link.ticket_id) || [];
+        ?.filter((link: any) => link.crises?.is_active)
+        ?.map((link: any) => link.ticket_id) || [];
 
       individualTickets = allTickets.filter(ticket => 
         !linkedTicketIds.includes(ticket.id)
@@ -344,7 +344,7 @@ async function analyzeTicketWithAI(
   settings: CrisisAISettings
 ): Promise<AIAnalysisResponse> {
   // Substituir placeholders no template
-  const existingProblemsText = existingProblems.map(p => 
+  const existingProblemsText = existingProblems.map((p: any) => 
     `ID: ${p.id}\nTítulo: ${p.titulo}\nTickets relacionados: ${p.tickets_count}\nDescrição: ${p.descricao || 'N/A'}`
   ).join('\n\n');
 

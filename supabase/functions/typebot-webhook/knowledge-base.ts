@@ -2,6 +2,7 @@
  * Knowledge Base search and suggestion engine
  */
 
+// @ts-nocheck
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0';
 import { extractSearchTerms, limparTexto, prepararMensagemParaFranqueado } from './text-utils.ts';
 import { gerarRespostaComContexto } from './rag-engine.ts';

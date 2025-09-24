@@ -1,13 +1,12 @@
 {
   "tasks": {
-    "serve": "deno run --allow-all supabase/functions/serve.ts"
+    "serve": "deno run --allow-all --no-check supabase/functions/serve.ts"
   },
   "compilerOptions": {
     "lib": ["dom", "deno.ns", "es2022"],
     "strict": false,
     "noImplicitAny": false,
-    "skipLibCheck": true,
-    "noCheck": true
+    "skipLibCheck": true
   },
   "imports": {
     "std/": "https://deno.land/std@0.190.0/",

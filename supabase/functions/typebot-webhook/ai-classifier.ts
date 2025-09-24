@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * AI-powered ticket classification engine
  */
