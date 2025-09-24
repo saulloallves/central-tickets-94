@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { loadZAPIConfig } from "../_shared/zapi-config.ts";
+import { isBusinessHours } from "../_shared/business-hours.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -22,6 +23,51 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Telefone não encontrado no payload" }), {
         headers: { "Content-Type": "application/json", ...corsHeaders },
         status: 400,
+      });
+    }
+
+    // Verificar se está dentro do horário de atendimento
+    if (!isBusinessHours()) {
+      console.log("⏰ Fora do horário de atendimento - redirecionando para autoatendimento");
+      
+      // Carrega configurações Z-API para enviar mensagem de fora do horário
+      const { instanceId, instanceToken, clientToken, baseUrl } = await loadZAPIConfig();
+      
+      const outOfHoursPayload = {
+        phone,
+        message: "❌ *Agora estamos fora do horário de atendimento.*\n\n⏰ Nosso time atende de segunda a sábado, das *9h às 18h.*\n\n📝 Você pode abrir um ticket agora mesmo. Sua solicitação será registrada e respondida pela equipe assim que possível.",
+        buttonList: {
+          buttons: [
+            {
+              id: "autoatendimento_ticket",
+              label: "📝 Abrir um ticket agora"
+            }
+          ]
+        }
+      };
+
+      const zapiUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}/send-button-list`;
+      console.log(`📤 Enviando mensagem de fora do horário para Z-API: ${zapiUrl.replace(instanceToken, '****')}`);
+
+      const res = await fetch(zapiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Client-Token": clientToken,
+        },
+        body: JSON.stringify(outOfHoursPayload),
+      });
+
+      const data = await res.json();
+      console.log("📤 Mensagem de fora do horário enviada:", data);
+
+      return new Response(JSON.stringify({ 
+        success: true, 
+        fora_do_horario: true,
+        data 
+      }), {
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+        status: 200,
       });
     }
 
