@@ -128,4 +128,21 @@ export class ZAPIClient {
   isConfigured(): boolean {
     return !!(this.instanceId && this.token && this.clientToken);
   }
+
+  // Public getters for accessing private properties
+  get instanceIdValue(): string {
+    return this.instanceId;
+  }
+
+  get tokenValue(): string {
+    return this.token;
+  }
+
+  get clientTokenValue(): string {
+    return this.clientToken;
+  }
+
+  get baseUrlValue(): string {
+    return this.baseUrl;
+  }
 }

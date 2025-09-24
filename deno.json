@@ -1,0 +1,15 @@
+{
+  "tasks": {
+    "serve": "deno run --allow-all supabase/functions/serve.ts"
+  },
+  "compilerOptions": {
+    "lib": ["dom", "deno.ns", "es2022"],
+    "strict": false,
+    "noImplicitAny": false,
+    "skipLibCheck": true
+  },
+  "imports": {
+    "std/": "https://deno.land/std@0.190.0/",
+    "supabase": "https://esm.sh/@supabase/supabase-js@2"
+  }
+}

@@ -67,12 +67,29 @@ class ZAPIClient {
       return result;
     } catch (error) {
       console.error('Error adding participant to Z-API group:', error);
-      return { value: false, error: error.message };
+      return { value: false, error: (error as any)?.message || 'Unknown error' };
     }
   }
 
   isConfigured(): boolean {
     return !!(this.instanceId && this.token && this.clientToken);
+  }
+
+  // Public getters for accessing private properties
+  get baseUrlValue(): string {
+    return this.baseUrl;
+  }
+
+  get instanceIdValue(): string {
+    return this.instanceId;
+  }
+
+  get tokenValue(): string {
+    return this.token;
+  }
+
+  get clientTokenValue(): string {
+    return this.clientToken;
   }
 }
 
@@ -217,12 +234,12 @@ serve(async (req) => {
 
       try {
         const response = await fetch(
-          `${zapiClient.baseUrl}/instances/${zapiClient.instanceId}/token/${zapiClient.token}/send-text`,
+          `${zapiClient.baseUrlValue}/instances/${zapiClient.instanceIdValue}/token/${zapiClient.tokenValue}/send-text`,
           {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "Client-Token": zapiClient.clientToken,
+              "Client-Token": zapiClient.clientTokenValue,
             },
             body: JSON.stringify({
               phone: groupId,
@@ -290,7 +307,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('❌ Unexpected error:', error);
     return new Response(
-      JSON.stringify({ error: 'Internal server error', details: error.message }),
+      JSON.stringify({ error: 'Internal server error', details: (error as any)?.message || 'Unknown error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
