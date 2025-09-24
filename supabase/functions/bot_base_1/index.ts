@@ -12,6 +12,12 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_ANON_KEY') ?? ''
 )
 
+// Cliente Supabase para verificar grupos permitidos na tabela unidades
+const unidadesSupabase = createClient(
+  'https://liovmltalaicwrixigjb.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxpb3ZtbHRhbGFpY3dyaXhpZ2piIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzMwNTI1MSwiZXhwIjoyMDY4ODgxMjUxfQ.vt2jHKJc-tBh-DQ222YnEI6DfurenC8DQID8jovrstI'
+)
+
 // Configuração Z-API específica para BOT
 class BotZAPIClient {
   private instanceId: string;
@@ -108,6 +114,65 @@ class BotZAPIClient {
 
 const botZapi = new BotZAPIClient();
 
+// Função para verificar se o grupo está autorizado na tabela unidades
+async function checkGroupInDatabase(groupId: string): Promise<boolean> {
+  try {
+    console.log(`🔍 Verificando grupo ${groupId} na tabela unidades...`);
+    
+    const { data, error } = await unidadesSupabase
+      .from('unidades')
+      .select('id, id_grupo_branco')
+      .eq('id_grupo_branco', groupId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('❌ Erro ao consultar tabela unidades:', error);
+      return false;
+    }
+
+    if (data) {
+      console.log(`✅ Grupo ${groupId} encontrado na tabela unidades:`, data.id);
+      return true;
+    } else {
+      console.log(`🚫 Grupo ${groupId} NÃO encontrado na tabela unidades`);
+      return false;
+    }
+  } catch (error) {
+    console.error('❌ Erro na verificação de grupo:', error);
+    return false;
+  }
+}
+
+// Função para enviar notificação de grupo não autorizado
+async function sendUnauthorizedGroupNotification(groupId: string) {
+  try {
+    console.log(`📢 Enviando notificação para grupo não autorizado: ${groupId}`);
+    
+    const notificationBody = {
+      title: "🚫 Grupo não autorizado tentou usar o bot",
+      message: `O grupo ${groupId} tentou usar o bot_base_1 mas não está cadastrado na tabela unidades`,
+      type: "alert",
+      payload: {
+        group_id: groupId,
+        timestamp: new Date().toISOString(),
+        function: "bot_base_1"
+      }
+    };
+
+    const response = await supabase.functions.invoke('create-internal-notification', {
+      body: notificationBody
+    });
+
+    if (response.error) {
+      console.error('❌ Erro ao enviar notificação:', response.error);
+    } else {
+      console.log('✅ Notificação enviada com sucesso:', response.data);
+    }
+  } catch (error) {
+    console.error('❌ Erro ao enviar notificação de grupo não autorizado:', error);
+  }
+}
+
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -143,23 +208,32 @@ serve(async (req: Request) => {
     console.log("ButtonId:", buttonId);
     console.log("Message:", message);
     
-    // FILTRO ESPECÍFICO: Só processar mensagens dos grupos específicos
-    const ALLOWED_GROUPS = ['120363421372736067-group', '120363420372480204-group'];
+    // FILTRO DINÂMICO: Verificar grupos na tabela unidades
     const isGroup = body?.isGroup;
     const chatId = body?.phone;
     
-    if (isGroup && !ALLOWED_GROUPS.includes(chatId)) {
-      console.log(`🚫 BOT_BASE_1: Skipping - not from allowed group (${chatId})`);
-      return new Response(JSON.stringify({ 
-        success: false, 
-        message: "Bot only processes messages from specific groups" 
-      }), {
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-        status: 200
-      });
+    if (isGroup) {
+      const isAuthorized = await checkGroupInDatabase(chatId);
+      
+      if (!isAuthorized) {
+        console.log(`🚫 BOT_BASE_1: Grupo não autorizado (${chatId})`);
+        
+        // Enviar notificação para admins
+        await sendUnauthorizedGroupNotification(chatId);
+        
+        return new Response(JSON.stringify({ 
+          success: false, 
+          message: "Bot only processes messages from authorized groups" 
+        }), {
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+          status: 403
+        });
+      }
+      
+      console.log("✅ BOT_BASE_1: Grupo autorizado - prosseguindo");
+    } else {
+      console.log("📱 BOT_BASE_1: Mensagem privada - prosseguindo");
     }
-    
-    console.log("✅ BOT_BASE_1: Group validation passed");
 
     // Palavras-chave que disparam menu inicial
     const KEYWORDS = ["menu", "ola robo", "olá robô", "abacate"];
