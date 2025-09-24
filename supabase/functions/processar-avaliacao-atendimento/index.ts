@@ -56,6 +56,7 @@ serve(async (req) => {
       .from('avaliacoes_atendimento')
       .select('*')
       .eq('chamado_id', chamadoId)
+      .is('rating', null) // Apenas avaliações ainda não respondidas
       .maybeSingle();
 
     if (searchError) {
@@ -140,14 +141,16 @@ serve(async (req) => {
       tipo_log: 'sistema',
       entidade_afetada: 'avaliacoes_atendimento',
       entidade_id: avaliacaoExistente.id,
-      acao_realizada: `Avaliação recebida: ${rating}`,
+      acao_realizada: `Avaliação recebida: ${rating} para ${avaliacaoExistente.tipo_atendimento} da unidade ${avaliacaoExistente.unidade_nome}`,
       usuario_responsavel: null,
       dados_novos: {
         chamado_id: chamadoId,
         rating: rating,
+        tipo_atendimento: avaliacaoExistente.tipo_atendimento,
+        unidade_nome: avaliacaoExistente.unidade_nome,
+        unidade_codigo: avaliacaoExistente.unidade_codigo,
         sender_phone: senderPhone,
-        button_id: buttonId,
-        webhook_data: webhookData
+        button_id: buttonId
       },
       canal: 'zapi'
     });

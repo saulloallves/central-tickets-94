@@ -271,13 +271,17 @@ serve(async (req) => {
       if (evaluationResult.value) {
         console.log('✅ Evaluation message sent successfully');
         
-        // Salvar registro na tabela de avaliações
+        // Salvar registro na tabela de avaliações com todas as informações da unidade
         const { error: avaliacaoError } = await supabase
           .from('avaliacoes_atendimento')
           .insert({
             chamado_id: chamado.id,
             telefone_destino: phoneDestino,
-            enviado_em: new Date().toISOString()
+            enviado_em: new Date().toISOString(),
+            tipo_atendimento: chamado.tipo_atendimento,
+            unidade_nome: unidade.grupo || `Unidade ${unidade.id}`,
+            unidade_codigo: unidade.id?.toString(),
+            grupo_whatsapp_id: unidade.id_grupo_branco
           });
 
         if (avaliacaoError) {

@@ -344,30 +344,42 @@ export type Database = {
           comentario: string | null
           created_at: string | null
           enviado_em: string
+          grupo_whatsapp_id: string | null
           id: string
           rating: string | null
           respondido_em: string | null
           telefone_destino: string
+          tipo_atendimento: string | null
+          unidade_codigo: string | null
+          unidade_nome: string | null
         }
         Insert: {
           chamado_id: string
           comentario?: string | null
           created_at?: string | null
           enviado_em?: string
+          grupo_whatsapp_id?: string | null
           id?: string
           rating?: string | null
           respondido_em?: string | null
           telefone_destino: string
+          tipo_atendimento?: string | null
+          unidade_codigo?: string | null
+          unidade_nome?: string | null
         }
         Update: {
           chamado_id?: string
           comentario?: string | null
           created_at?: string | null
           enviado_em?: string
+          grupo_whatsapp_id?: string | null
           id?: string
           rating?: string | null
           respondido_em?: string | null
           telefone_destino?: string
+          tipo_atendimento?: string | null
+          unidade_codigo?: string | null
+          unidade_nome?: string | null
         }
         Relationships: [
           {
