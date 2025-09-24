@@ -338,6 +338,47 @@ export type Database = {
         }
         Relationships: []
       }
+      avaliacoes_atendimento: {
+        Row: {
+          chamado_id: string
+          comentario: string | null
+          created_at: string | null
+          enviado_em: string
+          id: string
+          rating: string | null
+          respondido_em: string | null
+          telefone_destino: string
+        }
+        Insert: {
+          chamado_id: string
+          comentario?: string | null
+          created_at?: string | null
+          enviado_em?: string
+          id?: string
+          rating?: string | null
+          respondido_em?: string | null
+          telefone_destino: string
+        }
+        Update: {
+          chamado_id?: string
+          comentario?: string | null
+          created_at?: string | null
+          enviado_em?: string
+          id?: string
+          rating?: string | null
+          respondido_em?: string | null
+          telefone_destino?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacoes_atendimento_chamado_id_fkey"
+            columns: ["chamado_id"]
+            isOneToOne: false
+            referencedRelation: "chamados"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chamados: {
         Row: {
           atendente_id: string | null

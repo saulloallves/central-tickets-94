@@ -71,6 +71,45 @@ class ZAPIClient {
     }
   }
 
+  async sendButtonList(phone: string, message: string, buttons: Array<{id: string, label: string}>): Promise<ZAPIResponse> {
+    if (!this.instanceId || !this.token || !this.clientToken) {
+      console.error('Z-API credentials not configured');
+      return { value: false, error: 'Z-API credentials not configured' };
+    }
+
+    try {
+      console.log(`📋 Sending button list to ${phone}`);
+      
+      const response = await fetch(`${this.baseUrl}/instances/${this.instanceId}/token/${this.token}/send-button-list`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Client-Token': this.clientToken,
+        },
+        body: JSON.stringify({
+          phone: phone,
+          message: message,
+          buttonList: {
+            buttons: buttons
+          }
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to send button list via Z-API:', errorText);
+        return { value: false, error: errorText };
+      }
+
+      const result = await response.json();
+      console.log('✅ Button list sent successfully via Z-API:', result);
+      return result;
+    } catch (error) {
+      console.error('Error sending button list via Z-API:', error);
+      return { value: false, error: error.message };
+    }
+  }
+
   isConfigured(): boolean {
     return !!(this.instanceId && this.token && this.clientToken);
   }
@@ -203,12 +242,54 @@ serve(async (req) => {
     // Remover participante do grupo
     const result = await zapiClient.removeParticipantFromGroup(groupId, phoneToRemove);
 
-    // Se a remoção foi bem-sucedida, apenas logar (mensagem de finalização será enviada pela função específica)
+    // Se a remoção foi bem-sucedida, enviar mensagem de avaliação
     if (result.value) {
       console.log('✅ Participant removed successfully');
       
-      // Log da remoção sem duplicar mensagem (a função específica de finalização envia a mensagem)
-      console.log(`📤 ${participantName} removido do grupo com sucesso. Mensagem de finalização será enviada pela função específica.`);
+      // Enviar mensagem de avaliação usando telefone do chamado
+      const phoneDestino = chamado.telefone;
+      console.log(`📋 Enviando mensagem de avaliação para: ${phoneDestino}`);
+      
+      const evaluationMessage = "✅ *Atendimento finalizado*\n\n🗣️ Como você avalia esse atendimento?";
+      const evaluationButtons = [
+        {
+          id: `avaliacao_otimo_${chamado.id}`,
+          label: "🌟 Consegui resolver tudo"
+        },
+        {
+          id: `avaliacao_bom_${chamado.id}`,
+          label: "🙂 Foi útil, mas poderia melhorar"
+        },
+        {
+          id: `avaliacao_ruim_${chamado.id}`,
+          label: "😕 Não resolveu o que eu precisava"
+        }
+      ];
+
+      const evaluationResult = await zapiClient.sendButtonList(phoneDestino, evaluationMessage, evaluationButtons);
+      
+      if (evaluationResult.value) {
+        console.log('✅ Evaluation message sent successfully');
+        
+        // Salvar registro na tabela de avaliações
+        const { error: avaliacaoError } = await supabase
+          .from('avaliacoes_atendimento')
+          .insert({
+            chamado_id: chamado.id,
+            telefone_destino: phoneDestino,
+            enviado_em: new Date().toISOString()
+          });
+
+        if (avaliacaoError) {
+          console.error('❌ Error saving evaluation record:', avaliacaoError);
+        } else {
+          console.log('📝 Evaluation record saved successfully');
+        }
+      } else {
+        console.error('❌ Failed to send evaluation message:', evaluationResult.error);
+      }
+      
+      console.log(`📤 ${participantName} removido do grupo com sucesso. Mensagem de avaliação enviada.`);
 
       // Log da operação
       await supabase.from('logs_de_sistema').insert({
@@ -223,7 +304,8 @@ serve(async (req) => {
           participant_name: participantName,
           tipo_atendimento: chamado.tipo_atendimento,
           zapi_result: result,
-          farewell_message_sent: true
+          evaluation_sent: evaluationResult.value,
+          evaluation_phone: phoneDestino
         },
         canal: 'zapi'
       });
@@ -235,6 +317,7 @@ serve(async (req) => {
           participant: participantName,
           phone: phoneToRemove,
           group: groupId,
+          evaluation_sent: evaluationResult.value,
         }),
         {
           status: 200,
