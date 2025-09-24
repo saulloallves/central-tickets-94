@@ -129,6 +129,51 @@ export class ZAPIClient {
     return !!(this.instanceId && this.token && this.clientToken);
   }
 
+  async sendButtonList(phone: string, message: string, buttons: Array<{id: string, label: string}>): Promise<{value: boolean, error?: string, zaapId?: string, messageId?: string, id?: string}> {
+    if (!this.isConfigured()) {
+      console.error('Z-API client not configured');
+      return { value: false, error: 'Z-API client not configured' };
+    }
+
+    try {
+      const response = await fetch(`${this.baseUrl}/instances/${this.instanceId}/token/${this.token}/send-button-list`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Client-Token': this.clientToken,
+        },
+        body: JSON.stringify({
+          phone: phone,
+          message: message,
+          buttonList: {
+            buttons: buttons.map(btn => ({
+              id: btn.id,
+              label: btn.label
+            }))
+          }
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to send Z-API button list:', errorText);
+        return { value: false, error: errorText };
+      }
+
+      const result = await response.json();
+      console.log('✅ Button list sent successfully via Z-API:', result);
+      return { 
+        value: true, 
+        zaapId: result.zaapId,
+        messageId: result.messageId,
+        id: result.id 
+      };
+    } catch (error) {
+      console.error('Error sending Z-API button list:', error);
+      return { value: false, error: error.message };
+    }
+  }
+
   // Public getters for accessing private properties
   get instanceIdValue(): string {
     return this.instanceId;

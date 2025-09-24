@@ -107,6 +107,34 @@ serve(async (req) => {
         break;
     }
 
+    // Enviar mensagem de agradecimento via Z-API
+    const phoneDestino = webhookData.phone;
+    console.log(`📤 Enviando mensagem de agradecimento para: ${phoneDestino}`);
+    
+    try {
+      const response = await fetch(`${Deno.env.get('ZAPI_BASE_URL') || 'https://api.z-api.io'}/instances/${Deno.env.get('ZAPI_INSTANCE_ID')}/token/${Deno.env.get('ZAPI_TOKEN')}/send-text`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Client-Token': Deno.env.get('ZAPI_CLIENT_TOKEN') || '',
+        },
+        body: JSON.stringify({
+          phone: phoneDestino,
+          message: thankYouMessage,
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Mensagem de agradecimento enviada com sucesso:', result);
+      } else {
+        const errorText = await response.text();
+        console.error('❌ Falha ao enviar mensagem de agradecimento:', errorText);
+      }
+    } catch (error) {
+      console.error('❌ Erro ao enviar mensagem de agradecimento:', error);
+    }
+
     // Log da avaliação recebida
     await supabase.from('logs_de_sistema').insert({
       tipo_log: 'sistema',
