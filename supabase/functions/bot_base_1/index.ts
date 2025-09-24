@@ -208,32 +208,8 @@ serve(async (req: Request) => {
     console.log("ButtonId:", buttonId);
     console.log("Message:", message);
     
-    // FILTRO DINÂMICO: Verificar grupos na tabela unidades
     const isGroup = body?.isGroup;
     const chatId = body?.phone;
-    
-    if (isGroup) {
-      const isAuthorized = await checkGroupInDatabase(chatId);
-      
-      if (!isAuthorized) {
-        console.log(`🚫 BOT_BASE_1: Grupo não autorizado (${chatId})`);
-        
-        // Enviar notificação para admins
-        await sendUnauthorizedGroupNotification(chatId);
-        
-        return new Response(JSON.stringify({ 
-          success: false, 
-          message: "Bot only processes messages from authorized groups" 
-        }), {
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-          status: 403
-        });
-      }
-      
-      console.log("✅ BOT_BASE_1: Grupo autorizado - prosseguindo");
-    } else {
-      console.log("📱 BOT_BASE_1: Mensagem privada - prosseguindo");
-    }
 
     // Palavras-chave que disparam menu inicial
     const KEYWORDS = ["menu", "ola robo", "olá robô", "abacate"];
@@ -249,6 +225,30 @@ serve(async (req: Request) => {
     console.log("🔍 Keyword match encontrado:", keywordMatch);
     
     if (keywordMatch) {
+      // FILTRO DINÂMICO: Verificar grupos na tabela unidades APENAS quando usar palavras-chave
+      if (isGroup) {
+        const isAuthorized = await checkGroupInDatabase(chatId);
+        
+        if (!isAuthorized) {
+          console.log(`🚫 BOT_BASE_1: Grupo não autorizado (${chatId})`);
+          
+          // Enviar notificação para admins
+          await sendUnauthorizedGroupNotification(chatId);
+          
+          return new Response(JSON.stringify({ 
+            success: false, 
+            message: "Bot only processes messages from authorized groups" 
+          }), {
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+            status: 403
+          });
+        }
+        
+        console.log("✅ BOT_BASE_1: Grupo autorizado - prosseguindo para menu");
+      } else {
+        console.log("📱 BOT_BASE_1: Mensagem privada - prosseguindo para menu");
+      }
+      
       console.log("📞 Chamando menu_principal...");
       const res = await fetch(`${functionsBaseUrl}/menu_principal`, {
         method: "POST",
