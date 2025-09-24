@@ -363,6 +363,12 @@ serve(async (req: Request) => {
       return await proxy(functionsBaseUrl, "process-ticket-response", body);
     }
 
+    // 🔹 PROCESSAR AVALIAÇÃO
+    if (buttonId.startsWith("avaliacao_")) {
+      console.log("⭐ Processando avaliação:", buttonId);
+      return await proxy(functionsBaseUrl, "processar-avaliacao-atendimento", body);
+    }
+
     // ❌ Pula DFCom por enquanto
     if (buttonId === "autoatendimento_dfcom") {
       console.log("🚫 DFCom desativado por enquanto");
