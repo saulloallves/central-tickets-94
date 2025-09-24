@@ -1,6 +1,6 @@
+// @ts-nocheck
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { loadZAPIConfig } from "../_shared/zapi-config.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -25,46 +25,54 @@ serve(async (req) => {
       });
     }
 
-    // Conecta no Supabase atual (para chamados)
+    // Conecta no Supabase
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? '',
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? '',
     );
 
-    // Conecta no Supabase externo (para unidades)
-    const externalSupabase = createClient(
-      Deno.env.get("EXTERNAL_SUPABASE_URL") ?? '',
-      Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") ?? '',
-    );
+    // Carrega configurações Z-API
+    const zapiInstanceId = Deno.env.get('ZAPI_INSTANCE_ID');
+    const zapiToken = Deno.env.get('ZAPI_TOKEN');
+    const zapiClientToken = Deno.env.get('ZAPI_CLIENT_TOKEN');
+    const zapiBaseUrl = Deno.env.get('ZAPI_BASE_URL') || 'https://api.z-api.io';
+    
+    if (!zapiInstanceId || !zapiToken || !zapiClientToken) {
+      console.error('❌ Configurações Z-API não encontradas');
+      return new Response(JSON.stringify({ error: "Configuração Z-API não encontrada" }), {
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+        status: 500,
+      });
+    }
 
-    // 1. Busca a unidade correspondente ao grupo no projeto externo
-    const { data: unidade, error: unidadeError } = await externalSupabase
+    const zapiUrl = `${zapiBaseUrl}/instances/${zapiInstanceId}/token/${zapiToken}`;
+
+    async function enviarZapi(endpoint: string, payload: any) {
+      try {
+        const res = await fetch(`${zapiUrl}/${endpoint}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Client-Token": zapiClientToken },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        console.log("📤 Enviado:", endpoint, data);
+        return data;
+      } catch (err) {
+        console.error("❌ Erro ao enviar Z-API:", err);
+        return null;
+      }
+    }
+
+    // 1. Busca a unidade correspondente ao grupo
+    const { data: unidade, error: unidadeError } = await supabase
       .from("unidades")
-      .select("id, grupo, codigo_grupo, concierge_name, concierge_phone")
+      .select("id, grupo, codigo_grupo")
       .eq("id_grupo_branco", phone)
       .maybeSingle();
 
     if (unidadeError || !unidade) {
       console.error("❌ Unidade não encontrada:", unidadeError);
       
-      // Carrega configurações Z-API
-      const { instanceId, instanceToken, clientToken, baseUrl } = await loadZAPIConfig();
-      const zapiUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}`;
-
-      async function enviarZapi(endpoint: string, payload: any) {
-        try {
-          const res = await fetch(`${zapiUrl}/${endpoint}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "Client-Token": clientToken ?? '' },
-            body: JSON.stringify(payload),
-          });
-          const data = await res.json();
-          console.log("📤 Enviado:", endpoint, data);
-        } catch (err) {
-          console.error("❌ Erro ao enviar Z-API:", err);
-        }
-      }
-
       await enviarZapi("send-text", {
         phone,
         message: "❌ *Unidade não encontrada*\n\nNão foi possível localizar informações desta unidade no sistema.",
@@ -77,47 +85,29 @@ serve(async (req) => {
     }
     console.log("✅ Unidade encontrada:", unidade);
 
-    // 2. Buscar chamado ativo do telefone/grupo
-    const { data: chamadoAtivo, error: chamadoError } = await supabase
-      .from("chamados")
-      .select("id, status, criado_em, tipo_atendimento, categoria, descricao")
-      .eq("telefone", phone)
+    // 2. Buscar tickets ativos do telefone/grupo
+    const { data: ticketAtivo, error: ticketError } = await supabase
+      .from("tickets")
+      .select("id, status, data_abertura, categoria, descricao_problema, codigo_ticket")
+      .eq("telefone_contato", phone)
       .eq("unidade_id", unidade.id)
-      .in("status", ["em_fila", "em_atendimento"])
-      .order("criado_em", { ascending: false })
+      .in("status", ["aberto", "em_atendimento"])
+      .order("data_abertura", { ascending: false })
       .maybeSingle();
 
-    if (chamadoError) {
-      console.error("❌ Erro ao buscar chamado:", chamadoError);
-      return new Response(JSON.stringify({ error: "Erro ao buscar chamado" }), {
+    if (ticketError) {
+      console.error("❌ Erro ao buscar ticket:", ticketError);
+      return new Response(JSON.stringify({ error: "Erro ao buscar ticket" }), {
         headers: { "Content-Type": "application/json", ...corsHeaders },
         status: 500,
       });
-      }
-
-      // Carrega configurações Z-API
-      const { instanceId, instanceToken, clientToken, baseUrl } = await loadZAPIConfig();
-      const zapiUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}`;
-
-    async function enviarZapi(endpoint: string, payload: any) {
-      try {
-        const res = await fetch(`${zapiUrl}/${endpoint}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Client-Token": clientToken ?? '' },
-          body: JSON.stringify(payload),
-        });
-        const data = await res.json();
-        console.log("📤 Enviado:", endpoint, data);
-      } catch (err) {
-        console.error("❌ Erro ao enviar Z-API:", err);
-      }
     }
 
-    if (!chamadoAtivo) {
+    if (!ticketAtivo) {
       // Não há atendimento em andamento
       await enviarZapi("send-button-list", {
         phone,
-        message: "📋 *Acompanhar Chamado*\n\nVocê não possui nenhum atendimento personalizado em andamento no momento.\n\nDeseja iniciar um novo atendimento?",
+        message: "📋 *Acompanhar Chamado*\n\nVocê não possui nenhum atendimento em andamento no momento.\n\nDeseja iniciar um novo atendimento?",
         buttonList: {
           buttons: [
             { id: "concierge_falar", label: "🔵 Iniciar Atendimento" },
@@ -137,10 +127,11 @@ serve(async (req) => {
 
     // Há atendimento ativo - calcular informações
     const agora = new Date();
-    const criadoEm = new Date(chamadoAtivo.criado_em);
+    const criadoEm = new Date(ticketAtivo.data_abertura);
     const tempoEspera = Math.floor((agora.getTime() - criadoEm.getTime()) / (1000 * 60)); // em minutos
 
     let mensagem = `📊 *Status do seu Atendimento*\n\n`;
+    mensagem += `🎫 *Código:* ${ticketAtivo.codigo_ticket}\n`;
     mensagem += `🕐 *Aberto em:* ${criadoEm.toLocaleString('pt-BR', { 
       timeZone: 'America/Sao_Paulo',
       day: '2-digit',
@@ -150,26 +141,26 @@ serve(async (req) => {
       minute: '2-digit'
     })}\n`;
     mensagem += `⏱️ *Tempo decorrido:* ${tempoEspera} minutos\n`;
-    mensagem += `📋 *Tipo:* ${chamadoAtivo.tipo_atendimento}\n`;
+    mensagem += `📋 *Categoria:* ${ticketAtivo.categoria || 'Geral'}\n`;
 
-    if (chamadoAtivo.status === "em_fila") {
+    if (ticketAtivo.status === "aberto") {
       // Calcular posição na fila
       const { data: fila, error: filaError } = await supabase
-        .from("chamados")
-        .select("id, criado_em")
-        .eq("status", "em_fila")
+        .from("tickets")
+        .select("id, data_abertura")
+        .eq("status", "aberto")
         .eq("unidade_id", unidade.id)
-        .order("criado_em", { ascending: true });
+        .order("data_abertura", { ascending: true });
 
       if (!filaError && fila) {
-        const posicao = fila.findIndex((c) => c.id === chamadoAtivo.id) + 1;
+        const posicao = fila.findIndex((t) => t.id === ticketAtivo.id) + 1;
         mensagem += `🎯 *Posição na fila:* #${posicao}\n`;
-        mensagem += `👥 *Total na fila:* ${fila.length} atendimentos\n`;
+        mensagem += `👥 *Total na fila:* ${fila.length} tickets\n`;
       }
 
       mensagem += `\n⏳ *Status:* Aguardando atendimento\n`;
       mensagem += `\nVocê receberá uma mensagem assim que for sua vez.`;
-    } else if (chamadoAtivo.status === "em_atendimento") {
+    } else if (ticketAtivo.status === "em_atendimento") {
       mensagem += `\n👥 *Status:* Em atendimento\n`;
       mensagem += `\nVocê está sendo atendido agora por nossa equipe.`;
     }
@@ -188,7 +179,7 @@ serve(async (req) => {
     return new Response(JSON.stringify({ 
       success: true, 
       tem_atendimento: true,
-      chamado: chamadoAtivo,
+      ticket: ticketAtivo,
       tempo_espera: tempoEspera
     }), {
       headers: { "Content-Type": "application/json", ...corsHeaders },
