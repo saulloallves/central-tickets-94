@@ -180,8 +180,8 @@ serve(async (req) => {
     // Buscar dados da unidade na tabela externa para pegar concierge_phone e id_grupo_branco
     const { data: unidade, error: unidadeError } = await externalSupabase
       .from('unidades')
-      .select('id, grupo, concierge_name, concierge_phone, id_grupo_branco')
-      .eq('id', chamado.unidade_id)
+      .select('codigo_grupo, grupo, concierge_name, concierge_phone, id_grupo_branco')
+      .eq('codigo_grupo', chamado.unidade_id)
       .single();
 
     if (unidadeError || !unidade) {
@@ -193,7 +193,8 @@ serve(async (req) => {
     }
 
     console.log(`🏢 Unidade data:`, {
-      id: unidade.id,
+      codigo_grupo: unidade.codigo_grupo,
+      grupo: unidade.grupo,
       concierge_name: unidade.concierge_name,
       concierge_phone: unidade.concierge_phone,
       id_grupo_branco: unidade.id_grupo_branco
@@ -279,8 +280,8 @@ serve(async (req) => {
             telefone_destino: phoneDestino,
             enviado_em: new Date().toISOString(),
             tipo_atendimento: chamado.tipo_atendimento,
-            unidade_nome: unidade.grupo || `Unidade ${unidade.id}`,
-            unidade_codigo: unidade.id?.toString(),
+            unidade_nome: unidade.grupo || `Unidade ${unidade.codigo_grupo}`,
+            unidade_codigo: unidade.codigo_grupo?.toString(),
             grupo_whatsapp_id: unidade.id_grupo_branco
           });
 
