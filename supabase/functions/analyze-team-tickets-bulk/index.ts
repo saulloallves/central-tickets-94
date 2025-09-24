@@ -85,7 +85,7 @@ serve(async (req) => {
       .in('ticket_id', openTickets.map(t => t.id));
 
     const linkedTicketIds = linkedTickets
-      ?.filter(link => link.crises?.is_active)
+      ?.filter(link => (link.crises as any)?.is_active)
       ?.map(link => link.ticket_id) || [];
 
     const unlinkedTickets = openTickets.filter(ticket => 

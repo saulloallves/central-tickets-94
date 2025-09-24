@@ -138,10 +138,11 @@ serve(async (req) => {
 
     const equipesDisponiveis = equipesAtivas?.map(e => `- ${e.nome}: ${e.introducao || 'Sem especialidades definidas'}`).join('\n') || 'Nenhuma equipe disponível';
 
-    console.log('Prompt que será enviado para a IA:', analysisPrompt);
-
     // Prompt para análise completa incluindo título
     const analysisPrompt = `
+Você é um especialista em classificação de tickets de suporte técnico da Cresci & Perdi.
+
+Analise este ticket e forneça:
 Você é um especialista em classificação de tickets de suporte técnico da Cresci & Perdi.
 
 Analise este ticket e forneça:
