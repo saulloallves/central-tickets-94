@@ -122,16 +122,15 @@ async function checkGroupInDatabase(groupId: string): Promise<boolean> {
     const { data, error } = await unidadesSupabase
       .from('unidades')
       .select('id, id_grupo_branco')
-      .eq('id_grupo_branco', groupId)
-      .maybeSingle();
+      .eq('id_grupo_branco', groupId);
 
     if (error) {
       console.error('❌ Erro ao consultar tabela unidades:', error);
       return false;
     }
 
-    if (data) {
-      console.log(`✅ Grupo ${groupId} encontrado na tabela unidades:`, data.id);
+    if (data && data.length > 0) {
+      console.log(`✅ Grupo ${groupId} encontrado na tabela unidades (${data.length} registro(s)):`, data.map(d => d.id));
       return true;
     } else {
       console.log(`🚫 Grupo ${groupId} NÃO encontrado na tabela unidades`);
