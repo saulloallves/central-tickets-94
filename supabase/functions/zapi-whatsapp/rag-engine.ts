@@ -48,33 +48,45 @@ export async function encontrarDocumentosRelacionados(textoTicket: string, limit
 }
 
 /**
- * Re-ranking dos documentos usando LLM
+ * Re-ranking dos documentos usando LLM otimizado para Cresci & Perdi
  */
 export async function rerankComLLM(docs: any[], pergunta: string) {
   if (!docs || docs.length === 0) return [];
 
   try {
-    console.log('🧠 Re-ranking com LLM...');
+    console.log('🧠 Re-ranking com LLM otimizado...');
     
     const docsParaAnalise = docs.map((doc, idx) => 
-      `ID: ${doc.id}\nTítulo: ${doc.titulo}\nConteúdo: ${JSON.stringify(doc.conteudo).substring(0, 800)}`
+      `ID: ${doc.id}\nTítulo: ${doc.titulo}\nCategoria: ${doc.categoria || 'N/A'}\nConteúdo: ${JSON.stringify(doc.conteudo).substring(0, 800)}`
     ).join('\n\n---\n\n');
 
-    const prompt = `Você deve analisar os documentos e classificar sua relevância para responder à pergunta do usuário.
+    const prompt = `Você é um especialista em atendimento da Cresci & Perdi. Analise os documentos e classifique sua relevância para responder à pergunta específica do cliente/atendente.
 
-PERGUNTA: "${pergunta}"
+CONTEXTO: A Cresci & Perdi é uma empresa de brechó/marketplace de roupas usadas. Os documentos devem ser relevantes para:
+- Processos de venda, compra, avaliação de roupas
+- Funcionamento da plataforma/sistema
+- Políticas comerciais e operacionais
+- Suporte técnico e atendimento
 
-DOCUMENTOS:
+PERGUNTA/PROBLEMA: "${pergunta}"
+
+DOCUMENTOS DA BASE DE CONHECIMENTO:
 ${docsParaAnalise}
 
-Retorne APENAS um JSON válido com array "scores" contendo objetos com "id" e "score" (0-100):
-{"scores": [{"id": "doc-id", "score": 85}, ...]}
+CRITÉRIOS DE AVALIAÇÃO RIGOROSOS:
+- Score 90-100: Responde DIRETAMENTE ao problema/pergunta específica da Cresci & Perdi
+- Score 70-89: Contém informações relevantes que ajudam a resolver o problema
+- Score 50-69: Relacionado ao tema mas não resolve diretamente o problema
+- Score 30-49: Tangencialmente relacionado ao negócio da Cresci & Perdi
+- Score 0-29: Irrelevante ou sobre outro assunto completamente
 
-Critérios:
-- Score 80-100: Diretamente relevante e útil
-- Score 60-79: Parcialmente relevante  
-- Score 40-59: Tangencialmente relacionado
-- Score 0-39: Pouco ou nada relevante`;
+PENALIZAÇÕES:
+- Documentos sobre outros negócios/empresas: -50 pontos
+- Informações genéricas não específicas da Cresci & Perdi: -30 pontos
+- Conteúdo obsoleto ou contraditório: -40 pontos
+
+Retorne APENAS um JSON válido:
+{"scores": [{"id": "doc-id", "score": 85}, ...]}`;
 
     const response = await openAI('chat/completions', {
       model: 'gpt-4.1-2025-04-14',
@@ -94,14 +106,26 @@ Critérios:
     
     if (!result.scores) return docs.slice(0, 5);
 
-    // Ordenar por score e pegar top 5
-    const rankedDocs = result.scores
+    // Filtro rigoroso: apenas scores >= 70
+    const docsRelevantes = result.scores
+      .filter(item => item.score >= 70)
       .sort((a, b) => b.score - a.score)
-      .slice(0, 5)
-      .map(item => docs.find(doc => doc.id === item.id))
+      .slice(0, 3) // Máximo 3 documentos mais relevantes
+      .map(item => {
+        const doc = docs.find(d => d.id === item.id);
+        if (doc) {
+          doc.relevance_score = item.score;
+        }
+        return doc;
+      })
       .filter(Boolean);
 
-    return rankedDocs;
+    console.log(`🎯 RAG v4 - Documentos selecionados (score ≥ 70): ${docsRelevantes.length}`);
+    docsRelevantes.forEach(doc => {
+      console.log(`   📄 ${doc.titulo} (Score: ${doc.relevance_score})`);
+    });
+
+    return docsRelevantes;
     
   } catch (error) {
     console.error('Erro no reranking LLM:', error);
@@ -147,12 +171,17 @@ export async function gerarRespostaComContexto(docs: any[], pergunta: string, co
       .eq('ativo', true)
       .single();
 
-    const systemMessage = settingsData?.prompt_zapi_whatsapp || `Você é um assistente virtual amigável da Cresci & Perdi! 😊
+    const systemMessage = settingsData?.prompt_zapi_whatsapp || `Você é um assistente virtual amigável da Cresci & Perdi (brechó/marketplace de roupas usadas)! 😊
 
-REGRA PRINCIPAL: SEJA OBJETIVO
-- Vá direto ao ponto
-- Apenas detalhe mais se for necessário para esclarecer melhor
-- Priorize clareza e simplicidade
+VALIDAÇÃO RIGOROSA DE RELEVÂNCIA:
+- Use APENAS informações da base de conhecimento da Cresci & Perdi (score ≥ 70)
+- REJEITE perguntas sobre outros negócios ou temas não relacionados
+- APENAS temas sobre: brechó, roupas usadas, compra/venda, avaliação, plataforma, atendimento
+
+REGRA PRINCIPAL: SEJA OBJETIVO E ESPECÍFICO
+- Vá direto ao ponto sobre questões da Cresci & Perdi
+- Se não há informações relevantes (score < 70), seja honesto
+- Se pergunta for sobre outro negócio, informe que só pode ajudar com a Cresci & Perdi
 
 FORMATAÇÃO OBRIGATÓRIA - MUITO IMPORTANTE:
 - SEMPRE use \\n (quebra de linha) entre cada parágrafo
@@ -167,7 +196,7 @@ DICAS DE EMOJIS:
 - Roupas: 👕👖👗 | Sistema: 💻📱⚙️ | Processo: 🔄⚡📋 | Ajuda: 🤝💬❓
 
 INSTRUÇÕES:
-- Use apenas informações da base de conhecimento
+- Use apenas informações relevantes da base de conhecimento (score ≥ 70)
 - SEMPRE use \\n entre parágrafos para separar as linhas
 - Seja objetivo, só detalhe se necessário
 - Responda APENAS com o texto final, sem JSON ou formatação extra`;

@@ -33,9 +33,9 @@ async function openAI(path: string, payload: any, tries = 3) {
 }
 
 /**
- * RAG v4 - Busca híbrida usando embeddings + keywords
+ * RAG v4 - Busca híbrida otimizada usando embeddings + keywords
  */
-async function encontrarDocumentosRelacionados(textoMensagem: string, limiteResultados: number = 12) {
+async function encontrarDocumentosRelacionados(textoMensagem: string, limiteResultados: number = 10) {
   try {
     console.log('🔍 Gerando embedding para:', textoMensagem.substring(0, 100) + '...');
     
@@ -51,13 +51,13 @@ async function encontrarDocumentosRelacionados(textoMensagem: string, limiteResu
     const embeddingData = await embeddingResponse.json();
     const queryEmbedding = embeddingData.data[0].embedding;
 
-    console.log('🔎 Executando busca híbrida v4...');
+    console.log('🔎 Executando busca híbrida v4 otimizada...');
     
     const { data: candidatos, error } = await supabase.rpc('match_documentos_hibrido', {
       query_embedding: queryEmbedding,
       query_text: textoMensagem,
       match_count: limiteResultados,
-      alpha: 0.5
+      alpha: 0.7 // Prioriza busca semântica
     });
 
     if (error) {
@@ -65,8 +65,14 @@ async function encontrarDocumentosRelacionados(textoMensagem: string, limiteResu
       return [];
     }
 
-    console.log(`🔎 RAG v4 → ${candidatos?.length || 0} candidatos`);
-    return candidatos || [];
+    // Filtrar candidatos com similaridade mínima
+    const candidatosFiltrados = (candidatos || []).filter(doc => {
+      const similarity = doc.similarity || 0;
+      return similarity > 0.4; // Filtro de similaridade mínima
+    });
+
+    console.log(`🔎 RAG v4 → ${candidatos?.length || 0} candidatos iniciais, ${candidatosFiltrados.length} após filtro de similaridade`);
+    return candidatosFiltrados;
     
   } catch (error) {
     console.error('Erro ao buscar documentos relacionados:', error);
@@ -75,33 +81,45 @@ async function encontrarDocumentosRelacionados(textoMensagem: string, limiteResu
 }
 
 /**
- * RAG v4 - Re-ranking com LLM usando GPT-4.1
+ * RAG v4 - Re-ranking com LLM otimizado para Cresci & Perdi
  */
 async function rerankComLLM(docs: any[], pergunta: string) {
   if (!docs || docs.length === 0) return [];
 
   try {
-    console.log('🧠 Re-ranking com LLM v4...');
+    console.log('🧠 Re-ranking com LLM v4 otimizado...');
     
     const docsParaAnalise = docs.map((doc, idx) => 
-      `ID: ${doc.id}\nTítulo: ${doc.titulo}\nConteúdo: ${JSON.stringify(doc.conteudo).substring(0, 800)}`
+      `ID: ${doc.id}\nTítulo: ${doc.titulo}\nCategoria: ${doc.categoria || 'N/A'}\nConteúdo: ${JSON.stringify(doc.conteudo).substring(0, 800)}`
     ).join('\n\n---\n\n');
 
-    const prompt = `Você deve analisar os documentos e classificar sua relevância para responder à pergunta do usuário.
+    const prompt = `Você é um especialista em atendimento da Cresci & Perdi. Analise os documentos e classifique sua relevância para responder à pergunta específica do cliente/atendente.
 
-PERGUNTA: "${pergunta}"
+CONTEXTO: A Cresci & Perdi é uma empresa de brechó/marketplace de roupas usadas. Os documentos devem ser relevantes para:
+- Processos de venda, compra, avaliação de roupas
+- Funcionamento da plataforma/sistema
+- Políticas comerciais e operacionais
+- Suporte técnico e atendimento
 
-DOCUMENTOS:
+PERGUNTA/PROBLEMA: "${pergunta}"
+
+DOCUMENTOS DA BASE DE CONHECIMENTO:
 ${docsParaAnalise}
 
-Retorne APENAS um JSON válido com array "scores" contendo objetos com "id" e "score" (0-100):
-{"scores": [{"id": "doc-id", "score": 85}, ...]}
+CRITÉRIOS DE AVALIAÇÃO RIGOROSOS:
+- Score 90-100: Responde DIRETAMENTE ao problema/pergunta específica da Cresci & Perdi
+- Score 70-89: Contém informações relevantes que ajudam a resolver o problema
+- Score 50-69: Relacionado ao tema mas não resolve diretamente o problema
+- Score 30-49: Tangencialmente relacionado ao negócio da Cresci & Perdi
+- Score 0-29: Irrelevante ou sobre outro assunto completamente
 
-Critérios:
-- Score 80-100: Diretamente relevante e útil
-- Score 60-79: Parcialmente relevante  
-- Score 40-59: Tangencialmente relacionado
-- Score 0-39: Pouco ou nada relevante`;
+PENALIZAÇÕES:
+- Documentos sobre outros negócios/empresas: -50 pontos
+- Informações genéricas não específicas da Cresci & Perdi: -30 pontos
+- Conteúdo obsoleto ou contraditório: -40 pontos
+
+Retorne APENAS um JSON válido:
+{"scores": [{"id": "doc-id", "score": 85}, ...]}`;
 
     const response = await openAI('chat/completions', {
       model: 'gpt-4.1-2025-04-14',
@@ -119,23 +137,32 @@ Critérios:
     
     console.log(`RAG v4 rerank parsed items: ${result.scores?.length || 0}`);
     
-    if (!result.scores) return docs.slice(0, 5);
+    if (!result.scores) return [];
 
-    // Ordenar por score e pegar top 5
-    const rankedDocs = result.scores
+    // Filtro rigoroso: apenas scores >= 70
+    const docsRelevantes = result.scores
+      .filter(item => item.score >= 70)
       .sort((a, b) => b.score - a.score)
-      .slice(0, 5)
-      .map(item => docs.find(doc => doc.id === item.id))
+      .slice(0, 3) // Máximo 3 documentos mais relevantes
+      .map(item => {
+        const doc = docs.find(d => d.id === item.id);
+        if (doc) {
+          doc.relevance_score = item.score;
+        }
+        return doc;
+      })
       .filter(Boolean);
 
-    const docIds = rankedDocs.map(doc => doc.id).join(' | ');
-    console.log(`Docs selecionados para resposta: ${docIds}`);
+    console.log(`🎯 RAG v4 - Documentos selecionados (score ≥ 70): ${docsRelevantes.length}`);
+    docsRelevantes.forEach(doc => {
+      console.log(`   📄 ${doc.titulo} (Score: ${doc.relevance_score})`);
+    });
 
-    return rankedDocs;
+    return docsRelevantes;
     
   } catch (error) {
     console.error('Erro no reranking LLM:', error);
-    return docs.slice(0, 5);
+    return [];
   }
 }
 
@@ -189,30 +216,47 @@ async function corrigirRespostaComRAGv4(mensagem: string, documentos: any[]) {
 
     console.log(`🧠 RAG v4 - Usando GPT-4.1 com ${documentos.length} documentos de contexto`);
 
+    // Validação final: verificar se há informações realmente relevantes
+    if (documentos.length === 0) {
+      console.log('⚠️ Nenhum documento relevante encontrado, usando apenas correção gramatical');
+      return await corrigirApenasGramatica(mensagem, aiSettings?.prompt_format_response);
+    }
+
+    // Verificar se os documentos têm score de relevância alto o suficiente
+    const docsComScoreAlto = documentos.filter(doc => (doc.relevance_score || 0) >= 70);
+    if (docsComScoreAlto.length === 0) {
+      console.log('⚠️ Documentos com baixa relevância (< 70), usando apenas correção gramatical');
+      return await corrigirApenasGramatica(mensagem, aiSettings?.prompt_format_response);
+    }
+
     // Usar prompt configurável ou fallback para o padrão
     const customPrompt = aiSettings?.prompt_format_response;
-    const defaultPrompt = `Você é um especialista em atendimento ao cliente da Cresci & Perdi. 
+    const defaultPrompt = `Você é um especialista em atendimento ao cliente da Cresci & Perdi (brechó/marketplace de roupas usadas).
 
 IMPORTANTE: Você deve corrigir e padronizar a resposta do atendente seguindo estas regras:
 
 🔧 CORREÇÃO E PADRONIZAÇÃO:
 1. Corrija português (ortografia, gramática, concordância)
-2. Use tom educado, profissional e acolhedor
+2. Use tom educado, profissional e acolhedor específico da Cresci & Perdi
 3. Mantenha o conteúdo essencial da resposta
 4. Torne a resposta mais clara, completa e detalhada
-5. Use linguagem institucional consistente
+5. Use linguagem institucional consistente com o negócio de brechó
 
-📚 VALIDAÇÃO COM BASE DE CONHECIMENTO (RAG v4):
-- Se houver informações na base de conhecimento relacionadas à resposta, SEMPRE priorize e use essas informações oficiais
-- Se a resposta do atendente contradizer a base de conhecimento, corrija usando as informações oficiais
-- Se não houver informações relevantes na base, apenas faça a correção de forma e tom
-- NUNCA invente informações que não estão na base de conhecimento
-- Use as informações dos documentos fornecidos como referência oficial
-- NUNCA cite códigos de manuais, procedimentos ou documentos específicos (como "PRO 02.02", "Manual XYZ", etc.)
-- Incorpore as informações de forma natural sem referenciar a fonte
+📚 VALIDAÇÃO RIGOROSA COM BASE DE CONHECIMENTO (RAG v4):
+- APENAS use informações da base de conhecimento da Cresci & Perdi fornecida
+- Se a resposta do atendente contradizer a base oficial, SEMPRE corrija usando as informações oficiais
+- Se não há informações relevantes suficientes na base (score < 70), indique que precisa consultar supervisão
+- NUNCA invente informações sobre políticas, preços, processos que não estão documentados
+- NUNCA cite códigos de manuais ou documentos específicos
+- REJEITE responder sobre assuntos não relacionados ao negócio da Cresci & Perdi
+- Se a pergunta for sobre outro negócio/empresa, indique que só pode ajudar com questões da Cresci & Perdi
+
+🚫 FILTROS DE ASSUNTO:
+- APENAS temas relacionados a: brechó, roupas usadas, compra/venda, avaliação, plataforma, atendimento
+- REJEITE: outros negócios, temas não relacionados, informações genéricas
 
 📋 FORMATO DE SAÍDA:
-Retorne apenas a versão corrigida e padronizada da resposta, sem explicações adicionais ou referências a documentos.`;
+Retorne apenas a versão corrigida e padronizada da resposta, ou indique se o assunto está fora do escopo da Cresci & Perdi.`;
 
     console.log(`🎯 Usando prompt ${customPrompt ? 'personalizado' : 'padrão'} para formatação`);
 
