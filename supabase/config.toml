@@ -193,6 +193,9 @@ verify_jwt = false
 [functions.zapi-whatsapp]
 verify_jwt = false
 
+[functions.sync-atendentes]
+verify_jwt = false
+
 [functions.sla-processor]
 verify_jwt = false
 
