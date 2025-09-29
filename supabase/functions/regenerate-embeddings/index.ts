@@ -75,6 +75,7 @@ serve(async (req) => {
         }
 
         const embeddingData = await embeddingResponse.json();
+        const newEmbedding = embeddingData.data[0].embedding;
 
         console.log(`✅ Embedding gerado para ${doc.titulo} - dimensões: ${newEmbedding.length}`);
 
