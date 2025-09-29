@@ -1,7 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0';
-import { wrapAIFunction } from '../_shared/ai-alert-utils.ts';
+// import { wrapAIFunction } from '../_shared/ai-alert-utils.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -57,40 +57,24 @@ serve(async (req) => {
         }`;
 
         // Gerar novo embedding com monitoramento de alerta
-        const embeddingData = await wrapAIFunction(
-          'RegenerateEmbeddings-OpenAI',
-          'regenerate-embeddings/generateEmbedding',
-          async () => {
-            const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${openAIApiKey}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                model: 'text-embedding-ada-002', // Modelo padrão 1536 dimensões
-                input: textoParaEmbedding,
-              }),
-            });
-
-            if (!embeddingResponse.ok) {
-              const error = await embeddingResponse.text();
-              throw new Error(`OpenAI Embeddings API error: ${embeddingResponse.status} - ${error}`);
-            }
-
-            const data = await embeddingResponse.json();
-            if (!data.data?.[0]?.embedding) {
-              throw new Error('Resposta vazia da API de embeddings');
-            }
-
-            return data;
+        const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${openAIApiKey}`,
+            'Content-Type': 'application/json',
           },
-          undefined,
-          undefined,
-          { documentId: doc.id, documentTitle: doc.titulo, textLength: textoParaEmbedding.length }
-        );
+          body: JSON.stringify({
+            model: 'text-embedding-ada-002',
+            input: textoParaEmbedding,
+          }),
+        });
 
-        const newEmbedding = embeddingData.data[0].embedding;
+        if (!embeddingResponse.ok) {
+          const error = await embeddingResponse.text();
+          throw new Error(`OpenAI Embeddings API error: ${embeddingResponse.status} - ${error}`);
+        }
+
+        const embeddingData = await embeddingResponse.json();
 
         console.log(`✅ Embedding gerado para ${doc.titulo} - dimensões: ${newEmbedding.length}`);
 

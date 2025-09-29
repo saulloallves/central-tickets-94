@@ -5,7 +5,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0';
 import { openAI } from './openai-client.ts';
-import { wrapAIFunction } from '../_shared/ai-alert-utils.ts';
+// import { wrapAIFunction } from '../_shared/ai-alert-utils.ts';
 
 const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
 
@@ -33,7 +33,7 @@ export async function classifyTeamOnly(message: string, equipes: any[], existing
     return null;
   }
 
-  return await wrapAIFunction(
+  // return await wrapAIFunction(
     'TypebotClassifier-AI',
     'typebot-webhook/ai-classifier/classifyTeamOnly',
     async () => {

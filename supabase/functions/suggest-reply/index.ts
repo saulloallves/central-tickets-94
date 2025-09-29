@@ -1,7 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0';
-import { wrapAIFunction } from '../_shared/ai-alert-utils.ts';
+// import { wrapAIFunction } from '../_shared/ai-alert-utils.ts';
 import { encontrarDocumentosRelacionados, rerankComLLM, gerarRespostaComContexto } from './rag-engine.ts';
 
 const corsHeaders = {
@@ -175,14 +175,7 @@ serve(async (req) => {
     console.log('✅ Ticket encontrado:', ticket.codigo_ticket);
 
     // Executar pipeline RAG com monitoramento de alerta
-    const resultado = await wrapAIFunction(
-      'SuggestReply-RAG',
-      'suggest-reply/obterSugestaoDeRespostaParaTicket', 
-      () => obterSugestaoDeRespostaParaTicket(ticket),
-      ticket.id,
-      undefined,
-      { ticketId: body.ticketId, ticketCode: ticket.codigo_ticket }
-    );
+    const resultado = await obterSugestaoDeRespostaParaTicket(ticket);
 
     if (!resultado.success) {
       console.log('💥 ERRO FATAL na função suggest-reply:', new Error(resultado.error));
