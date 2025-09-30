@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import {
   DndContext,
   DragEndEvent,
@@ -473,9 +473,10 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
   const [draggedOverColumn, setDraggedOverColumn] = useState<string | null>(null);
   const [showArchivedTickets, setShowArchivedTickets] = useState(false);
   
-  // Estado otimista para drag and drop
+  // Estado otimista melhorado com timestamps
   const [optimisticTickets, setOptimisticTickets] = useState<Ticket[]>([]);
-  const [pendingMoves, setPendingMoves] = useState<Set<string>>(new Set());
+  const [pendingMoves, setPendingMoves] = useState<Map<string, number>>(new Map());
+  const ignoreRealtimeUntil = useRef<Map<string, number>>(new Map());
   const { toast } = useToast();
   
   // Sistema de crises removido - sem agrupamento
@@ -487,23 +488,58 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
       lastUpdate,
       timestamp: new Date().toISOString()
     });
-    
-    // Reset optimistic state quando recebemos novos dados do servidor
-    if (tickets.length > 0) {
-      setOptimisticTickets([]);
-      setPendingMoves(new Set());
-    }
   }, [tickets, lastUpdate]);
 
-  // Use optimistic tickets se existirem, senão use os tickets normais
-  const displayTickets = optimisticTickets.length > 0 ? optimisticTickets : tickets;
+  // Merge inteligente entre estado otimista e realtime
+  const displayTickets = useMemo(() => {
+    if (pendingMoves.size === 0) return tickets;
+    
+    const now = Date.now();
+    const optimisticMap = new Map(optimisticTickets.map(t => [t.id, t]));
+    
+    return tickets.map(ticket => {
+      const pendingTimestamp = pendingMoves.get(ticket.id);
+      const ignoreUntil = ignoreRealtimeUntil.current.get(ticket.id) || 0;
+      
+      // Se tem operação pendente recente, usa versão otimista
+      if (pendingTimestamp && (now - pendingTimestamp) < 3000) {
+        return optimisticMap.get(ticket.id) || ticket;
+      }
+      
+      // Se devemos ignorar realtime por enquanto, usa versão otimista
+      if (now < ignoreUntil && optimisticMap.has(ticket.id)) {
+        return optimisticMap.get(ticket.id) || ticket;
+      }
+      
+      return ticket;
+    });
+  }, [tickets, optimisticTickets, pendingMoves]);
 
-  // Limpar estado otimista quando realtime atualiza
+  // Cleanup de operações antigas
   useEffect(() => {
-    if (tickets.length > 0 && pendingMoves.size === 0) {
-      setOptimisticTickets([]);
-    }
-  }, [tickets, pendingMoves]);
+    const interval = setInterval(() => {
+      const now = Date.now();
+      let hasChanges = false;
+      
+      const newPending = new Map(pendingMoves);
+      pendingMoves.forEach((timestamp, ticketId) => {
+        if (now - timestamp > 5000) {
+          newPending.delete(ticketId);
+          ignoreRealtimeUntil.current.delete(ticketId);
+          hasChanges = true;
+        }
+      });
+      
+      if (hasChanges) {
+        setPendingMoves(newPending);
+        setOptimisticTickets(prev => 
+          prev.filter(t => newPending.has(t.id))
+        );
+      }
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [pendingMoves]);
 
   // Update timestamp when tickets change
   useEffect(() => {
@@ -616,6 +652,7 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
 
     // 1. ATUALIZAÇÃO OTIMISTA IMEDIATA - mover card visualmente
     const originalStatus = ticket.status;
+    const now = Date.now();
     const updatedTickets = [...tickets];
     const ticketIndex = updatedTickets.findIndex(t => t.id === ticketId);
     
@@ -625,7 +662,8 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
         status: newStatus as any
       };
       setOptimisticTickets(updatedTickets);
-      setPendingMoves(prev => new Set([...prev, ticketId]));
+      setPendingMoves(prev => new Map(prev).set(ticketId, now));
+      ignoreRealtimeUntil.current.set(ticketId, now + 2000); // Ignora realtime por 2s
       console.log('✨ Card movido visualmente para:', newStatus);
     }
 
@@ -639,21 +677,27 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
         undefined
       );
       
-      // Remove from pending moves
-      setPendingMoves(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(ticketId);
-        return newSet;
-      });
-      
       if (success) {
-        // 3. SUCESSO - Manter card na nova posição
+        // 3. SUCESSO - Aguardar um pouco antes de limpar para dar tempo do realtime propagar
         console.log('✅ Ticket movido com sucesso!');
-        // Limpar estado otimista - o realtime vai assumir controle
-        setOptimisticTickets([]);
+        setTimeout(() => {
+          setPendingMoves(prev => {
+            const newMap = new Map(prev);
+            newMap.delete(ticketId);
+            return newMap;
+          });
+          ignoreRealtimeUntil.current.delete(ticketId);
+          setOptimisticTickets(prev => prev.filter(t => t.id !== ticketId));
+        }, 1500);
       } else {
         // 4. ERRO - Reverter card para posição original
         console.log('❌ Falha ao mover ticket - revertendo');
+        setPendingMoves(prev => {
+          const newMap = new Map(prev);
+          newMap.delete(ticketId);
+          return newMap;
+        });
+        ignoreRealtimeUntil.current.delete(ticketId);
         setOptimisticTickets([]);
         
         toast({
@@ -667,11 +711,11 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
       console.error('❌ Erro na Edge Function:', error);
       
       setPendingMoves(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(ticketId);
-        return newSet;
+        const newMap = new Map(prev);
+        newMap.delete(ticketId);
+        return newMap;
       });
-      
+      ignoreRealtimeUntil.current.delete(ticketId);
       setOptimisticTickets([]);
       
       toast({
