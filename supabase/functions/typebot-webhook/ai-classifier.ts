@@ -9,6 +9,9 @@ import { openAI } from './openai-client.ts';
 
 const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
 
+// ID da equipe Concierge Operação - usada como fallback quando a IA não tem certeza
+const CONCIERGE_OPERACAO_ID = '2c080fb5-51e6-47dd-a59e-13c3d73bd8b2';
+
 function getSupabaseClient() {
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -61,13 +64,16 @@ Descrição do problema: "${message}"${existingInfo}
 Equipes disponíveis:
 ${equipesInfo}
 
+IMPORTANTE: Se você NÃO TIVER CERTEZA sobre qual equipe escolher, ou se o problema não se encaixar claramente em nenhuma equipe específica, escolha "Concierge Operação". Esta equipe está preparada para analisar e redirecionar tickets incertos.
+
 Responda APENAS com um JSON válido no formato:
 {
   "equipe_responsavel": "nome_da_equipe_escolhida",
-  "justificativa": "explicação de 1-2 frases do porquê desta equipe"
+  "justificativa": "explicação de 1-2 frases do porquê desta equipe",
+  "confianca": "alta, media ou baixa"
 }
 
-Escolha a equipe que melhor se adequa ao problema descrito.`;
+Escolha a equipe que melhor se adequa ao problema descrito. Use "Concierge Operação" quando em dúvida.`;
 
     const response = await openAI('chat/completions', {
       model: modelToUse,
@@ -87,8 +93,13 @@ Escolha a equipe que melhor se adequa ao problema descrito.`;
 
     const result = JSON.parse(content.trim());
     
-    if (!result.equipe_responsavel) {
-      throw new Error('IA não retornou equipe válida');
+    // Se a IA não retornou equipe ou está com baixa confiança, usar Concierge Operação
+    if (!result.equipe_responsavel || result.confianca === 'baixa') {
+      console.log('IA incerta ou sem equipe - direcionando para Concierge Operação');
+      return {
+        equipe_responsavel: 'Concierge Operação',
+        justificativa: result.justificativa || 'Ticket requer análise adicional para direcionamento correto'
+      };
     }
 
     console.log('Resultado da classificação de equipe:', result);
@@ -96,7 +107,12 @@ Escolha a equipe que melhor se adequa ao problema descrito.`;
 
   } catch (error) {
     console.error('Erro na classificação de equipe por IA:', error);
-    return null;
+    // Em caso de erro, retornar Concierge Operação como fallback
+    console.log('Erro na classificação - direcionando para Concierge Operação');
+    return {
+      equipe_responsavel: 'Concierge Operação',
+      justificativa: 'Erro na classificação automática - requer análise manual'
+    };
   }
 }
 
@@ -160,6 +176,8 @@ Analise este ticket e forneça:
 
 ${equipesDisponiveis}
 
+IMPORTANTE: Se você NÃO TIVER CERTEZA sobre qual equipe escolher, ou se o problema não se encaixar claramente em nenhuma especialidade, use "Concierge Operação" (ID: ${CONCIERGE_OPERACAO_ID}). Esta equipe está preparada para analisar e redirecionar tickets incertos.
+
 ANÁLISE: "${message}"
 
 Responda APENAS em JSON válido:
@@ -167,11 +185,14 @@ Responda APENAS em JSON válido:
   "categoria": "uma_das_categorias_definidas",
   "prioridade": "uma_das_5_prioridades_definidas",
   "titulo": "Título de 3 palavras descritivo",
-  "equipe_sugerida": "id_da_equipe_mais_apropriada_ou_null",
-  "justificativa": "Breve explicação da análise e por que escolheu esta equipe"
+  "equipe_sugerida": "id_da_equipe_mais_apropriada_ou_${CONCIERGE_OPERACAO_ID}",
+  "justificativa": "Breve explicação da análise e por que escolheu esta equipe",
+  "confianca": "alta, media ou baixa"
 }
 
-CRÍTICO: Use APENAS estas 5 prioridades: baixo, medio, alto, imediato, crise
+CRÍTICO: 
+- Use APENAS estas 5 prioridades: baixo, medio, alto, imediato, crise
+- Use Concierge Operação (ID: ${CONCIERGE_OPERACAO_ID}) quando tiver dúvida sobre a equipe
 `;
 
     const requestBody = {
@@ -261,11 +282,18 @@ CRÍTICO: Use APENAS estas 5 prioridades: baixo, medio, alto, imediato, crise
             titulo = words.slice(0, 3).join(' ');
           }
           
+          // Se a IA não sugeriu equipe ou está com baixa confiança, usar Concierge Operação
+          let equipeId = aiResult.equipe_sugerida;
+          if (!equipeId || equipeId === 'null' || aiResult.confianca === 'baixa') {
+            console.log('IA incerta sobre equipe - direcionando para Concierge Operação');
+            equipeId = CONCIERGE_OPERACAO_ID;
+          }
+          
           return {
             categoria: aiResult.categoria || 'outro',
             prioridade: aiResult.prioridade || 'baixo',
             titulo: titulo,
-            equipe_responsavel: aiResult.equipe_sugerida,
+            equipe_responsavel: equipeId,
             justificativa: aiResult.justificativa || 'Análise automática'
           };
           
@@ -313,7 +341,8 @@ export function generateFallbackClassification(message: string): ClassificationR
 export function applyIntelligentFallback(message: string, equipes: any[]): { categoria: string; equipeId: string | null } {
   const messageWords = message.toLowerCase();
   let fallbackCategoria = 'outro';
-  let fallbackEquipeId = equipes?.[0]?.id || null;
+  // Por padrão, usar Concierge Operação ao invés da primeira equipe
+  let fallbackEquipeId = CONCIERGE_OPERACAO_ID;
   
   if (messageWords.includes('sistema') || messageWords.includes('app') || messageWords.includes('erro') || messageWords.includes('travou')) {
     fallbackCategoria = 'sistema';
@@ -327,6 +356,7 @@ export function applyIntelligentFallback(message: string, equipes: any[]): { cat
     fallbackCategoria = 'financeiro';
   }
   
+  // Tentar encontrar equipe específica baseada na categoria
   const equipeCompativel = equipes?.find(eq => 
     eq.nome.toLowerCase().includes(fallbackCategoria) || 
     eq.descricao?.toLowerCase().includes(fallbackCategoria)
@@ -335,6 +365,9 @@ export function applyIntelligentFallback(message: string, equipes: any[]): { cat
   if (equipeCompativel) {
     fallbackEquipeId = equipeCompativel.id;
   }
+  // Caso contrário, mantém Concierge Operação como fallback
+  
+  console.log(`Fallback inteligente: categoria=${fallbackCategoria}, equipe=${fallbackEquipeId === CONCIERGE_OPERACAO_ID ? 'Concierge Operação' : 'Específica'}`);
   
   return { categoria: fallbackCategoria, equipeId: fallbackEquipeId };
 }
