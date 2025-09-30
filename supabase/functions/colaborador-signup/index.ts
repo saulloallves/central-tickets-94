@@ -69,72 +69,55 @@ serve(async (req) => {
     }
     console.log('✅ Profile criado/atualizado com sucesso');
 
-    // 2. Se for colaborador e tiver equipe_id, criar solicitação de acesso
-    if (role === 'colaborador' && equipe_id) {
-      console.log('👥 Processando colaborador com equipe...');
-      
-      // Inserir ou atualizar role como colaborador (upsert)
-      const { error: roleError } = await supabaseClient
-        .from('user_roles')
-        .upsert({
-          user_id: userId,
-          role: 'colaborador'
-        }, {
-          onConflict: 'user_id,role'
-        });
+    // 2. Criar role não aprovado e solicitação de acesso à equipe
+    console.log('👥 Processando cadastro com equipe...');
+    
+    // Inserir role NÃO APROVADO (approved = false)
+    const { error: roleError } = await supabaseClient
+      .from('user_roles')
+      .upsert({
+        user_id: userId,
+        role: role,
+        approved: false
+      }, {
+        onConflict: 'user_id,role'
+      });
 
-      if (roleError) {
-        console.error('⚠️ Aviso - erro ao criar role (pode já existir):', roleError);
-        // Não falhar por isso, pode já existir
-      } else {
-        console.log('✅ Role colaborador criado/atualizado');
-      }
-
-      // Criar solicitação de acesso à equipe
-      console.log('📨 Criando solicitação de acesso à equipe...');
-      const { error: requestError } = await supabaseClient
-        .from('internal_access_requests')
-        .insert({
-          user_id: userId,
-          equipe_id: equipe_id,
-          desired_role: 'member',
-          status: 'pending'
-        });
-
-      if (requestError) {
-        console.error('❌ Erro ao criar solicitação de acesso:', requestError);
-        throw new Error(`Erro na solicitação: ${requestError.message}`);
-      }
-
-      console.log('✅ Solicitação de acesso criada para equipe:', equipe_id);
+    if (roleError) {
+      console.error('⚠️ Aviso - erro ao criar role:', roleError);
+      // Não falhar por isso, pode já existir
     } else {
-      console.log('👤 Processando usuário direto...');
-      
-      // Para outros roles, inserir ou atualizar o role (upsert)
-      const { error: roleError } = await supabaseClient
-        .from('user_roles')
-        .upsert({
-          user_id: userId,
-          role: role
-        }, {
-          onConflict: 'user_id,role'
-        });
-
-      if (roleError) {
-        console.error('❌ Erro ao criar/atualizar role:', roleError);
-        throw new Error(`Erro no role: ${roleError.message}`);
-      }
-      console.log('✅ Role criado/atualizado:', role);
+      console.log('✅ Role criado (não aprovado):', role);
     }
+
+    // Criar solicitação de acesso à equipe (obrigatório para todos)
+    if (!equipe_id) {
+      throw new Error('Equipe é obrigatória para todos os tipos de usuário');
+    }
+
+    console.log('📨 Criando solicitação de acesso à equipe...');
+    const { error: requestError } = await supabaseClient
+      .from('internal_access_requests')
+      .insert({
+        user_id: userId,
+        equipe_id: equipe_id,
+        desired_role: 'member',
+        status: 'pending'
+      });
+
+    if (requestError) {
+      console.error('❌ Erro ao criar solicitação de acesso:', requestError);
+      throw new Error(`Erro na solicitação: ${requestError.message}`);
+    }
+
+    console.log('✅ Solicitação de acesso criada para equipe:', equipe_id);
 
     console.log('🎉 Processamento concluído com sucesso!');
     
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: role === 'colaborador' && equipe_id 
-          ? 'Cadastro realizado! Sua solicitação de acesso à equipe foi enviada para aprovação.'
-          : 'Cadastro realizado com sucesso!'
+        message: 'Cadastro realizado! Confirme seu email e aguarde aprovação do supervisor da equipe.'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

@@ -181,10 +181,10 @@ const Auth = () => {
       return;
     }
 
-    if (signupData.role === 'colaborador' && !signupData.equipeId) {
+    if (!signupData.equipeId) {
       toast({
         title: "Erro", 
-        description: "Colaboradores devem selecionar uma equipe",
+        description: "Selecione uma equipe",
         variant: "destructive"
       });
       return;
@@ -196,7 +196,7 @@ const Auth = () => {
       const { error } = await signUp(signupData.email, signupData.password, {
         nome_completo: signupData.nomeCompleto,
         role: signupData.role,
-        equipe_id: signupData.role === 'colaborador' ? signupData.equipeId : undefined
+        equipe_id: signupData.equipeId
       });
 
       if (!error) {
@@ -619,46 +619,44 @@ const Auth = () => {
                     </Select>
                   </div>
                   
-                  {signupData.role === 'colaborador' && (
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-equipe">Equipe</Label>
-                      {equipesLoading ? (
-                        <div className="h-11 flex items-center justify-center border rounded-md">
-                          <span className="text-sm text-muted-foreground">Carregando equipes...</span>
-                        </div>
-                      ) : equipesError ? (
-                        <div className="h-11 flex items-center justify-center border rounded-md bg-destructive/10">
-                          <span className="text-sm text-destructive">Erro ao carregar equipes</span>
-                        </div>
-                      ) : (
-                        <Select
-                          value={signupData.equipeId}
-                          onValueChange={(value) => setSignupData({ ...signupData, equipeId: value })}
-                          required
-                        >
-                          <SelectTrigger className="h-11">
-                            <SelectValue placeholder="Selecione sua equipe" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-background border shadow-lg z-50">
-                            {equipes && equipes.length > 0 ? (
-                              equipes.map((equipe) => (
-                                <SelectItem key={equipe.id} value={equipe.id}>
-                                  {equipe.nome}
-                                </SelectItem>
-                              ))
-                            ) : (
-                              <SelectItem value="no-teams" disabled>
-                                Nenhuma equipe disponível
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-equipe">Equipe</Label>
+                    {equipesLoading ? (
+                      <div className="h-11 flex items-center justify-center border rounded-md">
+                        <span className="text-sm text-muted-foreground">Carregando equipes...</span>
+                      </div>
+                    ) : equipesError ? (
+                      <div className="h-11 flex items-center justify-center border rounded-md bg-destructive/10">
+                        <span className="text-sm text-destructive">Erro ao carregar equipes</span>
+                      </div>
+                    ) : (
+                      <Select
+                        value={signupData.equipeId}
+                        onValueChange={(value) => setSignupData({ ...signupData, equipeId: value })}
+                        required
+                      >
+                        <SelectTrigger className="h-11">
+                          <SelectValue placeholder="Selecione sua equipe" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background border shadow-lg z-50">
+                          {equipes && equipes.length > 0 ? (
+                            equipes.map((equipe) => (
+                              <SelectItem key={equipe.id} value={equipe.id}>
+                                {equipe.nome}
                               </SelectItem>
-                            )}
-                          </SelectContent>
-                        </Select>
-                      )}
-                      <p className="text-xs text-muted-foreground">
-                        Sua solicitação será enviada para aprovação do supervisor da equipe.
-                      </p>
-                    </div>
-                  )}
+                            ))
+                          ) : (
+                            <SelectItem value="no-teams" disabled>
+                              Nenhuma equipe disponível
+                            </SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      Sua solicitação será enviada para aprovação do supervisor da equipe.
+                    </p>
+                  </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-password">Senha</Label>
                     <Input
