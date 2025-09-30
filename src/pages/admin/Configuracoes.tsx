@@ -41,7 +41,7 @@ export default function Configuracoes() {
         </div>
 
         <Tabs defaultValue="ia" className="w-full">
-          <TabsList className="flex w-full overflow-x-auto mb-6 h-auto p-1 gap-1">
+          <TabsList className="flex flex-wrap w-full justify-start mb-6 h-auto p-1 gap-1">
             <TabsTrigger value="logo" className="flex items-center gap-2">
               <Image className="h-4 w-4" />
               Logo
