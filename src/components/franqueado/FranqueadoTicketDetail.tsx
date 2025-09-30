@@ -408,28 +408,20 @@ export function FranqueadoTicketDetail({ ticketId, onClose }: FranqueadoTicketDe
 
       {/* Message Input */}
       <div className="p-4 border-t">
-        <div className="flex gap-2">
-          <Textarea
-            placeholder="Digite sua resposta..."
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSendMessage();
-              }
-            }}
-            rows={3}
-            className="resize-none"
-          />
-          <Button 
-            onClick={handleSendMessage}
-            disabled={!newMessage.trim() || sending}
-            size="sm"
-          >
-            <Send className="h-4 w-4" />
-          </Button>
-        </div>
+        <Textarea
+          placeholder="Digite sua resposta... (Enter para enviar)"
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              handleSendMessage();
+            }
+          }}
+          rows={3}
+          className="resize-none"
+          disabled={sending}
+        />
       </div>
     </div>
   );
