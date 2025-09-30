@@ -1235,19 +1235,6 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                             <Send className="h-4 w-4" />
                           )}
                         </Button>
-                        <Button 
-                          onClick={handleSendToFranqueado}
-                          disabled={!newMessage.trim() || isSendingToFranqueado || isUploadingAttachments}
-                          size="sm"
-                          variant="outline"
-                          className="text-xs h-8 w-16"
-                        >
-                          {isSendingToFranqueado ? (
-                            <div className="h-3 w-3 animate-spin rounded-full border border-primary border-t-transparent" />
-                          ) : (
-                            <ExternalLink className="h-3 w-3" />
-                          )}
-                        </Button>
                       </div>
                     </div>
                   </div>
