@@ -262,7 +262,7 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
                 colors.bg, colors.border, "border"
               )}>
                 <div className={cn("w-1 h-1 md:w-1.5 md:h-1.5 rounded-full", colors.dot)}></div>
-                <span className={cn("text-[10px] md:text-xs font-medium truncate max-w-12 md:max-w-20", colors.text)}>
+                <span className={cn("text-[10px] md:text-xs font-medium", colors.text)}>
                   {ticket.equipes.nome}
                 </span>
               </div>
