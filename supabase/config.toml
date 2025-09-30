@@ -163,6 +163,9 @@ verify_jwt = false
 [functions.test-openai-key]
 verify_jwt = false
 
+[functions.test-zapi-credentials]
+verify_jwt = false
+
 [functions.test-semantic-rag]
 verify_jwt = false
 

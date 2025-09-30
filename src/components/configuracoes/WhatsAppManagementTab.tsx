@@ -8,6 +8,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Trash2, MessageSquare, Loader2, Settings, TestTube, CheckCircle, XCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { TestZAPICredentials } from "./TestZAPICredentials";
 
 export function WhatsAppManagementTab() {
   const [isLoading, setIsLoading] = useState(false);
@@ -96,6 +97,21 @@ export function WhatsAppManagementTab() {
 
   return (
     <div className="space-y-6">
+      {/* Teste de Credenciais Z-API */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Teste de Credenciais</CardTitle>
+          <CardDescription>
+            Verifique se as credenciais Z-API estão configuradas corretamente
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <TestZAPICredentials />
+        </CardContent>
+      </Card>
+
+      <Separator />
+
       {/* Status da Instância Z-API */}
       <Card>
         <CardHeader>
