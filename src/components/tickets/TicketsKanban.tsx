@@ -207,6 +207,16 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
     }
   };
 
+  const getUnitInfo = (ticket: Ticket) => {
+    if (ticket.unidades?.grupo) {
+      if (ticket.unidades.cidade && ticket.unidades.uf) {
+        return `${ticket.unidades.grupo} - ${ticket.unidades.cidade}/${ticket.unidades.uf}`;
+      }
+      return ticket.unidades.grupo;
+    }
+    return ticket.unidade_id || 'Unidade não informada';
+  };
+
   if (isDragging) {
     return (
       <Card
@@ -281,6 +291,14 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
           )}>
             {ticket.status === 'concluido' ? 'OK' : getPriorityLabel(ticket.prioridade)}
           </div>
+        </div>
+
+        {/* Localização da Unidade */}
+        <div className="flex items-center gap-1 text-muted-foreground">
+          <MapPin className="h-2.5 w-2.5 md:h-3 md:w-3 flex-shrink-0" />
+          <span className="text-[10px] md:text-xs">
+            {getUnitInfo(ticket)}
+          </span>
         </div>
 
         {/* SLA countdown ou data de resolução */}
