@@ -83,6 +83,7 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
   const realtimeChannelRef = useRef<any>(null);
   const realtimeDebounceRef = useRef<NodeJS.Timeout | null>(null);
   const backupPollingRef = useRef<NodeJS.Timeout | null>(null);
+  const lastUpdateThrottle = useRef<number>(0);
 
   // Fetch tickets using regular supabase query (read-only) with retry logic
   const fetchTickets = useCallback(async (isRefetch = false, retryCount = 0) => {
@@ -181,9 +182,15 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
       });
       
       console.log('✅ Visible tickets (after filtering crises):', visibleTickets.length);
-      console.log('🔄 Setting lastUpdate to force Kanban re-render...');
       setTickets(visibleTickets);
-      setLastUpdate(Date.now()); // Força re-render no Kanban
+      
+      // Throttle setLastUpdate para no máximo 1x por segundo
+      const now = Date.now();
+      if (now - lastUpdateThrottle.current > 1000) {
+        console.log('🔄 Setting lastUpdate to force Kanban re-render...');
+        setLastUpdate(now);
+        lastUpdateThrottle.current = now;
+      }
       
     } catch (error) {
       console.error('Error fetching tickets:', {
@@ -329,9 +336,8 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
           if (payload.eventType === 'INSERT') {
             console.log('🎯 NOVO TICKET DETECTADO - Refetch imediato!');
             fetchTickets(true);
-            setLastUpdate(Date.now()); // Força re-render do Kanban
           } else {
-            // Para outros eventos, usar debounce mínimo
+            // Para outros eventos, usar debounce maior para evitar piscamento
             if (realtimeDebounceRef.current) {
               clearTimeout(realtimeDebounceRef.current);
             }
@@ -339,8 +345,7 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
             realtimeDebounceRef.current = setTimeout(() => {
               console.log('🔄 Triggering ticket refetch due to realtime event');
               fetchTickets(true);
-              setLastUpdate(Date.now()); // Força re-render do Kanban
-            }, 50); // Reduzido para 50ms para máxima responsividade
+            }, 500); // Aumentado para 500ms para reduzir piscamento
           }
         }
       )
@@ -374,7 +379,7 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
     const pollInterval = setInterval(() => {
       console.log('🔄 Backup polling triggered');
       fetchTickets(true); // Mark as refetch to avoid loading state
-    }, 10000); // Reduzido para 10s para melhor backup
+    }, 30000); // Aumentado para 30s para reduzir piscamento
 
     return () => {
       clearInterval(pollInterval);
@@ -410,7 +415,7 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
       const timeoutId = setTimeout(() => {
         console.log('🔍 Executing filter-based refetch');
         fetchTickets(true); // Mark as refetch to avoid loading state
-      }, 300);
+      }, 1000); // Aumentado para 1000ms para reduzir piscamento durante digitação
       
       return () => {
         console.log('🔍 Cancelling debounced refetch');
@@ -433,7 +438,6 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
       setTickets(prev => prev.map(ticket => 
         ticket.id === ticketId ? { ...ticket, ...updates } : ticket
       ));
-      setLastUpdate(Date.now()); // Força re-render no Kanban
     };
 
     const handleOptimisticRollback = (event: CustomEvent) => {
@@ -443,7 +447,6 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
       setTickets(prev => prev.map(ticket => 
         ticket.id === ticketId ? { ...ticket, status: originalStatus } : ticket
       ));
-      setLastUpdate(Date.now()); // Força re-render no Kanban
     };
 
     window.addEventListener('ticket-optimistic-update', handleOptimisticUpdate as EventListener);

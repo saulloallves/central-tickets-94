@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTicketNotifications } from '@/hooks/useTicketNotifications';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import { Plus, Filter, Calendar, Users, Clock, AlertTriangle, Brain } from 'lucide-react';
@@ -64,7 +64,7 @@ const Tickets = () => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [equipes, setEquipes] = useState<Equipe[]>([]);
-  const [filters, setFilters] = useState({
+  const [localFilters, setLocalFilters] = useState({
     search: '',
     status: 'all',
     categoria: 'all',
@@ -73,6 +73,18 @@ const Tickets = () => {
     status_sla: 'all',
     equipe_id: 'all'
   });
+  
+  // Debounced filters para evitar piscamento
+  const [debouncedFilters, setDebouncedFilters] = useState(localFilters);
+  
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedFilters(localFilters);
+    }, 800); // Debounce de 800ms para filtros
+    
+    return () => clearTimeout(handler);
+  }, [localFilters]);
+  
   const {
     tickets,
     loading,
@@ -83,7 +95,7 @@ const Tickets = () => {
     updateTicket,
     deleteTicket,
     moveTicket,
-  } = useTicketsEdgeFunctions(filters);
+  } = useTicketsEdgeFunctions(debouncedFilters);
 
   // Fetch available teams and start auto detection
   useEffect(() => {
@@ -183,15 +195,23 @@ const Tickets = () => {
         {showFilters && <Card className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border border-border/40">
             <CardContent className="p-4">
               <div className="flex gap-4 items-center flex-wrap">
-                <Input placeholder="Buscar tickets..." value={filters.search} onChange={e => setFilters(prev => ({
-              ...prev,
-              search: e.target.value
-            }))} className="max-w-xs" />
+                <Input 
+                  placeholder="Buscar tickets..." 
+                  value={localFilters.search} 
+                  onChange={e => setLocalFilters(prev => ({
+                    ...prev,
+                    search: e.target.value
+                  }))} 
+                  className="max-w-xs" 
+                />
                 
-                <Select value={filters.prioridade} onValueChange={value => setFilters(prev => ({
-              ...prev,
-              prioridade: value
-            }))}>
+                <Select 
+                  value={localFilters.prioridade} 
+                  onValueChange={value => setLocalFilters(prev => ({
+                    ...prev,
+                    prioridade: value
+                  }))}
+                >
                   <SelectTrigger className="w-40">
                     <SelectValue placeholder="Prioridade" />
                   </SelectTrigger>
@@ -205,10 +225,13 @@ const Tickets = () => {
                   </SelectContent>
                 </Select>
                 
-                <Select value={filters.equipe_id} onValueChange={value => setFilters(prev => ({
-              ...prev,
-              equipe_id: value
-            }))}>
+                <Select 
+                  value={localFilters.equipe_id} 
+                  onValueChange={value => setLocalFilters(prev => ({
+                    ...prev,
+                    equipe_id: value
+                  }))}
+                >
                   <SelectTrigger className="w-48">
                     <SelectValue placeholder="Equipe" />
                   </SelectTrigger>
@@ -221,10 +244,13 @@ const Tickets = () => {
                   </SelectContent>
                 </Select>
 
-                {(isAdmin || isSupervisor) && <Select value={filters.unidade_id} onValueChange={value => setFilters(prev => ({
-              ...prev,
-              unidade_id: value
-            }))}>
+                {(isAdmin || isSupervisor) && <Select 
+                  value={localFilters.unidade_id} 
+                  onValueChange={value => setLocalFilters(prev => ({
+                    ...prev,
+                    unidade_id: value
+                  }))}
+                >
                     <SelectTrigger className="w-40">
                       <SelectValue placeholder="Unidade" />
                     </SelectTrigger>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import {
   DndContext,
   DragEndEvent,
@@ -110,7 +110,7 @@ interface KanbanTicketCardProps {
   equipes: Array<{ id: string; nome: string }>;
 }
 
-const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicketCardProps) => {
+const KanbanTicketCard = memo(({ ticket, isSelected, onSelect, equipes }: KanbanTicketCardProps) => {
   const {
     attributes,
     listeners,
@@ -326,7 +326,18 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
       </CardContent>
     </Card>
   );
-};
+}, (prevProps, nextProps) => {
+  // Custom comparison for memo - only re-render if these props change
+  return (
+    prevProps.ticket.id === nextProps.ticket.id &&
+    prevProps.ticket.status === nextProps.ticket.status &&
+    prevProps.ticket.titulo === nextProps.ticket.titulo &&
+    prevProps.ticket.prioridade === nextProps.ticket.prioridade &&
+    prevProps.ticket.data_limite_sla === nextProps.ticket.data_limite_sla &&
+    prevProps.isSelected === nextProps.isSelected &&
+    prevProps.equipes.length === nextProps.equipes.length
+  );
+});
 
 interface KanbanColumnProps {
   status: keyof typeof COLUMN_STATUS;
@@ -572,15 +583,15 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
     })
   );
 
-  const handleTicketClick = (ticketId: string) => {
+  const handleTicketClick = useCallback((ticketId: string) => {
     onTicketSelect(ticketId);
     setDetailModalOpen(true);
-  };
+  }, [onTicketSelect]);
 
-  const closeDetailModal = () => {
+  const closeDetailModal = useCallback(() => {
     setDetailModalOpen(false);
     onTicketSelect('');
-  };
+  }, [onTicketSelect]);
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
@@ -744,24 +755,8 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
     }
   };
 
-  const getTicketsByStatus = (status: keyof typeof COLUMN_STATUS) => {
+  const getTicketsByStatus = useCallback((status: keyof typeof COLUMN_STATUS) => {
     let filteredTickets = displayTickets.filter(ticket => ticket.status === status);
-    
-    // Debug log para verificar o que está acontecendo
-    if (status === 'aberto' && displayTickets.length > 0) {
-      console.log('🔍 Debug Kanban filtering:', {
-        status,
-        totalTickets: displayTickets.length,
-        filteredCount: filteredTickets.length,
-        sampleTickets: displayTickets.slice(0, 3).map(t => ({
-          id: t.id,
-          codigo: t.codigo_ticket,
-          status: t.status,
-          matchesFilter: t.status === status
-        })),
-        allStatuses: [...new Set(displayTickets.map(t => t.status))]
-      });
-    }
     
     // For completed tickets, filter out old ones unless showing archived
     if (status === 'concluido' && !showArchivedTickets) {
@@ -793,16 +788,16 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
       // Finally by creation date (newest first)
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
-  };
+  }, [displayTickets, showArchivedTickets]);
 
-  const getGroupedTicketsAndCrises = (status: keyof typeof COLUMN_STATUS) => {
+  const getGroupedTicketsAndCrises = useCallback((status: keyof typeof COLUMN_STATUS) => {
     const statusTickets = getTicketsByStatus(status);
     
     // Sem sistema de crises - todos os tickets são individuais
     const individualTickets = statusTickets;
     
     return { crisisGroups: [], individualTickets };
-  };
+  }, [getTicketsByStatus]);
 
   if (loading) {
     return (
