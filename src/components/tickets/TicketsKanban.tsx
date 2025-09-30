@@ -252,17 +252,17 @@ const KanbanTicketCard = ({ ticket, isSelected, onSelect, equipes }: KanbanTicke
         </h3>
 
         {/* Equipe e Prioridade - Menores */}
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap overflow-visible">
           {/* Equipe Responsável - Menor */}
           {ticket.equipes?.nome && (() => {
             const colors = getEquipeColor(ticket.equipes.nome);
             return (
               <div className={cn(
-                "inline-flex items-center gap-1 md:gap-1.5 px-1.5 md:px-2 py-0.5 md:py-1 rounded-full whitespace-nowrap",
+                "inline-flex items-center gap-1 md:gap-1.5 px-1.5 md:px-2 py-0.5 md:py-1 rounded-full",
                 colors.bg, colors.border, "border"
               )}>
-                <div className={cn("w-1 h-1 md:w-1.5 md:h-1.5 rounded-full", colors.dot)}></div>
-                <span className={cn("text-[10px] md:text-xs font-medium", colors.text)}>
+                <div className={cn("w-1 h-1 md:w-1.5 md:h-1.5 rounded-full flex-shrink-0", colors.dot)}></div>
+                <span className={cn("text-[10px] md:text-xs font-medium break-words", colors.text)}>
                   {ticket.equipes.nome}
                 </span>
               </div>
