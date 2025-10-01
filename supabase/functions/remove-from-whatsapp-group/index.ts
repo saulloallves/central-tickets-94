@@ -181,7 +181,8 @@ serve(async (req) => {
     const { data: atendenteUnidade, error: atendenteUnidadeError } = await supabase
       .from('atendente_unidades')
       .select('grupo, codigo_grupo, atendente_id')
-      .eq('codigo_grupo', chamado.unidade_id)
+      .eq('id', chamado.unidade_id)
+      .eq('ativo', true)
       .maybeSingle();
 
     if (atendenteUnidadeError || !atendenteUnidade) {
