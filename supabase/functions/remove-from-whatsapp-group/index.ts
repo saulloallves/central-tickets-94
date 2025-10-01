@@ -217,23 +217,39 @@ serve(async (req) => {
       phoneToRemove = atendente.concierge_phone;
       participantName = atendente.concierge_name;
     } else if (chamado.tipo_atendimento === 'dfcom') {
-      // Para DFCOM, usar o número fixo configurado no sistema
-      const { data: dfcomConfig, error: configError } = await supabase
-        .from('system_settings')
-        .select('setting_value')
-        .eq('setting_key', 'dfcom_phone_number')
-        .single();
+      // Para DFCOM, buscar da tabela atendentes (DFCom global único)
+      console.log('🔍 Buscando DFCom global da tabela atendentes...');
+      const { data: dfcomAtendente, error: dfcomError } = await supabase
+        .from('atendentes')
+        .select('nome, telefone')
+        .eq('tipo', 'dfcom')
+        .eq('ativo', true)
+        .maybeSingle();
 
-      if (configError || !dfcomConfig) {
-        console.error('❌ DFCOM phone config not found:', configError);
-        return new Response(
-          JSON.stringify({ error: 'DFCOM phone configuration not found' }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+      if (dfcomError || !dfcomAtendente?.telefone) {
+        console.warn('⚠️ DFCom não encontrado na tabela atendentes, tentando fallback para system_settings');
+        // Fallback para system_settings (compatibilidade)
+        const { data: dfcomConfig, error: configError } = await supabase
+          .from('system_settings')
+          .select('setting_value')
+          .eq('setting_key', 'dfcom_phone_number')
+          .maybeSingle();
+
+        if (configError || !dfcomConfig) {
+          console.error('❌ DFCOM não configurado nem na tabela atendentes nem em system_settings:', configError);
+          return new Response(
+            JSON.stringify({ error: 'DFCOM phone configuration not found' }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        phoneToRemove = dfcomConfig.setting_value;
+        participantName = 'Equipe DFCom';
+      } else {
+        phoneToRemove = dfcomAtendente.telefone;
+        participantName = dfcomAtendente.nome || 'Equipe DFCom';
+        console.log('✅ DFCom encontrado na tabela atendentes:', participantName, phoneToRemove);
       }
-
-      phoneToRemove = dfcomConfig.setting_value;
-      participantName = 'Equipe DFCom';
     }
 
     if (!phoneToRemove) {

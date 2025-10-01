@@ -15,7 +15,6 @@ export const AtendentesUnidadesConfig = () => {
   const [editedAtendentes, setEditedAtendentes] = useState<Map<string, { nome: string; telefone: string }>>(new Map());
   const [saving, setSaving] = useState(false);
   const [creatingConcierge, setCreatingConcierge] = useState(false);
-  const [creatingDfcom, setCreatingDfcom] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -24,7 +23,15 @@ export const AtendentesUnidadesConfig = () => {
 
   const loadAtendentes = async () => {
     const concierge = await fetchAtendentesByTipo('concierge');
-    const dfcom = await fetchAtendentesByTipo('dfcom');
+    let dfcom = await fetchAtendentesByTipo('dfcom');
+    
+    // Garantir que sempre existe UM DFCom (global)
+    if (dfcom.length === 0) {
+      console.log('⚠️ Nenhum DFCom encontrado, criando automaticamente...');
+      await createAtendente('DFCom Global', '', 'dfcom');
+      dfcom = await fetchAtendentesByTipo('dfcom');
+    }
+    
     setAtendentesConcierge(concierge);
     setAtendentesDfcom(dfcom);
   };
@@ -89,15 +96,6 @@ export const AtendentesUnidadesConfig = () => {
     }
   };
 
-  const handleCreateDfcom = async () => {
-    try {
-      await createAtendente('Novo DFCom', '', 'dfcom');
-      await loadAtendentes();
-      setCreatingDfcom(false);
-    } catch (error) {
-      console.error('Erro ao criar DFCom:', error);
-    }
-  };
 
   const hasChanges = editedAtendentes.size > 0;
 
@@ -273,36 +271,32 @@ export const AtendentesUnidadesConfig = () => {
         </TabsContent>
 
         <TabsContent value="dfcom" className="space-y-4">
-          <div className="flex justify-end">
-            <Button 
-              onClick={handleCreateDfcom} 
-              disabled={creatingDfcom}
-              variant="outline"
-              size="sm"
-            >
-              {creatingDfcom ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Criando...
-                </>
-              ) : (
-                <>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Novo DFCom
-                </>
-              )}
-            </Button>
+          <div className="mb-4">
+            <Card className="border-primary/50 bg-primary/5">
+              <CardContent className="pt-6">
+                <div className="flex items-start gap-3">
+                  <User className="h-5 w-5 text-primary mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium">DFCom Global</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Existe apenas um atendente DFCom global para todas as unidades. 
+                      Configure o nome e telefone abaixo.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {atendentesDfcom.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-8">
-                <User className="h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">Nenhum atendente DFCom cadastrado</p>
+                <Loader2 className="h-12 w-12 text-muted-foreground mb-4 animate-spin" />
+                <p className="text-muted-foreground">Carregando configuração DFCom...</p>
               </CardContent>
             </Card>
           ) : (
-            renderAtendentesList(atendentesDfcom, 'dfcom')
+            renderAtendentesList(atendentesDfcom.slice(0, 1), 'dfcom')
           )}
         </TabsContent>
       </Tabs>
