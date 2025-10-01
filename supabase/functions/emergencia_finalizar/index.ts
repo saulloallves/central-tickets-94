@@ -43,7 +43,8 @@ class ZAPIClient {
     try {
       console.log(`🔗 Removing participant ${phone} from group ${groupId}`);
       
-      const response = await fetch(`${this.baseUrl}/instances/${this.instanceId}/token/${this.token}/remove-participant`, {
+      // Tentar primeiro sem o sufixo @s.whatsapp.net
+      let response = await fetch(`${this.baseUrl}/instances/${this.instanceId}/token/${this.token}/remove-participant`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -57,8 +58,29 @@ class ZAPIClient {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Failed to remove participant from Z-API group:', errorText);
-        return { value: false, error: errorText };
+        console.warn(`⚠️ First attempt failed (without suffix): ${errorText}`);
+        
+        // Se falhou, tentar com o sufixo @s.whatsapp.net
+        const phoneWithSuffix = phone.includes('@') ? phone : `${phone}@s.whatsapp.net`;
+        console.log(`🔄 Trying again with suffix: ${phoneWithSuffix}`);
+        
+        response = await fetch(`${this.baseUrl}/instances/${this.instanceId}/token/${this.token}/remove-participant`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Client-Token': this.clientToken,
+          },
+          body: JSON.stringify({
+            groupId: groupId,
+            phones: [phoneWithSuffix],
+          }),
+        });
+        
+        if (!response.ok) {
+          const errorText2 = await response.text();
+          console.error('Failed to remove participant from Z-API group (both attempts):', errorText2);
+          return { value: false, error: errorText2 };
+        }
       }
 
       const result = await response.json();
@@ -192,7 +214,20 @@ serve(async (req: Request) => {
       });
     }
 
-    console.log(`📞 Concierge phone: ${unidade.concierge_phone}`);
+    console.log(`📞 Concierge phone (raw): ${unidade.concierge_phone}`);
+
+    // Formatar telefone do concierge
+    let conciergePhone = String(unidade.concierge_phone).trim();
+    
+    // Remover caracteres especiais e espaços
+    conciergePhone = conciergePhone.replace(/\D/g, '');
+    
+    // Adicionar o prefixo do país se não tiver (Brasil = 55)
+    if (!conciergePhone.startsWith('55') && conciergePhone.length === 11) {
+      conciergePhone = '55' + conciergePhone;
+    }
+    
+    console.log(`📞 Concierge phone (formatted): ${conciergePhone}`);
 
     // Atualizar status do chamado para finalizado
     const { error: updateError } = await supabase
@@ -217,8 +252,12 @@ serve(async (req: Request) => {
 
     console.log(`✅ Chamado ${chamado.id} finalizado com sucesso`);
 
+    // Aguardar um pouco para garantir que o banco atualizou
+    await new Promise(resolve => setTimeout(resolve, 500));
+
     // Remover concierge do grupo usando ZAPIClient
-    const removeResult = await zapiClient.removeParticipantFromGroup(phone, unidade.concierge_phone);
+    console.log(`🔄 Tentando remover ${conciergePhone} do grupo ${phone}`);
+    const removeResult = await zapiClient.removeParticipantFromGroup(phone, conciergePhone);
 
     if (!removeResult.value) {
       console.error("❌ Falha ao remover concierge do grupo:", removeResult.error);
