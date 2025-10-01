@@ -116,20 +116,45 @@ serve(async (req) => {
     if (chamadoExistente) {
       console.log("⚠️ Atendimento já existe:", chamadoExistente);
 
+      // Buscar atendente do chamado existente
+      const { data: atendenteUnidadeExistente } = await supabase
+        .from("atendente_unidades")
+        .select("atendente_id")
+        .eq("id", unidade.id)
+        .eq("ativo", true)
+        .maybeSingle();
+
+      const atendenteIdExistente = atendenteUnidadeExistente?.atendente_id;
+      console.log(`👤 Atendente para chamado existente: ${atendenteIdExistente || 'Nenhum'}`);
+
       // Buscar posição na fila se estiver em fila
       let posicao = null;
       if (chamadoExistente.status === "em_fila") {
-        const { data: fila } = await supabase
+        // Se tiver atendente, filtrar pela fila desse atendente específico
+        let query = supabase
           .from("chamados")
-          .select("id, criado_em")
-          .eq("status", "em_fila")
-          .eq("tipo_atendimento", "concierge")
-          .eq("unidade_id", unidade.id)
-          .order("criado_em", { ascending: true });
+          .select("id, criado_em, atendente_id")
+          .in("status", ["em_fila", "em_atendimento"])
+          .eq("tipo_atendimento", "concierge");
+
+        if (atendenteIdExistente) {
+          query = query.eq("atendente_id", atendenteIdExistente);
+          console.log(`🔍 Filtrando fila por atendente_id: ${atendenteIdExistente}`);
+        } else {
+          query = query.eq("unidade_id", unidade.id);
+          console.log(`🔍 Filtrando fila por unidade_id (sem atendente): ${unidade.id}`);
+        }
+
+        const { data: fila } = await query.order("criado_em", { ascending: true });
 
         if (fila) {
-          posicao = fila.findIndex((c) => c.id === chamadoExistente.id) + 1;
-          console.log(`📊 Fila existente: ${fila.length} chamados, posição: ${posicao}`);
+          // Contar apenas os que estão em_fila antes deste
+          const emFila = fila.filter(c => c.status === "em_fila" || c.criado_em < chamadoExistente.criado_em);
+          posicao = emFila.findIndex((c) => c.id === chamadoExistente.id) + 1;
+          
+          const emAtendimento = fila.filter(c => c.status === "em_atendimento").length;
+          console.log(`📊 Fila do atendente: ${fila.length} total (${emAtendimento} em atendimento, ${fila.length - emAtendimento} aguardando)`);
+          console.log(`📊 Posição na fila: ${posicao}`);
         }
       }
 
@@ -233,14 +258,25 @@ serve(async (req) => {
     }
     console.log("🎫 Chamado criado:", chamado);
 
-    // 4. Conta posição na fila (filtrando apenas por concierge)
-    const { data: fila, error: filaError } = await supabase
+    // 4. Conta posição na fila do atendente específico
+    console.log(`👤 Calculando fila para atendente: ${atendenteId || 'Nenhum atendente'}`);
+    
+    // Se tiver atendente, filtrar pela fila desse atendente específico
+    let query = supabase
       .from("chamados")
-      .select("id, criado_em")
-      .eq("status", "em_fila")
-      .eq("tipo_atendimento", "concierge")
-      .eq("unidade_id", unidade.id)
-      .order("criado_em", { ascending: true });
+      .select("id, criado_em, status, atendente_id")
+      .in("status", ["em_fila", "em_atendimento"])
+      .eq("tipo_atendimento", "concierge");
+
+    if (atendenteId) {
+      query = query.eq("atendente_id", atendenteId);
+      console.log(`🔍 Filtrando fila por atendente_id: ${atendenteId}`);
+    } else {
+      query = query.eq("unidade_id", unidade.id);
+      console.log(`🔍 Filtrando fila por unidade_id (sem atendente): ${unidade.id}`);
+    }
+
+    const { data: fila, error: filaError } = await query.order("criado_em", { ascending: true });
 
     if (filaError) {
       console.error("❌ Erro ao buscar fila:", filaError);
@@ -250,10 +286,19 @@ serve(async (req) => {
       });
     }
 
-    const posicao = fila.findIndex((c) => c.id === chamado.id) + 1;
-    console.log(`📊 Fila completa: ${fila.length} chamados`);
-    console.log(`📊 Posição calculada: ${posicao} de ${fila.length}`);
-    console.log(`📊 IDs na fila:`, fila.map(c => c.id));
+    // Separar chamados em atendimento e em fila
+    const emAtendimento = fila.filter(c => c.status === "em_atendimento");
+    const apenasEmFila = fila.filter(c => c.status === "em_fila");
+    
+    // Posição é baseada apenas nos que estão em_fila (não conta os em_atendimento)
+    const posicao = apenasEmFila.findIndex((c) => c.id === chamado.id) + 1;
+    const totalNaFrente = emAtendimento.length + (posicao - 1);
+    
+    console.log(`📊 Fila do atendente "${atendenteNome}":`);
+    console.log(`   - ${emAtendimento.length} em atendimento`);
+    console.log(`   - ${apenasEmFila.length} aguardando na fila`);
+    console.log(`   - ${totalNaFrente} chamados na frente deste`);
+    console.log(`   - Posição na fila de espera: ${posicao}`);
 
     // Carrega configurações Z-API
     const { instanceId, instanceToken, clientToken, baseUrl } = await loadZAPIConfig();
@@ -273,31 +318,25 @@ serve(async (req) => {
       }
     }
 
-    // 4. Mensagem com posição na fila
-    if (posicao === 1) {
-      await enviarZapi("send-button-list", {
-        phone,
-        message:
-          "📥 *Você é o próximo na fila de atendimento personalizado*\n\n⏳ Por favor, permaneça aqui. Você receberá uma mensagem em instântes.\n\nSe desejar encerrar o atendimento ou alterar para autoatendimento, selecione abaixo:",
-        buttonList: {
-          buttons: [
-            { id: "personalizado_finalizar", label: "✅ Finalizar atendimento" },
-            { id: "autoatendimento_menu", label: "🔄 Transferir para autoatendimento" },
-          ],
-        },
-      });
+    // 5. Mensagem com posição na fila do atendente
+    let mensagem = "";
+    
+    if (totalNaFrente === 0) {
+      mensagem = `📥 *Você é o próximo na fila!*\n\n👤 Atendente: *${atendenteNome}*\n⏳ Por favor, permaneça aqui. Você receberá uma mensagem em instântes.\n\nSe desejar encerrar o atendimento ou alterar para autoatendimento, selecione abaixo:`;
     } else {
-      await enviarZapi("send-button-list", {
-        phone,
-        message: `⏳ *Você entrou na fila de atendimento personalizado*\n\n📊 Seu número na fila é: *#${posicao}*\n\nPor favor, permaneça aqui. Assim que for sua vez, você receberá uma mensagem diretamente.\n\nSe desejar encerrar ou transferir para autoatendimento, selecione abaixo:`,
-        buttonList: {
-          buttons: [
-            { id: "personalizado_finalizar", label: "✅ Finalizar atendimento" },
-            { id: "autoatendimento_menu", label: "🔄 Transferir para autoatendimento" },
-          ],
-        },
-      });
+      mensagem = `⏳ *Você entrou na fila de atendimento personalizado*\n\n👤 Atendente: *${atendenteNome}*\n📊 Número de chamados na sua frente: *${totalNaFrente}*\n${emAtendimento.length > 0 ? `   (${emAtendimento.length} em atendimento + ${posicao - 1} aguardando)\n` : ''}\nPor favor, permaneça aqui. Assim que for sua vez, você receberá uma mensagem diretamente.\n\nSe desejar encerrar ou transferir para autoatendimento, selecione abaixo:`;
     }
+
+    await enviarZapi("send-button-list", {
+      phone,
+      message: mensagem,
+      buttonList: {
+        buttons: [
+          { id: "personalizado_finalizar", label: "✅ Finalizar atendimento" },
+          { id: "autoatendimento_menu", label: "🔄 Transferir para autoatendimento" },
+        ],
+      },
+    });
 
     return new Response(JSON.stringify({ success: true, chamado, posicao }), {
       headers: { "Content-Type": "application/json", ...corsHeaders },
