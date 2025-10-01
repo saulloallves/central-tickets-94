@@ -183,19 +183,30 @@ serve(async (req: Request) => {
       .limit(1)
       .maybeSingle();
 
-    if (chamadoError || !chamado) {
-      console.error("❌ Chamado de emergência não encontrado:", chamadoError);
-      return new Response(JSON.stringify({ 
-        error: "Chamado de emergência não encontrado",
-        telefone: phone,
-        details: chamadoError?.message
-      }), {
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-        status: 404,
-      });
+    if (chamadoError) {
+      console.warn("⚠️ Erro ao buscar chamado:", chamadoError);
     }
 
-    console.log(`✅ Chamado encontrado: ${chamado.id}`);
+    if (!chamado) {
+      console.warn("⚠️ Chamado não encontrado - continuando com remoção de participantes");
+    } else {
+      console.log(`✅ Chamado encontrado: ${chamado.id}`);
+      
+      // Atualizar status do chamado para finalizado
+      const { error: updateError } = await supabase
+        .from('chamados')
+        .update({ 
+          status: 'finalizado',
+          atualizado_em: new Date().toISOString()
+        })
+        .eq('id', chamado.id);
+
+      if (updateError) {
+        console.error("❌ Erro ao finalizar chamado:", updateError);
+      } else {
+        console.log(`✅ Chamado ${chamado.id} finalizado com sucesso`);
+      }
+    }
 
     // Buscar unidade pelo código do grupo
     const { data: unidade } = await externalSupabase
@@ -205,52 +216,26 @@ serve(async (req: Request) => {
       .maybeSingle();
 
     if (!unidade?.concierge_phone) {
-      console.error("❌ Telefone do concierge não encontrado para a unidade");
-      return new Response(JSON.stringify({ 
-        error: "Telefone do concierge não configurado" 
-      }), {
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-        status: 404,
-      });
+      console.warn("⚠️ Telefone do concierge não encontrado - continuando sem remover concierge");
     }
 
-    console.log(`📞 Concierge phone (raw): ${unidade.concierge_phone}`);
+    let conciergePhone = null;
+    if (unidade?.concierge_phone) {
+      console.log(`📞 Concierge phone (raw): ${unidade.concierge_phone}`);
 
-    // Formatar telefone do concierge
-    let conciergePhone = String(unidade.concierge_phone).trim();
-    
-    // Remover caracteres especiais e espaços
-    conciergePhone = conciergePhone.replace(/\D/g, '');
-    
-    // Adicionar o prefixo do país se não tiver (Brasil = 55)
-    if (!conciergePhone.startsWith('55') && conciergePhone.length === 11) {
-      conciergePhone = '55' + conciergePhone;
+      // Formatar telefone do concierge
+      conciergePhone = String(unidade.concierge_phone).trim();
+      
+      // Remover caracteres especiais e espaços
+      conciergePhone = conciergePhone.replace(/\D/g, '');
+      
+      // Adicionar o prefixo do país se não tiver (Brasil = 55)
+      if (!conciergePhone.startsWith('55') && conciergePhone.length === 11) {
+        conciergePhone = '55' + conciergePhone;
+      }
+      
+      console.log(`📞 Concierge phone (formatted): ${conciergePhone}`);
     }
-    
-    console.log(`📞 Concierge phone (formatted): ${conciergePhone}`);
-
-    // Atualizar status do chamado para finalizado
-    const { error: updateError } = await supabase
-      .from('chamados')
-      .update({ 
-        status: 'finalizado',
-        resolucao: 'Emergência encerrada pelo usuário',
-        atualizado_em: new Date().toISOString()
-      })
-      .eq('id', chamado.id);
-
-    if (updateError) {
-      console.error("❌ Erro ao finalizar chamado:", updateError);
-      return new Response(JSON.stringify({ 
-        error: "Erro ao finalizar emergência",
-        details: updateError.message 
-      }), {
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-        status: 500,
-      });
-    }
-
-    console.log(`✅ Chamado ${chamado.id} finalizado com sucesso`);
 
     // Buscar números de emergência que podem ter sido adicionados
     const { data: settingsData } = await supabase
@@ -273,33 +258,41 @@ serve(async (req: Request) => {
     await new Promise(resolve => setTimeout(resolve, 500));
 
     // Remover todos os participantes adicionados (concierge + números de emergência)
-    const phonesToRemove = [conciergePhone];
+    const phonesToRemove = [];
+    
+    if (conciergePhone) {
+      phonesToRemove.push(conciergePhone);
+    }
     
     if (emergencyNumbers.length > 0) {
       phonesToRemove.push(...emergencyNumbers.map((num: any) => num.phone));
     }
 
-    console.log(`🔄 Tentando remover ${phonesToRemove.length} participantes do grupo ${phone}`);
-    
-    let allRemoved = true;
-    const removeErrors = [];
+    if (phonesToRemove.length === 0) {
+      console.warn("⚠️ Nenhum participante para remover");
+    } else {
+      console.log(`🔄 Tentando remover ${phonesToRemove.length} participantes do grupo ${phone}`);
+      
+      let allRemoved = true;
+      const removeErrors = [];
 
-    for (const phoneToRemove of phonesToRemove) {
-      const removeResult = await zapiClient.removeParticipantFromGroup(phone, phoneToRemove);
-      if (!removeResult.value) {
-        console.error(`❌ Falha ao remover ${phoneToRemove}:`, removeResult.error);
-        allRemoved = false;
-        removeErrors.push({ phone: phoneToRemove, error: removeResult.error });
-      } else {
-        console.log(`✅ ${phoneToRemove} removido com sucesso`);
+      for (const phoneToRemove of phonesToRemove) {
+        const removeResult = await zapiClient.removeParticipantFromGroup(phone, phoneToRemove);
+        if (!removeResult.value) {
+          console.error(`❌ Falha ao remover ${phoneToRemove}:`, removeResult.error);
+          allRemoved = false;
+          removeErrors.push({ phone: phoneToRemove, error: removeResult.error });
+        } else {
+          console.log(`✅ ${phoneToRemove} removido com sucesso`);
+        }
       }
-    }
 
-    if (!allRemoved) {
-      console.warn("⚠️ Alguns participantes não foram removidos:", removeErrors);
-    }
+      if (!allRemoved) {
+        console.warn("⚠️ Alguns participantes não foram removidos:", removeErrors);
+      }
 
-    console.log("✅ Processo de remoção concluído");
+      console.log("✅ Processo de remoção concluído");
+    }
 
     // Enviar mensagem de confirmação
     const confirmMessage = "✅ *EMERGÊNCIA ENCERRADA*\n\nO protocolo de emergência foi finalizado com sucesso.\n\nObrigado por utilizar nossos serviços! 🙏";

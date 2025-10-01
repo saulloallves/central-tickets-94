@@ -35,6 +35,29 @@ serve(async (req: Request) => {
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
       );
 
+      // Conecta no Supabase externo (para unidades)
+      const externalSupabase = createClient(
+        Deno.env.get("EXTERNAL_SUPABASE_URL") ?? '',
+        Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") ?? ''
+      );
+
+      // Buscar unidade pelo código do grupo no Supabase externo
+      const { data: unidade } = await externalSupabase
+        .from('unidades')
+        .select('id, grupo, codigo_grupo, concierge_name, concierge_phone')
+        .eq('id_grupo_branco', phone)
+        .maybeSingle();
+
+      if (!unidade) {
+        console.error("❌ Unidade não encontrada para grupo:", phone);
+        return new Response(JSON.stringify({ 
+          error: "Unidade não encontrada para este grupo"
+        }), {
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+          status: 404,
+        });
+      }
+
       // Buscar números de emergência configurados
       const { data: settingsData } = await supabase
         .from('system_settings')
@@ -52,17 +75,58 @@ serve(async (req: Request) => {
         }
       }
 
-      // Buscar concierge da unidade no Supabase externo
-      const externalSupabase = createClient(
-        Deno.env.get("EXTERNAL_SUPABASE_URL") ?? '',
-        Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") ?? ''
-      );
-
-      const { data: unidade } = await externalSupabase
-        .from('unidades')
-        .select('concierge_phone')
-        .eq('id_grupo_branco', phone)
+      // Buscar atendente da unidade
+      const { data: atendenteUnidade } = await supabase
+        .from('atendente_unidades')
+        .select('atendente_id')
+        .eq('id', unidade.id)
+        .eq('ativo', true)
         .maybeSingle();
+
+      let conciergePhone = unidade.concierge_phone;
+      let conciergeName = unidade.concierge_name || 'Concierge';
+      let atendenteId = null;
+
+      if (atendenteUnidade?.atendente_id) {
+        const { data: atendente } = await supabase
+          .from('atendentes')
+          .select('id, nome, telefone')
+          .eq('id', atendenteUnidade.atendente_id)
+          .eq('tipo', 'concierge')
+          .eq('ativo', true)
+          .maybeSingle();
+
+        if (atendente) {
+          conciergePhone = atendente.telefone || conciergePhone;
+          conciergeName = atendente.nome || conciergeName;
+          atendenteId = atendente.id;
+        }
+      }
+
+      // Criar chamado de emergência (mesmo fora do horário)
+      const { data: chamado, error: chamadoError } = await supabase
+        .from('chamados')
+        .insert({
+          unidade_id: unidade.id,
+          franqueado_nome: unidade.grupo || 'Emergência',
+          telefone: phone,
+          descricao: '🚨 EMERGÊNCIA FORA DO HORÁRIO - Atendimento prioritário solicitado',
+          tipo_atendimento: 'emergencia',
+          status: 'emergencia',
+          prioridade: 'urgente',
+          categoria: 'emergencia',
+          atendente_id: atendenteId,
+          atendente_nome: conciergeName,
+          is_emergencia: true
+        })
+        .select()
+        .single();
+
+      if (chamadoError) {
+        console.error("❌ Erro ao criar chamado:", chamadoError);
+      } else {
+        console.log(`✅ Chamado emergencial criado: ${chamado.id}`);
+      }
 
       const { instanceId, instanceToken, clientToken, baseUrl } = await loadZAPIConfig();
       const headers = { "Content-Type": "application/json", "Client-Token": clientToken };
@@ -71,14 +135,14 @@ serve(async (req: Request) => {
       const phonesToAdd = emergencyNumbers.map((num: any) => num.phone);
       const phonesToMention = [...phonesToAdd];
       
-      if (unidade?.concierge_phone) {
-        let conciergePhone = String(unidade.concierge_phone).replace(/\D/g, '');
-        if (!conciergePhone.startsWith('55') && conciergePhone.length === 11) {
-          conciergePhone = '55' + conciergePhone;
+      if (conciergePhone) {
+        let formattedPhone = String(conciergePhone).replace(/\D/g, '');
+        if (!formattedPhone.startsWith('55') && formattedPhone.length === 11) {
+          formattedPhone = '55' + formattedPhone;
         }
-        phonesToAdd.push(conciergePhone);
-        phonesToMention.push(conciergePhone);
-        console.log(`📞 Concierge da unidade: ${conciergePhone}`);
+        phonesToAdd.push(formattedPhone);
+        phonesToMention.push(formattedPhone);
+        console.log(`📞 Concierge da unidade: ${formattedPhone}`);
       }
 
       console.log(`👥 Total de participantes a adicionar: ${phonesToAdd.length}`);
@@ -130,7 +194,8 @@ serve(async (req: Request) => {
         JSON.stringify({ 
           success: true, 
           message: "Protocolo de emergência ativado (fora do horário)",
-          participants_added: phonesToAdd.length
+          participants_added: phonesToAdd.length,
+          chamado_id: chamado?.id
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
