@@ -30,6 +30,8 @@ export const AtendentesUnidadesConfig = () => {
   };
 
   const handleEdit = (id: string, currentNome: string, currentTelefone: string, field: 'nome' | 'telefone', value: string) => {
+    console.log('🎯 handleEdit chamado:', { id, field, value, currentNome, currentTelefone });
+    
     const newMap = new Map(editedAtendentes);
     const current = editedAtendentes.get(id) || { nome: currentNome, telefone: currentTelefone };
     
@@ -39,11 +41,15 @@ export const AtendentesUnidadesConfig = () => {
       telefone: field === 'telefone' ? value : current.telefone
     };
     
+    console.log('✏️ Novo valor a ser salvo:', updated);
     newMap.set(id, updated);
     setEditedAtendentes(newMap);
+    console.log('📝 Estado editedAtendentes atualizado. Total de edições:', newMap.size);
   };
 
   const handleSaveAll = async () => {
+    console.log('💾 handleSaveAll - Total de edições:', editedAtendentes.size);
+    
     if (editedAtendentes.size === 0) {
       toast({
         title: "Nenhuma alteração",
@@ -55,6 +61,7 @@ export const AtendentesUnidadesConfig = () => {
     setSaving(true);
     try {
       for (const [id, data] of editedAtendentes.entries()) {
+        console.log('💾 Salvando atendente:', id, data);
         await updateAtendente(id, data.nome, data.telefone);
       }
 
@@ -66,7 +73,7 @@ export const AtendentesUnidadesConfig = () => {
       setEditedAtendentes(new Map());
       await loadAtendentes();
     } catch (error) {
-      console.error('Erro ao salvar:', error);
+      console.error('❌ Erro ao salvar:', error);
     } finally {
       setSaving(false);
     }
@@ -94,6 +101,27 @@ export const AtendentesUnidadesConfig = () => {
 
   const hasChanges = editedAtendentes.size > 0;
 
+  const handleSaveIndividual = async (id: string) => {
+    const data = editedAtendentes.get(id);
+    if (!data) return;
+
+    setSaving(true);
+    try {
+      await updateAtendente(id, data.nome, data.telefone);
+      
+      // Remover do mapa de edições
+      const newMap = new Map(editedAtendentes);
+      newMap.delete(id);
+      setEditedAtendentes(newMap);
+      
+      await loadAtendentes();
+    } catch (error) {
+      console.error('❌ Erro ao salvar atendente individual:', error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const renderAtendentesList = (atendentes: AtendenteConfig[], tipo: 'concierge' | 'dfcom') => {
     return (
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -106,9 +134,27 @@ export const AtendentesUnidadesConfig = () => {
           return (
             <Card key={atendente.id} className={isEdited ? 'border-primary' : ''}>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5" />
-                  {tipo === 'concierge' ? 'Concierge' : 'DFCom'}
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <User className="h-5 w-5" />
+                    {tipo === 'concierge' ? 'Concierge' : 'DFCom'}
+                  </div>
+                  {isEdited && (
+                    <Button
+                      size="sm"
+                      onClick={() => handleSaveIndividual(atendente.id)}
+                      disabled={saving}
+                    >
+                      {saving ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4 mr-1" />
+                          Salvar
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -117,7 +163,10 @@ export const AtendentesUnidadesConfig = () => {
                   <Input
                     id={`name-${atendente.id}`}
                     value={displayNome}
-                    onChange={(e) => handleEdit(atendente.id, atendente.nome, atendente.telefone || '', 'nome', e.target.value)}
+                    onChange={(e) => {
+                      console.log('📝 Input Nome onChange:', e.target.value);
+                      handleEdit(atendente.id, atendente.nome, atendente.telefone || '', 'nome', e.target.value);
+                    }}
                     placeholder="Nome do atendente"
                   />
                 </div>
@@ -129,7 +178,10 @@ export const AtendentesUnidadesConfig = () => {
                   <Input
                     id={`phone-${atendente.id}`}
                     value={displayTelefone}
-                    onChange={(e) => handleEdit(atendente.id, atendente.nome, atendente.telefone || '', 'telefone', e.target.value)}
+                    onChange={(e) => {
+                      console.log('📝 Input Telefone onChange:', e.target.value);
+                      handleEdit(atendente.id, atendente.nome, atendente.telefone || '', 'telefone', e.target.value);
+                    }}
                     placeholder="Telefone do atendente"
                   />
                 </div>
@@ -157,6 +209,11 @@ export const AtendentesUnidadesConfig = () => {
           <p className="text-sm text-muted-foreground">
             Gerencie os nomes e telefones dos atendentes Concierge e DFCom.
           </p>
+          {hasChanges && (
+            <p className="text-sm text-primary font-medium mt-2">
+              {editedAtendentes.size} alteração(ões) pendente(s)
+            </p>
+          )}
         </div>
         {hasChanges && (
           <Button onClick={handleSaveAll} disabled={saving}>
@@ -168,7 +225,7 @@ export const AtendentesUnidadesConfig = () => {
             ) : (
               <>
                 <Save className="mr-2 h-4 w-4" />
-                Salvar Alterações
+                Salvar Todas as Alterações
               </>
             )}
           </Button>
