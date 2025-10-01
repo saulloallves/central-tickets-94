@@ -53,23 +53,41 @@ export function AtendimentoDetail({ atendimentoId, onClose }: AtendimentoDetailP
       try {
         setLoading(true);
         
-        const { data, error } = await supabase
+        // Buscar o chamado
+        const { data: chamadoData, error: chamadoError } = await supabase
           .from('chamados')
           .select('*')
           .eq('id', atendimentoId)
           .single();
 
-        if (error) {
-          console.error('Erro ao buscar atendimento:', error);
+        if (chamadoError) {
+          console.error('Erro ao buscar atendimento:', chamadoError);
           toast({
             title: "Erro ao carregar atendimento",
-            description: error.message,
+            description: chamadoError.message,
             variant: "destructive",
           });
           return;
         }
 
-        setAtendimento(data);
+        // Se tiver atendente_id, buscar o nome correto da tabela atendentes
+        let atendenteNome = chamadoData.atendente_nome;
+        if (chamadoData.atendente_id) {
+          const { data: atendenteData, error: atendenteError } = await supabase
+            .from('atendentes')
+            .select('nome')
+            .eq('id', chamadoData.atendente_id)
+            .single();
+
+          if (!atendenteError && atendenteData) {
+            atendenteNome = atendenteData.nome;
+          }
+        }
+
+        setAtendimento({
+          ...chamadoData,
+          atendente_nome: atendenteNome
+        });
       } catch (error) {
         console.error('Erro ao buscar atendimento:', error);
         toast({
