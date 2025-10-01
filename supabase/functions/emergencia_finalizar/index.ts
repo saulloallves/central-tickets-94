@@ -103,6 +103,13 @@ serve(async (req: Request) => {
     if (unidade?.concierge_phone) {
       console.log(`📞 Removendo concierge ${unidade.concierge_phone} do grupo ${phone}`);
       
+      // Formatar telefone do concierge com @s.whatsapp.net se necessário
+      const conciergePhone = unidade.concierge_phone.includes('@') 
+        ? unidade.concierge_phone 
+        : `${unidade.concierge_phone}@s.whatsapp.net`;
+      
+      console.log(`📱 Telefone formatado: ${conciergePhone}`);
+      
       // 1. Remover admin do concierge
       const removeAdminUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}/remove-admin`;
       const removeAdminRes = await fetch(removeAdminUrl, {
@@ -110,7 +117,7 @@ serve(async (req: Request) => {
         headers,
         body: JSON.stringify({
           groupId: phone,
-          phones: [unidade.concierge_phone]
+          phones: [conciergePhone]
         }),
       });
       const removeAdminData = await removeAdminRes.json();
@@ -123,7 +130,7 @@ serve(async (req: Request) => {
         headers,
         body: JSON.stringify({
           groupId: phone,
-          phones: [unidade.concierge_phone]
+          phones: [conciergePhone]
         }),
       });
       const removeParticipantData = await removeParticipantRes.json();
