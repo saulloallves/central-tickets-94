@@ -43,21 +43,27 @@ serve(async (req: Request) => {
       .eq('id_grupo_branco', phone)
       .maybeSingle();
 
+    console.log(`🔍 Buscando chamados com telefone: ${phone}, is_emergencia: true`);
+
     // Buscar chamado de emergência ativo deste grupo
     const { data: chamado, error: chamadoError } = await supabase
       .from('chamados')
       .select('*')
       .eq('telefone', phone)
       .eq('is_emergencia', true)
-      .in('status', ['emergencia', 'em_atendimento'])
+      .in('status', ['emergencia', 'em_atendimento', 'em_fila'])
       .order('criado_em', { ascending: false })
       .limit(1)
       .maybeSingle();
 
+    console.log(`📋 Resultado da busca - chamado:`, chamado, `error:`, chamadoError);
+
     if (chamadoError || !chamado) {
       console.error("❌ Chamado de emergência não encontrado:", chamadoError);
       return new Response(JSON.stringify({ 
-        error: "Chamado de emergência não encontrado" 
+        error: "Chamado de emergência não encontrado",
+        telefone: phone,
+        details: chamadoError?.message
       }), {
         headers: { "Content-Type": "application/json", ...corsHeaders },
         status: 404,

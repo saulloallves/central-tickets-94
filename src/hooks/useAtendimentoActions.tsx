@@ -86,8 +86,7 @@ export function useAtendimentoActions() {
         // Chamar edge function emergencia_finalizar
         const { error: emergencyError } = await supabase.functions.invoke('emergencia_finalizar', {
           body: { 
-            phone: atendimento.telefone,
-            body: { phone: atendimento.telefone }
+            phone: atendimento.telefone
           }
         });
 
