@@ -799,7 +799,7 @@ serve(async (req) => {
         // Get additional ticket information for richer variables
         const { data: unidadeData } = await supabase
           .from('unidades')
-          .select('nome')
+          .select('grupo')
           .eq('id', ticket.unidade_id)
           .single();
 
@@ -819,7 +819,7 @@ serve(async (req) => {
           codigo_ticket: formatTicketTitle(ticket),
           titulo_ticket: ticket.titulo || 'Ticket sem título',
           unidade_id: ticket.unidade_id,
-          unidade_nome: unidadeData?.nome || ticket.unidade_id,
+          unidade_nome: unidadeData?.grupo || ticket.unidade_id,
           categoria: ticket.categoria || 'Não informada',
           prioridade: ticket.prioridade,
           descricao_problema: ticket.descricao_problema,
@@ -885,7 +885,7 @@ serve(async (req) => {
           // Get additional ticket information for richer variables
           const { data: unidadeDataResp } = await supabase
             .from('unidades')
-            .select('nome')
+            .select('grupo')
             .eq('id', ticket.unidade_id)
             .single();
 
@@ -901,7 +901,7 @@ serve(async (req) => {
             codigo_ticket: formatTicketTitle(ticket),
             titulo_ticket: ticket.titulo || 'Ticket sem título',
             unidade_id: ticket.unidade_id,
-            unidade_nome: unidadeDataResp?.nome || ticket.unidade_id,
+            unidade_nome: unidadeDataResp?.grupo || ticket.unidade_id,
             categoria: ticket.categoria || 'Não informada',
             prioridade: ticket.prioridade,
             status: ticket.status,
@@ -940,7 +940,7 @@ serve(async (req) => {
         // Get additional ticket information for richer variables
         const { data: unidadeDataFranqueado } = await supabase
           .from('unidades')
-          .select('nome')
+          .select('grupo')
           .eq('id', ticket.unidade_id)
           .single();
 
@@ -954,7 +954,7 @@ serve(async (req) => {
           codigo_ticket: formatTicketTitle(ticket),
           titulo_ticket: ticket.titulo || 'Ticket sem título',
           unidade_id: ticket.unidade_id,
-          unidade_nome: unidadeDataFranqueado?.nome || ticket.unidade_id,
+          unidade_nome: unidadeDataFranqueado?.grupo || ticket.unidade_id,
           categoria: ticket.categoria || 'Não informada',
           prioridade: ticket.prioridade,
           status: ticket.status,
@@ -989,7 +989,7 @@ serve(async (req) => {
         // Get additional ticket information for richer variables
         const { data: unidadeDataSLAHalf } = await supabase
           .from('unidades')
-          .select('nome')
+          .select('grupo')
           .eq('id', ticket.unidade_id)
           .single();
 
@@ -1003,7 +1003,7 @@ serve(async (req) => {
           codigo_ticket: formatTicketTitle(ticket),
           titulo_ticket: ticket.titulo || 'Ticket sem título',
           unidade_id: ticket.unidade_id,
-          unidade_nome: unidadeDataSLAHalf?.nome || ticket.unidade_id,
+          unidade_nome: unidadeDataSLAHalf?.grupo || ticket.unidade_id,
           categoria: ticket.categoria || 'Não informada',
           prioridade: ticket.prioridade,
           status: ticket.status,
@@ -1082,7 +1082,7 @@ serve(async (req) => {
         // Get additional ticket information for richer variables
         const { data: unidadeDataSLABreach } = await supabase
           .from('unidades')
-          .select('nome')
+          .select('grupo')
           .eq('id', ticket.unidade_id)
           .single();
 
@@ -1097,7 +1097,7 @@ serve(async (req) => {
           codigo_ticket: formatTicketTitle(ticket),
           titulo_ticket: ticket.titulo || 'Ticket sem título',
           unidade_id: ticket.unidade_id,
-          unidade_nome: unidadeDataSLABreach?.nome || ticket.unidade_id,
+          unidade_nome: unidadeDataSLABreach?.grupo || ticket.unidade_id,
           categoria: ticket.categoria || 'Não informada',
           prioridade: ticket.prioridade,
           status: ticket.status,
