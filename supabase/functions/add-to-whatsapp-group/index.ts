@@ -155,15 +155,15 @@ serve(async (req) => {
       atendente_nome: chamado.atendente_nome
     });
 
-    // Buscar dados da unidade na tabela interna atendente_unidades
-    const { data: atendente, error: atendenteError } = await supabase
+    // Buscar dados da unidade e atendente_id na tabela interna atendente_unidades
+    const { data: atendenteUnidade, error: atendenteUnidadeError } = await supabase
       .from('atendente_unidades')
-      .select('grupo, codigo_grupo, concierge_name, concierge_phone')
+      .select('grupo, codigo_grupo, atendente_id')
       .eq('codigo_grupo', chamado.unidade_id)
       .maybeSingle();
 
-    if (atendenteError || !atendente) {
-      console.error('❌ Atendente/Unidade not found in atendente_unidades:', atendenteError);
+    if (atendenteUnidadeError || !atendenteUnidade) {
+      console.error('❌ Atendente/Unidade not found in atendente_unidades:', atendenteUnidadeError);
       return new Response(
         JSON.stringify({ error: 'Atendente/Unidade configuration not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -180,9 +180,8 @@ serve(async (req) => {
     const id_grupo_branco = unidadeExternal?.id_grupo_branco || chamado.telefone;
 
     console.log(`🏢 Atendente/Unidade data:`, {
-      concierge_name: atendente.concierge_name,
-      concierge_phone: atendente.concierge_phone,
-      grupo: atendente.grupo,
+      atendente_id: atendenteUnidade.atendente_id,
+      grupo: atendenteUnidade.grupo,
       id_grupo_branco: id_grupo_branco
     });
 
@@ -191,8 +190,27 @@ serve(async (req) => {
     let participantName: string = '';
 
     if (chamado.tipo_atendimento === 'concierge') {
-      phoneToAdd = atendente.concierge_phone;
-      participantName = atendente.concierge_name;
+      // Para Concierge, buscar da tabela atendentes usando atendente_id
+      console.log('🔍 Buscando Concierge da tabela atendentes...');
+      const { data: conciergeAtendente, error: conciergeError } = await supabase
+        .from('atendentes')
+        .select('nome, telefone')
+        .eq('id', atendenteUnidade.atendente_id)
+        .eq('tipo', 'concierge')
+        .eq('ativo', true)
+        .maybeSingle();
+
+      if (conciergeError || !conciergeAtendente?.telefone) {
+        console.error('❌ Concierge não encontrado na tabela atendentes:', conciergeError);
+        return new Response(
+          JSON.stringify({ error: 'Concierge configuration not found' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      phoneToAdd = conciergeAtendente.telefone;
+      participantName = conciergeAtendente.nome || 'Concierge';
+      console.log('✅ Concierge encontrado na tabela atendentes:', participantName, phoneToAdd);
     } else if (chamado.tipo_atendimento === 'dfcom') {
       // Para DFCOM, buscar da tabela atendentes (DFCom global único)
       console.log('🔍 Buscando DFCom global da tabela atendentes...');
