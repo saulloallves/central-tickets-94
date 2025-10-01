@@ -4,11 +4,14 @@ import { AtendimentosBoard } from '@/components/atendimentos/AtendimentosBoard';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAtendimentos } from '@/hooks/useAtendimentos';
 import { Badge } from '@/components/ui/badge';
-import { Wifi, WifiOff } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Wifi, WifiOff, Settings } from 'lucide-react';
+import { AtendentesConfigModal } from '@/components/atendentes/AtendentesConfigModal';
 
 export default function Atendimentos() {
   const isMobile = useIsMobile();
   const { isConnected } = useAtendimentos();
+  const [configModalOpen, setConfigModalOpen] = useState(false);
 
   return (
     <div className="space-y-6">
@@ -36,9 +39,22 @@ export default function Atendimentos() {
             Gerencie atendimentos WhatsApp e Typebot em tempo real
           </p>
         </div>
+        <Button 
+          variant="outline" 
+          size="icon"
+          onClick={() => setConfigModalOpen(true)}
+          title="Configurar Atendentes"
+        >
+          <Settings className="h-4 w-4" />
+        </Button>
       </div>
 
       <AtendimentosBoard />
+      
+      <AtendentesConfigModal 
+        open={configModalOpen} 
+        onOpenChange={setConfigModalOpen} 
+      />
     </div>
   );
 }
