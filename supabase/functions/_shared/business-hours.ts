@@ -1,6 +1,6 @@
 /**
  * Business hours utility function
- * Returns true if current time is within business hours (Monday-Saturday, 8h30-20h00, SP timezone)
+ * Returns true if current time is within business hours (Monday-Saturday, 8h30-18h30, SP timezone)
  */
 export function isBusinessHours(): boolean {
   try {
@@ -12,11 +12,11 @@ export function isBusinessHours(): boolean {
     const hour = spTime.getHours();
     const minutes = spTime.getMinutes();
     
-    // Monday to Saturday (1-6), 8h30 to 20h00
+    // Monday to Saturday (1-6), 8h30 to 18h30
     const isWorkday = dayOfWeek >= 1 && dayOfWeek <= 6;
     const timeInMinutes = hour * 60 + minutes;
     const startTime = 8 * 60 + 30; // 8h30 = 510 minutes
-    const endTime = 20 * 60; // 20h00 = 1200 minutes
+    const endTime = 18 * 60 + 30; // 18h30 = 1110 minutes
     const isWorkingHour = timeInMinutes >= startTime && timeInMinutes < endTime;
     
     return isWorkday && isWorkingHour;
