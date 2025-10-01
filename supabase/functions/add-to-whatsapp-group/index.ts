@@ -188,35 +188,80 @@ serve(async (req) => {
     // Determinar qual telefone adicionar ao grupo baseado no tipo de atendimento
     let phoneToAdd: string = '';
     let participantName: string = '';
+    let atendenteId: string | null = atendenteUnidade.atendente_id;
 
     if (chamado.tipo_atendimento === 'concierge') {
-      // Para Concierge, buscar da tabela atendentes usando atendente_id
+      // Para Concierge, buscar da tabela atendentes
       console.log('🔍 Buscando Concierge da tabela atendentes...');
-      const { data: conciergeAtendente, error: conciergeError } = await supabase
-        .from('atendentes')
-        .select('nome, telefone')
-        .eq('id', atendenteUnidade.atendente_id)
-        .eq('tipo', 'concierge')
-        .eq('ativo', true)
-        .maybeSingle();
+      
+      // Se atendente_id for NULL, buscar o atendente correto para esta unidade
+      if (!atendenteId) {
+        console.log('⚠️ atendente_id NULL, buscando atendente correto para unidade:', chamado.unidade_id);
+        const { data: atendenteCorreto, error: searchError } = await supabase
+          .from('atendentes')
+          .select('id, nome, telefone')
+          .eq('tipo', 'concierge')
+          .eq('ativo', true)
+          .eq('status', 'ativo')
+          .limit(1)
+          .maybeSingle();
+        
+        if (searchError || !atendenteCorreto) {
+          console.error('❌ Nenhum atendente concierge ativo encontrado:', searchError);
+          return new Response(
+            JSON.stringify({ error: 'No active concierge attendant found' }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        
+        atendenteId = atendenteCorreto.id;
+        phoneToAdd = atendenteCorreto.telefone;
+        participantName = atendenteCorreto.nome;
+        
+        // Atualizar atendente_id na tabela atendente_unidades
+        await supabase
+          .from('atendente_unidades')
+          .update({ atendente_id: atendenteId })
+          .eq('codigo_grupo', chamado.unidade_id);
+        
+        // Atualizar também o chamado com os dados corretos
+        await supabase
+          .from('chamados')
+          .update({ 
+            atendente_id: atendenteId,
+            atendente_nome: participantName 
+          })
+          .eq('id', chamadoId);
+        
+        console.log('✅ Atendente corrigido e chamado atualizado:', participantName, phoneToAdd);
+      } else {
+        // Buscar usando o atendente_id existente
+        const { data: conciergeAtendente, error: conciergeError } = await supabase
+          .from('atendentes')
+          .select('nome, telefone')
+          .eq('id', atendenteId)
+          .eq('tipo', 'concierge')
+          .eq('ativo', true)
+          .maybeSingle();
 
-      if (conciergeError || !conciergeAtendente?.telefone) {
-        console.error('❌ Concierge não encontrado na tabela atendentes:', conciergeError);
-        return new Response(
-          JSON.stringify({ error: 'Concierge configuration not found' }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        if (conciergeError || !conciergeAtendente?.telefone) {
+          console.error('❌ Concierge não encontrado na tabela atendentes:', conciergeError);
+          return new Response(
+            JSON.stringify({ error: 'Concierge configuration not found' }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        phoneToAdd = conciergeAtendente.telefone;
+        participantName = conciergeAtendente.nome || 'Concierge';
+        console.log('✅ Concierge encontrado na tabela atendentes:', participantName, phoneToAdd);
       }
-
-      phoneToAdd = conciergeAtendente.telefone;
-      participantName = conciergeAtendente.nome || 'Concierge';
-      console.log('✅ Concierge encontrado na tabela atendentes:', participantName, phoneToAdd);
     } else if (chamado.tipo_atendimento === 'dfcom') {
       // Para DFCOM, buscar da tabela atendentes (DFCom global único)
       console.log('🔍 Buscando DFCom global da tabela atendentes...');
       const { data: dfcomAtendente, error: dfcomError } = await supabase
         .from('atendentes')
-        .select('nome, telefone')
+        .select('id, nome, telefone')
         .eq('tipo', 'dfcom')
         .eq('ativo', true)
         .maybeSingle();
@@ -241,8 +286,23 @@ serve(async (req) => {
         phoneToAdd = dfcomConfig.setting_value;
         participantName = 'Equipe DFCom';
       } else {
+        atendenteId = dfcomAtendente.id;
         phoneToAdd = dfcomAtendente.telefone;
         participantName = dfcomAtendente.nome || 'Equipe DFCom';
+        
+        // Atualizar o chamado com os dados corretos do atendente
+        if (chamado.atendente_id !== atendenteId || chamado.atendente_nome !== participantName) {
+          await supabase
+            .from('chamados')
+            .update({ 
+              atendente_id: atendenteId,
+              atendente_nome: participantName 
+            })
+            .eq('id', chamadoId);
+          
+          console.log('✅ Chamado DFCom atualizado com atendente correto');
+        }
+        
         console.log('✅ DFCom encontrado na tabela atendentes:', participantName, phoneToAdd);
       }
     }
