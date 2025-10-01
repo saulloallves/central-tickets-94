@@ -68,38 +68,72 @@ export function useAtendimentoActions() {
     try {
       console.log('🏁 Finalizando atendimento:', atendimentoId);
       
-      // 1. Atualizar status do atendimento para finalizado
-      const { error: updateError } = await supabase
+      // Buscar dados do atendimento para verificar se é emergência
+      const { data: atendimento, error: fetchError } = await supabase
         .from('chamados')
-        .update({ 
-          status: 'finalizado',
-          resolucao: resolucao || 'Atendimento finalizado',
-          atualizado_em: new Date().toISOString()
-        })
-        .eq('id', atendimentoId);
+        .select('is_emergencia, telefone')
+        .eq('id', atendimentoId)
+        .single();
 
-      if (updateError) {
-        throw new Error(`Erro ao atualizar status: ${updateError.message}`);
+      if (fetchError) {
+        throw new Error(`Erro ao buscar atendimento: ${fetchError.message}`);
       }
 
-      // 2. Chamar edge function para remover do grupo WhatsApp
-      const { error: groupError } = await supabase.functions.invoke('remove-from-whatsapp-group', {
-        body: { chamadoId: atendimentoId }
-      });
+      // Se for emergência, chamar edge function específica
+      if (atendimento?.is_emergencia) {
+        console.log('🚨 Finalizando emergência via edge function...');
+        
+        // Chamar edge function emergencia_finalizar
+        const { error: emergencyError } = await supabase.functions.invoke('emergencia_finalizar', {
+          body: { 
+            phone: atendimento.telefone,
+            body: { phone: atendimento.telefone }
+          }
+        });
 
-      if (groupError) {
-        console.error('❌ Erro ao remover do grupo:', groupError);
-        // Não falhar completamente se o grupo falhar, apenas avisar
+        if (emergencyError) {
+          throw new Error(`Erro ao finalizar emergência: ${emergencyError.message}`);
+        }
+
         toast({
-          title: "⚠️ Atendimento Finalizado com Aviso",
-          description: "Atendimento finalizado, mas houve erro ao remover do grupo WhatsApp",
-          variant: "destructive",
+          title: "✅ Emergência Finalizada",
+          description: "Emergência finalizada e concierge removido do grupo!",
         });
       } else {
-        toast({
-          title: "✅ Atendimento Finalizado",
-          description: "Atendimento finalizado e removido do grupo WhatsApp!",
+        // Fluxo normal de atendimento
+        // 1. Atualizar status do atendimento para finalizado
+        const { error: updateError } = await supabase
+          .from('chamados')
+          .update({ 
+            status: 'finalizado',
+            resolucao: resolucao || 'Atendimento finalizado',
+            atualizado_em: new Date().toISOString()
+          })
+          .eq('id', atendimentoId);
+
+        if (updateError) {
+          throw new Error(`Erro ao atualizar status: ${updateError.message}`);
+        }
+
+        // 2. Chamar edge function para remover do grupo WhatsApp
+        const { error: groupError } = await supabase.functions.invoke('remove-from-whatsapp-group', {
+          body: { chamadoId: atendimentoId }
         });
+
+        if (groupError) {
+          console.error('❌ Erro ao remover do grupo:', groupError);
+          // Não falhar completamente se o grupo falhar, apenas avisar
+          toast({
+            title: "⚠️ Atendimento Finalizado com Aviso",
+            description: "Atendimento finalizado, mas houve erro ao remover do grupo WhatsApp",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "✅ Atendimento Finalizado",
+            description: "Atendimento finalizado e removido do grupo WhatsApp!",
+          });
+        }
       }
       
       // Chamar callback de sucesso para forçar refresh

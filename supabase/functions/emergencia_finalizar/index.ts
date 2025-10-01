@@ -30,6 +30,19 @@ serve(async (req: Request) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    // Conecta no Supabase externo (para unidades)
+    const externalSupabase = createClient(
+      Deno.env.get("EXTERNAL_SUPABASE_URL") ?? '',
+      Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") ?? ''
+    );
+
+    // Buscar unidade pelo código do grupo para pegar dados do concierge
+    const { data: unidade } = await externalSupabase
+      .from('unidades')
+      .select('id, concierge_phone')
+      .eq('id_grupo_branco', phone)
+      .maybeSingle();
+
     // Buscar chamado de emergência ativo deste grupo
     const { data: chamado, error: chamadoError } = await supabase
       .from('chamados')
@@ -50,6 +63,8 @@ serve(async (req: Request) => {
         status: 404,
       });
     }
+
+    console.log(`✅ Chamado encontrado: ${chamado.id}, Unidade: ${unidade?.id}`);
 
     // Atualizar status do chamado para finalizado
     const { error: updateError } = await supabase
@@ -74,16 +89,46 @@ serve(async (req: Request) => {
 
     console.log(`✅ Chamado ${chamado.id} finalizado com sucesso`);
 
-    // Enviar mensagem de confirmação
+    // Configurações Z-API
     const { instanceId, instanceToken, clientToken, baseUrl } = await loadZAPIConfig();
+    const headers = { "Content-Type": "application/json", "Client-Token": clientToken };
+
+    // Se temos dados do concierge e da unidade, remover do grupo
+    if (unidade?.concierge_phone) {
+      console.log(`📞 Removendo concierge ${unidade.concierge_phone} do grupo ${phone}`);
+      
+      // 1. Remover admin do concierge
+      const removeAdminUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}/remove-admin`;
+      const removeAdminRes = await fetch(removeAdminUrl, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          groupId: phone,
+          phones: [unidade.concierge_phone]
+        }),
+      });
+      const removeAdminData = await removeAdminRes.json();
+      console.log("✅ Resultado remove-admin:", removeAdminData);
+
+      // 2. Remover concierge do grupo
+      const removeParticipantUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}/remove-participant`;
+      const removeParticipantRes = await fetch(removeParticipantUrl, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          groupId: phone,
+          phones: [unidade.concierge_phone]
+        }),
+      });
+      const removeParticipantData = await removeParticipantRes.json();
+      console.log("✅ Resultado remove-participant:", removeParticipantData);
+    }
+
+    // 3. Enviar mensagem de confirmação
     const sendTextUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}/send-text`;
-    
     const sendTextRes = await fetch(sendTextUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Client-Token": clientToken
-      },
+      headers,
       body: JSON.stringify({
         phone: phone,
         message: "✅ *EMERGÊNCIA ENCERRADA*\n\nO protocolo de emergência foi finalizado com sucesso.\n\nObrigado por utilizar nossos serviços! 🙏"

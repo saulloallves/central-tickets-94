@@ -148,7 +148,7 @@ export function AtendimentoCard({ atendimento, onClick, compact = false, onRefre
                 {isLoading ? 'Iniciando...' : 'Iniciar'}
               </Button>
             )}
-            {atendimento.status === 'em_atendimento' && (
+            {(atendimento.status === 'em_atendimento' || atendimento.status === 'emergencia') && (
               <Button
                 size="sm"
                 variant="outline"
