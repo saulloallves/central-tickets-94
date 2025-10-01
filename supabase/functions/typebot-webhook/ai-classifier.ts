@@ -284,29 +284,45 @@ CRÍTICO:
           
           // Se a IA não sugeriu equipe ou está com baixa confiança, usar Concierge Operação
           let equipeId = aiResult.equipe_sugerida;
+          
+          // Debug: log de todas as equipes disponíveis
+          console.log('🔍 Equipes disponíveis:', equipes.map(e => ({ id: e.id, nome: e.nome })));
+          console.log('🔍 ID sugerido pela IA:', equipeId);
+          console.log('🔍 Tipo do ID sugerido:', typeof equipeId);
+          console.log('🔍 Confiança:', aiResult.confianca);
+          
           if (!equipeId || equipeId === 'null' || aiResult.confianca === 'baixa') {
             console.log('IA incerta sobre equipe - direcionando para Concierge Operação');
             equipeId = CONCIERGE_OPERACAO_ID;
           }
           
-          // Buscar nome da equipe pelo ID
+          // Buscar nome da equipe pelo ID (garantir que ambos sejam strings)
           let equipeNome: string | null = null;
-          const equipeEncontrada = equipes.find(e => e.id === equipeId);
+          const equipeIdString = String(equipeId);
+          
+          const equipeEncontrada = equipes.find(e => String(e.id) === equipeIdString);
+          
           if (equipeEncontrada) {
             equipeNome = equipeEncontrada.nome;
             console.log(`✅ Equipe encontrada: ${equipeNome} (ID: ${equipeId})`);
           } else {
             // Fallback para Concierge Operação se equipe não encontrada
-            const concierge = equipes.find(e => e.id === CONCIERGE_OPERACAO_ID);
+            console.log(`⚠️ Equipe ${equipeId} não encontrada na lista. Usando Concierge Operação.`);
+            const concierge = equipes.find(e => String(e.id) === String(CONCIERGE_OPERACAO_ID));
             equipeNome = concierge ? concierge.nome : 'Concierge Operação';
-            console.log(`⚠️ Equipe não encontrada, usando fallback: ${equipeNome}`);
+            console.log(`⚠️ Fallback definido como: ${equipeNome}`);
           }
+          
+          // GARANTIR que nunca retornamos um UUID
+          const equipeResponsavelFinal = equipeNome || 'Concierge Operação';
+          
+          console.log(`📋 Retornando equipe_responsavel: ${equipeResponsavelFinal}`);
           
           return {
             categoria: aiResult.categoria || 'outro',
             prioridade: aiResult.prioridade || 'baixo',
             titulo: titulo,
-            equipe_responsavel: equipeNome,
+            equipe_responsavel: equipeResponsavelFinal,
             justificativa: aiResult.justificativa || 'Análise automática'
           };
           
