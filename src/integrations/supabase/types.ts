@@ -209,6 +209,7 @@ export type Database = {
       }
       atendente_unidades: {
         Row: {
+          atendente_id: string | null
           ativo: boolean
           codigo_grupo: string | null
           concierge_name: string | null
@@ -220,6 +221,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          atendente_id?: string | null
           ativo?: boolean
           codigo_grupo?: string | null
           concierge_name?: string | null
@@ -231,6 +233,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          atendente_id?: string | null
           ativo?: boolean
           codigo_grupo?: string | null
           concierge_name?: string | null
@@ -241,7 +244,15 @@ export type Database = {
           prioridade?: number | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_atendente_unidades_atendente"
+            columns: ["atendente_id"]
+            isOneToOne: false
+            referencedRelation: "atendentes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       atendentes: {
         Row: {

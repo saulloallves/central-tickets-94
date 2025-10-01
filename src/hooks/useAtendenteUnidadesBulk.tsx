@@ -55,9 +55,18 @@ export const useAtendenteUnidadesBulk = () => {
 
       if (error) throw error;
 
+      // Atualizar também os campos legados em atendente_unidades para manter compatibilidade
+      await supabase
+        .from('atendente_unidades')
+        .update({
+          concierge_name: nome,
+          concierge_phone: telefone
+        })
+        .eq('atendente_id', id);
+
       toast({
         title: "Atualizado com sucesso",
-        description: "Atendente atualizado"
+        description: "Atendente atualizado em todas as unidades vinculadas"
       });
 
       return data;
