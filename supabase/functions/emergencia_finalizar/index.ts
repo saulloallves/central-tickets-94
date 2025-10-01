@@ -252,25 +252,54 @@ serve(async (req: Request) => {
 
     console.log(`✅ Chamado ${chamado.id} finalizado com sucesso`);
 
+    // Buscar números de emergência que podem ter sido adicionados
+    const { data: settingsData } = await supabase
+      .from('system_settings')
+      .select('setting_value')
+      .eq('setting_key', 'emergency_numbers')
+      .maybeSingle();
+
+    let emergencyNumbers = [];
+    if (settingsData?.setting_value) {
+      try {
+        emergencyNumbers = JSON.parse(settingsData.setting_value);
+        console.log(`📋 ${emergencyNumbers.length} números de emergência para remover`);
+      } catch (e) {
+        console.error('❌ Erro ao parsear números de emergência:', e);
+      }
+    }
+
     // Aguardar um pouco para garantir que o banco atualizou
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    // Remover concierge do grupo usando ZAPIClient
-    console.log(`🔄 Tentando remover ${conciergePhone} do grupo ${phone}`);
-    const removeResult = await zapiClient.removeParticipantFromGroup(phone, conciergePhone);
-
-    if (!removeResult.value) {
-      console.error("❌ Falha ao remover concierge do grupo:", removeResult.error);
-      return new Response(JSON.stringify({ 
-        error: "Erro ao remover concierge do grupo",
-        details: removeResult.error 
-      }), {
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-        status: 500,
-      });
+    // Remover todos os participantes adicionados (concierge + números de emergência)
+    const phonesToRemove = [conciergePhone];
+    
+    if (emergencyNumbers.length > 0) {
+      phonesToRemove.push(...emergencyNumbers.map((num: any) => num.phone));
     }
 
-    console.log(`✅ Concierge removido do grupo com sucesso`);
+    console.log(`🔄 Tentando remover ${phonesToRemove.length} participantes do grupo ${phone}`);
+    
+    let allRemoved = true;
+    const removeErrors = [];
+
+    for (const phoneToRemove of phonesToRemove) {
+      const removeResult = await zapiClient.removeParticipantFromGroup(phone, phoneToRemove);
+      if (!removeResult.value) {
+        console.error(`❌ Falha ao remover ${phoneToRemove}:`, removeResult.error);
+        allRemoved = false;
+        removeErrors.push({ phone: phoneToRemove, error: removeResult.error });
+      } else {
+        console.log(`✅ ${phoneToRemove} removido com sucesso`);
+      }
+    }
+
+    if (!allRemoved) {
+      console.warn("⚠️ Alguns participantes não foram removidos:", removeErrors);
+    }
+
+    console.log("✅ Processo de remoção concluído");
 
     // Enviar mensagem de confirmação
     const confirmMessage = "✅ *EMERGÊNCIA ENCERRADA*\n\nO protocolo de emergência foi finalizado com sucesso.\n\nObrigado por utilizar nossos serviços! 🙏";

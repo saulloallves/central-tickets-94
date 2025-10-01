@@ -28,25 +28,112 @@ serve(async (req: Request) => {
 
     // Verificar horário comercial
     if (!isBusinessHours()) {
-      console.log("⏰ Fora do horário comercial - implementação futura");
-      const payload = {
-        phone,
-        message: "🚨 *EMERGÊNCIA REGISTRADA*\n\n⚠️ No momento estamos fora do horário de atendimento.\n\nSeu chamado emergencial foi registrado e será tratado prioritariamente no próximo horário comercial (Segunda a Sábado, 9h às 18h).\n\n📞 Para emergências críticas, entre em contato: **(11) 99999-9999**",
-      };
+      console.log("⏰ Fora do horário comercial - ativando protocolo de emergência estendido");
+      
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+
+      // Buscar números de emergência configurados
+      const { data: settingsData } = await supabase
+        .from('system_settings')
+        .select('setting_value')
+        .eq('setting_key', 'emergency_numbers')
+        .maybeSingle();
+
+      let emergencyNumbers = [];
+      if (settingsData?.setting_value) {
+        try {
+          emergencyNumbers = JSON.parse(settingsData.setting_value);
+          console.log(`📋 ${emergencyNumbers.length} números de emergência configurados`);
+        } catch (e) {
+          console.error('❌ Erro ao parsear números de emergência:', e);
+        }
+      }
+
+      // Buscar concierge da unidade no Supabase externo
+      const externalSupabase = createClient(
+        Deno.env.get("EXTERNAL_SUPABASE_URL") ?? '',
+        Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") ?? ''
+      );
+
+      const { data: unidade } = await externalSupabase
+        .from('unidades')
+        .select('concierge_phone')
+        .eq('id_grupo_branco', phone)
+        .maybeSingle();
 
       const { instanceId, instanceToken, clientToken, baseUrl } = await loadZAPIConfig();
+      const headers = { "Content-Type": "application/json", "Client-Token": clientToken };
+
+      // Montar lista de números para adicionar e mencionar
+      const phonesToAdd = emergencyNumbers.map((num: any) => num.phone);
+      const phonesToMention = [...phonesToAdd];
+      
+      if (unidade?.concierge_phone) {
+        let conciergePhone = String(unidade.concierge_phone).replace(/\D/g, '');
+        if (!conciergePhone.startsWith('55') && conciergePhone.length === 11) {
+          conciergePhone = '55' + conciergePhone;
+        }
+        phonesToAdd.push(conciergePhone);
+        phonesToMention.push(conciergePhone);
+        console.log(`📞 Concierge da unidade: ${conciergePhone}`);
+      }
+
+      console.log(`👥 Total de participantes a adicionar: ${phonesToAdd.length}`);
+
+      // Adicionar participantes ao grupo
+      if (phonesToAdd.length > 0) {
+        const addUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}/add-participant`;
+        const addRes = await fetch(addUrl, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            groupId: phone,
+            phones: phonesToAdd,
+          }),
+        });
+        const addData = await addRes.json();
+        console.log("✅ Participantes adicionados:", addData);
+      }
+
+      // Montar mensagem com mentions
+      const mentionText = phonesToMention.map(p => `@${p}`).join(' ');
+      const messageText = `🚨 *PROTOCOLO EMERGÊNCIA* 🚨\n\nAdicionamos ${mentionText} para auxiliar sua unidade\n\n*De maneira direta, nos informe o ocorrido para que possamos auxiliar com mais rapidez.*`;
+
+      // Enviar mensagem com botão
       const zapiUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}/send-text`;
       
       const res = await fetch(zapiUrl, {
         method: "POST",
-        headers: { "Content-Type": "application/json", "Client-Token": clientToken },
-        body: JSON.stringify(payload),
+        headers,
+        body: JSON.stringify({
+          phone: phone,
+          message: messageText,
+          mentioned: phonesToMention,
+          buttonList: {
+            buttons: [
+              {
+                id: "emergencia_finalizar",
+                label: "☑️ Encerrar emergência"
+              }
+            ]
+          }
+        }),
       });
 
-      return new Response(JSON.stringify(await res.json()), {
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-        status: res.status,
-      });
+      const responseData = await res.json();
+      console.log("✅ Mensagem de emergência enviada:", responseData);
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: "Protocolo de emergência ativado (fora do horário)",
+          participants_added: phonesToAdd.length
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // Dentro do horário comercial - processar emergência
