@@ -209,7 +209,6 @@ export type Database = {
       }
       atendente_unidades: {
         Row: {
-          atendente_id: string
           ativo: boolean
           codigo_grupo: string | null
           concierge_name: string | null
@@ -217,27 +216,21 @@ export type Database = {
           created_at: string
           grupo: string | null
           id: string
-          is_preferencial: boolean
           prioridade: number | null
-          unidade_id: string
           updated_at: string
         }
         Insert: {
-          atendente_id: string
           ativo?: boolean
           codigo_grupo?: string | null
           concierge_name?: string | null
           concierge_phone?: string | null
           created_at?: string
           grupo?: string | null
-          id?: string
-          is_preferencial?: boolean
+          id: string
           prioridade?: number | null
-          unidade_id: string
           updated_at?: string
         }
         Update: {
-          atendente_id?: string
           ativo?: boolean
           codigo_grupo?: string | null
           concierge_name?: string | null
@@ -245,9 +238,7 @@ export type Database = {
           created_at?: string
           grupo?: string | null
           id?: string
-          is_preferencial?: boolean
           prioridade?: number | null
-          unidade_id?: string
           updated_at?: string
         }
         Relationships: []
