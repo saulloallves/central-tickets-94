@@ -177,27 +177,36 @@ serve(async (req) => {
       atendente_nome: chamado.atendente_nome
     });
 
-    // Buscar dados da unidade na tabela externa para pegar concierge_phone e id_grupo_branco
-    const { data: unidade, error: unidadeError } = await externalSupabase
-      .from('unidades')
-      .select('codigo_grupo, grupo, concierge_name, concierge_phone, id_grupo_branco')
-      .eq('codigo_grupo', chamado.unidade_id)
-      .single();
+    // Buscar dados da unidade na tabela interna atendente_unidades
+    const { data: atendente, error: atendenteError } = await supabase
+      .from('atendente_unidades')
+      .select('grupo, codigo_grupo, concierge_name, concierge_phone, unidade_id')
+      .eq('unidade_id', chamado.unidade_id)
+      .maybeSingle();
 
-    if (unidadeError || !unidade) {
-      console.error('❌ Unidade not found:', unidadeError);
+    if (atendenteError || !atendente) {
+      console.error('❌ Atendente/Unidade not found in atendente_unidades:', atendenteError);
       return new Response(
-        JSON.stringify({ error: 'Unidade not found' }),
+        JSON.stringify({ error: 'Atendente/Unidade configuration not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`🏢 Unidade data:`, {
-      codigo_grupo: unidade.codigo_grupo,
-      grupo: unidade.grupo,
-      concierge_name: unidade.concierge_name,
-      concierge_phone: unidade.concierge_phone,
-      id_grupo_branco: unidade.id_grupo_branco
+    // Buscar id_grupo_branco na tabela externa unidades
+    const { data: unidadeExternal, error: unidadeExternalError } = await externalSupabase
+      .from('unidades')
+      .select('id_grupo_branco')
+      .eq('id', chamado.unidade_id)
+      .maybeSingle();
+
+    const id_grupo_branco = unidadeExternal?.id_grupo_branco || chamado.telefone;
+
+    console.log(`🏢 Atendente/Unidade data:`, {
+      codigo_grupo: atendente.codigo_grupo,
+      grupo: atendente.grupo,
+      concierge_name: atendente.concierge_name,
+      concierge_phone: atendente.concierge_phone,
+      id_grupo_branco: id_grupo_branco
     });
 
     // Determinar qual telefone remover do grupo baseado no tipo de atendimento
@@ -205,8 +214,8 @@ serve(async (req) => {
     let participantName: string = '';
 
     if (chamado.tipo_atendimento === 'concierge') {
-      phoneToRemove = unidade.concierge_phone;
-      participantName = unidade.concierge_name;
+      phoneToRemove = atendente.concierge_phone;
+      participantName = atendente.concierge_name;
     } else if (chamado.tipo_atendimento === 'dfcom') {
       // Para DFCOM, usar o número fixo configurado no sistema
       const { data: dfcomConfig, error: configError } = await supabase
@@ -235,8 +244,8 @@ serve(async (req) => {
       );
     }
 
-    // Usar o id_grupo_branco da unidade como groupId (se não tiver, usar telefone do chamado)
-    const groupId = unidade.id_grupo_branco || chamado.telefone;
+    // Usar o id_grupo_branco como groupId
+    const groupId = id_grupo_branco;
 
     console.log(`📞 Removing ${participantName} (${phoneToRemove}) from group ${groupId}`);
 
@@ -280,9 +289,9 @@ serve(async (req) => {
             telefone_destino: phoneDestino,
             enviado_em: new Date().toISOString(),
             tipo_atendimento: chamado.tipo_atendimento,
-            unidade_nome: unidade.grupo || `Unidade ${unidade.codigo_grupo}`,
-            unidade_codigo: unidade.codigo_grupo?.toString(),
-            grupo_whatsapp_id: unidade.id_grupo_branco
+            unidade_nome: atendente.grupo || `Unidade ${atendente.codigo_grupo}`,
+            unidade_codigo: atendente.codigo_grupo?.toString(),
+            grupo_whatsapp_id: id_grupo_branco
           });
 
         if (avaliacaoError) {
