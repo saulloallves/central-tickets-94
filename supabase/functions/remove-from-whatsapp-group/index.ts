@@ -180,8 +180,8 @@ serve(async (req) => {
     // Buscar dados da unidade na tabela interna atendente_unidades
     const { data: atendente, error: atendenteError } = await supabase
       .from('atendente_unidades')
-      .select('grupo, codigo_grupo, concierge_name, concierge_phone, unidade_id')
-      .eq('unidade_id', chamado.unidade_id)
+      .select('grupo, codigo_grupo, concierge_name, concierge_phone')
+      .eq('codigo_grupo', chamado.unidade_id)
       .maybeSingle();
 
     if (atendenteError || !atendente) {
