@@ -123,11 +123,13 @@ serve(async (req) => {
           .from("chamados")
           .select("id, criado_em")
           .eq("status", "em_fila")
+          .eq("tipo_atendimento", "concierge")
           .eq("unidade_id", unidade.id)
           .order("criado_em", { ascending: true });
 
         if (fila) {
           posicao = fila.findIndex((c) => c.id === chamadoExistente.id) + 1;
+          console.log(`📊 Fila existente: ${fila.length} chamados, posição: ${posicao}`);
         }
       }
 
@@ -231,11 +233,12 @@ serve(async (req) => {
     }
     console.log("🎫 Chamado criado:", chamado);
 
-    // 4. Conta posição na fila
+    // 4. Conta posição na fila (filtrando apenas por concierge)
     const { data: fila, error: filaError } = await supabase
       .from("chamados")
       .select("id, criado_em")
       .eq("status", "em_fila")
+      .eq("tipo_atendimento", "concierge")
       .eq("unidade_id", unidade.id)
       .order("criado_em", { ascending: true });
 
@@ -248,7 +251,9 @@ serve(async (req) => {
     }
 
     const posicao = fila.findIndex((c) => c.id === chamado.id) + 1;
-    console.log(`📊 Posição na fila: ${posicao}`);
+    console.log(`📊 Fila completa: ${fila.length} chamados`);
+    console.log(`📊 Posição calculada: ${posicao} de ${fila.length}`);
+    console.log(`📊 IDs na fila:`, fila.map(c => c.id));
 
     // Carrega configurações Z-API
     const { instanceId, instanceToken, clientToken, baseUrl } = await loadZAPIConfig();
