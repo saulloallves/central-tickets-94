@@ -24,7 +24,7 @@ serve(async (req: Request) => {
       });
     }
 
-    console.log(`🚨 Emergência solicitada do grupo: ${phone} [v2.0]`);
+    console.log(`🚨 Emergência solicitada do grupo: ${phone} [v3.0]`);
 
     // Verificar horário comercial
     if (!isBusinessHours()) {
@@ -56,25 +56,38 @@ serve(async (req: Request) => {
     );
 
     // Buscar unidade pelo código do grupo
+    console.log(`🔍 Buscando unidade com código_grupo: ${phone}`);
+    
     const { data: unidade, error: unidadeError } = await supabase
       .from('atendente_unidades')
-      .select('id, concierge_phone, concierge_name, codigo_grupo, atendente_id')
+      .select('*')
       .eq('codigo_grupo', phone)
       .eq('ativo', true)
       .maybeSingle();
 
-    if (unidadeError || !unidade) {
-      console.error("❌ Erro ao buscar unidade:", unidadeError);
+    if (unidadeError) {
+      console.error("❌ Erro ao buscar unidade:", JSON.stringify(unidadeError));
       return new Response(JSON.stringify({ 
-        error: "Unidade não encontrada para este grupo",
-        details: unidadeError?.message 
+        error: "Erro ao buscar unidade",
+        details: unidadeError?.message,
+        code: unidadeError?.code
+      }), {
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+        status: 500,
+      });
+    }
+
+    if (!unidade) {
+      console.error("❌ Unidade não encontrada para grupo:", phone);
+      return new Response(JSON.stringify({ 
+        error: "Unidade não encontrada para este grupo"
       }), {
         headers: { "Content-Type": "application/json", ...corsHeaders },
         status: 404,
       });
     }
 
-    console.log(`✅ Unidade encontrada: ${unidade.id}, Concierge: ${unidade.concierge_name}`);
+    console.log(`✅ Unidade encontrada:`, JSON.stringify(unidade));
 
     // Buscar dados do concierge se atendente_id existe
     let conciergePhone = unidade.concierge_phone;
