@@ -1307,6 +1307,26 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                 </Card>
               </div>
 
+              {/* Temporal Info Card */}
+              <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50 hover:bg-card/70">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                      <Clock className="h-4 w-4 text-amber-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-muted-foreground mb-1">Criado em</p>
+                      <p className="font-semibold text-sm">
+                        {ticket.created_at ? formatDateTimeBR(ticket.created_at) : 'N/A'}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {ticket.created_at && formatDistanceToNowInSaoPaulo(ticket.created_at, { addSuffix: true })}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Description Card */}
               <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50">
                 <CardHeader className="pb-3">
