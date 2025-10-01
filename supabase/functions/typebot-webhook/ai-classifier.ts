@@ -185,7 +185,7 @@ Responda APENAS em JSON válido:
   "categoria": "uma_das_categorias_definidas",
   "prioridade": "uma_das_5_prioridades_definidas",
   "titulo": "Título de 3 palavras descritivo",
-  "equipe_sugerida": "id_da_equipe_mais_apropriada_ou_${CONCIERGE_OPERACAO_ID}",
+  "equipe_sugerida": "id_da_equipe_mais_apropriada_ou_ID${CONCIERGE_OPERACAO_}",
   "justificativa": "Breve explicação da análise e por que escolheu esta equipe",
   "confianca": "alta, media ou baixa"
 }
