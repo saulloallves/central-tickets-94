@@ -18,7 +18,6 @@ import CrisisAISettingsTab from '@/components/configuracoes/CrisisAISettingsTab'
 import { AtendentesTab } from '@/components/configuracoes/AtendentesTab';
 import { AIClassifierAdvancedTab } from '@/components/configuracoes/AIClassifierAdvancedTab';
 import { ZAPIInstancesTab } from '@/components/configuracoes/ZAPIInstancesTab';
-import { EmergencySettingsTab } from '@/components/configuracoes/EmergencySettingsTab';
 
 export default function Configuracoes() {
   const [searchParams] = useSearchParams();
@@ -102,10 +101,6 @@ export default function Configuracoes() {
               <Zap className="h-4 w-4" />
               Z-API Instâncias
             </TabsTrigger>
-            <TabsTrigger value="emergency" className="flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4" />
-              Emergência
-            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="logo" className="space-y-6 animate-fade-in">
@@ -155,10 +150,6 @@ export default function Configuracoes() {
 
           <TabsContent value="zapi-instances" className="space-y-6 animate-fade-in">
             <ZAPIInstancesTab />
-          </TabsContent>
-
-          <TabsContent value="emergency" className="space-y-6 animate-fade-in">
-            <EmergencySettingsTab />
           </TabsContent>
 
         </Tabs>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Users, Clock, Phone, AlertCircle } from 'lucide-react';
+import { Plus, Users, Clock, Phone, AlertCircle, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,7 @@ import { AtendenteCard } from './AtendenteCard';
 import { CreateAtendenteDialog } from './CreateAtendenteDialog';
 import { AtendentesDashboard } from './AtendentesDashboard';
 import { AtendentesUnidadesConfig } from './AtendentesUnidadesConfig';
+import { EmergencySettingsTab } from '@/components/configuracoes/EmergencySettingsTab';
 import { Separator } from '@/components/ui/separator';
 
 export const AtendentesManagement = () => {
@@ -141,6 +142,24 @@ export const AtendentesManagement = () => {
 
       {/* Configuração de Atendentes por Unidade */}
       <AtendentesUnidadesConfig />
+
+      <Separator className="my-8" />
+
+      {/* Configurações de Emergência */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-destructive" />
+            Protocolo de Emergência Fora do Horário
+          </CardTitle>
+          <CardDescription>
+            Configure os números que serão acionados automaticamente quando uma emergência for solicitada fora do horário de atendimento
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <EmergencySettingsTab />
+        </CardContent>
+      </Card>
 
       <Separator className="my-8" />
 
