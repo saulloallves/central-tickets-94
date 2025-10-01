@@ -29,17 +29,17 @@ export const AtendentesUnidadesConfig = () => {
     setAtendentesDfcom(dfcom);
   };
 
-  const handleEdit = (id: string, field: 'nome' | 'telefone', value: string) => {
+  const handleEdit = (id: string, currentNome: string, currentTelefone: string, field: 'nome' | 'telefone', value: string) => {
     const newMap = new Map(editedAtendentes);
-    const current = editedAtendentes.get(id) || { nome: '', telefone: '' };
+    const current = editedAtendentes.get(id) || { nome: currentNome, telefone: currentTelefone };
     
-    if (field === 'nome') {
-      current.nome = value;
-    } else {
-      current.telefone = value;
-    }
+    // Criar novo objeto para garantir que o React detecte a mudança
+    const updated = {
+      nome: field === 'nome' ? value : current.nome,
+      telefone: field === 'telefone' ? value : current.telefone
+    };
     
-    newMap.set(id, current);
+    newMap.set(id, updated);
     setEditedAtendentes(newMap);
   };
 
@@ -99,8 +99,8 @@ export const AtendentesUnidadesConfig = () => {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {atendentes.map((atendente) => {
           const edited = editedAtendentes.get(atendente.id);
-          const displayNome = edited?.nome || atendente.nome;
-          const displayTelefone = edited?.telefone || atendente.telefone || '';
+          const displayNome = edited?.nome ?? atendente.nome;
+          const displayTelefone = edited?.telefone ?? atendente.telefone ?? '';
           const isEdited = !!edited;
 
           return (
@@ -117,7 +117,7 @@ export const AtendentesUnidadesConfig = () => {
                   <Input
                     id={`name-${atendente.id}`}
                     value={displayNome}
-                    onChange={(e) => handleEdit(atendente.id, 'nome', e.target.value)}
+                    onChange={(e) => handleEdit(atendente.id, atendente.nome, atendente.telefone || '', 'nome', e.target.value)}
                     placeholder="Nome do atendente"
                   />
                 </div>
@@ -129,7 +129,7 @@ export const AtendentesUnidadesConfig = () => {
                   <Input
                     id={`phone-${atendente.id}`}
                     value={displayTelefone}
-                    onChange={(e) => handleEdit(atendente.id, 'telefone', e.target.value)}
+                    onChange={(e) => handleEdit(atendente.id, atendente.nome, atendente.telefone || '', 'telefone', e.target.value)}
                     placeholder="Telefone do atendente"
                   />
                 </div>
