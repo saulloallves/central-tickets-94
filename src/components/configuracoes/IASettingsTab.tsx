@@ -1089,41 +1089,6 @@ export function IASettingsTab() {
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="prompt_sugestao">🔮 Prompt para Sugestões</Label>
-              <Textarea
-                id="prompt_sugestao"
-                value={settings.prompt_sugestao}
-                onChange={(e) => setSettings(prev => ({...prev, prompt_sugestao: e.target.value}))}
-                rows={3}
-                placeholder="Instruções para gerar sugestões..."
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="prompt_chat">💬 Prompt para Chat com IA</Label>
-              <Textarea
-                id="prompt_chat"
-                value={settings.prompt_chat}
-                onChange={(e) => setSettings(prev => ({...prev, prompt_chat: e.target.value}))}
-                rows={3}
-                placeholder="Instruções para o chat com IA..."
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="prompt_classificacao">🏷️ Prompt para Classificação</Label>
-              <Textarea
-                id="prompt_classificacao"
-                value={settings.prompt_classificacao}
-                onChange={(e) => setSettings(prev => ({...prev, prompt_classificacao: e.target.value}))}
-                rows={3}
-                placeholder="Instruções para classificação automática..."
-              />
-            </div>
-
-            <Separator />
-            
             <h4 className="font-semibold text-sm text-muted-foreground">🔧 Prompts Específicos por Funcionalidade</h4>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
