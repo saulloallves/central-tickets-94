@@ -50,22 +50,24 @@ export const CleanupAtendentesButton = () => {
       // Primeiro remover associações
       const atendenteIds = atendentesParaRemover.map(a => a.id);
       
-      const { error: deleteAssocError } = await supabase
+      // @ts-ignore - Type instantiation depth issue with Supabase types
+      const deleteAssocResult = await supabase
         .from('atendente_unidades')
         .delete()
         .in('atendente_id', atendenteIds);
 
-      if (deleteAssocError) {
-        console.warn('Erro removendo associações:', deleteAssocError);
+      if (deleteAssocResult.error) {
+        console.warn('Erro removendo associações:', deleteAssocResult.error);
       }
 
       // Depois remover os atendentes
-      const { error: deleteError } = await supabase
+      // @ts-ignore - Type instantiation depth issue with Supabase types
+      const deleteResult = await supabase
         .from('atendentes')
         .delete()
         .in('id', atendenteIds);
 
-      if (deleteError) throw deleteError;
+      if (deleteResult.error) throw deleteResult.error;
 
       toast({
         title: "Limpeza Concluída",
