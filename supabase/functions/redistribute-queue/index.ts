@@ -24,12 +24,12 @@ Deno.serve(async (req) => {
       .from('atendentes')
       .select(`
         id, nome, capacidade_maxima, capacidade_atual,
-        atendente_unidades!inner(unidade_id, is_preferencial, prioridade)
+        atendente_unidades!inner(id, is_preferencial, prioridade)
       `)
       .eq('tipo', tipo)
       .eq('status', 'ativo')
       .eq('ativo', true)
-      .eq('atendente_unidades.unidade_id', unidade_id)
+      .eq('atendente_unidades.id', unidade_id)
       .eq('atendente_unidades.ativo', true)
       .order('atendente_unidades.is_preferencial', { ascending: false })
       .order('atendente_unidades.prioridade', { ascending: true })
