@@ -55,14 +55,19 @@ serve(async (req: Request) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Buscar unidade pelo código do grupo
-    console.log(`🔍 Buscando unidade com código_grupo: ${phone}`);
+    // Conecta no Supabase externo (para unidades)
+    const externalSupabase = createClient(
+      Deno.env.get("EXTERNAL_SUPABASE_URL") ?? '',
+      Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") ?? ''
+    );
+
+    // Buscar unidade pelo código do grupo no Supabase externo
+    console.log(`🔍 Buscando unidade com id_grupo_branco: ${phone}`);
     
-    const { data: unidade, error: unidadeError } = await supabase
-      .from('atendente_unidades')
-      .select('*')
-      .eq('codigo_grupo', phone)
-      .eq('ativo', true)
+    const { data: unidade, error: unidadeError } = await externalSupabase
+      .from('unidades')
+      .select('id, grupo, codigo_grupo, concierge_name, concierge_phone')
+      .eq('id_grupo_branco', phone)
       .maybeSingle();
 
     if (unidadeError) {
@@ -89,15 +94,23 @@ serve(async (req: Request) => {
 
     console.log(`✅ Unidade encontrada:`, JSON.stringify(unidade));
 
-    // Buscar dados do concierge se atendente_id existe
-    let conciergePhone = unidade.concierge_phone;
-    let conciergeName = unidade.concierge_name;
+    // Buscar atendente correto da tabela atendente_unidades e atendentes
+    const { data: atendenteUnidade } = await supabase
+      .from('atendente_unidades')
+      .select('atendente_id')
+      .eq('id', unidade.id)
+      .eq('ativo', true)
+      .maybeSingle();
 
-    if (unidade.atendente_id) {
+    let conciergePhone = unidade.concierge_phone;
+    let conciergeName = unidade.concierge_name || 'Concierge';
+    let atendenteId = null;
+
+    if (atendenteUnidade?.atendente_id) {
       const { data: atendente } = await supabase
         .from('atendentes')
-        .select('telefone, nome')
-        .eq('id', unidade.atendente_id)
+        .select('id, nome, telefone')
+        .eq('id', atendenteUnidade.atendente_id)
         .eq('tipo', 'concierge')
         .eq('ativo', true)
         .maybeSingle();
@@ -105,6 +118,8 @@ serve(async (req: Request) => {
       if (atendente) {
         conciergePhone = atendente.telefone || conciergePhone;
         conciergeName = atendente.nome || conciergeName;
+        atendenteId = atendente.id;
+        console.log(`✅ Atendente encontrado: ${conciergeName} (${atendenteId})`);
       }
     }
 
@@ -123,14 +138,14 @@ serve(async (req: Request) => {
       .from('chamados')
       .insert({
         unidade_id: unidade.id,
-        franqueado_nome: 'Emergência',
+        franqueado_nome: unidade.grupo || 'Emergência',
         telefone: phone,
         descricao: '🚨 EMERGÊNCIA - Atendimento prioritário solicitado',
         tipo_atendimento: 'emergencia',
         status: 'emergencia',
         prioridade: 'urgente',
         categoria: 'emergencia',
-        atendente_id: unidade.atendente_id,
+        atendente_id: atendenteId,
         atendente_nome: conciergeName,
         is_emergencia: true
       })
