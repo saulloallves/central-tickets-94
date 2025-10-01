@@ -211,7 +211,11 @@ export type Database = {
         Row: {
           atendente_id: string
           ativo: boolean
+          codigo_grupo: string | null
+          concierge_name: string | null
+          concierge_phone: string | null
           created_at: string
+          grupo: string | null
           id: string
           is_preferencial: boolean
           prioridade: number | null
@@ -221,7 +225,11 @@ export type Database = {
         Insert: {
           atendente_id: string
           ativo?: boolean
+          codigo_grupo?: string | null
+          concierge_name?: string | null
+          concierge_phone?: string | null
           created_at?: string
+          grupo?: string | null
           id?: string
           is_preferencial?: boolean
           prioridade?: number | null
@@ -231,7 +239,11 @@ export type Database = {
         Update: {
           atendente_id?: string
           ativo?: boolean
+          codigo_grupo?: string | null
+          concierge_name?: string | null
+          concierge_phone?: string | null
           created_at?: string
+          grupo?: string | null
           id?: string
           is_preferencial?: boolean
           prioridade?: number | null
