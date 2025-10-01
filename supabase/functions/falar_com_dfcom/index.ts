@@ -175,7 +175,27 @@ serve(async (req) => {
       });
     }
 
-    // 2. Cria um novo chamado DFCom
+    // 2. Buscar atendente DFCom correto da tabela atendentes
+    const { data: atendente, error: atendenteError } = await supabase
+      .from("atendentes")
+      .select("id, nome")
+      .eq("tipo", "dfcom")
+      .eq("ativo", true)
+      .eq("status", "ativo")
+      .maybeSingle();
+
+    let atendenteNome = "Equipe DFCom"; // fallback
+    let atendenteId = null;
+
+    if (atendente) {
+      atendenteNome = atendente.nome;
+      atendenteId = atendente.id;
+      console.log(`✅ Atendente DFCom encontrado: ${atendenteNome} (${atendenteId})`);
+    } else {
+      console.log("⚠️ Nenhum atendente DFCom encontrado, usando fallback");
+    }
+
+    // 3. Cria um novo chamado DFCom
     const { data: chamado, error: chamadoError } = await supabase
       .from("chamados")
       .insert({
@@ -184,7 +204,8 @@ serve(async (req) => {
         status: "em_fila",
         telefone: phone,
         franqueado_nome: unidade.grupo,
-        atendente_nome: "Equipe DFCom",
+        atendente_nome: atendenteNome,
+        atendente_id: atendenteId,
         descricao: "Solicitação de suporte técnico via DFCom",
       })
       .select()
@@ -199,7 +220,7 @@ serve(async (req) => {
     }
     console.log("🎫 Chamado DFCom criado:", chamado);
 
-    // 3. Conta posição na fila DFCom
+    // 4. Conta posição na fila DFCom
     const { data: fila, error: filaError } = await supabase
       .from("chamados")
       .select("id, criado_em")

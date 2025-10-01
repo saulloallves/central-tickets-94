@@ -173,7 +173,34 @@ serve(async (req) => {
       });
     }
 
-    // 2. Cria um novo chamado
+    // 2. Buscar atendente correto da tabela atendente_unidades e atendentes
+    const { data: atendenteUnidade, error: atendenteUnidadeError } = await supabase
+      .from("atendente_unidades")
+      .select("atendente_id")
+      .eq("id", unidade.id)
+      .eq("ativo", true)
+      .maybeSingle();
+
+    let atendenteNome = "Concierge"; // fallback
+    let atendenteId = null;
+
+    if (atendenteUnidade?.atendente_id) {
+      const { data: atendente, error: atendenteError } = await supabase
+        .from("atendentes")
+        .select("id, nome")
+        .eq("id", atendenteUnidade.atendente_id)
+        .eq("tipo", "concierge")
+        .eq("ativo", true)
+        .maybeSingle();
+
+      if (atendente) {
+        atendenteNome = atendente.nome;
+        atendenteId = atendente.id;
+        console.log(`✅ Atendente encontrado: ${atendenteNome} (${atendenteId})`);
+      }
+    }
+
+    // 3. Cria um novo chamado
     const { data: chamado, error: chamadoError } = await supabase
       .from("chamados")
       .insert({
@@ -182,7 +209,8 @@ serve(async (req) => {
         status: "em_fila",
         telefone: phone,
         franqueado_nome: unidade.grupo,
-        atendente_nome: unidade.concierge_name,
+        atendente_nome: atendenteNome,
+        atendente_id: atendenteId,
         descricao: "Solicitação de atendimento via Concierge",
       })
       .select()
@@ -197,7 +225,7 @@ serve(async (req) => {
     }
     console.log("🎫 Chamado criado:", chamado);
 
-    // 3. Conta posição na fila
+    // 4. Conta posição na fila
     const { data: fila, error: filaError } = await supabase
       .from("chamados")
       .select("id, criado_em")
