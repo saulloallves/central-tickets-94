@@ -2,43 +2,31 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-export interface UniqueAtendente {
-  concierge_name: string;
-  concierge_phone: string;
-  count: number;
+export interface AtendenteConfig {
+  id: string;
+  nome: string;
+  telefone: string | null;
+  tipo: 'concierge' | 'dfcom';
 }
 
 export const useAtendenteUnidadesBulk = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const fetchUniqueAtendentes = async (): Promise<UniqueAtendente[]> => {
+  const fetchAtendentesByTipo = async (tipo: 'concierge' | 'dfcom'): Promise<AtendenteConfig[]> => {
     try {
       const { data, error } = await supabase
-        .from('atendente_unidades')
-        .select('concierge_name, concierge_phone')
-        .not('concierge_name', 'is', null)
-        .not('concierge_phone', 'is', null);
+        .from('atendentes')
+        .select('id, nome, telefone, tipo')
+        .eq('tipo', tipo)
+        .eq('ativo', true)
+        .order('nome');
 
       if (error) throw error;
 
-      // Agrupar manualmente para contar
-      const grouped = data.reduce((acc, item) => {
-        const key = `${item.concierge_name}|${item.concierge_phone}`;
-        if (!acc[key]) {
-          acc[key] = {
-            concierge_name: item.concierge_name,
-            concierge_phone: item.concierge_phone,
-            count: 0
-          };
-        }
-        acc[key].count++;
-        return acc;
-      }, {} as Record<string, UniqueAtendente>);
-
-      return Object.values(grouped);
+      return data || [];
     } catch (error) {
-      console.error('Erro ao buscar atendentes únicos:', error);
+      console.error('Erro ao buscar atendentes:', error);
       toast({
         title: "Erro",
         description: "Não foi possível carregar os atendentes",
@@ -48,29 +36,28 @@ export const useAtendenteUnidadesBulk = () => {
     }
   };
 
-  const updateAtendenteInBulk = async (
-    oldName: string,
-    oldPhone: string,
-    newName: string,
-    newPhone: string
+  const updateAtendente = async (
+    id: string,
+    nome: string,
+    telefone: string
   ) => {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('atendente_unidades')
+        .from('atendentes')
         .update({
-          concierge_name: newName,
-          concierge_phone: newPhone
+          nome,
+          telefone
         })
-        .eq('concierge_name', oldName)
-        .eq('concierge_phone', oldPhone)
-        .select();
+        .eq('id', id)
+        .select()
+        .single();
 
       if (error) throw error;
 
       toast({
         title: "Atualizado com sucesso",
-        description: `${data?.length || 0} registros foram atualizados`
+        description: "Atendente atualizado"
       });
 
       return data;
@@ -87,9 +74,52 @@ export const useAtendenteUnidadesBulk = () => {
     }
   };
 
+  const createAtendente = async (
+    nome: string,
+    telefone: string,
+    tipo: 'concierge' | 'dfcom'
+  ) => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('atendentes')
+        .insert({
+          nome,
+          telefone,
+          tipo,
+          status: 'ativo',
+          capacidade_maxima: 5,
+          capacidade_atual: 0,
+          ativo: true
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "Criado com sucesso",
+        description: "Novo atendente criado"
+      });
+
+      return data;
+    } catch (error) {
+      console.error('Erro ao criar atendente:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível criar o atendente",
+        variant: "destructive"
+      });
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     loading,
-    fetchUniqueAtendentes,
-    updateAtendenteInBulk
+    fetchAtendentesByTipo,
+    updateAtendente,
+    createAtendente
   };
 };

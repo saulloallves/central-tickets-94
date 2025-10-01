@@ -3,15 +3,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAtendenteUnidadesBulk, UniqueAtendente } from '@/hooks/useAtendenteUnidadesBulk';
-import { Loader2, Save, Users, Phone, User } from 'lucide-react';
+import { useAtendenteUnidadesBulk, AtendenteConfig } from '@/hooks/useAtendenteUnidadesBulk';
+import { Loader2, Save, Phone, User, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export const AtendentesUnidadesConfig = () => {
-  const { loading, fetchUniqueAtendentes, updateAtendenteInBulk } = useAtendenteUnidadesBulk();
-  const [atendentes, setAtendentes] = useState<UniqueAtendente[]>([]);
-  const [editedAtendentes, setEditedAtendentes] = useState<Map<string, { newName: string; newPhone: string }>>(new Map());
+  const { loading, fetchAtendentesByTipo, updateAtendente, createAtendente } = useAtendenteUnidadesBulk();
+  const [atendentesConcierge, setAtendentesConcierge] = useState<AtendenteConfig[]>([]);
+  const [atendentesDfcom, setAtendentesDfcom] = useState<AtendenteConfig[]>([]);
+  const [editedAtendentes, setEditedAtendentes] = useState<Map<string, { nome: string; telefone: string }>>(new Map());
   const [saving, setSaving] = useState(false);
+  const [creatingConcierge, setCreatingConcierge] = useState(false);
+  const [creatingDfcom, setCreatingDfcom] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -19,22 +23,23 @@ export const AtendentesUnidadesConfig = () => {
   }, []);
 
   const loadAtendentes = async () => {
-    const data = await fetchUniqueAtendentes();
-    setAtendentes(data);
+    const concierge = await fetchAtendentesByTipo('concierge');
+    const dfcom = await fetchAtendentesByTipo('dfcom');
+    setAtendentesConcierge(concierge);
+    setAtendentesDfcom(dfcom);
   };
 
-  const handleEdit = (oldName: string, oldPhone: string, field: 'name' | 'phone', value: string) => {
-    const key = `${oldName}|${oldPhone}`;
-    const current = editedAtendentes.get(key) || { newName: oldName, newPhone: oldPhone };
+  const handleEdit = (id: string, field: 'nome' | 'telefone', value: string) => {
+    const newMap = new Map(editedAtendentes);
+    const current = editedAtendentes.get(id) || { nome: '', telefone: '' };
     
-    if (field === 'name') {
-      current.newName = value;
+    if (field === 'nome') {
+      current.nome = value;
     } else {
-      current.newPhone = value;
+      current.telefone = value;
     }
     
-    const newMap = new Map(editedAtendentes);
-    newMap.set(key, current);
+    newMap.set(id, current);
     setEditedAtendentes(newMap);
   };
 
@@ -49,17 +54,13 @@ export const AtendentesUnidadesConfig = () => {
 
     setSaving(true);
     try {
-      let totalUpdated = 0;
-      
-      for (const [key, edited] of editedAtendentes.entries()) {
-        const [oldName, oldPhone] = key.split('|');
-        await updateAtendenteInBulk(oldName, oldPhone, edited.newName, edited.newPhone);
-        totalUpdated++;
+      for (const [id, data] of editedAtendentes.entries()) {
+        await updateAtendente(id, data.nome, data.telefone);
       }
 
       toast({
         title: "Sucesso",
-        description: `${totalUpdated} atendente(s) atualizado(s) com sucesso`,
+        description: `${editedAtendentes.size} atendente(s) atualizado(s) com sucesso`,
       });
 
       setEditedAtendentes(new Map());
@@ -71,7 +72,74 @@ export const AtendentesUnidadesConfig = () => {
     }
   };
 
+  const handleCreateConcierge = async () => {
+    try {
+      await createAtendente('Novo Concierge', '', 'concierge');
+      await loadAtendentes();
+      setCreatingConcierge(false);
+    } catch (error) {
+      console.error('Erro ao criar concierge:', error);
+    }
+  };
+
+  const handleCreateDfcom = async () => {
+    try {
+      await createAtendente('Novo DFCom', '', 'dfcom');
+      await loadAtendentes();
+      setCreatingDfcom(false);
+    } catch (error) {
+      console.error('Erro ao criar DFCom:', error);
+    }
+  };
+
   const hasChanges = editedAtendentes.size > 0;
+
+  const renderAtendentesList = (atendentes: AtendenteConfig[], tipo: 'concierge' | 'dfcom') => {
+    return (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {atendentes.map((atendente) => {
+          const edited = editedAtendentes.get(atendente.id);
+          const displayNome = edited?.nome || atendente.nome;
+          const displayTelefone = edited?.telefone || atendente.telefone || '';
+          const isEdited = !!edited;
+
+          return (
+            <Card key={atendente.id} className={isEdited ? 'border-primary' : ''}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  {tipo === 'concierge' ? 'Concierge' : 'DFCom'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor={`name-${atendente.id}`}>Nome</Label>
+                  <Input
+                    id={`name-${atendente.id}`}
+                    value={displayNome}
+                    onChange={(e) => handleEdit(atendente.id, 'nome', e.target.value)}
+                    placeholder="Nome do atendente"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`phone-${atendente.id}`} className="flex items-center gap-2">
+                    <Phone className="h-4 w-4" />
+                    Telefone
+                  </Label>
+                  <Input
+                    id={`phone-${atendente.id}`}
+                    value={displayTelefone}
+                    onChange={(e) => handleEdit(atendente.id, 'telefone', e.target.value)}
+                    placeholder="Telefone do atendente"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    );
+  };
 
   if (loading) {
     return (
@@ -85,9 +153,9 @@ export const AtendentesUnidadesConfig = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold">Configuração de Atendentes por Unidade</h3>
+          <h3 className="text-lg font-semibold">Configuração de Atendentes</h3>
           <p className="text-sm text-muted-foreground">
-            Gerencie os atendentes vinculados às unidades. Alterações aqui afetam todas as unidades associadas.
+            Gerencie os nomes e telefones dos atendentes Concierge e DFCom.
           </p>
         </div>
         {hasChanges && (
@@ -107,62 +175,80 @@ export const AtendentesUnidadesConfig = () => {
         )}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {atendentes.map((atendente) => {
-          const key = `${atendente.concierge_name}|${atendente.concierge_phone}`;
-          const edited = editedAtendentes.get(key);
-          const displayName = edited?.newName || atendente.concierge_name;
-          const displayPhone = edited?.newPhone || atendente.concierge_phone;
-          const isEdited = !!edited;
+      <Tabs defaultValue="concierge" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="concierge">Concierge ({atendentesConcierge.length})</TabsTrigger>
+          <TabsTrigger value="dfcom">DFCom ({atendentesDfcom.length})</TabsTrigger>
+        </TabsList>
 
-          return (
-            <Card key={key} className={isEdited ? 'border-primary' : ''}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5" />
-                  Atendente
-                </CardTitle>
-                <CardDescription className="flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  Afeta {atendente.count} unidade(s)
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor={`name-${key}`}>Nome</Label>
-                  <Input
-                    id={`name-${key}`}
-                    value={displayName}
-                    onChange={(e) => handleEdit(atendente.concierge_name, atendente.concierge_phone, 'name', e.target.value)}
-                    placeholder="Nome do atendente"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor={`phone-${key}`} className="flex items-center gap-2">
-                    <Phone className="h-4 w-4" />
-                    Telefone
-                  </Label>
-                  <Input
-                    id={`phone-${key}`}
-                    value={displayPhone}
-                    onChange={(e) => handleEdit(atendente.concierge_name, atendente.concierge_phone, 'phone', e.target.value)}
-                    placeholder="Telefone do atendente"
-                  />
-                </div>
+        <TabsContent value="concierge" className="space-y-4">
+          <div className="flex justify-end">
+            <Button 
+              onClick={handleCreateConcierge} 
+              disabled={creatingConcierge}
+              variant="outline"
+              size="sm"
+            >
+              {creatingConcierge ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Criando...
+                </>
+              ) : (
+                <>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Novo Concierge
+                </>
+              )}
+            </Button>
+          </div>
+
+          {atendentesConcierge.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-8">
+                <User className="h-12 w-12 text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">Nenhum concierge cadastrado</p>
               </CardContent>
             </Card>
-          );
-        })}
-      </div>
+          ) : (
+            renderAtendentesList(atendentesConcierge, 'concierge')
+          )}
+        </TabsContent>
 
-      {atendentes.length === 0 && (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-8">
-            <Users className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">Nenhum atendente encontrado</p>
-          </CardContent>
-        </Card>
-      )}
+        <TabsContent value="dfcom" className="space-y-4">
+          <div className="flex justify-end">
+            <Button 
+              onClick={handleCreateDfcom} 
+              disabled={creatingDfcom}
+              variant="outline"
+              size="sm"
+            >
+              {creatingDfcom ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Criando...
+                </>
+              ) : (
+                <>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Novo DFCom
+                </>
+              )}
+            </Button>
+          </div>
+
+          {atendentesDfcom.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-8">
+                <User className="h-12 w-12 text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">Nenhum atendente DFCom cadastrado</p>
+              </CardContent>
+            </Card>
+          ) : (
+            renderAtendentesList(atendentesDfcom, 'dfcom')
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
