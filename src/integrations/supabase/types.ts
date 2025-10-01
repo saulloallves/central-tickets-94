@@ -415,6 +415,7 @@ export type Database = {
           descricao: string
           franqueado_nome: string
           id: string
+          is_emergencia: boolean | null
           prioridade: string | null
           resolucao: string | null
           status: string
@@ -431,6 +432,7 @@ export type Database = {
           descricao: string
           franqueado_nome: string
           id?: string
+          is_emergencia?: boolean | null
           prioridade?: string | null
           resolucao?: string | null
           status?: string
@@ -447,6 +449,7 @@ export type Database = {
           descricao?: string
           franqueado_nome?: string
           id?: string
+          is_emergencia?: boolean | null
           prioridade?: string | null
           resolucao?: string | null
           status?: string

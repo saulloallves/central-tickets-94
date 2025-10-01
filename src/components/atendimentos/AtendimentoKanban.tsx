@@ -17,7 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AtendimentoCard } from './AtendimentoCard';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAtendimentoDragDrop } from '@/hooks/useAtendimentoDragDrop';
-import { Clock, UserCheck, CheckCircle2 } from 'lucide-react';
+import { Clock, UserCheck, CheckCircle2, AlertTriangle } from 'lucide-react';
 
 interface AtendimentoKanbanProps {
   atendimentos: any[];
@@ -121,6 +121,11 @@ function DroppableColumn({
 
 const KANBAN_COLUMNS = [
   { 
+    id: 'emergencia', 
+    title: 'Emergência', 
+    icon: AlertTriangle
+  },
+  { 
     id: 'em_fila', 
     title: 'Em Fila', 
     icon: Clock
@@ -171,7 +176,7 @@ export function AtendimentoKanban({ atendimentos, onSelectAtendimento, onRefresh
     let newStatus = over.id as string;
     
     // Se o over.id for um UUID de outro atendimento, pegar o status da coluna pai
-    const validStatuses = ['em_fila', 'em_atendimento', 'finalizado'];
+    const validStatuses = ['emergencia', 'em_fila', 'em_atendimento', 'finalizado'];
     if (!validStatuses.includes(newStatus)) {
       // Encontrar o atendimento que está sendo dropado
       const targetAtendimento = atendimentos.find(a => a.id === newStatus);
@@ -232,7 +237,7 @@ export function AtendimentoKanban({ atendimentos, onSelectAtendimento, onRefresh
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="grid grid-cols-3 gap-4 h-full">
+        <div className="grid grid-cols-4 gap-4 h-full">
           {KANBAN_COLUMNS.map((column) => {
             const columnAtendimentos = getAtendimentosByStatus(column.id);
             

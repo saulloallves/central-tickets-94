@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, RotateCcw, FileText, Clock, MessageSquare, Bot, Phone, User } from 'lucide-react';
+import { CheckCircle, RotateCcw, FileText, Clock, MessageSquare, Bot, Phone, User, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -24,6 +24,7 @@ interface AtendimentoCardProps {
     resolucao?: string;
     criado_em: string;
     atualizado_em?: string;
+    is_emergencia?: boolean;
   };
   onClick: () => void;
   compact?: boolean;
@@ -31,6 +32,7 @@ interface AtendimentoCardProps {
 }
 
 const STATUS_CONFIG = {
+  emergencia: { variant: 'destructive' as const, emoji: '🚨', label: 'Emergência' },
   em_fila: { variant: 'warning' as const, emoji: '🟡', label: 'Em Fila' },
   em_atendimento: { variant: 'info' as const, emoji: '🔵', label: 'Em Atendimento' },
   finalizado: { variant: 'success' as const, emoji: '🟢', label: 'Finalizado' },
@@ -79,7 +81,8 @@ export function AtendimentoCard({ atendimento, onClick, compact = false, onRefre
       className={cn(
         "cursor-pointer hover:shadow-md transition-all duration-200 hover:-translate-y-1",
         compact ? "p-3" : "p-4",
-        "h-fit min-h-[140px] flex flex-col"
+        "h-fit min-h-[140px] flex flex-col",
+        atendimento.is_emergencia && "border-2 border-destructive bg-destructive/5 animate-pulse"
       )}
       onClick={onClick}
     >
@@ -88,6 +91,7 @@ export function AtendimentoCard({ atendimento, onClick, compact = false, onRefre
           {/* Header com status e prioridade */}
           <div className="flex items-center justify-between">
             <Badge variant={statusConfig.variant} className="text-xs">
+              {atendimento.is_emergencia && <AlertTriangle className="w-3 h-3 mr-1 inline" />}
               {statusConfig.emoji} {statusConfig.label}
             </Badge>
             <Badge variant={prioridadeConfig.variant} className="text-xs">
