@@ -289,11 +289,24 @@ CRÍTICO:
             equipeId = CONCIERGE_OPERACAO_ID;
           }
           
+          // Buscar nome da equipe pelo ID
+          let equipeNome: string | null = null;
+          const equipeEncontrada = equipes.find(e => e.id === equipeId);
+          if (equipeEncontrada) {
+            equipeNome = equipeEncontrada.nome;
+            console.log(`✅ Equipe encontrada: ${equipeNome} (ID: ${equipeId})`);
+          } else {
+            // Fallback para Concierge Operação se equipe não encontrada
+            const concierge = equipes.find(e => e.id === CONCIERGE_OPERACAO_ID);
+            equipeNome = concierge ? concierge.nome : 'Concierge Operação';
+            console.log(`⚠️ Equipe não encontrada, usando fallback: ${equipeNome}`);
+          }
+          
           return {
             categoria: aiResult.categoria || 'outro',
             prioridade: aiResult.prioridade || 'baixo',
             titulo: titulo,
-            equipe_responsavel: equipeId,
+            equipe_responsavel: equipeNome,
             justificativa: aiResult.justificativa || 'Análise automática'
           };
           
