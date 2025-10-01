@@ -8,18 +8,13 @@ import { useAtendentes } from '@/hooks/useAtendentes';
 import { AtendenteCard } from './AtendenteCard';
 import { CreateAtendenteDialog } from './CreateAtendenteDialog';
 import { AtendentesDashboard } from './AtendentesDashboard';
-import { SyncAtendentesExternos } from './SyncAtendentesExternos';
-import { ImportAtendentesButton } from './ImportAtendentesButton';
-import { CleanupAtendentesButton } from './CleanupAtendentesButton';
 import { AtendentesUnidadesConfig } from './AtendentesUnidadesConfig';
 import { Separator } from '@/components/ui/separator';
-import { supabase } from '@/integrations/supabase/client';
 
 export const AtendentesManagement = () => {
   const { atendentes, loading, updateStatus, redistributeQueue } = useAtendentes();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
-  const [initialSyncDone, setInitialSyncDone] = useState(false);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -58,36 +53,6 @@ export const AtendentesManagement = () => {
   const statsConcierge = calculateStats(atendentesConcierge);
   const statsDfcom = calculateStats(atendentesDfcom);
 
-  // REMOVIDO: Auto-sync que criava atendentes com nomes de unidades
-  // Esta função estava criando automaticamente atendentes com nomes como
-  // "Atendente AGUAÍ", "Atendente ADAMANTINA" ao invés de usar dados reais dos concierges
-  /*
-  useEffect(() => {
-    const runInitialSync = async () => {
-      if (!loading && atendentes.length === 0 && !initialSyncDone) {
-        console.log('🔄 Executando sincronização inicial automática...');
-        try {
-          const { data, error } = await supabase.functions.invoke('sync-atendentes', {
-            body: { action: 'sync' }
-          });
-          
-          if (!error && data?.stats?.criados > 0) {
-            console.log('✅ Sincronização inicial concluída:', data.stats);
-            setTimeout(() => {
-              window.location.reload();
-            }, 1000);
-          }
-        } catch (error) {
-          console.error('❌ Erro na sincronização inicial:', error);
-        }
-        setInitialSyncDone(true);
-      }
-    };
-    
-    runInitialSync();
-  }, [loading, atendentes.length, initialSyncDone]);
-  */
-
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -107,8 +72,6 @@ export const AtendentesManagement = () => {
           </p>
         </div>
         <div className="flex gap-2">
-          <CleanupAtendentesButton />
-          <ImportAtendentesButton />
           <Button 
             variant="outline" 
             onClick={() => setShowDashboard(true)}
@@ -175,11 +138,6 @@ export const AtendentesManagement = () => {
           </CardContent>
         </Card>
       </div>
-
-      {/* Sync External Data */}
-      <SyncAtendentesExternos />
-
-      <Separator className="my-8" />
 
       {/* Configuração de Atendentes por Unidade */}
       <AtendentesUnidadesConfig />
