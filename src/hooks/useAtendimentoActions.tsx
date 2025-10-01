@@ -6,7 +6,7 @@ export function useAtendimentoActions() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const iniciarAtendimento = async (atendimentoId: string) => {
+  const iniciarAtendimento = async (atendimentoId: string, onSuccess?: () => void) => {
     setIsLoading(true);
     try {
       console.log('🚀 Iniciando atendimento:', atendimentoId);
@@ -44,6 +44,11 @@ export function useAtendimentoActions() {
         });
       }
       
+      // Chamar callback de sucesso para forçar refresh
+      if (onSuccess) {
+        onSuccess();
+      }
+      
       return true;
     } catch (error) {
       console.error('❌ Erro ao iniciar atendimento:', error);
@@ -58,7 +63,7 @@ export function useAtendimentoActions() {
     }
   };
 
-  const finalizarAtendimento = async (atendimentoId: string, resolucao?: string) => {
+  const finalizarAtendimento = async (atendimentoId: string, resolucao?: string, onSuccess?: () => void) => {
     setIsLoading(true);
     try {
       console.log('🏁 Finalizando atendimento:', atendimentoId);
@@ -97,6 +102,11 @@ export function useAtendimentoActions() {
         });
       }
       
+      // Chamar callback de sucesso para forçar refresh
+      if (onSuccess) {
+        onSuccess();
+      }
+      
       return true;
     } catch (error) {
       console.error('❌ Erro ao finalizar atendimento:', error);
@@ -111,7 +121,7 @@ export function useAtendimentoActions() {
     }
   };
 
-  const reativarAtendimento = async (atendimentoId: string) => {
+  const reativarAtendimento = async (atendimentoId: string, onSuccess?: () => void) => {
     setIsLoading(true);
     try {
       console.log('🔄 Reativando atendimento:', atendimentoId);
@@ -133,6 +143,12 @@ export function useAtendimentoActions() {
         title: "✅ Atendimento Reativado",
         description: "Atendimento reativado para a fila!",
       });
+      
+      // Chamar callback de sucesso para forçar refresh
+      if (onSuccess) {
+        onSuccess();
+      }
+      
       return true;
     } catch (error) {
       console.error('❌ Erro ao reativar atendimento:', error);

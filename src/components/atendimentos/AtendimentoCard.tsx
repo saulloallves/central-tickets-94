@@ -27,6 +27,7 @@ interface AtendimentoCardProps {
   };
   onClick: () => void;
   compact?: boolean;
+  onRefresh?: () => void;
 }
 
 const STATUS_CONFIG = {
@@ -41,7 +42,7 @@ const PRIORIDADE_CONFIG = {
   urgente: { variant: 'destructive' as const, label: 'Urgente' },
 };
 
-export function AtendimentoCard({ atendimento, onClick, compact = false }: AtendimentoCardProps) {
+export function AtendimentoCard({ atendimento, onClick, compact = false, onRefresh }: AtendimentoCardProps) {
   const statusConfig = STATUS_CONFIG[atendimento.status] || STATUS_CONFIG.em_fila;
   const prioridadeConfig = PRIORIDADE_CONFIG[atendimento.prioridade] || PRIORIDADE_CONFIG.normal;
   const { iniciarAtendimento, finalizarAtendimento, reativarAtendimento, isLoading } = useAtendimentoActions();
@@ -60,17 +61,17 @@ export function AtendimentoCard({ atendimento, onClick, compact = false }: Atend
 
   const handleIniciarAtendimento = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    await iniciarAtendimento(atendimento.id);
+    await iniciarAtendimento(atendimento.id, onRefresh);
   };
 
   const handleFinalizarAtendimento = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    await finalizarAtendimento(atendimento.id);
+    await finalizarAtendimento(atendimento.id, undefined, onRefresh);
   };
 
   const handleReativarAtendimento = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    await reativarAtendimento(atendimento.id);
+    await reativarAtendimento(atendimento.id, onRefresh);
   };
 
   return (

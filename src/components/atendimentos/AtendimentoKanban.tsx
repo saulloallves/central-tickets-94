@@ -22,14 +22,16 @@ import { Clock, UserCheck, CheckCircle2 } from 'lucide-react';
 interface AtendimentoKanbanProps {
   atendimentos: any[];
   onSelectAtendimento: (id: string) => void;
+  onRefresh?: () => void;
 }
 
 interface SortableAtendimentoCardProps {
   atendimento: any;
   onClick: () => void;
+  onRefresh?: () => void;
 }
 
-function SortableAtendimentoCard({ atendimento, onClick }: SortableAtendimentoCardProps) {
+function SortableAtendimentoCard({ atendimento, onClick, onRefresh }: SortableAtendimentoCardProps) {
   const {
     attributes,
     listeners,
@@ -55,6 +57,7 @@ function SortableAtendimentoCard({ atendimento, onClick }: SortableAtendimentoCa
       <AtendimentoCard
         atendimento={atendimento}
         onClick={onClick}
+        onRefresh={onRefresh}
       />
     </div>
   );
@@ -66,6 +69,7 @@ interface DroppableColumnProps {
   icon: React.ComponentType<any>;
   atendimentos: any[];
   onSelectAtendimento: (id: string) => void;
+  onRefresh?: () => void;
 }
 
 function DroppableColumn({
@@ -73,7 +77,8 @@ function DroppableColumn({
   title,
   icon: Icon,
   atendimentos,
-  onSelectAtendimento
+  onSelectAtendimento,
+  onRefresh
 }: DroppableColumnProps) {
   const { setNodeRef } = useDroppable({ id });
 
@@ -97,6 +102,7 @@ function DroppableColumn({
                   key={atendimento.id}
                   atendimento={atendimento}
                   onClick={() => onSelectAtendimento(atendimento.id)}
+                  onRefresh={onRefresh}
                 />
               ))}
             </SortableContext>
@@ -131,7 +137,7 @@ const KANBAN_COLUMNS = [
   },
 ];
 
-export function AtendimentoKanban({ atendimentos, onSelectAtendimento }: AtendimentoKanbanProps) {
+export function AtendimentoKanban({ atendimentos, onSelectAtendimento, onRefresh }: AtendimentoKanbanProps) {
   const [activeAtendimento, setActiveAtendimento] = useState<any | null>(null);
   const { updateAtendimentoStatus } = useAtendimentoDragDrop();
 
@@ -238,6 +244,7 @@ export function AtendimentoKanban({ atendimentos, onSelectAtendimento }: Atendim
                 icon={column.icon}
                 atendimentos={columnAtendimentos}
                 onSelectAtendimento={onSelectAtendimento}
+                onRefresh={onRefresh}
               />
             );
           })}

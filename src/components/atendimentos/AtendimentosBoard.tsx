@@ -10,7 +10,7 @@ import { useAtendimentos } from '@/hooks/useAtendimentos';
 export function AtendimentosBoard() {
   const [selectedAtendimento, setSelectedAtendimento] = useState<string | null>(null);
   const isMobile = useIsMobile();
-  const { atendimentos } = useAtendimentos();
+  const { atendimentos, refreshAtendimentos } = useAtendimentos();
 
   const handleSelectAtendimento = (id: string) => {
     setSelectedAtendimento(id);
@@ -31,6 +31,7 @@ export function AtendimentosBoard() {
         <AtendimentoKanban 
           atendimentos={atendimentos}
           onSelectAtendimento={handleSelectAtendimento}
+          onRefresh={refreshAtendimentos}
         />
         
         {/* Modal para detalhes do atendimento */}
@@ -55,6 +56,7 @@ export function AtendimentosBoard() {
         <AtendimentoKanban 
           atendimentos={atendimentos}
           onSelectAtendimento={handleSelectAtendimento}
+          onRefresh={refreshAtendimentos}
         />
       </div>
 
