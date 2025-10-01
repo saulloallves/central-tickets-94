@@ -24,7 +24,7 @@ serve(async (req: Request) => {
       });
     }
 
-    console.log(`🚨 Emergência solicitada do grupo: ${phone}`);
+    console.log(`🚨 Emergência solicitada do grupo: ${phone} [v2.0]`);
 
     // Verificar horário comercial
     if (!isBusinessHours()) {
