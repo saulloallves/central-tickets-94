@@ -1,17 +1,15 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AtendimentosBoard } from '@/components/atendimentos/AtendimentosBoard';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAtendimentos } from '@/hooks/useAtendimentos';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Wifi, WifiOff, Settings } from 'lucide-react';
-import { AtendentesConfigModal } from '@/components/atendentes/AtendentesConfigModal';
+import { useNavigate } from 'react-router-dom';
 
 export default function Atendimentos() {
   const isMobile = useIsMobile();
   const { isConnected } = useAtendimentos();
-  const [configModalOpen, setConfigModalOpen] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <div className="space-y-6">
@@ -41,20 +39,15 @@ export default function Atendimentos() {
         </div>
         <Button 
           variant="outline" 
-          size="icon"
-          onClick={() => setConfigModalOpen(true)}
-          title="Configurar Atendentes"
+          size={isMobile ? "sm" : "default"}
+          onClick={() => navigate('/admin/configuracoes?tab=atendentes')}
         >
-          <Settings className="h-4 w-4" />
+          <Settings className="h-4 w-4 mr-2" />
+          Configurações
         </Button>
       </div>
 
       <AtendimentosBoard />
-      
-      <AtendentesConfigModal 
-        open={configModalOpen} 
-        onOpenChange={setConfigModalOpen} 
-      />
     </div>
   );
 }

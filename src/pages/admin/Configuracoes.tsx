@@ -1,5 +1,6 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Settings, Brain, BookOpen, TrendingUp, AlertTriangle, Image, Bell, Users, MessageSquare, Headphones, Zap } from "lucide-react";
@@ -19,6 +20,16 @@ import { AIClassifierAdvancedTab } from '@/components/configuracoes/AIClassifier
 import { ZAPIInstancesTab } from '@/components/configuracoes/ZAPIInstancesTab';
 
 export default function Configuracoes() {
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'ia');
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
+
   return (
     <div className="min-h-screen bg-gradient-subtle p-6">
       <div className="w-full space-y-6">
@@ -40,7 +51,7 @@ export default function Configuracoes() {
           </div>
         </div>
 
-        <Tabs defaultValue="ia" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="flex flex-wrap w-full justify-start mb-6 h-auto p-1 gap-1">
             <TabsTrigger value="logo" className="flex items-center gap-2">
               <Image className="h-4 w-4" />

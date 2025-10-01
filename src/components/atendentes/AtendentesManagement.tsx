@@ -11,6 +11,8 @@ import { AtendentesDashboard } from './AtendentesDashboard';
 import { SyncAtendentesExternos } from './SyncAtendentesExternos';
 import { ImportAtendentesButton } from './ImportAtendentesButton';
 import { CleanupAtendentesButton } from './CleanupAtendentesButton';
+import { AtendentesUnidadesConfig } from './AtendentesUnidadesConfig';
+import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 
 export const AtendentesManagement = () => {
@@ -176,6 +178,13 @@ export const AtendentesManagement = () => {
 
       {/* Sync External Data */}
       <SyncAtendentesExternos />
+
+      <Separator className="my-8" />
+
+      {/* Configuração de Atendentes por Unidade */}
+      <AtendentesUnidadesConfig />
+
+      <Separator className="my-8" />
 
       {/* Concierge Section */}
       <Card>
