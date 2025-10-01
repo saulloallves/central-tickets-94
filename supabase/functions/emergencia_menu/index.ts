@@ -58,7 +58,7 @@ serve(async (req: Request) => {
     // Buscar unidade pelo código do grupo
     const { data: unidade, error: unidadeError } = await supabase
       .from('atendente_unidades')
-      .select('id, unidade_id, concierge_phone, concierge_name, codigo_grupo, atendente_id')
+      .select('id, concierge_phone, concierge_name, codigo_grupo, atendente_id')
       .eq('codigo_grupo', phone)
       .eq('ativo', true)
       .maybeSingle();
@@ -74,7 +74,7 @@ serve(async (req: Request) => {
       });
     }
 
-    console.log(`✅ Unidade encontrada: ${unidade.unidade_id}, Concierge: ${unidade.concierge_name}`);
+    console.log(`✅ Unidade encontrada: ${unidade.id}, Concierge: ${unidade.concierge_name}`);
 
     // Buscar dados do concierge se atendente_id existe
     let conciergePhone = unidade.concierge_phone;
@@ -109,7 +109,7 @@ serve(async (req: Request) => {
     const { data: chamado, error: chamadoError } = await supabase
       .from('chamados')
       .insert({
-        unidade_id: unidade.unidade_id,
+        unidade_id: unidade.id,
         franqueado_nome: 'Emergência',
         telefone: phone,
         descricao: '🚨 EMERGÊNCIA - Atendimento prioritário solicitado',
