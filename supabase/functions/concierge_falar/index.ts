@@ -35,7 +35,7 @@ serve(async (req) => {
       
       const outOfHoursPayload = {
         phone,
-        message: "❌ *Agora estamos fora do horário de atendimento.*\n\n⏰ Nosso time atende de segunda a sábado, das *9h às 18h.*\n\n📝 Você pode abrir um ticket agora mesmo. Sua solicitação será registrada e respondida pela equipe assim que possível.",
+        message: "❌ *Agora estamos fora do horário de atendimento.*\n\n⏰ Nosso time atende de segunda a sábado, das *8h30 às 20h.*\n\n📝 Você pode abrir um ticket agora mesmo. Sua solicitação será registrada e respondida pela equipe assim que possível.",
         buttonList: {
           buttons: [
             {
@@ -151,9 +151,15 @@ serve(async (req) => {
 
       // Enviar mensagem adequada baseada no status
       if (chamadoExistente.status === "em_fila") {
-        await enviarZapi("send-text", {
+        await enviarZapi("send-button-list", {
           phone,
-          message: `⏳ *Você já possui um atendimento personalizado na fila*\n\n📊 Sua posição: *#${posicao}*\n\nPor favor, aguarde sua vez. Você receberá uma mensagem quando for atendido.`,
+          message: `⏳ *Você já possui um atendimento personalizado na fila*\n\n📊 Sua posição: *#${posicao}*\n\nPor favor, aguarde sua vez. Você receberá uma mensagem quando for atendido.\n\nSe desejar, pode finalizar ou transferir abaixo:`,
+          buttonList: {
+            buttons: [
+              { id: "personalizado_finalizar", label: "✅ Finalizar atendimento" },
+              { id: "autoatendimento_menu", label: "🔄 Transferir para autoatendimento" },
+            ],
+          },
         });
       } else if (chamadoExistente.status === "em_atendimento") {
         await enviarZapi("send-text", {
@@ -262,18 +268,12 @@ serve(async (req) => {
       }
     }
 
-    // 4. Mensagem inicial
-    await enviarZapi("send-text", {
-      phone,
-      message: "⏳ Você entrou na *fila de atendimento personalizado*.\n\nAguarde um momento — estamos organizando os atendimentos em ordem de chegada.",
-    });
-
-    // 5. Próximo ou posição
+    // 4. Mensagem com posição na fila
     if (posicao === 1) {
       await enviarZapi("send-button-list", {
         phone,
         message:
-          "📥 *Você é o próximo na fila de atendimento*\n\nPor favor, permaneça aqui. Você receberá uma mensagem em instântes.\n\nSe desejar encerrar o atendimento ou alterar a maneira de atendimento para autoatendimento, selecione um dos botões abaixo:",
+          "📥 *Você é o próximo na fila de atendimento personalizado*\n\n⏳ Por favor, permaneça aqui. Você receberá uma mensagem em instântes.\n\nSe desejar encerrar o atendimento ou alterar para autoatendimento, selecione abaixo:",
         buttonList: {
           buttons: [
             { id: "personalizado_finalizar", label: "✅ Finalizar atendimento" },
@@ -284,7 +284,7 @@ serve(async (req) => {
     } else {
       await enviarZapi("send-button-list", {
         phone,
-        message: `🧾 Seu número na fila é: *#${posicao}*\n\nPor favor, permaneça aqui. Assim que for sua vez, você receberá uma mensagem diretamente por aqui.\n\nSe desejar encerrar o atendimento ou alterar a maneira de atendimento para autoatendimento, selecione um dos botões abaixo:`,
+        message: `⏳ *Você entrou na fila de atendimento personalizado*\n\n📊 Seu número na fila é: *#${posicao}*\n\nPor favor, permaneça aqui. Assim que for sua vez, você receberá uma mensagem diretamente.\n\nSe desejar encerrar ou transferir para autoatendimento, selecione abaixo:`,
         buttonList: {
           buttons: [
             { id: "personalizado_finalizar", label: "✅ Finalizar atendimento" },
