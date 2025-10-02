@@ -108,7 +108,7 @@ serve(async (req) => {
         headers: { "Content-Type": "application/json", "Client-Token": clientToken },
         body: JSON.stringify({
           phone,
-          message: "Finalizado com sucesso",
+          message: "✅ *Atendimento finalizado com sucesso!*\n\n🙏 Obrigado por entrar em contato conosco.\n\n⭐ *Avalie este atendimento*\nSua opinião é muito importante para melhorarmos nossos serviços.\n\nSe precisar de mais ajuda, digite *menu* para ver todas as opções disponíveis.",
         }),
       });
       
