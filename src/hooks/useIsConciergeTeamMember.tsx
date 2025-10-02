@@ -16,7 +16,7 @@ export const useIsConciergeTeamMember = () => {
       // Admins always have access
       if (isAdmin()) return true;
 
-      // Check if user is member of any concierge team
+      // Check if user is member of Concierge or DFCom teams (have access to Atendimentos)
       const { data, error } = await supabase
         .from('equipe_members')
         .select(`
@@ -28,7 +28,7 @@ export const useIsConciergeTeamMember = () => {
         `)
         .eq('user_id', user.id)
         .eq('ativo', true)
-        .or('nome.ilike.%concierge%', { foreignTable: 'equipes' });
+        .or('nome.ilike.%concierge%,nome.ilike.%dfcom%', { foreignTable: 'equipes' });
 
       if (error) {
         console.error('Error checking concierge team membership:', error);
