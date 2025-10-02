@@ -100,7 +100,7 @@ async function listAtendentes() {
       const atendenteIds = atendentes.map(a => a.id)
       const { data: allUnidades, error: unidadesError } = await supabase
         .from('atendente_unidades')
-        .select('atendente_id, unidade_id, is_preferencial, prioridade, ativo')
+        .select('id, atendente_id, prioridade, ativo, codigo_grupo, grupo')
         .in('atendente_id', atendenteIds)
         .eq('ativo', true)
 
@@ -156,7 +156,7 @@ async function getAtendente(id: string) {
   // Buscar associações separadamente
   const { data: unidades } = await supabase
     .from('atendente_unidades')
-    .select('unidade_id, is_preferencial, prioridade, ativo')
+    .select('id, prioridade, ativo, codigo_grupo, grupo')
     .eq('atendente_id', id)
     .eq('ativo', true)
   
@@ -214,9 +214,8 @@ async function createAtendente(data: AtendenteData) {
   // 2. Associar com unidades se fornecidas
   if (unidades && unidades.length > 0) {
     const unidadeAssociations = unidades.map((unidade_id, index) => ({
+      id: unidade_id,
       atendente_id: atendente.id,
-      unidade_id,
-      is_preferencial: index === 0, // Primeira unidade é preferencial
       prioridade: index + 1
     }))
 
@@ -291,9 +290,8 @@ async function updateAtendente(id: string, data: Partial<AtendenteData>) {
     // Criar novas associações
     if (unidades.length > 0) {
       const unidadeAssociations = unidades.map((unidade_id, index) => ({
+        id: unidade_id,
         atendente_id: id,
-        unidade_id,
-        is_preferencial: index === 0,
         prioridade: index + 1
       }))
 
@@ -373,8 +371,7 @@ async function listExternalAtendentes() {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       atendente_unidades: [{
-        unidade_id: unidade.id,
-        is_preferencial: true,
+        id: unidade.id,
         prioridade: 1,
         ativo: true
       }]
