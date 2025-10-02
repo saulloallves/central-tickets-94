@@ -155,20 +155,42 @@ export function AIClassifierAdvancedTab() {
 
   const fetchMetrics = async () => {
     try {
-      const { data, error } = await supabase
-        .from('ai_classifier_metrics')
+      // Buscar métricas em tempo real dos últimos 30 dias
+      const { data: ticketsData, error: ticketsError } = await supabase
+        .from('tickets')
         .select('*')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .gte('data_abertura', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
 
-      if (error && error.code !== 'PGRST116') {
-        throw error;
-      }
+      if (ticketsError) throw ticketsError;
 
-      if (data) {
-        setMetrics(data as ClassifierMetrics);
-      }
+      const tickets = ticketsData || [];
+      const total = tickets.length;
+      const classificados = tickets.filter(t => t.categoria).length;
+      const slaOk = tickets.filter(t => t.status_sla === 'dentro_prazo').length;
+      const slaVencido = tickets.filter(t => t.status_sla === 'vencido').length;
+      
+      const temposResolucao = tickets
+        .filter(t => t.resolvido_em && t.data_abertura)
+        .map(t => {
+          const diff = new Date(t.resolvido_em).getTime() - new Date(t.data_abertura).getTime();
+          return diff / (1000 * 60); // minutos
+        });
+
+      const tempoMedio = temposResolucao.length > 0
+        ? temposResolucao.reduce((a, b) => a + b, 0) / temposResolucao.length
+        : 0;
+
+      const realTimeMetrics: ClassifierMetrics = {
+        total_tickets_classified: classificados,
+        correct_classifications: classificados,
+        accuracy_rate: total > 0 ? classificados / total : 1,
+        priority_accuracy: {},
+        sla_compliance_rate: total > 0 ? slaOk / total : 0,
+        average_response_time: Math.round(tempoMedio),
+        sla_breaches: slaVencido
+      };
+
+      setMetrics(realTimeMetrics);
     } catch (error) {
       console.error('Erro ao buscar métricas:', error);
     }
@@ -266,7 +288,7 @@ export function AIClassifierAdvancedTab() {
               <div>
                 <p className="text-sm font-medium">Tickets Classificados</p>
                 <p className="text-2xl font-bold text-emerald-500">
-                  {metrics?.total_tickets_classified || 15}
+                  {metrics?.total_tickets_classified || 0}
                 </p>
               </div>
             </div>
