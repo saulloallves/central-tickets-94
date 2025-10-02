@@ -168,30 +168,56 @@ const Dashboard = () => {
           value={kpis?.tickets_resolvidos || 0}
           icon={CheckCircle}
           iconColor="text-green-500"
+          description={`de ${kpis?.total_tickets || 0} tickets`}
         />
         <KPICardWithTrend
           title="SLA"
           value={`${kpis?.percentual_sla || 0}%`}
           icon={Clock}
-          iconColor={Number(kpis?.percentual_sla || 0) >= 85 ? 'text-green-500' : 'text-yellow-500'}
+          iconColor={Number(kpis?.percentual_sla || 0) >= 85 ? 'text-green-500' : Number(kpis?.percentual_sla || 0) >= 70 ? 'text-yellow-500' : 'text-red-500'}
+          description={(() => {
+            const total = kpis?.total_tickets || 0;
+            const slaOk = Math.round((Number(kpis?.percentual_sla || 0) / 100) * total);
+            return `${slaOk} de ${total} no prazo`;
+          })()}
         />
         <KPICardWithTrend
           title="Críticos"
           value={kpis?.tickets_crise || 0}
           icon={AlertTriangle}
           iconColor="text-red-500"
+          description="requerem atenção"
         />
         <KPICardWithTrend
           title="Tempo Médio"
-          value={`${kpis?.tempo_medio_resolucao || 0}h`}
+          value={(() => {
+            const horas = Number(kpis?.tempo_medio_resolucao || 0);
+            if (horas < 1) {
+              const minutos = Math.round(horas * 60);
+              return `${minutos} min`;
+            } else if (horas < 24) {
+              return `${horas.toFixed(1)}h`;
+            } else {
+              const dias = Math.floor(horas / 24);
+              const horasRestantes = Math.round(horas % 24);
+              return `${dias}d ${horasRestantes}h`;
+            }
+          })()}
           icon={Timer}
           iconColor="text-purple-500"
+          description="para resolver"
         />
         <KPICardWithTrend
           title="Reabertos"
           value={kpis?.tickets_reabertos || 0}
           icon={TrendingUp}
           iconColor="text-orange-500"
+          description={(() => {
+            const total = kpis?.total_tickets || 0;
+            const reabertos = kpis?.tickets_reabertos || 0;
+            const percentual = total > 0 ? ((reabertos / total) * 100).toFixed(1) : '0';
+            return `${percentual}% do total`;
+          })()}
         />
       </div>
 
