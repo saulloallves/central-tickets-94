@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { loadZAPIConfig } from "../_shared/zapi-config.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -32,12 +33,9 @@ serve(async (req) => {
     );
 
     // Carrega configurações Z-API
-    const zapiInstanceId = Deno.env.get('ZAPI_INSTANCE_ID');
-    const zapiToken = Deno.env.get('ZAPI_TOKEN');
-    const zapiClientToken = Deno.env.get('ZAPI_CLIENT_TOKEN');
-    const zapiBaseUrl = Deno.env.get('ZAPI_BASE_URL') || 'https://api.z-api.io';
+    const config = await loadZAPIConfig();
     
-    if (!zapiInstanceId || !zapiToken || !zapiClientToken) {
+    if (!config.instanceId || !config.instanceToken || !config.clientToken) {
       console.error('❌ Configurações Z-API não encontradas');
       return new Response(JSON.stringify({ error: "Configuração Z-API não encontrada" }), {
         headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -45,13 +43,13 @@ serve(async (req) => {
       });
     }
 
-    const zapiUrl = `${zapiBaseUrl}/instances/${zapiInstanceId}/token/${zapiToken}`;
+    const zapiUrl = `${config.baseUrl}/instances/${config.instanceId}/token/${config.instanceToken}`;
 
     async function enviarZapi(endpoint: string, payload: any) {
       try {
         const res = await fetch(`${zapiUrl}/${endpoint}`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", "Client-Token": zapiClientToken },
+          headers: { "Content-Type": "application/json", "Client-Token": config.clientToken },
           body: JSON.stringify(payload),
         });
         const data = await res.json();
