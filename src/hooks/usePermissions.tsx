@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 
 export type AppPermission = 
   | 'view_all_tickets'
@@ -21,49 +21,34 @@ export type AppPermission =
 
 export const usePermissions = () => {
   const { user } = useAuth();
-  const [permissions, setPermissions] = useState<AppPermission[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!user) {
-      setPermissions([]);
-      setLoading(false);
-      return;
-    }
+  // Use React Query for global caching - reduces 9 queries to 1
+  const { data: permissions = [], isLoading: loading } = useQuery({
+    queryKey: ['user-permissions', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      
+      const { data, error } = await supabase.rpc('get_user_permissions', {
+        _user_id: user.id
+      });
 
-    const fetchPermissions = async () => {
-      try {
-        const { data, error } = await supabase.rpc('get_user_permissions', {
-          _user_id: user.id
-        });
-
-        if (error) {
-          console.error('Error fetching permissions:', error);
-          // Only set empty array if it's not a network error
-          if (error.message?.includes('Failed to fetch')) {
-            // Network error - keep existing permissions if any
-            console.warn('Network error fetching permissions, keeping existing state');
-          } else {
-            setPermissions([]);
-          }
-        } else {
-          setPermissions(data?.map((p: any) => p.permission) || []);
-        }
-      } catch (error) {
+      if (error) {
         console.error('Error fetching permissions:', error);
-        // For network errors, don't clear existing permissions
-        if (error instanceof TypeError && error.message?.includes('Failed to fetch')) {
-          console.warn('Network connectivity issue, keeping existing permissions');
-        } else {
-          setPermissions([]);
+        // For network errors, return empty array but keep cache
+        if (error.message?.includes('Failed to fetch')) {
+          console.warn('Network error fetching permissions, keeping cache');
         }
-      } finally {
-        setLoading(false);
+        return [];
       }
-    };
 
-    fetchPermissions();
-  }, [user]);
+      return data?.map((p: any) => p.permission as AppPermission) || [];
+    },
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000, // 5 minutes - permissions don't change often
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+  });
 
   const hasPermission = (permission: AppPermission): boolean => {
     return permissions.includes(permission);

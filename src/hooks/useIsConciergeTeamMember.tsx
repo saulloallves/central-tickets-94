@@ -1,61 +1,48 @@
-import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
 import { useRole } from './useRole';
 import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 
 export const useIsConciergeTeamMember = () => {
   const { user } = useAuth();
   const { isAdmin } = useRole();
-  const [isConciergeTeamMember, setIsConciergeTeamMember] = useState(false);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!user) {
-      setIsConciergeTeamMember(false);
-      setLoading(false);
-      return;
-    }
+  // Use React Query with sessionStorage cache for memoization
+  const { data: isConciergeTeamMember = false, isLoading: loading } = useQuery({
+    queryKey: ['concierge-membership', user?.id],
+    queryFn: async () => {
+      if (!user) return false;
 
-    // Admins always have access
-    if (isAdmin()) {
-      setIsConciergeTeamMember(true);
-      setLoading(false);
-      return;
-    }
+      // Admins always have access
+      if (isAdmin()) return true;
 
-    const checkConciergeTeamMembership = async () => {
-      try {
-        // Check if user is member of any concierge team
-        const { data, error } = await supabase
-          .from('equipe_members')
-          .select(`
+      // Check if user is member of any concierge team
+      const { data, error } = await supabase
+        .from('equipe_members')
+        .select(`
+          id,
+          equipes!inner(
             id,
-            equipes!inner(
-              id,
-              nome
-            )
-          `)
-          .eq('user_id', user.id)
-          .eq('ativo', true)
-          .or('nome.ilike.%concierge%', { foreignTable: 'equipes' });
+            nome
+          )
+        `)
+        .eq('user_id', user.id)
+        .eq('ativo', true)
+        .or('nome.ilike.%concierge%', { foreignTable: 'equipes' });
 
-        if (error) {
-          console.error('Error checking concierge team membership:', error);
-          setIsConciergeTeamMember(false);
-        } else {
-          const isMember = data && data.length > 0;
-          setIsConciergeTeamMember(isMember);
-        }
-      } catch (error) {
+      if (error) {
         console.error('Error checking concierge team membership:', error);
-        setIsConciergeTeamMember(false);
-      } finally {
-        setLoading(false);
+        return false;
       }
-    };
 
-    checkConciergeTeamMembership();
-  }, [user, isAdmin]);
+      return data && data.length > 0;
+    },
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+  });
 
   return {
     isConciergeTeamMember: isAdmin() || isConciergeTeamMember,

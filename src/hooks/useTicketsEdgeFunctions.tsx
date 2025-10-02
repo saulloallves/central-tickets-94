@@ -378,15 +378,8 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
 
     realtimeChannelRef.current = channel;
     
-    // Set up periodic polling as backup if realtime fails
-    const pollInterval = setInterval(() => {
-      console.log('🔄 Backup polling triggered');
-      fetchTickets(true); // Mark as refetch to avoid loading state
-    }, 30000); // Aumentado para 30s para reduzir piscamento
-
-    return () => {
-      clearInterval(pollInterval);
-    };
+    // REMOVED: Polling backup removed to improve performance
+    // Realtime is reliable enough, if it fails, the reconnection logic handles it
   }, [user, fetchTickets]);
 
   // Simplified initialization - always fresh setup for realtime reliability

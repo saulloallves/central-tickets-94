@@ -77,12 +77,22 @@ export const useUserEquipes = () => {
     fetchUserEquipes();
   }, [user?.id]);
 
-  // Realtime subscription for equipe members
+  // Optimized Realtime subscription - prevent multiple channels and add debounce
   useEffect(() => {
     if (!user) return;
 
+    let debounceTimeout: NodeJS.Timeout | null = null;
+    const channelName = `user-equipes-${user.id}`;
+    
+    // Check if channel already exists to prevent duplicates
+    const existingChannel = supabase.getChannels().find(ch => ch.topic === channelName);
+    if (existingChannel) {
+      console.log('🔄 Equipes channel already exists, skipping duplicate');
+      return;
+    }
+
     const channel = supabase
-      .channel(`user-equipes-${user.id}`)
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -92,13 +102,24 @@ export const useUserEquipes = () => {
           filter: `user_id=eq.${user.id}`
         },
         (payload) => {
-          console.log('Realtime equipe change:', payload);
-          fetchUserEquipes(true); // Mark as refetch
+          console.log('🔄 Realtime equipe change:', payload);
+          
+          // Debounce refetch to prevent multiple rapid updates
+          if (debounceTimeout) {
+            clearTimeout(debounceTimeout);
+          }
+          
+          debounceTimeout = setTimeout(() => {
+            fetchUserEquipes(true);
+          }, 500);
         }
       )
       .subscribe();
 
     return () => {
+      if (debounceTimeout) {
+        clearTimeout(debounceTimeout);
+      }
       supabase.removeChannel(channel);
     };
   }, [user?.id]);

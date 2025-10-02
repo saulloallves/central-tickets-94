@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { slaTimerManager } from '@/lib/sla-timer-manager';
 
 interface SLATimerProps {
   ticketId: string;
@@ -29,65 +30,32 @@ export const SLATimer = ({
   
   const { toast } = useToast();
 
-  const calculateTimeRemaining = () => {
-    if (!dataLimiteSLA || status === 'concluido') {
-      return { hours: 0, minutes: 0, seconds: 0, isOverdue: false, isPaused: false, totalSeconds: 0 };
-    }
-
-    // Se SLA pausado, não calcular tempo
-    if (slaPausado) {
-      return { hours: 0, minutes: 0, seconds: 0, isOverdue: false, isPaused: true, totalSeconds: 0 };
-    }
-
-    const now = new Date();
-    const slaDate = new Date(dataLimiteSLA);
-    const diffMs = slaDate.getTime() - now.getTime();
-    
-    if (diffMs <= 0) {
-      return { hours: 0, minutes: 0, seconds: 0, isOverdue: true, isPaused: false, totalSeconds: 0 };
-    }
-
-    const totalSeconds = Math.floor(diffMs / 1000);
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-
-    return { hours, minutes, seconds, isOverdue: false, isPaused: false, totalSeconds };
-  };
-
+  // Use global SLA timer manager for better performance
   useEffect(() => {
-    const updateTimer = () => {
-      const newTime = calculateTimeRemaining();
-      const wasOverdue = timeRemaining.isOverdue;
-      
-      setTimeRemaining(newTime);
-
-      // Se o SLA acabou de vencer (transição de tempo restante para vencido)
-      if (!wasOverdue && newTime.isOverdue && newTime.totalSeconds === 0) {
-        console.log(`🚨 SLA VENCIDO: Ticket ${codigoTicket} (${ticketId})`);
-        
-        // Dispara notificação visual
+    slaTimerManager.register({
+      ticketId,
+      codigoTicket,
+      dataLimiteSLA,
+      status,
+      slaPausado,
+      callback: setTimeRemaining,
+      onExpired: (id) => {
         toast({
           title: '🚨 SLA Vencido!',
           description: `Ticket ${codigoTicket} teve o SLA vencido e será escalado automaticamente`,
           variant: 'destructive',
         });
-
-        // Chama callback se fornecido
+        
         if (onSLAExpired) {
-          onSLAExpired(ticketId);
+          onSLAExpired(id);
         }
       }
+    });
+
+    return () => {
+      slaTimerManager.unregister(ticketId);
     };
-
-    // Atualiza imediatamente
-    updateTimer();
-
-    // Atualiza a cada segundo
-    const interval = setInterval(updateTimer, 1000);
-
-    return () => clearInterval(interval);
-  }, [ticketId, dataLimiteSLA, status, codigoTicket, slaPausado, timeRemaining.isOverdue, onSLAExpired, toast]);
+  }, [ticketId, codigoTicket, dataLimiteSLA, status, slaPausado, onSLAExpired, toast]);
 
   if (!dataLimiteSLA || status === 'concluido') {
     return null;

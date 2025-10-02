@@ -22,11 +22,7 @@ import { useUserEquipes } from '@/hooks/useUserEquipes';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { TestFranqueadoNotification } from '@/components/notifications/TestFranqueadoNotification';
-interface Equipe {
-  id: string;
-  nome: string;
-  ativo: boolean;
-}
+
 const Tickets = () => {
   const {
     isAdmin,
@@ -63,7 +59,6 @@ const Tickets = () => {
   }, []);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [equipes, setEquipes] = useState<Equipe[]>([]);
   const [localFilters, setLocalFilters] = useState({
     search: '',
     status: 'all',
@@ -97,23 +92,15 @@ const Tickets = () => {
     moveTicket,
   } = useTicketsEdgeFunctions(debouncedFilters);
 
-  // Fetch available teams and start auto detection
-  useEffect(() => {
-    const fetchEquipes = async () => {
-      try {
-        const {
-          data,
-          error
-        } = await supabase.from('equipes').select('id, nome, ativo').eq('ativo', true).order('nome');
-        if (!error && data) {
-          setEquipes(data);
-        }
-      } catch (error) {
-        console.error('Error fetching equipes:', error);
-      }
-    };
-    fetchEquipes();
-  }, []);
+  // OPTIMIZED: Use userEquipes instead of separate fetch
+  // Convert userEquipes to format for compatibility
+  const equipes = userEquipes
+    .filter(ue => ue.equipes.ativo)
+    .map(ue => ({
+      id: ue.equipes.id,
+      nome: ue.equipes.nome,
+      ativo: ue.equipes.ativo
+    }));
 
   // Edge functions handle realtime automatically through database triggers
 
