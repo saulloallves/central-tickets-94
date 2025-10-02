@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -191,21 +192,36 @@ export const useDashboardMetrics = () => {
         console.log('🔍 [UNIT METRICS] First unit sample:', data[0]);
       }
 
-      // Fetch unit names from unidades table
+      // ✅ OTIMIZAÇÃO: Cache de nomes de unidades para evitar queries repetidas
       const unitIds = (data || []).map((unit: any) => unit.unidade_id).filter(Boolean);
       
       let unitNamesMap: Record<string, string> = {};
       if (unitIds.length > 0) {
-        const { data: unidadesData } = await supabase
-          .from('unidades')
-          .select('id, grupo')
-          .in('id', unitIds);
+        // Cache key para nomes de unidades
+        const cachedNames = sessionStorage.getItem('unit-names-cache');
+        const cacheTimestamp = sessionStorage.getItem('unit-names-cache-timestamp');
         
-        if (unidadesData) {
-          unitNamesMap = unidadesData.reduce((acc, u) => {
-            acc[u.id] = u.grupo || u.id;
-            return acc;
-          }, {} as Record<string, string>);
+        // Usar cache se tiver menos de 5 minutos
+        if (cachedNames && cacheTimestamp && (Date.now() - parseInt(cacheTimestamp)) < 5 * 60 * 1000) {
+          unitNamesMap = JSON.parse(cachedNames);
+          console.log('📦 [UNIT METRICS] Usando cache de nomes de unidades');
+        } else {
+          const { data: unidadesData } = await supabase
+            .from('unidades')
+            .select('id, grupo')
+            .in('id', unitIds);
+          
+          if (unidadesData) {
+            unitNamesMap = unidadesData.reduce((acc, u) => {
+              acc[u.id] = u.grupo || u.id;
+              return acc;
+            }, {} as Record<string, string>);
+            
+            // Salvar no cache
+            sessionStorage.setItem('unit-names-cache', JSON.stringify(unitNamesMap));
+            sessionStorage.setItem('unit-names-cache-timestamp', Date.now().toString());
+            console.log('💾 [UNIT METRICS] Cache de nomes de unidades atualizado');
+          }
         }
       }
 

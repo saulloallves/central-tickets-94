@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, CheckCircle, Clock, AlertTriangle, TrendingUp, BarChart3, AlertCircle, RefreshCw, Ticket, Timer } from "lucide-react";
@@ -9,6 +9,7 @@ import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
 import { useTeamMetrics } from "@/hooks/useTeamMetrics";
 import { useRole } from "@/hooks/useRole";
 import { useUserEquipes } from "@/hooks/useUserEquipes";
+import { debounce } from "@/lib/debounce";
 
 const Dashboard = () => {
   const { isAdmin, isDiretor } = useRole();
@@ -64,21 +65,30 @@ const Dashboard = () => {
   const { 
     teamMetrics, 
     loading: teamLoading,
-    refetch: refetchTeams
+    fetchTeamMetricsWithNames
   } = useTeamMetrics();
 
-  // Recarregar métricas quando os filtros mudarem
+  // ✅ OTIMIZAÇÃO: Debounce para evitar múltiplas requisições simultâneas
+  const debouncedFetchMetrics = useCallback(
+    debounce(() => {
+      console.log('📊 [DASHBOARD] Fetching metrics with filters:', { periodoDias, visao: filters.visao, unidade_id: filters.unidade_id });
+      fetchKPIs({
+        periodo_dias: periodoDias,
+        unidade_filter: filters.visao === 'unidade' ? filters.unidade_id : undefined,
+      });
+      fetchUnitMetrics({
+        periodo_dias: periodoDias,
+      });
+      fetchTeamMetricsWithNames({
+        periodo_dias: periodoDias,
+      });
+    }, 500), // 500ms de debounce
+    [periodoDias, filters.visao, filters.unidade_id]
+  );
+
+  // Recarregar métricas quando os filtros mudarem (com debounce)
   useEffect(() => {
-    fetchKPIs({
-      periodo_dias: periodoDias,
-      unidade_filter: filters.visao === 'unidade' ? filters.unidade_id : undefined,
-    });
-    fetchUnitMetrics({
-      periodo_dias: periodoDias,
-    });
-    refetchTeams({
-      periodo_dias: periodoDias,
-    });
+    debouncedFetchMetrics();
   }, [periodoDias, filters.visao, filters.unidade_id]);
 
   const loading = metricsLoading || teamLoading;
@@ -87,7 +97,7 @@ const Dashboard = () => {
   const handleRefresh = () => {
     fetchKPIs();
     fetchUnitMetrics();
-    refetchTeams();
+    fetchTeamMetricsWithNames();
   };
 
   if (loading) {

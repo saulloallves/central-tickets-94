@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -19,92 +20,92 @@ export interface TeamMetricsWithNames {
 export const useTeamMetrics = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [teamMetrics, setTeamMetrics] = useState<TeamMetricsWithNames[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [filters, setFilters] = useState<{ unidade_id?: string; periodo_dias?: number }>({});
 
-  const fetchTeamMetricsWithNames = async (filters?: { unidade_id?: string; periodo_dias?: number }) => {
-    if (!user) return;
+  // ✅ OTIMIZAÇÃO: Migrado para React Query com staleTime
+  const { data: teamMetrics = [], isLoading: loading, refetch } = useQuery({
+    queryKey: ['team-metrics', user?.id, filters],
+    staleTime: 2 * 60 * 1000, // ✅ Cache de 2 minutos
+    gcTime: 5 * 60 * 1000, // ✅ Garbage collect após 5 minutos
+    queryFn: async () => {
+      if (!user) return [];
 
-    console.log('👥 [TEAM METRICS] Starting fetch with names for user:', user.id);
-    setLoading(true);
-    
-    try {
-      // First get team metrics using the existing RPC
-      const { data: metricsData, error: metricsError } = await supabase.rpc('get_team_metrics', {
-        p_user_id: user.id,
-        p_periodo_dias: filters?.periodo_dias ?? 30,  // Use 30 as default instead of 0
-        p_unidade_filter: filters?.unidade_id || null
-      });
-
-      if (metricsError) {
-        console.error('❌ [TEAM METRICS] Error fetching metrics:', metricsError);
-        setTeamMetrics([]);
-        toast({
-          title: "Erro",
-          description: "Não foi possível carregar métricas das equipes",
-          variant: "destructive",
+      console.log('👥 [TEAM METRICS] Starting fetch with names for user:', user.id);
+      
+      try {
+        // First get team metrics using the existing RPC
+        const { data: metricsData, error: metricsError } = await supabase.rpc('get_team_metrics', {
+          p_user_id: user.id,
+          p_periodo_dias: filters?.periodo_dias ?? 30,
+          p_unidade_filter: filters?.unidade_id || null
         });
-        return;
-      }
 
-      // Now get team names
-      const { data: teamsData, error: teamsError } = await supabase
-        .from('equipes')
-        .select('id, nome')
-        .eq('ativo', true);
+        if (metricsError) {
+          console.error('❌ [TEAM METRICS] Error fetching metrics:', metricsError);
+          toast({
+            title: "Erro",
+            description: "Não foi possível carregar métricas das equipes",
+            variant: "destructive",
+          });
+          return [];
+        }
 
-      if (teamsError) {
-        console.error('❌ [TEAM METRICS] Error fetching team names:', teamsError);
-        // Still proceed with metrics data without showing error toast for team names
+        // Now get team names
+        const { data: teamsData, error: teamsError } = await supabase
+          .from('equipes')
+          .select('id, nome')
+          .eq('ativo', true);
+
+        if (teamsError) {
+          console.error('❌ [TEAM METRICS] Error fetching team names:', teamsError);
+          return (metricsData || []).map((metric: any) => ({
+            ...metric,
+            equipe_nome: metric.equipe_nome || 'Sem Equipe'
+          }));
+        }
+
+        console.log('📊 [TEAM METRICS] Metrics data:', metricsData);
+        console.log('👥 [TEAM METRICS] Teams data:', teamsData);
+
+        // Map team IDs to names
+        const teamNamesMap = teamsData.reduce((acc: Record<string, string>, team) => {
+          acc[team.id] = team.nome;
+          return acc;
+        }, {});
+
+        // Combine metrics with team names
         const enrichedMetrics = (metricsData || []).map((metric: any) => ({
           ...metric,
-          equipe_nome: metric.equipe_nome || 'Sem Equipe'
+          equipe_nome: teamNamesMap[metric.equipe_id] ?? metric.equipe_nome ?? 'Sem Equipe'
         }));
-        setTeamMetrics(enrichedMetrics);
-        return;
+
+        console.log('✅ [TEAM METRICS] Enriched metrics:', enrichedMetrics);
+        return enrichedMetrics;
+        
+      } catch (error) {
+        console.error('💥 [TEAM METRICS] Unexpected error:', error);
+        toast({
+          title: "Erro",
+          description: "Erro inesperado ao carregar métricas das equipes",
+          variant: "destructive",
+        });
+        return [];
       }
+    },
+    enabled: !!user,
+  });
 
-      console.log('📊 [TEAM METRICS] Metrics data:', metricsData);
-      console.log('👥 [TEAM METRICS] Teams data:', teamsData);
-
-      // Map team IDs to names
-      const teamNamesMap = teamsData.reduce((acc: Record<string, string>, team) => {
-        acc[team.id] = team.nome;
-        return acc;
-      }, {});
-
-      // Combine metrics with team names - preserve RPC-returned name if available
-      const enrichedMetrics = (metricsData || []).map((metric: any) => ({
-        ...metric,
-        equipe_nome: teamNamesMap[metric.equipe_id] ?? metric.equipe_nome ?? 'Sem Equipe'
-      }));
-
-      console.log('✅ [TEAM METRICS] Enriched metrics:', enrichedMetrics);
-      setTeamMetrics(enrichedMetrics);
-      
-    } catch (error) {
-      console.error('💥 [TEAM METRICS] Unexpected error:', error);
-      setTeamMetrics([]);
-      toast({
-        title: "Erro",
-        description: "Erro inesperado ao carregar métricas das equipes",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+  const fetchTeamMetricsWithNames = async (newFilters?: { unidade_id?: string; periodo_dias?: number }) => {
+    if (newFilters) {
+      setFilters(newFilters);
     }
+    await refetch();
   };
-
-  useEffect(() => {
-    if (user) {
-      fetchTeamMetricsWithNames();
-    }
-  }, [user]);
 
   return {
     teamMetrics,
     loading,
     fetchTeamMetricsWithNames,
-    refetch: fetchTeamMetricsWithNames
+    refetch: () => fetchTeamMetricsWithNames(filters)
   };
 };

@@ -22,7 +22,7 @@ export function MetricsSection({ periodDays = 30 }: MetricsSectionProps) {
   const {
     teamMetrics,
     loading: teamLoading,
-    refetch: refetchTeamMetrics
+    fetchTeamMetricsWithNames
   } = useTeamMetrics();
   
   const [refreshing, setRefreshing] = useState(false);
@@ -54,7 +54,7 @@ export function MetricsSection({ periodDays = 30 }: MetricsSectionProps) {
       console.log('🔄 [METRICS] Refreshing with period:', { periodDays, actualPeriod });
       
       await Promise.all([
-        refetchTeamMetrics({ periodo_dias: actualPeriod }),
+        fetchTeamMetricsWithNames({ periodo_dias: actualPeriod }),
         fetchUnitMetrics({ periodo_dias: actualPeriod })
       ]);
     } finally {
@@ -68,8 +68,8 @@ export function MetricsSection({ periodDays = 30 }: MetricsSectionProps) {
     console.log('🔄 [METRICS] Period changed, fetching with:', { periodDays, actualPeriod });
     
     fetchUnitMetrics({ periodo_dias: actualPeriod });
-    refetchTeamMetrics({ periodo_dias: actualPeriod });
-  }, [periodDays, fetchUnitMetrics, refetchTeamMetrics]);
+    fetchTeamMetricsWithNames({ periodo_dias: actualPeriod });
+  }, [periodDays, fetchUnitMetrics, fetchTeamMetricsWithNames]);
 
   const loading = unitLoading || teamLoading;
 

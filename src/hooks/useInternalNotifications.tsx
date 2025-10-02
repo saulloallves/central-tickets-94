@@ -33,6 +33,8 @@ export const useInternalNotifications = () => {
   // Fetch notifications with recipient status
   const { data: notifications = [], isLoading } = useQuery({
     queryKey: ['internal-notifications', user?.id],
+    staleTime: 2 * 60 * 1000, // ✅ OTIMIZAÇÃO: Cache de 2 minutos
+    gcTime: 5 * 60 * 1000, // ✅ OTIMIZAÇÃO: Garbage collect após 5 minutos
     queryFn: async () => {
       if (!user?.id) {
         console.log('🔔 No user ID, returning empty notifications');
@@ -356,18 +358,18 @@ export const useInternalNotifications = () => {
     };
   }, [user?.id, queryClient, toast]);
 
-  // Set up a polling backup as well
+  // Set up a polling backup as well (reduced frequency - only fallback)
   useEffect(() => {
     if (!user?.id) return;
     
-    console.log('🔔 ⏰ Configurando polling backup a cada 30s');
+    console.log('🔔 ⏰ Configurando polling backup a cada 2 min (fallback)');
     
     const interval = setInterval(() => {
       console.log('🔔 🔄 Polling backup - refetch notifications');
       queryClient.invalidateQueries({ 
         queryKey: ['internal-notifications', user.id] 
       });
-    }, 30000);
+    }, 120000); // ✅ OTIMIZAÇÃO: Reduzido de 30s para 2 minutos (fallback real)
 
     return () => {
       console.log('🔔 🧹 Limpando polling backup');

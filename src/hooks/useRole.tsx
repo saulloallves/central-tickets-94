@@ -112,7 +112,7 @@ export const useRole = () => {
     return () => {
       window.removeEventListener('roles-updated', handleRolesUpdate);
     };
-  }, [user, roleCache]);
+  }, [user]); // ✅ CORREÇÃO: Removido roleCache das dependências para evitar loop infinito
 
   const hasRole = (role: AppRole): boolean => {
     return roles.includes(role);
