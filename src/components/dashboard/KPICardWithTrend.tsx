@@ -12,6 +12,7 @@ interface KPICardWithTrendProps {
   icon: LucideIcon;
   description?: string;
   variant?: 'default' | 'success' | 'warning' | 'danger';
+  iconColor?: string;
 }
 
 export function KPICardWithTrend({
@@ -20,7 +21,8 @@ export function KPICardWithTrend({
   trend,
   icon: Icon,
   description,
-  variant = 'default'
+  variant = 'default',
+  iconColor
 }: KPICardWithTrendProps) {
   
   const getTrendIcon = () => {
@@ -41,26 +43,26 @@ export function KPICardWithTrend({
     return isGood ? 'text-success' : 'text-destructive';
   };
 
-  const getVariantStyles = () => {
+  const defaultIconColor = () => {
     switch (variant) {
       case 'success':
-        return 'border-success/20 bg-success/5';
+        return 'text-green-500';
       case 'warning':
-        return 'border-warning/20 bg-warning/5';
+        return 'text-yellow-500';
       case 'danger':
-        return 'border-destructive/20 bg-destructive/5';
+        return 'text-red-500';
       default:
-        return '';
+        return 'text-primary';
     }
   };
 
   return (
-    <Card className={cn("transition-all hover:shadow-md", getVariantStyles())}>
+    <Card className="transition-all hover:shadow-md">
       <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
         <CardTitle className="text-sm font-medium text-muted-foreground">
           {title}
         </CardTitle>
-        <Icon className="h-4 w-4 text-muted-foreground" />
+        <Icon className={cn("h-4 w-4", iconColor || defaultIconColor())} />
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">{value}</div>

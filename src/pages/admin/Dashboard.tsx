@@ -155,43 +155,43 @@ const Dashboard = () => {
         allowedViews={allowedViews as any}
       />
 
-      {/* KPIs Principais com Tendências */}
+      {/* KPIs Principais */}
       <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-6">
         <KPICardWithTrend
-          title="📈 Total"
+          title="Total"
           value={kpis?.total_tickets || 0}
           icon={Ticket}
-          variant="default"
+          iconColor="text-blue-500"
         />
         <KPICardWithTrend
-          title="✅ Resolvidos"
+          title="Resolvidos"
           value={kpis?.tickets_resolvidos || 0}
           icon={CheckCircle}
-          variant="success"
+          iconColor="text-green-500"
         />
         <KPICardWithTrend
-          title="⏱️ SLA"
+          title="SLA"
           value={`${kpis?.percentual_sla || 0}%`}
           icon={Clock}
-          variant={Number(kpis?.percentual_sla || 0) >= 85 ? 'success' : 'warning'}
+          iconColor={Number(kpis?.percentual_sla || 0) >= 85 ? 'text-green-500' : 'text-yellow-500'}
         />
         <KPICardWithTrend
-          title="🚨 Críticos"
+          title="Críticos"
           value={kpis?.tickets_crise || 0}
           icon={AlertTriangle}
-          variant="danger"
+          iconColor="text-red-500"
         />
         <KPICardWithTrend
-          title="⏰ Tempo Médio"
+          title="Tempo Médio"
           value={`${kpis?.tempo_medio_resolucao || 0}h`}
           icon={Timer}
-          variant="default"
+          iconColor="text-purple-500"
         />
         <KPICardWithTrend
-          title="🔄 Reabertos"
+          title="Reabertos"
           value={kpis?.tickets_reabertos || 0}
           icon={TrendingUp}
-          variant="warning"
+          iconColor="text-orange-500"
         />
       </div>
 
