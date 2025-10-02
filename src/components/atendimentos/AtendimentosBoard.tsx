@@ -25,11 +25,12 @@ export function AtendimentosBoard() {
     return filterAtendimentos(atendimentos);
   }, [atendimentos, selectedAtendenteId]);
 
-  // Calcular contadores de atendimentos por atendente
+  // Calcular contadores de atendimentos por atendente (excluindo concluídos)
   const atendimentosCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     atendimentos.forEach(atendimento => {
-      if (atendimento.atendente_id) {
+      if (atendimento.atendente_id && 
+          ['em_fila', 'em_atendimento', 'emergencia'].includes(atendimento.status)) {
         counts[atendimento.atendente_id] = (counts[atendimento.atendente_id] || 0) + 1;
       }
     });
