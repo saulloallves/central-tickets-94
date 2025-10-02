@@ -321,6 +321,7 @@ const KanbanTicketCard = memo(({ ticket, isSelected, onSelect, equipes }: Kanban
             codigoTicket={ticket.codigo_ticket}
             dataLimiteSLA={ticket.data_limite_sla}
             status={ticket.status}
+            slaPausado={ticket.sla_pausado || false}
           />
         )}
       </CardContent>

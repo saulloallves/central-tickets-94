@@ -22,7 +22,7 @@ export const useSLAMonitor = () => {
     try {
       const { data: tickets, error } = await supabase
         .from('tickets')
-        .select('id, codigo_ticket, data_limite_sla, sla_half_time, prioridade, status, data_abertura')
+        .select('id, codigo_ticket, data_limite_sla, sla_half_time, prioridade, status, data_abertura, sla_pausado, sla_pausado_em, tempo_pausado_total')
         .in('status', ['aberto', 'em_atendimento', 'escalonado'])
         .not('data_limite_sla', 'is', null);
 

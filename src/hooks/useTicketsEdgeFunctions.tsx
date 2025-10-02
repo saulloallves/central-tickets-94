@@ -21,6 +21,9 @@ export interface Ticket {
   prioridade: 'baixo' | 'medio' | 'alto' | 'imediato' | 'crise';
   data_abertura: string;
   data_limite_sla?: string;
+  sla_pausado?: boolean;
+  sla_pausado_em?: string;
+  tempo_pausado_total?: string;
   equipe_responsavel_id?: string;
   escalonado_para?: string;
   status_sla: 'dentro_prazo' | 'alerta' | 'vencido';
