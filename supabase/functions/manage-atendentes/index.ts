@@ -109,10 +109,17 @@ async function listAtendentes() {
         // Continue without associations if there's an error
       }
 
-      // Map associations to atendentes
+      // Map associations to atendentes and convert id to unidade_id for frontend
       for (const atendente of atendentes) {
         atendente.atendente_unidades = allUnidades 
-          ? allUnidades.filter(u => u.atendente_id === atendente.id)
+          ? allUnidades
+              .filter(u => u.atendente_id === atendente.id)
+              .map(u => ({
+                unidade_id: u.id,
+                is_preferencial: u.prioridade === 1,
+                prioridade: u.prioridade,
+                ativo: u.ativo
+              }))
           : []
       }
     } catch (error) {
@@ -160,7 +167,15 @@ async function getAtendente(id: string) {
     .eq('atendente_id', id)
     .eq('ativo', true)
   
-  atendente.atendente_unidades = unidades || []
+  // Mapear id para unidade_id para o frontend
+  const unidadesMapeadas = unidades?.map(u => ({
+    unidade_id: u.id,
+    is_preferencial: u.prioridade === 1,
+    prioridade: u.prioridade,
+    ativo: u.ativo
+  })) || []
+  
+  atendente.atendente_unidades = unidadesMapeadas
 
   return new Response(
     JSON.stringify({ data: atendente }),
