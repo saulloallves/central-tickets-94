@@ -85,25 +85,25 @@ serve(async (req) => {
     }
     console.log("✅ Unidade encontrada:", unidade);
 
-    // 2. Buscar tickets ativos do telefone/grupo
-    const { data: ticketAtivo, error: ticketError } = await supabase
-      .from("tickets")
-      .select("id, status, data_abertura, categoria, descricao_problema, codigo_ticket")
-      .eq("telefone_contato", phone)
+    // 2. Buscar chamados ativos do telefone/grupo
+    const { data: chamadoAtivo, error: chamadoError } = await supabase
+      .from("chamados")
+      .select("id, status, criado_em, categoria, descricao, tipo_atendimento")
+      .eq("telefone", phone)
       .eq("unidade_id", unidade.id)
-      .in("status", ["aberto", "em_atendimento"])
-      .order("data_abertura", { ascending: false })
+      .in("status", ["em_fila", "em_atendimento", "emergencia"])
+      .order("criado_em", { ascending: false })
       .maybeSingle();
 
-    if (ticketError) {
-      console.error("❌ Erro ao buscar ticket:", ticketError);
-      return new Response(JSON.stringify({ error: "Erro ao buscar ticket" }), {
+    if (chamadoError) {
+      console.error("❌ Erro ao buscar chamado:", chamadoError);
+      return new Response(JSON.stringify({ error: "Erro ao buscar chamado" }), {
         headers: { "Content-Type": "application/json", ...corsHeaders },
         status: 500,
       });
     }
 
-    if (!ticketAtivo) {
+    if (!chamadoAtivo) {
       // Não há atendimento em andamento
       await enviarZapi("send-button-list", {
         phone,
@@ -127,11 +127,11 @@ serve(async (req) => {
 
     // Há atendimento ativo - calcular informações
     const agora = new Date();
-    const criadoEm = new Date(ticketAtivo.data_abertura);
+    const criadoEm = new Date(chamadoAtivo.criado_em);
     const tempoEspera = Math.floor((agora.getTime() - criadoEm.getTime()) / (1000 * 60)); // em minutos
 
     let mensagem = `📊 *Status do seu Atendimento*\n\n`;
-    mensagem += `🎫 *Código:* ${ticketAtivo.codigo_ticket}\n`;
+    mensagem += `🎫 *Código:* ${chamadoAtivo.id.substring(0, 8)}\n`;
     mensagem += `🕐 *Aberto em:* ${criadoEm.toLocaleString('pt-BR', { 
       timeZone: 'America/Sao_Paulo',
       day: '2-digit',
@@ -141,26 +141,26 @@ serve(async (req) => {
       minute: '2-digit'
     })}\n`;
     mensagem += `⏱️ *Tempo decorrido:* ${tempoEspera} minutos\n`;
-    mensagem += `📋 *Categoria:* ${ticketAtivo.categoria || 'Geral'}\n`;
+    mensagem += `📋 *Tipo:* ${chamadoAtivo.tipo_atendimento || 'Personalizado'}\n`;
 
-    if (ticketAtivo.status === "aberto") {
+    if (chamadoAtivo.status === "em_fila") {
       // Calcular posição na fila
       const { data: fila, error: filaError } = await supabase
-        .from("tickets")
-        .select("id, data_abertura")
-        .eq("status", "aberto")
+        .from("chamados")
+        .select("id, criado_em")
+        .eq("status", "em_fila")
         .eq("unidade_id", unidade.id)
-        .order("data_abertura", { ascending: true });
+        .order("criado_em", { ascending: true });
 
       if (!filaError && fila) {
-        const posicao = fila.findIndex((t) => t.id === ticketAtivo.id) + 1;
+        const posicao = fila.findIndex((t) => t.id === chamadoAtivo.id) + 1;
         mensagem += `🎯 *Posição na fila:* #${posicao}\n`;
-        mensagem += `👥 *Total na fila:* ${fila.length} tickets\n`;
+        mensagem += `👥 *Total na fila:* ${fila.length} chamados\n`;
       }
 
       mensagem += `\n⏳ *Status:* Aguardando atendimento\n`;
       mensagem += `\nVocê receberá uma mensagem assim que for sua vez.`;
-    } else if (ticketAtivo.status === "em_atendimento") {
+    } else if (chamadoAtivo.status === "em_atendimento") {
       mensagem += `\n👥 *Status:* Em atendimento\n`;
       mensagem += `\nVocê está sendo atendido agora por nossa equipe.`;
     }
@@ -179,7 +179,7 @@ serve(async (req) => {
     return new Response(JSON.stringify({ 
       success: true, 
       tem_atendimento: true,
-      ticket: ticketAtivo,
+      chamado: chamadoAtivo,
       tempo_espera: tempoEspera
     }), {
       headers: { "Content-Type": "application/json", ...corsHeaders },
