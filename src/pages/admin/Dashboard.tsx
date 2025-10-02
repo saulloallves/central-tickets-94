@@ -1,73 +1,102 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { KPICard } from "@/components/dashboard/KPICard";
+import { Users, CheckCircle, Clock, AlertTriangle, TrendingUp, BarChart3, AlertCircle, RefreshCw, Ticket, Timer } from "lucide-react";
+import { DashboardFilters, DashboardFiltersState } from "@/components/dashboard/DashboardFilters";
+import { KPICardWithTrend } from "@/components/dashboard/KPICardWithTrend";
 import { InternalAlertsPanel } from "@/components/dashboard/InternalAlertsPanel";
-import { TicketDetail } from "@/components/tickets/TicketDetail";
-import { useTeamDashboardMetrics } from "@/hooks/useTeamDashboardMetrics";
-import { useInternalNotifications } from "@/hooks/useInternalNotifications";
-import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
+import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
+import { useTeamMetrics } from "@/hooks/useTeamMetrics";
 import { useRole } from "@/hooks/useRole";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { 
-  TicketIcon, 
-  ClockIcon, 
-  CheckCircleIcon, 
-  AlertTriangleIcon,
-  TrendingUpIcon,
-  UsersIcon,
-  RefreshCw,
-  User,
-  Users,
-  BarChart3,
-  AlertCircle
-} from "lucide-react";
+import { useUserEquipes } from "@/hooks/useUserEquipes";
 
 const Dashboard = () => {
-  const { isAdmin, isColaborador } = useRole();
+  const { isAdmin, isDiretor } = useRole();
+  const { userEquipes, getPrimaryEquipe } = useUserEquipes();
+  const primaryEquipe = getPrimaryEquipe();
+  
+  // Estado dos filtros
+  const [filters, setFilters] = useState<DashboardFiltersState>({
+    periodo: 'hoje',
+    dataInicio: new Date(),
+    dataFim: new Date(),
+    visao: 'geral',
+  });
+
+  // Determinar visões permitidas baseado no papel do usuário
+  const allowedViews = (() => {
+    if (isAdmin() || isDiretor()) return ['geral', 'equipe', 'unidade'] as const;
+    if (userEquipes && userEquipes.length > 0) return ['geral', 'equipe'] as const;
+    return ['geral'] as const;
+  })();
+
+  // Auto-selecionar equipe primária se usuário tem equipe e mudou para visão por equipe
+  useEffect(() => {
+    if (filters.visao === 'equipe' && !filters.equipe_id && primaryEquipe) {
+      setFilters(prev => ({ ...prev, equipe_id: primaryEquipe.equipe_id }));
+    }
+  }, [filters.visao, filters.equipe_id, primaryEquipe]);
+
+  // Calcular dias baseado no período
+  const periodoDias = (() => {
+    if (filters.periodo === 'customizado' && filters.dataInicio && filters.dataFim) {
+      const diffTime = Math.abs(filters.dataFim.getTime() - filters.dataInicio.getTime());
+      return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    }
+    switch (filters.periodo) {
+      case 'hoje': return 1;
+      case 'semana': return 7;
+      case 'mes': return 30;
+      case '90dias': return 90;
+      default: return 1;
+    }
+  })();
+
+  // Buscar dados com os filtros aplicados
+  const { 
+    kpis, 
+    unitMetrics, 
+    loading: metricsLoading,
+    fetchKPIs,
+    fetchUnitMetrics
+  } = useDashboardMetrics();
+
   const { 
     teamMetrics, 
-    crisisMetrics, 
-    loading, 
-    primaryEquipe,
-    refetch 
-  } = useTeamDashboardMetrics();
-  
-  // Initialize notification systems - only internal notifications here
-  const { notifications, unreadCount } = useInternalNotifications();
-  // Remove useRealtimeNotifications from here to avoid conflicts
-  
-  // Debug log to verify data structure
-  console.log('Dashboard metrics:', { teamMetrics, crisisMetrics, loading, primaryEquipe });
-  console.log('🔔 Internal notifications debug:', { notificationCount: notifications.length, unreadCount });
-  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
-  
-  // Listen for notification ticket modal events
+    loading: teamLoading,
+    refetch: refetchTeams
+  } = useTeamMetrics();
+
+  // Recarregar métricas quando os filtros mudarem
   useEffect(() => {
-    const handleOpenTicketModal = (event: CustomEvent) => {
-      setSelectedTicketId(event.detail.ticketId);
-    };
-    
-    window.addEventListener('openTicketModal', handleOpenTicketModal as EventListener);
-    
-    return () => {
-      window.removeEventListener('openTicketModal', handleOpenTicketModal as EventListener);
-    };
-  }, []);
+    fetchKPIs({
+      periodo_dias: periodoDias,
+      unidade_filter: filters.visao === 'unidade' ? filters.unidade_id : undefined,
+    });
+    fetchUnitMetrics({
+      periodo_dias: periodoDias,
+    });
+    refetchTeams({
+      periodo_dias: periodoDias,
+    });
+  }, [periodoDias, filters.visao, filters.unidade_id]);
+
+  const loading = metricsLoading || teamLoading;
+
+  // Função de refresh global
+  const handleRefresh = () => {
+    fetchKPIs();
+    fetchUnitMetrics();
+    refetchTeams();
+  };
 
   if (loading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 animate-in fade-in duration-300">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Dashboard da Equipe</h1>
-            <p className="text-muted-foreground">
-              Visão focada na sua produtividade e equipe
-            </p>
+            <h1 className="text-3xl font-bold tracking-tight">Dashboard de Governança</h1>
+            <p className="text-muted-foreground">Carregando métricas...</p>
           </div>
         </div>
         
@@ -89,174 +118,205 @@ const Dashboard = () => {
     );
   }
 
-  return (
-    <div className="w-full space-y-4 md:space-y-6 pt-3 md:pt-6">
-      {/* Header com Alerta de Crise */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl md:text-3xl font-bold tracking-tight">Dashboard da Equipe</h1>
-            <p className="text-sm md:text-base text-muted-foreground">
-              {primaryEquipe ? `Equipe: ${primaryEquipe.equipes.nome}` : 'Visão geral da equipe'}
-            </p>
-          </div>
-          <Button variant="outline" onClick={refetch} className="gap-2">
-            <RefreshCw className="h-4 w-4" />
-            Atualizar
-          </Button>
-        </div>
+  // Preparar lista de equipes para o filtro
+  const equipesParaFiltro = teamMetrics?.map(t => ({
+    id: t.equipe_id || '',
+    nome: t.equipe_nome || 'Equipe sem nome'
+  })).filter(e => e.id) || [];
 
-        {/* Alerta de Crise - só aparece quando há crise ativa */}
-        {crisisMetrics?.crise_ativa && (
-          <Card className="border-destructive bg-destructive/5">
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5 text-destructive" />
-                <CardTitle className="text-destructive">🚨 ALERTA DE CRISE ATIVA 🚨</CardTitle>
-              </div>
-              <CardDescription className="text-destructive/80">
-                Uma situação de crise está em andamento. Priorize o atendimento aos tickets críticos.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        )}
+  // Preparar lista de unidades para o filtro
+  const unidadesParaFiltro = unitMetrics?.map(u => ({
+    id: u.unidade_id || '',
+    nome: u.unidade_nome || 'Unidade sem nome'
+  })).filter(u => u.id) || [];
+
+  return (
+    <div className="w-full space-y-4 md:space-y-6 pt-3 md:pt-6 animate-in fade-in duration-300">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl md:text-3xl font-bold tracking-tight">Dashboard de Governança</h1>
+          <p className="text-sm md:text-base text-muted-foreground">
+            Visão completa de métricas e desempenho
+          </p>
+        </div>
+        <Button variant="outline" onClick={handleRefresh} className="gap-2">
+          <RefreshCw className="h-4 w-4" />
+          Atualizar
+        </Button>
       </div>
 
-      {/* VISÃO DA EQUIPE */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            VISÃO DA EQUIPE {primaryEquipe ? `DE ${primaryEquipe.equipes.nome.toUpperCase()}` : ''}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Métricas principais da equipe */}
-          <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-5">
-            <KPICard
-              title="Total de Tickets"
-              value={teamMetrics?.total_tickets?.toString() || "0"}
-              description="Todos os tickets"
-              icon={<TicketIcon className="h-4 w-4 text-primary" />}
-            />
-            <KPICard
-              title="Resolvidos Hoje"
-              value={teamMetrics?.resolvidos_hoje?.toString() || "0"}
-              description="Tickets finalizados"
-              icon={<CheckCircleIcon className="h-4 w-4 text-success" />}
-            />
-            <KPICard
-              title="Em Atendimento"
-              value={teamMetrics?.em_atendimento?.toString() || "0"}
-              description="Sendo resolvidos"
-              icon={<User className="h-4 w-4 text-info" />}
-            />
-            <KPICard
-              title="Abertos"
-              value={teamMetrics?.abertos?.toString() || "0"}
-              description="Aguardando atendimento"
-              icon={<AlertTriangleIcon className="h-4 w-4 text-warning" />}
-            />
-            <KPICard
-              title="Escalonados"
-              value={teamMetrics?.escalonados?.toString() || "0"}
-              description="Enviados para supervisão"
-              icon={<TrendingUpIcon className="h-4 w-4 text-critical" />}
-            />
-          </div>
+      {/* Filtros */}
+      <DashboardFilters
+        filters={filters}
+        onChange={setFilters}
+        equipes={equipesParaFiltro}
+        unidades={unidadesParaFiltro}
+        allowedViews={allowedViews as any}
+      />
 
-          {/* Carga por Colaborador e Tickets próximos de vencer */}
-          <div className="grid gap-4 md:grid-cols-2">
-            {/* Carga por Colaborador */}
-            <Card className="bg-muted/30">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm">Carga por Colaborador</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {teamMetrics?.carga_por_colaborador?.length ? (
-                  teamMetrics.carga_por_colaborador.map((item, index) => (
-                    <div key={index} className="flex justify-between items-center text-sm">
-                      <span className="truncate">{item.nome}:</span>
-                      <Badge variant="secondary">{item.tickets} tickets</Badge>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-muted-foreground">Nenhum colaborador com tickets ativos</p>
-                )}
-              </CardContent>
-            </Card>
+      {/* KPIs Principais com Tendências */}
+      <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-6">
+        <KPICardWithTrend
+          title="📈 Total"
+          value={kpis?.total_tickets || 0}
+          icon={Ticket}
+          variant="default"
+        />
+        <KPICardWithTrend
+          title="✅ Resolvidos"
+          value={kpis?.tickets_resolvidos || 0}
+          icon={CheckCircle}
+          variant="success"
+        />
+        <KPICardWithTrend
+          title="⏱️ SLA"
+          value={`${kpis?.percentual_sla || 0}%`}
+          icon={Clock}
+          variant={Number(kpis?.percentual_sla || 0) >= 85 ? 'success' : 'warning'}
+        />
+        <KPICardWithTrend
+          title="🚨 Críticos"
+          value={kpis?.tickets_crise || 0}
+          icon={AlertTriangle}
+          variant="danger"
+        />
+        <KPICardWithTrend
+          title="⏰ Tempo Médio"
+          value={`${kpis?.tempo_medio_resolucao || 0}h`}
+          icon={Timer}
+          variant="default"
+        />
+        <KPICardWithTrend
+          title="🔄 Reabertos"
+          value={kpis?.tickets_reabertos || 0}
+          icon={TrendingUp}
+          variant="warning"
+        />
+      </div>
 
-            {/* Tickets Próximos de Violar SLA */}
-            <Card className="bg-warning/10 border-warning/20">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <ClockIcon className="h-4 w-4 text-warning" />
-                  Tickets Próximos de Violar SLA (Meus)
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {teamMetrics?.tickets_proximos_vencer?.length ? (
-                  teamMetrics.tickets_proximos_vencer.slice(0, 3).map((ticket, index) => (
-                    <div key={index} className="text-sm space-y-1">
-                      <div className="flex justify-between">
-                        <span className="font-medium">[ID] [Título]</span>
-                        <span className="text-muted-foreground">[Tempo Restante]</span>
+      {/* DETALHAMENTO POR VISÃO */}
+      {filters.visao === 'geral' && (
+        <div className="grid gap-4 md:grid-cols-2">
+          {/* Métricas por Equipe */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Desempenho por Equipe (Top 5)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {teamMetrics && teamMetrics.length > 0 ? (
+                  teamMetrics.slice(0, 5).map((team, index) => (
+                    <div key={team.equipe_id || index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                      <div className="flex-1">
+                        <p className="font-medium">{team.equipe_nome || 'Equipe sem nome'}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {team.total_tickets} tickets • {team.tickets_resolvidos} resolvidos
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-primary">
+                          {team.tickets_sla_ok && team.total_tickets 
+                            ? ((team.tickets_sla_ok / team.total_tickets) * 100).toFixed(1)
+                            : '0.0'}%
+                        </p>
+                        <p className="text-xs text-muted-foreground">SLA</p>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <p className="text-sm text-muted-foreground">Nenhum ticket próximo do vencimento</p>
+                  <p className="text-sm text-muted-foreground text-center py-8">
+                    Nenhuma equipe com dados no período
+                  </p>
                 )}
-              </CardContent>
-            </Card>
-          </div>
-        </CardContent>
-      </Card>
+              </div>
+            </CardContent>
+          </Card>
 
-      {/* VISÃO GERAL DO SISTEMA */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
-            VISÃO GERAL DO SISTEMA
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 md:gap-4 grid-cols-1 md:grid-cols-2">
-            <KPICard
-              title="Tickets Críticos (Equipe)"
-              value={crisisMetrics?.tickets_criticos_equipe?.toString() || "0"}
-              description="Crise + Imediato"
-              icon={<AlertTriangleIcon className="h-4 w-4 text-critical" />}
-            />
-            <KPICard
-              title="Backlog (Últimos 7 dias)"
-              value={crisisMetrics?.backlog_ultimos_7_dias?.toString() || "0"}
-              description="Tickets em aberto"
-              icon={<TrendingUpIcon className="h-4 w-4 text-info" />}
-            />
-          </div>
-        </CardContent>
-      </Card>
+          {/* Métricas por Unidade */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Desempenho por Unidade (Top 5)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {unitMetrics && unitMetrics.length > 0 ? (
+                  unitMetrics.slice(0, 5).map((unit, index) => (
+                    <div key={unit.unidade_id || index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                      <div className="flex-1">
+                        <p className="font-medium">{unit.unidade_nome || 'Unidade sem nome'}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {unit.total_tickets_mes || 0} tickets • {unit.tickets_resolvidos || 0} resolvidos
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-primary">
+                          {Number(unit.percentual_sla || 0).toFixed(1)}%
+                        </p>
+                        <p className="text-xs text-muted-foreground">SLA</p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-8">
+                    Nenhuma unidade com dados no período
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {filters.visao === 'equipe' && filters.equipe_id && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Detalhes da Equipe Selecionada
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {(() => {
+              const equipeData = teamMetrics?.find(t => t.equipe_id === filters.equipe_id);
+              if (!equipeData) {
+                return <p className="text-sm text-muted-foreground">Equipe não encontrada</p>;
+              }
+              return (
+                <div className="space-y-4">
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <div className="p-4 bg-muted/30 rounded-lg">
+                      <p className="text-sm text-muted-foreground">Total de Tickets</p>
+                      <p className="text-2xl font-bold">{equipeData.total_tickets}</p>
+                    </div>
+                    <div className="p-4 bg-muted/30 rounded-lg">
+                      <p className="text-sm text-muted-foreground">Resolvidos</p>
+                      <p className="text-2xl font-bold text-success">{equipeData.tickets_resolvidos}</p>
+                    </div>
+                    <div className="p-4 bg-muted/30 rounded-lg">
+                      <p className="text-sm text-muted-foreground">SLA Compliance</p>
+                      <p className="text-2xl font-bold text-primary">
+                        {equipeData.tickets_sla_ok && equipeData.total_tickets
+                          ? ((equipeData.tickets_sla_ok / equipeData.total_tickets) * 100).toFixed(1)
+                          : '0.0'}%
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Internal Alerts Panel */}
       <InternalAlertsPanel />
-      
-      {/* Ticket Detail Modal */}
-      <Dialog open={!!selectedTicketId} onOpenChange={() => setSelectedTicketId(null)}>
-        <DialogContent className="w-[96vw] max-w-6xl h-[90vh] p-0 overflow-hidden">
-          <DialogHeader className="sr-only">
-            <DialogTitle>Detalhes do Ticket</DialogTitle>
-            <DialogDescription>Visualização completa dos detalhes do ticket</DialogDescription>
-          </DialogHeader>
-          {selectedTicketId && (
-            <TicketDetail 
-              ticketId={selectedTicketId}
-              onClose={() => setSelectedTicketId(null)}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
