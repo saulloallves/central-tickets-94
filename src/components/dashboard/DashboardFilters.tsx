@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Clock, Eye } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -102,7 +102,10 @@ export function DashboardFilters({
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Período */}
           <div className="space-y-2">
-            <Label>📅 Período</Label>
+            <Label className="flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              Período
+            </Label>
             <Select value={filters.periodo} onValueChange={handlePeriodoChange}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o período" />
@@ -178,7 +181,10 @@ export function DashboardFilters({
 
           {/* Visão */}
           <div className="space-y-2">
-            <Label>👁️ Visão</Label>
+            <Label className="flex items-center gap-2">
+              <Eye className="h-4 w-4" />
+              Visão
+            </Label>
             <Select value={filters.visao} onValueChange={(value: string) => handleVisaoChange(value as VisaoType)}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione a visão" />
