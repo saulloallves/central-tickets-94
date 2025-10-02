@@ -88,7 +88,6 @@ serve(async (req) => {
       .from("chamados")
       .select("id, status, criado_em, categoria, descricao, tipo_atendimento")
       .eq("telefone", phone)
-      .eq("unidade_id", unidade.id)
       .in("status", ["em_fila", "em_atendimento", "emergencia"])
       .order("criado_em", { ascending: false })
       .maybeSingle();
