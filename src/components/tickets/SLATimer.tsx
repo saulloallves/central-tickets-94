@@ -6,6 +6,7 @@ interface SLATimerProps {
   codigoTicket: string;
   dataLimiteSLA: string | null;
   status: string;
+  slaPausado?: boolean;
   onSLAExpired?: (ticketId: string) => void;
 }
 
@@ -14,6 +15,7 @@ export const SLATimer = ({
   codigoTicket, 
   dataLimiteSLA, 
   status, 
+  slaPausado = false,
   onSLAExpired 
 }: SLATimerProps) => {
   const [timeRemaining, setTimeRemaining] = useState<{
@@ -21,14 +23,20 @@ export const SLATimer = ({
     minutes: number;
     seconds: number;
     isOverdue: boolean;
+    isPaused: boolean;
     totalSeconds: number;
-  }>({ hours: 0, minutes: 0, seconds: 0, isOverdue: false, totalSeconds: 0 });
+  }>({ hours: 0, minutes: 0, seconds: 0, isOverdue: false, isPaused: false, totalSeconds: 0 });
   
   const { toast } = useToast();
 
   const calculateTimeRemaining = () => {
     if (!dataLimiteSLA || status === 'concluido') {
-      return { hours: 0, minutes: 0, seconds: 0, isOverdue: false, totalSeconds: 0 };
+      return { hours: 0, minutes: 0, seconds: 0, isOverdue: false, isPaused: false, totalSeconds: 0 };
+    }
+
+    // Se SLA pausado, não calcular tempo
+    if (slaPausado) {
+      return { hours: 0, minutes: 0, seconds: 0, isOverdue: false, isPaused: true, totalSeconds: 0 };
     }
 
     const now = new Date();
@@ -36,7 +44,7 @@ export const SLATimer = ({
     const diffMs = slaDate.getTime() - now.getTime();
     
     if (diffMs <= 0) {
-      return { hours: 0, minutes: 0, seconds: 0, isOverdue: true, totalSeconds: 0 };
+      return { hours: 0, minutes: 0, seconds: 0, isOverdue: true, isPaused: false, totalSeconds: 0 };
     }
 
     const totalSeconds = Math.floor(diffMs / 1000);
@@ -44,7 +52,7 @@ export const SLATimer = ({
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
 
-    return { hours, minutes, seconds, isOverdue: false, totalSeconds };
+    return { hours, minutes, seconds, isOverdue: false, isPaused: false, totalSeconds };
   };
 
   useEffect(() => {
@@ -79,13 +87,22 @@ export const SLATimer = ({
     const interval = setInterval(updateTimer, 1000);
 
     return () => clearInterval(interval);
-  }, [ticketId, dataLimiteSLA, status, codigoTicket, timeRemaining.isOverdue, onSLAExpired, toast]);
+  }, [ticketId, dataLimiteSLA, status, codigoTicket, slaPausado, timeRemaining.isOverdue, onSLAExpired, toast]);
 
   if (!dataLimiteSLA || status === 'concluido') {
     return null;
   }
 
   const formatTime = (value: number) => value.toString().padStart(2, '0');
+
+  if (timeRemaining.isPaused) {
+    return (
+      <div className="flex items-center gap-1 text-amber-600 text-sm font-medium">
+        <span className="w-2 h-2 bg-amber-600 rounded-full"></span>
+        <span>SLA Pausado (Fora do horário)</span>
+      </div>
+    );
+  }
 
   if (timeRemaining.isOverdue) {
     return (

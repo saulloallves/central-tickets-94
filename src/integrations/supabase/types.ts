@@ -2435,9 +2435,12 @@ export type Database = {
           resolvido_em: string | null
           resposta_resolucao: string | null
           sla_half_time: string | null
+          sla_pausado: boolean | null
+          sla_pausado_em: string | null
           status: Database["public"]["Enums"]["ticket_status"]
           status_sla: Database["public"]["Enums"]["ticket_sla_status"]
           subcategoria: string | null
+          tempo_pausado_total: unknown | null
           titulo: string | null
           unidade_id: string
           updated_at: string
@@ -2470,9 +2473,12 @@ export type Database = {
           resolvido_em?: string | null
           resposta_resolucao?: string | null
           sla_half_time?: string | null
+          sla_pausado?: boolean | null
+          sla_pausado_em?: string | null
           status?: Database["public"]["Enums"]["ticket_status"]
           status_sla?: Database["public"]["Enums"]["ticket_sla_status"]
           subcategoria?: string | null
+          tempo_pausado_total?: unknown | null
           titulo?: string | null
           unidade_id: string
           updated_at?: string
@@ -2505,9 +2511,12 @@ export type Database = {
           resolvido_em?: string | null
           resposta_resolucao?: string | null
           sla_half_time?: string | null
+          sla_pausado?: boolean | null
+          sla_pausado_em?: string | null
           status?: Database["public"]["Enums"]["ticket_status"]
           status_sla?: Database["public"]["Enums"]["ticket_sla_status"]
           subcategoria?: string | null
+          tempo_pausado_total?: unknown | null
           titulo?: string | null
           unidade_id?: string
           updated_at?: string
