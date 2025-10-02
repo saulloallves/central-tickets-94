@@ -191,10 +191,28 @@ export const useDashboardMetrics = () => {
         console.log('🔍 [UNIT METRICS] First unit sample:', data[0]);
       }
 
+      // Fetch unit names from unidades table
+      const unitIds = (data || []).map((unit: any) => unit.unidade_id).filter(Boolean);
+      
+      let unitNamesMap: Record<string, string> = {};
+      if (unitIds.length > 0) {
+        const { data: unidadesData } = await supabase
+          .from('unidades')
+          .select('id, grupo')
+          .in('id', unitIds);
+        
+        if (unidadesData) {
+          unitNamesMap = unidadesData.reduce((acc, u) => {
+            acc[u.id] = u.grupo || u.id;
+            return acc;
+          }, {} as Record<string, string>);
+        }
+      }
+
       // Map the database response to match our interface
       const mappedData = (data || []).map((unit: any) => ({
         unidade_id: unit.unidade_id,
-        unidade_nome: unit.unidade_nome,
+        unidade_nome: unitNamesMap[unit.unidade_id] || unit.unidade_nome || unit.unidade_id,
         total_tickets_mes: unit.total_tickets || 0, // Map from total_tickets
         tickets_resolvidos: unit.tickets_concluidos || 0, // Map from tickets_concluidos
         tickets_abertos: unit.total_tickets - unit.tickets_concluidos || 0,
