@@ -158,7 +158,7 @@ const App = () => (
                 </ProtectedRoute>
               } />
               <Route path="/admin/import-members" element={
-                <ProtectedRoute requiredRole="admin">
+                <ProtectedRoute requiredRoles={['admin', 'diretoria']}>
                   <AdminLayout>
                     <ImportMembers />
                   </AdminLayout>

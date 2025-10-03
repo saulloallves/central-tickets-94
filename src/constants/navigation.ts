@@ -7,7 +7,8 @@ import {
   Settings, 
   Home,
   Users2,
-  BarChart3
+  BarChart3,
+  Upload
 } from "lucide-react";
 
 export const navigationItems = [
@@ -18,6 +19,7 @@ export const navigationItems = [
   { title: "Franqueados", url: "/admin/franqueados", icon: Users, permission: 'view_team_tickets' as const },
   { title: "Colaboradores", url: "/admin/colaboradores", icon: UserCheck, permission: 'view_all_tickets' as const },
   { title: "Equipes", url: "/admin/equipes", icon: Users2, permission: 'view_team_tickets' as const },
+  { title: "Importar Usuários", url: "/admin/import-members", icon: Upload, permission: 'configure_ai_models' as const },
   { title: "Configurações", url: "/admin/configuracoes", icon: Settings, permission: 'configure_ai_models' as const },
   { title: "Central de Controle", url: "/admin/governanca", icon: BarChart3, permission: 'view_audit_logs' as const },
 ];
