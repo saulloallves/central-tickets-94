@@ -40,17 +40,35 @@ serve(async (req) => {
     const results = {
       success: [] as string[],
       errors: [] as { email: string; error: string }[],
-      skipped: [] as string[],
+      skipped: [] as { email: string; reason: string }[],
     };
 
     for (const member of members as FranchisingMember[]) {
       try {
-        // Verificar se o usuário já existe
+        // Verificar se o usuário já existe no Auth
         const { data: existingUser } = await supabaseAdmin.auth.admin.listUsers();
         const userExists = existingUser?.users.find(u => u.email === member.email);
 
         if (userExists) {
-          results.skipped.push(member.email);
+          results.skipped.push({ 
+            email: member.email, 
+            reason: 'Usuário já existe no Auth' 
+          });
+          continue;
+        }
+
+        // Verificar se o profile já existe
+        const { data: existingProfile } = await supabaseAdmin
+          .from('profiles')
+          .select('id')
+          .eq('email', member.email)
+          .maybeSingle();
+
+        if (existingProfile) {
+          results.skipped.push({ 
+            email: member.email, 
+            reason: 'Profile já existe' 
+          });
           continue;
         }
 
