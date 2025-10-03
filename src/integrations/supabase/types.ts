@@ -1291,9 +1291,12 @@ export type Database = {
           cpf_rnm: string | null
           CreatedAt: string | null
           description_extra_activities: string | null
+          discovery_source: string | null
+          education: string | null
           email: string | null
           franchisee_subtype: string | null
           franchisee_type: string | null
+          has_other_activities: boolean | null
           have_extra_activities: string | null
           id: number
           instagram: string | null
@@ -1307,9 +1310,13 @@ export type Database = {
           nationality: string | null
           neighborhood: string | null
           normalized_phone: string | null
+          other_activities_description: string | null
           phone: string | null
+          previous_profession: string | null
+          previous_salary_range: string | null
           profile_picture: string | null
           receive_for_labor: string | null
+          referrer_name: string | null
           state: string | null
           system_term_accepted: string | null
           uf: string | null
@@ -1320,6 +1327,7 @@ export type Database = {
           UpdatedAt: string | null
           was_entrepreneur: string | null
           was_nominated: string | null
+          was_referred: boolean | null
           web_password: number | null
           who_nominated: string | null
         }
@@ -1335,9 +1343,12 @@ export type Database = {
           cpf_rnm?: string | null
           CreatedAt?: string | null
           description_extra_activities?: string | null
+          discovery_source?: string | null
+          education?: string | null
           email?: string | null
           franchisee_subtype?: string | null
           franchisee_type?: string | null
+          has_other_activities?: boolean | null
           have_extra_activities?: string | null
           id: number
           instagram?: string | null
@@ -1351,9 +1362,13 @@ export type Database = {
           nationality?: string | null
           neighborhood?: string | null
           normalized_phone?: string | null
+          other_activities_description?: string | null
           phone?: string | null
+          previous_profession?: string | null
+          previous_salary_range?: string | null
           profile_picture?: string | null
           receive_for_labor?: string | null
+          referrer_name?: string | null
           state?: string | null
           system_term_accepted?: string | null
           uf?: string | null
@@ -1364,6 +1379,7 @@ export type Database = {
           UpdatedAt?: string | null
           was_entrepreneur?: string | null
           was_nominated?: string | null
+          was_referred?: boolean | null
           web_password?: number | null
           who_nominated?: string | null
         }
@@ -1379,9 +1395,12 @@ export type Database = {
           cpf_rnm?: string | null
           CreatedAt?: string | null
           description_extra_activities?: string | null
+          discovery_source?: string | null
+          education?: string | null
           email?: string | null
           franchisee_subtype?: string | null
           franchisee_type?: string | null
+          has_other_activities?: boolean | null
           have_extra_activities?: string | null
           id?: number
           instagram?: string | null
@@ -1395,9 +1414,13 @@ export type Database = {
           nationality?: string | null
           neighborhood?: string | null
           normalized_phone?: string | null
+          other_activities_description?: string | null
           phone?: string | null
+          previous_profession?: string | null
+          previous_salary_range?: string | null
           profile_picture?: string | null
           receive_for_labor?: string | null
+          referrer_name?: string | null
           state?: string | null
           system_term_accepted?: string | null
           uf?: string | null
@@ -1408,6 +1431,7 @@ export type Database = {
           UpdatedAt?: string | null
           was_entrepreneur?: string | null
           was_nominated?: string | null
+          was_referred?: boolean | null
           web_password?: number | null
           who_nominated?: string | null
         }
@@ -2142,6 +2166,7 @@ export type Database = {
           created_at: string
           email: string | null
           id: string
+          is_imported_user: boolean | null
           nome_completo: string | null
           telefone: string | null
           updated_at: string
@@ -2151,6 +2176,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id: string
+          is_imported_user?: boolean | null
           nome_completo?: string | null
           telefone?: string | null
           updated_at?: string
@@ -2160,6 +2186,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          is_imported_user?: boolean | null
           nome_completo?: string | null
           telefone?: string | null
           updated_at?: string
@@ -2205,6 +2232,33 @@ export type Database = {
           id?: string
           permission?: Database["public"]["Enums"]["app_permission"]
           role?: Database["public"]["Enums"]["app_role"]
+        }
+        Relationships: []
+      }
+      sync_audit_log: {
+        Row: {
+          created_at: string | null
+          entity_id: string
+          entity_type: string
+          id: string
+          operation: string
+          raw_data: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          entity_id: string
+          entity_type: string
+          id?: string
+          operation: string
+          raw_data?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          operation?: string
+          raw_data?: Json | null
         }
         Relationships: []
       }
@@ -2605,9 +2659,11 @@ export type Database = {
       unidades: {
         Row: {
           bairro: string | null
+          bearer: string | null
           cep: string | null
           cidade: string | null
-          codigo_grupo: number | null
+          cnpj: string | null
+          codigo_grupo: string | null
           complemento: string | null
           contrato: string | null
           created_at: string | null
@@ -2615,6 +2671,7 @@ export type Database = {
           endereco: string | null
           estado: string | null
           etapa_loja: string | null
+          fantasy_name: string | null
           fase_loja: string | null
           func_dom: string | null
           func_sab: string | null
@@ -2636,23 +2693,37 @@ export type Database = {
           id_pasta_documentos: string | null
           id_pasta_unidade: string | null
           instagram: string | null
+          instagram_profile: string | null
+          is_active: boolean | null
           link_pasta_documentos: string | null
           link_pasta_unidade: string | null
           modelo_loja: string | null
           numero: string | null
+          operation_fri: string | null
+          operation_hol: string | null
+          operation_mon: string | null
+          operation_sat: string | null
+          operation_sun: string | null
+          operation_thu: string | null
+          operation_tue: string | null
+          operation_wed: string | null
           parking_spots: string | null
           partner_parking_address: string | null
+          password_instagram: string | null
           purchases_active: Json | null
           sales_active: Json | null
-          telefone: number | null
+          telefone: string | null
           uf: string | null
           updated_at: string | null
+          user_instagram: string | null
         }
         Insert: {
           bairro?: string | null
+          bearer?: string | null
           cep?: string | null
           cidade?: string | null
-          codigo_grupo?: number | null
+          cnpj?: string | null
+          codigo_grupo?: string | null
           complemento?: string | null
           contrato?: string | null
           created_at?: string | null
@@ -2660,6 +2731,7 @@ export type Database = {
           endereco?: string | null
           estado?: string | null
           etapa_loja?: string | null
+          fantasy_name?: string | null
           fase_loja?: string | null
           func_dom?: string | null
           func_sab?: string | null
@@ -2681,23 +2753,37 @@ export type Database = {
           id_pasta_documentos?: string | null
           id_pasta_unidade?: string | null
           instagram?: string | null
+          instagram_profile?: string | null
+          is_active?: boolean | null
           link_pasta_documentos?: string | null
           link_pasta_unidade?: string | null
           modelo_loja?: string | null
           numero?: string | null
+          operation_fri?: string | null
+          operation_hol?: string | null
+          operation_mon?: string | null
+          operation_sat?: string | null
+          operation_sun?: string | null
+          operation_thu?: string | null
+          operation_tue?: string | null
+          operation_wed?: string | null
           parking_spots?: string | null
           partner_parking_address?: string | null
+          password_instagram?: string | null
           purchases_active?: Json | null
           sales_active?: Json | null
-          telefone?: number | null
+          telefone?: string | null
           uf?: string | null
           updated_at?: string | null
+          user_instagram?: string | null
         }
         Update: {
           bairro?: string | null
+          bearer?: string | null
           cep?: string | null
           cidade?: string | null
-          codigo_grupo?: number | null
+          cnpj?: string | null
+          codigo_grupo?: string | null
           complemento?: string | null
           contrato?: string | null
           created_at?: string | null
@@ -2705,6 +2791,7 @@ export type Database = {
           endereco?: string | null
           estado?: string | null
           etapa_loja?: string | null
+          fantasy_name?: string | null
           fase_loja?: string | null
           func_dom?: string | null
           func_sab?: string | null
@@ -2726,17 +2813,29 @@ export type Database = {
           id_pasta_documentos?: string | null
           id_pasta_unidade?: string | null
           instagram?: string | null
+          instagram_profile?: string | null
+          is_active?: boolean | null
           link_pasta_documentos?: string | null
           link_pasta_unidade?: string | null
           modelo_loja?: string | null
           numero?: string | null
+          operation_fri?: string | null
+          operation_hol?: string | null
+          operation_mon?: string | null
+          operation_sat?: string | null
+          operation_sun?: string | null
+          operation_thu?: string | null
+          operation_tue?: string | null
+          operation_wed?: string | null
           parking_spots?: string | null
           partner_parking_address?: string | null
+          password_instagram?: string | null
           purchases_active?: Json | null
           sales_active?: Json | null
-          telefone?: number | null
+          telefone?: string | null
           uf?: string | null
           updated_at?: string | null
+          user_instagram?: string | null
         }
         Relationships: []
       }
@@ -3456,6 +3555,124 @@ export type Database = {
           p_mensagem?: string
           p_status: Database["public"]["Enums"]["crise_status"]
         }
+        Returns: undefined
+      }
+      upsert_franqueado_from_matriz: {
+        Args:
+          | {
+              p_address: string
+              p_address_complement: string
+              p_address_number: string
+              p_birth_date: string
+              p_cep: string
+              p_city: string
+              p_cpf: string
+              p_created_at: string
+              p_email: string
+              p_id: string
+              p_name: string
+              p_nationality: string
+              p_neighborhood: string
+              p_phone: string
+              p_raw_payload: Json
+              p_state: string
+              p_status: string
+              p_uf: string
+              p_updated_at: string
+            }
+          | {
+              p_bairro: string
+              p_birth_date: string
+              p_cep: string
+              p_cidade: string
+              p_complemento: string
+              p_confidentiality_term_accepted: boolean
+              p_cpf: string
+              p_created_at: string
+              p_email: string
+              p_endereco: string
+              p_estado: string
+              p_franchisee_subtype: string
+              p_franchisee_type: string
+              p_id: string
+              p_instagram: string
+              p_is_in_social_contract: boolean
+              p_labor_value: number
+              p_lgpd_term_accepted: boolean
+              p_link_units: string
+              p_nationality: string
+              p_nome: string
+              p_numero: string
+              p_profile_picture: string
+              p_receive_for_labor: boolean
+              p_status: string
+              p_system_term_accepted: boolean
+              p_telefone: string
+              p_uf: string
+              p_unit_code: string
+              p_unit_id_group: string
+              p_unit_name: string
+              p_updated_at: string
+              p_web_password: string
+            }
+        Returns: undefined
+      }
+      upsert_unidade_from_matriz: {
+        Args:
+          | {
+              p_bairro: string
+              p_bearer: string
+              p_cep: string
+              p_cidade: string
+              p_cnpj: string
+              p_codigo_grupo: string
+              p_complemento: string
+              p_created_at: string
+              p_email: string
+              p_endereco: string
+              p_estado: string
+              p_etapa_loja: string
+              p_fantasy_name: string
+              p_fase_loja: string
+              p_grupo: string
+              p_id: string
+              p_instagram_profile: string
+              p_is_active: boolean
+              p_numero: string
+              p_operation_fri: string
+              p_operation_hol: string
+              p_operation_mon: string
+              p_operation_sat: string
+              p_operation_sun: string
+              p_operation_thu: string
+              p_operation_tue: string
+              p_operation_wed: string
+              p_password_instagram: string
+              p_telefone: string
+              p_uf: string
+              p_updated_at: string
+              p_user_instagram: string
+            }
+          | {
+              p_bairro: string
+              p_cep: string
+              p_cidade: string
+              p_cnpj: string
+              p_codigo_grupo: string
+              p_complemento: string
+              p_created_at: string
+              p_email: string
+              p_endereco: string
+              p_estado: string
+              p_etapa_loja: string
+              p_fase_loja: string
+              p_grupo: string
+              p_id: string
+              p_numero: string
+              p_telefone: string
+              p_uf: string
+              p_updated_at: string
+            }
         Returns: undefined
       }
       user_can_view_unidade: {

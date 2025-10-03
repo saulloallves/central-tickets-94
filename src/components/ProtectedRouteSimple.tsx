@@ -1,7 +1,9 @@
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRole, AppRole } from '@/hooks/useRole';
 import { Navigate, useLocation } from 'react-router-dom';
 import { EmailConfirmationRequired } from '@/components/EmailConfirmationRequired';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -13,17 +15,42 @@ export const ProtectedRoute = ({ children, requiredRole, requiredRoles }: Protec
   const { user, loading, emailConfirmed } = useAuth();
   const { hasRole, loading: roleLoading, hasPendingAccess } = useRole();
   const location = useLocation();
+  const [isImportedUser, setIsImportedUser] = useState<boolean | null>(null);
+  const [checkingImport, setCheckingImport] = useState(true);
+
+  // Verificar se é usuário importado
+  useEffect(() => {
+    const checkImportedStatus = async () => {
+      if (!user?.id) {
+        setCheckingImport(false);
+        return;
+      }
+
+      const { data } = await supabase
+        .from('profiles')
+        .select('is_imported_user')
+        .eq('id', user.id)
+        .single();
+
+      setIsImportedUser(data?.is_imported_user ?? false);
+      setCheckingImport(false);
+    };
+
+    checkImportedStatus();
+  }, [user?.id]);
 
   console.log('🛡️ ProtectedRoute check:', { 
     user: user?.id, 
     loading, 
-    roleLoading, 
+    roleLoading,
+    checkingImport,
+    isImportedUser,
     hasPendingAccess,
     requiredRole,
     requiredRoles 
   });
 
-  if (loading || roleLoading) {
+  if (loading || roleLoading || checkingImport) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-hero">
         <div className="text-center">
@@ -41,6 +68,11 @@ export const ProtectedRoute = ({ children, requiredRole, requiredRoles }: Protec
   // Verificar se o email está confirmado
   if (!emailConfirmed) {
     return <EmailConfirmationRequired />;
+  }
+
+  // Redirecionar usuários importados para configuração
+  if (isImportedUser && location.pathname !== '/first-access') {
+    return <Navigate to="/first-access" replace />;
   }
 
   // Se o usuário tem solicitação pendente e não tem nenhuma role aprovada
