@@ -124,12 +124,6 @@ export const FirstAccessSetup = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg mb-4">
-            <p className="text-sm text-blue-700 dark:text-blue-300">
-              💡 <strong>Bem-vindo!</strong> Você foi adicionado pela equipe. 
-              Defina sua senha e escolha sua equipe para começar.
-            </p>
-          </div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>

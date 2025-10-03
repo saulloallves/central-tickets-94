@@ -70,11 +70,6 @@ export const ProtectedRoute = ({ children, requiredRole, requiredRoles }: Protec
     return <EmailConfirmationRequired />;
   }
 
-  // Redirecionar usuários importados para configuração
-  if (isImportedUser && location.pathname !== '/first-access') {
-    return <Navigate to="/first-access" replace />;
-  }
-
   // Se o usuário tem solicitação pendente e não tem nenhuma role aprovada
   if (hasPendingAccess && !hasRole('admin') && !hasRole('supervisor') && !hasRole('colaborador') && !hasRole('franqueado') && !hasRole('diretoria')) {
     return <Navigate to="/pending-approval" replace />;

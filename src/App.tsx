@@ -19,6 +19,7 @@ const Auth = lazy(() => import("./pages/Auth").then(module => ({ default: module
 const NotFound = lazy(() => import("./pages/NotFound"));
 const PendingApproval = lazy(() => import("./pages/PendingApproval").then(module => ({ default: module.PendingApproval })));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const Welcome = lazy(() => import("./pages/Welcome"));
 const FirstAccessSetup = lazy(() => import("./components/FirstAccessSetup").then(module => ({ default: module.FirstAccessSetup })));
 const ImportMembers = lazy(() => import("./pages/admin/ImportMembers"));
 
@@ -78,6 +79,7 @@ const App = () => (
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/pending-approval" element={<PendingApproval />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/welcome" element={<Welcome />} />
                 <Route path="/first-access" element={<FirstAccessSetup />} />
               <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
               <Route path="/admin/dashboard" element={
