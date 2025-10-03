@@ -71,7 +71,7 @@ export const useFranqueadoUnits = () => {
       const { data: unidadesData, error } = await supabase
         .from('unidades')
         .select('id, grupo, cidade, uf, codigo_grupo')
-        .in('codigo_grupo', groupCodes);
+        .in('codigo_grupo', groupCodes.map(String));
 
       if (error) {
         console.error('Erro ao buscar unidades:', error);

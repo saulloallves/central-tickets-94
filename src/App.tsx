@@ -20,6 +20,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const PendingApproval = lazy(() => import("./pages/PendingApproval").then(module => ({ default: module.PendingApproval })));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const FirstAccessSetup = lazy(() => import("./components/FirstAccessSetup").then(module => ({ default: module.FirstAccessSetup })));
+const ImportMembers = lazy(() => import("./pages/admin/ImportMembers"));
 
 // Admin pages
 const AdminLayout = lazy(() => import("./pages/AdminLayout"));
@@ -153,6 +154,13 @@ const App = () => (
                 <ProtectedRoute>
                   <AdminLayout>
                     <Governanca />
+                  </AdminLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/import-members" element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminLayout>
+                    <ImportMembers />
                   </AdminLayout>
                 </ProtectedRoute>
               } />

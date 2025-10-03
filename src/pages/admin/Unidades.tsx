@@ -11,7 +11,7 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 interface Unidade {
   id: string;
   grupo: string;
-  codigo_grupo?: number;
+  codigo_grupo?: string;
   cidade?: string;
   estado?: string;
   uf?: string;
@@ -21,7 +21,7 @@ interface Unidade {
   bairro?: string;
   cep?: string;
   email?: string;
-  telefone?: number;
+  telefone?: string;
   modelo_loja?: string;
   fase_loja?: string;
   etapa_loja?: string;
