@@ -76,7 +76,7 @@ export function ZAPIInstancesTab() {
       const { data, error } = await supabase
         .from('messaging_providers')
         .select('*')
-        .in('provider_name', ['zapi_whatsapp', 'zapi_bot', 'zapi_notifications', 'zapi'])
+        .in('provider_name', ['zapi_whatsapp', 'zapi_bot', 'send_ticket_notification', 'zapi'])
         .order('provider_name');
 
       if (error) throw error;
@@ -129,7 +129,7 @@ export function ZAPIInstancesTab() {
                 base_url: botConfig.baseUrl || 'https://api.z-api.io'
               };
               break;
-            case 'zapi_notifications':
+            case 'send_ticket_notification':
               const notificationConfig = currentConfig.configurations.send_ticket_notification || {};
               configData = {
                 ...defaultConfig,
