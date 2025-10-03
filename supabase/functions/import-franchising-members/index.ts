@@ -123,8 +123,7 @@ serve(async (req) => {
         }
 
         // Enviar email de redefinição de senha (redireciona para /first-access)
-        // URL do app (não do Supabase)
-        const appUrl = 'https://hryurntaljdisohawpqf.lovable.app';
+        const appUrl = 'https://centralticket.girabot.com.br';
         const { error: resetError } = await supabaseAdmin.auth.resetPasswordForEmail(
           member.email,
           {
