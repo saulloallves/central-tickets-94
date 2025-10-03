@@ -22,6 +22,7 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Welcome = lazy(() => import("./pages/Welcome"));
 const FirstAccessSetup = lazy(() => import("./components/FirstAccessSetup").then(module => ({ default: module.FirstAccessSetup })));
 const ImportMembers = lazy(() => import("./pages/admin/ImportMembers"));
+const ConvertUsers = lazy(() => import("./pages/admin/ConvertUsers"));
 
 // Admin pages
 const AdminLayout = lazy(() => import("./pages/AdminLayout"));
@@ -163,6 +164,13 @@ const App = () => (
                 <ProtectedRoute requiredRoles={['admin', 'diretoria']}>
                   <AdminLayout>
                     <ImportMembers />
+                  </AdminLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/convert-users" element={
+                <ProtectedRoute requiredRoles={['admin', 'diretoria']}>
+                  <AdminLayout>
+                    <ConvertUsers />
                   </AdminLayout>
                 </ProtectedRoute>
               } />
