@@ -209,9 +209,6 @@ const KanbanTicketCard = memo(({ ticket, isSelected, onSelect, equipes }: Kanban
 
   const getUnitInfo = (ticket: Ticket) => {
     if (ticket.unidades?.grupo) {
-      if (ticket.unidades.cidade && ticket.unidades.uf) {
-        return `${ticket.unidades.grupo} - ${ticket.unidades.cidade}/${ticket.unidades.uf}`;
-      }
       return ticket.unidades.grupo;
     }
     return ticket.unidade_id || 'Unidade não informada';
