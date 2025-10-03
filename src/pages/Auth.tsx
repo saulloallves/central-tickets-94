@@ -14,7 +14,7 @@ import { useQuery } from '@tanstack/react-query';
 import { translateAuthError } from '@/lib/auth-error-messages';
 
 const Auth = () => {
-  const { user, signIn, signUp, resetPassword, loading } = useAuth();
+  const { user, signIn, signInImportedUser, signUp, resetPassword, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -152,7 +152,7 @@ const Auth = () => {
     // Marcar como login interno
     localStorage.setItem('last_login_origin', 'interno');
 
-    const { error } = await signIn(loginData.email, loginData.password);
+    const { error } = await signInImportedUser(loginData.email, loginData.password);
     if (!error) {
       navigate('/admin');
     }

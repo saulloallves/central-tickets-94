@@ -72,8 +72,8 @@ serve(async (req) => {
           continue;
         }
 
-        // Gerar senha temporária
-        const tempPassword = crypto.randomUUID();
+        // Senha temporária padrão para todos os usuários importados
+        const tempPassword = "first-access-temp-2024";
 
         // Criar usuário no Auth
         const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -122,18 +122,8 @@ serve(async (req) => {
           throw roleError;
         }
 
-        // Enviar email de redefinição de senha (redireciona para /first-access)
-        const appUrl = 'https://centralticket.girabot.com.br';
-        const { error: resetError } = await supabaseAdmin.auth.resetPasswordForEmail(
-          member.email,
-          {
-            redirectTo: `${appUrl}/first-access`,
-          }
-        );
-
-        if (resetError) {
-          console.error('Erro ao enviar email de redefinição:', resetError);
-        }
+        // Usuário criado com senha temporária - login direto disponível
+        console.log(`✅ Usuário ${member.email} criado com senha temporária. Login direto disponível.`);
 
         // Log da ação
         await supabaseAdmin.from('logs_de_sistema').insert({

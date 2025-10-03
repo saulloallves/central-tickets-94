@@ -9,6 +9,7 @@ interface AuthContextType {
   session: Session | null;
   signUp: (email: string, password: string, metadata?: any) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signInImportedUser: (email: string, anyPassword: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: any }>;
   updatePassword: (password: string) => Promise<{ error: any }>;
@@ -219,6 +220,52 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return { error };
   };
 
+  const signInImportedUser = async (email: string, anyPassword: string) => {
+    try {
+      // 1. Verificar se é usuário importado
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_imported_user')
+        .eq('email', email)
+        .maybeSingle();
+
+      if (!profile?.is_imported_user) {
+        // Usuário normal, fazer login convencional
+        return await signIn(email, anyPassword);
+      }
+
+      // 2. Se for importado, tentar login com senha temporária
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password: "first-access-temp-2024" // Senha padrão
+      });
+
+      if (error) {
+        toast({
+          title: "Erro no login",
+          description: translateAuthError(error),
+          variant: "destructive"
+        });
+        return { error };
+      }
+
+      toast({
+        title: "Login realizado",
+        description: "Bem-vindo! Configure sua senha definitiva."
+      });
+      
+      return { error: null };
+    } catch (error: any) {
+      console.error('Sign in imported user error:', error);
+      toast({
+        title: "Erro ao fazer login",
+        description: error.message,
+        variant: "destructive",
+      });
+      return { error };
+    }
+  };
+
   const signOut = async () => {
     try {
       // Executar signOut do Supabase primeiro
@@ -292,6 +339,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       session,
       signUp,
       signIn,
+      signInImportedUser,
       signOut,
       resetPassword,
       updatePassword,
