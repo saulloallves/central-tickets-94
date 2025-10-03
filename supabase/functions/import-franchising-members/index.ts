@@ -123,11 +123,12 @@ serve(async (req) => {
         }
 
         // Enviar email de redefinição de senha (redireciona para /first-access)
-        const baseUrl = Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '') || '';
+        // URL do app (não do Supabase)
+        const appUrl = 'https://hryurntaljdisohawpqf.lovable.app';
         const { error: resetError } = await supabaseAdmin.auth.resetPasswordForEmail(
           member.email,
           {
-            redirectTo: `${baseUrl}/first-access`,
+            redirectTo: `${appUrl}/first-access`,
           }
         );
 
