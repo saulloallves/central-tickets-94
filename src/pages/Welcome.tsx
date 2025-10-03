@@ -370,15 +370,10 @@ export default function Welcome() {
                       <SelectTrigger id="equipe">
                         <SelectValue placeholder="Selecione sua equipe" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="max-h-[200px]">
                         {equipes.map((equipe) => (
                           <SelectItem key={equipe.id} value={equipe.id}>
-                            <div className="flex flex-col items-start">
-                              <span className="font-medium">{equipe.nome}</span>
-                              {equipe.introducao && (
-                                <span className="text-xs text-muted-foreground">{equipe.introducao}</span>
-                              )}
-                            </div>
+                            {equipe.nome}
                           </SelectItem>
                         ))}
                       </SelectContent>
