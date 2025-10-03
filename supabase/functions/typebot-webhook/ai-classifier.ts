@@ -185,7 +185,7 @@ Responda APENAS em JSON válido:
   "categoria": "uma_das_categorias_definidas",
   "prioridade": "uma_das_5_prioridades_definidas",
   "titulo": "Título de 3 palavras descritivo",
-  "equipe_sugerida": "id_da_equipe_mais_apropriada_ou_ID${CONCIERGE_OPERACAO_}",
+  "equipe_sugerida": "id_da_equipe_mais_apropriada_ou_${CONCIERGE_OPERACAO_ID}",
   "justificativa": "Breve explicação da análise e por que escolheu esta equipe",
   "confianca": "alta, media ou baixa"
 }
@@ -370,8 +370,10 @@ export function generateFallbackClassification(message: string): ClassificationR
 export function applyIntelligentFallback(message: string, equipes: any[]): { categoria: string; equipeId: string | null } {
   const messageWords = message.toLowerCase();
   let fallbackCategoria = 'outro';
-  // Por padrão, usar Concierge Operação ao invés da primeira equipe
-  let fallbackEquipeId = CONCIERGE_OPERACAO_ID;
+  
+  // SEMPRE começar com Concierge Operação como fallback seguro
+  const conciergeEquipe = equipes?.find(e => String(e.id) === String(CONCIERGE_OPERACAO_ID));
+  let fallbackEquipeId = conciergeEquipe ? conciergeEquipe.id : CONCIERGE_OPERACAO_ID;
   
   if (messageWords.includes('sistema') || messageWords.includes('app') || messageWords.includes('erro') || messageWords.includes('travou')) {
     fallbackCategoria = 'sistema';
