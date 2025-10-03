@@ -7,14 +7,10 @@ const corsHeaders = {
 };
 
 interface FranchisingMember {
-  id: string;
-  member_id: string;
-  full_name: string;
   email: string;
+  full_name: string;
   phone: string;
-  job_title: string;
   user_type: 'Administrator' | 'Regular User';
-  team_id: string;
   member_status: 'active' | 'inactive';
 }
 
@@ -49,12 +45,6 @@ serve(async (req) => {
 
     for (const member of members as FranchisingMember[]) {
       try {
-        // Apenas processar membros ativos
-        if (member.member_status !== 'active') {
-          results.skipped.push(member.email);
-          continue;
-        }
-
         // Verificar se o usuário já existe
         const { data: existingUser } = await supabaseAdmin.auth.admin.listUsers();
         const userExists = existingUser?.users.find(u => u.email === member.email);
@@ -75,7 +65,6 @@ serve(async (req) => {
           user_metadata: {
             full_name: member.full_name,
             phone: member.phone,
-            job_title: member.job_title,
           }
         });
 
@@ -100,7 +89,7 @@ serve(async (req) => {
           throw profileError;
         }
 
-        // Atribuir role baseado no user_type
+        // Atribuir role baseado no user_type (auto-aprovado)
         const role = member.user_type === 'Administrator' ? 'admin' : 'colaborador';
         
         const { error: roleError } = await supabaseAdmin
@@ -108,24 +97,24 @@ serve(async (req) => {
           .insert({
             user_id: userId,
             role: role,
-            approved: true, // Auto-aprovado
+            approved: true,
           });
 
         if (roleError) {
           throw roleError;
         }
 
-        // Enviar email de redefinição de senha
+        // Enviar email de redefinição de senha (redireciona para /first-access)
+        const baseUrl = Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '') || '';
         const { error: resetError } = await supabaseAdmin.auth.resetPasswordForEmail(
           member.email,
           {
-            redirectTo: `${Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '')}/first-access`,
+            redirectTo: `${baseUrl}/first-access`,
           }
         );
 
         if (resetError) {
           console.error('Erro ao enviar email de redefinição:', resetError);
-          // Não falha a importação se o email não for enviado
         }
 
         // Log da ação
@@ -133,12 +122,12 @@ serve(async (req) => {
           tipo_log: 'sistema',
           entidade_afetada: 'users',
           entidade_id: userId,
-          acao_realizada: `Usuário importado do franchising_members - ${member.member_id}`,
+          acao_realizada: `Usuário importado via CSV`,
           dados_novos: {
             email: member.email,
             full_name: member.full_name,
             role: role,
-            team_id: member.team_id,
+            is_imported_user: true,
           },
           canal: 'web',
         });

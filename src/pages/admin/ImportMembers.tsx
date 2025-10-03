@@ -1,73 +1,83 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Upload, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Upload, RefreshCw, CheckCircle2, AlertCircle, FileUp } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+
+interface CSVMember {
+  email: string;
+  full_name: string;
+  phone: string;
+  user_type: 'Administrator' | 'Regular User';
+  member_status: 'active' | 'inactive';
+}
 
 export default function ImportMembers() {
   const { toast } = useToast();
-  const [sqlContent, setSqlContent] = useState('');
   const [importing, setImporting] = useState(false);
   const [results, setResults] = useState<any>(null);
+  const [fileName, setFileName] = useState('');
 
-  const parseSQLInsert = (sql: string) => {
-    try {
-      // Extrair valores do INSERT
-      const valuesMatch = sql.match(/VALUES\s+(.+)/is);
-      if (!valuesMatch) throw new Error('SQL inválido');
+  const parseCSV = (text: string): CSVMember[] => {
+    const lines = text.split('\n').filter(line => line.trim());
+    if (lines.length === 0) throw new Error('Arquivo CSV vazio');
 
-      const valuesString = valuesMatch[1];
-      const rows = [];
-      
-      // Regex para capturar cada linha de valores
-      const rowRegex = /\(([^)]+)\)/g;
-      let match;
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+    
+    const emailIdx = headers.indexOf('email');
+    const nameIdx = headers.indexOf('full_name');
+    const phoneIdx = headers.indexOf('phone');
+    const typeIdx = headers.indexOf('user_type');
+    const statusIdx = headers.indexOf('member_status');
 
-      while ((match = rowRegex.exec(valuesString)) !== null) {
-        const values = match[1].split(',').map(v => v.trim().replace(/^'|'$/g, ''));
-        
-        if (values.length >= 12) {
-          rows.push({
-            id: values[0],
-            member_id: values[1],
-            full_name: values[2],
-            email: values[3],
-            phone: values[4],
-            job_title: values[5],
-            user_type: values[6],
-            password_hash: values[7],
-            team_id: values[8],
-            team_role: values[9],
-            start_date: values[10],
-            member_status: values[11],
-          });
-        }
-      }
-
-      return rows;
-    } catch (error) {
-      console.error('Erro ao parsear SQL:', error);
-      throw new Error('Erro ao processar SQL. Verifique o formato.');
+    if (emailIdx === -1 || nameIdx === -1) {
+      throw new Error('CSV deve conter as colunas: email, full_name');
     }
+
+    const members: CSVMember[] = [];
+    
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+      
+      if (values[emailIdx] && values[nameIdx]) {
+        members.push({
+          email: values[emailIdx],
+          full_name: values[nameIdx],
+          phone: values[phoneIdx] || '',
+          user_type: values[typeIdx] as any || 'Regular User',
+          member_status: values[statusIdx] as any || 'active',
+        });
+      }
+    }
+
+    return members;
   };
 
-  const handleImport = async () => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setFileName(file.name);
+    
     try {
       setImporting(true);
       setResults(null);
 
-      const members = parseSQLInsert(sqlContent);
+      const text = await file.text();
+      const members = parseCSV(text);
+      
+      const activeMembers = members.filter(m => m.member_status === 'active');
 
       toast({
         title: "Iniciando Importação",
-        description: `Processando ${members.length} membros...`,
+        description: `Processando ${activeMembers.length} membros ativos de ${members.length} total...`,
       });
 
       const { data, error } = await supabase.functions.invoke('import-franchising-members', {
-        body: { members }
+        body: { members: activeMembers }
       });
 
       if (error) throw error;
@@ -88,6 +98,7 @@ export default function ImportMembers() {
       });
     } finally {
       setImporting(false);
+      event.target.value = '';
     }
   };
 
@@ -96,11 +107,11 @@ export default function ImportMembers() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Upload className="h-5 w-5" />
-            Importar Franchising Members
+            <FileUp className="h-5 w-5" />
+            Importar Usuários via CSV
           </CardTitle>
           <CardDescription>
-            Cole o conteúdo do arquivo SQL com os dados dos membros para importar
+            Faça upload do arquivo CSV com os dados dos membros para importar
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -119,34 +130,47 @@ export default function ImportMembers() {
           </Alert>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Conteúdo SQL</label>
-            <Textarea
-              placeholder="Cole aqui o INSERT INTO franchising_members..."
-              value={sqlContent}
-              onChange={(e) => setSqlContent(e.target.value)}
-              rows={10}
-              className="font-mono text-sm"
-            />
+            <label className="text-sm font-medium">
+              Arquivo CSV
+              <span className="text-muted-foreground ml-2 text-xs">
+                (colunas: email, full_name, phone, user_type, member_status)
+              </span>
+            </label>
+            <div className="border-2 border-dashed rounded-lg p-8 text-center hover:border-primary/50 transition-colors">
+              <Input
+                type="file"
+                accept=".csv"
+                onChange={handleFileUpload}
+                disabled={importing}
+                className="hidden"
+                id="csv-upload"
+              />
+              <label
+                htmlFor="csv-upload"
+                className="cursor-pointer flex flex-col items-center gap-2"
+              >
+                <Upload className="h-10 w-10 text-muted-foreground" />
+                <div className="text-sm">
+                  <span className="font-semibold text-primary">
+                    Clique para fazer upload
+                  </span>
+                  {' '}ou arraste o arquivo aqui
+                </div>
+                {fileName && (
+                  <div className="text-xs text-muted-foreground mt-2">
+                    Arquivo selecionado: {fileName}
+                  </div>
+                )}
+              </label>
+            </div>
           </div>
 
-          <Button
-            onClick={handleImport}
-            disabled={importing || !sqlContent}
-            className="w-full gap-2"
-            size="lg"
-          >
-            {importing ? (
-              <>
-                <RefreshCw className="h-4 w-4 animate-spin" />
-                Importando...
-              </>
-            ) : (
-              <>
-                <Upload className="h-4 w-4" />
-                Iniciar Importação
-              </>
-            )}
-          </Button>
+          {importing && (
+            <div className="flex items-center justify-center gap-2 p-4 bg-muted/50 rounded-lg">
+              <RefreshCw className="h-4 w-4 animate-spin" />
+              <span className="text-sm">Processando importação...</span>
+            </div>
+          )}
 
           {results && (
             <div className="space-y-3 pt-4 border-t">
