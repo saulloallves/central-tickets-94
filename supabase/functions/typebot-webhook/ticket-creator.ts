@@ -91,19 +91,33 @@ export async function findUnitByCode(codigo_unidade: string) {
     throw new Error('Código da unidade deve ser um número válido');
   }
   
-  const { data: unidade, error: unidadeError } = await supabase
+  // Buscar todas as unidades com este código, ordenadas pela mais recente
+  const { data: unidades, error: unidadeError } = await supabase
     .from('unidades')
-    .select('id')
+    .select('id, grupo, cidade, uf, created_at')
     .eq('codigo_grupo', codigoNumerico)
-    .single();
+    .order('created_at', { ascending: false });
 
-  if (unidadeError || !unidade) {
+  if (unidadeError) {
     console.error('Erro ao buscar unidade:', unidadeError);
     console.log('Código procurado:', codigoNumerico);
+    throw new Error('Erro ao buscar unidade no banco de dados');
+  }
+
+  if (!unidades || unidades.length === 0) {
+    console.error('Nenhuma unidade encontrada com código:', codigoNumerico);
     throw new Error('Código da unidade não encontrado');
   }
 
-  return unidade;
+  // Se houver múltiplas unidades, avisar e usar a mais recente
+  if (unidades.length > 1) {
+    console.warn(`⚠️ Múltiplas unidades encontradas com código ${codigoNumerico}:`, 
+      unidades.map(u => `${u.grupo} (${u.cidade}/${u.uf})`).join(', ')
+    );
+    console.log(`✅ Usando unidade mais recente: ${unidades[0].grupo} (${unidades[0].cidade}/${unidades[0].uf})`);
+  }
+
+  return unidades[0];
 }
 
 export async function findFranqueadoByPassword(web_password: string) {
