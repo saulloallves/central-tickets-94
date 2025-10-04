@@ -2,7 +2,7 @@
   "name": "Central de Tickets - Cresci & Perdi",
   "short_name": "Central Tickets",
   "description": "Sistema completo de gestão de tickets com IA",
-  "start_url": "/",
+  "start_url": "/?v=2",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#7ab8d6",
@@ -10,6 +10,7 @@
   "scope": "/",
   "lang": "pt-BR",
   "dir": "ltr",
+  "version": "2.0",
   "icons": [
     {
       "src": "/icons/icon-72x72.png",

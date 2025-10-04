@@ -51,12 +51,13 @@ export default defineConfig(({ mode }) => ({
           },
           {
             urlPattern: /\/icons\/.*\.png$/,
-            handler: 'CacheFirst',
+            handler: 'NetworkFirst',
             options: {
-              cacheName: 'pwa-icons-v1',
+              cacheName: 'pwa-icons-v2',
+              networkTimeoutSeconds: 3,
               expiration: {
                 maxEntries: 20,
-                maxAgeSeconds: 60 * 60 * 24 * 90 // 90 dias
+                maxAgeSeconds: 60 * 60 * 24 // 1 dia - força atualização
               },
               cacheableResponse: {
                 statuses: [0, 200]
@@ -64,11 +65,27 @@ export default defineConfig(({ mode }) => ({
             }
           },
           {
+            urlPattern: /\/favicon\.(png|ico)$/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'favicon-v2',
+              networkTimeoutSeconds: 3,
+              expiration: {
+                maxEntries: 5,
+                maxAgeSeconds: 60 * 60 * 24 // 1 dia
+              }
+            }
+          },
+          {
             urlPattern: /\/manifest\.json$/,
             handler: 'NetworkFirst',
             options: {
-              cacheName: 'manifest-cache',
-              networkTimeoutSeconds: 3
+              cacheName: 'manifest-v2',
+              networkTimeoutSeconds: 3,
+              expiration: {
+                maxEntries: 5,
+                maxAgeSeconds: 60 * 60 // 1 hora - força atualização
+              }
             }
           },
           {
