@@ -258,19 +258,19 @@ export default function Welcome() {
       <div className="flex-1 flex items-center justify-center p-6 lg:p-12 relative">
         
         
-        <Card className="w-full max-w-md shadow-elegant relative z-10 animate-scale-in border-primary/20">
+        <Card className="w-full max-w-md shadow-elegant relative z-10 animate-scale-in border-white/30 bg-white/95 backdrop-blur-sm">
           <CardHeader className="space-y-1">
             <div className="lg:hidden flex items-center gap-3 mb-6">
               <SystemLogo />
               <div>
-                <h1 className="text-2xl font-bold">Sistema Central</h1>
+                <h1 className="text-2xl font-bold text-primary">Sistema Central</h1>
                 <p className="text-sm text-muted-foreground">Tecnologia em Gestão</p>
               </div>
             </div>
-            <CardTitle className="text-3xl bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+            <CardTitle className="text-3xl font-bold text-primary">
               Ative sua conta
             </CardTitle>
-            <CardDescription className="text-base">
+            <CardDescription className="text-base text-muted-foreground">
               Configure sua senha e comece a usar o sistema
             </CardDescription>
           </CardHeader>
