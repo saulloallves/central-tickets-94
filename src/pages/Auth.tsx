@@ -17,6 +17,7 @@ import { AnimatedIcon } from '@/components/welcome/AnimatedIcon';
 import { AnimatedFormElement } from '@/components/welcome/AnimatedFormElement';
 import { FloatingOrbs } from '@/components/welcome/FloatingOrbs';
 import { MouseFollower } from '@/components/welcome/MouseFollower';
+import { DottedSurface } from '@/components/ui/dotted-surface';
 
 const Auth = () => {
   const { user, signIn, signUp, resetPassword, loading } = useAuth();
@@ -459,6 +460,7 @@ const Auth = () => {
   return (
     <div className="min-h-screen flex relative overflow-hidden bg-gradient-to-br from-[hsl(201,70%,45%)] via-[hsl(201,65%,60%)] to-[hsl(201,60%,75%)]">
       {/* Advanced Background Effects */}
+      <DottedSurface />
       <FloatingOrbs />
       <MouseFollower />
       
