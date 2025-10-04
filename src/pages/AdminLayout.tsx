@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useRole } from "@/hooks/useRole";
 import { useUserEquipes } from "@/hooks/useUserEquipes";
 import { useInternalAccessRequests } from "@/hooks/useInternalAccessRequests";
+import { useOneSignal } from "@/hooks/useOneSignal";
 import { InternalAccessRequest } from "@/components/InternalAccessRequest";
 import { AppSidebar } from "@/components/AppSidebar"
 import { MobileBottomNav } from "@/components/MobileBottomNav"
@@ -25,6 +26,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const { roles, loading: roleLoading } = useRole();
   const { userEquipes, loading: equipeLoading } = useUserEquipes();
   const { userRequest, loading: requestLoading } = useInternalAccessRequests();
+  const { isInitialized, isSubscribed } = useOneSignal();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [isFirstRender, setIsFirstRender] = useState(true);

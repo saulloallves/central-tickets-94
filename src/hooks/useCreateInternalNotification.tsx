@@ -30,6 +30,8 @@ export const useCreateInternalNotification = () => {
       // Enviar push notification via OneSignal (se tiver title e message)
       if (params.title && (params.message || params.payload)) {
         try {
+          const { data: { session } } = await supabase.auth.getSession();
+          
           await supabase.functions.invoke('send-push-notification', {
             body: {
               title: params.title,
@@ -37,6 +39,9 @@ export const useCreateInternalNotification = () => {
               userIds: params.recipients,
               equipeId: params.equipe_id,
               data: params.payload,
+            },
+            headers: {
+              Authorization: `Bearer ${session?.access_token}`,
             },
           });
           console.log('✅ Push notification sent via OneSignal');
