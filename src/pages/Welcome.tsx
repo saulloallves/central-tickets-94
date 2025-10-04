@@ -15,6 +15,7 @@ import { DottedSurface } from "@/components/welcome/DottedSurface";
 import { MouseFollower } from "@/components/welcome/MouseFollower";
 import { FloatingOrbs } from "@/components/welcome/FloatingOrbs";
 import { StepProgress } from "@/components/welcome/StepProgress";
+import { AnimatedText } from "@/components/welcome/AnimatedText";
 
 export default function Welcome() {
   const navigate = useNavigate();
@@ -227,13 +228,20 @@ export default function Welcome() {
                 <Sparkles className="h-8 w-8 text-white/80 animate-pulse" />
               </div>
               <div>
-                <h2 className="text-5xl font-bold text-white mb-6 leading-tight drop-shadow-lg">
-                  Bem-vindo(a) ao seu novo espaço de colaboração
-                </h2>
-                <p className="text-white/90 text-lg leading-relaxed">
-                  Você foi convidado para integrar nossa equipe.<br />
-                  Agora é só ativar sua conta em poucos passos para começar a participar:
-                </p>
+                <AnimatedText 
+                  text="Bem-vindo(a) ao seu novo espaço de colaboração"
+                  as="h2"
+                  className="text-5xl font-bold text-white mb-6 leading-tight drop-shadow-lg"
+                  startDelay={200}
+                  wordDelay={150}
+                />
+                <AnimatedText 
+                  text="Você foi convidado para integrar nossa equipe. Agora é só ativar sua conta em poucos passos para começar a participar:"
+                  as="p"
+                  className="text-white/90 text-lg leading-relaxed"
+                  startDelay={1500}
+                  wordDelay={120}
+                />
               </div>
             </div>
 

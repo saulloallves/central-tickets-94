@@ -438,3 +438,45 @@ All colors MUST be HSL.
   animation-name: fadeOut;
   --animate-duration: 200ms;
 }
+
+/* Word-by-word animation keyframes */
+@keyframes word-appear {
+  0% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.8);
+    filter: blur(10px);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translateY(10px) scale(0.95);
+    filter: blur(2px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+/* Word animation class */
+.word-animate {
+  display: inline-block;
+  opacity: 0;
+  margin: 0 0.15em;
+  transition: color 0.3s ease, transform 0.3s ease, text-shadow 0.3s ease;
+}
+
+.word-animate:hover {
+  transform: translateY(-2px);
+  text-shadow: 0 0 20px rgba(203, 213, 225, 0.3);
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .word-animate {
+    animation: none !important;
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+  }
+}
