@@ -8,6 +8,7 @@ import { AnimatedText } from '@/components/welcome/AnimatedText';
 import { AnimatedIcon } from '@/components/welcome/AnimatedIcon';
 import { FloatingOrbs } from '@/components/welcome/FloatingOrbs';
 import { MouseFollower } from '@/components/welcome/MouseFollower';
+import { BackgroundPaths } from '@/components/ui/background-paths';
 import { SystemLogo } from '@/components/SystemLogo';
 
 const Index = () => {
@@ -33,8 +34,9 @@ const Index = () => {
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-[hsl(201,70%,45%)] via-[hsl(201,65%,60%)] to-[hsl(201,60%,75%)]">
-      <MouseFollower />
+      <BackgroundPaths />
       <FloatingOrbs />
+      <MouseFollower />
       
       {/* Scanline effect */}
       <div className="absolute inset-0 bg-[linear-gradient(0deg,transparent_calc(100%_-_1px),rgba(255,255,255,0.05)_calc(100%_-_1px))] bg-[length:100%_4px] pointer-events-none" />
