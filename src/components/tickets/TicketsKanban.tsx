@@ -526,11 +526,15 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
       pendingCount: pendingMoves.size
     });
 
-    if (pendingMoves.size === 0) return tickets;
+    // Se não tem nada otimista, retorna os tickets base
+    if (pendingMoves.size === 0 && optimisticTickets.length === 0) {
+      return tickets;
+    }
     
     const now = Date.now();
     const optimisticMap = new Map(optimisticTickets.map(t => [t.id, t]));
     
+    // Criar array base e aplicar otimistas
     return tickets.map(ticket => {
       const pendingTimestamp = pendingMoves.get(ticket.id);
       const ignoreUntil = ignoreRealtimeUntil.current.get(ticket.id) || 0;
@@ -543,6 +547,11 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
       // Se devemos ignorar realtime por enquanto, usa versão otimista
       if (now < ignoreUntil && optimisticMap.has(ticket.id)) {
         return optimisticMap.get(ticket.id) || ticket;
+      }
+      
+      // Se tem versão otimista (vinda do realtime), usa ela
+      if (optimisticMap.has(ticket.id)) {
+        return optimisticMap.get(ticket.id)!;
       }
       
       return ticket;
