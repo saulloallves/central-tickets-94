@@ -17,7 +17,7 @@ export const StepProgress: React.FC<StepProgressProps> = ({ currentStep, steps }
         return (
           <div
             key={step.number}
-            className="flex items-center gap-4 transition-all duration-300"
+            className="flex items-start gap-4 transition-all duration-300"
           >
             <div className={cn(
               "flex-shrink-0 h-12 w-12 rounded-full flex items-center justify-center text-lg font-bold transition-all duration-300",
@@ -33,7 +33,7 @@ export const StepProgress: React.FC<StepProgressProps> = ({ currentStep, steps }
             </div>
             
             <span className={cn(
-              "text-base transition-all duration-300",
+              "text-base transition-all duration-300 pt-2.5",
               isCurrent && "text-white font-semibold",
               isCompleted && "text-white/80",
               !isCompleted && !isCurrent && "text-white/60"
