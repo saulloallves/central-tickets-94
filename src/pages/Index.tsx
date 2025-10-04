@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ClipboardList, Sparkles, Shield, Zap, ArrowRight, CheckCircle } from 'lucide-react';
+import { Sparkles, Shield, Zap, ArrowRight, CheckCircle } from 'lucide-react';
 import { AnimatedText } from '@/components/welcome/AnimatedText';
 import { AnimatedIcon } from '@/components/welcome/AnimatedIcon';
 import { FloatingOrbs } from '@/components/welcome/FloatingOrbs';
 import { MouseFollower } from '@/components/welcome/MouseFollower';
-import logoSistema from '@/assets/logo-sistema.png';
+import { SystemLogo } from '@/components/SystemLogo';
 
 const Index = () => {
   const { user, loading } = useAuth();
@@ -33,9 +33,8 @@ const Index = () => {
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-[hsl(201,70%,45%)] via-[hsl(201,65%,60%)] to-[hsl(201,60%,75%)]">
-      {/* Advanced Background Effects */}
-      <FloatingOrbs />
       <MouseFollower />
+      <FloatingOrbs />
       
       {/* Scanline effect */}
       <div className="absolute inset-0 bg-[linear-gradient(0deg,transparent_calc(100%_-_1px),rgba(255,255,255,0.05)_calc(100%_-_1px))] bg-[length:100%_4px] pointer-events-none" />
@@ -53,8 +52,8 @@ const Index = () => {
           <div className="text-center max-w-4xl mx-auto">
             {/* Logo with animation */}
             <div className="flex items-center justify-center gap-3 mb-8 logo-entrance">
-              <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center glow-pulse" style={{ boxShadow: '0 0 40px hsla(201, 65%, 75%, 0.4)' }}>
-                <img src={logoSistema} alt="Logo Sistema" className="w-10 h-10 object-contain" />
+              <div className="logo-entrance transition-transform duration-300">
+                <SystemLogo />
               </div>
               <div className="text-left">
                 <AnimatedText 
