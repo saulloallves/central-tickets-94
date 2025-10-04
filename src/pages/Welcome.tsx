@@ -11,7 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Mail, Lock, Users, CheckCircle2, XCircle, Loader2, Sparkles } from "lucide-react";
 import { SystemLogo } from "@/components/SystemLogo";
-import { AnimatedBackground } from "@/components/welcome/AnimatedBackground";
+import { DottedSurface } from "@/components/welcome/DottedSurface";
 import { MouseFollower } from "@/components/welcome/MouseFollower";
 import { FloatingOrbs } from "@/components/welcome/FloatingOrbs";
 import { StepProgress } from "@/components/welcome/StepProgress";
@@ -204,7 +204,7 @@ export default function Welcome() {
 
       {/* Hero Section - Desktop */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary via-primary/95 to-primary/80 p-12 flex-col justify-between relative overflow-hidden">
-        <AnimatedBackground />
+        <DottedSurface className="opacity-40" />
         <FloatingOrbs />
         
         {/* Scanline effect */}
