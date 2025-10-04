@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,9 @@ import { MouseFollower } from "@/components/welcome/MouseFollower";
 import { FloatingOrbs } from "@/components/welcome/FloatingOrbs";
 import { StepProgress } from "@/components/welcome/StepProgress";
 import { AnimatedText } from "@/components/welcome/AnimatedText";
+import { AnimatedIcon } from "@/components/welcome/AnimatedIcon";
+import { AnimatedFormElement } from "@/components/welcome/AnimatedFormElement";
+import "@/styles/welcome-animations.css";
 
 export default function Welcome() {
   const navigate = useNavigate();
@@ -30,6 +33,41 @@ export default function Welcome() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [isActivating, setIsActivating] = useState(false);
   const [emailStatus, setEmailStatus] = useState<'idle' | 'approved' | 'rejected'>('idle');
+  const [particles, setParticles] = useState<Array<{ id: number; x: number; y: number; tx: number; ty: number }>>([]);
+  const [ripples, setRipples] = useState<Array<{ id: number; x: number; y: number }>>([]);
+
+  // Particle burst effect on click
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      const particleCount = 8;
+      const newParticles = Array.from({ length: particleCount }, (_, i) => {
+        const angle = (Math.PI * 2 * i) / particleCount;
+        const velocity = 50 + Math.random() * 50;
+        return {
+          id: Date.now() + i,
+          x: e.clientX,
+          y: e.clientY,
+          tx: Math.cos(angle) * velocity,
+          ty: Math.sin(angle) * velocity,
+        };
+      });
+      
+      setParticles(prev => [...prev, ...newParticles]);
+      setTimeout(() => {
+        setParticles(prev => prev.filter(p => !newParticles.find(np => np.id === p.id)));
+      }, 800);
+
+      // Add ripple effect
+      const ripple = { id: Date.now(), x: e.clientX, y: e.clientY };
+      setRipples(prev => [...prev, ripple]);
+      setTimeout(() => {
+        setRipples(prev => prev.filter(r => r.id !== ripple.id));
+      }, 1000);
+    };
+
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, []);
 
   // Buscar equipes ativas
   const { data: equipes = [], isLoading: loadingEquipes } = useQuery({
@@ -211,20 +249,20 @@ export default function Welcome() {
         {/* Scanline effect */}
         <div className="absolute inset-0 bg-[linear-gradient(0deg,transparent_calc(100%_-_1px),rgba(255,255,255,0.05)_calc(100%_-_1px))] bg-[length:100%_4px] pointer-events-none" />
         
-        <div className="relative z-10 animate-fade-in">
+        <div className="relative z-10">
           <div className="flex items-center gap-4 mb-12 group cursor-pointer">
-            <div className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+            <div className="logo-entrance transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
               <SystemLogo />
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-white drop-shadow-lg">Sistema Central</h1>
+            <div className="slide-in-right" style={{ animationDelay: '300ms' }}>
+              <h1 className="text-3xl font-bold text-white drop-shadow-lg text-glow">Sistema Central</h1>
               <p className="text-white/70 text-sm">Tecnologia em Gestão</p>
             </div>
           </div>
           
           <div className="space-y-8">
-            <div className="flex items-start gap-4 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-              <div className="mt-2">
+            <div className="flex items-start gap-4">
+              <div className="mt-2 icon-animate" style={{ animationDelay: '100ms' }}>
                 <Sparkles className="h-8 w-8 text-white/80 animate-pulse" />
               </div>
               <div>
@@ -245,10 +283,10 @@ export default function Welcome() {
               </div>
             </div>
 
-            <div className="mt-12 animate-fade-in" style={{ animationDelay: '0.4s' }}>
+            <div className="mt-12 slide-in-up" style={{ animationDelay: '2500ms' }}>
               <StepProgress currentStep={getCurrentStep()} steps={steps} />
               
-              <div className="mt-6 p-5 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20">
+              <div className="mt-6 p-5 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 shimmer glow-pulse">
                 <p className="text-white/90 text-base">
                   <strong className="text-white">Pronto:</strong> já poderá acessar o sistema e colaborar com o time.
                 </p>
@@ -257,7 +295,7 @@ export default function Welcome() {
           </div>
         </div>
 
-        <p className="text-white/60 text-sm relative z-10 animate-fade-in" style={{ animationDelay: '0.6s' }}>
+        <p className="text-white/60 text-sm relative z-10 slide-in-up" style={{ animationDelay: '3000ms' }}>
           © 2024 Sistema Central. Tecnologia e Inovação.
         </p>
       </div>
@@ -270,31 +308,40 @@ export default function Welcome() {
         {/* Scanline effect */}
         <div className="absolute inset-0 bg-[linear-gradient(0deg,transparent_calc(100%_-_1px),rgba(255,255,255,0.05)_calc(100%_-_1px))] bg-[length:100%_4px] pointer-events-none" />
         
-        <Card className="w-full max-w-md shadow-elegant relative z-10 animate-scale-in border-white/30 bg-white/95 backdrop-blur-sm">
+        <Card className="w-full max-w-md shadow-elegant relative z-10 float-in border-white/30 bg-white/95 backdrop-blur-sm">
           <CardHeader className="space-y-1">
             <div className="lg:hidden flex items-center gap-3 mb-6">
-              <SystemLogo />
-              <div>
+              <div className="logo-entrance">
+                <SystemLogo />
+              </div>
+              <div className="slide-in-right" style={{ animationDelay: '300ms' }}>
                 <h1 className="text-2xl font-bold text-primary">Sistema Central</h1>
                 <p className="text-sm text-muted-foreground">Tecnologia em Gestão</p>
               </div>
             </div>
-            <CardTitle className="text-3xl font-bold text-primary">
-              Ative sua conta
-            </CardTitle>
-            <CardDescription className="text-base text-muted-foreground">
-              Configure sua senha e comece a usar o sistema
-            </CardDescription>
+            <AnimatedText 
+              text="Ative sua conta"
+              as="h3"
+              className="text-3xl font-bold text-primary"
+              startDelay={500}
+              wordDelay={200}
+            />
+            <div className="slide-in-up" style={{ animationDelay: '900ms' }}>
+              <CardDescription className="text-base text-muted-foreground">
+                Configure sua senha e comece a usar o sistema
+              </CardDescription>
+            </div>
           </CardHeader>
 
           <CardContent>
             <form onSubmit={handleActivate} className="space-y-5">
               {/* Step 1: Email Verification */}
-              <div className="space-y-3">
-                <Label htmlFor="email" className="text-base flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-primary" />
-                  Email pré-aprovado
-                </Label>
+              <AnimatedFormElement delay={1200} direction="left">
+                <div className="space-y-3">
+                  <Label htmlFor="email" className="text-base flex items-center gap-2">
+                    <AnimatedIcon icon={Mail} delay={1300} className="text-primary" />
+                    Email pré-aprovado
+                  </Label>
                 <div className="flex gap-2">
                   <Input
                     id="email"
@@ -320,48 +367,50 @@ export default function Welcome() {
                   </Button>
                 </div>
 
-                {isVerifying && (
-                  <div className="flex items-center gap-2 text-sm text-primary animate-fade-in p-3 rounded-lg bg-primary/5 border border-primary/20">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Verificando email...</span>
-                  </div>
-                )}
-
-                {emailStatus === 'approved' && (
-                  <div className="p-4 bg-primary/10 rounded-xl border border-primary/30 animate-scale-in shadow-[0_0_20px_rgba(104,182,229,0.2)]">
-                    <div className="flex items-center gap-2 text-primary">
-                      <CheckCircle2 className="h-5 w-5 animate-scale-in" />
-                      <span className="font-semibold">Email pré-aprovado!</span>
+                  {isVerifying && (
+                    <div className="flex items-center gap-2 text-sm text-primary status-pulse p-3 rounded-lg bg-primary/5 border border-primary/20">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Verificando email...</span>
                     </div>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Agora configure sua senha e escolha sua equipe.
-                    </p>
-                  </div>
-                )}
+                  )}
 
-                {emailStatus === 'rejected' && (
-                  <div className="p-4 bg-destructive/10 rounded-xl border border-destructive/30 animate-scale-in">
-                    <div className="flex items-center gap-2 text-destructive">
-                      <XCircle className="h-5 w-5" />
-                      <span className="font-semibold">Email não autorizado</span>
+                  {emailStatus === 'approved' && (
+                    <div className="p-4 bg-primary/10 rounded-xl border border-primary/30 status-pulse glow-pulse shadow-[0_0_20px_rgba(104,182,229,0.2)]">
+                      <div className="flex items-center gap-2 text-primary">
+                        <CheckCircle2 className="h-5 w-5 icon-animate" />
+                        <span className="font-semibold">Email pré-aprovado!</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Agora configure sua senha e escolha sua equipe.
+                      </p>
                     </div>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Este email não está na lista de pré-aprovados. Entre em contato com o administrador.
-                    </p>
-                  </div>
-                )}
-              </div>
+                  )}
+
+                  {emailStatus === 'rejected' && (
+                    <div className="p-4 bg-destructive/10 rounded-xl border border-destructive/30 status-pulse">
+                      <div className="flex items-center gap-2 text-destructive">
+                        <XCircle className="h-5 w-5 icon-animate" />
+                        <span className="font-semibold">Email não autorizado</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Este email não está na lista de pré-aprovados. Entre em contato com o administrador.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </AnimatedFormElement>
 
               {/* Step 2: Password & Team (only show after email approved) */}
               {emailStatus === 'approved' && (
-                <div className="space-y-5 animate-fade-in">
-                  <div className="h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent my-6"></div>
+                <>
+                  <div className="h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent my-6 slide-in-left" style={{ animationDelay: '200ms' }}></div>
 
-                  <div className="space-y-3">
-                    <Label htmlFor="password" className="text-base flex items-center gap-2">
-                      <Lock className="h-4 w-4 text-primary" />
-                      Nova senha
-                    </Label>
+                  <AnimatedFormElement delay={400} direction="right">
+                    <div className="space-y-3">
+                      <Label htmlFor="password" className="text-base flex items-center gap-2">
+                        <AnimatedIcon icon={Lock} delay={500} className="text-primary" />
+                        Nova senha
+                      </Label>
                     <Input
                       id="password"
                       type="password"
@@ -370,25 +419,36 @@ export default function Welcome() {
                       onChange={(e) => setPassword(e.target.value)}
                       className="transition-all duration-300 focus:shadow-[0_0_20px_rgba(104,182,229,0.3)]"
                     />
-                    {password && (
-                      <div className="mt-3 space-y-2">
-                        <div className="flex gap-1.5">
-                          <div className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${passwordStrength >= 1 ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'bg-muted'}`} />
-                          <div className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${passwordStrength >= 2 ? 'bg-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.5)]' : 'bg-muted'}`} />
-                          <div className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${passwordStrength >= 3 ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'bg-muted'}`} />
+                      {password && (
+                        <div className="mt-3 space-y-2 slide-in-up" style={{ animationDelay: '100ms' }}>
+                          <div className="flex gap-1.5">
+                            <div 
+                              className={`h-1.5 flex-1 rounded-full transition-all duration-500 progress-animate ${passwordStrength >= 1 ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'bg-muted'}`}
+                              style={{ '--fill-width': passwordStrength >= 1 ? '100%' : '0%' } as any}
+                            />
+                            <div 
+                              className={`h-1.5 flex-1 rounded-full transition-all duration-500 progress-animate ${passwordStrength >= 2 ? 'bg-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.5)]' : 'bg-muted'}`}
+                              style={{ '--fill-width': passwordStrength >= 2 ? '100%' : '0%', animationDelay: '150ms' } as any}
+                            />
+                            <div 
+                              className={`h-1.5 flex-1 rounded-full transition-all duration-500 progress-animate ${passwordStrength >= 3 ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'bg-muted'}`}
+                              style={{ '--fill-width': passwordStrength >= 3 ? '100%' : '0%', animationDelay: '300ms' } as any}
+                            />
+                          </div>
+                          <p className="text-xs text-muted-foreground font-medium">
+                            {passwordStrength === 0 && 'Muito fraca'}
+                            {passwordStrength === 1 && 'Fraca'}
+                            {passwordStrength === 2 && 'Média'}
+                            {passwordStrength === 3 && '✓ Forte'}
+                          </p>
                         </div>
-                        <p className="text-xs text-muted-foreground font-medium">
-                          {passwordStrength === 0 && 'Muito fraca'}
-                          {passwordStrength === 1 && 'Fraca'}
-                          {passwordStrength === 2 && 'Média'}
-                          {passwordStrength === 3 && '✓ Forte'}
-                        </p>
-                      </div>
-                    )}
-                  </div>
+                      )}
+                    </div>
+                  </AnimatedFormElement>
 
-                  <div className="space-y-3">
-                    <Label htmlFor="confirmPassword" className="text-base">Confirmar senha</Label>
+                  <AnimatedFormElement delay={600} direction="left">
+                    <div className="space-y-3">
+                      <Label htmlFor="confirmPassword" className="text-base">Confirmar senha</Label>
                     <Input
                       id="confirmPassword"
                       type="password"
@@ -397,59 +457,90 @@ export default function Welcome() {
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       className="transition-all duration-300 focus:shadow-[0_0_20px_rgba(104,182,229,0.3)]"
                     />
-                    {confirmPassword && (
-                      <p className={`text-sm font-medium transition-all duration-300 ${password === confirmPassword ? 'text-green-500' : 'text-destructive'}`}>
-                        {password === confirmPassword ? '✓ Senhas coincidem' : '✗ Senhas não coincidem'}
-                      </p>
-                    )}
-                  </div>
+                      {confirmPassword && (
+                        <p className={`text-sm font-medium transition-all duration-300 status-pulse ${password === confirmPassword ? 'text-green-500' : 'text-destructive'}`}>
+                          {password === confirmPassword ? '✓ Senhas coincidem' : '✗ Senhas não coincidem'}
+                        </p>
+                      )}
+                    </div>
+                  </AnimatedFormElement>
 
-                  <div className="space-y-3">
-                    <Label htmlFor="equipe" className="text-base flex items-center gap-2">
-                      <Users className="h-4 w-4 text-primary" />
-                      Equipe
-                    </Label>
-                    <Select
-                      value={selectedEquipe}
-                      onValueChange={setSelectedEquipe}
-                      disabled={loadingEquipes}
+                  <AnimatedFormElement delay={800} direction="right">
+                    <div className="space-y-3">
+                      <Label htmlFor="equipe" className="text-base flex items-center gap-2">
+                        <AnimatedIcon icon={Users} delay={900} className="text-primary" />
+                        Equipe
+                      </Label>
+                      <Select
+                        value={selectedEquipe}
+                        onValueChange={setSelectedEquipe}
+                        disabled={loadingEquipes}
+                      >
+                        <SelectTrigger id="equipe" className="transition-all duration-300 focus:shadow-[0_0_20px_rgba(104,182,229,0.3)]">
+                          <SelectValue placeholder="Selecione sua equipe" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-[200px]">
+                          {equipes.map((equipe) => (
+                            <SelectItem key={equipe.id} value={equipe.id}>
+                              {equipe.nome}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </AnimatedFormElement>
+
+                  <AnimatedFormElement delay={1000} direction="up">
+                    <Button
+                      type="submit"
+                      className="w-full h-12 text-base font-semibold transition-all duration-300 hover:shadow-[0_0_30px_rgba(104,182,229,0.5)] hover:scale-[1.02] shimmer"
+                      disabled={isActivating || !password || !confirmPassword || !selectedEquipe || password !== confirmPassword}
                     >
-                      <SelectTrigger id="equipe" className="transition-all duration-300 focus:shadow-[0_0_20px_rgba(104,182,229,0.3)]">
-                        <SelectValue placeholder="Selecione sua equipe" />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-[200px]">
-                        {equipes.map((equipe) => (
-                          <SelectItem key={equipe.id} value={equipe.id}>
-                            {equipe.nome}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <Button
-                    type="submit"
-                    className="w-full h-12 text-base font-semibold transition-all duration-300 hover:shadow-[0_0_30px_rgba(104,182,229,0.5)] hover:scale-[1.02]"
-                    disabled={isActivating || !password || !confirmPassword || !selectedEquipe || password !== confirmPassword}
-                  >
-                    {isActivating ? (
-                      <>
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                        Ativando conta...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="mr-2 h-5 w-5" />
-                        Ativar minha conta
-                      </>
-                    )}
-                  </Button>
-                </div>
+                      {isActivating ? (
+                        <>
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          Ativando conta...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="mr-2 h-5 w-5" />
+                          Ativar minha conta
+                        </>
+                      )}
+                    </Button>
+                  </AnimatedFormElement>
+                </>
               )}
             </form>
           </CardContent>
         </Card>
       </div>
+
+      {/* Particle Effects */}
+      {particles.map(particle => (
+        <div
+          key={particle.id}
+          className="particle"
+          style={{
+            left: `${particle.x}px`,
+            top: `${particle.y}px`,
+            '--tx': `${particle.tx}px`,
+            '--ty': `${particle.ty}px`,
+          } as any}
+        />
+      ))}
+
+      {/* Ripple Effects */}
+      {ripples.map(ripple => (
+        <div
+          key={ripple.id}
+          className="ripple-effect"
+          style={{
+            left: `${ripple.x}px`,
+            top: `${ripple.y}px`,
+          }}
+        />
+      ))}
     </div>
   );
 }
