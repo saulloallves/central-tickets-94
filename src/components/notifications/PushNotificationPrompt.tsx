@@ -16,18 +16,21 @@ export const PushNotificationPrompt = () => {
   const { isSupported, isSubscribed, isLoading, subscribe, unsubscribe } = usePushNotifications();
 
   useEffect(() => {
-    // Mostrar prompt após 5 segundos se não estiver inscrito
-    const timer = setTimeout(() => {
-      if (isSupported && !isSubscribed) {
-        const hasShownBefore = localStorage.getItem('push-prompt-shown');
-        if (!hasShownBefore) {
+    // Apenas mostrar prompt se não estiver inscrito e não tiver sido mostrado antes
+    if (isSupported && !isSubscribed) {
+      const hasShownBefore = localStorage.getItem('push-prompt-shown');
+      if (!hasShownBefore) {
+        const timer = setTimeout(() => {
           setShowPrompt(true);
           localStorage.setItem('push-prompt-shown', 'true');
-        }
+        }, 5000);
+        
+        return () => clearTimeout(timer);
       }
-    }, 5000);
-
-    return () => clearTimeout(timer);
+    } else if (isSubscribed) {
+      // Se já está inscrito, garantir que o prompt está fechado
+      setShowPrompt(false);
+    }
   }, [isSupported, isSubscribed]);
 
   const handleSubscribe = async () => {
