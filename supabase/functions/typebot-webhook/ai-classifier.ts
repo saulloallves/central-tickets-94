@@ -24,7 +24,7 @@ function getSupabaseClient() {
 }
 
 export interface ClassificationResult {
-  categoria: string;
+  categoria?: string;
   prioridade: string;
   titulo: string;
   equipe_responsavel: string | null;
@@ -163,9 +163,7 @@ Analise este ticket e forneça:
    - Seja criativo e descritivo
    - Exemplos: "Problema áudio Zoom", "Solicitar materiais gráficos", "Criação mídia planfetos"
 
-2. CATEGORIA: juridico, sistema, midia, operacoes, rh, financeiro, outro
-
-3. PRIORIDADE (OBRIGATÓRIO escolher uma): baixo, medio, alto, imediato, crise
+2. PRIORIDADE (OBRIGATÓRIO escolher uma): baixo, medio, alto, imediato, crise
    - baixo: dúvidas, solicitações, problemas menores
    - medio: problemas importantes mas não bloqueiam trabalho
    - alto: problemas urgentes que afetam produtividade  
@@ -182,7 +180,6 @@ ANÁLISE: "${message}"
 
 Responda APENAS em JSON válido:
 {
-  "categoria": "uma_das_categorias_definidas",
   "prioridade": "uma_das_5_prioridades_definidas",
   "titulo": "Título de 3 palavras descritivo",
   "equipe_sugerida": "id_da_equipe_mais_apropriada_ou_${CONCIERGE_OPERACAO_ID}",
@@ -319,7 +316,6 @@ CRÍTICO:
           console.log(`📋 Retornando equipe_responsavel: ${equipeResponsavelFinal}`);
           
           return {
-            categoria: aiResult.categoria || 'outro',
             prioridade: aiResult.prioridade || 'baixo',
             titulo: titulo,
             equipe_responsavel: equipeResponsavelFinal,
@@ -359,7 +355,6 @@ export function generateFallbackTitle(description: string): string {
 
 export function generateFallbackClassification(message: string): ClassificationResult {
   return {
-    categoria: 'outro',
     prioridade: 'baixo',
     titulo: generateFallbackTitle(message),
     equipe_responsavel: null,
@@ -367,38 +362,12 @@ export function generateFallbackClassification(message: string): ClassificationR
   };
 }
 
-export function applyIntelligentFallback(message: string, equipes: any[]): { categoria: string; equipeId: string | null } {
-  const messageWords = message.toLowerCase();
-  let fallbackCategoria = 'outro';
-  
+export function applyIntelligentFallback(message: string, equipes: any[]): { equipeId: string | null } {
   // SEMPRE começar com Concierge Operação como fallback seguro
   const conciergeEquipe = equipes?.find(e => String(e.id) === String(CONCIERGE_OPERACAO_ID));
   let fallbackEquipeId = conciergeEquipe ? conciergeEquipe.id : CONCIERGE_OPERACAO_ID;
   
-  if (messageWords.includes('sistema') || messageWords.includes('app') || messageWords.includes('erro') || messageWords.includes('travou')) {
-    fallbackCategoria = 'sistema';
-  } else if (messageWords.includes('midia') || messageWords.includes('marketing') || messageWords.includes('propaganda')) {
-    fallbackCategoria = 'midia';
-  } else if (messageWords.includes('juridico') || messageWords.includes('contrato') || messageWords.includes('legal')) {
-    fallbackCategoria = 'juridico';
-  } else if (messageWords.includes('rh') || messageWords.includes('funcionario') || messageWords.includes('folha')) {
-    fallbackCategoria = 'rh';
-  } else if (messageWords.includes('financeiro') || messageWords.includes('pagamento') || messageWords.includes('dinheiro')) {
-    fallbackCategoria = 'financeiro';
-  }
+  console.log(`Fallback inteligente: equipe=${fallbackEquipeId === CONCIERGE_OPERACAO_ID ? 'Concierge Operação' : 'Específica'}`);
   
-  // Tentar encontrar equipe específica baseada na categoria
-  const equipeCompativel = equipes?.find(eq => 
-    eq.nome.toLowerCase().includes(fallbackCategoria) || 
-    eq.descricao?.toLowerCase().includes(fallbackCategoria)
-  );
-  
-  if (equipeCompativel) {
-    fallbackEquipeId = equipeCompativel.id;
-  }
-  // Caso contrário, mantém Concierge Operação como fallback
-  
-  console.log(`Fallback inteligente: categoria=${fallbackCategoria}, equipe=${fallbackEquipeId === CONCIERGE_OPERACAO_ID ? 'Concierge Operação' : 'Específica'}`);
-  
-  return { categoria: fallbackCategoria, equipeId: fallbackEquipeId };
+  return { equipeId: fallbackEquipeId };
 }

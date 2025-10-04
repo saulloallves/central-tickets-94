@@ -18,7 +18,7 @@ function getSupabaseClient() {
 export interface TicketData {
   titulo: string;
   descricao_problema: string;
-  categoria: string;
+  categoria?: string;
   prioridade: string;
   unidade_id: string;
   equipe_responsavel_id?: string;
@@ -36,19 +36,27 @@ export async function createTicket(ticketData: TicketData) {
   });
 
   const supabase = getSupabaseClient();
+  
+  // Preparar dados do ticket (categoria opcional)
+  const ticketInsertData: any = {
+    titulo: ticketData.titulo,
+    descricao_problema: ticketData.descricao_problema,
+    prioridade: ticketData.prioridade,
+    unidade_id: ticketData.unidade_id,
+    equipe_responsavel_id: ticketData.equipe_responsavel_id,
+    franqueado_id: ticketData.franqueado_id,
+    canal_origem: ticketData.canal_origem || 'typebot',
+    status: 'aberto'
+  };
+  
+  // Adicionar categoria apenas se fornecida
+  if (ticketData.categoria) {
+    ticketInsertData.categoria = ticketData.categoria;
+  }
+  
   const { data: ticket, error: ticketError } = await supabase
     .from('tickets')
-    .insert({
-      titulo: ticketData.titulo,
-      descricao_problema: ticketData.descricao_problema,
-      categoria: ticketData.categoria,
-      prioridade: ticketData.prioridade,
-      unidade_id: ticketData.unidade_id,
-      equipe_responsavel_id: ticketData.equipe_responsavel_id,
-      franqueado_id: ticketData.franqueado_id,
-      canal_origem: ticketData.canal_origem || 'typebot',
-      status: 'aberto'
-    })
+    .insert(ticketInsertData)
     .select()
     .single();
 
