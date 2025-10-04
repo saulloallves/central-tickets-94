@@ -394,7 +394,7 @@ const Auth = () => {
             </div>
             <Button 
               onClick={() => setShowPendingApproval(false)} 
-              className="w-full h-11 bg-gradient-primary hover:opacity-90"
+              className="w-full h-11 bg-gradient-primary hover:opacity-90 text-white"
             >
               Voltar ao Login
             </Button>
@@ -436,7 +436,7 @@ const Auth = () => {
               <Button 
                 type="submit" 
                 disabled={isSubmitting} 
-                className="w-full h-11 bg-gradient-primary hover:opacity-90"
+                className="w-full h-11 bg-gradient-primary hover:opacity-90 text-white"
               >
                 {isSubmitting ? "Enviando..." : "Enviar Link de Redefinição"}
               </Button>
@@ -759,7 +759,7 @@ const Auth = () => {
                       required
                     />
                   </div>
-                  <Button type="submit" className="w-full h-11 bg-gradient-primary hover:opacity-90 shadow-glow" disabled={isSubmitting}>
+                  <Button type="submit" className="w-full h-11 bg-gradient-primary hover:opacity-90 shadow-glow text-white" disabled={isSubmitting}>
                     {isSubmitting ? 'Cadastrando...' : 'Criar Conta'}
                   </Button>
                 </form>
@@ -799,7 +799,7 @@ const Auth = () => {
                       required
                     />
                   </div>
-                  <Button type="submit" className="w-full h-11 bg-gradient-primary hover:opacity-90 shadow-glow" disabled={isSubmitting}>
+                  <Button type="submit" className="w-full h-11 bg-gradient-primary hover:opacity-90 shadow-glow text-white" disabled={isSubmitting}>
                     {isSubmitting ? 'Entrando...' : 'Acessar Área do Franqueado'}
                   </Button>
                 </form>
