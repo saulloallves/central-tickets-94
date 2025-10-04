@@ -17,9 +17,6 @@ export default {
 				'2xl': '1400px'
 			}
 		},
-		screens: {
-			'standalone': { 'raw': '(display-mode: standalone)' },
-		},
 		extend: {
 			fontFamily: {
 				sans: ['Poppins', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
