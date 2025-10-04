@@ -8,6 +8,21 @@
     <meta name="description" content="Sistema completo de gestão de tickets com IA">
     <meta name="author" content="Cresci & Perdi" />
 
+    <!-- OneSignal SDK -->
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.init({
+          appId: "23de91fb-41d4-499d-a367-d863ffe4fdbe",
+          safari_web_id: "web.onesignal.auto.2473987d-7114-4e84-8494-f768208d432f",
+          notifyButton: {
+            enable: true,
+          },
+        });
+      });
+    </script>
+
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#7ab8d6">
     <meta name="mobile-web-app-capable" content="yes">
