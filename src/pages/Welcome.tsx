@@ -237,10 +237,10 @@ export default function Welcome() {
               </div>
             </div>
 
-            <div className="mt-12 space-y-6 animate-fade-in" style={{ animationDelay: '0.4s' }}>
+            <div className="mt-12 animate-fade-in" style={{ animationDelay: '0.4s' }}>
               <StepProgress currentStep={getCurrentStep()} steps={steps} />
               
-              <div className="mt-8 p-6 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20">
+              <div className="mt-6 p-5 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20">
                 <p className="text-white/90 text-base">
                   <strong className="text-white">Pronto:</strong> já poderá acessar o sistema e colaborar com o time.
                 </p>
