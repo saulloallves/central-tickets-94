@@ -199,11 +199,11 @@ export default function Welcome() {
   };
 
   return (
-    <div className="min-h-screen flex relative overflow-hidden bg-background">
+    <div className="min-h-screen flex relative overflow-hidden bg-gradient-to-br from-[hsl(201,70%,45%)] via-[hsl(201,65%,60%)] to-[hsl(201,60%,75%)]">
       <MouseFollower />
 
       {/* Hero Section - Desktop */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[hsl(201,70%,45%)] via-[hsl(201,65%,60%)] to-[hsl(201,60%,75%)] p-12 flex-col justify-between relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 p-12 flex-col justify-between relative overflow-hidden">
         <DottedSurface className="opacity-60" />
         <FloatingOrbs />
         
@@ -256,7 +256,7 @@ export default function Welcome() {
 
       {/* Form Section */}
       <div className="flex-1 flex items-center justify-center p-6 lg:p-12 relative">
-        <div className="absolute inset-0 bg-gradient-to-br from-[hsl(201,50%,92%)] via-[hsl(201,45%,88%)] to-[hsl(201,40%,85%)]" />
+        
         
         <Card className="w-full max-w-md shadow-elegant relative z-10 animate-scale-in border-primary/20">
           <CardHeader className="space-y-1">
