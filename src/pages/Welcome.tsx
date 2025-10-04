@@ -488,8 +488,10 @@ export default function Welcome() {
                   <AnimatedFormElement delay={500} direction="up">
                     <Button
                       type="submit"
-                      variant="default"
-                      className="w-full h-12 text-base font-semibold transition-all duration-300 hover:shadow-[0_0_30px_rgba(104,182,229,0.5)] hover:scale-[1.02] shimmer"
+                      className="w-full h-12 text-base font-semibold transition-all duration-300 hover:shadow-[0_0_30px_rgba(104,182,229,0.5)] hover:scale-[1.02] shimmer text-white"
+                      style={{
+                        background: 'linear-gradient(135deg, hsl(201 60% 66%), hsl(201 65% 75%))',
+                      }}
                       disabled={isActivating || !password || !confirmPassword || !selectedEquipe || password !== confirmPassword}
                     >
                       {isActivating ? (
