@@ -261,26 +261,21 @@ export default function Welcome() {
           </div>
           
           <div className="space-y-8">
-            <div className="flex items-start gap-4">
-              <div className="mt-2 icon-animate" style={{ animationDelay: '100ms' }}>
-                <Sparkles className="h-8 w-8 text-white/80 animate-pulse" />
-              </div>
-              <div>
-                <AnimatedText 
-                  text="Bem-vindo(a) ao seu novo espaço de colaboração"
-                  as="h2"
-                  className="text-5xl font-bold text-white mb-6 leading-tight drop-shadow-lg"
-                  startDelay={50}
-                  wordDelay={80}
-                />
-                <AnimatedText 
-                  text="Você foi convidado para integrar nossa equipe. Agora é só ativar sua conta em poucos passos para começar a participar:"
-                  as="p"
-                  className="text-white/90 text-lg leading-relaxed"
-                  startDelay={600}
-                  wordDelay={60}
-                />
-              </div>
+            <div>
+              <AnimatedText 
+                text="Bem-vindo(a) ao seu novo espaço de colaboração"
+                as="h2"
+                className="text-5xl font-bold text-white mb-6 leading-tight drop-shadow-lg"
+                startDelay={50}
+                wordDelay={80}
+              />
+              <AnimatedText 
+                text="Você foi convidado para integrar nossa equipe. Agora é só ativar sua conta em poucos passos para começar a participar:"
+                as="p"
+                className="text-white/90 text-lg leading-relaxed"
+                startDelay={600}
+                wordDelay={60}
+              />
             </div>
 
             <div className="mt-12 slide-in-up" style={{ animationDelay: '1000ms' }}>
