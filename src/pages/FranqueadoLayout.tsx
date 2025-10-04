@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import PageTransition from "@/components/PageTransition";
+import { PushNotificationPrompt } from "@/components/notifications/PushNotificationPrompt";
 
 interface FranqueadoLayoutProps {
   children: React.ReactNode;
@@ -67,6 +68,7 @@ export default function FranqueadoLayout({ children }: FranqueadoLayoutProps) {
       {/* Mobile bottom navigation */}
       {isMobile && <MobileBottomNav />}
       <Toaster />
+      <PushNotificationPrompt />
     </div>
   );
 }

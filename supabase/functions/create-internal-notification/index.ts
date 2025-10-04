@@ -103,6 +103,33 @@ serve(async (req) => {
 
     console.log(`Created notification: ${notification.id} for ${finalRecipients.length} recipients`)
 
+    // 4. Enviar push notifications
+    try {
+      const pushResponse = await supabase.functions.invoke('send-push-notification', {
+        body: {
+          title,
+          body: message || title,
+          icon: '/icons/icon-192x192.png',
+          badge: '/icons/icon-96x96.png',
+          data: {
+            type,
+            notification_id: notification.id,
+            ...payload
+          },
+          userIds: finalRecipients
+        }
+      });
+
+      if (pushResponse.error) {
+        console.error('❌ Erro ao enviar push:', pushResponse.error);
+      } else {
+        console.log(`✅ Push enviado: ${pushResponse.data?.sent || 0} dispositivos`);
+      }
+    } catch (pushError) {
+      // Não falhar se push falhar - apenas log
+      console.error('⚠️ Push notification falhou (não crítico):', pushError);
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 

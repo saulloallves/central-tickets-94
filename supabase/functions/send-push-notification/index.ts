@@ -23,7 +23,38 @@ serve(async (req) => {
   }
 
   try {
+    // Verificar autenticação
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('Não autenticado');
+    }
+
+    // Criar cliente autenticado
     const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    // Verificar usuário
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    if (authError || !user) {
+      throw new Error('Token inválido');
+    }
+
+    // Verificar se é admin ou diretoria
+    const { data: roles } = await supabaseClient
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id);
+
+    const isAdmin = roles?.some(r => r.role === 'admin' || r.role === 'diretoria');
+    if (!isAdmin) {
+      throw new Error('Permissão negada - apenas admins podem enviar push notifications');
+    }
+
+    // Usar service role key para operações privilegiadas
+    const supabaseServiceClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
@@ -31,8 +62,8 @@ serve(async (req) => {
     const payload: PushPayload = await req.json();
     console.log('📤 Enviando push notification:', payload);
 
-    // Buscar subscriptions dos usuários
-    let query = supabaseClient
+    // Buscar subscriptions dos usuários usando service role
+    let query = supabaseServiceClient
       .from('push_subscriptions')
       .select('subscription, user_id');
 
@@ -40,7 +71,7 @@ serve(async (req) => {
       query = query.in('user_id', payload.userIds);
     } else if (payload.equipeId) {
       // Buscar membros da equipe
-      const { data: members } = await supabaseClient
+      const { data: members } = await supabaseServiceClient
         .from('equipe_members')
         .select('user_id')
         .eq('equipe_id', payload.equipeId)
@@ -114,7 +145,7 @@ serve(async (req) => {
 
           // Remover subscriptions inválidas/expiradas
           if (error.statusCode === 410 || error.statusCode === 404) {
-            await supabaseClient
+            await supabaseServiceClient
               .from('push_subscriptions')
               .delete()
               .eq('user_id', sub.user_id);
