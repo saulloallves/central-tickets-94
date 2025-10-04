@@ -24,10 +24,7 @@ import { cn } from '@/lib/utils';
 import { TestFranqueadoNotification } from '@/components/notifications/TestFranqueadoNotification';
 
 const Tickets = () => {
-  const {
-    isAdmin,
-    isSupervisor
-  } = useRole();
+  const { isAdmin, isSupervisor } = useRole();
   const {
     userEquipes
   } = useUserEquipes();
