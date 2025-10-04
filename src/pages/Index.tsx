@@ -8,6 +8,7 @@ import { AnimatedText } from '@/components/welcome/AnimatedText';
 import { AnimatedIcon } from '@/components/welcome/AnimatedIcon';
 import { FloatingOrbs } from '@/components/welcome/FloatingOrbs';
 import { MouseFollower } from '@/components/welcome/MouseFollower';
+import logoSistema from '@/assets/logo-sistema.png';
 
 const Index = () => {
   const { user, loading } = useAuth();
@@ -53,7 +54,7 @@ const Index = () => {
             {/* Logo with animation */}
             <div className="flex items-center justify-center gap-3 mb-8 logo-entrance">
               <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center glow-pulse" style={{ boxShadow: '0 0 40px hsla(201, 65%, 75%, 0.4)' }}>
-                <AnimatedIcon icon={ClipboardList} delay={0} className="text-white" size={32} />
+                <img src={logoSistema} alt="Logo Sistema" className="w-10 h-10 object-contain" />
               </div>
               <div className="text-left">
                 <AnimatedText 
@@ -71,7 +72,7 @@ const Index = () => {
 
             {/* Hero content with advanced animations */}
             <AnimatedText
-              text="O futuro do suporte ao cliente"
+              text="O futuro do suporte ao Franqueado"
               as="h2"
               className="text-5xl md:text-6xl font-bold text-white mb-6 leading-tight text-glow"
               startDelay={400}
