@@ -291,7 +291,7 @@ export default function Welcome() {
         </div>
 
         <p className="text-white/60 text-sm relative z-10 slide-in-up" style={{ animationDelay: '1200ms' }}>
-          © 2024 Sistema Central. Tecnologia e Inovação.
+          © 2025 Sistema Central. Tecnologia e Inovação.
         </p>
       </div>
 
