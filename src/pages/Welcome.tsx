@@ -270,20 +270,20 @@ export default function Welcome() {
                   text="Bem-vindo(a) ao seu novo espaço de colaboração"
                   as="h2"
                   className="text-5xl font-bold text-white mb-6 leading-tight drop-shadow-lg"
-                  startDelay={200}
-                  wordDelay={150}
+                  startDelay={50}
+                  wordDelay={80}
                 />
                 <AnimatedText 
                   text="Você foi convidado para integrar nossa equipe. Agora é só ativar sua conta em poucos passos para começar a participar:"
                   as="p"
                   className="text-white/90 text-lg leading-relaxed"
-                  startDelay={1500}
-                  wordDelay={120}
+                  startDelay={600}
+                  wordDelay={60}
                 />
               </div>
             </div>
 
-            <div className="mt-12 slide-in-up" style={{ animationDelay: '2500ms' }}>
+            <div className="mt-12 slide-in-up" style={{ animationDelay: '1000ms' }}>
               <StepProgress currentStep={getCurrentStep()} steps={steps} />
               
               <div className="mt-6 p-5 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 shimmer glow-pulse">
@@ -295,7 +295,7 @@ export default function Welcome() {
           </div>
         </div>
 
-        <p className="text-white/60 text-sm relative z-10 slide-in-up" style={{ animationDelay: '3000ms' }}>
+        <p className="text-white/60 text-sm relative z-10 slide-in-up" style={{ animationDelay: '1200ms' }}>
           © 2024 Sistema Central. Tecnologia e Inovação.
         </p>
       </div>
@@ -323,10 +323,10 @@ export default function Welcome() {
               text="Ative sua conta"
               as="h3"
               className="text-3xl font-bold text-primary"
-              startDelay={500}
-              wordDelay={200}
+              startDelay={200}
+              wordDelay={100}
             />
-            <div className="slide-in-up" style={{ animationDelay: '900ms' }}>
+            <div className="slide-in-up" style={{ animationDelay: '400ms' }}>
               <CardDescription className="text-base text-muted-foreground">
                 Configure sua senha e comece a usar o sistema
               </CardDescription>
@@ -336,10 +336,10 @@ export default function Welcome() {
           <CardContent>
             <form onSubmit={handleActivate} className="space-y-5">
               {/* Step 1: Email Verification */}
-              <AnimatedFormElement delay={1200} direction="left">
+              <AnimatedFormElement delay={500} direction="left">
                 <div className="space-y-3">
                   <Label htmlFor="email" className="text-base flex items-center gap-2">
-                    <AnimatedIcon icon={Mail} delay={1300} className="text-primary" />
+                    <AnimatedIcon icon={Mail} delay={550} className="text-primary" />
                     Email pré-aprovado
                   </Label>
                 <div className="flex gap-2">
@@ -403,12 +403,12 @@ export default function Welcome() {
               {/* Step 2: Password & Team (only show after email approved) */}
               {emailStatus === 'approved' && (
                 <>
-                  <div className="h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent my-6 slide-in-left" style={{ animationDelay: '200ms' }}></div>
+                  <div className="h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent my-6 slide-in-left" style={{ animationDelay: '100ms' }}></div>
 
-                  <AnimatedFormElement delay={400} direction="right">
+                  <AnimatedFormElement delay={200} direction="right">
                     <div className="space-y-3">
                       <Label htmlFor="password" className="text-base flex items-center gap-2">
-                        <AnimatedIcon icon={Lock} delay={500} className="text-primary" />
+                        <AnimatedIcon icon={Lock} delay={250} className="text-primary" />
                         Nova senha
                       </Label>
                     <Input
@@ -446,7 +446,7 @@ export default function Welcome() {
                     </div>
                   </AnimatedFormElement>
 
-                  <AnimatedFormElement delay={600} direction="left">
+                  <AnimatedFormElement delay={300} direction="left">
                     <div className="space-y-3">
                       <Label htmlFor="confirmPassword" className="text-base">Confirmar senha</Label>
                     <Input
@@ -465,10 +465,10 @@ export default function Welcome() {
                     </div>
                   </AnimatedFormElement>
 
-                  <AnimatedFormElement delay={800} direction="right">
+                  <AnimatedFormElement delay={400} direction="right">
                     <div className="space-y-3">
                       <Label htmlFor="equipe" className="text-base flex items-center gap-2">
-                        <AnimatedIcon icon={Users} delay={900} className="text-primary" />
+                        <AnimatedIcon icon={Users} delay={450} className="text-primary" />
                         Equipe
                       </Label>
                       <Select
@@ -490,7 +490,7 @@ export default function Welcome() {
                     </div>
                   </AnimatedFormElement>
 
-                  <AnimatedFormElement delay={1000} direction="up">
+                  <AnimatedFormElement delay={500} direction="up">
                     <Button
                       type="submit"
                       className="w-full h-12 text-base font-semibold transition-all duration-300 hover:shadow-[0_0_30px_rgba(104,182,229,0.5)] hover:scale-[1.02] shimmer"

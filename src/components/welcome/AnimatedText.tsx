@@ -11,7 +11,7 @@ interface AnimatedTextProps {
 export const AnimatedText: React.FC<AnimatedTextProps> = ({
   text,
   startDelay = 0,
-  wordDelay = 150,
+  wordDelay = 80,
   className = '',
   as: Component = 'span',
 }) => {
@@ -26,7 +26,7 @@ export const AnimatedText: React.FC<AnimatedTextProps> = ({
             key={`${word}-${index}`}
             className="word-animate"
             style={{
-              animation: `word-appear 0.8s ease-out forwards`,
+              animation: `word-appear 0.5s ease-out forwards`,
               animationDelay: `${delay}ms`,
             }}
           >

@@ -41,7 +41,7 @@
     transparent 100%
   );
   background-size: 200% 100%;
-  animation: shimmer 2s ease-in-out infinite;
+  animation: shimmer 1.5s ease-in-out infinite;
 }
 
 /* Icon Bounce Animation */
@@ -62,7 +62,7 @@
 .icon-animate {
   display: inline-block;
   opacity: 0;
-  animation: icon-bounce 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+  animation: icon-bounce 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
 }
 
 /* Form Element Slide-In */
@@ -107,17 +107,17 @@
 
 .slide-in-left {
   opacity: 0;
-  animation: slide-in-left 0.6s ease-out forwards;
+  animation: slide-in-left 0.4s ease-out forwards;
 }
 
 .slide-in-right {
   opacity: 0;
-  animation: slide-in-right 0.6s ease-out forwards;
+  animation: slide-in-right 0.4s ease-out forwards;
 }
 
 .slide-in-up {
   opacity: 0;
-  animation: slide-in-up 0.6s ease-out forwards;
+  animation: slide-in-up 0.4s ease-out forwards;
 }
 
 /* Glow Pulse */
@@ -131,7 +131,7 @@
 }
 
 .glow-pulse {
-  animation: glow-pulse 2s ease-in-out infinite;
+  animation: glow-pulse 1.5s ease-in-out infinite;
 }
 
 /* Progress Bar Fill */
@@ -150,7 +150,7 @@
 }
 
 .progress-animate {
-  animation: progress-fill 1s ease-out forwards;
+  animation: progress-fill 0.6s ease-out forwards;
 }
 
 /* Card Float In */
@@ -172,7 +172,7 @@
 
 .float-in {
   opacity: 0;
-  animation: float-in 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  animation: float-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 /* Ripple Effect */
