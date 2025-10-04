@@ -4,11 +4,7 @@ export const useActivateAccount = () => {
   const checkPreApproved = async (email: string): Promise<boolean> => {
     try {
       const { data, error } = await supabase
-        .from('profiles')
-        .select('id, is_imported_user')
-        .eq('email', email)
-        .eq('is_imported_user', true)
-        .maybeSingle();
+        .rpc('check_email_pre_approved', { email_check: email });
 
       if (error) {
         console.error('Erro ao verificar email pré-aprovado:', error);

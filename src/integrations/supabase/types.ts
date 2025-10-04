@@ -3156,6 +3156,10 @@ export type Database = {
           | { ticket_unidade_id: string }
         Returns: boolean
       }
+      check_email_pre_approved: {
+        Args: { email_check: string }
+        Returns: boolean
+      }
       cleanup_all_users_except_current: {
         Args: Record<PropertyKey, never>
         Returns: Json
