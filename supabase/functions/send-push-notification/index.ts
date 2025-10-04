@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
+import webpush from 'https://esm.sh/web-push@3.6.6';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -70,11 +71,18 @@ serve(async (req) => {
 
     const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY');
     const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY');
-    const vapidMailto = Deno.env.get('VAPID_MAILTO');
+    const vapidMailto = Deno.env.get('VAPID_MAILTO') || 'mailto:daniel.santos@crescieperdi.com.br';
 
     if (!vapidPublicKey || !vapidPrivateKey) {
       throw new Error('VAPID keys não configuradas');
     }
+
+    // Configurar VAPID para web-push
+    webpush.setVapidDetails(
+      vapidMailto,
+      vapidPublicKey,
+      vapidPrivateKey
+    );
 
     const notificationPayload = JSON.stringify({
       title: payload.title,
@@ -84,45 +92,36 @@ serve(async (req) => {
       data: payload.data || {},
     });
 
+    console.log(`📤 Enviando notificação com web-push para ${subscriptions.length} dispositivos`);
+
     const results = await Promise.allSettled(
       subscriptions.map(async (sub) => {
         try {
-          const subscription = sub.subscription as any;
-          
-          const response = await fetch('https://fcm.googleapis.com/fcm/send', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `key=${vapidPrivateKey}`,
-            },
-            body: JSON.stringify({
-              to: subscription.endpoint.split('/').pop(),
-              notification: {
-                title: payload.title,
-                body: payload.body,
-                icon: payload.icon || '/icons/icon-192x192.png',
-                badge: payload.badge || '/icons/icon-96x96.png',
-              },
-              data: payload.data || {},
-            }),
-          });
+          // Parse da subscription (pode ser string ou objeto)
+          const subscription = typeof sub.subscription === 'string'
+            ? JSON.parse(sub.subscription)
+            : sub.subscription;
 
-          if (!response.ok) {
-            // Se a subscription estiver inválida, remover
-            if (response.status === 410) {
-              await supabaseClient
-                .from('push_subscriptions')
-                .delete()
-                .eq('user_id', sub.user_id);
-              console.log(`🗑️ Subscription inválida removida: ${sub.user_id}`);
-            }
-            throw new Error(`HTTP ${response.status}`);
+          console.log(`📨 Enviando para user_id: ${sub.user_id}`);
+
+          // Enviar usando web-push (protocolo correto Web Push RFC 8292)
+          await webpush.sendNotification(subscription, notificationPayload);
+
+          console.log(`✅ Enviado com sucesso para: ${sub.user_id}`);
+          return { success: true, userId: sub.user_id };
+        } catch (error: any) {
+          console.error(`❌ Erro ao enviar para ${sub.user_id}:`, error);
+
+          // Remover subscriptions inválidas/expiradas
+          if (error.statusCode === 410 || error.statusCode === 404) {
+            await supabaseClient
+              .from('push_subscriptions')
+              .delete()
+              .eq('user_id', sub.user_id);
+            console.log(`🗑️ Subscription inválida removida: ${sub.user_id}`);
           }
 
-          return { success: true, userId: sub.user_id };
-        } catch (error) {
-          console.error(`❌ Erro ao enviar para ${sub.user_id}:`, error);
-          return { success: false, userId: sub.user_id, error };
+          return { success: false, userId: sub.user_id, error: error.message || error };
         }
       })
     );
