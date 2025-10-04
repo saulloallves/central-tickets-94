@@ -90,8 +90,9 @@ export function DottedSurface({ className, ...props }: DottedSurfaceProps) {
       size: isMobile ? 6 : 8,
       vertexColors: true,
       transparent: true,
-      opacity: 0.6, // Reduced opacity to not compete with content
+      opacity: 0.7, // More visible particles
       sizeAttenuation: true,
+      blending: THREE.AdditiveBlending, // Add glow effect
     });
 
     // Create points object

@@ -204,7 +204,7 @@ export default function Welcome() {
 
       {/* Hero Section - Desktop */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary via-primary/95 to-primary/80 p-12 flex-col justify-between relative overflow-hidden">
-        <DottedSurface className="opacity-40" />
+        <DottedSurface className="opacity-30" />
         <FloatingOrbs />
         
         {/* Scanline effect */}
