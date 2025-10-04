@@ -9,6 +9,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "./components/ProtectedRouteSimple";
 import LoadingSpinner from "./components/LoadingSpinner";
 import { GlobalNotificationListener } from "./components/GlobalNotificationListener";
+import { PWAInstallPrompt } from "./components/PWAInstallPrompt";
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -73,6 +74,7 @@ const App = () => (
         <Sonner />
         <TestNotifications />
         <GlobalNotificationListener />
+        <PWAInstallPrompt />
         <BrowserRouter>
           <Suspense fallback={<LoadingSpinner />}>
             <Routes>

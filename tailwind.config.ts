@@ -21,6 +21,9 @@ export default {
 			fontFamily: {
 				sans: ['Poppins', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
 			},
+			screens: {
+				'standalone': { 'raw': '(display-mode: standalone)' },
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
