@@ -203,8 +203,8 @@ export default function Welcome() {
       <MouseFollower />
 
       {/* Hero Section - Desktop */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-background via-primary/10 to-primary/30 p-12 flex-col justify-between relative overflow-hidden">
-        <DottedSurface className="opacity-70" />
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary/20 via-primary/40 to-primary/60 p-12 flex-col justify-between relative overflow-hidden">
+        <DottedSurface className="opacity-80" />
         <FloatingOrbs />
         
         {/* Scanline effect */}
