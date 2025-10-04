@@ -308,7 +308,7 @@ export default function Welcome() {
         {/* Scanline effect */}
         <div className="absolute inset-0 bg-[linear-gradient(0deg,transparent_calc(100%_-_1px),rgba(255,255,255,0.05)_calc(100%_-_1px))] bg-[length:100%_4px] pointer-events-none" />
         
-        <Card className="w-full max-w-md shadow-elegant relative z-10 float-in border-white/30 bg-white/95 backdrop-blur-sm">
+        <Card className="w-full max-w-md shadow-elegant relative z-10 float-in border-white/30 bg-white/95 backdrop-blur-sm" style={{ animationDelay: '1500ms' }}>
           <CardHeader className="space-y-1">
             <div className="lg:hidden flex items-center gap-3 mb-6">
               <div className="logo-entrance">
@@ -323,10 +323,10 @@ export default function Welcome() {
               text="Ative sua conta"
               as="h3"
               className="text-3xl font-bold text-primary"
-              startDelay={200}
+              startDelay={1700}
               wordDelay={100}
             />
-            <div className="slide-in-up" style={{ animationDelay: '400ms' }}>
+            <div className="slide-in-up" style={{ animationDelay: '1900ms' }}>
               <CardDescription className="text-base text-muted-foreground">
                 Configure sua senha e comece a usar o sistema
               </CardDescription>
@@ -336,10 +336,10 @@ export default function Welcome() {
           <CardContent>
             <form onSubmit={handleActivate} className="space-y-5">
               {/* Step 1: Email Verification */}
-              <AnimatedFormElement delay={500} direction="left">
+              <AnimatedFormElement delay={2000} direction="left">
                 <div className="space-y-3">
                   <Label htmlFor="email" className="text-base flex items-center gap-2">
-                    <AnimatedIcon icon={Mail} delay={550} className="text-primary" />
+                    <AnimatedIcon icon={Mail} delay={2050} className="text-primary" />
                     Email pré-aprovado
                   </Label>
                 <div className="flex gap-2">
