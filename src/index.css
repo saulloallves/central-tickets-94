@@ -484,14 +484,21 @@ All colors MUST be HSL.
 
 /* PWA Installed - Remove scroll bounce no iOS */
 @media (display-mode: standalone) {
-  body {
+  html, body {
     overscroll-behavior-y: none;
     -webkit-overflow-scrolling: touch;
+    height: 100%;
+    overflow-x: hidden;
   }
   
   /* Esconder elementos web-only quando instalado */
   .web-only {
     display: none !important;
+  }
+  
+  /* Garantir que animações funcionem no PWA */
+  * {
+    animation-play-state: running !important;
   }
 }
 

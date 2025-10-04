@@ -14,11 +14,14 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === 'development' && componentTagger(),
     VitePWA({
-      registerType: 'prompt',
-      includeAssets: ['favicon.ico', 'robots.txt', 'icons/*.png'],
+      registerType: 'autoUpdate',
+      includeAssets: ['favicon.ico', 'robots.txt', 'icons/*.png', 'manifest.json'],
       manifest: false, // Usar manifest.json do public
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -44,6 +47,28 @@ export default defineConfig(({ mode }) => ({
                 maxAgeSeconds: 60 * 5 // 5 minutos
               },
               networkTimeoutSeconds: 10
+            }
+          },
+          {
+            urlPattern: /\/icons\/.*\.png$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'pwa-icons-v1',
+              expiration: {
+                maxEntries: 20,
+                maxAgeSeconds: 60 * 60 * 24 * 90 // 90 dias
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
+            urlPattern: /\/manifest\.json$/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'manifest-cache',
+              networkTimeoutSeconds: 3
             }
           },
           {

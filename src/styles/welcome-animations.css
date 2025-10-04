@@ -276,6 +276,52 @@
   animation: status-pulse 0.5s ease-out forwards;
 }
 
+/* Word Appear Animation */
+@keyframes word-appear {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.9);
+    filter: blur(3px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+.word-animate {
+  display: inline-block;
+  opacity: 0;
+  margin: 0 0.15em;
+  transition: transform 0.2s ease;
+}
+
+.word-animate:hover {
+  transform: scale(1.05);
+}
+
+/* PWA Standalone Mode - Garantir animações funcionem */
+@media (display-mode: standalone) {
+  /* Forçar animações no modo standalone */
+  .word-animate,
+  .slide-in-left,
+  .slide-in-right,
+  .slide-in-up,
+  .float-in,
+  .logo-entrance,
+  .status-pulse,
+  .icon-animate {
+    opacity: 1 !important;
+    animation-play-state: running !important;
+  }
+  
+  /* Fallback: se animação não carregar, mostrar conteúdo */
+  .word-animate {
+    animation: word-appear 0.5s ease-out forwards;
+  }
+}
+
 /* Reduced Motion Support */
 @media (prefers-reduced-motion: reduce) {
   .particle,
@@ -291,7 +337,8 @@
   .text-glow,
   .focus-trail,
   .logo-entrance,
-  .status-pulse {
+  .status-pulse,
+  .word-animate {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
