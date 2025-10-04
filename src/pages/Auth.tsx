@@ -12,6 +12,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { translateAuthError } from '@/lib/auth-error-messages';
+import { AnimatedText } from '@/components/welcome/AnimatedText';
+import { AnimatedIcon } from '@/components/welcome/AnimatedIcon';
+import { AnimatedFormElement } from '@/components/welcome/AnimatedFormElement';
+import { FloatingOrbs } from '@/components/welcome/FloatingOrbs';
+import { MouseFollower } from '@/components/welcome/MouseFollower';
 
 const Auth = () => {
   const { user, signIn, signUp, resetPassword, loading } = useAuth();
@@ -452,110 +457,152 @@ const Auth = () => {
   }
 
   return (
-    <div className="min-h-screen flex bg-gradient-hero">
-      {/* Left side - Branding */}
+    <div className="min-h-screen flex bg-gradient-hero relative overflow-hidden">
+      {/* Advanced Background Effects */}
+      <FloatingOrbs />
+      <MouseFollower />
+      
+      {/* Scanline effect */}
+      <div className="absolute inset-0 bg-[linear-gradient(0deg,transparent_calc(100%_-_1px),rgba(255,255,255,0.03)_calc(100%_-_1px))] bg-[length:100%_4px] pointer-events-none" />
+      
+      {/* Left side - Branding with animations */}
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-center px-12 relative overflow-hidden">
         <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
-              <ClipboardList className="h-6 w-6 text-white" />
+          <div className="flex items-center gap-3 mb-8 logo-entrance">
+            <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center glow-pulse">
+              <AnimatedIcon icon={ClipboardList} delay={0} className="text-white" size={24} />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white">Central de Tickets</h1>
-              <p className="text-white/60 text-sm">Gestão Inteligente de Tickets</p>
+              <AnimatedText
+                text="Central de Tickets"
+                as="h1"
+                className="text-2xl font-bold text-white"
+                startDelay={100}
+                wordDelay={80}
+              />
+              <div className="slide-in-up" style={{ animationDelay: '300ms' }}>
+                <p className="text-white/60 text-sm">Gestão Inteligente de Tickets</p>
+              </div>
             </div>
           </div>
           
-          <h2 className="text-4xl font-bold text-white mb-6 leading-tight">
-            Transforme seu<br />
-            suporte com IA
-          </h2>
+          <AnimatedText
+            text="Transforme seu suporte com IA"
+            as="h2"
+            className="text-4xl font-bold text-white mb-6 leading-tight text-glow"
+            startDelay={400}
+            wordDelay={100}
+          />
           
-          <p className="text-xl text-white/80 mb-8 leading-relaxed">
-            Sistema completo de gestão de tickets com inteligência artificial,
-            integração WhatsApp e análise avançada de dados.
-          </p>
+          <div className="slide-in-up" style={{ animationDelay: '800ms' }}>
+            <p className="text-xl text-white/80 mb-8 leading-relaxed shimmer">
+              Sistema completo de gestão de tickets com inteligência artificial,
+              integração WhatsApp e análise avançada de dados.
+            </p>
+          </div>
 
           <div className="space-y-4">
-            <div className="flex items-center gap-3 text-white/90">
-              <Sparkles className="h-5 w-5 text-primary-glow" />
+            <div className="flex items-center gap-3 text-white/90 status-pulse" style={{ animationDelay: '1000ms' }}>
+              <AnimatedIcon icon={Sparkles} delay={1050} className="text-primary-glow" size={20} />
               <span>Respostas automáticas com IA</span>
             </div>
-            <div className="flex items-center gap-3 text-white/90">
-              <Shield className="h-5 w-5 text-primary-glow" />
+            <div className="flex items-center gap-3 text-white/90 status-pulse" style={{ animationDelay: '1100ms' }}>
+              <AnimatedIcon icon={Shield} delay={1150} className="text-primary-glow" size={20} />
               <span>Controle avançado de permissões</span>
             </div>
-            <div className="flex items-center gap-3 text-white/90">
-              <Zap className="h-5 w-5 text-primary-glow" />
+            <div className="flex items-center gap-3 text-white/90 status-pulse" style={{ animationDelay: '1200ms' }}>
+              <AnimatedIcon icon={Zap} delay={1250} className="text-primary-glow" size={20} />
               <span>Integração WhatsApp Z-API</span>
             </div>
           </div>
         </div>
         
-        {/* Background decoration */}
-        <div className="absolute inset-0 opacity-10">
+        {/* Subtle Background decoration */}
+        <div className="absolute inset-0 opacity-5">
           <div className="absolute top-20 left-10 w-32 h-32 rounded-full bg-white animate-pulse"></div>
           <div className="absolute bottom-20 right-10 w-24 h-24 rounded-full bg-white animate-pulse animation-delay-1000"></div>
           <div className="absolute top-1/2 right-20 w-16 h-16 rounded-full bg-white animate-pulse animation-delay-2000"></div>
         </div>
       </div>
 
-      {/* Right side - Auth forms */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
-        <Card className="w-full max-w-md shadow-lg border-0 bg-white/95 backdrop-blur-sm">
+      {/* Right side - Auth forms with animations */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 relative z-10">
+        <Card className="w-full max-w-md shadow-elegant border-white/30 bg-white/95 backdrop-blur-sm float-in" style={{ animationDelay: '600ms' }}>
           <CardHeader className="text-center pb-6">
-            <div className="lg:hidden flex items-center justify-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
-                <ClipboardList className="h-4 w-4 text-white" />
+            <div className="lg:hidden flex items-center justify-center gap-2 mb-4 logo-entrance">
+              <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center glow-pulse">
+                <AnimatedIcon icon={ClipboardList} delay={700} className="text-white" size={16} />
               </div>
-              <span className="text-xl font-bold">Central de Tickets</span>
+              <AnimatedText
+                text="Central de Tickets"
+                as="span"
+                className="text-xl font-bold"
+                startDelay={750}
+                wordDelay={80}
+              />
             </div>
-            <CardTitle className="text-2xl font-bold">Bem-vindo</CardTitle>
-            <CardDescription>Acesse sua conta ou crie uma nova</CardDescription>
+            <AnimatedText
+              text="Bem-vindo"
+              as="h3"
+              className="text-2xl font-bold text-primary"
+              startDelay={800}
+              wordDelay={80}
+            />
+            <div className="slide-in-up" style={{ animationDelay: '900ms' }}>
+              <CardDescription>Acesse sua conta ou crie uma nova</CardDescription>
+            </div>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="login" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 mb-6">
-                <TabsTrigger value="login" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-white">
-                  Entrar
-                </TabsTrigger>
-                <TabsTrigger value="signup" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-white">
-                  Cadastrar
-                </TabsTrigger>
-                <TabsTrigger value="franqueado" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-white">
-                  Franqueado
-                </TabsTrigger>
-              </TabsList>
+              <div className="slide-in-up" style={{ animationDelay: '1000ms' }}>
+                <TabsList className="grid w-full grid-cols-3 mb-6">
+                  <TabsTrigger value="login" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-white">
+                    Entrar
+                  </TabsTrigger>
+                  <TabsTrigger value="signup" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-white">
+                    Cadastrar
+                  </TabsTrigger>
+                  <TabsTrigger value="franqueado" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-white">
+                    Franqueado
+                  </TabsTrigger>
+                </TabsList>
+              </div>
 
               <TabsContent value="login" className="space-y-4">
                 <form onSubmit={handleSignIn} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="login-email">Email</Label>
-                    <Input
-                      id="login-email"
-                      type="email"
-                      placeholder="seu@email.com"
-                      value={loginData.email}
-                      onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
-                      className="h-11"
-                      required
-                    />
+                  <AnimatedFormElement delay={1100} direction="left">
+                    <div className="space-y-2">
+                      <Label htmlFor="login-email">Email</Label>
+                      <Input
+                        id="login-email"
+                        type="email"
+                        placeholder="seu@email.com"
+                        value={loginData.email}
+                        onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+                        className="h-11"
+                        required
+                      />
+                    </div>
+                  </AnimatedFormElement>
+                  <AnimatedFormElement delay={1200} direction="right">
+                    <div className="space-y-2">
+                      <Label htmlFor="login-password">Senha</Label>
+                      <Input
+                        id="login-password"
+                        type="password"
+                        placeholder="••••••••"
+                        value={loginData.password}
+                        onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                        className="h-11"
+                        required
+                      />
+                    </div>
+                  </AnimatedFormElement>
+                  <div className="slide-in-up" style={{ animationDelay: '1300ms' }}>
+                    <Button type="submit" className="w-full h-11 bg-gradient-primary hover:opacity-90 shadow-glow glow-pulse" disabled={isSubmitting}>
+                      {isSubmitting ? 'Entrando...' : 'Entrar no Sistema'}
+                    </Button>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="login-password">Senha</Label>
-                    <Input
-                      id="login-password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={loginData.password}
-                      onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                      className="h-11"
-                      required
-                    />
-                  </div>
-                  <Button type="submit" className="w-full h-11 bg-gradient-primary hover:opacity-90 shadow-glow" disabled={isSubmitting}>
-                    {isSubmitting ? 'Entrando...' : 'Entrar no Sistema'}
-                  </Button>
                 </form>
                 
                 <div className="mt-4 text-center">
