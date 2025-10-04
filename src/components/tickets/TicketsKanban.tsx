@@ -56,6 +56,7 @@ import { TicketDetail } from './TicketDetail';
 import { TicketActions } from './TicketActions';
 import { formatDistanceToNowInSaoPaulo, calculateTimeRemaining, isFromPreviousBusinessDay } from '@/lib/date-utils';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 
 interface TicketsKanbanProps {
   tickets: Ticket[];
@@ -519,6 +520,12 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
 
   // Merge inteligente entre estado otimista e realtime
   const displayTickets = useMemo(() => {
+    console.log('🔄 Recalculando displayTickets:', {
+      baseCount: tickets.length,
+      optimisticCount: optimisticTickets.length,
+      pendingCount: pendingMoves.size
+    });
+
     if (pendingMoves.size === 0) return tickets;
     
     const now = Date.now();
@@ -540,7 +547,7 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
       
       return ticket;
     });
-  }, [tickets, optimisticTickets, pendingMoves]);
+  }, [tickets, optimisticTickets, pendingMoves.size]);
 
   // Cleanup de operações antigas
   useEffect(() => {
@@ -567,6 +574,72 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
     
     return () => clearInterval(interval);
   }, [pendingMoves]);
+
+  // Subscrição em tempo real para mudanças de status
+  useEffect(() => {
+    if (!tickets || tickets.length === 0) return;
+
+    console.log('🔄 Configurando realtime direto no Kanban');
+
+    const channel = supabase
+      .channel('kanban-status-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'tickets'
+        },
+        (payload) => {
+          const updatedTicket = payload.new as Ticket;
+          const oldTicket = payload.old as Ticket;
+          
+          console.log('📡 Kanban recebeu update:', {
+            id: updatedTicket.id,
+            codigo: updatedTicket.codigo_ticket,
+            oldStatus: oldTicket.status,
+            newStatus: updatedTicket.status
+          });
+
+          // IGNORAR se for uma atualização otimista nossa
+          const ignoreUntil = ignoreRealtimeUntil.current.get(updatedTicket.id);
+          if (ignoreUntil && Date.now() < ignoreUntil) {
+            console.log('⏭️ Ignorando update otimista próprio');
+            return;
+          }
+
+          // IGNORAR se já estiver pendente localmente
+          if (pendingMoves.has(updatedTicket.id)) {
+            console.log('⏭️ Ignorando - já em movimento local');
+            return;
+          }
+
+          // ✅ ATUALIZAR O TICKET LOCALMENTE
+          setOptimisticTickets(prev => {
+            const existing = prev.find(t => t.id === updatedTicket.id);
+            if (existing) {
+              // Já existe na lista otimista - atualizar
+              return prev.map(t => 
+                t.id === updatedTicket.id ? updatedTicket : t
+              );
+            } else {
+              // Adicionar à lista otimista
+              return [...prev, updatedTicket];
+            }
+          });
+
+          console.log('✅ Ticket atualizado via realtime!');
+        }
+      )
+      .subscribe((status) => {
+        console.log('📡 Status do canal Kanban:', status);
+      });
+
+    return () => {
+      console.log('🧹 Limpando canal do Kanban');
+      supabase.removeChannel(channel);
+    };
+  }, [tickets.length, pendingMoves]);
 
   // Update timestamp when tickets change
   useEffect(() => {
