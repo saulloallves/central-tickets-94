@@ -208,6 +208,12 @@ verify_jwt = false
 [functions.debug-notifications]
 verify_jwt = false
 
+[functions.send-push-notification]
+verify_jwt = false
+
+[functions.register-push-subscription]
+verify_jwt = true
+
 [db]
 port = 54322
 shadow_port = 54320
