@@ -16,6 +16,7 @@ export function DottedSurface({ className, ...props }: DottedSurfaceProps) {
   } | null>(null);
 
   useEffect(() => {
+    console.log('🎨 DottedSurface: Inicializando Three.js...');
     if (!containerRef.current) return;
 
     // Detect mobile for performance optimization
@@ -46,6 +47,13 @@ export function DottedSurface({ className, ...props }: DottedSurfaceProps) {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Cap pixel ratio for performance
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setClearColor(scene.fog.color, 0);
+    
+    console.log('🎨 DottedSurface: Three.js configurado', {
+      width: window.innerWidth,
+      height: window.innerHeight,
+      isMobile,
+      particles: AMOUNTX * AMOUNTY
+    });
 
     containerRef.current.appendChild(renderer.domElement);
 
@@ -184,7 +192,7 @@ export function DottedSurface({ className, ...props }: DottedSurfaceProps) {
   return (
     <div
       ref={containerRef}
-      className={cn('pointer-events-none fixed inset-0 -z-10', className)}
+      className={cn('pointer-events-none fixed inset-0 z-0', className)}
       {...props}
     />
   );
