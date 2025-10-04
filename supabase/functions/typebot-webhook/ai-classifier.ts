@@ -151,7 +151,7 @@ export async function classifyTicket(message: string, equipes: any[]): Promise<C
       }
     }
 
-    const equipesDisponiveis = equipes?.map(e => `- ${e.nome}: ${e.introducao || 'Sem especialidades definidas'}`).join('\n') || 'Nenhuma equipe disponível';
+    const equipesDisponiveis = equipes?.map(e => `- ID: ${e.id} | Nome: ${e.nome}\n  Especialidade: ${e.introducao || 'Sem especialidades definidas'}`).join('\n\n') || 'Nenhuma equipe disponível';
 
     const analysisPrompt = `
 Você é um especialista em classificação de tickets de suporte técnico da Cresci & Perdi.
@@ -170,11 +170,16 @@ Analise este ticket e forneça:
    - imediato: problemas críticos que impedem funcionamento
    - crise: problemas que afetam múltiplas unidades
 
-4. EQUIPE SUGERIDA: Escolha a melhor equipe baseado nas especialidades:
+3. EQUIPE SUGERIDA: Escolha a melhor equipe baseado nas especialidades abaixo.
+   IMPORTANTE: Você DEVE retornar o ID (UUID) da equipe, NÃO o nome.
+
+Equipes disponíveis:
 
 ${equipesDisponiveis}
 
-IMPORTANTE: Se você NÃO TIVER CERTEZA sobre qual equipe escolher, ou se o problema não se encaixar claramente em nenhuma especialidade, use "Concierge Operação" (ID: ${CONCIERGE_OPERACAO_ID}). Esta equipe está preparada para analisar e redirecionar tickets incertos.
+CRÍTICO: 
+- Retorne o ID completo (UUID) da equipe no campo "equipe_sugerida"
+- Se NÃO tiver certeza, use o ID: ${CONCIERGE_OPERACAO_ID} (Concierge Operação)
 
 ANÁLISE: "${message}"
 
@@ -182,14 +187,24 @@ Responda APENAS em JSON válido:
 {
   "prioridade": "uma_das_5_prioridades_definidas",
   "titulo": "Título de 3 palavras descritivo",
-  "equipe_sugerida": "id_da_equipe_mais_apropriada_ou_${CONCIERGE_OPERACAO_ID}",
+  "equipe_sugerida": "UUID_da_equipe_escolhida",
   "justificativa": "Breve explicação da análise e por que escolheu esta equipe",
   "confianca": "alta, media ou baixa"
 }
 
-CRÍTICO: 
+EXEMPLO DE RESPOSTA CORRETA:
+{
+  "prioridade": "baixo",
+  "titulo": "Aluguel Fantasia Disponibilidade",
+  "equipe_sugerida": "36562741-7c74-4d77-8940-d598e8699342",
+  "justificativa": "Solicitação de aluguel de material operacional - equipe Suprimentos",
+  "confianca": "alta"
+}
+
+REGRAS CRÍTICAS:
 - Use APENAS estas 5 prioridades: baixo, medio, alto, imediato, crise
-- Use Concierge Operação (ID: ${CONCIERGE_OPERACAO_ID}) quando tiver dúvida sobre a equipe
+- Retorne SEMPRE o UUID completo da equipe, nunca o nome
+- Use ${CONCIERGE_OPERACAO_ID} quando tiver dúvida
 `;
 
     const requestBody = {
