@@ -31,13 +31,13 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden" style={{ background: 'linear-gradient(135deg, hsl(201 70% 20%), hsl(201 75% 25%))' }}>
+    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-[hsl(201,70%,45%)] via-[hsl(201,65%,60%)] to-[hsl(201,60%,75%)]">
       {/* Advanced Background Effects */}
       <FloatingOrbs />
       <MouseFollower />
       
       {/* Scanline effect */}
-      <div className="absolute inset-0 bg-[linear-gradient(0deg,transparent_calc(100%_-_1px),rgba(255,255,255,0.03)_calc(100%_-_1px))] bg-[length:100%_4px] pointer-events-none" />
+      <div className="absolute inset-0 bg-[linear-gradient(0deg,transparent_calc(100%_-_1px),rgba(255,255,255,0.05)_calc(100%_-_1px))] bg-[length:100%_4px] pointer-events-none" />
       
       {/* Hero Section */}
       <div className="relative">
