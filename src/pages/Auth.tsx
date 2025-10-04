@@ -457,7 +457,7 @@ const Auth = () => {
   }
 
   return (
-    <div className="min-h-screen flex bg-gradient-hero relative overflow-hidden">
+    <div className="min-h-screen flex relative overflow-hidden" style={{ background: 'linear-gradient(135deg, hsl(201 70% 20%), hsl(201 75% 25%))' }}>
       {/* Advanced Background Effects */}
       <FloatingOrbs />
       <MouseFollower />
@@ -469,7 +469,7 @@ const Auth = () => {
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-center px-12 relative overflow-hidden">
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-8 logo-entrance">
-            <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center glow-pulse">
+            <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center glow-pulse" style={{ boxShadow: '0 0 40px hsla(201, 65%, 75%, 0.4)' }}>
               <AnimatedIcon icon={ClipboardList} delay={0} className="text-white" size={24} />
             </div>
             <div>
@@ -503,15 +503,15 @@ const Auth = () => {
 
           <div className="space-y-4">
             <div className="flex items-center gap-3 text-white/90 status-pulse" style={{ animationDelay: '1000ms' }}>
-              <AnimatedIcon icon={Sparkles} delay={1050} className="text-primary-glow" size={20} />
+              <AnimatedIcon icon={Sparkles} delay={1050} className="text-white" size={20} />
               <span>Respostas automáticas com IA</span>
             </div>
             <div className="flex items-center gap-3 text-white/90 status-pulse" style={{ animationDelay: '1100ms' }}>
-              <AnimatedIcon icon={Shield} delay={1150} className="text-primary-glow" size={20} />
+              <AnimatedIcon icon={Shield} delay={1150} className="text-white" size={20} />
               <span>Controle avançado de permissões</span>
             </div>
             <div className="flex items-center gap-3 text-white/90 status-pulse" style={{ animationDelay: '1200ms' }}>
-              <AnimatedIcon icon={Zap} delay={1250} className="text-primary-glow" size={20} />
+              <AnimatedIcon icon={Zap} delay={1250} className="text-white" size={20} />
               <span>Integração WhatsApp Z-API</span>
             </div>
           </div>
@@ -527,10 +527,10 @@ const Auth = () => {
 
       {/* Right side - Auth forms with animations */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 relative z-10">
-        <Card className="w-full max-w-md shadow-elegant border-white/30 bg-white/95 backdrop-blur-sm float-in" style={{ animationDelay: '600ms' }}>
+        <Card className="w-full max-w-md shadow-elegant border-white/30 bg-white/95 backdrop-blur-sm float-in" style={{ animationDelay: '600ms', boxShadow: '0 8px 32px hsla(0, 0%, 0%, 0.2)' }}>
           <CardHeader className="text-center pb-6">
             <div className="lg:hidden flex items-center justify-center gap-2 mb-4 logo-entrance">
-              <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center glow-pulse">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center glow-pulse" style={{ background: 'linear-gradient(135deg, hsl(201 60% 66%), hsl(201 65% 75%))', boxShadow: '0 0 30px hsla(201, 65%, 75%, 0.3)' }}>
                 <AnimatedIcon icon={ClipboardList} delay={700} className="text-white" size={16} />
               </div>
               <AnimatedText
@@ -541,13 +541,15 @@ const Auth = () => {
                 wordDelay={80}
               />
             </div>
-            <AnimatedText
-              text="Bem-vindo"
-              as="h3"
-              className="text-2xl font-bold text-primary"
-              startDelay={800}
-              wordDelay={80}
-            />
+            <div style={{ color: 'hsl(201 60% 66%)' }}>
+              <AnimatedText
+                text="Bem-vindo"
+                as="h3"
+                className="text-2xl font-bold"
+                startDelay={800}
+                wordDelay={80}
+              />
+            </div>
             <div className="slide-in-up" style={{ animationDelay: '900ms' }}>
               <CardDescription>Acesse sua conta ou crie uma nova</CardDescription>
             </div>
@@ -556,13 +558,32 @@ const Auth = () => {
             <Tabs defaultValue="login" className="w-full">
               <div className="slide-in-up" style={{ animationDelay: '1000ms' }}>
                 <TabsList className="grid w-full grid-cols-3 mb-6">
-                  <TabsTrigger value="login" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-white">
+                  <TabsTrigger 
+                    value="login" 
+                    className="data-[state=active]:text-white"
+                    style={{ 
+                      '--tw-gradient-stops': 'hsl(201 60% 66%), hsl(201 65% 75%)'
+                    } as any}
+                    data-active-class="bg-gradient-to-r from-[hsl(201_60%_66%)] to-[hsl(201_65%_75%)]"
+                  >
                     Entrar
                   </TabsTrigger>
-                  <TabsTrigger value="signup" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-white">
+                  <TabsTrigger 
+                    value="signup" 
+                    className="data-[state=active]:text-white"
+                    style={{ 
+                      '--tw-gradient-stops': 'hsl(201 60% 66%), hsl(201 65% 75%)'
+                    } as any}
+                  >
                     Cadastrar
                   </TabsTrigger>
-                  <TabsTrigger value="franqueado" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-white">
+                  <TabsTrigger 
+                    value="franqueado" 
+                    className="data-[state=active]:text-white"
+                    style={{ 
+                      '--tw-gradient-stops': 'hsl(201 60% 66%), hsl(201 65% 75%)'
+                    } as any}
+                  >
                     Franqueado
                   </TabsTrigger>
                 </TabsList>
@@ -599,7 +620,15 @@ const Auth = () => {
                     </div>
                   </AnimatedFormElement>
                   <div className="slide-in-up" style={{ animationDelay: '1300ms' }}>
-                    <Button type="submit" className="w-full h-11 bg-gradient-primary hover:opacity-90 shadow-glow glow-pulse" disabled={isSubmitting}>
+                    <Button 
+                      type="submit" 
+                      className="w-full h-11 text-white hover:opacity-90 glow-pulse" 
+                      disabled={isSubmitting}
+                      style={{ 
+                        background: 'linear-gradient(135deg, hsl(201 60% 66%), hsl(201 65% 75%))',
+                        boxShadow: '0 0 40px hsla(201, 65%, 75%, 0.3)'
+                      }}
+                    >
                       {isSubmitting ? 'Entrando...' : 'Entrar no Sistema'}
                     </Button>
                   </div>

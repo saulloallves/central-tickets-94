@@ -31,7 +31,7 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-hero overflow-hidden relative">
+    <div className="min-h-screen relative overflow-hidden" style={{ background: 'linear-gradient(135deg, hsl(201 70% 20%), hsl(201 75% 25%))' }}>
       {/* Advanced Background Effects */}
       <FloatingOrbs />
       <MouseFollower />
@@ -52,7 +52,7 @@ const Index = () => {
           <div className="text-center max-w-4xl mx-auto">
             {/* Logo with animation */}
             <div className="flex items-center justify-center gap-3 mb-8 logo-entrance">
-              <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center shadow-glow glow-pulse">
+              <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center glow-pulse" style={{ boxShadow: '0 0 40px hsla(201, 65%, 75%, 0.4)' }}>
                 <AnimatedIcon icon={ClipboardList} delay={0} className="text-white" size={32} />
               </div>
               <div className="text-left">
@@ -98,12 +98,12 @@ const Index = () => {
 
             {/* Features Grid with staggered animations */}
             <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-              <Card className="border-0 bg-white/10 backdrop-blur-sm text-white hover:bg-white/15 transition-all duration-300 hover:scale-105 float-in" style={{ animationDelay: '1200ms' }}>
+              <Card className="border-white/20 bg-white/5 backdrop-blur-sm text-white hover:bg-white/10 transition-all duration-300 hover:scale-105 float-in" style={{ animationDelay: '1200ms' }}>
                 <CardHeader className="text-center pb-4">
-                  <div className="w-12 h-12 rounded-xl bg-primary-glow/20 flex items-center justify-center mx-auto mb-4 glow-pulse">
-                    <AnimatedIcon icon={Sparkles} delay={1250} className="text-primary-glow" size={24} />
+                  <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center mx-auto mb-4 glow-pulse" style={{ boxShadow: '0 0 30px hsla(201, 65%, 75%, 0.3)' }}>
+                    <AnimatedIcon icon={Sparkles} delay={1250} className="text-white" size={24} />
                   </div>
-                  <CardTitle className="text-xl">Inteligência Artificial</CardTitle>
+                  <CardTitle className="text-xl text-white">Inteligência Artificial</CardTitle>
                 </CardHeader>
                 <CardContent className="text-center">
                   <CardDescription className="text-white/70">
@@ -112,12 +112,12 @@ const Index = () => {
                 </CardContent>
               </Card>
 
-              <Card className="border-0 bg-white/10 backdrop-blur-sm text-white hover:bg-white/15 transition-all duration-300 hover:scale-105 float-in" style={{ animationDelay: '1400ms' }}>
+              <Card className="border-white/20 bg-white/5 backdrop-blur-sm text-white hover:bg-white/10 transition-all duration-300 hover:scale-105 float-in" style={{ animationDelay: '1400ms' }}>
                 <CardHeader className="text-center pb-4">
-                  <div className="w-12 h-12 rounded-xl bg-primary-glow/20 flex items-center justify-center mx-auto mb-4 glow-pulse">
-                    <AnimatedIcon icon={Shield} delay={1450} className="text-primary-glow" size={24} />
+                  <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center mx-auto mb-4 glow-pulse" style={{ boxShadow: '0 0 30px hsla(201, 65%, 75%, 0.3)' }}>
+                    <AnimatedIcon icon={Shield} delay={1450} className="text-white" size={24} />
                   </div>
-                  <CardTitle className="text-xl">Controle Avançado</CardTitle>
+                  <CardTitle className="text-xl text-white">Controle Avançado</CardTitle>
                 </CardHeader>
                 <CardContent className="text-center">
                   <CardDescription className="text-white/70">
@@ -126,12 +126,12 @@ const Index = () => {
                 </CardContent>
               </Card>
 
-              <Card className="border-0 bg-white/10 backdrop-blur-sm text-white hover:bg-white/15 transition-all duration-300 hover:scale-105 float-in" style={{ animationDelay: '1600ms' }}>
+              <Card className="border-white/20 bg-white/5 backdrop-blur-sm text-white hover:bg-white/10 transition-all duration-300 hover:scale-105 float-in" style={{ animationDelay: '1600ms' }}>
                 <CardHeader className="text-center pb-4">
-                  <div className="w-12 h-12 rounded-xl bg-primary-glow/20 flex items-center justify-center mx-auto mb-4 glow-pulse">
-                    <AnimatedIcon icon={Zap} delay={1650} className="text-primary-glow" size={24} />
+                  <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center mx-auto mb-4 glow-pulse" style={{ boxShadow: '0 0 30px hsla(201, 65%, 75%, 0.3)' }}>
+                    <AnimatedIcon icon={Zap} delay={1650} className="text-white" size={24} />
                   </div>
-                  <CardTitle className="text-xl">Integração WhatsApp</CardTitle>
+                  <CardTitle className="text-xl text-white">Integração WhatsApp</CardTitle>
                 </CardHeader>
                 <CardContent className="text-center">
                   <CardDescription className="text-white/70">
