@@ -95,10 +95,10 @@ export function DottedSurface({ className, ...props }: DottedSurfaceProps) {
 
     // Create material with blue tones
     const material = new THREE.PointsMaterial({
-      size: isMobile ? 6 : 8,
+      size: isMobile ? 8 : 12,
       vertexColors: true,
       transparent: true,
-      opacity: 0.7, // More visible particles
+      opacity: 0.9,
       sizeAttenuation: true,
       blending: THREE.AdditiveBlending, // Add glow effect
     });
