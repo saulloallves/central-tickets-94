@@ -561,30 +561,17 @@ const Auth = () => {
               <div className="slide-in-up" style={{ animationDelay: '1000ms' }}>
                 <TabsList className="grid w-full grid-cols-3 mb-6">
                   <TabsTrigger 
-                    value="login" 
-                    className="data-[state=active]:text-white"
-                    style={{ 
-                      '--tw-gradient-stops': 'hsl(201 60% 66%), hsl(201 65% 75%)'
-                    } as any}
-                    data-active-class="bg-gradient-to-r from-[hsl(201_60%_66%)] to-[hsl(201_65%_75%)]"
+                    value="login"
                   >
                     Entrar
                   </TabsTrigger>
                   <TabsTrigger 
-                    value="signup" 
-                    className="data-[state=active]:text-white"
-                    style={{ 
-                      '--tw-gradient-stops': 'hsl(201 60% 66%), hsl(201 65% 75%)'
-                    } as any}
+                    value="signup"
                   >
                     Cadastrar
                   </TabsTrigger>
                   <TabsTrigger 
-                    value="franqueado" 
-                    className="data-[state=active]:text-white"
-                    style={{ 
-                      '--tw-gradient-stops': 'hsl(201 60% 66%), hsl(201 65% 75%)'
-                    } as any}
+                    value="franqueado"
                   >
                     Franqueado
                   </TabsTrigger>
