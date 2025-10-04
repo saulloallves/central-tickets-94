@@ -481,3 +481,26 @@ All colors MUST be HSL.
     transform: none !important;
   }
 }
+
+/* PWA Installed - Remove scroll bounce no iOS */
+@media (display-mode: standalone) {
+  body {
+    overscroll-behavior-y: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Esconder elementos web-only quando instalado */
+  .web-only {
+    display: none !important;
+  }
+}
+
+/* iOS Safe Area */
+@supports (padding-top: env(safe-area-inset-top)) {
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
