@@ -256,7 +256,7 @@ export default function Welcome() {
 
       {/* Form Section */}
       <div className="flex-1 flex items-center justify-center p-6 lg:p-12 relative">
-        <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-primary/5" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[hsl(201,50%,92%)] via-[hsl(201,45%,88%)] to-[hsl(201,40%,85%)]" />
         
         <Card className="w-full max-w-md shadow-elegant relative z-10 animate-scale-in border-primary/20">
           <CardHeader className="space-y-1">
