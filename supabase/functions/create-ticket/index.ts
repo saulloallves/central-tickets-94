@@ -173,10 +173,11 @@ Deno.serve(async (req) => {
 
     console.log('✅ Ticket created successfully:', newTicket.codigo_ticket);
 
-    // Enviar notificação de ticket criado imediatamente
+    // Processar notificações pendentes após criar ticket
     try {
-      console.log('📤 Enviando notificação de ticket criado...');
+      console.log('📤 Processando notificações do ticket criado...');
       
+      // Chamar process-notifications para processar a fila
       const notificationResult = await fetch(`${supabaseUrl}/functions/v1/process-notifications`, {
         method: 'POST',
         headers: {
@@ -184,25 +185,19 @@ Deno.serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          ticketId: newTicket.id,
-          type: 'ticket_created',
-          payload: {
-            unidade_id: newTicket.unidade_id,
-            codigo_ticket: newTicket.codigo_ticket,
-            categoria: newTicket.categoria,
-            prioridade: newTicket.prioridade
-          }
+          ticket_id: newTicket.id
         })
       });
 
       if (notificationResult.ok) {
         const notificationData = await notificationResult.json();
-        console.log('✅ Notificação de ticket criado enviada:', notificationData);
+        console.log('✅ Notificações processadas:', notificationData);
       } else {
-        console.error('❌ Erro ao enviar notificação:', await notificationResult.text());
+        const errorText = await notificationResult.text();
+        console.error('❌ Erro ao processar notificações:', errorText);
       }
     } catch (notificationError) {
-      console.error('❌ Erro ao processar notificação:', notificationError);
+      console.error('❌ Erro ao chamar process-notifications:', notificationError);
       // Continue sem falhar a criação do ticket
     }
 
