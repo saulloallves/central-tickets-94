@@ -256,7 +256,11 @@ export default function Welcome() {
 
       {/* Form Section */}
       <div className="flex-1 flex items-center justify-center p-6 lg:p-12 relative">
+        <DottedSurface className="opacity-60" />
+        <FloatingOrbs />
         
+        {/* Scanline effect */}
+        <div className="absolute inset-0 bg-[linear-gradient(0deg,transparent_calc(100%_-_1px),rgba(255,255,255,0.05)_calc(100%_-_1px))] bg-[length:100%_4px] pointer-events-none" />
         
         <Card className="w-full max-w-md shadow-elegant relative z-10 animate-scale-in border-white/30 bg-white/95 backdrop-blur-sm">
           <CardHeader className="space-y-1">
