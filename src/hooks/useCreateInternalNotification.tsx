@@ -17,6 +17,7 @@ export const useCreateInternalNotification = () => {
 
   return useMutation({
     mutationFn: async (params: CreateNotificationParams) => {
+      // Criar notificação interna
       const { data, error } = await supabase.functions.invoke('create-internal-notification', {
         body: params,
       });
@@ -24,6 +25,25 @@ export const useCreateInternalNotification = () => {
       if (error) {
         console.error('Error creating notification:', error);
         throw error;
+      }
+
+      // Enviar push notification via OneSignal (se tiver title e message)
+      if (params.title && (params.message || params.payload)) {
+        try {
+          await supabase.functions.invoke('send-push-notification', {
+            body: {
+              title: params.title,
+              message: params.message || 'Nova notificação',
+              userIds: params.recipients,
+              equipeId: params.equipe_id,
+              data: params.payload,
+            },
+          });
+          console.log('✅ Push notification sent via OneSignal');
+        } catch (pushError) {
+          console.warn('Failed to send push notification (non-critical):', pushError);
+          // Don't fail the whole operation if push fails
+        }
       }
 
       return data;

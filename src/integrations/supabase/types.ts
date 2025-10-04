@@ -2198,6 +2198,9 @@ export type Database = {
           created_at: string | null
           device_info: string | null
           id: string
+          onesignal_player_id: string | null
+          onesignal_tags: Json | null
+          platform: string | null
           subscription: Json
           updated_at: string | null
           user_id: string
@@ -2206,6 +2209,9 @@ export type Database = {
           created_at?: string | null
           device_info?: string | null
           id?: string
+          onesignal_player_id?: string | null
+          onesignal_tags?: Json | null
+          platform?: string | null
           subscription: Json
           updated_at?: string | null
           user_id: string
@@ -2214,6 +2220,9 @@ export type Database = {
           created_at?: string | null
           device_info?: string | null
           id?: string
+          onesignal_player_id?: string | null
+          onesignal_tags?: Json | null
+          platform?: string | null
           subscription?: Json
           updated_at?: string | null
           user_id?: string

@@ -1,7 +1,9 @@
+// DEPRECATED: This component is no longer needed - OneSignal handles push prompts natively
+// Keeping for backwards compatibility only
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Bell, BellOff } from 'lucide-react';
-import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { useOneSignal } from '@/hooks/useOneSignal';
 import {
   Dialog,
   DialogContent,
@@ -13,42 +15,26 @@ import {
 
 export const PushNotificationPrompt = () => {
   const [showPrompt, setShowPrompt] = useState(false);
-  const { isSupported, isSubscribed, isLoading, subscribe, unsubscribe } = usePushNotifications();
+  const { isInitialized, isSubscribed, promptSubscription, unsubscribe } = useOneSignal();
 
   useEffect(() => {
-    // Apenas mostrar prompt se não estiver inscrito e não tiver sido mostrado antes
-    if (isSupported && !isSubscribed) {
-      const hasShownBefore = localStorage.getItem('push-prompt-shown');
-      if (!hasShownBefore) {
-        const timer = setTimeout(() => {
-          setShowPrompt(true);
-          localStorage.setItem('push-prompt-shown', 'true');
-        }, 5000);
-        
-        return () => clearTimeout(timer);
-      }
-    } else if (isSubscribed) {
-      // Se já está inscrito, garantir que o prompt está fechado
+    // OneSignal handles everything - hide if already subscribed
+    if (isSubscribed) {
       setShowPrompt(false);
     }
-  }, [isSupported, isSubscribed]);
+  }, [isSubscribed]);
 
   const handleSubscribe = async () => {
-    const success = await subscribe();
-    if (success) {
-      setShowPrompt(false);
-    }
+    await promptSubscription();
+    setShowPrompt(false);
   };
 
   const handleDismiss = () => {
     setShowPrompt(false);
-    // Mostrar novamente em 24h
-    setTimeout(() => {
-      localStorage.removeItem('push-prompt-shown');
-    }, 24 * 60 * 60 * 1000);
   };
 
-  if (!isSupported) {
+  // OneSignal handles everything - this component is deprecated
+  if (!isInitialized) {
     return null;
   }
 
@@ -69,8 +55,8 @@ export const PushNotificationPrompt = () => {
             <Button variant="outline" onClick={handleDismiss}>
               Agora não
             </Button>
-            <Button onClick={handleSubscribe} disabled={isLoading}>
-              {isLoading ? 'Ativando...' : 'Ativar Notificações'}
+            <Button onClick={handleSubscribe}>
+              Ativar Notificações
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -78,23 +64,13 @@ export const PushNotificationPrompt = () => {
 
       {/* Botão de controle sempre visível */}
       <Button
-        variant="ghost"
+        onClick={() => isSubscribed ? unsubscribe() : promptSubscription()}
+        variant={isSubscribed ? "secondary" : "default"}
         size="sm"
-        onClick={isSubscribed ? unsubscribe : subscribe}
-        disabled={isLoading}
         className="gap-2"
       >
-        {isSubscribed ? (
-          <>
-            <Bell className="h-4 w-4" />
-            Push ativo
-          </>
-        ) : (
-          <>
-            <BellOff className="h-4 w-4" />
-            Ativar push
-          </>
-        )}
+        <Bell className="h-4 w-4" />
+        {isSubscribed ? 'Push ativo' : 'Ativar push'}
       </Button>
     </>
   );
