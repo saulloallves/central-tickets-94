@@ -5,7 +5,7 @@ export const FloatingOrbs: React.FC = () => {
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
       {/* Orb 1 */}
       <div 
-        className="absolute w-96 h-96 rounded-full blur-3xl opacity-20 animate-float"
+        className="absolute w-[600px] h-[600px] rounded-full blur-3xl opacity-20 animate-float"
         style={{
           background: 'radial-gradient(circle, hsl(201 65% 75%) 0%, transparent 70%)',
           top: '10%',
@@ -16,7 +16,7 @@ export const FloatingOrbs: React.FC = () => {
       
       {/* Orb 2 */}
       <div 
-        className="absolute w-80 h-80 rounded-full blur-3xl opacity-15 animate-float-delayed"
+        className="absolute w-[500px] h-[500px] rounded-full blur-3xl opacity-15 animate-float-delayed"
         style={{
           background: 'radial-gradient(circle, hsl(201 60% 66%) 0%, transparent 70%)',
           bottom: '20%',
@@ -27,7 +27,7 @@ export const FloatingOrbs: React.FC = () => {
       
       {/* Orb 3 */}
       <div 
-        className="absolute w-64 h-64 rounded-full blur-3xl opacity-10"
+        className="absolute w-[450px] h-[450px] rounded-full blur-3xl opacity-10"
         style={{
           background: 'radial-gradient(circle, hsl(201 70% 80%) 0%, transparent 70%)',
           top: '50%',
