@@ -460,8 +460,8 @@ const Auth = () => {
       <div className="absolute inset-0 bg-[linear-gradient(0deg,transparent_calc(100%_-_1px),rgba(255,255,255,0.05)_calc(100%_-_1px))] bg-[length:100%_4px] pointer-events-none" />
       
       {/* Left side - Branding with animations */}
-      <div className="hidden lg:flex lg:w-1/2 flex-col justify-center px-12 relative overflow-hidden">
-        <div className="relative z-10">
+      <div className="hidden lg:flex lg:w-1/2 flex-col justify-start pt-24 px-12 relative overflow-hidden">
+        <div className="relative z-10 max-w-2xl">
           <div className="flex items-center gap-3 mb-8">
             <SystemLogo />
             <div>
