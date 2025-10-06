@@ -24,14 +24,8 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
-    // Use service role for admin operations, but pass user auth for RLS
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      global: { 
-        headers: { 
-          Authorization: req.headers.get('Authorization') ?? ''
-        } 
-      },
-    });
+    // Use service role to bypass RLS for admin operations
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     console.log('🎯 Processing ticket move:', { ticketId, toStatus, beforeId, afterId });
 
