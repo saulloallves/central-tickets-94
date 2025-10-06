@@ -70,7 +70,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
       const [unidadeRes, colaboradorRes, franqueadoRes, profileRes, equipeRes, atendimentoIniciadoRes] = await Promise.all([
         supabase.from('unidades').select('grupo, id').eq('id', ticketData.unidade_id).maybeSingle(),
         ticketData.colaborador_id ? supabase.from('colaboradores').select('nome_completo').eq('id', ticketData.colaborador_id).maybeSingle() : Promise.resolve({ data: null }),
-        ticketData.franqueado_id ? supabase.from('franqueados').select('name').eq('id', ticketData.franqueado_id).maybeSingle() : Promise.resolve({ data: null }),
+        ticketData.franqueado_id ? supabase.from('franqueados').select('name').eq('id', String(ticketData.franqueado_id)).maybeSingle() : Promise.resolve({ data: null }),
         ticketData.criado_por ? supabase.from('profiles').select('nome_completo').eq('id', ticketData.criado_por).maybeSingle() : Promise.resolve({ data: null }),
         ticketData.equipe_responsavel_id ? supabase.from('equipes').select('nome').eq('id', ticketData.equipe_responsavel_id).maybeSingle() : Promise.resolve({ data: null }),
         ticketData.atendimento_iniciado_por ? supabase.from('profiles').select('nome_completo').eq('id', ticketData.atendimento_iniciado_por).maybeSingle() : Promise.resolve({ data: null })

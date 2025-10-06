@@ -140,12 +140,21 @@ export function AccessPermissionsControl() {
 
       if (usersError) throw usersError;
 
+      console.log('👥 [ACCESS CONTROL] Profiles fetched:', { 
+        count: usersData?.length || 0,
+        sample: usersData?.slice(0, 3).map(u => ({ id: u.id, email: u.email, nome: u.nome_completo }))
+      });
+
       // Fetch user roles
       const { data: userRolesData, error: userRolesError } = await supabase
         .from('user_roles')
         .select('user_id, role');
 
       if (userRolesError) throw userRolesError;
+
+      console.log('🎭 [ACCESS CONTROL] User roles fetched:', { 
+        count: userRolesData?.length || 0 
+      });
 
       // Fetch user permissions
       const { data: userPermsData, error: userPermsError } = await supabase
@@ -192,6 +201,12 @@ export function AccessPermissionsControl() {
           permissions: [...new Set(permissions)] // Remove duplicatas
         };
       }) || [];
+
+      console.log('✅ [ACCESS CONTROL] Users with roles combined:', {
+        total: usersWithRolesData.length,
+        withRoles: usersWithRolesData.filter(u => u.roles.length > 0).length,
+        withoutRoles: usersWithRolesData.filter(u => u.roles.length === 0).length
+      });
 
       setUsersWithRoles(usersWithRolesData);
 
@@ -543,6 +558,12 @@ export function AccessPermissionsControl() {
     user.roles?.some(role => role.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  console.log('🔍 [ACCESS CONTROL] Filtering result:', {
+    total: usersWithRoles.length,
+    filtered: filteredUsers.length,
+    searchTerm
+  });
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -789,7 +810,7 @@ export function AccessPermissionsControl() {
                 Usuários, Cargos e Sessões
               </CardTitle>
               <CardDescription>
-                {filteredUsers.length} usuário(s) encontrado(s)
+                {filteredUsers.length} de {usersWithRoles.length} usuário(s) {searchTerm ? 'encontrado(s)' : 'total'}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -806,7 +827,36 @@ export function AccessPermissionsControl() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredUsers.map((user) => {
+                    {filteredUsers.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-12">
+                          <div className="flex flex-col items-center gap-4">
+                            <UserX className="h-12 w-12 text-muted-foreground" />
+                            <div>
+                              <p className="text-sm font-medium text-foreground mb-1">
+                                {searchTerm ? 'Nenhum usuário encontrado' : 'Nenhum usuário no sistema'}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {searchTerm 
+                                  ? `Nenhum resultado para "${searchTerm}". Tente outro termo de busca.`
+                                  : 'Ainda não há usuários cadastrados no sistema.'
+                                }
+                              </p>
+                            </div>
+                            {searchTerm && (
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => setSearchTerm('')}
+                              >
+                                Limpar busca
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredUsers.map((user) => {
                       const activityStatus = getActivityStatus(user.last_activity || user.created_at);
                       const online = isUserOnline(user.id);
                       
@@ -980,7 +1030,8 @@ export function AccessPermissionsControl() {
                           </TableCell>
                         </TableRow>
                       );
-                    })}
+                    })
+                  )}
                   </TableBody>
                 </Table>
               </div>

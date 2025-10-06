@@ -109,16 +109,17 @@ export function MetricsSection({ periodDays = 30 }: MetricsSectionProps) {
               </p>
             </div>
           ) : !teamMetrics || teamMetrics.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <Users className="h-12 w-12 text-muted-foreground mb-4" />
-              <h4 className="text-lg font-semibold text-foreground mb-2">
-                Sem dados de equipes
-              </h4>
-              <p className="text-sm text-muted-foreground max-w-sm">
-                Não há métricas de equipes disponíveis no momento. 
-                Isso pode acontecer se não houver tickets atribuídos a equipes no período.
-              </p>
-            </div>
+            <EmptyState
+              type="no-tickets"
+              title="Nenhum ticket de equipe encontrado"
+              description={`Não há atividade de tickets nas equipes ${periodDays === 0 ? 'em todo o histórico' : periodDays === 1 ? 'hoje' : `nos últimos ${periodDays} dias`}. As métricas de equipes serão exibidas quando houver tickets atribuídos a equipes.`}
+              icon={<Users className="h-10 w-10 text-muted-foreground" />}
+              hint="🎯 As métricas de equipe rastreiam tickets atribuídos, resolução, SLA e tickets de crise por equipe"
+              action={{
+                label: "Ver Todos os Períodos",
+                onClick: () => window.location.href = '/admin/tickets'
+              }}
+            />
           ) : (
             <div className="space-y-4">
               <div className="text-xs text-muted-foreground mb-2">
@@ -239,31 +240,17 @@ export function MetricsSection({ periodDays = 30 }: MetricsSectionProps) {
               </p>
             </div>
           ) : !unitMetrics || unitMetrics.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <Building className="h-12 w-12 text-muted-foreground mb-4" />
-              <h4 className="text-lg font-semibold text-foreground mb-2">
-                Sem dados de unidades
-              </h4>
-              <p className="text-sm text-muted-foreground max-w-sm">
-                Não foi possível carregar métricas das unidades. 
-                Verifique se há tickets no período selecionado ou tente atualizar novamente.
-              </p>
-              <div className="mt-4 space-y-2">
-                <Button 
-                  onClick={handleRefresh} 
-                  disabled={loading || refreshing}
-                  className="mb-2"
-                  variant="outline"
-                  size="sm"
-                >
-                  <RefreshCw className={`h-4 w-4 mr-2 ${(loading || refreshing) ? 'animate-spin' : ''}`} />
-                  Tentar novamente
-                </Button>
-                <p className="text-xs text-muted-foreground">
-                  Debug: {unitMetrics?.length || 0} unidades encontradas
-                </p>
-              </div>
-            </div>
+            <EmptyState
+              type="no-tickets"
+              title="Nenhum ticket de unidade encontrado"
+              description={`Não há atividade de tickets nas unidades ${periodDays === 0 ? 'em todo o histórico' : periodDays === 1 ? 'hoje' : `nos últimos ${periodDays} dias`}. As métricas de unidades aparecerão quando houver tickets criados para unidades específicas.`}
+              icon={<Building className="h-10 w-10 text-muted-foreground" />}
+              hint="🏢 As métricas de unidade mostram performance de tickets, SLA e resolução por unidade organizacional"
+              action={{
+                label: "Criar Ticket de Teste",
+                onClick: () => window.location.href = '/admin/tickets'
+              }}
+            />
           ) : (
             <div className="space-y-4">
               <div className="text-xs text-muted-foreground mb-2">
