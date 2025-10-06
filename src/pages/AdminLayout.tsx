@@ -14,7 +14,7 @@ import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
 import PageTransition from "@/components/PageTransition";
 import { SidebarProvider, useSidebarContext } from "@/contexts/SidebarContext";
-import { PushNotificationPrompt } from "@/components/notifications/PushNotificationPrompt";
+import { OneSignalPrompt } from "@/components/OneSignalPrompt";
 import { TestPushNotificationButton } from "@/components/notifications/TestPushNotificationButton";
 
 interface AdminLayoutProps {
@@ -123,7 +123,7 @@ function AdminLayoutContent({ children, isMobile }: { children: React.ReactNode,
       {/* Mobile bottom navigation - FIXA */}
       {isMobile && <MobileBottomNav />}
       <Toaster />
-      <PushNotificationPrompt />
+      <OneSignalPrompt />
     </div>
   )
 }
