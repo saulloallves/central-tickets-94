@@ -165,8 +165,9 @@ serve(async (req) => {
     if (web_password) {
       const franqueado = await findFranqueadoByPassword(web_password);
       if (franqueado) {
-        franqueadoId = franqueado.id;
-        console.log('Franqueado encontrado:', franqueado.id);
+        // GARANTIR que franqueado_id seja string (UUID)
+        franqueadoId = String(franqueado.id);
+        console.log('Franqueado encontrado:', franqueadoId, '(tipo:', typeof franqueadoId, ')');
       } else {
         console.log('Franqueado não encontrado para senha web:', web_password);
       }
