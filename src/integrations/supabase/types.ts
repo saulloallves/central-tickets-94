@@ -246,6 +246,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "atendente_unidades_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "unidades"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_atendente_unidades_atendente"
             columns: ["atendente_id"]
             isOneToOne: false
@@ -457,7 +464,15 @@ export type Database = {
           tipo_atendimento?: string
           unidade_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "chamados_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       colaboradores: {
         Row: {
@@ -997,6 +1012,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "escalation_levels_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "fk_escalation_levels_destino_user"
             columns: ["destino_user_id"]
