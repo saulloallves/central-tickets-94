@@ -15,7 +15,7 @@ import { translateAuthError } from '@/lib/auth-error-messages';
 import { FloatingOrbs } from '@/components/welcome/FloatingOrbs';
 import { MouseFollower } from '@/components/welcome/MouseFollower';
 import { DottedSurface } from '@/components/ui/dotted-surface';
-import logoGiraffa from '@/assets/logo-giraffa.png';
+import { SystemLogo } from '@/components/SystemLogo';
 
 const Auth = () => {
   const { user, signIn, signUp, resetPassword, loading } = useAuth();
@@ -312,9 +312,7 @@ const Auth = () => {
         <Card className="w-full max-w-md shadow-lg border-0 bg-white/95 backdrop-blur-sm">
           <CardHeader className="text-center pb-6">
             <div className="flex items-center justify-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center p-1">
-                <img src={logoGiraffa} alt="Logo Giraffa" className="w-full h-full object-contain" />
-              </div>
+              <SystemLogo />
               <span className="text-xl font-bold">Central de Tickets</span>
             </div>
             <CardTitle className="text-2xl font-bold text-primary">Confirme seu Email</CardTitle>
@@ -322,8 +320,8 @@ const Auth = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="text-center space-y-4">
-              <div className="w-16 h-16 mx-auto rounded-full bg-gradient-primary/10 flex items-center justify-center p-3">
-                <img src={logoGiraffa} alt="Logo Giraffa" className="w-full h-full object-contain" />
+              <div className="mx-auto">
+                <SystemLogo />
               </div>
               <div className="space-y-2">
                 <h3 className="font-semibold text-lg">Verifique seu Email</h3>
@@ -361,9 +359,7 @@ const Auth = () => {
         <Card className="w-full max-w-md shadow-lg border-0 bg-white/95 backdrop-blur-sm">
           <CardHeader className="text-center pb-6">
             <div className="flex items-center justify-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center p-1">
-                <img src={logoGiraffa} alt="Logo Giraffa" className="w-full h-full object-contain" />
-              </div>
+              <SystemLogo />
               <span className="text-xl font-bold">Central de Tickets</span>
             </div>
             <CardTitle className="text-2xl font-bold text-primary">Solicitação em Análise!</CardTitle>
@@ -409,9 +405,7 @@ const Auth = () => {
         <Card className="w-full max-w-md shadow-lg border-0 bg-white/95 backdrop-blur-sm">
           <CardHeader className="text-center pb-6">
             <div className="flex items-center justify-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center p-1">
-                <img src={logoGiraffa} alt="Logo Giraffa" className="w-full h-full object-contain" />
-              </div>
+              <SystemLogo />
               <span className="text-xl font-bold">Central de Tickets</span>
             </div>
             <CardTitle className="text-2xl font-bold text-primary">Redefinir Senha</CardTitle>
@@ -469,9 +463,7 @@ const Auth = () => {
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-center px-12 relative overflow-hidden">
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center p-2">
-              <img src={logoGiraffa} alt="Logo Giraffa" className="w-full h-full object-contain" />
-            </div>
+            <SystemLogo />
             <div>
               <h1 className="text-2xl font-bold text-white">Central de Tickets</h1>
               <p className="text-white/60 text-sm">Gestão Inteligente de Tickets</p>
@@ -516,9 +508,7 @@ const Auth = () => {
         <Card className="w-full max-w-md shadow-elegant border-white/30 bg-white/95 backdrop-blur-sm float-in" style={{ animationDelay: '600ms', boxShadow: '0 8px 32px hsla(0, 0%, 0%, 0.2)' }}>
           <CardHeader className="text-center pb-6">
             <div className="lg:hidden flex items-center justify-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center p-1.5" style={{ background: 'linear-gradient(135deg, hsl(201 60% 66%), hsl(201 65% 75%))' }}>
-                <img src={logoGiraffa} alt="Logo Giraffa" className="w-full h-full object-contain" />
-              </div>
+              <SystemLogo />
               <span className="text-xl font-bold text-primary">Central de Tickets</span>
             </div>
             <div style={{ color: 'hsl(201 60% 66%)' }}>
