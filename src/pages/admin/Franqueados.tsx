@@ -9,7 +9,7 @@ import { Search, MapPin, Phone, Mail, User, Building, Calendar, ChevronLeft, Che
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 interface Franqueado {
-  id: number;
+  id: string;
   name: string;
   email: string;
   phone: string;

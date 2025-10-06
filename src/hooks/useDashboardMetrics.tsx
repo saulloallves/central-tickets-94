@@ -28,7 +28,7 @@ export interface DashboardKPIs {
 
 export interface TicketTrend {
   data: string;
-  total_tickets: number;
+  total_tickets?: number;
   tickets_resolvidos: number;
   tickets_sla_ok: number;
   tempo_medio_resolucao: number;
@@ -39,11 +39,13 @@ export interface TeamMetrics {
   equipe_nome: string;
   total_tickets: number;
   tickets_resolvidos: number;
-  tickets_sla_ok: number;
+  tickets_em_aberto: number;
+  taxa_resolucao: number;
   tempo_medio_resolucao: number;
-  tickets_crise: number;
-  tickets_reabertos: number;
-  unidades_atendidas: number;
+  tickets_sla_ok?: number;
+  tickets_crise?: number;
+  tickets_reabertos?: number;
+  unidades_atendidas?: number;
 }
 
 export interface UnitMetrics {
