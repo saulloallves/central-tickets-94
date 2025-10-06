@@ -3237,6 +3237,27 @@ export type Database = {
         }
         Relationships: []
       }
+      unidades_whatsapp: {
+        Row: {
+          codigo_grupo: number | null
+          grupo: string | null
+          id: number | null
+          id_grupo_branco: string | null
+        }
+        Insert: {
+          codigo_grupo?: number | null
+          grupo?: string | null
+          id?: number | null
+          id_grupo_branco?: string | null
+        }
+        Update: {
+          codigo_grupo?: number | null
+          grupo?: string | null
+          id?: number | null
+          id_grupo_branco?: string | null
+        }
+        Relationships: []
+      }
       user_flows: {
         Row: {
           created_at: string | null
