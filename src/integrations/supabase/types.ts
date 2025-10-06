@@ -3521,15 +3521,15 @@ export type Database = {
         Returns: number
       }
       can_create_ticket: {
-        Args: { ticket_unidade_id: string }
+        Args: Record<PropertyKey, never> | { ticket_unidade_id: string }
         Returns: boolean
       }
       can_update_ticket: {
-        Args: { ticket_equipe_id?: string; ticket_unidade_id: string }
+        Args: { p_equipe_id: string; p_unidade_id: string }
         Returns: boolean
       }
       can_view_ticket: {
-        Args: { ticket_equipe_id?: string; ticket_unidade_id: string }
+        Args: { p_equipe_id: string; p_unidade_id: string }
         Returns: boolean
       }
       check_email_pre_approved: {
