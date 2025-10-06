@@ -217,6 +217,7 @@ export type Database = {
           created_at: string
           grupo: string | null
           id: string
+          id_grupo_branco: string | null
           prioridade: number | null
           updated_at: string
         }
@@ -228,7 +229,8 @@ export type Database = {
           concierge_phone?: string | null
           created_at?: string
           grupo?: string | null
-          id: string
+          id?: string
+          id_grupo_branco?: string | null
           prioridade?: number | null
           updated_at?: string
         }
@@ -241,25 +243,11 @@ export type Database = {
           created_at?: string
           grupo?: string | null
           id?: string
+          id_grupo_branco?: string | null
           prioridade?: number | null
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "atendente_unidades_unidade_id_fkey"
-            columns: ["id"]
-            isOneToOne: true
-            referencedRelation: "unidades"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_atendente_unidades_atendente"
-            columns: ["atendente_id"]
-            isOneToOne: false
-            referencedRelation: "atendentes"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       atendentes: {
         Row: {
@@ -3247,19 +3235,19 @@ export type Database = {
         Row: {
           codigo_grupo: string | null
           grupo: string | null
-          id: number | null
+          id: number
           id_grupo_branco: string | null
         }
         Insert: {
           codigo_grupo?: string | null
           grupo?: string | null
-          id?: number | null
+          id: number
           id_grupo_branco?: string | null
         }
         Update: {
           codigo_grupo?: string | null
           grupo?: string | null
-          id?: number | null
+          id?: number
           id_grupo_branco?: string | null
         }
         Relationships: []
@@ -3460,6 +3448,23 @@ export type Database = {
       }
     }
     Views: {
+      atendente_unidades_validation: {
+        Row: {
+          atendente_id: string | null
+          atendente_nome: string | null
+          atendente_status:
+            | Database["public"]["Enums"]["atendente_status"]
+            | null
+          atendente_telefone: string | null
+          atendente_tipo: Database["public"]["Enums"]["atendente_tipo"] | null
+          codigo_grupo: string | null
+          concierge_name: string | null
+          concierge_phone: string | null
+          id: string | null
+          status_validacao: string | null
+        }
+        Relationships: []
+      }
       v_kb_articles_usage: {
         Row: {
           aprovado: boolean | null
