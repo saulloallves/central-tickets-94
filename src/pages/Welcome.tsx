@@ -269,13 +269,9 @@ export default function Welcome() {
                 startDelay={50}
                 wordDelay={80}
               />
-              <AnimatedText 
-                text="Você foi convidado para integrar nossa equipe. Agora é só ativar sua conta em poucos passos para começar a participar:"
-                as="p"
-                className="text-white/90 text-lg leading-relaxed"
-                startDelay={600}
-                wordDelay={60}
-              />
+              <p className="text-white/90 text-lg leading-relaxed">
+                Você foi convidado para integrar nossa equipe. Agora é só ativar sua conta em poucos passos para começar a participar:
+              </p>
             </div>
 
             <div className="mt-12 slide-in-up" style={{ animationDelay: '1000ms' }}>
