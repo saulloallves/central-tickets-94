@@ -71,10 +71,13 @@ export async function createTicket(ticketData: TicketData) {
 
 export async function addInitialMessage(ticketId: string, message: string, attachments?: any[]) {
   const supabase = getSupabaseClient();
+  
+  // Usar service role para inserir mensagem do sistema (typebot)
   const { error: messageError } = await supabase
     .from('ticket_mensagens')
     .insert({
       ticket_id: ticketId,
+      usuario_id: null, // Sistema/Typebot não tem usuário
       mensagem: message,
       direcao: 'entrada',
       canal: 'typebot',
