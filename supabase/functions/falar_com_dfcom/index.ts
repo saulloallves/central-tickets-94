@@ -175,24 +175,37 @@ serve(async (req) => {
       });
     }
 
-    // 2. Buscar atendente DFCom correto da tabela atendentes
-    const { data: atendente, error: atendenteError } = await supabase
-      .from("atendentes")
-      .select("id, nome")
-      .eq("tipo", "dfcom")
+    // 2. Buscar atendente DFCom da unidade via atendente_unidades
+    const { data: atendenteUnidade, error: atendenteError } = await supabase
+      .from("atendente_unidades")
+      .select(`
+        atendente_id,
+        atendentes!inner(
+          id,
+          nome,
+          tipo,
+          status,
+          capacidade_atual,
+          capacidade_maxima
+        )
+      `)
+      .eq("codigo_grupo", unidade.codigo_grupo)
       .eq("ativo", true)
-      .eq("status", "ativo")
+      .eq("atendentes.tipo", "dfcom")
+      .eq("atendentes.status", "ativo")
+      .eq("atendentes.ativo", true)
       .maybeSingle();
 
     let atendenteNome = "Equipe DFCom"; // fallback
     let atendenteId = null;
 
-    if (atendente) {
-      atendenteNome = atendente.nome;
-      atendenteId = atendente.id;
-      console.log(`✅ Atendente DFCom encontrado: ${atendenteNome} (${atendenteId})`);
+    if (atendenteUnidade?.atendentes) {
+      atendenteNome = atendenteUnidade.atendentes.nome;
+      atendenteId = atendenteUnidade.atendente_id;
+      console.log(`✅ Atendente DFCom encontrado via atendente_unidades: ${atendenteNome} (${atendenteId})`);
     } else {
-      console.log("⚠️ Nenhum atendente DFCom encontrado, usando fallback");
+      console.log("⚠️ Nenhum atendente DFCom encontrado para esta unidade, usando fallback");
+      console.error("Erro ao buscar atendente:", atendenteError);
     }
 
     // 3. Cria um novo chamado DFCom

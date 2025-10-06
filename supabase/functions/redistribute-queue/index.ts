@@ -19,20 +19,30 @@ Deno.serve(async (req) => {
     const { tipo, unidade_id, motivo } = await req.json()
     console.log(`🔄 Redistribuindo fila - Tipo: ${tipo}, Unidade: ${unidade_id}`)
 
-    // 1. Buscar atendentes disponíveis para o tipo e unidade
+    // 1. Buscar atendentes disponíveis para o tipo e unidade via atendente_unidades
     const { data: atendentesDisponiveis, error: atendenteError } = await supabase
-      .from('atendentes')
+      .from('atendente_unidades')
       .select(`
-        id, nome, capacidade_maxima, capacidade_atual,
-        atendente_unidades!inner(id, is_preferencial, prioridade)
+        atendente_id,
+        is_preferencial,
+        prioridade,
+        atendentes!inner(
+          id,
+          nome,
+          capacidade_maxima,
+          capacidade_atual,
+          tipo,
+          status,
+          ativo
+        )
       `)
-      .eq('tipo', tipo)
-      .eq('status', 'ativo')
+      .eq('codigo_grupo', unidade_id)
       .eq('ativo', true)
-      .eq('atendente_unidades.id', unidade_id)
-      .eq('atendente_unidades.ativo', true)
-      .order('atendente_unidades.is_preferencial', { ascending: false })
-      .order('atendente_unidades.prioridade', { ascending: true })
+      .eq('atendentes.tipo', tipo)
+      .eq('atendentes.status', 'ativo')
+      .eq('atendentes.ativo', true)
+      .order('is_preferencial', { ascending: false })
+      .order('prioridade', { ascending: true })
 
     if (atendenteError) throw atendenteError
 
@@ -60,23 +70,33 @@ Deno.serve(async (req) => {
       )
     }
 
+    // Mapear dados para formato mais fácil de trabalhar
+    const atendentesMap = atendentesDisponiveis.map(au => ({
+      id: au.atendentes.id,
+      nome: au.atendentes.nome,
+      capacidade_atual: au.atendentes.capacidade_atual,
+      capacidade_maxima: au.atendentes.capacidade_maxima,
+      is_preferencial: au.is_preferencial,
+      prioridade: au.prioridade
+    }))
+
     let redistribuidos = 0
     const notificacoes = []
 
     // 3. Redistribuir chamados para atendentes com capacidade
     for (const chamado of chamadosEmFila) {
       // Encontrar atendente com menor carga atual
-      const atendenteDisponivel = atendentesDisponiveis
+      const atendenteDisponivel = atendentesMap
         .filter(a => a.capacidade_atual < a.capacidade_maxima)
         .sort((a, b) => {
           // Priorizar por: preferencial -> menor carga atual -> prioridade
-          if (a.atendente_unidades[0].is_preferencial !== b.atendente_unidades[0].is_preferencial) {
-            return a.atendente_unidades[0].is_preferencial ? -1 : 1
+          if (a.is_preferencial !== b.is_preferencial) {
+            return a.is_preferencial ? -1 : 1
           }
           if (a.capacidade_atual !== b.capacidade_atual) {
             return a.capacidade_atual - b.capacidade_atual
           }
-          return a.atendente_unidades[0].prioridade - b.atendente_unidades[0].prioridade
+          return a.prioridade - b.prioridade
         })[0]
 
       if (atendenteDisponivel) {
