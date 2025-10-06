@@ -231,9 +231,8 @@ serve(async (req) => {
 
     if (atendenteUnidade?.atendentes) {
       atendenteNome = atendenteUnidade.atendentes.nome;
-        atendenteId = atendente.id;
-        console.log(`✅ Atendente encontrado: ${atendenteNome} (${atendenteId})`);
-      }
+      atendenteId = atendenteUnidade.atendente_id;
+      console.log(`✅ Atendente encontrado via join: ${atendenteNome} (${atendenteId})`);
     }
 
     // 3. Cria um novo chamado
