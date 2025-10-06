@@ -116,11 +116,11 @@ serve(async (req) => {
     if (chamadoExistente) {
       console.log("⚠️ Atendimento já existe:", chamadoExistente);
 
-      // Buscar atendente do chamado existente
+      // Buscar atendente do chamado existente via codigo_grupo
       const { data: atendenteUnidadeExistente } = await supabase
         .from("atendente_unidades")
         .select("atendente_id")
-        .eq("id", unidade.id)
+        .eq("codigo_grupo", unidade.codigo_grupo)
         .eq("ativo", true)
         .maybeSingle();
 

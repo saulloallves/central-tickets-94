@@ -91,11 +91,11 @@ serve(async (req: Request) => {
         }
       }
 
-      // Buscar atendente da unidade
+      // Buscar atendente da unidade via codigo_grupo
       const { data: atendenteUnidade } = await supabase
         .from('atendente_unidades')
         .select('atendente_id')
-        .eq('id', unidade.id)
+        .eq('codigo_grupo', unidade.codigo_grupo)
         .eq('ativo', true)
         .maybeSingle();
 
