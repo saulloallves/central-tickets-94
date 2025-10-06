@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,8 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Edit, Settings2, Database, Hash } from "lucide-react";
+import { Edit, Settings2, Database, Hash, Loader2 } from "lucide-react";
 import { useNotificationSourceConfig, NotificationSourceConfig } from "@/hooks/useNotificationSourceConfig";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const NOTIFICATION_TYPES = [
   { value: 'resposta_ticket', label: 'Resposta do Ticket', description: 'Resposta enviada para grupos' },
@@ -16,28 +18,17 @@ const NOTIFICATION_TYPES = [
   { value: 'ticket_created', label: 'Ticket Criado', description: 'Quando um novo ticket é criado' },
   { value: 'sla_breach', label: 'SLA Vencido', description: 'Quando um ticket ultrapassa o prazo' },
   { value: 'sla_half', label: 'SLA 50%', description: 'Quando SLA atinge 50%' },
-  { value: 'sla_breach', label: 'SLA Vencido', description: 'Quando SLA é ultrapassado' },
-];
-
-const AVAILABLE_TABLES = [
-  { value: 'unidades', label: 'Unidades' },
-  { value: 'franqueados', label: 'Franqueados' },
-  { value: 'colaboradores', label: 'Colaboradores' },
-];
-
-const COMMON_COLUMNS = [
-  { value: 'id_grupo_branco', label: 'ID Grupo Branco (unidades)' },
-  { value: 'id_grupo_amarelo', label: 'ID Grupo Amarelo (unidades)' },
-  { value: 'id_grupo_azul', label: 'ID Grupo Azul (unidades)' },
-  { value: 'id_grupo_vermelho', label: 'ID Grupo Vermelho (unidades)' },
-  { value: 'phone', label: 'Telefone (franqueados)' },
-  { value: 'telefone', label: 'Telefone (colaboradores)' },
 ];
 
 export function ConfiguracaoOrigemTab() {
   const { configs, loading, updateConfig } = useNotificationSourceConfig();
+  const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingConfig, setEditingConfig] = useState<NotificationSourceConfig | null>(null);
+  const [availableTables, setAvailableTables] = useState<{ value: string; label: string }[]>([]);
+  const [tableColumns, setTableColumns] = useState<{ value: string; label: string }[]>([]);
+  const [loadingTables, setLoadingTables] = useState(false);
+  const [loadingColumns, setLoadingColumns] = useState(false);
   
   const [formData, setFormData] = useState({
     source_type: 'fixed' as 'column' | 'fixed' | 'dynamic',
@@ -47,6 +38,114 @@ export function ConfiguracaoOrigemTab() {
     description: '',
     is_active: true
   });
+
+  // Buscar tabelas disponíveis do Supabase
+  useEffect(() => {
+    fetchAvailableTables();
+  }, []);
+
+  // Buscar colunas quando a tabela é selecionada
+  useEffect(() => {
+    if (formData.source_table) {
+      fetchTableColumns(formData.source_table);
+    } else {
+      setTableColumns([]);
+    }
+  }, [formData.source_table]);
+
+  const fetchAvailableTables = async () => {
+    setLoadingTables(true);
+    try {
+      // Lista de tabelas principais do sistema
+      // Como não podemos consultar o schema diretamente, usamos uma lista conhecida
+      const knownTables = [
+        'unidades',
+        'franqueados', 
+        'colaboradores',
+        'tickets',
+        'equipes',
+        'atendentes',
+        'ticket_mensagens',
+        'notifications_queue',
+      ];
+
+      // Verificar quais tabelas realmente existem tentando fazer uma query
+      const tableChecks = await Promise.all(
+        knownTables.map(async (tableName) => {
+          try {
+            const { error } = await (supabase as any)
+              .from(tableName)
+              .select('*')
+              .limit(0);
+            
+            return error ? null : {
+              value: tableName,
+              label: tableName.charAt(0).toUpperCase() + tableName.slice(1).replace(/_/g, ' '),
+            };
+          } catch {
+            return null;
+          }
+        })
+      );
+
+      const validTables = tableChecks.filter(Boolean) as { value: string; label: string }[];
+      setAvailableTables(validTables.length > 0 ? validTables : [
+        { value: 'unidades', label: 'Unidades' },
+        { value: 'franqueados', label: 'Franqueados' },
+        { value: 'colaboradores', label: 'Colaboradores' },
+      ]);
+    } catch (error) {
+      console.error('Erro ao buscar tabelas:', error);
+      // Fallback para tabelas conhecidas
+      setAvailableTables([
+        { value: 'unidades', label: 'Unidades' },
+        { value: 'franqueados', label: 'Franqueados' },
+        { value: 'colaboradores', label: 'Colaboradores' },
+      ]);
+    } finally {
+      setLoadingTables(false);
+    }
+  };
+
+  const fetchTableColumns = async (tableName: string) => {
+    setLoadingColumns(true);
+    try {
+      // Buscar uma linha da tabela para obter as colunas
+      const { data, error } = await (supabase as any)
+        .from(tableName)
+        .select('*')
+        .limit(1);
+
+      if (error) {
+        console.error('Erro ao buscar colunas:', error);
+        toast({
+          title: "Erro ao buscar colunas",
+          description: `Não foi possível buscar as colunas da tabela ${tableName}`,
+          variant: "destructive",
+        });
+        setTableColumns([]);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        const columns = Object.keys(data[0]).map(columnName => ({
+          value: columnName,
+          label: columnName
+            .split('_')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' '),
+        }));
+        setTableColumns(columns);
+      } else {
+        setTableColumns([]);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar colunas:', error);
+      setTableColumns([]);
+    } finally {
+      setLoadingColumns(false);
+    }
+  };
 
   const openEditDialog = (config: NotificationSourceConfig) => {
     setFormData({
@@ -181,16 +280,23 @@ export function ConfiguracaoOrigemTab() {
                   <Select
                     value={formData.source_table}
                     onValueChange={(value) => setFormData({ ...formData, source_table: value })}
+                    disabled={loadingTables}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione a tabela" />
+                      <SelectValue placeholder={loadingTables ? "Carregando tabelas..." : "Selecione a tabela"} />
                     </SelectTrigger>
-                    <SelectContent>
-                      {AVAILABLE_TABLES.map((table) => (
-                        <SelectItem key={table.value} value={table.value}>
-                          {table.label}
-                        </SelectItem>
-                      ))}
+                    <SelectContent className="bg-background z-50">
+                      {loadingTables ? (
+                        <div className="flex items-center justify-center p-4">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        </div>
+                      ) : (
+                        availableTables.map((table) => (
+                          <SelectItem key={table.value} value={table.value}>
+                            {table.label}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -200,16 +306,35 @@ export function ConfiguracaoOrigemTab() {
                   <Select
                     value={formData.source_column}
                     onValueChange={(value) => setFormData({ ...formData, source_column: value })}
+                    disabled={!formData.source_table || loadingColumns}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione a coluna" />
+                      <SelectValue 
+                        placeholder={
+                          !formData.source_table 
+                            ? "Primeiro selecione uma tabela" 
+                            : loadingColumns 
+                            ? "Carregando colunas..." 
+                            : "Selecione a coluna"
+                        } 
+                      />
                     </SelectTrigger>
-                    <SelectContent>
-                      {COMMON_COLUMNS.map((column) => (
-                        <SelectItem key={column.value} value={column.value}>
-                          {column.label}
-                        </SelectItem>
-                      ))}
+                    <SelectContent className="bg-background z-50">
+                      {loadingColumns ? (
+                        <div className="flex items-center justify-center p-4">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        </div>
+                      ) : tableColumns.length > 0 ? (
+                        tableColumns.map((column) => (
+                          <SelectItem key={column.value} value={column.value}>
+                            {column.label}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <div className="p-4 text-sm text-muted-foreground">
+                          Nenhuma coluna encontrada
+                        </div>
+                      )}
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">
