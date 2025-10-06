@@ -3588,12 +3588,19 @@ export type Database = {
         Returns: number
       }
       get_realtime_kpis: {
-        Args: {
-          p_equipe_filter?: string
-          p_periodo_dias?: number
-          p_unidade_filter?: string
-          p_user_id?: string
-        }
+        Args:
+          | {
+              p_equipe_filter?: string
+              p_periodo_dias?: number
+              p_unidade_filter?: string
+              p_user_id?: string
+            }
+          | {
+              p_equipe_filter?: string
+              p_periodo_dias?: number
+              p_unidade_filter?: string
+              p_user_id?: string
+            }
         Returns: Json
       }
       get_sla_minutes_for_priority: {
