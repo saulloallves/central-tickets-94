@@ -3747,7 +3747,7 @@ export type Database = {
         Returns: unknown
       }
       is_active_member_of_equipe: {
-        Args: { _equipe_id: string; _user_id: string }
+        Args: { p_equipe_id: string; p_user_id: string }
         Returns: boolean
       }
       ivfflat_bit_support: {
