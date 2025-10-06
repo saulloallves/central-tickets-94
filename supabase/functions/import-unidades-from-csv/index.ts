@@ -17,20 +17,15 @@ Deno.serve(async (req) => {
 
     console.log('🚀 Iniciando importação de unidades do CSV...');
 
-    // Fetch CSV from Supabase Storage
-    const { data: csvFile, error: storageError } = await supabase
-      .storage
-      .from('data')
-      .download('unidades_rows_8.csv');
+    // Get CSV content from request body
+    const { csvContent } = await req.json();
     
-    if (storageError || !csvFile) {
-      console.error('Erro ao buscar CSV do storage:', storageError);
-      throw new Error('Arquivo CSV não encontrado no storage. Faça upload primeiro em Storage > data bucket.');
+    if (!csvContent) {
+      throw new Error('CSV content is required');
     }
 
-    const csvText = await csvFile.text();
-    const lines = csvText.split('\n');
-    const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+    const lines = csvContent.split('\n');
+    const headers = lines[0].split(',').map((h: string) => h.trim().replace(/^"|"$/g, ''));
     
     console.log(`📊 Total de linhas: ${lines.length - 1}`);
 
@@ -47,12 +42,12 @@ Deno.serve(async (req) => {
 
       try {
         // Parse CSV line (handling quotes)
-        const values = lines[i].match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g)?.map(v => 
+        const values = lines[i].match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g)?.map((v: string) => 
           v.trim().replace(/^"|"$/g, '')
         ) || [];
 
         const row: any = {};
-        headers.forEach((header, index) => {
+        headers.forEach((header: string, index: number) => {
           row[header] = values[index] || null;
         });
 
@@ -74,7 +69,7 @@ Deno.serve(async (req) => {
           phone: row.phone || null,
           whatsapp: row.whatsapp || null,
           email: row.email || null,
-          instagram: row.instagram_profile || null, // usando instagram_profile do CSV
+          instagram: row.instagram_profile || null,
           opening_hours: row.opening_hours || null,
           store_hours: row.store_hours || null,
           payment_methods: row.payment_methods || null,
@@ -89,6 +84,13 @@ Deno.serve(async (req) => {
           updated_at: row.updated_at || new Date().toISOString(),
         };
 
+        // Check if exists
+        const { data: existing } = await supabase
+          .from('unidades')
+          .select('id')
+          .eq('id', unidadeData.id)
+          .maybeSingle();
+
         // Insert or update
         const { error } = await supabase
           .from('unidades')
@@ -102,13 +104,6 @@ Deno.serve(async (req) => {
           stats.errors++;
           stats.errorDetails.push(`${unidadeData.codigo}: ${error.message}`);
         } else {
-          // Check if was insert or update
-          const { data: existing } = await supabase
-            .from('unidades')
-            .select('id')
-            .eq('id', unidadeData.id)
-            .single();
-          
           if (existing) {
             stats.updated++;
           } else {
@@ -117,7 +112,7 @@ Deno.serve(async (req) => {
           
           console.log(`✅ Unidade ${unidadeData.codigo} processada`);
         }
-      } catch (lineError) {
+      } catch (lineError: any) {
         console.error(`❌ Erro ao processar linha ${i}:`, lineError);
         stats.errors++;
         stats.errorDetails.push(`Linha ${i}: ${lineError.message}`);
@@ -153,7 +148,7 @@ Deno.serve(async (req) => {
       }
     );
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Erro na importação:', error);
     return new Response(
       JSON.stringify({ 

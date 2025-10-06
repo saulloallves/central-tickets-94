@@ -21,11 +21,24 @@ export function ImportUnidadesButton() {
     setIsImporting(true);
     
     try {
-      toast.info("Iniciando importação de unidades...");
+      toast.info("Lendo arquivo CSV...");
+      
+      // Fetch the CSV file from public folder
+      const csvResponse = await fetch('/data/unidades_rows_8.csv');
+      if (!csvResponse.ok) {
+        throw new Error('Arquivo CSV não encontrado em /public/data/');
+      }
+      
+      const csvContent = await csvResponse.text();
+      
+      toast.info("Enviando dados para processamento...");
       
       const { data, error } = await supabase.functions.invoke(
         "import-unidades-from-csv",
-        { method: "POST" }
+        { 
+          method: "POST",
+          body: { csvContent }
+        }
       );
 
       if (error) {
