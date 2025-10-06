@@ -279,33 +279,36 @@ serve(async (req: Request) => {
 
     console.log(`✅ Unidade encontrada:`, JSON.stringify(unidade));
 
-    // Buscar atendente correto da tabela atendente_unidades e atendentes
+    // Buscar atendente correto via atendente_unidades com join
     const { data: atendenteUnidade } = await supabase
       .from('atendente_unidades')
-      .select('atendente_id')
-      .eq('id', unidade.id)
+      .select(`
+        atendente_id,
+        atendentes!inner(
+          id,
+          nome,
+          telefone,
+          tipo,
+          status,
+          ativo
+        )
+      `)
+      .eq('codigo_grupo', unidade.codigo_grupo)
       .eq('ativo', true)
+      .eq('atendentes.tipo', 'concierge')
+      .eq('atendentes.status', 'ativo')
+      .eq('atendentes.ativo', true)
       .maybeSingle();
 
     let conciergePhone = unidade.concierge_phone;
     let conciergeName = unidade.concierge_name || 'Concierge';
     let atendenteId = null;
 
-    if (atendenteUnidade?.atendente_id) {
-      const { data: atendente } = await supabase
-        .from('atendentes')
-        .select('id, nome, telefone')
-        .eq('id', atendenteUnidade.atendente_id)
-        .eq('tipo', 'concierge')
-        .eq('ativo', true)
-        .maybeSingle();
-
-      if (atendente) {
-        conciergePhone = atendente.telefone || conciergePhone;
-        conciergeName = atendente.nome || conciergeName;
-        atendenteId = atendente.id;
-        console.log(`✅ Atendente encontrado: ${conciergeName} (${atendenteId})`);
-      }
+    if (atendenteUnidade?.atendentes) {
+      conciergePhone = atendenteUnidade.atendentes.telefone || conciergePhone;
+      conciergeName = atendenteUnidade.atendentes.nome || conciergeName;
+      atendenteId = atendenteUnidade.atendente_id;
+      console.log(`✅ Atendente encontrado via join: ${conciergeName} (${atendenteId})`);
     }
 
     if (!conciergePhone) {

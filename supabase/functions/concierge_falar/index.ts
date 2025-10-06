@@ -206,28 +206,31 @@ serve(async (req) => {
       });
     }
 
-    // 2. Buscar atendente correto da tabela atendente_unidades e atendentes
+    // 2. Buscar atendente correto via atendente_unidades com join
     const { data: atendenteUnidade, error: atendenteUnidadeError } = await supabase
       .from("atendente_unidades")
-      .select("atendente_id")
-      .eq("id", unidade.id)
+      .select(`
+        atendente_id,
+        atendentes!inner(
+          id,
+          nome,
+          tipo,
+          status,
+          ativo
+        )
+      `)
+      .eq("codigo_grupo", unidade.codigo_grupo)
       .eq("ativo", true)
+      .eq("atendentes.tipo", "concierge")
+      .eq("atendentes.status", "ativo")
+      .eq("atendentes.ativo", true)
       .maybeSingle();
 
     let atendenteNome = "Concierge"; // fallback
     let atendenteId = null;
 
-    if (atendenteUnidade?.atendente_id) {
-      const { data: atendente, error: atendenteError } = await supabase
-        .from("atendentes")
-        .select("id, nome")
-        .eq("id", atendenteUnidade.atendente_id)
-        .eq("tipo", "concierge")
-        .eq("ativo", true)
-        .maybeSingle();
-
-      if (atendente) {
-        atendenteNome = atendente.nome;
+    if (atendenteUnidade?.atendentes) {
+      atendenteNome = atendenteUnidade.atendentes.nome;
         atendenteId = atendente.id;
         console.log(`✅ Atendente encontrado: ${atendenteNome} (${atendenteId})`);
       }
