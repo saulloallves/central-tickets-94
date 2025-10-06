@@ -105,9 +105,11 @@ function formatDisplayValue(key: string, value: any): string {
   return formatters[key] ? formatters[key](value) : String(value);
 }
 
-// Função para buscar destino usando configuração existente
+// Função para buscar destino usando configuração existente - VERSÃO AVANÇADA
 async function getDestinationNumber(supabase: any, type: string, ticket: any): Promise<string | null> {
   try {
+    console.log('\n📋 ===== getDestinationNumber =====');
+    
     // Buscar configuração de source para o tipo de notificação
     const { data: sourceConfig } = await supabase
       .from('notification_source_config')
@@ -116,18 +118,93 @@ async function getDestinationNumber(supabase: any, type: string, ticket: any): P
       .eq('is_active', true)
       .single();
 
-    if (sourceConfig?.source_type === 'column' && sourceConfig.source_table === 'unidades') {
-      // Buscar o número do grupo da unidade
-      const { data: unidade } = await supabase
-        .from('unidades')
-        .select('id_grupo_branco')
-        .eq('id', ticket.unidade_id)
-        .single();
+    console.log('📋 Source config:', sourceConfig);
 
-      return unidade?.id_grupo_branco || null;
+    if (!sourceConfig) {
+      console.log('⚠️ Nenhuma source_config encontrada, usando fallback');
+      // Fallback: buscar nas notification_routes
+      const { data: routes } = await supabase
+        .from('notification_routes')
+        .select('destination_value')
+        .eq('type', type)
+        .eq('is_active', true)
+        .limit(1);
+
+      return routes?.[0]?.destination_value || null;
     }
 
-    // Fallback: buscar nas notification_routes
+    // LÓGICA AVANÇADA: Suportar unidades_whatsapp com filtro
+    if (sourceConfig.source_type === 'column') {
+      const sourceTable = sourceConfig.source_table;
+      const sourceColumn = sourceConfig.source_column;
+      const filterColumn = sourceConfig.filter_column;
+      const filterValueSource = sourceConfig.filter_value_source;
+
+      console.log('📋 Table:', sourceTable, 'Column:', sourceColumn);
+      console.log('📋 Filter:', filterColumn, 'from', filterValueSource);
+
+      // Se for unidades_whatsapp com filtro dinâmico
+      if (sourceTable === 'unidades_whatsapp' && filterColumn && filterValueSource) {
+        // Extrair valor do filtro do ticket (ex: unidades.codigo_grupo)
+        const parts = filterValueSource.split('.');
+        let filterValue = ticket;
+        
+        console.log('📋 Ticket data keys:', Object.keys(ticket));
+        console.log('📋 Ticket.unidades keys:', ticket.unidades ? Object.keys(ticket.unidades) : 'N/A');
+        
+        for (const part of parts) {
+          filterValue = filterValue?.[part];
+          console.log(`🔍 Extraindo: ${part} =`, filterValue);
+        }
+
+        if (!filterValue) {
+          console.error(`❌ Não foi possível extrair valor de ${filterValueSource}`);
+          return null;
+        }
+
+        console.log(`🔍 ticket.unidades disponível? ${!!ticket.unidades}`);
+        console.log(`✅ Valor extraído de ${filterValueSource}:`, filterValue);
+        console.log(`✅ Aplicando filtro: unidades_whatsapp.${filterColumn} = ${filterValue}`);
+
+        // Buscar na unidades_whatsapp aplicando filtro
+        console.log(`🔍 Buscando com filtro: ${filterColumn} = valor de ${filterValueSource}`);
+        console.log(`🔍 ticket.unidades.${parts[parts.length - 1]}:`, ticket.unidades?.[parts[parts.length - 1]]);
+
+        const { data: whatsappData, error: whatsappError } = await supabase
+          .from('unidades_whatsapp')
+          .select(sourceColumn)
+          .eq(filterColumn, filterValue)
+          .maybeSingle();
+
+        if (whatsappError) {
+          console.error('❌ Erro ao buscar em unidades_whatsapp:', whatsappError);
+          return null;
+        }
+
+        if (whatsappData?.[sourceColumn]) {
+          console.log(`✅ ✅ ✅ Número encontrado: ${whatsappData[sourceColumn]} de unidades_whatsapp.${sourceColumn}`);
+          return whatsappData[sourceColumn];
+        } else {
+          console.error(`❌ Nenhum registro encontrado em unidades_whatsapp para ${filterColumn} = ${filterValue}`);
+          return null;
+        }
+      }
+
+      // Lógica antiga para tabela unidades (fallback)
+      if (sourceTable === 'unidades') {
+        const { data: unidade } = await supabase
+          .from('unidades')
+          .select(sourceColumn)
+          .eq('id', ticket.unidade_id)
+          .single();
+
+        console.log(`Got number from unidades.${sourceColumn}:`, unidade?.[sourceColumn]);
+        return unidade?.[sourceColumn] || null;
+      }
+    }
+
+    // Fallback final
+    console.log('⚠️ Nenhum número encontrado, tentando notification_routes');
     const { data: routes } = await supabase
       .from('notification_routes')
       .select('destination_value')
@@ -137,7 +214,7 @@ async function getDestinationNumber(supabase: any, type: string, ticket: any): P
 
     return routes?.[0]?.destination_value || null;
   } catch (error) {
-    console.error('Erro ao buscar destino:', error);
+    console.error('❌ Erro ao buscar destino:', error);
     return null;
   }
 }
