@@ -25,9 +25,14 @@ interface Unidade {
   modelo_loja?: string;
   fase_loja?: string;
   etapa_loja?: string;
-  func_seg_sex?: string;
-  func_sab?: string;
-  func_dom?: string;
+  operation_mon?: string;
+  operation_tue?: string;
+  operation_wed?: string;
+  operation_thu?: string;
+  operation_fri?: string;
+  operation_sat?: string;
+  operation_sun?: string;
+  operation_hol?: string;
   instagram?: string;
   has_parking?: any;
   parking_spots?: any;

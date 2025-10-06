@@ -2709,9 +2709,6 @@ export type Database = {
           etapa_loja: string | null
           fantasy_name: string | null
           fase_loja: string | null
-          func_dom: string | null
-          func_sab: string | null
-          func_seg_sex: string | null
           grupo: string | null
           has_parking: string | null
           has_partner_parking: string | null
@@ -2769,9 +2766,6 @@ export type Database = {
           etapa_loja?: string | null
           fantasy_name?: string | null
           fase_loja?: string | null
-          func_dom?: string | null
-          func_sab?: string | null
-          func_seg_sex?: string | null
           grupo?: string | null
           has_parking?: string | null
           has_partner_parking?: string | null
@@ -2829,9 +2823,6 @@ export type Database = {
           etapa_loja?: string | null
           fantasy_name?: string | null
           fase_loja?: string | null
-          func_dom?: string | null
-          func_sab?: string | null
-          func_seg_sex?: string | null
           grupo?: string | null
           has_parking?: string | null
           has_partner_parking?: string | null
