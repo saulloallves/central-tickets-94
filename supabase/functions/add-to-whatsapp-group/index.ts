@@ -219,11 +219,11 @@ serve(async (req) => {
         phoneToAdd = atendenteCorreto.telefone;
         participantName = atendenteCorreto.nome;
         
-        // Atualizar atendente_id na tabela atendente_unidades
+        // Atualizar atendente_id na tabela atendente_unidades via codigo_grupo
         await supabase
           .from('atendente_unidades')
           .update({ atendente_id: atendenteId })
-          .eq('id', chamado.unidade_id);
+          .eq('codigo_grupo', chamado.unidade_id);
         
         // Atualizar também o chamado com os dados corretos
         await supabase
