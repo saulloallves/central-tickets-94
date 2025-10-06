@@ -3511,7 +3511,7 @@ export type Database = {
       }
       can_view_ticket: {
         Args:
-          | { ticket_equipe_id?: string; ticket_unidade_id: string }
+          | { ticket_equipe_id: string; ticket_unidade_id: string }
           | { ticket_unidade_id: string }
         Returns: boolean
       }
@@ -3588,19 +3588,12 @@ export type Database = {
         Returns: number
       }
       get_realtime_kpis: {
-        Args:
-          | {
-              p_equipe_filter?: string
-              p_periodo_dias?: number
-              p_unidade_filter?: string
-              p_user_id?: string
-            }
-          | {
-              p_equipe_filter?: string
-              p_periodo_dias?: number
-              p_unidade_filter?: string
-              p_user_id?: string
-            }
+        Args: {
+          p_equipe_filter?: string
+          p_periodo_dias?: number
+          p_unidade_filter?: string
+          p_user_id?: string
+        }
         Returns: Json
       }
       get_sla_minutes_for_priority: {
@@ -3608,27 +3601,19 @@ export type Database = {
         Returns: number
       }
       get_team_metrics: {
-        Args:
-          | {
-              p_periodo_dias?: number
-              p_unidade_filter?: string
-              p_user_id?: string
-            }
-          | {
-              p_periodo_dias?: number
-              p_unidade_filter?: string
-              p_user_id?: string
-            }
+        Args: {
+          p_periodo_dias?: number
+          p_unidade_filter?: string
+          p_user_id?: string
+        }
         Returns: {
           equipe_id: string
           equipe_nome: string
+          taxa_resolucao: number
           tempo_medio_resolucao: number
-          tickets_crise: number
-          tickets_reabertos: number
+          tickets_em_aberto: number
           tickets_resolvidos: number
-          tickets_sla_ok: number
           total_tickets: number
-          unidades_atendidas: number
         }[]
       }
       get_ticket_conversa: {
@@ -3636,9 +3621,7 @@ export type Database = {
         Returns: Json
       }
       get_ticket_trends: {
-        Args:
-          | { p_dias?: number; p_unidade_filter?: string; p_user_id?: string }
-          | { p_dias?: number; p_unidade_filter?: string; p_user_id?: string }
+        Args: { p_dias?: number; p_unidade_filter?: string; p_user_id?: string }
         Returns: {
           data: string
           tempo_medio_resolucao: number
