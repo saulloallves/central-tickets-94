@@ -2853,7 +2853,6 @@ export type Database = {
           canal_origem: Database["public"]["Enums"]["canal_origem"]
           canal_resposta: Database["public"]["Enums"]["canal_resposta"] | null
           categoria: Database["public"]["Enums"]["ticket_categoria"] | null
-          codigo_grupo: number | null
           codigo_ticket: string
           colaborador_id: string | null
           conversa: Json
@@ -2865,7 +2864,7 @@ export type Database = {
           equipe_responsavel_id: string | null
           escalonado_para: string | null
           escalonamento_nivel: number
-          franqueado_id: number | null
+          franqueado_id: string | null
           id: string
           log_ia: Json | null
           position: number
@@ -2891,7 +2890,6 @@ export type Database = {
           canal_origem: Database["public"]["Enums"]["canal_origem"]
           canal_resposta?: Database["public"]["Enums"]["canal_resposta"] | null
           categoria?: Database["public"]["Enums"]["ticket_categoria"] | null
-          codigo_grupo?: number | null
           codigo_ticket: string
           colaborador_id?: string | null
           conversa?: Json
@@ -2903,7 +2901,7 @@ export type Database = {
           equipe_responsavel_id?: string | null
           escalonado_para?: string | null
           escalonamento_nivel?: number
-          franqueado_id?: number | null
+          franqueado_id?: string | null
           id?: string
           log_ia?: Json | null
           position?: number
@@ -2929,7 +2927,6 @@ export type Database = {
           canal_origem?: Database["public"]["Enums"]["canal_origem"]
           canal_resposta?: Database["public"]["Enums"]["canal_resposta"] | null
           categoria?: Database["public"]["Enums"]["ticket_categoria"] | null
-          codigo_grupo?: number | null
           codigo_ticket?: string
           colaborador_id?: string | null
           conversa?: Json
@@ -2941,7 +2938,7 @@ export type Database = {
           equipe_responsavel_id?: string | null
           escalonado_para?: string | null
           escalonamento_nivel?: number
-          franqueado_id?: number | null
+          franqueado_id?: string | null
           id?: string
           log_ia?: Json | null
           position?: number
@@ -2994,6 +2991,13 @@ export type Database = {
             columns: ["equipe_responsavel_id"]
             isOneToOne: false
             referencedRelation: "equipes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_franqueado_id_fkey"
+            columns: ["franqueado_id"]
+            isOneToOne: false
+            referencedRelation: "franqueados"
             referencedColumns: ["id"]
           },
           {
