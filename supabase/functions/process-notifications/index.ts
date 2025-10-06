@@ -70,6 +70,8 @@ async function getDestinationNumber(supabase: any, type: string, ticket: any): P
             supabase,
             sourceConfig.source_table,
             sourceConfig.source_column,
+            sourceConfig.filter_column,
+            sourceConfig.filter_value_source,
             ticket
           );
           if (number) {
@@ -92,11 +94,55 @@ async function getDestinationNumber(supabase: any, type: string, ticket: any): P
   }
 }
 
-async function getNumberFromColumn(supabase: any, table: string, column: string, ticket: any): Promise<string | null> {
+async function getNumberFromColumn(
+  supabase: any, 
+  table: string, 
+  column: string,
+  filterColumn?: string,
+  filterValueSource?: string,
+  ticket?: any
+): Promise<string | null> {
   try {
+    // Se tem filtro configurado, buscar com filtro
+    if (filterColumn && filterValueSource) {
+      console.log(`🔍 Buscando com filtro: ${filterColumn} = ${filterValueSource}`);
+      
+      // Extrair valor do filtro (ex: unidades.codigo_grupo)
+      const [sourceTable, sourceColumn] = filterValueSource.split('.');
+      let filterValue = null;
+      
+      if (sourceTable === 'unidades' && ticket?.unidades) {
+        filterValue = ticket.unidades[sourceColumn];
+      } else if (sourceTable === 'tickets' && ticket) {
+        filterValue = ticket[sourceColumn];
+      }
+      
+      if (filterValue) {
+        console.log(`✅ Valor do filtro encontrado: ${filterValue}`);
+        const { data, error } = await supabase
+          .from(table)
+          .select(column)
+          .eq(filterColumn, filterValue)
+          .maybeSingle();
+          
+        if (error) {
+          console.error(`❌ Erro ao buscar com filtro:`, error);
+          return null;
+        }
+        
+        if (data && data[column]) {
+          console.log(`✅ Número encontrado com filtro: ${data[column]}`);
+          return data[column];
+        }
+      } else {
+        console.log(`⚠️ Valor do filtro não encontrado para ${filterValueSource}`);
+      }
+    }
+    
+    // Fallback: buscar sem filtro (lógica antiga)
     switch (table) {
       case 'unidades':
-        if (ticket.unidade_id) {
+        if (ticket?.unidade_id) {
           const { data, error } = await supabase
             .from('unidades')
             .select(column)

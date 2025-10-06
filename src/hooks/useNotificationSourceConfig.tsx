@@ -9,6 +9,8 @@ export interface NotificationSourceConfig {
   source_table?: string;
   source_column?: string;
   fixed_value?: string;
+  filter_column?: string;
+  filter_value_source?: string;
   description?: string;
   is_active: boolean;
   created_at: string;

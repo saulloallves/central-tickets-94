@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Edit, Settings2, Database, Hash, Loader2 } from "lucide-react";
+import { Edit, Settings2, Database, Hash, Loader2, Filter } from "lucide-react";
 import { useNotificationSourceConfig, NotificationSourceConfig } from "@/hooks/useNotificationSourceConfig";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -35,6 +35,8 @@ export function ConfiguracaoOrigemTab() {
     source_table: '',
     source_column: '',
     fixed_value: '',
+    filter_column: '',
+    filter_value_source: '',
     description: '',
     is_active: true
   });
@@ -154,6 +156,8 @@ export function ConfiguracaoOrigemTab() {
       source_table: config.source_table || '',
       source_column: config.source_column || '',
       fixed_value: config.fixed_value || '',
+      filter_column: config.filter_column || '',
+      filter_value_source: config.filter_value_source || '',
       description: config.description || '',
       is_active: config.is_active
     });
@@ -356,6 +360,40 @@ export function ConfiguracaoOrigemTab() {
                     <p className="text-xs text-muted-foreground">
                       💡 Dica: Se a tabela tiver dados, as colunas serão detectadas automaticamente
                     </p>
+                  </div>
+
+                  {/* Filtro opcional */}
+                  <div className="space-y-2 border-t pt-4">
+                    <div className="flex items-center gap-2">
+                      <Filter className="h-4 w-4 text-muted-foreground" />
+                      <Label className="font-medium">Filtro (Opcional)</Label>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Configure um filtro para fazer JOIN entre tabelas
+                    </p>
+                    
+                    <div className="space-y-2">
+                      <Label className="text-xs">Coluna para filtrar:</Label>
+                      <Input
+                        value={formData.filter_column}
+                        onChange={(e) => setFormData({ ...formData, filter_column: e.target.value })}
+                        placeholder="Ex: codigo_grupo"
+                        className="font-mono text-sm"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-xs">Valor vem de:</Label>
+                      <Input
+                        value={formData.filter_value_source}
+                        onChange={(e) => setFormData({ ...formData, filter_value_source: e.target.value })}
+                        placeholder="Ex: unidades.codigo_grupo"
+                        className="font-mono text-sm"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        💡 Exemplo: unidades.codigo_grupo para filtrar pela unidade do ticket
+                      </p>
+                    </div>
                   </div>
                 </div>
               </>
