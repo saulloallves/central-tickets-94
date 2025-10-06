@@ -1121,11 +1121,21 @@ export const useTicketMessages = (ticketId: string) => {
     if (!ticketId || (!mensagem.trim() && (!anexos || anexos.length === 0))) return false;
 
     try {
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id;
+
+      console.log('📤 Tentando enviar mensagem:', {
+        ticket_id: ticketId,
+        usuario_id: userId,
+        mensagem_length: mensagem.length,
+        anexos_count: anexos?.length || 0
+      });
+
       const { data, error } = await supabase
         .from('ticket_mensagens')
         .insert([{
           ticket_id: ticketId,
-          usuario_id: (await supabase.auth.getUser()).data.user?.id,
+          usuario_id: userId,
           mensagem,
           anexos,
           direcao: 'saida',
@@ -1135,10 +1145,16 @@ export const useTicketMessages = (ticketId: string) => {
         .single();
 
       if (error) {
-        console.error('Error sending message:', error);
+        console.error('❌ ERRO DETALHADO ao enviar mensagem:', {
+          error,
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
         toast({
           title: "Erro",
-          description: "Não foi possível enviar a mensagem",
+          description: `Não foi possível enviar a mensagem: ${error.message}`,
           variant: "destructive",
         });
         return false;
