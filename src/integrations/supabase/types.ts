@@ -3245,19 +3245,19 @@ export type Database = {
       }
       unidades_whatsapp: {
         Row: {
-          codigo_grupo: number | null
+          codigo_grupo: string | null
           grupo: string | null
           id: number | null
           id_grupo_branco: string | null
         }
         Insert: {
-          codigo_grupo?: number | null
+          codigo_grupo?: string | null
           grupo?: string | null
           id?: number | null
           id_grupo_branco?: string | null
         }
         Update: {
-          codigo_grupo?: number | null
+          codigo_grupo?: string | null
           grupo?: string | null
           id?: number | null
           id_grupo_branco?: string | null

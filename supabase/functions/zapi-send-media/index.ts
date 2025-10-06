@@ -122,7 +122,7 @@ serve(async (req) => {
         id,
         unidade_id,
         codigo_ticket,
-        unidades!inner(id_grupo_branco, grupo)
+        unidades!inner(id, grupo, codigo_grupo)
       `)
       .eq('id', ticketId)
       .single();
@@ -139,21 +139,38 @@ serve(async (req) => {
       ticketId: ticket.id,
       codigo_ticket: ticket.codigo_ticket,
       unidade_id: ticket.unidade_id,
+      codigo_grupo: ticket.unidades?.codigo_grupo,
       grupo_nome: ticket.unidades?.grupo
     });
 
-    const grupoWhatsApp = ticket.unidades?.id_grupo_branco;
+    if (!ticket.unidades?.codigo_grupo) {
+      console.error('❌ Unidade não tem codigo_grupo configurado');
+      return new Response(
+        JSON.stringify({ error: 'Unidade sem código de grupo configurado' }), 
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Buscar grupo WhatsApp em unidades_whatsapp
+    const { data: whatsappData } = await supabase
+      .from('unidades_whatsapp')
+      .select('id_grupo_branco')
+      .eq('codigo_grupo', ticket.unidades.codigo_grupo)
+      .maybeSingle();
+
+    const grupoWhatsApp = whatsappData?.id_grupo_branco;
     
     console.log('🔍 WhatsApp Group Info:', {
+      codigo_grupo: ticket.unidades.codigo_grupo,
       id_grupo_branco: grupoWhatsApp,
       unidade_grupo: ticket.unidades?.grupo,
       has_group: !!grupoWhatsApp
     });
     
     if (!grupoWhatsApp) {
-      console.error('❌ Unidade não tem id_grupo_branco configurado');
+      console.error('❌ Grupo WhatsApp não encontrado para codigo_grupo:', ticket.unidades.codigo_grupo);
       return new Response(
-        JSON.stringify({ error: 'Unidade sem grupo WhatsApp configurado' }), 
+        JSON.stringify({ error: 'Grupo WhatsApp não encontrado para esta unidade' }), 
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

@@ -41,11 +41,27 @@ serve(async (req: Request) => {
         Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") ?? ''
       );
 
-      // Buscar unidade pelo código do grupo no Supabase externo
+      // Buscar unidade pelo código do grupo no Supabase externo via unidades_whatsapp
+      const { data: whatsappGroup } = await supabase
+        .from('unidades_whatsapp')
+        .select('codigo_grupo')
+        .eq('id_grupo_branco', phone)
+        .maybeSingle();
+
+      if (!whatsappGroup) {
+        console.error("❌ Grupo WhatsApp não encontrado:", phone);
+        return new Response(JSON.stringify({ 
+          error: "Grupo WhatsApp não encontrado"
+        }), {
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+          status: 404,
+        });
+      }
+
       const { data: unidade } = await externalSupabase
         .from('unidades')
         .select('id, grupo, codigo_grupo, concierge_name, concierge_phone')
-        .eq('id_grupo_branco', phone)
+        .eq('codigo_grupo', whatsappGroup.codigo_grupo)
         .maybeSingle();
 
       if (!unidade) {
@@ -213,13 +229,30 @@ serve(async (req: Request) => {
       Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") ?? ''
     );
 
-    // Buscar unidade pelo código do grupo no Supabase externo
+    // Buscar unidade pelo código do grupo no Supabase externo via unidades_whatsapp
     console.log(`🔍 Buscando unidade com id_grupo_branco: ${phone}`);
     
+    const { data: whatsappGroup, error: whatsappError } = await supabase
+      .from('unidades_whatsapp')
+      .select('codigo_grupo')
+      .eq('id_grupo_branco', phone)
+      .maybeSingle();
+
+    if (whatsappError || !whatsappGroup) {
+      console.error("❌ Grupo WhatsApp não encontrado:", whatsappError);
+      return new Response(JSON.stringify({ 
+        error: "Grupo WhatsApp não encontrado",
+        details: whatsappError?.message
+      }), {
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+        status: 404,
+      });
+    }
+
     const { data: unidade, error: unidadeError } = await externalSupabase
       .from('unidades')
       .select('id, grupo, codigo_grupo, concierge_name, concierge_phone')
-      .eq('id_grupo_branco', phone)
+      .eq('codigo_grupo', whatsappGroup.codigo_grupo)
       .maybeSingle();
 
     if (unidadeError) {

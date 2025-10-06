@@ -30,7 +30,7 @@ async function sendAIAlert(alert: AIAlert): Promise<void> {
     // Buscar configuração da unidade TESTES DO MAKE / RJ
     const { data: unidade, error: unidadeError } = await supabase
       .from('unidades')
-      .select('id, grupo, id_grupo_branco')
+      .select('id, grupo, codigo_grupo')
       .ilike('grupo', '%TESTES%MAKE%')
       .or('grupo.ilike.%TESTES DO MAKE%,grupo.ilike.%MAKE%RJ%')
       .single();
@@ -40,29 +40,53 @@ async function sendAIAlert(alert: AIAlert): Promise<void> {
       // Fallback: buscar qualquer unidade com "TESTES" no nome
       const { data: fallbackUnidade } = await supabase
         .from('unidades')
-        .select('id, grupo, id_grupo_branco')
+        .select('id, grupo, codigo_grupo')
         .ilike('grupo', '%TESTES%')
         .limit(1)
         .single();
       
-      if (fallbackUnidade?.id_grupo_branco) {
+      if (fallbackUnidade?.codigo_grupo) {
         console.log('📱 Usando unidade fallback:', fallbackUnidade.grupo);
-        await enviarAlertaWhatsApp(fallbackUnidade.id_grupo_branco, alert);
+        
+        // Buscar id_grupo_branco em unidades_whatsapp
+        const { data: whatsappData } = await supabase
+          .from('unidades_whatsapp')
+          .select('id_grupo_branco')
+          .eq('codigo_grupo', fallbackUnidade.codigo_grupo)
+          .maybeSingle();
+        
+        if (whatsappData?.id_grupo_branco) {
+          await enviarAlertaWhatsApp(whatsappData.id_grupo_branco, alert);
+        } else {
+          console.error('❌ Grupo WhatsApp não encontrado para unidade fallback');
+        }
       } else {
         console.error('❌ Nenhuma unidade de teste encontrada');
       }
       return;
     }
 
-    if (!unidade.id_grupo_branco) {
-      console.error('❌ Unidade não tem id_grupo_branco configurado');
+    if (!unidade.codigo_grupo) {
+      console.error('❌ Unidade não tem codigo_grupo configurado');
       return;
     }
 
-    console.log('✅ Unidade encontrada:', unidade.grupo, 'Grupo:', unidade.id_grupo_branco);
+    // Buscar id_grupo_branco em unidades_whatsapp
+    const { data: whatsappConfig } = await supabase
+      .from('unidades_whatsapp')
+      .select('id_grupo_branco')
+      .eq('codigo_grupo', unidade.codigo_grupo)
+      .maybeSingle();
+
+    if (!whatsappConfig?.id_grupo_branco) {
+      console.error('❌ Grupo WhatsApp não encontrado para unidade:', unidade.grupo);
+      return;
+    }
+
+    console.log('✅ Unidade encontrada:', unidade.grupo, 'Grupo:', whatsappConfig.id_grupo_branco);
     
     // Enviar alerta via WhatsApp
-    await enviarAlertaWhatsApp(unidade.id_grupo_branco, alert);
+    await enviarAlertaWhatsApp(whatsappConfig.id_grupo_branco, alert);
 
     // Salvar log do alerta
     await supabase

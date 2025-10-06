@@ -208,12 +208,22 @@ serve(async (req: Request) => {
       }
     }
 
-    // Buscar unidade pelo código do grupo
-    const { data: unidade } = await externalSupabase
-      .from('unidades')
-      .select('id, concierge_phone')
+    // Buscar unidade pelo código do grupo via unidades_whatsapp
+    const { data: whatsappGroup } = await supabase
+      .from('unidades_whatsapp')
+      .select('codigo_grupo')
       .eq('id_grupo_branco', phone)
       .maybeSingle();
+
+    let unidade = null;
+    if (whatsappGroup?.codigo_grupo) {
+      const { data } = await externalSupabase
+        .from('unidades')
+        .select('id, concierge_phone')
+        .eq('codigo_grupo', whatsappGroup.codigo_grupo)
+        .maybeSingle();
+      unidade = data;
+    }
 
     if (!unidade?.concierge_phone) {
       console.warn("⚠️ Telefone do concierge não encontrado - continuando sem remover concierge");
