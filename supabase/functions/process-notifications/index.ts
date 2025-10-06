@@ -648,7 +648,7 @@ serve(async (req) => {
           .from('tickets')
           .select(`
             *,
-            unidades (id, grupo, id_grupo_azul, id_grupo_branco, id_grupo_vermelho, telefone),
+            unidades (id, grupo, codigo_grupo, id_grupo_azul, id_grupo_branco, id_grupo_vermelho, telefone),
             colaboradores (nome_completo)
           `)
           .eq('id', ticketId)
