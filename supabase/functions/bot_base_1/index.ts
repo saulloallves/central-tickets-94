@@ -110,20 +110,28 @@ class BotZAPIClient {
 
 const botZapi = new BotZAPIClient();
 
-// ✅ Função atualizada - usa tabela atendente_unidades do banco principal
+// ✅ Função atualizada - busca mais robusta em atendente_unidades
 async function checkGroupInDatabase(groupId: string): Promise<boolean> {
   try {
     console.log(`🔍 Verificando grupo ${groupId} na tabela atendente_unidades...`);
     
+    // Buscar por id_grupo_branco exato ou sem sufixo -group
+    const groupIdClean = groupId.replace('-group', '');
+    
     const { data, error } = await supabase
       .from('atendente_unidades')
-      .select('id, codigo_grupo, id_grupo_branco, grupo')
-      .eq('id_grupo_branco', groupId)
+      .select('id, codigo_grupo, id_grupo_branco, grupo, ativo')
+      .or(`id_grupo_branco.eq.${groupId},id_grupo_branco.eq.${groupIdClean}`)
       .eq('ativo', true);
 
     if (error) {
       console.error('❌ Erro ao consultar tabela atendente_unidades:', error);
       return false;
+    }
+
+    console.log(`📊 Resultados encontrados:`, data?.length || 0);
+    if (data && data.length > 0) {
+      console.log(`📋 Detalhes:`, JSON.stringify(data, null, 2));
     }
 
     if (data && data.length > 0) {
@@ -132,6 +140,7 @@ async function checkGroupInDatabase(groupId: string): Promise<boolean> {
       return true;
     } else {
       console.log(`🚫 Grupo ${groupId} NÃO encontrado na tabela atendente_unidades`);
+      console.log(`💡 Tentou buscar: ${groupId} e ${groupIdClean}`);
       return false;
     }
   } catch (error) {
