@@ -320,7 +320,7 @@ export function ConfiguracaoOrigemTab() {
                         } 
                       />
                     </SelectTrigger>
-                    <SelectContent className="bg-background z-50">
+                  <SelectContent className="bg-background z-50">
                       {loadingColumns ? (
                         <div className="flex items-center justify-center p-4">
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -332,20 +332,31 @@ export function ConfiguracaoOrigemTab() {
                           </SelectItem>
                         ))
                       ) : (
-                        <div className="p-4 text-sm text-muted-foreground">
-                          Nenhuma coluna encontrada
+                        <div className="p-4 space-y-2">
+                          <p className="text-sm text-muted-foreground">
+                            Tabela vazia - não foi possível detectar colunas
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Digite manualmente o nome da coluna abaixo
+                          </p>
                         </div>
                       )}
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-muted-foreground">
-                    Ou digite manualmente o nome da coluna
-                  </p>
-                  <Input
-                    value={formData.source_column}
-                    onChange={(e) => setFormData({ ...formData, source_column: e.target.value })}
-                    placeholder="nome_da_coluna"
-                  />
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-foreground">
+                      Digite o nome da coluna:
+                    </p>
+                    <Input
+                      value={formData.source_column}
+                      onChange={(e) => setFormData({ ...formData, source_column: e.target.value })}
+                      placeholder="Ex: id_grupo_whatsapp"
+                      className="font-mono"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      💡 Dica: Se a tabela tiver dados, as colunas serão detectadas automaticamente
+                    </p>
+                  </div>
                 </div>
               </>
             )}
