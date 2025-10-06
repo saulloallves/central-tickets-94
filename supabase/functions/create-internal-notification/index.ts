@@ -52,19 +52,28 @@ serve(async (req) => {
     let finalRecipients = recipients || []
     
     if (!recipients) {
+      console.log('🔍 Auto-deriving recipients...');
+      
       // SEMPRE incluir administradores em todas as notificações
       const { data: admins, error: adminsError } = await supabase
         .from('user_roles')
         .select('user_id')
         .eq('role', 'admin')
+        .eq('approved', true)
 
-      if (!adminsError && admins) {
+      if (adminsError) {
+        console.error('❌ Error fetching admins:', adminsError);
+      } else if (admins && admins.length > 0) {
         finalRecipients = admins.map(admin => admin.user_id)
-        console.log(`Always including ${finalRecipients.length} admins in notifications`)
+        console.log(`✅ Found ${finalRecipients.length} admins:`, finalRecipients);
+      } else {
+        console.warn('⚠️ No admins found!');
       }
 
       // Se tem equipe específica, TAMBÉM incluir membros da equipe
       if (equipe_id) {
+        console.log(`🔍 Fetching team members for equipe_id: ${equipe_id}`);
+        
         const { data: teamMembers, error: membersError } = await supabase
           .from('equipe_members')
           .select('user_id')
@@ -72,17 +81,21 @@ serve(async (req) => {
           .eq('ativo', true)
 
         if (membersError) {
-          console.error('Error fetching team members:', membersError)
-        } else {
+          console.error('❌ Error fetching team members:', membersError)
+        } else if (teamMembers && teamMembers.length > 0) {
           // Adicionar membros da equipe aos administradores (evitar duplicatas)
           const teamMemberIds = teamMembers.map(member => member.user_id)
           const uniqueRecipients = [...new Set([...finalRecipients, ...teamMemberIds])]
           finalRecipients = uniqueRecipients
-          console.log(`Found ${teamMemberIds.length} team members for equipe_id: ${equipe_id}`)
-          console.log(`Total unique recipients (admins + team): ${finalRecipients.length}`)
+          console.log(`✅ Found ${teamMemberIds.length} team members`)
+          console.log(`✅ Total unique recipients (admins + team): ${finalRecipients.length}`)
+        } else {
+          console.log(`ℹ️ No team members found for equipe_id: ${equipe_id}`);
         }
       }
     }
+
+    console.log(`📊 Final recipients count: ${finalRecipients.length}`, finalRecipients);
 
     // 3. Create recipients
     if (finalRecipients.length > 0) {
@@ -91,14 +104,20 @@ serve(async (req) => {
         user_id: userId,
       }))
 
+      console.log(`📝 Inserting ${recipientsData.length} recipients...`);
+
       const { error: recipientsError } = await supabase
         .from('internal_notification_recipients')
         .insert(recipientsData)
 
       if (recipientsError) {
-        console.error('Error creating recipients:', recipientsError)
+        console.error('❌ Error creating recipients:', recipientsError)
         throw recipientsError
       }
+      
+      console.log(`✅ Successfully created ${recipientsData.length} recipient records`);
+    } else {
+      console.warn('⚠️ No recipients to create!');
     }
 
     console.log(`Created notification: ${notification.id} for ${finalRecipients.length} recipients`)
