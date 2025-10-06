@@ -12,11 +12,7 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_ANON_KEY') ?? ''
 )
 
-// Cliente Supabase para verificar grupos permitidos na tabela unidades
-const unidadesSupabase = createClient(
-  'https://liovmltalaicwrixigjb.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxpb3ZtbHRhbGFpY3dyaXhpZ2piIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzMwNTI1MSwiZXhwIjoyMDY4ODgxMjUxfQ.vt2jHKJc-tBh-DQ222YnEI6DfurenC8DQID8jovrstI'
-)
+// ✅ Usando banco principal - tabela atendente_unidades migrada
 
 // Configuração Z-API específica para BOT
 class BotZAPIClient {
@@ -114,26 +110,28 @@ class BotZAPIClient {
 
 const botZapi = new BotZAPIClient();
 
-// Função para verificar se o grupo está autorizado na tabela unidades
+// ✅ Função atualizada - usa tabela atendente_unidades do banco principal
 async function checkGroupInDatabase(groupId: string): Promise<boolean> {
   try {
-    console.log(`🔍 Verificando grupo ${groupId} na tabela unidades...`);
+    console.log(`🔍 Verificando grupo ${groupId} na tabela atendente_unidades...`);
     
-    const { data, error } = await unidadesSupabase
-      .from('unidades')
-      .select('id, id_grupo_branco')
-      .eq('id_grupo_branco', groupId);
+    const { data, error } = await supabase
+      .from('atendente_unidades')
+      .select('id, codigo_grupo, id_grupo_branco, grupo')
+      .eq('id_grupo_branco', groupId)
+      .eq('ativo', true);
 
     if (error) {
-      console.error('❌ Erro ao consultar tabela unidades:', error);
+      console.error('❌ Erro ao consultar tabela atendente_unidades:', error);
       return false;
     }
 
     if (data && data.length > 0) {
-      console.log(`✅ Grupo ${groupId} encontrado na tabela unidades (${data.length} registro(s)):`, data.map(d => d.id));
+      console.log(`✅ Grupo ${groupId} encontrado na tabela atendente_unidades (${data.length} registro(s)):`, 
+        data.map(d => `${d.grupo} (${d.codigo_grupo})`));
       return true;
     } else {
-      console.log(`🚫 Grupo ${groupId} NÃO encontrado na tabela unidades`);
+      console.log(`🚫 Grupo ${groupId} NÃO encontrado na tabela atendente_unidades`);
       return false;
     }
   } catch (error) {
@@ -149,7 +147,7 @@ async function sendUnauthorizedGroupNotification(groupId: string) {
     
     const notificationBody = {
       title: "🚫 Grupo não autorizado tentou usar o bot",
-      message: `O grupo ${groupId} tentou usar o bot_base_1 mas não está cadastrado na tabela unidades`,
+      message: `O grupo ${groupId} tentou usar o bot_base_1 mas não está cadastrado na tabela atendente_unidades`,
       type: "alert",
       payload: {
         group_id: groupId,
