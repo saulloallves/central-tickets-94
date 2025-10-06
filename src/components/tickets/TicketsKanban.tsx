@@ -691,11 +691,12 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
+    console.log('🎯 [DRAG END] Evento iniciado');
     const { active, over } = event;
     setActiveTicket(null);
     setDraggedOverColumn(null);
 
-    console.log('🎯 Drag end event:', {
+    console.log('🎯 [DRAG END] Dados do evento:', {
       over: over?.id,
       overData: over?.data?.current,
       activeId: active.id,
@@ -703,15 +704,17 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
     });
 
     if (!over) {
-      console.log('❌ No drop target');
+      console.log('❌ [DRAG END] Sem alvo de drop');
       return;
     }
 
     const ticketId = active.id as string;
     const ticket = active.data.current?.ticket as Ticket;
     
+    console.log('📋 [DRAG END] Ticket encontrado:', { ticketId, ticketExists: !!ticket });
+    
     if (!ticket) {
-      console.log('❌ No ticket data found');
+      console.log('❌ [DRAG END] Dados do ticket não encontrados');
       return;
     }
 
@@ -777,6 +780,8 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
     }
 
     // 2. CHAMAR EDGE FUNCTION EM BACKGROUND
+    console.log('🔄 [DRAG END] Chamando onChangeStatus...', { ticketId, originalStatus, newStatus });
+    
     try {
       const success = await onChangeStatus(
         ticketId, 
@@ -786,9 +791,11 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
         undefined
       );
       
+      console.log('📬 [DRAG END] Resposta do onChangeStatus:', success);
+      
       if (success) {
         // 3. SUCESSO - Aguardar um pouco antes de limpar para dar tempo do realtime propagar
-        console.log('✅ Ticket movido com sucesso!');
+        console.log('✅ [DRAG END] Ticket movido com sucesso!');
         setTimeout(() => {
           setPendingMoves(prev => {
             const newMap = new Map(prev);
@@ -800,7 +807,7 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
         }, 1500);
       } else {
         // 4. ERRO - Reverter card para posição original
-        console.log('❌ Falha ao mover ticket - revertendo');
+        console.log('❌ [DRAG END] Falha ao mover ticket - revertendo');
         setPendingMoves(prev => {
           const newMap = new Map(prev);
           newMap.delete(ticketId);
@@ -817,7 +824,8 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
       }
     } catch (error) {
       // 4. ERRO - Reverter card para posição original
-      console.error('❌ Erro na Edge Function:', error);
+      console.error('💥 [DRAG END] Erro na Edge Function:', error);
+      console.error('💥 [DRAG END] Error details:', error instanceof Error ? error.message : String(error));
       
       setPendingMoves(prev => {
         const newMap = new Map(prev);
@@ -829,7 +837,7 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
       
       toast({
         title: "❌ Erro",
-        description: "Erro ao mover o ticket. Tente novamente.",
+        description: `Erro ao mover o ticket: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
         variant: "destructive",
       });
     }

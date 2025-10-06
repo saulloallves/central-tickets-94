@@ -593,19 +593,23 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
   };
 
   const moveTicket = async (ticketId: string, toStatus: string, beforeId?: string, afterId?: string): Promise<boolean> => {
+    console.log('🎯 [MOVE TICKET] Função chamada!', { ticketId, toStatus, beforeId, afterId });
+    
     try {
-      console.log('📤 [FRONTEND] Moving ticket via edge function:', { ticketId, toStatus, beforeId, afterId });
+      console.log('📤 [FRONTEND] Invocando edge function move-ticket...');
       console.log('📤 [FRONTEND] Status change detected to concluido:', toStatus === 'concluido');
       
       const { data, error } = await supabase.functions.invoke('move-ticket', {
         body: { ticketId, toStatus, beforeId, afterId },
       });
 
+      console.log('📬 [FRONTEND] Resposta da edge function:', { data, error });
+
       if (error) {
         console.error('❌ Edge function error moving ticket:', error);
         toast({
           title: "❌ Erro",
-          description: "Erro ao mover o ticket. Tente novamente.",
+          description: `Erro ao mover o ticket: ${error.message || 'Erro desconhecido'}`,
           variant: "destructive",
         });
         return false;
@@ -624,10 +628,11 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
       
       return true;
     } catch (error) {
-      console.error('Error moving ticket:', error);
+      console.error('💥 Error moving ticket:', error);
+      console.error('💥 Error details:', error instanceof Error ? error.message : String(error));
       toast({
         title: "❌ Erro",
-        description: "Erro inesperado ao mover ticket. Tente novamente.",
+        description: `Erro inesperado ao mover ticket: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
         variant: "destructive",
       });
       return false;
