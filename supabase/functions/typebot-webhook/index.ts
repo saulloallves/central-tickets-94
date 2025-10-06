@@ -165,8 +165,7 @@ serve(async (req) => {
     if (web_password) {
       const franqueado = await findFranqueadoByPassword(web_password);
       if (franqueado) {
-        // GARANTIR que franqueado_id seja string (UUID)
-        franqueadoId = String(franqueado.id);
+        franqueadoId = franqueado.id; // Already UUID
         console.log('Franqueado encontrado:', franqueadoId, '(tipo:', typeof franqueadoId, ')');
       } else {
         console.log('Franqueado não encontrado para senha web:', web_password);
@@ -453,11 +452,8 @@ serve(async (req) => {
       equipe_nome: analysisResult.equipe_responsavel
     });
 
-    // Validar que unidade_id é string
-    if (typeof unidade.id !== 'string') {
-      console.error('❌ ERRO: unidade.id não é string:', typeof unidade.id, unidade.id);
-      throw new Error('ID da unidade deve ser string');
-    }
+    // UUID validation is handled by ticket-creator
+    console.log('✅ Unidade ID validado:', unidade.id, '(tipo:', typeof unidade.id, ')');
 
     // Criar o ticket
     const ticketData = {

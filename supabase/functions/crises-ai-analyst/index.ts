@@ -391,8 +391,8 @@ async function analyzeTicketWithAI(
 
 async function linkTicketToCrise(
   supabase: any,
-  ticketId: string,
-  criseId: string
+  ticketId: string, // UUID
+  criseId: string // UUID
 ): Promise<void> {
   // Verificar se já está vinculado
   const { data: existingLink } = await supabase

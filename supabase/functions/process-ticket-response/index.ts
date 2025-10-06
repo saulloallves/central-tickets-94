@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 interface ConversationState {
-  awaiting_response_for_ticket: string;
+  awaiting_response_for_ticket: string; // UUID
   expires_at: string;
 }
 
@@ -16,7 +16,7 @@ async function saveConversationState(
   supabase: any, 
   phone: string, 
   instanceId: string, 
-  ticketId: string
+  ticketId: string // UUID
 ): Promise<void> {
   const state: ConversationState = {
     awaiting_response_for_ticket: ticketId,

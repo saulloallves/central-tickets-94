@@ -19,8 +19,8 @@ interface AIAlert {
   requestPayload?: any;
   responseData?: any;
   timestamp?: string;
-  ticketId?: string;
-  userId?: string;
+  ticketId?: string; // UUID
+  userId?: string; // UUID
 }
 
 async function sendAIAlert(alert: AIAlert): Promise<void> {

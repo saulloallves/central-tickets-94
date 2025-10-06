@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
       case 'update_status':
         return await updateStatus(id, data.status)
       case 'get_capacity':
-        return await getCapacity(data.tipo, data.unidade_id)
+        return await getCapacity(data.tipo, data.unidade_id) // unidade_id is UUID
       default:
         throw new Error(`Ação não reconhecida: ${action}`)
     }

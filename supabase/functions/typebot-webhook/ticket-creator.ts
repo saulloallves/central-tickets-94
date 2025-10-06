@@ -20,9 +20,9 @@ export interface TicketData {
   descricao_problema: string;
   categoria?: string;
   prioridade: string;
-  unidade_id: string;
-  equipe_responsavel_id?: string;
-  franqueado_id?: string;
+  unidade_id: string; // UUID string
+  equipe_responsavel_id?: string; // UUID string
+  franqueado_id?: string; // UUID string
   canal_origem?: string;
 }
 
@@ -127,20 +127,14 @@ export async function findUnitByCode(codigo_unidade: string) {
 
   const unidade = unidades[0];
   
-  // GARANTIR que unidade.id seja string
-  const unidadeComIdString = {
-    ...unidade,
-    id: String(unidade.id)
-  };
-  
   console.log('✅ Unidade encontrada:', {
-    id: unidadeComIdString.id,
-    tipo_id: typeof unidadeComIdString.id,
+    id: unidade.id,
+    tipo_id: typeof unidade.id,
     codigo_grupo: codigoNumerico,
     grupo: unidade.grupo
   });
 
-  return unidadeComIdString;
+  return unidade;
 }
 
 export async function findFranqueadoByPassword(web_password: string) {

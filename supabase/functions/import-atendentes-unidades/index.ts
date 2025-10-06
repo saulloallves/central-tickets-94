@@ -142,8 +142,8 @@ Deno.serve(async (req) => {
 })
 
 async function processarRegistroExterno(record: any, stats: any, supabase: any) {
-  // 1. Extrair dados do registro da API externa
-  const unidade_id = record.id || record.codigo_grupo?.toString()
+  // 1. Extrair dados do registro da API externa (id é UUID)
+  const unidade_id = record.id || record.codigo_grupo?.toString() // UUID or codigo_grupo
   const { grupo, codigo_grupo, cidade, uf, concierge_name, concierge_phone, concierge_email } = record
   
   console.log(`🔍 Processando unidade ${grupo || cidade} (ID: ${unidade_id})`)

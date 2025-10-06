@@ -1,11 +1,11 @@
 interface TicketForAnalysis {
-  id: string;
+  id: string; // UUID
   codigo_ticket: string;
   titulo: string;
   descricao_problema: string;
   categoria?: string;
   data_abertura: string;
-  unidade_id: string;
+  unidade_id: string; // UUID
   prioridade: string;
 }
 
