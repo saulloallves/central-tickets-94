@@ -1,5 +1,4 @@
 import React from 'react';
-import { ClipboardList } from 'lucide-react';
 import { useSystemSettings } from '@/hooks/useSystemSettings';
 
 export function SystemLogo() {
@@ -22,7 +21,7 @@ export function SystemLogo() {
           className="w-10 h-10 object-contain rounded drop-shadow-lg"
         />
       ) : (
-        <ClipboardList className="h-8 w-8 text-white drop-shadow-lg" strokeWidth={1.5} />
+        <div className="text-4xl leading-none drop-shadow-lg">🦒</div>
       )}
     </div>
   );

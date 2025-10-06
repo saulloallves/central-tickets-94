@@ -242,53 +242,55 @@ export default function Welcome() {
       <MouseFollower />
 
       {/* Hero Section - Desktop */}
-      <div className="hidden lg:flex lg:w-1/2 p-12 flex-col justify-between relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 p-12 pt-24 flex-col justify-start relative overflow-hidden">
         <DottedSurface className="opacity-60" />
         <FloatingOrbs />
         
         {/* Scanline effect */}
         <div className="absolute inset-0 bg-[linear-gradient(0deg,transparent_calc(100%_-_1px),rgba(255,255,255,0.05)_calc(100%_-_1px))] bg-[length:100%_4px] pointer-events-none" />
         
-        <div className="relative z-10">
-          <div className="flex items-center gap-4 mb-12 group cursor-pointer">
-            <div className="logo-entrance transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
-              <SystemLogo />
+        <div className="relative z-10 flex-1 flex flex-col justify-between max-w-2xl">
+          <div className="space-y-12">
+            <div className="flex items-center gap-4 group cursor-pointer">
+              <div className="logo-entrance transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+                <SystemLogo />
+              </div>
+              <div className="slide-in-right" style={{ animationDelay: '300ms' }}>
+                <h1 className="text-3xl font-bold text-white drop-shadow-lg text-glow">Sistema Central</h1>
+                <p className="text-white/70 text-sm">Tecnologia em Gestão</p>
+              </div>
             </div>
-            <div className="slide-in-right" style={{ animationDelay: '300ms' }}>
-              <h1 className="text-3xl font-bold text-white drop-shadow-lg text-glow">Sistema Central</h1>
-              <p className="text-white/70 text-sm">Tecnologia em Gestão</p>
-            </div>
-          </div>
-          
-          <div className="space-y-8">
-            <div>
-              <AnimatedText 
-                text="Bem-vindo(a) ao seu novo espaço de colaboração"
-                as="h2"
-                className="text-5xl font-bold text-white mb-6 leading-tight drop-shadow-lg"
-                startDelay={50}
-                wordDelay={80}
-              />
-              <p className="text-white/90 text-lg leading-relaxed">
-                Você foi convidado para integrar nossa equipe. Agora é só ativar sua conta em poucos passos para começar a participar:
-              </p>
-            </div>
-
-            <div className="mt-12 slide-in-up" style={{ animationDelay: '1000ms' }}>
-              <StepProgress currentStep={getCurrentStep()} steps={steps} />
-              
-              <div className="mt-6 p-5 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 shimmer glow-pulse">
-                <p className="text-white/90 text-base">
-                  <strong className="text-white">Pronto:</strong> já poderá acessar o sistema e colaborar com o time.
+            
+            <div className="space-y-8">
+              <div>
+                <AnimatedText 
+                  text="Bem-vindo(a) ao seu novo espaço de colaboração"
+                  as="h2"
+                  className="text-5xl font-bold text-white mb-6 leading-tight drop-shadow-lg"
+                  startDelay={50}
+                  wordDelay={80}
+                />
+                <p className="text-white/90 text-lg leading-relaxed">
+                  Você foi convidado para integrar nossa equipe. Agora é só ativar sua conta em poucos passos para começar a participar:
                 </p>
+              </div>
+
+              <div className="slide-in-up" style={{ animationDelay: '1000ms' }}>
+                <StepProgress currentStep={getCurrentStep()} steps={steps} />
+                
+                <div className="mt-6 p-5 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 shimmer glow-pulse">
+                  <p className="text-white/90 text-base">
+                    <strong className="text-white">Pronto:</strong> já poderá acessar o sistema e colaborar com o time.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <p className="text-white/60 text-sm relative z-10 slide-in-up" style={{ animationDelay: '1200ms' }}>
-          © 2025 Sistema Central. Tecnologia e Inovação.
-        </p>
+          <p className="text-white/60 text-sm relative z-10 slide-in-up" style={{ animationDelay: '1200ms' }}>
+            © 2025 Sistema Central. Tecnologia e Inovação.
+          </p>
+        </div>
       </div>
 
       {/* Form Section */}
