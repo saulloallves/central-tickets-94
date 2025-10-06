@@ -247,7 +247,15 @@ export type Database = {
           prioridade?: number | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_atendente_unidades_atendente"
+            columns: ["atendente_id"]
+            isOneToOne: false
+            referencedRelation: "atendentes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       atendentes: {
         Row: {
@@ -452,7 +460,15 @@ export type Database = {
           tipo_atendimento?: string
           unidade_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_chamados_atendente"
+            columns: ["atendente_id"]
+            isOneToOne: false
+            referencedRelation: "atendentes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       colaboradores: {
         Row: {
@@ -3457,13 +3473,24 @@ export type Database = {
             | null
           atendente_telefone: string | null
           atendente_tipo: Database["public"]["Enums"]["atendente_tipo"] | null
+          capacidade_atual: number | null
+          capacidade_maxima: number | null
           codigo_grupo: string | null
           concierge_name: string | null
           concierge_phone: string | null
           id: string | null
           status_validacao: string | null
+          total_chamados: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_atendente_unidades_atendente"
+            columns: ["atendente_id"]
+            isOneToOne: false
+            referencedRelation: "atendentes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       v_kb_articles_usage: {
         Row: {
