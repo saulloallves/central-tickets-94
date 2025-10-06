@@ -92,36 +92,6 @@ export function BottleneckDetection() {
           console.error('💥 [BOTTLENECK] Direct query exception:', directError);
         }
       }
-      
-      // Approach 3: If both failed, create sample data to test the UI
-      if (ticketsData.length === 0) {
-        console.log('⚠️ [BOTTLENECK] No data available, creating sample data for testing');
-        const now = new Date();
-        ticketsData = [
-          {
-            id: 'sample-1',
-            codigo_ticket: 'SAMPLE-001',
-            data_abertura: new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString(), // 48h ago
-            status: 'aberto',
-            prioridade: 'imediato',
-            equipe_responsavel_id: 'sample-team-1',
-            colaborador_id: 'sample-agent-1',
-            resolvido_em: null,
-            categoria: 'sistema'
-          },
-          {
-            id: 'sample-2',
-            codigo_ticket: 'SAMPLE-002',
-            data_abertura: new Date(now.getTime() - 36 * 60 * 60 * 1000).toISOString(), // 36h ago
-            status: 'em_atendimento',
-            prioridade: 'alta',
-            equipe_responsavel_id: 'sample-team-1',
-            colaborador_id: 'sample-agent-1',
-            resolvido_em: null,
-            categoria: 'suporte'
-          }
-        ];
-      }
 
       console.log('✅ [BOTTLENECK] Final tickets data:', ticketsData.length);
       setTickets(ticketsData);
@@ -425,10 +395,19 @@ export function BottleneckDetection() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {bottleneckMetrics.slowTickets.length === 0 ? (
-              <p className="text-muted-foreground text-center py-4">
-                ✅ Nenhum ticket com espera excessiva
-              </p>
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-8">
+                <RefreshCw className="h-8 w-8 animate-spin text-primary mb-4" />
+                <p className="text-sm text-muted-foreground">Carregando dados...</p>
+              </div>
+            ) : bottleneckMetrics.slowTickets.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <Clock className="h-12 w-12 text-muted-foreground mb-4 opacity-50" />
+                <p className="text-sm font-medium text-foreground mb-2">✅ Nenhum ticket com espera excessiva</p>
+                <p className="text-xs text-muted-foreground">
+                  Todos os tickets estão dentro do tempo esperado de {threshold}h
+                </p>
+              </div>
             ) : (
               <div className="space-y-3">
                 {bottleneckMetrics.slowTickets.slice(0, 10).map((ticket: any) => (
@@ -476,10 +455,19 @@ export function BottleneckDetection() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {bottleneckMetrics.overloadedTeams.length === 0 ? (
-              <p className="text-muted-foreground text-center py-4">
-                ✅ Nenhuma equipe sobrecarregada
-              </p>
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-8">
+                <RefreshCw className="h-8 w-8 animate-spin text-primary mb-4" />
+                <p className="text-sm text-muted-foreground">Carregando dados...</p>
+              </div>
+            ) : bottleneckMetrics.overloadedTeams.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <Users className="h-12 w-12 text-muted-foreground mb-4 opacity-50" />
+                <p className="text-sm font-medium text-foreground mb-2">✅ Nenhuma equipe sobrecarregada</p>
+                <p className="text-xs text-muted-foreground">
+                  Todas as equipes estão com carga abaixo de {teamThreshold} tickets ativos
+                </p>
+              </div>
             ) : (
               <div className="space-y-3">
                 {bottleneckMetrics.overloadedTeams.map((team: any) => (
