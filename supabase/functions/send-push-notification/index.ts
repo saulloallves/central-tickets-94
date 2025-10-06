@@ -31,25 +31,42 @@ serve(async (req) => {
       }
     );
 
-    // Verify authentication and authorization
-    const {
-      data: { user },
-      error: authError,
-    } = await supabaseClient.auth.getUser();
+    // Check if request is from service role (backend edge function)
+    const authHeader = req.headers.get('Authorization');
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const isServiceRole = authHeader?.includes(serviceRoleKey || '');
 
-    if (authError || !user) {
-      throw new Error('Unauthorized');
-    }
+    console.log('🔐 Auth check - Is service role:', isServiceRole);
 
-    // Check if user is admin or diretoria
-    const { data: userRoles } = await supabaseClient
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .in('role', ['admin', 'diretoria']);
+    if (!isServiceRole) {
+      // Verify authentication and authorization for user requests
+      const {
+        data: { user },
+        error: authError,
+      } = await supabaseClient.auth.getUser();
 
-    if (!userRoles || userRoles.length === 0) {
-      throw new Error('Forbidden: Only admins and diretoria can send push notifications');
+      if (authError || !user) {
+        console.error('❌ Auth error:', authError);
+        throw new Error('Unauthorized');
+      }
+
+      console.log('✅ User authenticated:', user.id);
+
+      // Check if user is admin or diretoria
+      const { data: userRoles } = await supabaseClient
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .in('role', ['admin', 'diretoria']);
+
+      if (!userRoles || userRoles.length === 0) {
+        console.error('❌ User lacks required role');
+        throw new Error('Forbidden: Only admins and diretoria can send push notifications');
+      }
+
+      console.log('✅ User has required role:', userRoles);
+    } else {
+      console.log('✅ Service role authenticated - skipping user checks');
     }
 
     const payload: PushPayload = await req.json();

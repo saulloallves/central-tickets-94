@@ -105,18 +105,22 @@ serve(async (req) => {
 
     // 4. Enviar push notifications
     try {
+      const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+      console.log('🔑 Using service role key for push notification');
+      
       const pushResponse = await supabase.functions.invoke('send-push-notification', {
         body: {
           title,
-          body: message || title,
-          icon: '/icons/icon-192x192.png',
-          badge: '/icons/icon-96x96.png',
+          message: message || title,
+          userIds: finalRecipients,
           data: {
             type,
             notification_id: notification.id,
             ...payload
-          },
-          userIds: finalRecipients
+          }
+        },
+        headers: {
+          Authorization: `Bearer ${serviceRoleKey}`
         }
       });
 
