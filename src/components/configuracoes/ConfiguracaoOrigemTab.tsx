@@ -60,6 +60,7 @@ export function ConfiguracaoOrigemTab() {
       // Como não podemos consultar o schema diretamente, usamos uma lista conhecida
       const knownTables = [
         'unidades',
+        'unidades_whatsapp',
         'franqueados', 
         'colaboradores',
         'tickets',
