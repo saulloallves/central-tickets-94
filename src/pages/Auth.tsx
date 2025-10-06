@@ -471,7 +471,7 @@ const Auth = () => {
           </div>
           
           <h2 className="text-4xl font-bold text-white mb-6 leading-tight">
-            Gerencie sua franquia com inteligência
+            Bem-vindo(a) ao seu novo espaço de colaboração
           </h2>
           
           <p className="text-xl text-white/80 mb-8 leading-relaxed">
