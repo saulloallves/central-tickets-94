@@ -12,12 +12,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { translateAuthError } from '@/lib/auth-error-messages';
-import { AnimatedText } from '@/components/welcome/AnimatedText';
-import { AnimatedIcon } from '@/components/welcome/AnimatedIcon';
-import { AnimatedFormElement } from '@/components/welcome/AnimatedFormElement';
 import { FloatingOrbs } from '@/components/welcome/FloatingOrbs';
 import { MouseFollower } from '@/components/welcome/MouseFollower';
 import { DottedSurface } from '@/components/ui/dotted-surface';
+import logoGiraffa from '@/assets/logo-giraffa.png';
 
 const Auth = () => {
   const { user, signIn, signUp, resetPassword, loading } = useAuth();
@@ -314,18 +312,18 @@ const Auth = () => {
         <Card className="w-full max-w-md shadow-lg border-0 bg-white/95 backdrop-blur-sm">
           <CardHeader className="text-center pb-6">
             <div className="flex items-center justify-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
-                <span className="text-xl leading-none">🦒</span>
+              <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center p-1">
+                <img src={logoGiraffa} alt="Logo Giraffa" className="w-full h-full object-contain" />
               </div>
-              <span className="text-xl font-bold">Sistema Giraffa</span>
+              <span className="text-xl font-bold">Central de Tickets</span>
             </div>
             <CardTitle className="text-2xl font-bold text-primary">Confirme seu Email</CardTitle>
             <CardDescription>Enviamos um link de confirmação</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="text-center space-y-4">
-              <div className="w-16 h-16 mx-auto rounded-full bg-gradient-primary/10 flex items-center justify-center">
-                <span className="text-4xl leading-none">🦒</span>
+              <div className="w-16 h-16 mx-auto rounded-full bg-gradient-primary/10 flex items-center justify-center p-3">
+                <img src={logoGiraffa} alt="Logo Giraffa" className="w-full h-full object-contain" />
               </div>
               <div className="space-y-2">
                 <h3 className="font-semibold text-lg">Verifique seu Email</h3>
@@ -363,10 +361,10 @@ const Auth = () => {
         <Card className="w-full max-w-md shadow-lg border-0 bg-white/95 backdrop-blur-sm">
           <CardHeader className="text-center pb-6">
             <div className="flex items-center justify-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
-                <span className="text-xl leading-none">🦒</span>
+              <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center p-1">
+                <img src={logoGiraffa} alt="Logo Giraffa" className="w-full h-full object-contain" />
               </div>
-              <span className="text-xl font-bold">Sistema Giraffa</span>
+              <span className="text-xl font-bold">Central de Tickets</span>
             </div>
             <CardTitle className="text-2xl font-bold text-primary">Solicitação em Análise!</CardTitle>
             <CardDescription>Sua solicitação está sendo avaliada</CardDescription>
@@ -411,10 +409,10 @@ const Auth = () => {
         <Card className="w-full max-w-md shadow-lg border-0 bg-white/95 backdrop-blur-sm">
           <CardHeader className="text-center pb-6">
             <div className="flex items-center justify-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
-                <span className="text-xl leading-none">🦒</span>
+              <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center p-1">
+                <img src={logoGiraffa} alt="Logo Giraffa" className="w-full h-full object-contain" />
               </div>
-              <span className="text-xl font-bold">Sistema Giraffa</span>
+              <span className="text-xl font-bold">Central de Tickets</span>
             </div>
             <CardTitle className="text-2xl font-bold text-primary">Redefinir Senha</CardTitle>
             <CardDescription>Digite seu email para receber o link de redefinição</CardDescription>
@@ -470,50 +468,36 @@ const Auth = () => {
       {/* Left side - Branding with animations */}
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-center px-12 relative overflow-hidden">
         <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-8 logo-entrance">
-            <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center glow-pulse" style={{ boxShadow: '0 0 40px hsla(201, 65%, 75%, 0.4)' }}>
-              <span className="text-4xl leading-none">🦒</span>
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center p-2">
+              <img src={logoGiraffa} alt="Logo Giraffa" className="w-full h-full object-contain" />
             </div>
             <div>
-              <AnimatedText
-                text="Sistema Giraffa"
-                as="h1"
-                className="text-2xl font-bold text-white"
-                startDelay={100}
-                wordDelay={80}
-              />
-              <div className="slide-in-up" style={{ animationDelay: '300ms' }}>
-                <p className="text-white/60 text-sm">Gestão Inteligente de Franquias</p>
-              </div>
+              <h1 className="text-2xl font-bold text-white">Central de Tickets</h1>
+              <p className="text-white/60 text-sm">Gestão Inteligente de Tickets</p>
             </div>
           </div>
           
-          <AnimatedText
-            text="Gerencie sua franquia com inteligência"
-            as="h2"
-            className="text-4xl font-bold text-white mb-6 leading-tight text-glow"
-            startDelay={400}
-            wordDelay={100}
-          />
+          <h2 className="text-4xl font-bold text-white mb-6 leading-tight">
+            Gerencie sua franquia com inteligência
+          </h2>
           
-          <div className="slide-in-up" style={{ animationDelay: '800ms' }}>
-            <p className="text-xl text-white/80 mb-8 leading-relaxed shimmer">
-              Sistema completo para franqueados e equipes com controle de tickets,
-              atendimento via WhatsApp e gestão de operações.
-            </p>
-          </div>
+          <p className="text-xl text-white/80 mb-8 leading-relaxed">
+            Sistema completo para franqueados e equipes com controle de tickets,
+            atendimento via WhatsApp e gestão de operações.
+          </p>
 
           <div className="space-y-4">
-            <div className="flex items-center gap-3 text-white/90 status-pulse" style={{ animationDelay: '1000ms' }}>
-              <AnimatedIcon icon={Sparkles} delay={1050} className="text-white" size={20} />
+            <div className="flex items-center gap-3 text-white/90">
+              <Sparkles className="text-white" size={20} />
               <span>Gestão de tickets e demandas</span>
             </div>
-            <div className="flex items-center gap-3 text-white/90 status-pulse" style={{ animationDelay: '1100ms' }}>
-              <AnimatedIcon icon={Shield} delay={1150} className="text-white" size={20} />
+            <div className="flex items-center gap-3 text-white/90">
+              <Shield className="text-white" size={20} />
               <span>Controle de equipes e permissões</span>
             </div>
-            <div className="flex items-center gap-3 text-white/90 status-pulse" style={{ animationDelay: '1200ms' }}>
-              <AnimatedIcon icon={Phone} delay={1250} className="text-white" size={20} />
+            <div className="flex items-center gap-3 text-white/90">
+              <Phone className="text-white" size={20} />
               <span>Atendimento integrado via WhatsApp</span>
             </div>
           </div>
@@ -531,30 +515,16 @@ const Auth = () => {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 relative z-10">
         <Card className="w-full max-w-md shadow-elegant border-white/30 bg-white/95 backdrop-blur-sm float-in" style={{ animationDelay: '600ms', boxShadow: '0 8px 32px hsla(0, 0%, 0%, 0.2)' }}>
           <CardHeader className="text-center pb-6">
-            <div className="lg:hidden flex items-center justify-center gap-2 mb-4 logo-entrance">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center glow-pulse" style={{ background: 'linear-gradient(135deg, hsl(201 60% 66%), hsl(201 65% 75%))', boxShadow: '0 0 30px hsla(201, 65%, 75%, 0.3)' }}>
-                <span className="text-lg leading-none">🦒</span>
+            <div className="lg:hidden flex items-center justify-center gap-2 mb-4">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center p-1.5" style={{ background: 'linear-gradient(135deg, hsl(201 60% 66%), hsl(201 65% 75%))' }}>
+                <img src={logoGiraffa} alt="Logo Giraffa" className="w-full h-full object-contain" />
               </div>
-              <AnimatedText
-                text="Sistema Giraffa"
-                as="span"
-                className="text-xl font-bold"
-                startDelay={750}
-                wordDelay={80}
-              />
+              <span className="text-xl font-bold text-primary">Central de Tickets</span>
             </div>
             <div style={{ color: 'hsl(201 60% 66%)' }}>
-              <AnimatedText
-                text="Bem-vindo"
-                as="h3"
-                className="text-2xl font-bold"
-                startDelay={800}
-                wordDelay={80}
-              />
+              <h3 className="text-2xl font-bold">Bem-vindo</h3>
             </div>
-            <div className="slide-in-up" style={{ animationDelay: '900ms' }}>
-              <CardDescription>Acesse sua conta ou crie uma nova</CardDescription>
-            </div>
+            <CardDescription>Acesse sua conta ou crie uma nova</CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="login" className="w-full">
@@ -580,47 +550,40 @@ const Auth = () => {
 
               <TabsContent value="login" className="space-y-4">
                 <form onSubmit={handleSignIn} className="space-y-4">
-                  <AnimatedFormElement delay={1100} direction="left">
-                    <div className="space-y-2">
-                      <Label htmlFor="login-email">Email</Label>
-                      <Input
-                        id="login-email"
-                        type="email"
-                        placeholder="seu@email.com"
-                        value={loginData.email}
-                        onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
-                        className="h-11"
-                        required
-                      />
-                    </div>
-                  </AnimatedFormElement>
-                  <AnimatedFormElement delay={1200} direction="right">
-                    <div className="space-y-2">
-                      <Label htmlFor="login-password">Senha</Label>
-                      <Input
-                        id="login-password"
-                        type="password"
-                        placeholder="••••••••"
-                        value={loginData.password}
-                        onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                        className="h-11"
-                        required
-                      />
-                    </div>
-                  </AnimatedFormElement>
-                  <div className="slide-in-up" style={{ animationDelay: '1300ms' }}>
-                    <Button 
+                  <div className="space-y-2">
+                    <Label htmlFor="login-email">Email</Label>
+                    <Input
+                      id="login-email"
+                      type="email"
+                      placeholder="seu@email.com"
+                      value={loginData.email}
+                      onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+                      className="h-11"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="login-password">Senha</Label>
+                    <Input
+                      id="login-password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={loginData.password}
+                      onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                      className="h-11"
+                      required
+                    />
+                  </div>
+                  <Button
                       type="submit" 
-                      className="w-full h-11 text-white hover:opacity-90 glow-pulse" 
+                      className="w-full h-11 text-white hover:opacity-90" 
                       disabled={isSubmitting}
                       style={{ 
-                        background: 'linear-gradient(135deg, hsl(201 60% 66%), hsl(201 65% 75%))',
-                        boxShadow: '0 0 40px hsla(201, 65%, 75%, 0.3)'
+                        background: 'linear-gradient(135deg, hsl(201 60% 66%), hsl(201 65% 75%))'
                       }}
                     >
                       {isSubmitting ? 'Entrando...' : 'Entrar no Sistema'}
                     </Button>
-                  </div>
                 </form>
                 
                 <div className="mt-4 text-center">
