@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { supabase } from '@/integrations/supabase/client';
 import { Search, MapPin, Phone, Mail, Building, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { ImportUnidadesButton } from '@/components/unidades/ImportUnidadesButton';
 
 interface Unidade {
   id: string;
@@ -162,7 +163,7 @@ const Unidades = () => {
 
         <div className="space-y-3 md:space-y-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 flex-1">
               <Search className="w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar por nome, cidade ou estado..."
@@ -172,8 +173,10 @@ const Unidades = () => {
               />
             </div>
             
+            <ImportUnidadesButton />
+            
             {/* Info de paginação */}
-            <div className="text-xs md:text-sm text-muted-foreground">
+            <div className="text-xs md:text-sm text-muted-foreground whitespace-nowrap">
               {totalCount > 0 && (
                 <>
                   Pág {currentPage}/{totalPages} • {totalCount} unidades

@@ -214,6 +214,9 @@ verify_jwt = true
 [functions.register-push-subscription]
 verify_jwt = true
 
+[functions.import-unidades-from-csv]
+verify_jwt = true
+
 [db]
 port = 54322
 shadow_port = 54320
