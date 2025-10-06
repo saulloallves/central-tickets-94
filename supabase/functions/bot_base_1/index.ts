@@ -114,22 +114,22 @@ const botZapi = new BotZAPIClient();
 async function checkGroupInDatabase(groupId: string): Promise<boolean> {
   try {
     console.log(`🔍 Verificando grupo ${groupId} na tabela atendente_unidades...`);
-    console.log(`🔍 Buscando por id_grupo_branco: ${groupId}`);
+    console.log(`🔍 Buscando por id_grupo_branco: "${groupId}"`);
     
-    const { data, error } = await supabase
+    const { data, error, count } = await supabase
       .from('atendente_unidades')
-      .select('id, codigo_grupo, id_grupo_branco, grupo, ativo')
+      .select('id, codigo_grupo, id_grupo_branco, grupo, ativo', { count: 'exact' })
       .eq('id_grupo_branco', groupId)
       .eq('ativo', true);
+
+    console.log(`📊 Query completa - Error:`, error);
+    console.log(`📊 Query completa - Count:`, count);
+    console.log(`📊 Query completa - Data length:`, data?.length || 0);
+    console.log(`📊 Query completa - Data:`, JSON.stringify(data, null, 2));
 
     if (error) {
       console.error('❌ Erro ao consultar tabela atendente_unidades:', error);
       return false;
-    }
-
-    console.log(`📊 Resultados encontrados:`, data?.length || 0);
-    if (data && data.length > 0) {
-      console.log(`📋 Detalhes:`, JSON.stringify(data, null, 2));
     }
 
     if (data && data.length > 0) {
@@ -137,7 +137,7 @@ async function checkGroupInDatabase(groupId: string): Promise<boolean> {
         data.map(d => `${d.grupo} (código: ${d.codigo_grupo}, id_branco: ${d.id_grupo_branco})`));
       return true;
     } else {
-      console.log(`🚫 Grupo NÃO encontrado para id_grupo_branco: ${groupId}`);
+      console.log(`🚫 Grupo NÃO encontrado para id_grupo_branco: "${groupId}"`);
       return false;
     }
   } catch (error) {
