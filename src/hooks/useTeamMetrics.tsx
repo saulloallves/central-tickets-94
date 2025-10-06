@@ -1,9 +1,8 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
 
 export interface TeamMetricsWithNames {
   equipe_id: string;
@@ -19,14 +18,14 @@ export interface TeamMetricsWithNames {
 
 export const useTeamMetrics = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const [filters, setFilters] = useState<{ unidade_id?: string; periodo_dias?: number }>({});
 
   // ✅ OTIMIZAÇÃO: Migrado para React Query com staleTime
-  const { data: teamMetrics = [], isLoading: loading, refetch } = useQuery({
+  const { data: teamMetrics = [], isLoading: loading, refetch, error } = useQuery({
     queryKey: ['team-metrics', user?.id, filters],
     staleTime: 2 * 60 * 1000, // ✅ Cache de 2 minutos
     gcTime: 5 * 60 * 1000, // ✅ Garbage collect após 5 minutos
+    retry: 1, // ✅ Apenas 1 retry para evitar múltiplas tentativas
     queryFn: async () => {
       if (!user) return [];
 
@@ -42,12 +41,8 @@ export const useTeamMetrics = () => {
 
         if (metricsError) {
           console.error('❌ [TEAM METRICS] Error fetching metrics:', metricsError);
-          toast({
-            title: "Erro",
-            description: "Não foi possível carregar métricas das equipes",
-            variant: "destructive",
-          });
-          return [];
+          // ✅ NÃO mostrar toast aqui - deixar componentes decidirem
+          throw metricsError;
         }
 
         // Now get team names
@@ -84,12 +79,8 @@ export const useTeamMetrics = () => {
         
       } catch (error) {
         console.error('💥 [TEAM METRICS] Unexpected error:', error);
-        toast({
-          title: "Erro",
-          description: "Erro inesperado ao carregar métricas das equipes",
-          variant: "destructive",
-        });
-        return [];
+        // ✅ NÃO mostrar toast aqui - deixar componentes decidirem
+        throw error;
       }
     },
     enabled: !!user,
@@ -105,6 +96,7 @@ export const useTeamMetrics = () => {
   return {
     teamMetrics,
     loading,
+    error,
     fetchTeamMetricsWithNames,
     refetch: () => fetchTeamMetricsWithNames(filters)
   };

@@ -22,6 +22,7 @@ export function MetricsSection({ periodDays = 30 }: MetricsSectionProps) {
   const {
     teamMetrics,
     loading: teamLoading,
+    error: teamError,
     fetchTeamMetricsWithNames
   } = useTeamMetrics();
   
@@ -63,15 +64,19 @@ export function MetricsSection({ periodDays = 30 }: MetricsSectionProps) {
     }
   };
 
-  // Update data when period changes
+  // Update data when period changes - com debounce para evitar múltiplas chamadas
   useEffect(() => {
-    const actualPeriod = periodDays === 0 ? 999 : periodDays;
-    console.log('🔄 [METRICS] Period changed, fetching with:', { periodDays, actualPeriod });
-    
-    // Don't show toast on automatic load
-    fetchUnitMetrics({ periodo_dias: actualPeriod }, false);
-    fetchTeamMetricsWithNames({ periodo_dias: actualPeriod });
-  }, [periodDays, fetchUnitMetrics, fetchTeamMetricsWithNames]);
+    const timeoutId = setTimeout(() => {
+      const actualPeriod = periodDays === 0 ? 999 : periodDays;
+      console.log('🔄 [METRICS] Period changed, fetching with:', { periodDays, actualPeriod });
+      
+      // Don't show toast on automatic load
+      fetchUnitMetrics({ periodo_dias: actualPeriod }, false);
+      fetchTeamMetricsWithNames({ periodo_dias: actualPeriod });
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [periodDays]);
 
   const loading = unitLoading || teamLoading;
 
@@ -108,6 +113,16 @@ export function MetricsSection({ periodDays = 30 }: MetricsSectionProps) {
                 Carregando métricas das equipes...
               </p>
             </div>
+          ) : teamError ? (
+            <EmptyState
+              type="error"
+              title="Erro ao carregar métricas"
+              description="Não foi possível carregar as métricas das equipes. Tente atualizar a página ou verifique sua conexão."
+              action={{
+                label: "Tentar Novamente",
+                onClick: handleRefresh
+              }}
+            />
           ) : !teamMetrics || teamMetrics.length === 0 ? (
             <EmptyState
               type="no-tickets"

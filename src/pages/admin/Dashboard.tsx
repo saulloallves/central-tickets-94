@@ -65,6 +65,7 @@ const Dashboard = () => {
   const { 
     teamMetrics, 
     loading: teamLoading,
+    error: teamError,
     fetchTeamMetricsWithNames
   } = useTeamMetrics();
 
