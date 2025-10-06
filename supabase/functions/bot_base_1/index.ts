@@ -110,18 +110,18 @@ class BotZAPIClient {
 
 const botZapi = new BotZAPIClient();
 
-// ✅ Função atualizada - busca mais robusta em atendente_unidades
+// ✅ Função corrigida - sintaxe correta do Supabase
 async function checkGroupInDatabase(groupId: string): Promise<boolean> {
   try {
     console.log(`🔍 Verificando grupo ${groupId} na tabela atendente_unidades...`);
     
-    // Buscar por id_grupo_branco exato ou sem sufixo -group
+    // Buscar por id_grupo_branco com e sem sufixo -group
     const groupIdClean = groupId.replace('-group', '');
     
     const { data, error } = await supabase
       .from('atendente_unidades')
       .select('id, codigo_grupo, id_grupo_branco, grupo, ativo')
-      .or(`id_grupo_branco.eq.${groupId},id_grupo_branco.eq.${groupIdClean}`)
+      .in('id_grupo_branco', [groupId, groupIdClean])
       .eq('ativo', true);
 
     if (error) {
@@ -135,12 +135,11 @@ async function checkGroupInDatabase(groupId: string): Promise<boolean> {
     }
 
     if (data && data.length > 0) {
-      console.log(`✅ Grupo ${groupId} encontrado na tabela atendente_unidades (${data.length} registro(s)):`, 
-        data.map(d => `${d.grupo} (${d.codigo_grupo})`));
+      console.log(`✅ Grupo ${groupId} encontrado! Registro(s):`, 
+        data.map(d => `${d.grupo} (código: ${d.codigo_grupo})`));
       return true;
     } else {
-      console.log(`🚫 Grupo ${groupId} NÃO encontrado na tabela atendente_unidades`);
-      console.log(`💡 Tentou buscar: ${groupId} e ${groupIdClean}`);
+      console.log(`🚫 Grupo NÃO encontrado. Tentou buscar: [${groupId}, ${groupIdClean}]`);
       return false;
     }
   } catch (error) {
