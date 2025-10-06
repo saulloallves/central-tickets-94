@@ -1456,7 +1456,22 @@ export type Database = {
           unidade_id?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "franqueados_unidades_franqueado_id_fkey"
+            columns: ["franqueado_id"]
+            isOneToOne: false
+            referencedRelation: "franqueados"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "franqueados_unidades_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       internal_access_requests: {
         Row: {
@@ -2866,7 +2881,7 @@ export type Database = {
           subcategoria: string | null
           tempo_pausado_total: unknown | null
           titulo: string | null
-          unidade_id: string
+          unidade_id: string | null
           updated_at: string
         }
         Insert: {
@@ -2904,7 +2919,7 @@ export type Database = {
           subcategoria?: string | null
           tempo_pausado_total?: unknown | null
           titulo?: string | null
-          unidade_id: string
+          unidade_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -2942,7 +2957,7 @@ export type Database = {
           subcategoria?: string | null
           tempo_pausado_total?: unknown | null
           titulo?: string | null
-          unidade_id?: string
+          unidade_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -2979,6 +2994,13 @@ export type Database = {
             columns: ["equipe_responsavel_id"]
             isOneToOne: false
             referencedRelation: "equipes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
             referencedColumns: ["id"]
           },
         ]
