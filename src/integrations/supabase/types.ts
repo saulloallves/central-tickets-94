@@ -3529,9 +3529,7 @@ export type Database = {
         Returns: boolean
       }
       can_view_ticket: {
-        Args:
-          | { ticket_equipe_id: string; ticket_unidade_id: string }
-          | { ticket_unidade_id: string }
+        Args: { ticket_equipe_id?: string; ticket_unidade_id: string }
         Returns: boolean
       }
       check_email_pre_approved: {
