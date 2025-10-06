@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ClipboardList, Sparkles, Shield, Zap, Phone } from 'lucide-react';
+import { Sparkles, Shield, Phone } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
@@ -315,9 +315,9 @@ const Auth = () => {
           <CardHeader className="text-center pb-6">
             <div className="flex items-center justify-center gap-2 mb-4">
               <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
-                <ClipboardList className="h-4 w-4 text-white" />
+                <span className="text-xl leading-none">🦒</span>
               </div>
-              <span className="text-xl font-bold">Central de Tickets</span>
+              <span className="text-xl font-bold">Sistema Giraffa</span>
             </div>
             <CardTitle className="text-2xl font-bold text-primary">Confirme seu Email</CardTitle>
             <CardDescription>Enviamos um link de confirmação</CardDescription>
@@ -325,7 +325,7 @@ const Auth = () => {
           <CardContent className="space-y-4">
             <div className="text-center space-y-4">
               <div className="w-16 h-16 mx-auto rounded-full bg-gradient-primary/10 flex items-center justify-center">
-                <ClipboardList className="h-8 w-8 text-primary" />
+                <span className="text-4xl leading-none">🦒</span>
               </div>
               <div className="space-y-2">
                 <h3 className="font-semibold text-lg">Verifique seu Email</h3>
@@ -364,9 +364,9 @@ const Auth = () => {
           <CardHeader className="text-center pb-6">
             <div className="flex items-center justify-center gap-2 mb-4">
               <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
-                <ClipboardList className="h-4 w-4 text-white" />
+                <span className="text-xl leading-none">🦒</span>
               </div>
-              <span className="text-xl font-bold">Central de Tickets</span>
+              <span className="text-xl font-bold">Sistema Giraffa</span>
             </div>
             <CardTitle className="text-2xl font-bold text-primary">Solicitação em Análise!</CardTitle>
             <CardDescription>Sua solicitação está sendo avaliada</CardDescription>
@@ -412,9 +412,9 @@ const Auth = () => {
           <CardHeader className="text-center pb-6">
             <div className="flex items-center justify-center gap-2 mb-4">
               <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
-                <ClipboardList className="h-4 w-4 text-white" />
+                <span className="text-xl leading-none">🦒</span>
               </div>
-              <span className="text-xl font-bold">Central de Tickets</span>
+              <span className="text-xl font-bold">Sistema Giraffa</span>
             </div>
             <CardTitle className="text-2xl font-bold text-primary">Redefinir Senha</CardTitle>
             <CardDescription>Digite seu email para receber o link de redefinição</CardDescription>
@@ -472,24 +472,24 @@ const Auth = () => {
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-8 logo-entrance">
             <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center glow-pulse" style={{ boxShadow: '0 0 40px hsla(201, 65%, 75%, 0.4)' }}>
-              <AnimatedIcon icon={ClipboardList} delay={0} className="text-white" size={24} />
+              <span className="text-4xl leading-none">🦒</span>
             </div>
             <div>
               <AnimatedText
-                text="Central de Tickets"
+                text="Sistema Giraffa"
                 as="h1"
                 className="text-2xl font-bold text-white"
                 startDelay={100}
                 wordDelay={80}
               />
               <div className="slide-in-up" style={{ animationDelay: '300ms' }}>
-                <p className="text-white/60 text-sm">Gestão Inteligente de Tickets</p>
+                <p className="text-white/60 text-sm">Gestão Inteligente de Franquias</p>
               </div>
             </div>
           </div>
           
           <AnimatedText
-            text="Transforme seu suporte com IA"
+            text="Gerencie sua franquia com inteligência"
             as="h2"
             className="text-4xl font-bold text-white mb-6 leading-tight text-glow"
             startDelay={400}
@@ -498,23 +498,23 @@ const Auth = () => {
           
           <div className="slide-in-up" style={{ animationDelay: '800ms' }}>
             <p className="text-xl text-white/80 mb-8 leading-relaxed shimmer">
-              Sistema completo de gestão de tickets com inteligência artificial,
-              integração WhatsApp e análise avançada de dados.
+              Sistema completo para franqueados e equipes com controle de tickets,
+              atendimento via WhatsApp e gestão de operações.
             </p>
           </div>
 
           <div className="space-y-4">
             <div className="flex items-center gap-3 text-white/90 status-pulse" style={{ animationDelay: '1000ms' }}>
               <AnimatedIcon icon={Sparkles} delay={1050} className="text-white" size={20} />
-              <span>Respostas automáticas com IA</span>
+              <span>Gestão de tickets e demandas</span>
             </div>
             <div className="flex items-center gap-3 text-white/90 status-pulse" style={{ animationDelay: '1100ms' }}>
               <AnimatedIcon icon={Shield} delay={1150} className="text-white" size={20} />
-              <span>Controle avançado de permissões</span>
+              <span>Controle de equipes e permissões</span>
             </div>
             <div className="flex items-center gap-3 text-white/90 status-pulse" style={{ animationDelay: '1200ms' }}>
-              <AnimatedIcon icon={Zap} delay={1250} className="text-white" size={20} />
-              <span>Integração WhatsApp Z-API</span>
+              <AnimatedIcon icon={Phone} delay={1250} className="text-white" size={20} />
+              <span>Atendimento integrado via WhatsApp</span>
             </div>
           </div>
         </div>
@@ -533,10 +533,10 @@ const Auth = () => {
           <CardHeader className="text-center pb-6">
             <div className="lg:hidden flex items-center justify-center gap-2 mb-4 logo-entrance">
               <div className="w-8 h-8 rounded-lg flex items-center justify-center glow-pulse" style={{ background: 'linear-gradient(135deg, hsl(201 60% 66%), hsl(201 65% 75%))', boxShadow: '0 0 30px hsla(201, 65%, 75%, 0.3)' }}>
-                <AnimatedIcon icon={ClipboardList} delay={700} className="text-white" size={16} />
+                <span className="text-lg leading-none">🦒</span>
               </div>
               <AnimatedText
-                text="Central de Tickets"
+                text="Sistema Giraffa"
                 as="span"
                 className="text-xl font-bold"
                 startDelay={750}
