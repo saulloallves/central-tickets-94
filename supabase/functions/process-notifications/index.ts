@@ -27,12 +27,11 @@ interface NotificationRoute {
 // Get destination number based on notification source configuration
 async function getDestinationNumber(supabase: any, type: string, ticket: any): Promise<string | null> {
   try {
-    console.log(`🔍 Getting destination for notification type: ${type}`);
-    console.log(`📋 Ticket data:`, { 
-      unidade_id: ticket.unidade_id, 
-      unidades: ticket.unidades,
-      id_grupo_branco: ticket.unidades?.id_grupo_branco 
-    });
+    console.log(`\n🎯 ===== GETTING DESTINATION NUMBER =====`);
+    console.log(`🎯 Notification type: ${type}`);
+    console.log(`🎯 Ticket.unidade_id: ${ticket?.unidade_id}`);
+    console.log(`🎯 Ticket.unidades:`, ticket?.unidades ? JSON.stringify(ticket.unidades) : 'não disponível');
+    console.log(`🎯 Full ticket data:`, JSON.stringify(ticket, null, 2));
 
     // Get source configuration for this notification type
     const { data: sourceConfig, error: configError } = await supabase
@@ -102,23 +101,35 @@ async function getNumberFromColumn(
   filterValueSource?: string,
   ticket?: any
 ): Promise<string | null> {
+  console.log(`\n📋 ===== getNumberFromColumn =====`);
+  console.log(`📋 Table: ${table}, Column: ${column}`);
+  console.log(`📋 Filter: ${filterColumn} from ${filterValueSource}`);
+  console.log(`📋 Ticket data keys:`, ticket ? Object.keys(ticket) : 'no ticket');
+  console.log(`📋 Ticket.unidades keys:`, ticket?.unidades ? Object.keys(ticket.unidades) : 'no unidades');
+  
   try {
     // Se tem filtro configurado, buscar com filtro
-    if (filterColumn && filterValueSource) {
-      console.log(`🔍 Buscando com filtro: ${filterColumn} = ${filterValueSource}`);
+    if (filterColumn && filterValueSource && ticket) {
+      console.log(`🔍 Buscando com filtro: ${filterColumn} = valor de ${filterValueSource}`);
       
       // Extrair valor do filtro (ex: unidades.codigo_grupo)
       const [sourceTable, sourceColumn] = filterValueSource.split('.');
       let filterValue = null;
       
+      console.log(`🔍 Extraindo: ${sourceTable}.${sourceColumn}`);
+      console.log(`🔍 ticket.unidades disponível?`, !!ticket?.unidades);
+      console.log(`🔍 ticket.unidades.${sourceColumn}:`, ticket?.unidades?.[sourceColumn]);
+      
       if (sourceTable === 'unidades' && ticket?.unidades) {
         filterValue = ticket.unidades[sourceColumn];
+        console.log(`✅ Valor extraído de ticket.unidades.${sourceColumn}: ${filterValue}`);
       } else if (sourceTable === 'tickets' && ticket) {
         filterValue = ticket[sourceColumn];
+        console.log(`✅ Valor extraído de ticket.${sourceColumn}: ${filterValue}`);
       }
       
       if (filterValue) {
-        console.log(`✅ Valor do filtro encontrado: ${filterValue}`);
+        console.log(`✅ Aplicando filtro: ${table}.${filterColumn} = ${filterValue}`);
         const { data, error } = await supabase
           .from(table)
           .select(column)
@@ -131,12 +142,17 @@ async function getNumberFromColumn(
         }
         
         if (data && data[column]) {
-          console.log(`✅ Número encontrado com filtro: ${data[column]}`);
+          console.log(`✅ ✅ ✅ Número encontrado: ${data[column]} de ${table}.${column}`);
           return data[column];
+        } else {
+          console.warn(`⚠️ Nenhum registro encontrado em ${table} com ${filterColumn}=${filterValue}`);
         }
       } else {
-        console.log(`⚠️ Valor do filtro não encontrado para ${filterValueSource}`);
+        console.error(`❌ Valor do filtro NÃO encontrado para ${filterValueSource}`);
+        console.error(`❌ Dados disponíveis no ticket:`, JSON.stringify(ticket, null, 2));
       }
+    } else {
+      console.log(`ℹ️ Sem filtro configurado, tentando buscar primeiro registro`);
     }
     
     // Fallback: buscar sem filtro (lógica antiga)
@@ -668,13 +684,15 @@ serve(async (req) => {
     
     // Only log ticket details if ticket exists
     if (ticket) {
-      console.log('Ticket found:', {
-        id: ticket.id,
-        codigo: ticket.codigo_ticket,
-        franqueado_id: ticket.franqueado_id
-      });
+      console.log('\n🎫 ===== TICKET DATA LOADED =====');
+      console.log('🎫 ID:', ticket.id);
+      console.log('🎫 Código:', ticket.codigo_ticket);
+      console.log('🎫 Franqueado ID:', ticket.franqueado_id);
+      console.log('🎫 Unidade ID:', ticket.unidade_id);
+      console.log('🎫 Unidades data:', JSON.stringify(ticket.unidades, null, 2));
+      console.log('🎫 ===== END TICKET DATA =====\n');
     } else {
-      console.log(`No ticket data fetched for type ${type} - either no ticketId provided or type doesn't require ticket data`);
+      console.log(`⚠️ No ticket data fetched for type ${type} - either no ticketId provided or type doesn't require ticket data`);
     }
 
     // Validate that we have ticket data when required
@@ -966,10 +984,10 @@ serve(async (req) => {
 
       case 'resposta_ticket_franqueado':
       case 'resposta_ticket_privado':
-        console.log(`Processing ${type} - sending to franqueado (solicitante) phone`);
+        console.log(`Processing ${notificationType} - sending to franqueado (solicitante) phone`);
         
         if (!ticket) {
-          throw new Error(`Ticket data is required for ${type} notifications`);
+          throw new Error(`Ticket data is required for ${notificationType} notifications`);
         }
         
         // For franqueado responses, we always send to the original requester
