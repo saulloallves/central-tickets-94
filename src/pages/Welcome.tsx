@@ -137,9 +137,9 @@ export default function Welcome() {
       } else {
         setEmailStatus('rejected');
         toast({
-          title: "Email não autorizado",
-          description: "Este email não está na lista de pré-aprovados. Entre em contato com o administrador.",
-          variant: "destructive"
+          title: "Email não pré-aprovado",
+          description: "Você pode fazer o cadastro completo para ter acesso ao sistema.",
+          variant: "default"
         });
       }
     } catch (error) {
@@ -382,14 +382,21 @@ export default function Welcome() {
                   )}
 
                   {emailStatus === 'rejected' && (
-                    <div className="p-4 bg-destructive/10 rounded-xl border border-destructive/30 status-pulse">
-                      <div className="flex items-center gap-2 text-destructive">
-                        <XCircle className="h-5 w-5 icon-animate" />
-                        <span className="font-semibold">Email não autorizado</span>
+                    <div className="p-4 bg-blue-50 rounded-xl border border-blue-200 status-pulse">
+                      <div className="flex items-center gap-2 text-blue-700 mb-3">
+                        <Sparkles className="h-5 w-5 icon-animate" />
+                        <span className="font-semibold">Email não pré-aprovado</span>
                       </div>
-                      <p className="text-sm text-muted-foreground mt-2">
-                        Este email não está na lista de pré-aprovados. Entre em contato com o administrador.
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Este email não está na lista de pré-aprovados, mas você pode fazer o cadastro completo para ter acesso ao sistema.
                       </p>
+                      <Button
+                        type="button"
+                        className="w-full"
+                        onClick={() => navigate('/auth?tab=signup')}
+                      >
+                        Fazer Cadastro Completo
+                      </Button>
                     </div>
                   )}
                 </div>
