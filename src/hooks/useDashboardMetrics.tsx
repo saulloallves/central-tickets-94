@@ -72,7 +72,7 @@ export const useDashboardMetrics = () => {
     unidade_filter?: string;
     equipe_filter?: string;
     periodo_dias?: number;
-  } = {}) => {
+  } = {}, showToast: boolean = false) => {
     if (!user) return;
 
     try {
@@ -94,11 +94,14 @@ export const useDashboardMetrics = () => {
       console.log('✅ [KPIs] Processed KPIs:', kpisData);
     } catch (error) {
       console.error('Error fetching KPIs:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível carregar os indicadores",
-        variant: "destructive",
-      });
+      // Only show toast if explicitly requested
+      if (showToast) {
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar os indicadores",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -161,7 +164,7 @@ export const useDashboardMetrics = () => {
     }
   };
 
-  const fetchUnitMetrics = async (filters?: { equipe_id?: string; periodo_dias?: number }) => {
+  const fetchUnitMetrics = async (filters?: { equipe_id?: string; periodo_dias?: number }, showToast: boolean = false) => {
     console.log('🏢 [UNIT METRICS] Starting fetch with filters:', filters);
     console.log('🔑 [UNIT METRICS] User ID:', user?.id);
     
@@ -177,11 +180,14 @@ export const useDashboardMetrics = () => {
       if (error) {
         console.error('❌ [UNIT METRICS] Supabase error:', error);
         setUnitMetrics([]);
-        toast({
-          title: "Erro",
-          description: `Erro ao carregar métricas das unidades: ${error.message}`,
-          variant: "destructive",
-        });
+        // Only show toast if explicitly requested
+        if (showToast) {
+          toast({
+            title: "Erro",
+            description: `Erro ao carregar métricas das unidades: ${error.message}`,
+            variant: "destructive",
+          });
+        }
         return;
       }
 
@@ -243,11 +249,14 @@ export const useDashboardMetrics = () => {
     } catch (error) {
       console.error('💥 [UNIT METRICS] Unexpected error:', error);
       setUnitMetrics([]);
-      toast({
-        title: "Erro",
-        description: "Erro inesperado ao carregar métricas das unidades.",
-        variant: "destructive",
-      });
+      // Only show toast if explicitly requested during initial load
+      if (showToast) {
+        toast({
+          title: "Erro",
+          description: "Erro inesperado ao carregar métricas das unidades.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -362,25 +371,8 @@ export const useDashboardMetrics = () => {
     }
   };
 
-  useEffect(() => {
-    if (user) {
-      console.log('🚀 [DASHBOARD] Initializing dashboard metrics for user:', user.id);
-      const loadAllMetrics = async () => {
-        setLoading(true);
-        try {
-          await Promise.allSettled([
-            fetchKPIs(),
-            fetchTrends(),
-            fetchTeamMetrics(),
-            fetchUnitMetrics()
-          ]);
-        } finally {
-          setLoading(false);
-        }
-      };
-      loadAllMetrics();
-    }
-  }, [user]);
+  // No longer auto-load on mount - let components fetch when needed
+  // This prevents multiple simultaneous loads and redundant error toasts
 
   return {
     kpis,

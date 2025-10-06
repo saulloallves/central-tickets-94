@@ -53,9 +53,10 @@ export function MetricsSection({ periodDays = 30 }: MetricsSectionProps) {
       const actualPeriod = periodDays === 0 ? 999 : periodDays;
       console.log('🔄 [METRICS] Refreshing with period:', { periodDays, actualPeriod });
       
+      // Show toast on manual refresh
       await Promise.all([
         fetchTeamMetricsWithNames({ periodo_dias: actualPeriod }),
-        fetchUnitMetrics({ periodo_dias: actualPeriod })
+        fetchUnitMetrics({ periodo_dias: actualPeriod }, true)
       ]);
     } finally {
       setRefreshing(false);
@@ -67,7 +68,8 @@ export function MetricsSection({ periodDays = 30 }: MetricsSectionProps) {
     const actualPeriod = periodDays === 0 ? 999 : periodDays;
     console.log('🔄 [METRICS] Period changed, fetching with:', { periodDays, actualPeriod });
     
-    fetchUnitMetrics({ periodo_dias: actualPeriod });
+    // Don't show toast on automatic load
+    fetchUnitMetrics({ periodo_dias: actualPeriod }, false);
     fetchTeamMetricsWithNames({ periodo_dias: actualPeriod });
   }, [periodDays, fetchUnitMetrics, fetchTeamMetricsWithNames]);
 
