@@ -246,7 +246,7 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "atendente_unidades_id_fkey"
+            foreignKeyName: "atendente_unidades_unidade_id_fkey"
             columns: ["id"]
             isOneToOne: true
             referencedRelation: "unidades"
@@ -464,15 +464,7 @@ export type Database = {
           tipo_atendimento?: string
           unidade_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "chamados_unidade_id_fkey"
-            columns: ["unidade_id"]
-            isOneToOne: false
-            referencedRelation: "unidades"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       colaboradores: {
         Row: {
@@ -532,22 +524,7 @@ export type Database = {
           unidade_id?: string | null
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "colaboradores_unidade_id_fkey"
-            columns: ["unidade_id"]
-            isOneToOne: false
-            referencedRelation: "unidades"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_colaboradores_unidade"
-            columns: ["unidade_id"]
-            isOneToOne: false
-            referencedRelation: "unidades"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       crise_mensagens: {
         Row: {
@@ -1013,24 +990,10 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "escalation_levels_unidade_id_fkey"
-            columns: ["unidade_id"]
-            isOneToOne: false
-            referencedRelation: "unidades"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "fk_escalation_levels_destino_user"
             columns: ["destino_user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_escalation_levels_unidade"
-            columns: ["unidade_id"]
-            isOneToOne: false
-            referencedRelation: "unidades"
             referencedColumns: ["id"]
           },
         ]
@@ -1311,6 +1274,7 @@ export type Database = {
           city: string | null
           confidentiality_term_accepted: string | null
           cpf_rnm: string | null
+          createdat: string | null
           CreatedAt: string | null
           description_extra_activities: string | null
           discovery_source: string | null
@@ -1320,8 +1284,9 @@ export type Database = {
           franchisee_type: string | null
           has_other_activities: boolean | null
           have_extra_activities: string | null
-          id: number
+          id: string
           instagram: string | null
+          is_active_system: boolean | null
           is_in_social_contract: string | null
           labor_value: string | null
           landline: string | null
@@ -1333,7 +1298,8 @@ export type Database = {
           neighborhood: string | null
           normalized_phone: string | null
           other_activities_description: string | null
-          phone: string | null
+          phone: string
+          postal_code: string | null
           previous_profession: string | null
           previous_salary_range: string | null
           profile_picture: string | null
@@ -1346,6 +1312,7 @@ export type Database = {
           unit_code_indicated: string | null
           unit_id_group: string | null
           unit_name: Json | null
+          updatedat: string | null
           UpdatedAt: string | null
           was_entrepreneur: string | null
           was_nominated: string | null
@@ -1363,6 +1330,7 @@ export type Database = {
           city?: string | null
           confidentiality_term_accepted?: string | null
           cpf_rnm?: string | null
+          createdat?: string | null
           CreatedAt?: string | null
           description_extra_activities?: string | null
           discovery_source?: string | null
@@ -1372,8 +1340,9 @@ export type Database = {
           franchisee_type?: string | null
           has_other_activities?: boolean | null
           have_extra_activities?: string | null
-          id: number
+          id: string
           instagram?: string | null
+          is_active_system?: boolean | null
           is_in_social_contract?: string | null
           labor_value?: string | null
           landline?: string | null
@@ -1385,7 +1354,8 @@ export type Database = {
           neighborhood?: string | null
           normalized_phone?: string | null
           other_activities_description?: string | null
-          phone?: string | null
+          phone?: string
+          postal_code?: string | null
           previous_profession?: string | null
           previous_salary_range?: string | null
           profile_picture?: string | null
@@ -1398,6 +1368,7 @@ export type Database = {
           unit_code_indicated?: string | null
           unit_id_group?: string | null
           unit_name?: Json | null
+          updatedat?: string | null
           UpdatedAt?: string | null
           was_entrepreneur?: string | null
           was_nominated?: string | null
@@ -1415,6 +1386,7 @@ export type Database = {
           city?: string | null
           confidentiality_term_accepted?: string | null
           cpf_rnm?: string | null
+          createdat?: string | null
           CreatedAt?: string | null
           description_extra_activities?: string | null
           discovery_source?: string | null
@@ -1424,8 +1396,9 @@ export type Database = {
           franchisee_type?: string | null
           has_other_activities?: boolean | null
           have_extra_activities?: string | null
-          id?: number
+          id?: string
           instagram?: string | null
+          is_active_system?: boolean | null
           is_in_social_contract?: string | null
           labor_value?: string | null
           landline?: string | null
@@ -1437,7 +1410,8 @@ export type Database = {
           neighborhood?: string | null
           normalized_phone?: string | null
           other_activities_description?: string | null
-          phone?: string | null
+          phone?: string
+          postal_code?: string | null
           previous_profession?: string | null
           previous_salary_range?: string | null
           profile_picture?: string | null
@@ -1450,12 +1424,37 @@ export type Database = {
           unit_code_indicated?: string | null
           unit_id_group?: string | null
           unit_name?: Json | null
+          updatedat?: string | null
           UpdatedAt?: string | null
           was_entrepreneur?: string | null
           was_nominated?: string | null
           was_referred?: boolean | null
           web_password?: number | null
           who_nominated?: string | null
+        }
+        Relationships: []
+      }
+      franqueados_unidades: {
+        Row: {
+          created_at: string | null
+          franqueado_id: string | null
+          id: number
+          unidade_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          franqueado_id?: string | null
+          id: number
+          unidade_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          franqueado_id?: string | null
+          id?: number
+          unidade_id?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -2350,6 +2349,327 @@ export type Database = {
         }
         Relationships: []
       }
+      teste_franqueados: {
+        Row: {
+          academic_education: string | null
+          additional_address_details: string | null
+          address: string | null
+          address_number: string | null
+          availability: string | null
+          birth_date: string | null
+          city: string | null
+          confidentiality_term_accepted: boolean | null
+          cpf_rnm: number | null
+          createdat: string | null
+          email: string | null
+          franchisee_subtype: string | null
+          franchisee_type: string | null
+          has_other_activities: boolean | null
+          id: string
+          instagram: string | null
+          is_active_system: boolean | null
+          is_in_social_contract: boolean | null
+          labor_value: string | null
+          landline: string | null
+          lead_source: string | null
+          lgpd_term_accepted: boolean | null
+          link_units: string | null
+          name: string | null
+          nationality: string | null
+          neighborhood: string | null
+          normalized_phone: string | null
+          other_activities_description: string | null
+          phone: number | null
+          postal_code: number | null
+          previous_profession: string | null
+          previous_salary_range: string | null
+          profile_picture: string | null
+          receive_for_labor: boolean | null
+          state: string | null
+          system_term_accepted: boolean | null
+          uf: string | null
+          unit_code: string | null
+          unit_code_indicated: string | null
+          unit_id_group: string | null
+          unit_name: string | null
+          updatedat: string | null
+          was_entrepreneur: boolean | null
+          was_nominated: boolean | null
+          web_password: number | null
+          who_nominated: string | null
+        }
+        Insert: {
+          academic_education?: string | null
+          additional_address_details?: string | null
+          address?: string | null
+          address_number?: string | null
+          availability?: string | null
+          birth_date?: string | null
+          city?: string | null
+          confidentiality_term_accepted?: boolean | null
+          cpf_rnm?: number | null
+          createdat?: string | null
+          email?: string | null
+          franchisee_subtype?: string | null
+          franchisee_type?: string | null
+          has_other_activities?: boolean | null
+          id: string
+          instagram?: string | null
+          is_active_system?: boolean | null
+          is_in_social_contract?: boolean | null
+          labor_value?: string | null
+          landline?: string | null
+          lead_source?: string | null
+          lgpd_term_accepted?: boolean | null
+          link_units?: string | null
+          name?: string | null
+          nationality?: string | null
+          neighborhood?: string | null
+          normalized_phone?: string | null
+          other_activities_description?: string | null
+          phone?: number | null
+          postal_code?: number | null
+          previous_profession?: string | null
+          previous_salary_range?: string | null
+          profile_picture?: string | null
+          receive_for_labor?: boolean | null
+          state?: string | null
+          system_term_accepted?: boolean | null
+          uf?: string | null
+          unit_code?: string | null
+          unit_code_indicated?: string | null
+          unit_id_group?: string | null
+          unit_name?: string | null
+          updatedat?: string | null
+          was_entrepreneur?: boolean | null
+          was_nominated?: boolean | null
+          web_password?: number | null
+          who_nominated?: string | null
+        }
+        Update: {
+          academic_education?: string | null
+          additional_address_details?: string | null
+          address?: string | null
+          address_number?: string | null
+          availability?: string | null
+          birth_date?: string | null
+          city?: string | null
+          confidentiality_term_accepted?: boolean | null
+          cpf_rnm?: number | null
+          createdat?: string | null
+          email?: string | null
+          franchisee_subtype?: string | null
+          franchisee_type?: string | null
+          has_other_activities?: boolean | null
+          id?: string
+          instagram?: string | null
+          is_active_system?: boolean | null
+          is_in_social_contract?: boolean | null
+          labor_value?: string | null
+          landline?: string | null
+          lead_source?: string | null
+          lgpd_term_accepted?: boolean | null
+          link_units?: string | null
+          name?: string | null
+          nationality?: string | null
+          neighborhood?: string | null
+          normalized_phone?: string | null
+          other_activities_description?: string | null
+          phone?: number | null
+          postal_code?: number | null
+          previous_profession?: string | null
+          previous_salary_range?: string | null
+          profile_picture?: string | null
+          receive_for_labor?: boolean | null
+          state?: string | null
+          system_term_accepted?: boolean | null
+          uf?: string | null
+          unit_code?: string | null
+          unit_code_indicated?: string | null
+          unit_id_group?: string | null
+          unit_name?: string | null
+          updatedat?: string | null
+          was_entrepreneur?: boolean | null
+          was_nominated?: boolean | null
+          web_password?: number | null
+          who_nominated?: string | null
+        }
+        Relationships: []
+      }
+      teste_unidades: {
+        Row: {
+          bairro: string | null
+          bearer: string | null
+          cep: string | null
+          cidade: string | null
+          cnpj: number | null
+          codigo_grupo: number | null
+          complemento: string | null
+          contrato: string | null
+          created_at: string | null
+          email: string | null
+          endereco: string | null
+          estado: string | null
+          etapa_loja: string | null
+          fantasy_name: string | null
+          fase_loja: string | null
+          grupo: string | null
+          has_parking: boolean | null
+          has_partner_parking: boolean | null
+          id: string
+          id_agente_ia: string | null
+          id_grupo_amarelo: string | null
+          id_grupo_azul: string | null
+          id_grupo_branco: string | null
+          id_grupo_colab: string | null
+          id_grupo_compras: string | null
+          id_grupo_notificacoes: string | null
+          id_grupo_reclame_aqui: string | null
+          id_grupo_vermelho: string | null
+          id_page_notion: string | null
+          id_pasta_documentos: string | null
+          id_pasta_unidade: string | null
+          id_unidade: string | null
+          instagram: string | null
+          is_active: boolean | null
+          link_pasta_documentos: string | null
+          link_pasta_unidade: string | null
+          modelo_loja: string | null
+          numero: string | null
+          operation_fri: string | null
+          operation_hol: string | null
+          operation_mon: string | null
+          operation_sat: string | null
+          operation_sun: string | null
+          operation_thu: string | null
+          operation_tue: string | null
+          operation_wed: string | null
+          parking_spots: number | null
+          partner_parking_address: string | null
+          password_instagram: string | null
+          purchases_active: boolean | null
+          sales_active: boolean | null
+          telefone: string | null
+          uf: string | null
+          updated_at: string | null
+          user_instagram: string | null
+        }
+        Insert: {
+          bairro?: string | null
+          bearer?: string | null
+          cep?: string | null
+          cidade?: string | null
+          cnpj?: number | null
+          codigo_grupo?: number | null
+          complemento?: string | null
+          contrato?: string | null
+          created_at?: string | null
+          email?: string | null
+          endereco?: string | null
+          estado?: string | null
+          etapa_loja?: string | null
+          fantasy_name?: string | null
+          fase_loja?: string | null
+          grupo?: string | null
+          has_parking?: boolean | null
+          has_partner_parking?: boolean | null
+          id: string
+          id_agente_ia?: string | null
+          id_grupo_amarelo?: string | null
+          id_grupo_azul?: string | null
+          id_grupo_branco?: string | null
+          id_grupo_colab?: string | null
+          id_grupo_compras?: string | null
+          id_grupo_notificacoes?: string | null
+          id_grupo_reclame_aqui?: string | null
+          id_grupo_vermelho?: string | null
+          id_page_notion?: string | null
+          id_pasta_documentos?: string | null
+          id_pasta_unidade?: string | null
+          id_unidade?: string | null
+          instagram?: string | null
+          is_active?: boolean | null
+          link_pasta_documentos?: string | null
+          link_pasta_unidade?: string | null
+          modelo_loja?: string | null
+          numero?: string | null
+          operation_fri?: string | null
+          operation_hol?: string | null
+          operation_mon?: string | null
+          operation_sat?: string | null
+          operation_sun?: string | null
+          operation_thu?: string | null
+          operation_tue?: string | null
+          operation_wed?: string | null
+          parking_spots?: number | null
+          partner_parking_address?: string | null
+          password_instagram?: string | null
+          purchases_active?: boolean | null
+          sales_active?: boolean | null
+          telefone?: string | null
+          uf?: string | null
+          updated_at?: string | null
+          user_instagram?: string | null
+        }
+        Update: {
+          bairro?: string | null
+          bearer?: string | null
+          cep?: string | null
+          cidade?: string | null
+          cnpj?: number | null
+          codigo_grupo?: number | null
+          complemento?: string | null
+          contrato?: string | null
+          created_at?: string | null
+          email?: string | null
+          endereco?: string | null
+          estado?: string | null
+          etapa_loja?: string | null
+          fantasy_name?: string | null
+          fase_loja?: string | null
+          grupo?: string | null
+          has_parking?: boolean | null
+          has_partner_parking?: boolean | null
+          id?: string
+          id_agente_ia?: string | null
+          id_grupo_amarelo?: string | null
+          id_grupo_azul?: string | null
+          id_grupo_branco?: string | null
+          id_grupo_colab?: string | null
+          id_grupo_compras?: string | null
+          id_grupo_notificacoes?: string | null
+          id_grupo_reclame_aqui?: string | null
+          id_grupo_vermelho?: string | null
+          id_page_notion?: string | null
+          id_pasta_documentos?: string | null
+          id_pasta_unidade?: string | null
+          id_unidade?: string | null
+          instagram?: string | null
+          is_active?: boolean | null
+          link_pasta_documentos?: string | null
+          link_pasta_unidade?: string | null
+          modelo_loja?: string | null
+          numero?: string | null
+          operation_fri?: string | null
+          operation_hol?: string | null
+          operation_mon?: string | null
+          operation_sat?: string | null
+          operation_sun?: string | null
+          operation_thu?: string | null
+          operation_tue?: string | null
+          operation_wed?: string | null
+          parking_spots?: number | null
+          partner_parking_address?: string | null
+          password_instagram?: string | null
+          purchases_active?: boolean | null
+          sales_active?: boolean | null
+          telefone?: string | null
+          uf?: string | null
+          updated_at?: string | null
+          user_instagram?: string | null
+        }
+        Relationships: []
+      }
       ticket_ai_interactions: {
         Row: {
           created_at: string
@@ -2484,15 +2804,7 @@ export type Database = {
           unidade_id?: string
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_ticket_sequences_unidade"
-            columns: ["unidade_id"]
-            isOneToOne: false
-            referencedRelation: "unidades"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       ticket_status_transitions: {
         Row: {
@@ -2663,13 +2975,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fk_tickets_unidade"
-            columns: ["unidade_id"]
-            isOneToOne: false
-            referencedRelation: "unidades"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "tickets_equipe_responsavel_id_fkey"
             columns: ["equipe_responsavel_id"]
             isOneToOne: false
@@ -2747,6 +3052,7 @@ export type Database = {
           id_page_notion: string | null
           id_pasta_documentos: string | null
           id_pasta_unidade: string | null
+          id_unidade: string | null
           instagram: string | null
           instagram_profile: string | null
           is_active: boolean | null
@@ -2804,6 +3110,7 @@ export type Database = {
           id_page_notion?: string | null
           id_pasta_documentos?: string | null
           id_pasta_unidade?: string | null
+          id_unidade?: string | null
           instagram?: string | null
           instagram_profile?: string | null
           is_active?: boolean | null
@@ -2861,6 +3168,7 @@ export type Database = {
           id_page_notion?: string | null
           id_pasta_documentos?: string | null
           id_pasta_unidade?: string | null
+          id_unidade?: string | null
           instagram?: string | null
           instagram_profile?: string | null
           is_active?: boolean | null
@@ -3106,26 +3414,6 @@ export type Database = {
           titulo: string | null
         }
         Relationships: []
-      }
-      v_tickets_por_unidade_mes: {
-        Row: {
-          mes: string | null
-          nome_unidade: string | null
-          tempo_medio_resolucao_horas: number | null
-          tickets_reabertos: number | null
-          tickets_sla_vencido: number | null
-          total_tickets: number | null
-          unidade_id: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_tickets_unidade"
-            columns: ["unidade_id"]
-            isOneToOne: false
-            referencedRelation: "unidades"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       v_tickets_sla_overview: {
         Row: {
