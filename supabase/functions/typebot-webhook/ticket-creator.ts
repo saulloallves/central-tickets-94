@@ -125,7 +125,22 @@ export async function findUnitByCode(codigo_unidade: string) {
     console.log(`✅ Usando unidade mais recente: ${unidades[0].grupo} (${unidades[0].cidade}/${unidades[0].uf})`);
   }
 
-  return unidades[0];
+  const unidade = unidades[0];
+  
+  // GARANTIR que unidade.id seja string
+  const unidadeComIdString = {
+    ...unidade,
+    id: String(unidade.id)
+  };
+  
+  console.log('✅ Unidade encontrada:', {
+    id: unidadeComIdString.id,
+    tipo_id: typeof unidadeComIdString.id,
+    codigo_grupo: codigoNumerico,
+    grupo: unidade.grupo
+  });
+
+  return unidadeComIdString;
 }
 
 export async function findFranqueadoByPassword(web_password: string) {

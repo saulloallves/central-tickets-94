@@ -452,6 +452,12 @@ serve(async (req) => {
       equipe_nome: analysisResult.equipe_responsavel
     });
 
+    // Validar que unidade_id é string
+    if (typeof unidade.id !== 'string') {
+      console.error('❌ ERRO: unidade.id não é string:', typeof unidade.id, unidade.id);
+      throw new Error('ID da unidade deve ser string');
+    }
+
     // Criar o ticket
     const ticketData = {
       titulo: analysisResult.titulo,

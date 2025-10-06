@@ -126,6 +126,17 @@ Deno.serve(async (req) => {
       finalPriority = 'baixo';
     }
 
+    // Validar tipo de unidade_id
+    if (typeof ticketData.unidade_id !== 'string') {
+      console.error('❌ ERRO: unidade_id não é string:', typeof ticketData.unidade_id, ticketData.unidade_id);
+      return new Response(JSON.stringify({ 
+        error: `unidade_id deve ser string, recebido: ${typeof ticketData.unidade_id}` 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Prepare ticket data
     const ticketInsertData = {
       unidade_id: ticketData.unidade_id,
