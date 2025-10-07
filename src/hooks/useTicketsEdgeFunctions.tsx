@@ -333,12 +333,24 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
                 duration: 5000,
               });
             }
+            
+            // Dispatch custom event for Kanban as backup
+            window.dispatchEvent(new CustomEvent('new-ticket-created', {
+              detail: { ticket: newTicket }
+            }));
           }
           
           // Para eventos INSERT, refetch imediatamente sem debounce para máxima responsividade
           if (payload.eventType === 'INSERT') {
             console.log('🎯 NOVO TICKET DETECTADO - Refetch imediato!');
-            fetchTickets(true);
+            fetchTickets(true).then(() => {
+              console.log('✅ Tickets refetched successfully after INSERT');
+              // Force lastUpdate to trigger Kanban re-render
+              const now = Date.now();
+              console.log('🔄 Forcing lastUpdate to trigger Kanban re-render');
+              setLastUpdate(now);
+              lastUpdateThrottle.current = now;
+            });
           } else {
             // Para outros eventos, usar debounce maior para evitar piscamento
             if (realtimeDebounceRef.current) {

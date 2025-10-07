@@ -584,76 +584,33 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
     return () => clearInterval(interval);
   }, [pendingMoves]);
 
-  // Subscrição em tempo real para mudanças de status
+  // REMOVIDO: Canal real-time duplicado
+  // O Kanban agora confia 100% no prop tickets vindo do useTicketsEdgeFunctions
+  // que já tem um canal real-time otimizado gerenciando INSERT e UPDATE
+
+  // Listen for custom events as backup for new tickets
   useEffect(() => {
-    if (!tickets || tickets.length === 0) return;
+    const handleNewTicketEvent = (event: CustomEvent) => {
+      console.log('🎫 Kanban received new ticket event:', event.detail);
+      // The parent hook already handles the refetch, we just ensure UI updates
+      setOptimisticTickets([]); // Clear any optimistic state
+    };
 
-    console.log('🔄 Configurando realtime direto no Kanban');
-
-    const channel = supabase
-      .channel('kanban-status-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'tickets'
-        },
-        (payload) => {
-          const updatedTicket = payload.new as Ticket;
-          const oldTicket = payload.old as Ticket;
-          
-          console.log('📡 Kanban recebeu update:', {
-            id: updatedTicket.id,
-            codigo: updatedTicket.codigo_ticket,
-            oldStatus: oldTicket.status,
-            newStatus: updatedTicket.status
-          });
-
-          // IGNORAR se for uma atualização otimista nossa
-          const ignoreUntil = ignoreRealtimeUntil.current.get(updatedTicket.id);
-          if (ignoreUntil && Date.now() < ignoreUntil) {
-            console.log('⏭️ Ignorando update otimista próprio');
-            return;
-          }
-
-          // IGNORAR se já estiver pendente localmente
-          if (pendingMoves.has(updatedTicket.id)) {
-            console.log('⏭️ Ignorando - já em movimento local');
-            return;
-          }
-
-          // ✅ ATUALIZAR O TICKET LOCALMENTE
-          setOptimisticTickets(prev => {
-            const existing = prev.find(t => t.id === updatedTicket.id);
-            if (existing) {
-              // Já existe na lista otimista - atualizar
-              return prev.map(t => 
-                t.id === updatedTicket.id ? updatedTicket : t
-              );
-            } else {
-              // Adicionar à lista otimista
-              return [...prev, updatedTicket];
-            }
-          });
-
-          console.log('✅ Ticket atualizado via realtime!');
-        }
-      )
-      .subscribe((status) => {
-        console.log('📡 Status do canal Kanban:', status);
-      });
+    window.addEventListener('new-ticket-created', handleNewTicketEvent as EventListener);
 
     return () => {
-      console.log('🧹 Limpando canal do Kanban');
-      supabase.removeChannel(channel);
+      window.removeEventListener('new-ticket-created', handleNewTicketEvent as EventListener);
     };
-  }, [tickets.length, pendingMoves]);
+  }, []);
 
   // Update timestamp when tickets change
   useEffect(() => {
-    console.log('📊 Tickets updated, count:', tickets.length);
-  }, [tickets.length]);
+    console.log('📊 TicketsKanban: Tickets prop changed', {
+      count: tickets.length,
+      lastUpdate,
+      timestamp: new Date().toISOString()
+    });
+  }, [tickets.length, lastUpdate]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
