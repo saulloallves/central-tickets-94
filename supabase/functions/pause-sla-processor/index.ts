@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
 import { isBusinessHours, getNextBusinessHourStart, calculatePausedTime } from '../_shared/business-hours.ts';
+import { toZonedTime } from 'npm:date-fns-tz@3.2.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,6 +23,13 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const { action } = await req.json() as PauseResumeRequest;
+    
+    // 🔍 DEBUG: Logs de timezone (temporários)
+    const debugNow = new Date();
+    const debugSpTime = toZonedTime(debugNow, 'America/Sao_Paulo');
+    console.log(`⏰ DEBUG Timezone - UTC: ${debugNow.toISOString()}`);
+    console.log(`⏰ DEBUG Timezone - SP: ${debugSpTime.getHours()}:${debugSpTime.getMinutes().toString().padStart(2, '0')}`);
+    console.log(`⏰ DEBUG isBusinessHours: ${isBusinessHours()}`);
     
     console.log(`🕐 Iniciando processamento de SLA - Ação: ${action}`);
 

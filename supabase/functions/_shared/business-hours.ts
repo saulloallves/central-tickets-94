@@ -1,12 +1,14 @@
+import { toZonedTime } from 'npm:date-fns-tz@3.2.0';
+
 /**
  * Business hours utility function
  * Returns true if current time is within business hours (Monday-Saturday, 8h30-18h30, SP timezone)
  */
 export function isBusinessHours(): boolean {
   try {
-    // Get current time in São Paulo timezone
+    // Get current time in São Paulo timezone using date-fns-tz
     const now = new Date();
-    const spTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
+    const spTime = toZonedTime(now, 'America/Sao_Paulo');
     
     const dayOfWeek = spTime.getDay(); // 0=Sunday, 1=Monday, ..., 6=Saturday
     const hour = spTime.getHours();
@@ -32,7 +34,7 @@ export function isBusinessHours(): boolean {
  */
 export function getNextBusinessHourStart(): Date {
   const now = new Date();
-  const spTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
+  const spTime = toZonedTime(now, 'America/Sao_Paulo');
   
   const dayOfWeek = spTime.getDay();
   const hour = spTime.getHours();
@@ -75,7 +77,7 @@ export function getNextBusinessHourStart(): Date {
  */
 export function getNextBusinessHourEnd(): Date {
   const now = new Date();
-  const spTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
+  const spTime = toZonedTime(now, 'America/Sao_Paulo');
   
   const dayOfWeek = spTime.getDay();
   const endTime = 18 * 60 + 30; // 18h30
@@ -139,7 +141,7 @@ export function calculatePausedTime(pausedAt: Date, resumedAt: Date): number {
 export function isNearBusinessHourEnd(): boolean {
   try {
     const now = new Date();
-    const spTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
+    const spTime = toZonedTime(now, 'America/Sao_Paulo');
     
     const dayOfWeek = spTime.getDay();
     const hour = spTime.getHours();
