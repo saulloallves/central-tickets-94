@@ -69,7 +69,7 @@ export function useAtendimentos() {
       const atendimentosFormatados = chamados?.map(chamado => ({
         id: chamado.id,
         unidade_id: chamado.unidade_id,
-        unidade_nome: unidadeMap.get(chamado.unidade_id) || 'Unidade não identificada',
+        unidade_nome: unidadeMap.get(chamado.unidade_id) || 'Unidade',
         franqueado_nome: chamado.franqueado_nome,
         telefone: chamado.telefone,
         descricao: chamado.descricao,
