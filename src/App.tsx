@@ -73,9 +73,9 @@ const App = () => (
         <Toaster />
         <Sonner />
         <TestNotifications />
-        <GlobalNotificationListener />
-        <PWAInstallPrompt />
         <BrowserRouter>
+          <GlobalNotificationListener />
+          <PWAInstallPrompt />
           <Suspense fallback={<LoadingSpinner />}>
             <Routes>
                 <Route path="/" element={<Index />} />
