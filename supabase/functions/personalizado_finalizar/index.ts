@@ -111,9 +111,9 @@ serve(async (req) => {
           message: "✅ *Atendimento finalizado*\n\n🗣️ *Como você avalia esse atendimento?*",
           buttonList: {
             buttons: [
-              { id: "avaliacao_otimo", label: "😊 Consegui resolver tudo" },
-              { id: "avaliacao_bom", label: "😐 Foi útil, mas poderia melhorar" },
-              { id: "avaliacao_ruim", label: "😞 Não resolveu o que eu precisava" }
+              { id: `avaliacao_otimo_${chamado.id}`, label: "😊 Consegui resolver tudo" },
+              { id: `avaliacao_bom_${chamado.id}`, label: "😐 Foi útil, mas poderia melhorar" },
+              { id: `avaliacao_ruim_${chamado.id}`, label: "😞 Não resolveu o que eu precisava" }
             ]
           }
         }),
