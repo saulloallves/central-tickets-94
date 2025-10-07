@@ -7,9 +7,17 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// External Supabase configuration for franchising_owners table
-const EXTERNAL_SUPABASE_URL = "https://liovmltalaicwrixigjb.supabase.co";
-const EXTERNAL_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxpb3ZtbHRhbGFpY3dyaXhpZ2piIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzMwNTI1MSwiZXhwIjoyMDY4ODgxMjUxfQ.vt2jHKJc-tBh-DQ222YnEI6DfurenC8DQID8jovrstI";
+// Helper function to normalize phone numbers
+function normalizePhone(phone: string): string {
+  const cleaned = phone.replace(/\D/g, '');
+  if (cleaned.startsWith('55')) {
+    return cleaned;
+  }
+  if (cleaned.length >= 10) {
+    return `55${cleaned}`;
+  }
+  return cleaned;
+}
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -45,122 +53,87 @@ serve(async (req: Request) => {
       });
     }
 
-    // Initialize external Supabase client
-    const externalSupabase = createClient(EXTERNAL_SUPABASE_URL, EXTERNAL_SUPABASE_KEY);
-    
     // Initialize current project Supabase client
-    const currentSupabase = createClient(
+    const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    // Step 1: Search for existing user in franchising_owners table
-    console.log("🔍 Buscando usuário na tabela franchising_owners...");
-    console.log("📞 Telefone para busca:", participantPhone);
+    // Normalize phone number for search
+    const normalizedPhone = normalizePhone(participantPhone);
+    console.log("📞 Telefone normalizado:", normalizedPhone);
+
+    // Step 1: Search for franchisee in franqueados table
+    console.log("🔍 Buscando franqueado na tabela franqueados...");
     
-    const { data: existingUser, error: searchError } = await externalSupabase
-      .from('franchising_owners')
-      .select('*')
-      .eq('phone', participantPhone)
+    const { data: franqueado, error: searchError } = await supabase
+      .from('franqueados')
+      .select('id, phone, normalized_phone, web_password, name, email')
+      .eq('normalized_phone', normalizedPhone)
       .maybeSingle();
     
-    console.log("🔍 Resultado da busca:", { existingUser, searchError });
+    console.log("🔍 Resultado da busca:", { 
+      found: !!franqueado, 
+      hasPassword: !!franqueado?.web_password,
+      error: searchError 
+    });
 
-    let userPassword = null;
-
-    if (existingUser && existingUser.web_password) {
-      // User exists and has password
-      userPassword = existingUser.web_password;
-      console.log("✅ Usuário encontrado com senha existente");
-    } else {
-      // User doesn't exist or doesn't have password - need to create/update
-      console.log("🆕 Usuário não encontrado ou sem senha, criando nova...");
+    // Step 2: Handle different scenarios
+    if (!franqueado) {
+      // Scenario 3: User not found - send registration message
+      console.log("❌ Franqueado não encontrado");
       
-      // Step 2: Get unit code to generate password
-      const { data: unidadeData, error: unidadeError } = await currentSupabase
-        .from('unidades')
-        .select('codigo_grupo')
-        .eq('id_grupo_branco', groupPhone)
-        .single();
+      const notFoundMessageUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}/send-text`;
+      const notFoundPayload = {
+        phone: participantPhone,
+        message: `📱 Não encontramos um cadastro vinculado a este número de telefone.
+Se este número é o seu, você pode fazer seu cadastro agora pelo link abaixo 👇
 
-      let codigoGrupo = null;
-      
-      if (unidadeData?.codigo_grupo) {
-        codigoGrupo = unidadeData.codigo_grupo;
-      } else {
-        // Try alternative search by grupo
-        const { data: unidadeAlternativa } = await currentSupabase
-          .from('unidades')
-          .select('codigo_grupo')
-          .eq('grupo', groupPhone)
-          .single();
-        
-        codigoGrupo = unidadeAlternativa?.codigo_grupo;
-      }
+🔗 cadastro.girabot.com.br
 
-      if (!codigoGrupo) {
-        console.log("⚠️ Código do grupo não encontrado, usando padrão");
-        codigoGrupo = "0001"; // Default code
-      }
+Após o cadastro, você receberá sua senha de acesso.`
+      };
 
-      // Step 3: Generate password (intercalate random + unit code)
-      const codigo = String(codigoGrupo).padStart(4, "0");
-      const random = String(Math.floor(Math.random() * 10000)).padStart(4, "0");
-      
-      let senha = "";
-      for (let i = 0; i < 4; i++) {
-        senha += random[i] + codigo[i];
-      }
+      await fetch(notFoundMessageUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Client-Token": clientToken,
+        },
+        body: JSON.stringify(notFoundPayload),
+      });
 
-      userPassword = senha;
+      console.log("📤 Mensagem de cadastro enviada");
 
-      // Step 4: Check if password already exists to avoid duplicates
-      const { data: existingPassword } = await externalSupabase
-        .from('franchising_owners')
-        .select('web_password')
-        .eq('web_password', senha)
-        .single();
-
-      if (existingPassword) {
-        // Regenerate if password exists
-        const newRandom = String(Math.floor(Math.random() * 10000)).padStart(4, "0");
-        senha = "";
-        for (let i = 0; i < 4; i++) {
-          senha += newRandom[i] + codigo[i];
-        }
-        userPassword = senha;
-      }
-
-      // Step 5: Create or update user record
-      if (existingUser) {
-        // Update existing user with new password
-        const { error: updateError } = await externalSupabase
-          .from('franchising_owners')
-          .update({ web_password: userPassword })
-          .eq('phone', participantPhone);
-
-        if (updateError) {
-          console.error("❌ Erro ao atualizar senha:", updateError);
-        } else {
-          console.log("✅ Senha atualizada para usuário existente");
-        }
-      } else {
-        // Create new user
-        const { error: createError } = await externalSupabase
-          .from('franchising_owners')
-          .insert({
-            phone: participantPhone,
-            web_password: userPassword,
-            Id: userPassword
-          });
-
-        if (createError) {
-          console.error("❌ Erro ao criar usuário:", createError);
-        } else {
-          console.log("✅ Novo usuário criado com senha");
-        }
-      }
+      return new Response(JSON.stringify({ 
+        success: true, 
+        user_found: false,
+        message_sent: true,
+        message_type: "not_registered"
+      }), {
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+        status: 200,
+      });
     }
+
+    if (!franqueado.web_password) {
+      // Scenario 2: User found but no password - for now just return status
+      console.log("⚠️ Franqueado encontrado mas sem senha cadastrada");
+      
+      return new Response(JSON.stringify({ 
+        success: true, 
+        user_found: true,
+        password_found: false,
+        message: "Franqueado encontrado mas sem senha cadastrada (mensagem pendente)"
+      }), {
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+        status: 200,
+      });
+    }
+
+    // Scenario 1: User found with password - send it
+    const userPassword = String(franqueado.web_password);
+    console.log("✅ Franqueado encontrado com senha");
 
     // Step 6: Send password privately to participant
     console.log("📱 Enviando senha no PV...");
@@ -207,8 +180,9 @@ serve(async (req: Request) => {
 
     return new Response(JSON.stringify({ 
       success: true, 
-      step: "password_sent",
-      password_created: !existingUser || !existingUser.web_password
+      user_found: true,
+      password_found: true,
+      password_sent: true
     }), {
       headers: { "Content-Type": "application/json", ...corsHeaders },
       status: 200,
