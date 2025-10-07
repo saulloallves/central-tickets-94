@@ -14,11 +14,6 @@ serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-
     const webhookData = await req.json();
     console.log('📩 Webhook de avaliação recebido:', JSON.stringify(webhookData, null, 2));
 
@@ -32,9 +27,9 @@ serve(async (req) => {
     }
 
     const buttonId = webhookData.buttonsResponseMessage.buttonId;
-    const senderPhone = webhookData.participantPhone || webhookData.phone;
+    const phoneDestino = webhookData.phone;
     
-    console.log(`🔍 Processing button: ${buttonId} from phone: ${senderPhone}`);
+    console.log(`🔍 Processing button: ${buttonId} from phone: ${phoneDestino}`);
 
     // Extrair informações do buttonId: avaliacao_{rating}_{chamado_id}
     const buttonMatch = buttonId.match(/^avaliacao_(otimo|bom|ruim)_(.+)$/);
@@ -52,54 +47,21 @@ serve(async (req) => {
     
     console.log(`⭐ Avaliação recebida: ${rating} para chamado: ${chamadoId}`);
 
-    // Buscar registro de avaliação existente
-    const { data: avaliacaoExistente, error: searchError } = await supabase
-      .from('avaliacoes_atendimento')
-      .select('*')
-      .eq('chamado_id', chamadoId)
-      .is('rating', null) // Apenas avaliações ainda não respondidas
-      .maybeSingle();
-
-    if (searchError) {
-      console.error('❌ Error searching for existing evaluation:', searchError);
-      return new Response(
-        JSON.stringify({ error: 'Error searching evaluation' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Preparar mensagem de agradecimento baseada na avaliação
+    let thankYouMessage = '';
+    switch (rating) {
+      case 'otimo':
+        thankYouMessage = '🌟 *Obrigado pela avaliação!*\n\nFicamos felizes que conseguimos resolver tudo para você! Sua opinião é muito importante para nós.';
+        break;
+      case 'bom':
+        thankYouMessage = '🙂 *Obrigado pela avaliação!*\n\nValorizamos seu feedback e vamos trabalhar para melhorar ainda mais nosso atendimento.';
+        break;
+      case 'ruim':
+        thankYouMessage = '😕 *Obrigado pela avaliação!*\n\nLamentamos que não conseguimos atender suas expectativas. Sua opinião nos ajudará a melhorar.';
+        break;
     }
-
-    if (!avaliacaoExistente) {
-      console.log('⚠️ Nenhuma avaliação pendente encontrada para este chamado');
-      return new Response(
-        JSON.stringify({ message: 'Nenhuma avaliação pendente encontrada' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Atualizar avaliação com o rating recebido
-    const { error: updateError } = await supabase
-      .from('avaliacoes_atendimento')
-      .update({
-        rating: rating,
-        respondido_em: new Date().toISOString()
-      })
-      .eq('id', avaliacaoExistente.id);
-
-    if (updateError) {
-      console.error('❌ Error updating evaluation:', updateError);
-      return new Response(
-        JSON.stringify({ error: 'Error updating evaluation' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    console.log('✅ Avaliação atualizada com sucesso!');
-
-    // Mensagem de agradecimento única para todos os tipos de avaliação
-    const thankYouMessage = '🙏 *Obrigado pela sua avaliação!*\n\nSua opinião é muito importante para nós.';
 
     // Enviar mensagem de agradecimento via Z-API
-    const phoneDestino = webhookData.phone;
     console.log(`📤 Enviando mensagem de agradecimento para: ${phoneDestino}`);
     
     try {
@@ -128,25 +90,6 @@ serve(async (req) => {
     } catch (error) {
       console.error('❌ Erro ao enviar mensagem de agradecimento:', error);
     }
-
-    // Log da avaliação recebida
-    await supabase.from('logs_de_sistema').insert({
-      tipo_log: 'sistema',
-      entidade_afetada: 'avaliacoes_atendimento',
-      entidade_id: avaliacaoExistente.id,
-      acao_realizada: `Avaliação recebida: ${rating} para ${avaliacaoExistente.tipo_atendimento} da unidade ${avaliacaoExistente.unidade_nome}`,
-      usuario_responsavel: null,
-      dados_novos: {
-        chamado_id: chamadoId,
-        rating: rating,
-        tipo_atendimento: avaliacaoExistente.tipo_atendimento,
-        unidade_nome: avaliacaoExistente.unidade_nome,
-        unidade_codigo: avaliacaoExistente.unidade_codigo,
-        sender_phone: senderPhone,
-        button_id: buttonId
-      },
-      canal: 'whatsapp'
-    });
 
     return new Response(
       JSON.stringify({
