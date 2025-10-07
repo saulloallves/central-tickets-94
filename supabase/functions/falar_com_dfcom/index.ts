@@ -84,27 +84,44 @@ serve(async (req) => {
     );
 
     // 1. Busca a unidade correspondente ao grupo no projeto externo
-    const { data: unidade, error: unidadeError } = await externalSupabase
+    const { data: unidadeExterna, error: unidadeError } = await externalSupabase
       .from("unidades")
       .select("id, grupo, codigo_grupo, concierge_name, concierge_phone")
       .eq("id_grupo_branco", phone)
       .maybeSingle();
 
-    if (unidadeError || !unidade) {
-      console.error("❌ Unidade não encontrada:", unidadeError);
+    if (unidadeError || !unidadeExterna) {
+      console.error("❌ Unidade externa não encontrada:", unidadeError);
       return new Response(JSON.stringify({ error: "Unidade não encontrada" }), {
         headers: { "Content-Type": "application/json", ...corsHeaders },
         status: 404,
       });
     }
-    console.log("✅ Unidade encontrada:", unidade);
+    console.log("✅ Unidade externa encontrada:", unidadeExterna);
 
-    // 1.5 Verificar se já existe um atendimento ativo DFCom para este telefone
+    // 1.5 Buscar unidade local (atendente_unidades) usando codigo_grupo
+    const { data: unidadeLocal, error: unidadeLocalError } = await supabase
+      .from("atendente_unidades")
+      .select("id, grupo, codigo_grupo, atendente_id")
+      .eq("codigo_grupo", unidadeExterna.codigo_grupo)
+      .eq("ativo", true)
+      .maybeSingle();
+
+    if (unidadeLocalError || !unidadeLocal) {
+      console.error("❌ Unidade local não encontrada:", unidadeLocalError);
+      return new Response(JSON.stringify({ error: "Unidade local não encontrada" }), {
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+        status: 404,
+      });
+    }
+    console.log("✅ Unidade local encontrada:", unidadeLocal);
+
+    // 1.6 Verificar se já existe um atendimento ativo DFCom para este telefone
     const { data: chamadoExistente, error: verificacaoError } = await supabase
       .from("chamados")
       .select("id, status, criado_em")
       .eq("telefone", phone)
-      .eq("unidade_id", unidade.id)
+      .eq("unidade_id", unidadeLocal.id)
       .eq("tipo_atendimento", "dfcom")
       .in("status", ["em_fila", "em_atendimento"])
       .maybeSingle();
@@ -124,7 +141,7 @@ serve(async (req) => {
           .from("chamados")
           .select("id, criado_em")
           .eq("status", "em_fila")
-          .eq("unidade_id", unidade.id)
+          .eq("unidade_id", unidadeLocal.id)
           .eq("tipo_atendimento", "dfcom")
           .order("criado_em", { ascending: true });
 
@@ -189,7 +206,7 @@ serve(async (req) => {
           capacidade_maxima
         )
       `)
-      .eq("codigo_grupo", unidade.codigo_grupo)
+      .eq("id", unidadeLocal.id)
       .eq("ativo", true)
       .eq("atendentes.tipo", "dfcom")
       .eq("atendentes.status", "ativo")
@@ -212,11 +229,11 @@ serve(async (req) => {
     const { data: chamado, error: chamadoError } = await supabase
       .from("chamados")
       .insert({
-        unidade_id: unidade.id,
+        unidade_id: unidadeLocal.id,
         tipo_atendimento: "dfcom",
         status: "em_fila",
         telefone: phone,
-        franqueado_nome: unidade.grupo,
+        franqueado_nome: unidadeExterna.grupo,
         atendente_nome: atendenteNome,
         atendente_id: atendenteId,
         descricao: "Solicitação de suporte técnico via DFCom",
@@ -238,7 +255,7 @@ serve(async (req) => {
       .from("chamados")
       .select("id, criado_em")
       .eq("status", "em_fila")
-      .eq("unidade_id", unidade.id)
+      .eq("unidade_id", unidadeLocal.id)
       .eq("tipo_atendimento", "dfcom")
       .order("criado_em", { ascending: true });
 
