@@ -10,7 +10,7 @@
   "scope": "/",
   "lang": "pt-BR",
   "dir": "ltr",
-  "version": "3.0",
+  "version": "3.1",
   "icons": [
     {
       "src": "/icons/icon-72x72.png",
@@ -55,16 +55,10 @@
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
       "src": "/icons/maskable-icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     }
   ],
   "categories": ["business", "productivity"],
