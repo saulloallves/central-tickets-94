@@ -1,5 +1,5 @@
 // Service Worker for PWA with Push Notifications
-const CACHE_NAME = 'lovable-pwa-v1';
+const CACHE_NAME = 'lovable-pwa-v3';
 const urlsToCache = [
   '/',
   '/index.html',
