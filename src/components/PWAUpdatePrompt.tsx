@@ -18,8 +18,18 @@ export const PWAUpdatePrompt = () => {
     },
   });
 
-  const handleUpdate = () => {
-    updateServiceWorker(true);
+  const handleUpdate = async () => {
+    console.log('🔄 Iniciando atualização do service worker...');
+    try {
+      await updateServiceWorker(true);
+      // Force reload after update
+      console.log('✅ Service worker atualizado, recarregando página...');
+      window.location.reload();
+    } catch (error) {
+      console.error('❌ Erro ao atualizar service worker:', error);
+      // Fallback: force reload anyway
+      window.location.reload();
+    }
   };
 
   const handleDismiss = () => {
