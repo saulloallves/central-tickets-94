@@ -122,26 +122,8 @@ serve(async (req) => {
 
     console.log("✅ Chamado DFCom finalizado com sucesso");
 
-    // 4. Carrega configurações Z-API
-    const { instanceId, instanceToken, clientToken, baseUrl } = await loadZAPIConfig();
-    const zapiUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}`;
-
-    // 5. Envia mensagem de confirmação
-    try {
-      const response = await fetch(`${zapiUrl}/send-text`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Client-Token": clientToken },
-        body: JSON.stringify({
-          phone,
-          message: "⚫ *Atendimento DFCom finalizado com sucesso*\n\n✅ Seu suporte técnico foi encerrado.\n\nSe precisar de ajuda novamente, digite *menu* para acessar todas as opções disponíveis.",
-        }),
-      });
-      
-      const zapiData = await response.json();
-      console.log("📤 Mensagem de finalização DFCom enviada:", zapiData);
-    } catch (err) {
-      console.error("❌ Erro ao enviar mensagem de confirmação:", err);
-    }
+    // A mensagem de avaliação já é enviada pela função remove-from-whatsapp-group
+    // Não é necessário enviar mensagem adicional aqui
 
     return new Response(JSON.stringify({ 
       success: true, 
