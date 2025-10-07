@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { isDuplicateMessage } from '../_shared/message-deduplication.ts'
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -183,10 +184,6 @@ async function sendUnauthorizedGroupNotification(groupId: string) {
   }
 }
 
-// Cache de mensagens processadas (expira após 5 minutos)
-const processedMessages = new Map<string, number>();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
-
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -195,30 +192,20 @@ serve(async (req: Request) => {
   try {
     const body = await req.json();
     const messageId = body?.messageId;
+    const phone = body?.phone || body?.participantPhone;
     
-    // 🔹 DEDUPLICAÇÃO: Verificar se já processamos esta mensagem
-    if (messageId) {
-      const now = Date.now();
-      const lastProcessed = processedMessages.get(messageId);
+    // 🔹 DEDUPLICAÇÃO GLOBAL: Verificar se já processamos esta mensagem
+    if (messageId && phone) {
+      const isDuplicate = await isDuplicateMessage(messageId, phone);
       
-      if (lastProcessed && (now - lastProcessed) < CACHE_TTL) {
-        console.log(`⚠️ Mensagem duplicada detectada (messageId: ${messageId}), ignorando...`);
+      if (isDuplicate) {
+        console.log(`⚠️ Mensagem duplicada ignorada (messageId: ${messageId}, phone: ${phone})`);
         return new Response(JSON.stringify({ 
           success: true, 
           message: "Duplicate message ignored" 
         }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" }
         });
-      }
-      
-      // Registrar que processamos esta mensagem
-      processedMessages.set(messageId, now);
-      
-      // Limpar cache antigo (garbage collection simples)
-      for (const [id, timestamp] of processedMessages.entries()) {
-        if (now - timestamp > CACHE_TTL) {
-          processedMessages.delete(id);
-        }
       }
     }
 
