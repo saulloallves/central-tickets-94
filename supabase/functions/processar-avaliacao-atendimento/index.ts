@@ -145,7 +145,7 @@ serve(async (req) => {
         sender_phone: senderPhone,
         button_id: buttonId
       },
-      canal: 'zapi'
+      canal: 'whatsapp'
     });
 
     return new Response(
