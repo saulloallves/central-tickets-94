@@ -212,7 +212,7 @@ const KanbanTicketCard = memo(({ ticket, isSelected, onSelect, equipes }: Kanban
     if (ticket.unidades?.grupo) {
       return ticket.unidades.grupo;
     }
-    return ticket.unidade_id || 'Unidade não informada';
+    return 'Unidade não informada';
   };
 
   if (isDragging) {
