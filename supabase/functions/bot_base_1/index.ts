@@ -183,22 +183,53 @@ async function sendUnauthorizedGroupNotification(groupId: string) {
   }
 }
 
+// Cache de mensagens processadas (expira após 5 minutos)
+const processedMessages = new Map<string, number>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+
+  try {
+    const body = await req.json();
+    const messageId = body?.messageId;
+    
+    // 🔹 DEDUPLICAÇÃO: Verificar se já processamos esta mensagem
+    if (messageId) {
+      const now = Date.now();
+      const lastProcessed = processedMessages.get(messageId);
+      
+      if (lastProcessed && (now - lastProcessed) < CACHE_TTL) {
+        console.log(`⚠️ Mensagem duplicada detectada (messageId: ${messageId}), ignorando...`);
+        return new Response(JSON.stringify({ 
+          success: true, 
+          message: "Duplicate message ignored" 
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+      
+      // Registrar que processamos esta mensagem
+      processedMessages.set(messageId, now);
+      
+      // Limpar cache antigo (garbage collection simples)
+      for (const [id, timestamp] of processedMessages.entries()) {
+        if (now - timestamp > CACHE_TTL) {
+          processedMessages.delete(id);
+        }
+      }
+    }
 
   // Carrega configuração do banco primeiro
   console.log("🔧 Carregando configuração do bot...");
   await botZapi.loadConfig();
   console.log("✅ Configuração carregada, bot está configurado:", botZapi.isConfigured());
 
-  try {
     console.log("🚀 BOT_BASE_1 INICIADO - Recebendo requisição");
     console.log("🌍 Request URL:", req.url);
     console.log("📝 Request method:", req.method);
-    
-    const body = await req.json();
     console.log("📦 Body parseado:", JSON.stringify(body, null, 2));
 
     // Tenta extrair buttonId de várias formas possíveis
