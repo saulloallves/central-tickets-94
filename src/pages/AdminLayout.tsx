@@ -9,13 +9,11 @@ import { useOneSignal } from "@/hooks/useOneSignal";
 import { InternalAccessRequest } from "@/components/InternalAccessRequest";
 import { AppSidebar } from "@/components/AppSidebar"
 import { MobileBottomNav } from "@/components/MobileBottomNav"
-import { Toaster } from "@/components/ui/toaster"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
 import PageTransition from "@/components/PageTransition";
 import { SidebarProvider, useSidebarContext } from "@/contexts/SidebarContext";
 import { OneSignalPrompt } from "@/components/OneSignalPrompt";
-import { TestPushNotificationButton } from "@/components/notifications/TestPushNotificationButton";
 
 interface AdminLayoutProps {
   children: React.ReactNode
@@ -109,20 +107,13 @@ function AdminLayoutContent({ children, isMobile }: { children: React.ReactNode,
         {/* Main content area - SCROLLÁVEL */}
         <main className={cn("h-full overflow-y-auto", isMobile ? "p-4" : "p-6")}>
           <PageTransition>
-            <div className="w-full space-y-6">
-              {/* Botão de teste - apenas para desenvolvimento */}
-              <div className="flex justify-end">
-                <TestPushNotificationButton />
-              </div>
-              {children}
-            </div>
+            {children}
           </PageTransition>
         </main>
       </div>
       
       {/* Mobile bottom navigation - FIXA */}
       {isMobile && <MobileBottomNav />}
-      <Toaster />
       <OneSignalPrompt />
     </div>
   )

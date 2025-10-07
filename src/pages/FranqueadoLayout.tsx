@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { FranqueadoAppSidebar } from "@/components/FranqueadoAppSidebar";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
-import { Toaster } from "@/components/ui/toaster";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import PageTransition from "@/components/PageTransition";
@@ -67,7 +66,6 @@ export default function FranqueadoLayout({ children }: FranqueadoLayoutProps) {
       
       {/* Mobile bottom navigation */}
       {isMobile && <MobileBottomNav />}
-      <Toaster />
       <PushNotificationPrompt />
     </div>
   );
