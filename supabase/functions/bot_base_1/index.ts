@@ -6,10 +6,16 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Cliente Supabase para buscar configurações
+// Cliente Supabase com ANON_KEY (para operações gerais)
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
   Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+)
+
+// Cliente Supabase com SERVICE_ROLE_KEY (para bypass RLS em webhooks)
+const supabaseAdmin = createClient(
+  Deno.env.get('SUPABASE_URL') ?? '',
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 )
 
 // ✅ Usando banco principal - tabela atendente_unidades migrada
@@ -115,8 +121,10 @@ async function checkGroupInDatabase(groupId: string): Promise<boolean> {
   try {
     console.log(`🔍 Verificando grupo ${groupId} na tabela atendente_unidades...`);
     console.log(`🔍 Buscando por id_grupo_branco: "${groupId}"`);
+    console.log(`🔑 Usando SERVICE_ROLE_KEY para bypass de RLS (webhook não tem auth)`);
     
-    const { data, error, count } = await supabase
+    // Usar supabaseAdmin para bypass de RLS (webhooks não têm auth.uid())
+    const { data, error, count } = await supabaseAdmin
       .from('atendente_unidades')
       .select('id, codigo_grupo, id_grupo_branco, grupo, ativo', { count: 'exact' })
       .eq('id_grupo_branco', groupId)
@@ -125,7 +133,6 @@ async function checkGroupInDatabase(groupId: string): Promise<boolean> {
     console.log(`📊 Query completa - Error:`, error);
     console.log(`📊 Query completa - Count:`, count);
     console.log(`📊 Query completa - Data length:`, data?.length || 0);
-    console.log(`📊 Query completa - Data:`, JSON.stringify(data, null, 2));
 
     if (error) {
       console.error('❌ Erro ao consultar tabela atendente_unidades:', error);
