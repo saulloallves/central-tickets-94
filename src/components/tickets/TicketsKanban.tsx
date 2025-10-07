@@ -333,6 +333,8 @@ const KanbanTicketCard = memo(({ ticket, isSelected, onSelect, equipes }: Kanban
     prevProps.ticket.titulo === nextProps.ticket.titulo &&
     prevProps.ticket.prioridade === nextProps.ticket.prioridade &&
     prevProps.ticket.data_limite_sla === nextProps.ticket.data_limite_sla &&
+    prevProps.ticket.equipe_responsavel_id === nextProps.ticket.equipe_responsavel_id &&
+    prevProps.ticket.equipes?.nome === nextProps.ticket.equipes?.nome &&
     prevProps.isSelected === nextProps.isSelected &&
     prevProps.equipes.length === nextProps.equipes.length
   );
