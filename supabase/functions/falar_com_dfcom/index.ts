@@ -152,14 +152,13 @@ serve(async (req) => {
     if (chamadoExistente) {
       console.log("⚠️ Atendimento DFCom já existe:", chamadoExistente);
 
-      // Buscar posição na fila se estiver em fila
+      // Buscar posição na fila GLOBAL se estiver em fila ou em atendimento
       let posicao = null;
-      if (chamadoExistente.status === "em_fila") {
+      if (chamadoExistente.status === "em_fila" || chamadoExistente.status === "em_atendimento") {
         const { data: fila } = await supabase
           .from("chamados")
           .select("id, criado_em")
-          .eq("status", "em_fila")
-          .eq("unidade_id", unidadeLocal.id)
+          .in("status", ["em_fila", "em_atendimento"])
           .eq("tipo_atendimento", "dfcom")
           .order("criado_em", { ascending: true });
 
@@ -237,12 +236,11 @@ serve(async (req) => {
     }
     console.log("🎫 Chamado DFCom criado:", chamado);
 
-    // 6. Calcular posição na fila DEPOIS de criar o chamado (agora inclui o novo)
+    // 6. Calcular posição na fila GLOBAL da DFCom (todas as unidades)
     const { data: fila, error: filaError } = await supabase
       .from("chamados")
       .select("id, criado_em, status")
       .in("status", ["em_fila", "em_atendimento"])
-      .eq("unidade_id", unidadeLocal.id)
       .eq("tipo_atendimento", "dfcom")
       .order("criado_em", { ascending: true });
 
@@ -254,13 +252,10 @@ serve(async (req) => {
       });
     }
 
-    // Separar chamados em atendimento e em fila
-    const apenasEmFila = fila.filter(c => c.status === "em_fila");
+    // Posição na fila GLOBAL (conta em_fila + em_atendimento)
+    const posicao = fila.findIndex((c) => c.id === chamado.id) + 1;
     
-    // Posição é baseada apenas nos que estão em_fila (não conta os em_atendimento)
-    const posicao = apenasEmFila.findIndex((c) => c.id === chamado.id) + 1;
-    
-    console.log(`📊 Fila DFCom da unidade "${unidadeLocal.grupo}": ${apenasEmFila.length} aguardando`);
+    console.log(`📊 Fila GLOBAL DFCom: ${fila.length} atendimentos (em_fila + em_atendimento)`);
     console.log(`   - Posição deste chamado: #${posicao}`);
 
     // 4. Log do chamado criado (grupo será adicionado quando atendente aceitar)
