@@ -1330,10 +1330,10 @@ export type Database = {
           state: string | null
           system_term_accepted: string | null
           uf: string | null
-          unit_code: Json | null
+          unit_code: string | null
           unit_code_indicated: string | null
           unit_id_group: string | null
-          unit_name: Json | null
+          unit_name: string | null
           updatedat: string | null
           UpdatedAt: string | null
           was_entrepreneur: string | null
@@ -1386,10 +1386,10 @@ export type Database = {
           state?: string | null
           system_term_accepted?: string | null
           uf?: string | null
-          unit_code?: Json | null
+          unit_code?: string | null
           unit_code_indicated?: string | null
           unit_id_group?: string | null
-          unit_name?: Json | null
+          unit_name?: string | null
           updatedat?: string | null
           UpdatedAt?: string | null
           was_entrepreneur?: string | null
@@ -1442,10 +1442,10 @@ export type Database = {
           state?: string | null
           system_term_accepted?: string | null
           uf?: string | null
-          unit_code?: Json | null
+          unit_code?: string | null
           unit_code_indicated?: string | null
           unit_id_group?: string | null
-          unit_name?: Json | null
+          unit_name?: string | null
           updatedat?: string | null
           UpdatedAt?: string | null
           was_entrepreneur?: string | null
