@@ -255,18 +255,13 @@ serve(async (req) => {
     }
 
     // Separar chamados em atendimento e em fila
-    const emAtendimento = fila.filter(c => c.status === "em_atendimento");
     const apenasEmFila = fila.filter(c => c.status === "em_fila");
     
     // Posição é baseada apenas nos que estão em_fila (não conta os em_atendimento)
     const posicao = apenasEmFila.findIndex((c) => c.id === chamado.id) + 1;
-    const totalNaFrente = emAtendimento.length + (posicao - 1);
     
-    console.log(`📊 Fila DFCom da unidade "${unidadeLocal.grupo}":`);
-    console.log(`   - ${emAtendimento.length} em atendimento`);
-    console.log(`   - ${apenasEmFila.length} aguardando na fila`);
-    console.log(`   - ${totalNaFrente} chamados na frente deste`);
-    console.log(`   - Posição na fila de espera: ${posicao}`);
+    console.log(`📊 Fila DFCom da unidade "${unidadeLocal.grupo}": ${apenasEmFila.length} aguardando`);
+    console.log(`   - Posição deste chamado: #${posicao}`);
 
     // 4. Log do chamado criado (grupo será adicionado quando atendente aceitar)
     console.log('📋 Chamado DFCom criado para fila, aguardando atendente aceitar no kanban');
@@ -290,22 +285,15 @@ serve(async (req) => {
     }
 
     // 5. Mensagem com posição na fila
-    let mensagem = "";
-    
-    if (totalNaFrente === 0) {
-      mensagem = `📥 *Você é o próximo na fila!*\n\n⏳ Por favor, permaneça aqui. Nossa equipe técnica entrará em contato em instantes.\n\nSe desejar encerrar o atendimento ou alterar para autoatendimento, selecione abaixo:`;
-    } else {
-      mensagem = `⏳ *Você entrou na fila de suporte técnico DFCom*\n\n📊 Sua posição na fila é: *#${posicao}*\n📊 Número de chamados na sua frente: *${totalNaFrente}*\n${emAtendimento.length > 0 ? `   (${emAtendimento.length} em atendimento + ${posicao - 1} aguardando)\n` : ''}\nPor favor, permaneça aqui. Assim que for sua vez, nossa equipe técnica entrará em contato.\n\nSe desejar encerrar ou transferir para autoatendimento, selecione abaixo:`;
-    }
+    const mensagem = `🧾 Seu número na fila é: *#${posicao}*\n\nPor favor, permaneça aqui. Assim que for sua vez, você receberá uma mensagem diretamente por aqui.\n\nSe desejar encerrar o atendimento ou alterar a maneira de atendimento para autoatendimento, selecione um dos botões abaixo:`;
 
     await enviarZapi("send-button-list", {
       phone,
       message: mensagem,
       buttonList: {
         buttons: [
-          { id: "finalizar_atendimento_dfcom", label: "📱 Finalizar Atendimento" },
-          { id: "autoatendimento_menu", label: "🔄 Transferir para Autoatendimento" },
-          { id: "voltar_menu_inicial", label: "🏠 Voltar ao Menu Inicial" },
+          { id: "personalizado_finalizar", label: "✅ Finalizar atendimento" },
+          { id: "autoatendimento_menu", label: "🔄 Transferir para autoatendimento" },
         ],
       },
     });
