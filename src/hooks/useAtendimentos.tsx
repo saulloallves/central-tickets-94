@@ -88,21 +88,22 @@ export function useAtendimentos() {
 
       // Calcular posição na fila para cada atendimento
       const atendimentosComPosicao = atendimentosFormatados.map(atendimento => {
-        if (atendimento.status !== 'em_fila') {
+        // Apenas calcular posição para DFCom em fila ou em atendimento
+        if (atendimento.tipo_atendimento !== 'dfcom' || 
+            !['em_fila', 'em_atendimento'].includes(atendimento.status)) {
           return atendimento;
         }
 
-        // Filtrar atendimentos da mesma unidade, mesmo tipo e em fila
-        const filaUnidade = atendimentosFormatados
+        // Fila GLOBAL da DFCom: todos os atendimentos em fila + em atendimento
+        const filaGlobalDFCom = atendimentosFormatados
           .filter(a => 
-            a.unidade_id === atendimento.unidade_id &&
-            a.tipo_atendimento === atendimento.tipo_atendimento &&
-            a.status === 'em_fila'
+            a.tipo_atendimento === 'dfcom' &&
+            (a.status === 'em_fila' || a.status === 'em_atendimento')
           )
           .sort((a, b) => new Date(a.criado_em).getTime() - new Date(b.criado_em).getTime());
 
-        // Encontrar posição baseada em criado_em
-        const posicao = filaUnidade.findIndex(a => a.id === atendimento.id) + 1;
+        // Encontrar posição na fila global
+        const posicao = filaGlobalDFCom.findIndex(a => a.id === atendimento.id) + 1;
 
         return {
           ...atendimento,
