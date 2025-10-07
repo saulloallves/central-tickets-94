@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { isDuplicateMessage } from '../_shared/message-deduplication.ts'
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -189,34 +188,17 @@ serve(async (req: Request) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  try {
-    const body = await req.json();
-    const messageId = body?.messageId;
-    const phone = body?.phone || body?.participantPhone;
-    
-    // 🔹 DEDUPLICAÇÃO GLOBAL: Verificar se já processamos esta mensagem
-    if (messageId && phone) {
-      const isDuplicate = await isDuplicateMessage(messageId, phone);
-      
-      if (isDuplicate) {
-        console.log(`⚠️ Mensagem duplicada ignorada (messageId: ${messageId}, phone: ${phone})`);
-        return new Response(JSON.stringify({ 
-          success: true, 
-          message: "Duplicate message ignored" 
-        }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" }
-        });
-      }
-    }
-
   // Carrega configuração do banco primeiro
   console.log("🔧 Carregando configuração do bot...");
   await botZapi.loadConfig();
   console.log("✅ Configuração carregada, bot está configurado:", botZapi.isConfigured());
 
+  try {
     console.log("🚀 BOT_BASE_1 INICIADO - Recebendo requisição");
     console.log("🌍 Request URL:", req.url);
     console.log("📝 Request method:", req.method);
+    
+    const body = await req.json();
     console.log("📦 Body parseado:", JSON.stringify(body, null, 2));
 
     // Tenta extrair buttonId de várias formas possíveis
