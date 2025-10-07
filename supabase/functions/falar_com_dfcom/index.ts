@@ -240,8 +240,8 @@ serve(async (req) => {
     // 6. Calcular posição na fila DEPOIS de criar o chamado (agora inclui o novo)
     const { data: fila, error: filaError } = await supabase
       .from("chamados")
-      .select("id, criado_em")
-      .eq("status", "em_fila")
+      .select("id, criado_em, status")
+      .in("status", ["em_fila", "em_atendimento"])
       .eq("unidade_id", unidadeLocal.id)
       .eq("tipo_atendimento", "dfcom")
       .order("criado_em", { ascending: true });
@@ -254,8 +254,19 @@ serve(async (req) => {
       });
     }
 
-    const posicao = fila.findIndex((c) => c.id === chamado.id) + 1;
-    console.log(`📊 Posição na fila DFCom: ${posicao}`);
+    // Separar chamados em atendimento e em fila
+    const emAtendimento = fila.filter(c => c.status === "em_atendimento");
+    const apenasEmFila = fila.filter(c => c.status === "em_fila");
+    
+    // Posição é baseada apenas nos que estão em_fila (não conta os em_atendimento)
+    const posicao = apenasEmFila.findIndex((c) => c.id === chamado.id) + 1;
+    const totalNaFrente = emAtendimento.length + (posicao - 1);
+    
+    console.log(`📊 Fila DFCom da unidade "${unidadeLocal.grupo}":`);
+    console.log(`   - ${emAtendimento.length} em atendimento`);
+    console.log(`   - ${apenasEmFila.length} aguardando na fila`);
+    console.log(`   - ${totalNaFrente} chamados na frente deste`);
+    console.log(`   - Posição na fila de espera: ${posicao}`);
 
     // 4. Log do chamado criado (grupo será adicionado quando atendente aceitar)
     console.log('📋 Chamado DFCom criado para fila, aguardando atendente aceitar no kanban');
@@ -278,39 +289,26 @@ serve(async (req) => {
       }
     }
 
-    // 5. Mensagem inicial
-    await enviarZapi("send-text", {
-      phone,
-      message: "⚫ Você entrou na *fila de suporte técnico DFCom*.\n\nAguarde um momento — nossa equipe técnica está organizando os atendimentos em ordem de chegada.",
-    });
-
-    // 6. Próximo ou posição
-    if (posicao === 1) {
-      await enviarZapi("send-button-list", {
-        phone,
-        message:
-          "📥 *Você é o próximo na fila DFCom*\n\nPor favor, permaneça aqui. Nossa equipe técnica entrará em contato em instantes.\n\nSe desejar encerrar o atendimento ou alterar para autoatendimento, selecione um dos botões abaixo:",
-        buttonList: {
-          buttons: [
-            { id: "finalizar_atendimento_dfcom", label: "📱 Finalizar Atendimento" },
-            { id: "autoatendimento_menu", label: "🔄 Transferir para Autoatendimento" },
-            { id: "voltar_menu_inicial", label: "🏠 Voltar ao Menu Inicial" },
-          ],
-        },
-      });
+    // 5. Mensagem com posição na fila
+    let mensagem = "";
+    
+    if (totalNaFrente === 0) {
+      mensagem = `📥 *Você é o próximo na fila!*\n\n⏳ Por favor, permaneça aqui. Nossa equipe técnica entrará em contato em instantes.\n\nSe desejar encerrar o atendimento ou alterar para autoatendimento, selecione abaixo:`;
     } else {
-      await enviarZapi("send-button-list", {
-        phone,
-        message: `🧾 Seu número na fila DFCom: *#${posicao}*\n\nPor favor, permaneça aqui. Assim que for sua vez, nossa equipe técnica entrará em contato por aqui.\n\nSe desejar encerrar o atendimento ou alterar para autoatendimento, selecione um dos botões abaixo:`,
-        buttonList: {
-          buttons: [
-            { id: "finalizar_atendimento_dfcom", label: "📱 Finalizar Atendimento" },
-            { id: "autoatendimento_menu", label: "🔄 Transferir para Autoatendimento" },
-            { id: "voltar_menu_inicial", label: "🏠 Voltar ao Menu Inicial" },
-          ],
-        },
-      });
+      mensagem = `⏳ *Você entrou na fila de suporte técnico DFCom*\n\n📊 Sua posição na fila é: *#${posicao}*\n📊 Número de chamados na sua frente: *${totalNaFrente}*\n${emAtendimento.length > 0 ? `   (${emAtendimento.length} em atendimento + ${posicao - 1} aguardando)\n` : ''}\nPor favor, permaneça aqui. Assim que for sua vez, nossa equipe técnica entrará em contato.\n\nSe desejar encerrar ou transferir para autoatendimento, selecione abaixo:`;
     }
+
+    await enviarZapi("send-button-list", {
+      phone,
+      message: mensagem,
+      buttonList: {
+        buttons: [
+          { id: "finalizar_atendimento_dfcom", label: "📱 Finalizar Atendimento" },
+          { id: "autoatendimento_menu", label: "🔄 Transferir para Autoatendimento" },
+          { id: "voltar_menu_inicial", label: "🏠 Voltar ao Menu Inicial" },
+        ],
+      },
+    });
 
     return new Response(JSON.stringify({ success: true, chamado, posicao }), {
       headers: { "Content-Type": "application/json", ...corsHeaders },
