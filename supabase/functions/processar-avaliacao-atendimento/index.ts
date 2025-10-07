@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { loadZAPIConfig } from "../_shared/zapi-config.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -94,30 +95,22 @@ serve(async (req) => {
 
     console.log('✅ Avaliação atualizada com sucesso!');
 
-    // Preparar mensagem de agradecimento baseada na avaliação
-    let thankYouMessage = '';
-    switch (rating) {
-      case 'otimo':
-        thankYouMessage = '🌟 *Obrigado pela avaliação!*\n\nFicamos felizes que conseguimos resolver tudo para você! Sua opinião é muito importante para nós.';
-        break;
-      case 'bom':
-        thankYouMessage = '🙂 *Obrigado pela avaliação!*\n\nValorizamos seu feedback e vamos trabalhar para melhorar ainda mais nosso atendimento.';
-        break;
-      case 'ruim':
-        thankYouMessage = '😕 *Obrigado pela avaliação!*\n\nLamentamos que não conseguimos atender suas expectativas. Sua opinião nos ajudará a melhorar.';
-        break;
-    }
+    // Mensagem de agradecimento única para todos os tipos de avaliação
+    const thankYouMessage = '🙏 *Obrigado pela sua avaliação!*\n\nSua opinião é muito importante para nós.';
 
     // Enviar mensagem de agradecimento via Z-API
     const phoneDestino = webhookData.phone;
     console.log(`📤 Enviando mensagem de agradecimento para: ${phoneDestino}`);
     
     try {
-      const response = await fetch(`${Deno.env.get('ZAPI_BASE_URL') || 'https://api.z-api.io'}/instances/${Deno.env.get('ZAPI_INSTANCE_ID')}/token/${Deno.env.get('ZAPI_TOKEN')}/send-text`, {
+      const { instanceId, instanceToken, clientToken, baseUrl } = await loadZAPIConfig();
+      const zapiUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}/send-text`;
+      
+      const response = await fetch(zapiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Client-Token': Deno.env.get('ZAPI_CLIENT_TOKEN') || '',
+          'Client-Token': clientToken,
         },
         body: JSON.stringify({
           phone: phoneDestino,
