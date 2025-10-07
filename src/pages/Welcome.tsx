@@ -33,41 +33,6 @@ export default function Welcome() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [isActivating, setIsActivating] = useState(false);
   const [emailStatus, setEmailStatus] = useState<'idle' | 'approved' | 'rejected'>('idle');
-  const [particles, setParticles] = useState<Array<{ id: number; x: number; y: number; tx: number; ty: number }>>([]);
-  const [ripples, setRipples] = useState<Array<{ id: number; x: number; y: number }>>([]);
-
-  // Particle burst effect on click
-  useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      const particleCount = 8;
-      const newParticles = Array.from({ length: particleCount }, (_, i) => {
-        const angle = (Math.PI * 2 * i) / particleCount;
-        const velocity = 50 + Math.random() * 50;
-        return {
-          id: Date.now() + i,
-          x: e.clientX,
-          y: e.clientY,
-          tx: Math.cos(angle) * velocity,
-          ty: Math.sin(angle) * velocity,
-        };
-      });
-      
-      setParticles(prev => [...prev, ...newParticles]);
-      setTimeout(() => {
-        setParticles(prev => prev.filter(p => !newParticles.find(np => np.id === p.id)));
-      }, 800);
-
-      // Add ripple effect
-      const ripple = { id: Date.now(), x: e.clientX, y: e.clientY };
-      setRipples(prev => [...prev, ripple]);
-      setTimeout(() => {
-        setRipples(prev => prev.filter(r => r.id !== ripple.id));
-      }, 1000);
-    };
-
-    document.addEventListener('click', handleClick);
-    return () => document.removeEventListener('click', handleClick);
-  }, []);
 
   // Buscar equipes ativas
   const { data: equipes = [], isLoading: loadingEquipes } = useQuery({
@@ -519,31 +484,6 @@ export default function Welcome() {
         </Card>
       </div>
 
-      {/* Particle Effects */}
-      {particles.map(particle => (
-        <div
-          key={particle.id}
-          className="particle"
-          style={{
-            left: `${particle.x}px`,
-            top: `${particle.y}px`,
-            '--tx': `${particle.tx}px`,
-            '--ty': `${particle.ty}px`,
-          } as any}
-        />
-      ))}
-
-      {/* Ripple Effects */}
-      {ripples.map(ripple => (
-        <div
-          key={ripple.id}
-          className="ripple-effect"
-          style={{
-            left: `${ripple.x}px`,
-            top: `${ripple.y}px`,
-          }}
-        />
-      ))}
     </div>
   );
 }

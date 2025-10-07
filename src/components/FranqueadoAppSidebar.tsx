@@ -103,7 +103,7 @@ export function FranqueadoAppSidebar() {
                             strokeWidth={1.5}
                           />
                           {isActive && (
-                            <div className="absolute -right-1 -top-1 w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_4px_rgba(255,255,255,0.8)] animate-pulse"></div>
+                            <div className="absolute -right-1 -top-1 w-1.5 h-1.5 rounded-full bg-white shadow-sm"></div>
                           )}
                         </div>
                         <span className={cn(
@@ -138,7 +138,7 @@ export function FranqueadoAppSidebar() {
                               strokeWidth={1.5}
                             />
                             {isActive && (
-                              <div className="absolute -top-1 -right-1 w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_4px_rgba(255,255,255,0.8)] animate-pulse"></div>
+                              <div className="absolute -top-1 -right-1 w-1.5 h-1.5 rounded-full bg-white shadow-sm"></div>
                             )}
                           </>
                         )}

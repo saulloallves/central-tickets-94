@@ -83,7 +83,7 @@ export function AtendimentoCard({ atendimento, onClick, compact = false, onRefre
         "cursor-pointer hover:shadow-md transition-all duration-200 hover:-translate-y-1",
         compact ? "p-3" : "p-4",
         "h-fit min-h-[140px] flex flex-col",
-        atendimento.is_emergencia && "border-2 border-destructive bg-destructive/5 animate-pulse"
+        atendimento.is_emergencia && "border-2 border-destructive bg-destructive/5"
       )}
       onClick={onClick}
     >

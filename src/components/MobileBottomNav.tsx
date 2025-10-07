@@ -46,7 +46,7 @@ export function MobileBottomNav() {
                         
                         {/* Active indicator */}
                         {isActive && (
-                          <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)] animate-pulse"></div>
+                          <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-white shadow-sm"></div>
                         )}
                         
                         {/* Small label */}
@@ -91,7 +91,7 @@ export function MobileBottomNav() {
                     
                     {/* Active indicator */}
                     {isActive && (
-                      <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)] animate-pulse"></div>
+                      <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-white shadow-sm"></div>
                     )}
                     
                     <span className={cn(
