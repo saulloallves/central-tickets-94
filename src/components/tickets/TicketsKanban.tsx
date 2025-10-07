@@ -556,7 +556,7 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
       
       return ticket;
     });
-  }, [tickets, optimisticTickets, pendingMoves.size]);
+  }, [tickets, optimisticTickets, pendingMoves.size, lastUpdate]);
 
   // Cleanup de operações antigas
   useEffect(() => {
