@@ -12,12 +12,12 @@ export function isBusinessHours(): boolean {
     const hour = spTime.getHours();
     const minutes = spTime.getMinutes();
     
-    // Monday to Saturday (1-6), 8h30 to 23h00
-    const isWorkday = dayOfWeek >= 1 && dayOfWeek <= 6;
-    const timeInMinutes = hour * 60 + minutes;
-    const startTime = 8 * 60 + 30; // 8h30 = 510 minutes
-    const endTime = 23 * 60; // 23h00 = 1380 minutes
-    const isWorkingHour = timeInMinutes >= startTime && timeInMinutes < endTime;
+  // Monday to Saturday (1-6), 8h30 to 18h30
+  const isWorkday = dayOfWeek >= 1 && dayOfWeek <= 6;
+  const timeInMinutes = hour * 60 + minutes;
+  const startTime = 8 * 60 + 30; // 8h30 = 510 minutes
+  const endTime = 18 * 60 + 30; // 18h30 = 1110 minutes
+  const isWorkingHour = timeInMinutes >= startTime && timeInMinutes < endTime;
     
     return isWorkday && isWorkingHour;
   } catch (error) {
@@ -71,34 +71,34 @@ export function getNextBusinessHourStart(): Date {
 }
 
 /**
- * Returns the next business hour end (23h00) in São Paulo timezone
+ * Returns the next business hour end (18h30) in São Paulo timezone
  */
 export function getNextBusinessHourEnd(): Date {
   const now = new Date();
   const spTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
   
   const dayOfWeek = spTime.getDay();
-  const endTime = 23 * 60; // 23h00
+  const endTime = 18 * 60 + 30; // 18h30
   
-  // If it's Sunday, go to Monday 23h00
+  // If it's Sunday, go to Monday 18h30
   if (dayOfWeek === 0) {
     const nextEnd = new Date(spTime);
     nextEnd.setDate(nextEnd.getDate() + 1);
-    nextEnd.setHours(23, 0, 0, 0);
+    nextEnd.setHours(18, 30, 0, 0);
     return nextEnd;
   }
   
-  // If it's Saturday, go to Monday 23h00
+  // If it's Saturday, go to Monday 18h30
   if (dayOfWeek === 6) {
     const nextEnd = new Date(spTime);
     nextEnd.setDate(nextEnd.getDate() + 2);
-    nextEnd.setHours(23, 0, 0, 0);
+    nextEnd.setHours(18, 30, 0, 0);
     return nextEnd;
   }
   
-  // Otherwise, return today 23h00
+  // Otherwise, return today 18h30
   const nextEnd = new Date(spTime);
-  nextEnd.setHours(23, 0, 0, 0);
+  nextEnd.setHours(18, 30, 0, 0);
   return nextEnd;
 }
 
@@ -149,8 +149,8 @@ export function isNearBusinessHourEnd(): boolean {
     // Only check on workdays
     if (dayOfWeek < 1 || dayOfWeek > 6) return false;
     
-    const endTime = 23 * 60; // 23h00
-    const threshold = endTime - 30; // 22h30
+    const endTime = 18 * 60 + 30; // 18h30
+    const threshold = endTime - 30; // 18h00
     
     return timeInMinutes >= threshold && timeInMinutes < endTime;
   } catch (error) {
