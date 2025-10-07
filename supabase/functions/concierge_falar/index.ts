@@ -239,7 +239,7 @@ serve(async (req) => {
     const { data: chamado, error: chamadoError } = await supabase
       .from("chamados")
       .insert({
-        unidade_id: unidade.id.toString(),
+        unidade_id: unidade.id,
         tipo_atendimento: "concierge",
         status: "em_fila",
         telefone: phone,
