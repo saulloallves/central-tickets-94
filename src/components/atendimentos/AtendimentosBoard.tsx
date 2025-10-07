@@ -29,13 +29,25 @@ export function AtendimentosBoard() {
   const atendimentosCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     atendimentos.forEach(atendimento => {
-      if (atendimento.atendente_id && 
-          ['em_fila', 'em_atendimento', 'emergencia'].includes(atendimento.status)) {
-        counts[atendimento.atendente_id] = (counts[atendimento.atendente_id] || 0) + 1;
+      const activeStatuses = ['em_fila', 'em_atendimento', 'emergencia'];
+      
+      if (activeStatuses.includes(atendimento.status)) {
+        // Priorizar contagem por ID, mas também contar por nome para chamados legados
+        if (atendimento.atendente_id) {
+          counts[atendimento.atendente_id] = (counts[atendimento.atendente_id] || 0) + 1;
+        } else if (atendimento.atendente_nome) {
+          // Para chamados sem atendente_id, procurar o atendente pelo nome
+          const atendenteCorrespondente = atendentes.find(a => 
+            atendimento.atendente_nome?.toLowerCase().includes(a.nome.toLowerCase())
+          );
+          if (atendenteCorrespondente) {
+            counts[atendenteCorrespondente.id] = (counts[atendenteCorrespondente.id] || 0) + 1;
+          }
+        }
       }
     });
     return counts;
-  }, [atendimentos]);
+  }, [atendimentos, atendentes]);
 
   const handleSelectAtendimento = (id: string) => {
     setSelectedAtendimento(id);

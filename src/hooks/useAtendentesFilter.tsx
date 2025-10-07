@@ -37,7 +37,21 @@ export function useAtendentesFilter() {
 
   const filterAtendimentos = (atendimentos: any[]) => {
     if (!selectedAtendenteId) return atendimentos;
-    return atendimentos.filter(a => a.atendente_id === selectedAtendenteId);
+    
+    // Encontrar o atendente selecionado para pegar o nome
+    const atendenteSelecionado = atendentes.find(a => a.id === selectedAtendenteId);
+    
+    return atendimentos.filter(a => {
+      // Filtrar por ID quando disponível
+      if (a.atendente_id === selectedAtendenteId) return true;
+      
+      // Fallback: filtrar por nome quando atendente_id é null (chamados legados)
+      if (!a.atendente_id && atendenteSelecionado && a.atendente_nome) {
+        return a.atendente_nome.toLowerCase().includes(atendenteSelecionado.nome.toLowerCase());
+      }
+      
+      return false;
+    });
   };
 
   return {

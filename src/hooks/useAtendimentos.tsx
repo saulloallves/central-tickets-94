@@ -31,10 +31,17 @@ export function useAtendimentos() {
     try {
       setLoading(true);
       
-      // Buscar chamados
+      // Buscar chamados com JOIN para pegar informações do atendente
       const { data: chamados, error } = await supabase
         .from('chamados')
-        .select('*')
+        .select(`
+          *,
+          atendentes:atendente_id (
+            id,
+            nome,
+            tipo
+          )
+        `)
         .order('criado_em', { ascending: false });
 
       if (error) {
@@ -70,7 +77,8 @@ export function useAtendimentos() {
         status: chamado.status,
         tipo_atendimento: chamado.tipo_atendimento,
         atendente_id: chamado.atendente_id,
-        atendente_nome: chamado.atendente_nome,
+        // Priorizar nome do JOIN, depois nome salvo, depois fallback
+        atendente_nome: chamado.atendentes?.nome || chamado.atendente_nome || 'Sem atendente',
         resolucao: chamado.resolucao,
         criado_em: chamado.criado_em,
         atualizado_em: chamado.atualizado_em,

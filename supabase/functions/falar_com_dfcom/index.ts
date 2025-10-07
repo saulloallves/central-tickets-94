@@ -83,7 +83,25 @@ serve(async (req) => {
       Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY"),
     );
 
-    // 1. Busca a unidade correspondente ao grupo no projeto externo
+    // 1. Buscar atendente DFCom disponível (necessário antes de criar o chamado)
+    const { data: atendenteDFCom, error: atendenteError } = await supabase
+      .from('atendentes')
+      .select('id, nome')
+      .eq('tipo', 'dfcom')
+      .eq('status', 'ativo')
+      .eq('ativo', true)
+      .maybeSingle();
+
+    if (atendenteError || !atendenteDFCom) {
+      console.error("❌ Atendente DFCom não encontrado:", atendenteError);
+      return new Response(JSON.stringify({ error: "Atendente DFCom não encontrado" }), {
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+        status: 500,
+      });
+    }
+    console.log("✅ Atendente DFCom encontrado:", atendenteDFCom);
+
+    // 2. Busca a unidade correspondente ao grupo no projeto externo
     const { data: unidadeExterna, error: unidadeError } = await externalSupabase
       .from("unidades")
       .select("id, grupo, codigo_grupo, concierge_name, concierge_phone")
@@ -99,7 +117,7 @@ serve(async (req) => {
     }
     console.log("✅ Unidade externa encontrada:", unidadeExterna);
 
-    // 1.5 Buscar unidade local (atendente_unidades) usando codigo_grupo
+    // 3. Buscar unidade local (atendente_unidades) usando codigo_grupo
     const { data: unidadeLocal, error: unidadeLocalError } = await supabase
       .from("atendente_unidades")
       .select("id, grupo, codigo_grupo, atendente_id")
@@ -116,7 +134,7 @@ serve(async (req) => {
     }
     console.log("✅ Unidade local encontrada:", unidadeLocal);
 
-    // 1.6 Verificar se já existe um atendimento ativo DFCom para este telefone
+    // 4. Verificar se já existe um atendimento ativo DFCom para este telefone
     const { data: chamadoExistente, error: verificacaoError } = await supabase
       .from("chamados")
       .select("id, status, criado_em")
@@ -192,40 +210,7 @@ serve(async (req) => {
       });
     }
 
-    // 2. Buscar atendente DFCom da unidade via atendente_unidades
-    const { data: atendenteUnidade, error: atendenteError } = await supabase
-      .from("atendente_unidades")
-      .select(`
-        atendente_id,
-        atendentes!inner(
-          id,
-          nome,
-          tipo,
-          status,
-          capacidade_atual,
-          capacidade_maxima
-        )
-      `)
-      .eq("id", unidadeLocal.id)
-      .eq("ativo", true)
-      .eq("atendentes.tipo", "dfcom")
-      .eq("atendentes.status", "ativo")
-      .eq("atendentes.ativo", true)
-      .maybeSingle();
-
-    let atendenteNome = "Equipe DFCom"; // fallback
-    let atendenteId = null;
-
-    if (atendenteUnidade?.atendentes) {
-      atendenteNome = atendenteUnidade.atendentes.nome;
-      atendenteId = atendenteUnidade.atendente_id;
-      console.log(`✅ Atendente DFCom encontrado via atendente_unidades: ${atendenteNome} (${atendenteId})`);
-    } else {
-      console.log("⚠️ Nenhum atendente DFCom encontrado para esta unidade, usando fallback");
-      console.error("Erro ao buscar atendente:", atendenteError);
-    }
-
-    // 3. Cria um novo chamado DFCom
+    // 5. Criar novo chamado DFCom
     const { data: chamado, error: chamadoError } = await supabase
       .from("chamados")
       .insert({
@@ -234,9 +219,11 @@ serve(async (req) => {
         status: "em_fila",
         telefone: phone,
         franqueado_nome: unidadeExterna.grupo,
-        atendente_nome: atendenteNome,
-        atendente_id: atendenteId,
+        atendente_nome: atendenteDFCom.nome,
+        atendente_id: atendenteDFCom.id,
         descricao: "Solicitação de suporte técnico via DFCom",
+        categoria: "suporte_tecnico",
+        prioridade: "normal",
       })
       .select()
       .single();
@@ -250,7 +237,7 @@ serve(async (req) => {
     }
     console.log("🎫 Chamado DFCom criado:", chamado);
 
-    // 4. Conta posição na fila DFCom
+    // 6. Calcular posição na fila DEPOIS de criar o chamado (agora inclui o novo)
     const { data: fila, error: filaError } = await supabase
       .from("chamados")
       .select("id, criado_em")
