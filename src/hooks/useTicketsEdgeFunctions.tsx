@@ -291,6 +291,10 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
           console.log('🚀 REALTIME EVENT:', {
             tipo: payload.eventType,
             ticket: (payload.new as any)?.codigo_ticket,
+            status_anterior: (payload.old as any)?.status,
+            status_novo: (payload.new as any)?.status,
+            equipe_anterior: (payload.old as any)?.equipe_responsavel_id,
+            equipe_nova: (payload.new as any)?.equipe_responsavel_id,
             usuario_causador: (payload.new as any)?.criado_por,
             usuario_atual: user.id,
             timestamp: new Date().toISOString()
@@ -337,15 +341,12 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
               setLastUpdate(Date.now());
             });
           } else {
-            // Para outros eventos, usar debounce maior para evitar piscamento
-            if (realtimeDebounceRef.current) {
-              clearTimeout(realtimeDebounceRef.current);
-            }
-            
-            realtimeDebounceRef.current = setTimeout(() => {
-              console.log('🔄 Triggering ticket refetch due to realtime event');
-              fetchTickets(true);
-            }, 150); // Faster response for better UX
+            // Para UPDATE e DELETE, refetch imediato sem debounce para sincronização instantânea
+            console.log('🎯 UPDATE/DELETE DETECTADO - Refetch imediato para todos os usuários!');
+            fetchTickets(true).then(() => {
+              console.log('✅ Tickets atualizados após evento', payload.eventType);
+              setLastUpdate(Date.now()); // Força re-render do Kanban
+            });
           }
         }
       )
