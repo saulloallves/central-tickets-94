@@ -80,7 +80,7 @@ serve(async (req) => {
     // 1. Busca a unidade na tabela LOCAL atendente_unidades
     const { data: atendenteUnidade, error: unidadeError } = await supabase
       .from("atendente_unidades")
-      .select("id, codigo_grupo, grupo, id_grupo_branco, concierge_name, concierge_phone, unidade_id_externo")
+      .select("id, codigo_grupo, grupo, id_grupo_branco, concierge_name, concierge_phone, unidade_id_externo, atendente_id")
       .eq("id_grupo_branco", phone)
       .eq("ativo", true)
       .maybeSingle();
