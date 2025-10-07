@@ -182,17 +182,15 @@ All colors MUST be HSL.
   
   .liquid-glass {
     background: rgba(255, 255, 255, 0.02);
-    backdrop-filter: blur(40px) saturate(200%);
-    -webkit-backdrop-filter: blur(40px) saturate(200%);
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
     border: 2px solid rgba(255, 255, 255, 0.4);
     border-radius: 24px;
-    box-shadow: 
-      0 8px 32px rgba(0, 0, 0, 0.12),
-      inset 0 2px 4px rgba(255, 255, 255, 0.6),
-      inset 0 -1px 2px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.1);
     position: relative;
     overflow: hidden;
-    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transition: transform 0.25s, background 0.25s, box-shadow 0.25s;
+    will-change: transform;
   }
 
   .liquid-glass::before {
@@ -235,17 +233,15 @@ All colors MUST be HSL.
 
   .liquid-glass-card {
     background: rgba(255, 255, 255, 0.01);
-    backdrop-filter: blur(30px) saturate(180%);
-    -webkit-backdrop-filter: blur(30px) saturate(180%);
+    backdrop-filter: blur(15px) saturate(140%);
+    -webkit-backdrop-filter: blur(15px) saturate(140%);
     border: 1.5px solid rgba(255, 255, 255, 0.3);
     border-radius: 20px;
-    box-shadow: 
-      0 6px 24px rgba(0, 0, 0, 0.1),
-      inset 0 1px 3px rgba(255, 255, 255, 0.5),
-      inset 0 -1px 1px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
     position: relative;
     overflow: hidden;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.25s, background 0.25s;
+    will-change: transform;
   }
 
   .liquid-glass-card::before {
@@ -259,55 +255,45 @@ All colors MUST be HSL.
 
   .liquid-glass-button {
     background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(25px) saturate(150%);
-    -webkit-backdrop-filter: blur(25px) saturate(150%);
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
     border: 1px solid rgba(255, 255, 255, 0.25);
     border-radius: 16px;
-    box-shadow: 
-      0 4px 16px rgba(0, 0, 0, 0.08),
-      inset 0 1px 2px rgba(255, 255, 255, 0.4);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
     position: relative;
     overflow: hidden;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.2s, background 0.2s, box-shadow 0.2s;
+    will-change: transform;
   }
 
   .liquid-glass-button:hover {
     background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.4);
-    box-shadow: 
-      0 8px 24px rgba(0, 0, 0, 0.12),
-      inset 0 2px 4px rgba(255, 255, 255, 0.6);
+    border-color: rgba(255, 255, 255, 0.35);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
     transform: translateY(-1px);
   }
 
   .liquid-glass-sidebar {
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
-    backdrop-filter: blur(60px) saturate(250%);
-    -webkit-backdrop-filter: blur(60px) saturate(250%);
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
     border: 2px solid rgba(255, 255, 255, 0.5);
     border-radius: 32px;
-    box-shadow: 
-      0 20px 80px rgba(0, 0, 0, 0.15),
-      inset 0 4px 8px rgba(255, 255, 255, 0.7),
-      inset 0 -2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
     position: relative;
     overflow: hidden;
+    will-change: transform;
+    contain: layout style paint;
   }
 
   .liquid-glass-sidebar::before {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.4) 0%, transparent 50%, rgba(255, 255, 255, 0.1) 100%);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.3) 0%, transparent 50%, rgba(255, 255, 255, 0.08) 100%);
     border-radius: inherit;
     pointer-events: none;
   }
-
-  .liquid-glass-sidebar::after {
-    content: '';
-    position: absolute;
-    top: 16px;
-    left: 24px;
     width: 80px;
     height: 24px;
     background: rgba(255, 255, 255, 0.5);
@@ -400,7 +386,6 @@ All colors MUST be HSL.
   .dark .liquid-glass-button {
     background: rgba(255, 255, 255, 0.06);
     border-color: rgba(255, 255, 255, 0.2);
-  }
   }
 
 

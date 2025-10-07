@@ -84,8 +84,8 @@ export function AppSidebar() {
                 // Special handling for Atendimentos - only for concierge team and admins
                 if (item.title === "Atendimentos") {
                   return (
-                    <ConciergeGuard key={item.title}>
-                      <TooltipProvider delayDuration={0}>
+                      <ConciergeGuard key={item.title}>
+                       <TooltipProvider delayDuration={200}>
                     {isExpanded ? (
                       <NavLink
                         to={item.url}
@@ -168,7 +168,7 @@ export function AppSidebar() {
                 // Default handling for other items
                 return (
                   <PermissionGuard key={item.title} requiredPermission={item.permission}>
-                    <TooltipProvider delayDuration={0}>
+                    <TooltipProvider delayDuration={200}>
                       {isExpanded ? (
                         <NavLink
                           to={item.url}
@@ -322,8 +322,8 @@ export function AppSidebar() {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              ) : (
-                <TooltipProvider delayDuration={0}>
+               ) : (
+                <TooltipProvider delayDuration={200}>
                   <Tooltip>
                     <TooltipTrigger asChild>
                        <div className="relative">

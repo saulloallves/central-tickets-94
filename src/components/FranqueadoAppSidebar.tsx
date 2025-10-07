@@ -79,7 +79,7 @@ export function FranqueadoAppSidebar() {
           {/* Navigation Icons - sempre vertical */}
           <div className="flex-1 flex flex-col space-y-1 overflow-y-auto scrollbar-hide py-2">
             {franqueadoNavigationItems.map((item) => (
-              <TooltipProvider key={item.title} delayDuration={0}>
+              <TooltipProvider key={item.title} delayDuration={200}>
                 {isExpanded ? (
                   <NavLink
                     to={item.url}
@@ -213,7 +213,7 @@ export function FranqueadoAppSidebar() {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <TooltipProvider delayDuration={0}>
+              <TooltipProvider delayDuration={200}>
                 <Tooltip>
                   <TooltipTrigger asChild>
                      <div className="relative">
