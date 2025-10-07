@@ -187,13 +187,9 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
       console.log('✅ Visible tickets (after filtering crises):', visibleTickets.length);
       setTickets(visibleTickets);
       
-      // Throttle setLastUpdate para no máximo 1x por segundo
-      const now = Date.now();
-      if (now - lastUpdateThrottle.current > 1000) {
-        console.log('🔄 Setting lastUpdate to force Kanban re-render...');
-        setLastUpdate(now);
-        lastUpdateThrottle.current = now;
-      }
+      // Force immediate update for realtime responsiveness
+      console.log('🔄 Setting lastUpdate to force Kanban re-render...');
+      setLastUpdate(Date.now());
       
     } catch (error) {
       console.error('Error fetching tickets:', {
@@ -277,13 +273,7 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
     }
 
     const channelName = `tickets-realtime-${user.id}-${Math.random().toString(36).substr(2, 9)}`;
-    const channel = supabase
-      .channel(channelName, {
-        config: {
-          broadcast: { self: true },
-          presence: { key: user.id }
-        }
-      })
+    const channel = supabase.channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -292,21 +282,12 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
           table: 'tickets',
         },
         (payload) => {
-          console.log('🚀 REALTIME EVENT RECEIVED:', {
-            event: payload.eventType,
-            table: payload.table,
-            timestamp: new Date().toISOString(),
-            new: payload.new ? { 
-              id: (payload.new as any)?.id, 
-              codigo_ticket: (payload.new as any)?.codigo_ticket,
-              status: (payload.new as any)?.status,
-              created_at: (payload.new as any)?.data_abertura
-            } : null,
-            old: payload.old ? { 
-              id: (payload.old as any)?.id, 
-              codigo_ticket: (payload.old as any)?.codigo_ticket,
-              status: (payload.old as any)?.status 
-            } : null
+          console.log('🚀 REALTIME EVENT:', {
+            tipo: payload.eventType,
+            ticket: (payload.new as any)?.codigo_ticket,
+            usuario_causador: (payload.new as any)?.criado_por,
+            usuario_atual: user.id,
+            timestamp: new Date().toISOString()
           });
           
           // Handle new ticket notifications
@@ -345,11 +326,9 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
             console.log('🎯 NOVO TICKET DETECTADO - Refetch imediato!');
             fetchTickets(true).then(() => {
               console.log('✅ Tickets refetched successfully after INSERT');
-              // Force lastUpdate to trigger Kanban re-render
-              const now = Date.now();
+              // Force immediate update
               console.log('🔄 Forcing lastUpdate to trigger Kanban re-render');
-              setLastUpdate(now);
-              lastUpdateThrottle.current = now;
+              setLastUpdate(Date.now());
             });
           } else {
             // Para outros eventos, usar debounce maior para evitar piscamento
@@ -360,7 +339,7 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
             realtimeDebounceRef.current = setTimeout(() => {
               console.log('🔄 Triggering ticket refetch due to realtime event');
               fetchTickets(true);
-            }, 500); // Aumentado para 500ms para reduzir piscamento
+            }, 150); // Faster response for better UX
           }
         }
       )
