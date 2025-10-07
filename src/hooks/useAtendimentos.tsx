@@ -20,6 +20,7 @@ interface Atendimento {
   criado_em: string;
   atualizado_em?: string;
   is_emergencia?: boolean;
+  posicao_fila?: number;
 }
 
 export function useAtendimentos() {
@@ -85,7 +86,31 @@ export function useAtendimentos() {
         is_emergencia: chamado.is_emergencia || false,
       })) || [];
 
-      setAtendimentos(atendimentosFormatados);
+      // Calcular posição na fila para cada atendimento
+      const atendimentosComPosicao = atendimentosFormatados.map(atendimento => {
+        if (atendimento.status !== 'em_fila') {
+          return atendimento;
+        }
+
+        // Filtrar atendimentos da mesma unidade, mesmo tipo e em fila
+        const filaUnidade = atendimentosFormatados
+          .filter(a => 
+            a.unidade_id === atendimento.unidade_id &&
+            a.tipo_atendimento === atendimento.tipo_atendimento &&
+            a.status === 'em_fila'
+          )
+          .sort((a, b) => new Date(a.criado_em).getTime() - new Date(b.criado_em).getTime());
+
+        // Encontrar posição baseada em criado_em
+        const posicao = filaUnidade.findIndex(a => a.id === atendimento.id) + 1;
+
+        return {
+          ...atendimento,
+          posicao_fila: posicao
+        };
+      });
+
+      setAtendimentos(atendimentosComPosicao);
     } catch (error) {
       console.error('Erro ao buscar atendimentos:', error);
       toast({

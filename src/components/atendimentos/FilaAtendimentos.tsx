@@ -19,10 +19,10 @@ export function FilaAtendimentos({ atendimentos, onSelectAtendimento }: FilaAten
             </div>
           </div>
         ) : (
-          atendimentos.map((atendimento, index) => (
+          atendimentos.map((atendimento) => (
             <div key={atendimento.id} className="relative mb-4">
               <div className="absolute -left-2 top-4 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-bold z-10">
-                {index + 1}
+                {atendimento.posicao_fila || '-'}
               </div>
               <div className="ml-4">
                 <AtendimentoCard
