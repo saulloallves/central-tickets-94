@@ -1339,7 +1339,7 @@ export type Database = {
           was_entrepreneur: string | null
           was_nominated: string | null
           was_referred: boolean | null
-          web_password: number | null
+          web_password: string | null
           who_nominated: string | null
         }
         Insert: {
@@ -1395,7 +1395,7 @@ export type Database = {
           was_entrepreneur?: string | null
           was_nominated?: string | null
           was_referred?: boolean | null
-          web_password?: number | null
+          web_password?: string | null
           who_nominated?: string | null
         }
         Update: {
@@ -1451,7 +1451,7 @@ export type Database = {
           was_entrepreneur?: string | null
           was_nominated?: string | null
           was_referred?: boolean | null
-          web_password?: number | null
+          web_password?: string | null
           who_nominated?: string | null
         }
         Relationships: []
@@ -4000,63 +4000,47 @@ export type Database = {
         Returns: undefined
       }
       upsert_franqueado_from_matriz: {
-        Args:
-          | {
-              p_address: string
-              p_address_complement: string
-              p_address_number: string
-              p_birth_date: string
-              p_cep: string
-              p_city: string
-              p_cpf: string
-              p_created_at: string
-              p_email: string
-              p_id: string
-              p_name: string
-              p_nationality: string
-              p_neighborhood: string
-              p_phone: string
-              p_raw_payload: Json
-              p_state: string
-              p_status: string
-              p_uf: string
-              p_updated_at: string
-            }
-          | {
-              p_bairro: string
-              p_birth_date: string
-              p_cep: string
-              p_cidade: string
-              p_complemento: string
-              p_confidentiality_term_accepted: boolean
-              p_cpf: string
-              p_created_at: string
-              p_email: string
-              p_endereco: string
-              p_estado: string
-              p_franchisee_subtype: string
-              p_franchisee_type: string
-              p_id: string
-              p_instagram: string
-              p_is_in_social_contract: boolean
-              p_labor_value: number
-              p_lgpd_term_accepted: boolean
-              p_link_units: string
-              p_nationality: string
-              p_nome: string
-              p_numero: string
-              p_profile_picture: string
-              p_receive_for_labor: boolean
-              p_status: string
-              p_system_term_accepted: boolean
-              p_telefone: string
-              p_uf: string
-              p_unit_code: string
-              p_unit_id_group: string
-              p_unit_name: string
-              p_updated_at: string
-              p_web_password: string
-            }
+        Args: {
+          p_address: string
+          p_address_complement: string
+          p_availability?: string
+          p_birth_date: string
+          p_city: string
+          p_confidentiality_term_accepted?: boolean
+          p_contact: string
+          p_cpf_rnm: string
+          p_created_at: string
+          p_discovery_source?: string
+          p_education?: string
+          p_email: string
+          p_full_name: string
+          p_has_other_activities?: boolean
+          p_id: string
+          p_instagram?: string
+          p_is_active_system: boolean
+          p_is_in_contract?: boolean
+          p_lgpd_term_accepted?: boolean
+          p_nationality: string
+          p_neighborhood: string
+          p_number_address: string
+          p_other_activities_description?: string
+          p_owner_type?: string
+          p_postal_code: string
+          p_previous_profession?: string
+          p_previous_salary_range?: string
+          p_profile_image?: string
+          p_prolabore_value?: number
+          p_receives_prolabore?: boolean
+          p_referrer_name?: string
+          p_referrer_unit_code?: string
+          p_state: string
+          p_system_term_accepted?: boolean
+          p_systems_password?: string
+          p_uf: string
+          p_updated_at: string
+          p_was_entrepreneur?: boolean
+          p_was_referred?: boolean
+        }
         Returns: undefined
       }
       upsert_unidade_from_matriz: {

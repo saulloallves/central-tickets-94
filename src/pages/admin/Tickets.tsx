@@ -18,7 +18,6 @@ import { CrisisBanner } from '@/components/tickets/CrisisBanner';
 import { NotificationButton } from '@/components/notifications/NotificationButton';
 import { useTicketsEdgeFunctions } from '@/hooks/useTicketsEdgeFunctions';
 import { BulkAnalysisDialog } from '@/components/tickets/BulkAnalysisDialog';
-import { ForceResumeSLAButton } from '@/components/tickets/ForceResumeSLAButton';
 import { useUserEquipes } from '@/hooks/useUserEquipes';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -136,7 +135,6 @@ const Tickets = () => {
           
           <div className="flex flex-wrap gap-1 md:gap-2">
             <NotificationButton isExpanded={false} variant="tickets" />
-            <ForceResumeSLAButton />
           </div>
         </div>
 

@@ -55,7 +55,7 @@ serve(async (req) => {
       .from('franqueados')
       .select('id, email, name, phone, web_password')
       .eq('normalized_phone', normalizedPhone)
-      .eq('web_password', parseInt(password))
+      .eq('web_password', password)
       .single();
 
     if (franqueadoError || !franqueado) {
