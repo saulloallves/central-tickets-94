@@ -6,6 +6,7 @@ import { useAtendimentosRealtime } from './useAtendimentosRealtime';
 interface Atendimento {
   id: string;
   unidade_id: string;
+  unidade_nome?: string;
   franqueado_nome: string;
   telefone: string;
   descricao: string;
@@ -18,6 +19,7 @@ interface Atendimento {
   resolucao?: string;
   criado_em: string;
   atualizado_em?: string;
+  is_emergencia?: boolean;
 }
 
 export function useAtendimentos() {
@@ -29,7 +31,8 @@ export function useAtendimentos() {
     try {
       setLoading(true);
       
-      const { data, error } = await supabase
+      // Buscar chamados
+      const { data: chamados, error } = await supabase
         .from('chamados')
         .select('*')
         .order('criado_em', { ascending: false });
@@ -44,10 +47,21 @@ export function useAtendimentos() {
         return;
       }
 
+      // Buscar informações de unidades para enriquecer os dados
+      const unidadeIds = [...new Set(chamados?.map(c => c.unidade_id).filter(Boolean))];
+      
+      const { data: unidades } = await supabase
+        .from('atendente_unidades')
+        .select('id, grupo')
+        .in('id', unidadeIds);
+
+      const unidadeMap = new Map(unidades?.map(u => [u.id, u.grupo]) || []);
+
       // Mapear dados da tabela chamados para o formato esperado
-      const atendimentosFormatados = data?.map(chamado => ({
+      const atendimentosFormatados = chamados?.map(chamado => ({
         id: chamado.id,
         unidade_id: chamado.unidade_id,
+        unidade_nome: unidadeMap.get(chamado.unidade_id) || 'Unidade não identificada',
         franqueado_nome: chamado.franqueado_nome,
         telefone: chamado.telefone,
         descricao: chamado.descricao,
@@ -60,6 +74,7 @@ export function useAtendimentos() {
         resolucao: chamado.resolucao,
         criado_em: chamado.criado_em,
         atualizado_em: chamado.atualizado_em,
+        is_emergencia: chamado.is_emergencia || false,
       })) || [];
 
       setAtendimentos(atendimentosFormatados);
