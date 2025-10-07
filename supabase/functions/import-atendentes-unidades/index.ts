@@ -144,7 +144,8 @@ Deno.serve(async (req) => {
 async function processarRegistroExterno(record: any, stats: any, supabase: any) {
   // 1. Extrair dados do registro da API externa (id é UUID)
   const unidade_id = record.id || record.codigo_grupo?.toString() // UUID or codigo_grupo
-  const { grupo, codigo_grupo, cidade, uf, concierge_name, concierge_phone, concierge_email } = record
+  const unidade_id_externo = record.id?.toString() // Guardar ID original da API externa
+  const { grupo, codigo_grupo, cidade, uf, concierge_name, concierge_phone, concierge_email, id_grupo_branco } = record
   
   console.log(`🔍 Processando unidade ${grupo || cidade} (ID: ${unidade_id})`)
   
@@ -274,17 +275,21 @@ async function processarRegistroExterno(record: any, stats: any, supabase: any) 
 
   const unidadeIdFinal = unidadeLocal?.id || unidade_id
 
-  // 7. Criar associação com unidade (upsert para evitar duplicatas)
+  // 7. Criar associação na tabela atendente_unidades (upsert para evitar duplicatas)
   const { error: associacaoError } = await supabase
     .from('atendente_unidades')
     .upsert({
       atendente_id: atendenteId,
-      unidade_id: unidadeIdFinal,
+      codigo_grupo: codigo_grupo?.toString(),
+      grupo: grupo || cidade,
+      id_grupo_branco: id_grupo_branco,
+      concierge_name: concierge_name,
+      concierge_phone: concierge_phone,
+      unidade_id_externo: unidade_id_externo,
       ativo: true,
-      is_preferencial: true,
       prioridade: 1
     }, {
-      onConflict: 'atendente_id,unidade_id'
+      onConflict: 'atendente_id,codigo_grupo'
     })
 
   if (associacaoError) {

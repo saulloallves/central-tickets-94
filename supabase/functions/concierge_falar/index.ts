@@ -71,40 +71,35 @@ serve(async (req) => {
       });
     }
 
-    // Conecta no Supabase atual (para chamados)
+    // Conecta no Supabase
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL"),
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),
     );
 
-    // Conecta no Supabase externo (para unidades)
-    const externalSupabase = createClient(
-      Deno.env.get("EXTERNAL_SUPABASE_URL"),
-      Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY"),
-    );
-
-    // 1. Busca a unidade correspondente ao grupo no projeto externo
-    const { data: unidade, error: unidadeError } = await externalSupabase
-      .from("unidades")
-      .select("id, grupo, codigo_grupo, concierge_name, concierge_phone")
+    // 1. Busca a unidade na tabela LOCAL atendente_unidades
+    const { data: atendenteUnidade, error: unidadeError } = await supabase
+      .from("atendente_unidades")
+      .select("id, codigo_grupo, grupo, id_grupo_branco, concierge_name, concierge_phone, unidade_id_externo")
       .eq("id_grupo_branco", phone)
+      .eq("ativo", true)
       .maybeSingle();
 
-    if (unidadeError || !unidade) {
+    if (unidadeError || !atendenteUnidade) {
       console.error("❌ Unidade não encontrada:", unidadeError);
       return new Response(JSON.stringify({ error: "Unidade não encontrada" }), {
         headers: { "Content-Type": "application/json", ...corsHeaders },
         status: 404,
       });
     }
-    console.log("✅ Unidade encontrada:", unidade);
+    console.log("✅ Unidade encontrada:", atendenteUnidade);
 
     // 1.5 Verificar se já existe um atendimento ativo para este telefone
     const { data: chamadoExistente, error: verificacaoError } = await supabase
       .from("chamados")
       .select("id, status, criado_em")
       .eq("telefone", phone)
-      .eq("unidade_id", unidade.id)
+      .eq("unidade_id", atendenteUnidade.id)
       .in("status", ["em_fila", "em_atendimento"])
       .maybeSingle();
 
@@ -120,7 +115,7 @@ serve(async (req) => {
       const { data: atendenteUnidadeExistente } = await supabase
         .from("atendente_unidades")
         .select("atendente_id")
-        .eq("codigo_grupo", unidade.codigo_grupo)
+        .eq("codigo_grupo", atendenteUnidade.codigo_grupo)
         .eq("ativo", true)
         .maybeSingle();
 
@@ -141,8 +136,8 @@ serve(async (req) => {
           query = query.eq("atendente_id", atendenteIdExistente);
           console.log(`🔍 Filtrando fila por atendente_id: ${atendenteIdExistente}`);
         } else {
-          query = query.eq("unidade_id", unidade.id);
-          console.log(`🔍 Filtrando fila por unidade_id (sem atendente): ${unidade.id}`);
+          query = query.eq("unidade_id", atendenteUnidade.id);
+          console.log(`🔍 Filtrando fila por unidade_id (sem atendente): ${atendenteUnidade.id}`);
         }
 
         const { data: fila } = await query.order("criado_em", { ascending: true });
@@ -206,44 +201,35 @@ serve(async (req) => {
       });
     }
 
-    // 2. Buscar atendente correto via atendente_unidades com join
-    const { data: atendenteUnidade, error: atendenteUnidadeError } = await supabase
-      .from("atendente_unidades")
-      .select(`
-        atendente_id,
-        atendentes!inner(
-          id,
-          nome,
-          tipo,
-          status,
-          ativo
-        )
-      `)
-      .eq("codigo_grupo", unidade.codigo_grupo)
-      .eq("ativo", true)
-      .eq("atendentes.tipo", "concierge")
-      .eq("atendentes.status", "ativo")
-      .eq("atendentes.ativo", true)
-      .maybeSingle();
-
+    // 2. Buscar atendente correto via atendente_id da unidade
     let atendenteNome = "Concierge"; // fallback
-    let atendenteId = null;
+    let atendenteId = atendenteUnidade.atendente_id;
 
-    if (atendenteUnidade?.atendentes) {
-      atendenteNome = atendenteUnidade.atendentes.nome;
-      atendenteId = atendenteUnidade.atendente_id;
-      console.log(`✅ Atendente encontrado via join: ${atendenteNome} (${atendenteId})`);
+    if (atendenteId) {
+      const { data: atendente } = await supabase
+        .from("atendentes")
+        .select("nome")
+        .eq("id", atendenteId)
+        .eq("tipo", "concierge")
+        .eq("status", "ativo")
+        .eq("ativo", true)
+        .maybeSingle();
+
+      if (atendente) {
+        atendenteNome = atendente.nome;
+        console.log(`✅ Atendente encontrado: ${atendenteNome} (${atendenteId})`);
+      }
     }
 
     // 3. Cria um novo chamado
     const { data: chamado, error: chamadoError } = await supabase
       .from("chamados")
       .insert({
-        unidade_id: unidade.id,
+        unidade_id: atendenteUnidade.id,
         tipo_atendimento: "concierge",
         status: "em_fila",
         telefone: phone,
-        franqueado_nome: unidade.grupo,
+        franqueado_nome: atendenteUnidade.grupo,
         atendente_nome: atendenteNome,
         atendente_id: atendenteId,
         descricao: "Solicitação de atendimento via Concierge",
@@ -274,8 +260,8 @@ serve(async (req) => {
       query = query.eq("atendente_id", atendenteId);
       console.log(`🔍 Filtrando fila por atendente_id: ${atendenteId}`);
     } else {
-      query = query.eq("unidade_id", unidade.id);
-      console.log(`🔍 Filtrando fila por unidade_id (sem atendente): ${unidade.id}`);
+      query = query.eq("unidade_id", atendenteUnidade.id);
+      console.log(`🔍 Filtrando fila por unidade_id (sem atendente): ${atendenteUnidade.id}`);
     }
 
     const { data: fila, error: filaError } = await query.order("criado_em", { ascending: true });

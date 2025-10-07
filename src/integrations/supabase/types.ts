@@ -219,6 +219,7 @@ export type Database = {
           id: string
           id_grupo_branco: string | null
           prioridade: number | null
+          unidade_id_externo: string | null
           updated_at: string
         }
         Insert: {
@@ -232,6 +233,7 @@ export type Database = {
           id?: string
           id_grupo_branco?: string | null
           prioridade?: number | null
+          unidade_id_externo?: string | null
           updated_at?: string
         }
         Update: {
@@ -245,6 +247,7 @@ export type Database = {
           id?: string
           id_grupo_branco?: string | null
           prioridade?: number | null
+          unidade_id_externo?: string | null
           updated_at?: string
         }
         Relationships: [
