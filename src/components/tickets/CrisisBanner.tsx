@@ -9,6 +9,9 @@ import { useRole } from '@/hooks/useRole';
 import { CrisisModal } from './CrisisModal';
 import { NotificationSounds } from '@/lib/notification-sounds';
 
+// Intervalo de polling para atualização de crises (em milissegundos)
+const CRISIS_POLLING_INTERVAL = 60000; // 1 minuto
+
 interface Crisis {
   id: string;
   titulo: string;
@@ -32,7 +35,6 @@ export function CrisisBanner() {
     let isMounted = true;
     let retryCount = 0;
     const maxRetries = 3;
-    let channelRef: any = null;
 
     // Buscar crises ativas das equipes do usuário + crises globais
     const fetchActiveCrises = async () => {
@@ -97,47 +99,21 @@ export function CrisisBanner() {
       }
     };
 
+    // Busca inicial
     fetchActiveCrises();
 
-    // Subscription para updates em tempo real de crises com debounce
-    let fetchTimeout: NodeJS.Timeout;
-    
-    channelRef = supabase
-      .channel('crisis-realtime-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'crises'
-        },
-        (payload) => {
-          console.log('Crisis realtime update:', payload);
-          
-          // Debounce para evitar múltiplas chamadas simultâneas
-          if (fetchTimeout) {
-            clearTimeout(fetchTimeout);
-          }
-          
-          fetchTimeout = setTimeout(() => {
-            if (isMounted) {
-              fetchActiveCrises();
-            }
-          }, 500); // Aguardar 500ms para agrupar mudanças simultâneas
-        }
-      )
-      .subscribe();
+    // Polling periódico para atualizar crises
+    const pollingInterval = setInterval(() => {
+      if (isMounted) {
+        fetchActiveCrises();
+      }
+    }, CRISIS_POLLING_INTERVAL);
 
     return () => {
       isMounted = false;
-      if (fetchTimeout) {
-        clearTimeout(fetchTimeout);
-      }
-      if (channelRef) {
-        supabase.removeChannel(channelRef);
-      }
+      clearInterval(pollingInterval);
     };
-  }, [user]); // Removido isAdmin e isDiretor das dependências
+  }, [user]);
 
   // Tocar som de alerta quando nova crise aparece (apenas uma vez por crise)
   useEffect(() => {
