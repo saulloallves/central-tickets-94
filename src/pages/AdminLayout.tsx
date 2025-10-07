@@ -13,7 +13,7 @@ import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
 import PageTransition from "@/components/PageTransition";
 import { SidebarProvider, useSidebarContext } from "@/contexts/SidebarContext";
-import { OneSignalPrompt } from "@/components/OneSignalPrompt";
+
 
 interface AdminLayoutProps {
   children: React.ReactNode
@@ -114,7 +114,6 @@ function AdminLayoutContent({ children, isMobile }: { children: React.ReactNode,
       
       {/* Mobile bottom navigation - FIXA */}
       {isMobile && <MobileBottomNav />}
-      <OneSignalPrompt />
     </div>
   )
 }
