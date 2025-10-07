@@ -31,12 +31,12 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),
     );
 
-    // 1. Busca o chamado ativo para este telefone
+    // 1. Busca o chamado ativo para este telefone (em_fila ou em_atendimento)
     const { data: chamado, error: chamadoError } = await supabase
       .from("chamados")
       .select("*")
       .eq("telefone", phone)
-      .eq("status", "em_fila")
+      .in("status", ["em_fila", "em_atendimento"])
       .order("criado_em", { ascending: false })
       .limit(1)
       .maybeSingle();
