@@ -87,6 +87,8 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
   const realtimeDebounceRef = useRef<NodeJS.Timeout | null>(null);
   const backupPollingRef = useRef<NodeJS.Timeout | null>(null);
   const lastUpdateThrottle = useRef<number>(0);
+  const reconnectAttemptsRef = useRef<number>(0);
+  const MAX_RECONNECT_ATTEMPTS = 3;
 
   // Fetch tickets using regular supabase query (read-only) with retry logic
   const fetchTickets = useCallback(async (isRefetch = false, retryCount = 0) => {
@@ -230,7 +232,7 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
     }
   }, [user, roleLoading, filters, userEquipes, toast]);
 
-  // Calculate stats from current tickets
+  // Calculate stats from current tickets - memoized to prevent recreation
   const calculateStats = useCallback((ticketsList: Ticket[]) => {
     const today = new Date().toISOString().split('T')[0];
     const todaysTickets = ticketsList.filter(t => {
@@ -258,7 +260,7 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
     }
 
     setTicketStats(stats);
-  }, []);
+  }, []); // Empty deps - function is stable
 
   // Optimized realtime setup - single channel only
   const setupRealtime = useCallback(() => {
@@ -266,11 +268,15 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
 
     console.log('🔄 Setting up optimized realtime subscription for tickets');
     
-    // Clean up existing subscription
+    // Clean up existing subscription and reset reconnect counter
     if (realtimeChannelRef.current) {
+      console.log('🧹 Removing old channel before creating new one');
       supabase.removeChannel(realtimeChannelRef.current);
       realtimeChannelRef.current = null;
     }
+    
+    // Reset reconnect attempts when setting up fresh
+    reconnectAttemptsRef.current = 0;
 
     const channelName = `tickets-realtime-${user.id}-${Math.random().toString(36).substr(2, 9)}`;
     const channel = supabase.channel(channelName)
@@ -348,20 +354,36 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
         
         if (status === 'SUBSCRIBED') {
           console.log('✅ Successfully subscribed to tickets realtime');
+          // Reset reconnect attempts on successful connection
+          reconnectAttemptsRef.current = 0;
         } else if (status === 'CHANNEL_ERROR') {
           console.error('❌ Channel error in realtime subscription');
-          // Tentar reconectar após erro
-          setTimeout(() => {
-            console.log('🔁 Retrying realtime connection...');
-            setupRealtime();
-          }, 3000);
+          
+          // Limitar tentativas de reconexão
+          if (reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
+            reconnectAttemptsRef.current++;
+            console.log(`🔁 Retrying realtime connection (attempt ${reconnectAttemptsRef.current}/${MAX_RECONNECT_ATTEMPTS})...`);
+            
+            setTimeout(() => {
+              setupRealtime();
+            }, 3000);
+          } else {
+            console.error(`❌ Max reconnect attempts (${MAX_RECONNECT_ATTEMPTS}) reached. Stopping reconnection.`);
+          }
         } else if (status === 'TIMED_OUT') {
           console.error('❌ Realtime subscription timed out');
-          // Tentar reconectar após timeout
-          setTimeout(() => {
-            console.log('🔁 Retrying realtime connection...');
-            setupRealtime();
-          }, 3000);
+          
+          // Limitar tentativas de reconexão
+          if (reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
+            reconnectAttemptsRef.current++;
+            console.log(`🔁 Retrying realtime connection (attempt ${reconnectAttemptsRef.current}/${MAX_RECONNECT_ATTEMPTS})...`);
+            
+            setTimeout(() => {
+              setupRealtime();
+            }, 3000);
+          } else {
+            console.error(`❌ Max reconnect attempts (${MAX_RECONNECT_ATTEMPTS}) reached. Stopping reconnection.`);
+          }
         } else if (status === 'CLOSED') {
           console.warn('⚠️ Realtime subscription closed');
         }
@@ -393,23 +415,10 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
     };
     
     initialize();
-  }, [user?.id, roleLoading, fetchTickets, setupRealtime]);
+  }, [user?.id, roleLoading]); // Removed fetchTickets and setupRealtime to prevent infinite loop
 
-  // Filter-based refetch with improved debouncing
-  useEffect(() => {
-    if (user && !roleLoading && fetchedRef.current) {
-      console.log('🔍 Filters changed, debouncing refetch:', filters);
-      const timeoutId = setTimeout(() => {
-        console.log('🔍 Executing filter-based refetch');
-        fetchTickets(true); // Mark as refetch to avoid loading state
-      }, 1000); // Aumentado para 1000ms para reduzir piscamento durante digitação
-      
-      return () => {
-        console.log('🔍 Cancelling debounced refetch');
-        clearTimeout(timeoutId);
-      };
-    }
-  }, [filters, user, roleLoading, fetchTickets]);
+  // REMOVED: Filter-based refetch duplicates debounce in parent component (Tickets.tsx)
+  // Parent already handles debounced filters via useDebounce hook
 
   // Recalculate stats when tickets change
   useEffect(() => {

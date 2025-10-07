@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -38,6 +38,8 @@ export const useEnhancedAtendimentoRealtime = ({
   const [isConnected, setIsConnected] = useState(false);
   const [hasAttemptedRealtime, setHasAttemptedRealtime] = useState(false);
   const { user } = useAuth();
+  const reconnectAttemptsRef = useRef<number>(0);
+  const MAX_RECONNECT_ATTEMPTS = 3;
 
   const formatAtendimento = (chamado: any): Atendimento => ({
     id: chamado.id,
@@ -80,6 +82,9 @@ export const useEnhancedAtendimentoRealtime = ({
 
     console.log('📡 Setting up enhanced atendimento realtime with filters:', filters);
     setHasAttemptedRealtime(true);
+    
+    // Reset reconnect attempts on fresh setup
+    reconnectAttemptsRef.current = 0;
 
     const channelName = `atendimentos-realtime-${Math.random().toString(36).substr(2, 9)}`;
     console.log('📡 Creating channel:', channelName);
@@ -117,8 +122,20 @@ export const useEnhancedAtendimentoRealtime = ({
         if (status === 'SUBSCRIBED') {
           console.log('✅ Enhanced atendimento realtime connected successfully');
           setIsConnected(true);
-        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          reconnectAttemptsRef.current = 0; // Reset on success
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
           console.log('❌ Enhanced atendimento realtime connection failed:', status, err);
+          setIsConnected(false);
+          
+          // Limit reconnection attempts
+          if (reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
+            reconnectAttemptsRef.current++;
+            console.log(`🔁 Will retry atendimento connection (attempt ${reconnectAttemptsRef.current}/${MAX_RECONNECT_ATTEMPTS})`);
+          } else {
+            console.error(`❌ Max reconnect attempts (${MAX_RECONNECT_ATTEMPTS}) reached for atendimentos. Stopping reconnection.`);
+          }
+        } else if (status === 'CLOSED') {
+          console.log('⚠️ Enhanced atendimento realtime connection closed');
           setIsConnected(false);
         }
       });
