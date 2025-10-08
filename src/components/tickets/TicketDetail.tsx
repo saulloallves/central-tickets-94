@@ -646,16 +646,22 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
 
   const handleEquipeChange = async (equipeId: string) => {
     try {
-      const { error } = await supabase
-        .from('tickets')
-        .update({ 
-          equipe_responsavel_id: equipeId || null,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', ticketId);
+      // Usar edge function com service role para contornar RLS
+      const { data, error } = await supabase.functions.invoke('update-ticket', {
+        body: {
+          ticketId,
+          updates: {
+            equipe_responsavel_id: equipeId || null
+          }
+        }
+      });
 
       if (error) {
         throw error;
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
       }
 
       setTicket(prev => ({
