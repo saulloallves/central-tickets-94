@@ -4,11 +4,12 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { RefreshCw, Send, AlertTriangle } from 'lucide-react';
+import { RefreshCw, Send, AlertTriangle, Bell } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 
 export function NotificationQueueManager() {
   const [processing, setProcessing] = useState(false);
+  const [processingInternal, setProcessingInternal] = useState(false);
   const { toast } = useToast();
 
   const { data: pendingNotifications, refetch, isLoading } = useQuery({
@@ -55,6 +56,38 @@ export function NotificationQueueManager() {
       });
     } finally {
       setProcessing(false);
+    }
+  };
+
+  const processInternalNotifications = async () => {
+    setProcessingInternal(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('process-pending-internal-notifications');
+      
+      if (error) {
+        console.error('Error processing internal notifications:', error);
+        toast({
+          title: "Erro ao processar notificações internas",
+          description: error.message || "Erro desconhecido",
+          variant: "destructive",
+        });
+      } else {
+        console.log('Internal processing result:', data);
+        toast({
+          title: "Notificações internas processadas",
+          description: data.message || `${data.processed || 0} notificações criadas`,
+        });
+        refetch();
+      }
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      toast({
+        title: "Erro inesperado",
+        description: "Erro ao processar notificações internas",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessingInternal(false);
     }
   };
 
@@ -123,42 +156,59 @@ export function NotificationQueueManager() {
               )}
             </div>
 
-            <div className="flex gap-2">
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <Button
+                  onClick={processPendingNotifications}
+                  disabled={processing}
+                  className="flex-1"
+                  size="sm"
+                >
+                  {processing ? (
+                    <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Send className="h-4 w-4 mr-2" />
+                  )}
+                  {processing ? 'Processando...' : 'Processar Agora'}
+                </Button>
+                <Button
+                  onClick={async () => {
+                    try {
+                      await supabase.functions.invoke('notification-scheduler');
+                      toast({
+                        title: "Agendador executado",
+                        description: "Verificação automática de notificações executada",
+                      });
+                      refetch();
+                    } catch (error) {
+                      console.error('Error running scheduler:', error);
+                      toast({
+                        title: "Erro",
+                        description: "Erro ao executar agendador",
+                        variant: "destructive",
+                      });
+                    }
+                  }}
+                  variant="outline"
+                  size="sm"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </div>
+              
               <Button
-                onClick={processPendingNotifications}
-                disabled={processing}
-                className="flex-1"
+                onClick={processInternalNotifications}
+                disabled={processingInternal}
+                className="w-full"
+                variant="secondary"
                 size="sm"
               >
-                {processing ? (
+                {processingInternal ? (
                   <RefreshCw className="h-4 w-4 animate-spin mr-2" />
                 ) : (
-                  <Send className="h-4 w-4 mr-2" />
+                  <Bell className="h-4 w-4 mr-2" />
                 )}
-                {processing ? 'Processando...' : 'Processar Agora'}
-              </Button>
-              <Button
-                onClick={async () => {
-                  try {
-                    await supabase.functions.invoke('notification-scheduler');
-                    toast({
-                      title: "Agendador executado",
-                      description: "Verificação automática de notificações executada",
-                    });
-                    refetch();
-                  } catch (error) {
-                    console.error('Error running scheduler:', error);
-                    toast({
-                      title: "Erro",
-                      description: "Erro ao executar agendador",
-                      variant: "destructive",
-                    });
-                  }
-                }}
-                variant="outline"
-                size="sm"
-              >
-                <RefreshCw className="h-4 w-4" />
+                {processingInternal ? 'Criando notificações internas...' : 'Criar Notificações Internas Retroativas'}
               </Button>
             </div>
           </div>
