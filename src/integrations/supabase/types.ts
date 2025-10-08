@@ -3966,6 +3966,16 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: undefined
       }
+      reprocess_pending_ticket_forwarded_notifications: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          equipe_id: string
+          members_notified: number
+          notification_id: string
+          status: string
+          ticket_id: string
+        }[]
+      }
       resolve_crise_close_tickets: {
         Args: {
           p_by?: string
