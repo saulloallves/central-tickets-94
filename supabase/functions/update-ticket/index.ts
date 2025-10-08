@@ -64,13 +64,11 @@ Deno.serve(async (req) => {
       updated_at: new Date().toISOString(),
     };
 
-    // Update ticket
-    const { data: updatedTicket, error: updateError } = await supabase
+    // Update ticket (without select to avoid ON CONFLICT error)
+    const { error: updateError } = await supabase
       .from('tickets')
       .update(updatePayload)
-      .eq('id', ticketId)
-      .select('*')
-      .single();
+      .eq('id', ticketId);
 
     if (updateError) {
       console.error('❌ Failed to update ticket:', updateError);
@@ -79,6 +77,25 @@ Deno.serve(async (req) => {
         details: updateError.details || 'Erro ao atualizar ticket'
       }), {
         status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Fetch updated ticket in separate query
+    const { data: updatedTicket, error: fetchError } = await supabase
+      .from('tickets')
+      .select('*')
+      .eq('id', ticketId)
+      .single();
+
+    if (fetchError) {
+      console.error('❌ Failed to fetch updated ticket:', fetchError);
+      // Update succeeded but fetch failed - still return success
+      return new Response(JSON.stringify({ 
+        success: true,
+        message: 'Ticket atualizado com sucesso (dados não retornados)'
+      }), {
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
