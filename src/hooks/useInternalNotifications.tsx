@@ -9,7 +9,7 @@ export interface InternalNotification {
   id: string;
   title: string;
   message: string;
-  type: 'ticket' | 'sla' | 'alert' | 'info' | 'crisis' | 'franqueado_respondeu';
+  type: 'ticket' | 'sla' | 'alert' | 'info' | 'crisis' | 'franqueado_respondeu' | 'ticket_forwarded';
   equipe_id?: string | null;
   created_by?: string | null;
   created_at: string;
@@ -318,6 +318,22 @@ export const useInternalNotifications = () => {
                 await playNotificationSound(0.5); // Volume menor para notificações gerais
               }).catch(error => {
                 console.log('🔔 ❌ Erro ao carregar audio manager para notificação genérica:', error);
+              });
+            }
+
+            // Toast específico para ticket encaminhado
+            if (notificationDetails?.type === 'ticket_forwarded') {
+              console.log('🔔 📥 Exibindo toast para ticket encaminhado');
+              toast({
+                title: "📥 Ticket Encaminhado",
+                description: notificationDetails.message || "Novo ticket encaminhado para sua equipe",
+                duration: 6000,
+              });
+              
+              import('@/lib/audio-manager').then(async ({ playNotificationSound }) => {
+                await playNotificationSound(0.6);
+              }).catch(error => {
+                console.log('🔔 ❌ Erro ao carregar audio manager para ticket encaminhado:', error);
               });
             }
           } catch (error) {

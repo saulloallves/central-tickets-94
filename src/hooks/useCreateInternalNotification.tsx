@@ -5,7 +5,7 @@ import { useToast } from './use-toast';
 interface CreateNotificationParams {
   title: string;
   message?: string;
-  type: 'ticket' | 'sla' | 'alert' | 'info' | 'crisis';
+  type: 'ticket' | 'sla' | 'alert' | 'info' | 'crisis' | 'ticket_forwarded';
   equipe_id?: string;
   recipients?: string[]; // Optional: if not provided, will auto-derive from equipe_id
   payload?: Record<string, any>;
