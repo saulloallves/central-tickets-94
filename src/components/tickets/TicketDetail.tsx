@@ -49,20 +49,32 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
 
   const fetchTicketDetails = async () => {
     try {
-      // Fetch ticket first
+      // Fetch ticket first using maybeSingle to avoid RLS issues
       const { data: ticketData, error: ticketError } = await supabase
         .from('tickets')
         .select('*')
         .eq('id', ticketId)
-        .single();
+        .maybeSingle();
 
-      if (ticketError || !ticketData) {
+      if (ticketError) {
         console.error('Error fetching ticket:', ticketError);
         toast({
-          title: "Erro",
-          description: "Não foi possível carregar o ticket",
+          title: "Erro ao carregar ticket",
+          description: "Não foi possível carregar os detalhes do ticket. Tente novamente.",
           variant: "destructive",
         });
+        setLoading(false);
+        return;
+      }
+
+      if (!ticketData) {
+        console.error('Ticket not found or no permission:', ticketId);
+        toast({
+          title: "Ticket não encontrado",
+          description: "O ticket não existe ou você não tem permissão para visualizá-lo.",
+          variant: "destructive",
+        });
+        setLoading(false);
         return;
       }
 
