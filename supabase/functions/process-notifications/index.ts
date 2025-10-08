@@ -363,7 +363,7 @@ async function getMessageTemplate(supabase: any, templateKey: string): Promise<s
 {{descricao_problema}}
 
 🕐 *Encaminhado em:* {{timestamp}}
-⏰ *Prazo SLA:* {{data_limite_sla}}`
+⏰ *Prazo SLA:* {{data_limite_sla}}
 
 Para mais detalhes, acesse o sistema.`,
 
