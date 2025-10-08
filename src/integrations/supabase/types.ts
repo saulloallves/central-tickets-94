@@ -1362,7 +1362,7 @@ export type Database = {
           franchisee_type?: string | null
           has_other_activities?: boolean | null
           have_extra_activities?: string | null
-          id: string
+          id?: string
           instagram?: string | null
           is_active_system?: boolean | null
           is_in_social_contract?: string | null
