@@ -25,14 +25,23 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
-    // Use service role for admin operations, but pass user auth for RLS
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      global: { 
-        headers: { 
-          Authorization: req.headers.get('Authorization') ?? ''
-        } 
-      },
-    });
+    // Usar service role sem passar Authorization header para contornar RLS
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Extrair user_id do token JWT para validação de permissões
+    const authHeader = req.headers.get('Authorization');
+    let userId: string | null = null;
+    
+    if (authHeader) {
+      try {
+        const token = authHeader.replace('Bearer ', '');
+        const [, payload] = token.split('.');
+        const decoded = JSON.parse(atob(payload));
+        userId = decoded.sub;
+      } catch (e) {
+        console.error('Erro ao decodificar token:', e);
+      }
+    }
 
     // Get current ticket to validate permissions
     const { data: currentTicket, error: currentError } = await supabase
