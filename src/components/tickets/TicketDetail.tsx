@@ -405,16 +405,22 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
 
   const handleTeamChange = async (equipeId: string) => {
     try {
-      const { error } = await supabase
-        .from('tickets')
-        .update({ 
-          equipe_responsavel_id: equipeId || null,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', ticketId);
+      // Use edge function to bypass RLS and trigger issues
+      const { data, error } = await supabase.functions.invoke('update-ticket', {
+        body: { 
+          ticketId,
+          updates: {
+            equipe_responsavel_id: equipeId || null
+          }
+        }
+      });
 
       if (error) {
         throw error;
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
       }
 
       // Update local ticket state immediately
