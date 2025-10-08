@@ -54,6 +54,7 @@ const Tickets = () => {
       window.removeEventListener('openTicketModal', handleOpenTicketModal as EventListener);
     };
   }, []);
+
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [localFilters, setLocalFilters] = useState({
@@ -88,6 +89,18 @@ const Tickets = () => {
     deleteTicket,
     moveTicket,
   } = useTicketsEdgeFunctions(debouncedFilters);
+
+  // Listen for ticket transferred events to update Kanban
+  useEffect(() => {
+    const handleTicketTransferred = (event: CustomEvent) => {
+      console.log('🔄 Ticket transferido detectado. Atualizando Kanban...', event.detail);
+      refetch();
+    };
+    window.addEventListener('ticket-transferred', handleTicketTransferred as EventListener);
+    return () => {
+      window.removeEventListener('ticket-transferred', handleTicketTransferred as EventListener);
+    };
+  }, [refetch]);
 
   // OPTIMIZED: Use userEquipes instead of separate fetch
   // Convert userEquipes to format for compatibility

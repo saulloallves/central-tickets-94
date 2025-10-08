@@ -417,6 +417,18 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
 
   const handleTeamChange = async (equipeId: string) => {
     try {
+      // Verificar se usuário pertence à nova equipe
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id;
+
+      const { data: userEquipesData } = await supabase
+        .from('user_equipes' as any)
+        .select('equipe_id')
+        .eq('user_id', userId);
+
+      const userEquipeIds = (userEquipesData as any[])?.map((ue: any) => ue.equipe_id) || [];
+      const userWillLoseAccess = !userEquipeIds.includes(equipeId);
+
       // Use edge function to bypass RLS and trigger issues
       const { data, error } = await supabase.functions.invoke('update-ticket', {
         body: { 
@@ -435,21 +447,29 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
         throw new Error(data.error);
       }
 
-      // Update local ticket state immediately
-      setTicket(prev => ({
-        ...prev,
-        equipe_responsavel_id: equipeId || null,
-        equipes: equipes.find(e => e.id === equipeId) || null,
-        updated_at: new Date().toISOString()
+      // Emitir evento de transferência para o hook
+      window.dispatchEvent(new CustomEvent('ticket-transferred', {
+        detail: { ticketId, newEquipeId: equipeId }
       }));
 
       toast({
         title: "Sucesso",
-        description: "Equipe responsável atualizada",
+        description: "Ticket transferido com sucesso",
       });
 
-      // Refresh ticket details to get latest data
-      fetchTicketDetails();
+      // Se usuário não tem acesso à nova equipe, fechar modal
+      if (userWillLoseAccess) {
+        console.log('🚪 Usuário perdeu acesso ao ticket. Fechando modal...');
+        onClose();
+      } else {
+        // Se ainda tem acesso, atualizar estado local
+        setTicket(prev => ({
+          ...prev,
+          equipe_responsavel_id: equipeId || null,
+          equipes: equipes.find(e => e.id === equipeId) || null,
+          updated_at: new Date().toISOString()
+        }));
+      }
     } catch (error) {
       console.error('Error updating team:', error);
       toast({
@@ -664,6 +684,18 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
 
   const handleEquipeChange = async (equipeId: string) => {
     try {
+      // Verificar se usuário pertence à nova equipe
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id;
+
+      const { data: userEquipesData } = await supabase
+        .from('user_equipes' as any)
+        .select('equipe_id')
+        .eq('user_id', userId);
+
+      const userEquipeIds = (userEquipesData as any[])?.map((ue: any) => ue.equipe_id) || [];
+      const userWillLoseAccess = !userEquipeIds.includes(equipeId);
+
       // Usar edge function com service role para contornar RLS
       const { data, error } = await supabase.functions.invoke('update-ticket', {
         body: {
@@ -682,18 +714,28 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
         throw new Error(data.error);
       }
 
-      setTicket(prev => ({
-        ...prev,
-        equipe_responsavel_id: equipeId || null,
-        equipes: equipes.find(e => e.id === equipeId) || null
+      // Emitir evento de transferência para o hook
+      window.dispatchEvent(new CustomEvent('ticket-transferred', {
+        detail: { ticketId, newEquipeId: equipeId }
       }));
 
       toast({
         title: "Equipe Atualizada",
-        description: "Equipe responsável atualizada",
+        description: "Ticket transferido com sucesso",
       });
 
-      fetchTicketDetails();
+      // Se usuário não tem acesso à nova equipe, fechar modal
+      if (userWillLoseAccess) {
+        console.log('🚪 Usuário perdeu acesso ao ticket. Fechando modal...');
+        onClose();
+      } else {
+        // Se ainda tem acesso, atualizar estado local
+        setTicket(prev => ({
+          ...prev,
+          equipe_responsavel_id: equipeId || null,
+          equipes: equipes.find(e => e.id === equipeId) || null
+        }));
+      }
     } catch (error) {
       console.error('Error updating team:', error);
       toast({
