@@ -1592,6 +1592,7 @@ export type Database = {
           id: string
           message: string | null
           payload: Json | null
+          related_ticket_id: string | null
           title: string
           type: string
         }
@@ -1602,6 +1603,7 @@ export type Database = {
           id?: string
           message?: string | null
           payload?: Json | null
+          related_ticket_id?: string | null
           title: string
           type: string
         }
@@ -1612,6 +1614,7 @@ export type Database = {
           id?: string
           message?: string | null
           payload?: Json | null
+          related_ticket_id?: string | null
           title?: string
           type?: string
         }
@@ -1621,6 +1624,13 @@ export type Database = {
             columns: ["equipe_id"]
             isOneToOne: false
             referencedRelation: "equipes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "internal_notifications_related_ticket_id_fkey"
+            columns: ["related_ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
             referencedColumns: ["id"]
           },
         ]
