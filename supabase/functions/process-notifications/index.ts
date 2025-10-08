@@ -347,7 +347,23 @@ async function getMessageTemplate(supabase: any, templateKey: string): Promise<s
 📝 *Resposta:*
 {{texto_resposta}}
 
-🕐 *Respondido em:* {{timestamp}}
+🕐 *Respondido em:* {{timestamp}}`,
+
+    'ticket_forwarded': `🔄 *TICKET ENCAMINHADO PARA SUA EQUIPE*
+
+📋 *Ticket:* {{codigo_ticket}}
+📝 *Título:* {{titulo_ticket}}
+🏢 *Unidade:* {{unidade_nome}} ({{unidade_id}})
+👥 *Equipe:* {{equipe_responsavel}}
+📂 *Categoria:* {{categoria}}
+⚡ *Prioridade:* {{prioridade}}
+📊 *Status:* {{status}}
+
+💬 *Problema:*
+{{descricao_problema}}
+
+🕐 *Encaminhado em:* {{timestamp}}
+⏰ *Prazo SLA:* {{data_limite_sla}}`
 
 Para mais detalhes, acesse o sistema.`,
 
@@ -639,7 +655,7 @@ serve(async (req) => {
     let ticket: any = null;
     
     // Types that require ticket data
-    const ticketRequiredTypes = ['ticket_created', 'ticket_criado', 'sla_half', 'sla_breach', 'resposta_ticket'];
+    const ticketRequiredTypes = ['ticket_created', 'ticket_criado', 'sla_half', 'sla_breach', 'resposta_ticket', 'ticket_forwarded'];
     
     if (ticketId && ticketId !== 'null' && ticketRequiredTypes.includes(type)) {
       console.log('Fetching ticket data for ID:', ticketId);
@@ -1082,6 +1098,113 @@ serve(async (req) => {
           throw new Error(`Número de telefone inválido para sla_half: ${destinoFinal}`);
         }
         resultadoEnvio = await sendZapiMessage(normalizedPhoneSLAHalf, mensagemSLAHalf);
+        break;
+
+      case 'ticket_forwarded':
+        console.log('🔄 Processing ticket_forwarded notification');
+        
+        if (!ticket) {
+          throw new Error('Ticket data is required for ticket_forwarded notifications');
+        }
+        
+        // Get the new team information
+        const equipeId = payload?.equipe_id || ticket.equipe_responsavel_id;
+        if (!equipeId) {
+          throw new Error('Equipe ID não encontrada para notificação de encaminhamento');
+        }
+        
+        console.log(`📤 Sending notification to team: ${equipeId}`);
+        
+        // Get team members who should be notified
+        const { data: teamMembers, error: membersError } = await supabase
+          .from('equipe_members')
+          .select(`
+            user_id,
+            profiles:user_id (
+              id,
+              telefone,
+              nome_completo
+            )
+          `)
+          .eq('equipe_id', equipeId)
+          .eq('ativo', true);
+        
+        if (membersError) {
+          console.error('Error fetching team members:', membersError);
+          throw new Error('Erro ao buscar membros da equipe');
+        }
+        
+        if (!teamMembers || teamMembers.length === 0) {
+          console.warn(`⚠️ No active team members found for equipe ${equipeId}`);
+          resultadoEnvio = { success: false, message: 'No team members to notify' };
+          break;
+        }
+        
+        console.log(`📋 Found ${teamMembers.length} team members to notify`);
+        
+        // Get template and prepare message
+        const templateForwarded = await getMessageTemplate(supabase, 'ticket_forwarded');
+        
+        const { data: unidadeDataForwarded } = await supabase
+          .from('unidades')
+          .select('grupo')
+          .eq('id', ticket.unidade_id)
+          .single();
+        
+        const { data: equipeDataForwarded } = await supabase
+          .from('equipes')
+          .select('nome')
+          .eq('id', equipeId)
+          .single();
+        
+        const mensagemForwarded = processTemplate(templateForwarded, {
+          codigo_ticket: formatTicketTitle(ticket),
+          titulo_ticket: ticket.titulo || 'Ticket sem título',
+          unidade_id: ticket.unidade_id,
+          unidade_nome: unidadeDataForwarded?.grupo || ticket.unidade_id,
+          categoria: ticket.categoria || 'Não informada',
+          prioridade: ticket.prioridade,
+          status: ticket.status,
+          equipe_responsavel: equipeDataForwarded?.nome || 'Não atribuída',
+          descricao_problema: ticket.descricao_problema,
+          timestamp: new Date().toLocaleString('pt-BR'),
+          data_limite_sla: ticket.data_limite_sla ? new Date(ticket.data_limite_sla).toLocaleString('pt-BR') : 'Não definido'
+        });
+        
+        // Send to all team members
+        const sendResults = [];
+        for (const member of teamMembers) {
+          const profile = member.profiles as any;
+          if (profile?.telefone) {
+            console.log(`📞 Sending to team member: ${profile.nome_completo} (${profile.telefone})`);
+            const normalizedMemberPhone = normalizePhoneNumber(profile.telefone);
+            if (normalizedMemberPhone) {
+              try {
+                const sendResult = await sendZapiMessage(normalizedMemberPhone, mensagemForwarded);
+                sendResults.push({ 
+                  member: profile.nome_completo, 
+                  phone: normalizedMemberPhone,
+                  success: sendResult.success 
+                });
+              } catch (error) {
+                console.error(`Error sending to ${profile.nome_completo}:`, error);
+                sendResults.push({ 
+                  member: profile.nome_completo, 
+                  phone: normalizedMemberPhone,
+                  success: false,
+                  error: error.message 
+                });
+              }
+            }
+          }
+        }
+        
+        resultadoEnvio = { 
+          success: sendResults.some(r => r.success),
+          message: `Sent to ${sendResults.filter(r => r.success).length} of ${sendResults.length} team members`,
+          details: sendResults
+        };
+        destinoFinal = `Team ${equipeDataForwarded?.nome || equipeId} (${sendResults.length} members)`;
         break;
 
       case 'sla_breach':
