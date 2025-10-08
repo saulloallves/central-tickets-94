@@ -1269,39 +1269,18 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                         className="flex-1 min-h-[60px] resize-none"
                         disabled={messagesLoading || isUploadingAttachments}
                       />
-                      <div className="flex flex-col gap-2">
-                        <input
-                          type="file"
-                          multiple
-                          accept="image/jpeg,image/png,image/gif,image/webp,image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
-                          onChange={handleFileSelect}
-                          className="hidden"
-                          id="attachment-input"
-                        />
-                        <Button 
-                          size="icon"
-                          variant="outline"
-                          asChild
-                          className="h-10 w-10 shrink-0"
-                          disabled={messagesLoading || isUploadingAttachments}
-                        >
-                          <label htmlFor="attachment-input" className="cursor-pointer">
-                            <Paperclip className="h-4 w-4" />
-                          </label>
-                        </Button>
-                        <Button 
-                          onClick={handleSendMessage}
-                          disabled={(!newMessage.trim() && attachments.length === 0) || messagesLoading || isUploadingAttachments}
-                          size="icon"
-                          className="h-10 w-10 shrink-0"
-                        >
-                          {isUploadingAttachments ? (
-                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                          ) : (
-                            <Send className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </div>
+                      <Button 
+                        onClick={handleSendMessage}
+                        disabled={!newMessage.trim() || messagesLoading || isUploadingAttachments}
+                        size="icon"
+                        className="h-10 w-10 shrink-0"
+                      >
+                        {isUploadingAttachments ? (
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                        ) : (
+                          <Send className="h-4 w-4" />
+                        )}
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
