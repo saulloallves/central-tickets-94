@@ -13,6 +13,7 @@ import { PWAInstallPrompt } from "./components/PWAInstallPrompt";
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import AdminLayout from "./pages/AdminLayout";
 
 // Lazy load pages for better performance
 const Index = lazy(() => import("./pages/Index"));
@@ -26,7 +27,6 @@ const ImportMembers = lazy(() => import("./pages/admin/ImportMembers"));
 const ConvertUsers = lazy(() => import("./pages/admin/ConvertUsers"));
 
 // Admin pages
-const AdminLayout = lazy(() => import("./pages/AdminLayout"));
 const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
 const Tickets = lazy(() => import("./pages/admin/Tickets"));
 const Atendimentos = lazy(() => import("./pages/admin/Atendimentos"));
