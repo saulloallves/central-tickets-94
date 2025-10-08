@@ -90,7 +90,7 @@ const Tickets = () => {
     moveTicket,
   } = useTicketsEdgeFunctions(debouncedFilters);
 
-  // Listen for ticket transferred events to update Kanban
+  // Listen for ticket transferred events to update Kanban (MOVED AFTER refetch declaration)
   useEffect(() => {
     const handleTicketTransferred = (event: CustomEvent) => {
       console.log('🔄 Ticket transferido detectado. Atualizando Kanban...', event.detail);
