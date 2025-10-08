@@ -11,19 +11,45 @@ export const ProcessPendingButton: React.FC = () => {
   const handleProcessPending = async () => {
     try {
       setIsProcessing(true);
-      console.log('🔄 Forçando processamento de notificações pendentes...');
-      const {
-        data,
-        error
-      } = await supabase.functions.invoke('process-pending-notifications');
-      if (error) {
-        console.error('❌ Erro ao processar notificações:', error);
-        throw error;
+      console.log('🔄 Processando notificações pendentes retroativamente...');
+      
+      const { data: pendingNotifications, error: fetchError } = await supabase
+        .from('notifications_queue')
+        .select('*')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: true });
+
+      if (fetchError) {
+        console.error('❌ Erro ao buscar notificações:', fetchError);
+        throw fetchError;
       }
-      console.log('✅ Resultado do processamento:', data);
+
+      if (!pendingNotifications || pendingNotifications.length === 0) {
+        toast({
+          title: "Nenhuma notificação pendente",
+          description: "Não há notificações para processar",
+          variant: "default"
+        });
+        return;
+      }
+
+      console.log(`📋 Encontradas ${pendingNotifications.length} notificações pendentes`);
+
+      // Atualizar status para forçar reprocessamento via trigger
+      const { error: updateError } = await supabase
+        .from('notifications_queue')
+        .update({ status: 'pending', updated_at: new Date().toISOString() })
+        .eq('status', 'pending')
+        .in('id', pendingNotifications.map(n => n.id));
+
+      if (updateError) {
+        console.error('❌ Erro ao atualizar notificações:', updateError);
+        throw updateError;
+      }
+
       toast({
-        title: "Notificações Processadas",
-        description: `${data.processed} notificações foram processadas com sucesso`,
+        title: "Notificações Reprocessadas",
+        description: `${pendingNotifications.length} notificações foram enviadas para reprocessamento`,
         variant: "default"
       });
     } catch (error: any) {
