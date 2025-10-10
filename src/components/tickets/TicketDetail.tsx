@@ -1131,40 +1131,69 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                       </div>
                     ) : (
                       messages.map((message) => {
-                        // Determinar se é franqueado ou suporte interno baseado no criador do ticket
-                        const isFranqueado = ticket.franqueado_id && message.direcao === 'entrada';
-                        const isSystem = !message.profiles?.nome_completo || message.profiles?.nome_completo === 'Sistema';
+                        // ✅ Lógica corrigida de identificação do remetente
+                        // Franqueado: mensagens de ENTRADA sem usuario_id (vindas de fora do sistema)
+                        const isFranqueado = message.direcao === 'entrada' && !message.usuario_id;
+                        
+                        // Suporte: mensagens de SAÍDA com usuario_id (colaborador do sistema)
+                        const isSuporte = message.direcao === 'saida' && message.usuario_id && message.profiles?.nome_completo;
+                        
+                        // Sistema: mensagens sem identificação clara
+                        const isSystem = !isFranqueado && !isSuporte;
+                        
+                        // Nome a exibir
+                        const displayName = isFranqueado 
+                          ? (ticket.franqueados?.name || 'Franqueado')
+                          : isSuporte 
+                            ? message.profiles?.nome_completo 
+                            : 'Sistema';
                         
                         return (
                           <div key={message.id} className="flex gap-3 p-3 bg-muted/20 rounded-lg">
                             <div className={`p-2 rounded-full shrink-0 ${
-                              isSystem 
-                                ? 'bg-gray-500/10 border border-gray-500/20' 
-                                : isFranqueado 
-                                  ? 'bg-orange-500/10 border border-orange-500/20' 
-                                  : 'bg-blue-500/10 border border-blue-500/20'
+                              isFranqueado 
+                                ? 'bg-orange-500/10 border border-orange-500/20' 
+                                : isSuporte 
+                                  ? 'bg-blue-500/10 border border-blue-500/20'
+                                  : 'bg-gray-500/10 border border-gray-500/20'
                             }`}>
                               <User className={`h-4 w-4 ${
-                                isSystem 
-                                  ? 'text-gray-600' 
-                                  : isFranqueado 
-                                    ? 'text-orange-600' 
-                                    : 'text-blue-600'
+                                isFranqueado 
+                                  ? 'text-orange-600' 
+                                  : isSuporte 
+                                    ? 'text-blue-600'
+                                    : 'text-gray-600'
                               }`} />
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-1">
                                 <span className={`text-sm font-medium ${
-                                  isSystem 
-                                    ? 'text-gray-600' 
-                                    : isFranqueado 
-                                      ? 'text-orange-600' 
-                                      : 'text-blue-600'
+                                  isFranqueado 
+                                    ? 'text-orange-600' 
+                                    : isSuporte 
+                                      ? 'text-blue-600'
+                                      : 'text-gray-600'
                                 }`}>
-                                  {message.profiles?.nome_completo || 'Franqueado'}
-                                  {isFranqueado && <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full ml-2">Franqueado</span>}
-                                  {!isSystem && !isFranqueado && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full ml-2">Suporte</span>}
+                                  {displayName}
                                 </span>
+                                
+                                {/* Badge identificador */}
+                                {isFranqueado && (
+                                  <Badge variant="outline" className="text-xs bg-orange-100 text-orange-700 border-orange-300">
+                                    Franqueado
+                                  </Badge>
+                                )}
+                                {isSuporte && (
+                                  <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-300">
+                                    Suporte
+                                  </Badge>
+                                )}
+                                {isSystem && (
+                                  <Badge variant="outline" className="text-xs bg-gray-100 text-gray-700 border-gray-300">
+                                    Sistema
+                                  </Badge>
+                                )}
+                                
                                 <span className="text-xs text-muted-foreground">
                                   {formatDistanceToNowInSaoPaulo(message.created_at)}
                                 </span>
