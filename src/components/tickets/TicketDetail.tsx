@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Clock, User, Building, Tag, AlertTriangle, MessageSquare, Send, Paperclip, Zap, Sparkles, Copy, Bot, Phone, Users, FileText, Settings, Play, Check, ExternalLink, Image, Video, File, Download, ChevronDown } from 'lucide-react';
+import { X, Clock, User, Building, Tag, AlertTriangle, MessageSquare, Send, Paperclip, Zap, Sparkles, Copy, Bot, Phone, Users, FileText, Settings, Play, Check, ExternalLink, Image, Video, File, Download, ChevronDown, RotateCcw } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -39,6 +39,8 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
   const [attachments, setAttachments] = useState<File[]>([]);
   const [isUploadingAttachments, setIsUploadingAttachments] = useState(false);
   const [isSuggestionOpen, setIsSuggestionOpen] = useState(false);
+  const [isFormatted, setIsFormatted] = useState(false);
+  const [originalMessage, setOriginalMessage] = useState('');
   
   const { messages, sendMessage, loading: messagesLoading, refetch: refetchMessages } = useTicketMessages(ticketId);
   const { suggestion, loading: suggestionLoading, generateSuggestion, markSuggestionUsed } = useAISuggestion(ticketId);
@@ -255,6 +257,57 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
     }
   };
 
+  const handleFormatMessage = async () => {
+    if (!newMessage.trim()) {
+      toast({
+        title: "Campo vazio",
+        description: "Digite uma mensagem antes de formatar",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setOriginalMessage(newMessage);
+    setIsUploadingAttachments(true);
+    
+    try {
+      console.log('🤖 Iniciando formatação:', newMessage);
+      const { data: userData } = await supabase.auth.getUser();
+      const processed = await processResponse(newMessage, ticketId, userData.user?.id || '');
+      
+      if (processed?.respostaFinal) {
+        console.log('✅ Mensagem formatada:', processed.respostaFinal);
+        setNewMessage(processed.respostaFinal);
+        setIsFormatted(true);
+        
+        toast({
+          title: "✨ Mensagem formatada",
+          description: "Revise e edite se necessário antes de enviar",
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao formatar:', error);
+      toast({
+        title: "Erro na formatação",
+        description: "Não foi possível formatar a mensagem",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUploadingAttachments(false);
+    }
+  };
+
+  const handleRestoreOriginal = () => {
+    if (originalMessage) {
+      setNewMessage(originalMessage);
+      setIsFormatted(false);
+      toast({
+        title: "Mensagem restaurada",
+        description: "Versão original restaurada",
+      });
+    }
+  };
+
   const handleSendMessage = async () => {
     if (!newMessage.trim() && attachments.length === 0) return;
 
@@ -263,54 +316,28 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
     try {
       let uploadedAttachments = [];
       
-      // Upload attachments if any
       if (attachments.length > 0) {
         console.log('📎 Uploading attachments:', attachments.length);
         uploadedAttachments = await uploadAttachments(attachments);
         console.log('✅ Uploaded attachments:', uploadedAttachments);
       }
 
-      // Process response with AI correction before sending
-      let finalMessage = newMessage.trim() || (uploadedAttachments.length > 0 ? '' : 'Mensagem vazia');
-      
-      if (finalMessage.trim()) {
-        console.log('🤖 Processando resposta com IA:', finalMessage);
-        const { data: userData } = await supabase.auth.getUser();
-        const processed = await processResponse(finalMessage, ticketId, userData.user?.id || '');
-        
-        console.log('📤 Resultado do processamento:', processed);
-        
-        if (processed?.respostaFinal && processed.respostaFinal !== finalMessage) {
-          console.log('✅ Mensagem foi alterada pela IA:', {
-            original: finalMessage,
-            processada: processed.respostaFinal
-          });
-          finalMessage = processed.respostaFinal;
-          
-          toast({
-            title: "Resposta processada pela IA",
-            description: "Sua mensagem foi formatada usando o prompt personalizado",
-          });
-        } else {
-          console.log('⚠️ Mensagem não foi alterada:', processed);
-        }
-      }
+      const finalMessage = newMessage.trim() || '';
 
-      // Send text message with attachments metadata to database
       console.log('💬 Sending message to database:', { finalMessage, attachments: uploadedAttachments });
       const success = await sendMessage(finalMessage, uploadedAttachments);
       
       if (success) {
-        // PRIMEIRO: Send attachments via Z-API if any
         if (uploadedAttachments.length > 0) {
-          console.log('📱 Sending attachments via Z-API FIRST:', uploadedAttachments);
+          console.log('📱 Sending attachments via Z-API:', uploadedAttachments);
           await sendAttachments(uploadedAttachments);
         }
 
         setNewMessage('');
         setAttachments([]);
+        setIsFormatted(false);
+        setOriginalMessage('');
         
-        // Force refresh messages to show the new message immediately
         setTimeout(() => {
           refetchMessages();
         }, 500);
@@ -1315,27 +1342,101 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                       </div>
                     )}
                     
-                    <div className="flex gap-3">
+                    {/* Badge indicador de mensagem formatada */}
+                    {isFormatted && (
+                      <div className="mb-2">
+                        <Badge variant="secondary" className="text-xs">
+                          <Sparkles className="h-3 w-3 mr-1" />
+                          Mensagem formatada pela IA
+                        </Badge>
+                      </div>
+                    )}
+                    
+                    <div className="flex gap-2">
+                      <input
+                        id="file-upload"
+                        type="file"
+                        multiple
+                        onChange={handleFileSelect}
+                        className="hidden"
+                        accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx"
+                      />
+                      <label htmlFor="file-upload">
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          type="button" 
+                          className="h-10 w-10 shrink-0"
+                          asChild
+                        >
+                          <span>
+                            <Paperclip className="h-4 w-4" />
+                          </span>
+                        </Button>
+                      </label>
+                      
                       <Textarea
                         placeholder="Digite sua mensagem..."
                         value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSendMessage())}
+                        onChange={(e) => {
+                          setNewMessage(e.target.value);
+                          if (isFormatted) setIsFormatted(false);
+                        }}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            if (isFormatted) {
+                              handleSendMessage();
+                            } else {
+                              handleFormatMessage();
+                            }
+                          }
+                        }}
                         className="flex-1 min-h-[60px] resize-none"
                         disabled={messagesLoading || isUploadingAttachments}
                       />
-                      <Button 
-                        onClick={handleSendMessage}
-                        disabled={!newMessage.trim() || messagesLoading || isUploadingAttachments}
-                        size="icon"
-                        className="h-10 w-10 shrink-0"
-                      >
-                        {isUploadingAttachments ? (
-                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                        ) : (
-                          <Send className="h-4 w-4" />
-                        )}
-                      </Button>
+                      
+                      {!isFormatted ? (
+                        <Button
+                          onClick={handleFormatMessage}
+                          disabled={!newMessage.trim() || isUploadingAttachments}
+                          size="icon"
+                          title="Formatar mensagem com IA"
+                          className="h-10 w-10 shrink-0"
+                        >
+                          {isUploadingAttachments ? (
+                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                          ) : (
+                            <Sparkles className="h-4 w-4" />
+                          )}
+                        </Button>
+                      ) : (
+                        <>
+                          <Button
+                            onClick={handleRestoreOriginal}
+                            variant="outline"
+                            size="icon"
+                            title="Restaurar mensagem original"
+                            className="h-10 w-10 shrink-0"
+                          >
+                            <RotateCcw className="h-4 w-4" />
+                          </Button>
+                          
+                          <Button
+                            onClick={handleSendMessage}
+                            disabled={isUploadingAttachments}
+                            size="icon"
+                            title="Enviar mensagem"
+                            className="h-10 w-10 shrink-0"
+                          >
+                            {isUploadingAttachments ? (
+                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                            ) : (
+                              <Send className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </div>
                 </CardContent>
