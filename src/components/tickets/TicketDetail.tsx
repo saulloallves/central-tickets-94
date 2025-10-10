@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Clock, User, Building, Tag, AlertTriangle, MessageSquare, Send, Paperclip, Zap, Sparkles, Copy, Bot, Phone, Users, FileText, Settings, Play, Check, ExternalLink, Image, Video, File, Download } from 'lucide-react';
+import { X, Clock, User, Building, Tag, AlertTriangle, MessageSquare, Send, Paperclip, Zap, Sparkles, Copy, Bot, Phone, Users, FileText, Settings, Play, Check, ExternalLink, Image, Video, File, Download, ChevronDown } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useTicketMessages } from '@/hooks/useTickets';
 import { useAISuggestion } from '@/hooks/useAISuggestion';
 import { useResponseProcessor } from '@/hooks/useResponseProcessor';
@@ -37,6 +38,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
   const [isSendingToFranqueado, setIsSendingToFranqueado] = useState(false);
   const [attachments, setAttachments] = useState<File[]>([]);
   const [isUploadingAttachments, setIsUploadingAttachments] = useState(false);
+  const [isSuggestionOpen, setIsSuggestionOpen] = useState(false);
   
   const { messages, sendMessage, loading: messagesLoading, refetch: refetchMessages } = useTicketMessages(ticketId);
   const { suggestion, loading: suggestionLoading, generateSuggestion, markSuggestionUsed } = useAISuggestion(ticketId);
@@ -1012,90 +1014,107 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
         <div className="p-6">
           {activeTab === 'chat' && (
             <div className="flex flex-col gap-4 min-h-[700px]">
-              {/* Sugestão IA Section */}
-              <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Bot className="h-4 w-4" />
-                      Sugestão IA
-                    </CardTitle>
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      onClick={generateSuggestion}
-                      disabled={suggestionLoading}
-                      className="h-8"
-                    >
-                      {suggestionLoading ? (
-                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                      ) : (
-                        <Zap className="h-4 w-4" />
-                      )}
-                      {suggestionLoading ? 'Gerando...' : 'Gerar'}
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {suggestion ? (
-                    <div className="space-y-4">
-                      <div className="p-4 bg-muted/30 rounded-lg border border-primary/20">
-                        <p className="text-sm leading-relaxed">{suggestion.resposta}</p>
-                        <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
-                          <div className="flex items-center gap-2">
-                            <span>Gerada em {formatDateTimeBR(suggestion.created_at)}</span>
-                            {suggestion.log?.rag_hits !== undefined && suggestion.log?.kb_hits !== undefined && (
-                              <span className="text-primary">
-                                ({(suggestion.log.rag_hits + suggestion.log.kb_hits)} docs)
-                              </span>
-                            )}
-                          </div>
-                          {suggestion.foi_usada && (
-                            <Badge variant="secondary" className="text-xs">✓ Utilizada</Badge>
+                {/* Sugestão IA Section - COLLAPSIBLE */}
+                <Collapsible open={isSuggestionOpen} onOpenChange={setIsSuggestionOpen}>
+                  <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50">
+                    <CollapsibleTrigger asChild>
+                      <CardHeader className="pb-3 cursor-pointer hover:bg-muted/50 transition-colors">
+                        <div className="flex items-center justify-between w-full">
+                          <CardTitle className="text-base flex items-center gap-2">
+                            <Bot className="h-4 w-4" />
+                            Sugestão IA
+                            <ChevronDown 
+                              className={`h-4 w-4 transition-transform duration-200 ${
+                                isSuggestionOpen ? 'transform rotate-180' : ''
+                              }`} 
+                            />
+                          </CardTitle>
+                          {isSuggestionOpen && (
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                generateSuggestion();
+                              }}
+                              disabled={suggestionLoading}
+                              className="h-8"
+                            >
+                              {suggestionLoading ? (
+                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                              ) : (
+                                <Zap className="h-4 w-4" />
+                              )}
+                              {suggestionLoading ? 'Gerando...' : 'Gerar'}
+                            </Button>
                           )}
                         </div>
-                      </div>
-                      {!suggestion.foi_usada && (
-                        <div className="flex gap-3">
-                          <Button size="sm" variant="outline" onClick={handleCopySuggestion} className="h-9">
-                            <Copy className="h-4 w-4 mr-2" />
-                            Copiar
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={handleEditAndSend} className="h-9">
-                            Editar e Enviar
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  ) : suggestionLoading ? (
-                    <div className="text-center py-8">
-                      <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mb-3">
-                        <Bot className="h-4 w-4 animate-spin" />
-                        Gerando sugestão da IA...
-                      </div>
-                      <div className="h-2 bg-muted rounded-full overflow-hidden">
-                        <div className="h-full bg-primary/50 rounded-full animate-pulse" style={{width: '60%'}}></div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <Bot className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Gere uma sugestão de resposta baseada no contexto do ticket
-                      </p>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        onClick={generateSuggestion}
-                        className="h-9"
-                      >
-                        <Zap className="h-4 w-4 mr-2" />
-                        Gerar Sugestão
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                      </CardHeader>
+                    </CollapsibleTrigger>
+                    
+                    <CollapsibleContent>
+                      <CardContent>
+                        {suggestion ? (
+                          <div className="space-y-4">
+                            <div className="p-4 bg-muted/30 rounded-lg border border-primary/20">
+                              <p className="text-sm leading-relaxed">{suggestion.resposta}</p>
+                              <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
+                                <div className="flex items-center gap-2">
+                                  <span>Gerada em {formatDateTimeBR(suggestion.created_at)}</span>
+                                  {suggestion.log?.rag_hits !== undefined && suggestion.log?.kb_hits !== undefined && (
+                                    <span className="text-primary">
+                                      ({(suggestion.log.rag_hits + suggestion.log.kb_hits)} docs)
+                                    </span>
+                                  )}
+                                </div>
+                                {suggestion.foi_usada && (
+                                  <Badge variant="secondary" className="text-xs">✓ Utilizada</Badge>
+                                )}
+                              </div>
+                            </div>
+                            {!suggestion.foi_usada && (
+                              <div className="flex gap-3">
+                                <Button size="sm" variant="outline" onClick={handleCopySuggestion} className="h-9">
+                                  <Copy className="h-4 w-4 mr-2" />
+                                  Copiar
+                                </Button>
+                                <Button size="sm" variant="outline" onClick={handleEditAndSend} className="h-9">
+                                  Editar e Enviar
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        ) : suggestionLoading ? (
+                          <div className="text-center py-8">
+                            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mb-3">
+                              <Bot className="h-4 w-4 animate-spin" />
+                              Gerando sugestão da IA...
+                            </div>
+                            <div className="h-2 bg-muted rounded-full overflow-hidden">
+                              <div className="h-full bg-primary/50 rounded-full animate-pulse" style={{width: '60%'}}></div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-center py-8">
+                            <Bot className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
+                            <p className="text-sm text-muted-foreground mb-4">
+                              Gere uma sugestão de resposta baseada no contexto do ticket
+                            </p>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={generateSuggestion}
+                              className="h-9"
+                            >
+                              <Zap className="h-4 w-4 mr-2" />
+                              Gerar Sugestão
+                            </Button>
+                          </div>
+                        )}
+                      </CardContent>
+                    </CollapsibleContent>
+                  </Card>
+                </Collapsible>
 
               {/* Messages Section */}
               <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50">
