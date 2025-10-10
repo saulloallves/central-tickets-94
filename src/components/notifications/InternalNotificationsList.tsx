@@ -253,11 +253,14 @@ export const InternalNotificationsList = () => {
                         </div>
                       </div>
                       
-                      {notification.message && (
-                        <p className="text-xs text-muted-foreground line-clamp-2 mb-1">
-                          {notification.message.replace(/Ticket [a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi, 'Ticket')}
-                        </p>
-                      )}
+            {notification.message && (
+              <p className="text-xs text-muted-foreground line-clamp-2 mb-1">
+                {notification.type === 'franqueado_respondeu' && notification.payload?.titulo_ticket
+                  ? `Franqueado respondeu o ticket ${notification.payload.titulo_ticket}`
+                  : notification.message.replace(/Ticket [a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi, 'Ticket')
+                }
+              </p>
+            )}
                       
                       <div className="flex items-center text-xs text-muted-foreground">
                         <span>

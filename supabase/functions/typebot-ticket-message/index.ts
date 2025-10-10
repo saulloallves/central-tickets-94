@@ -52,7 +52,8 @@ Deno.serve(async (req) => {
         prioridade,
         titulo,
         data_abertura,
-        updated_at
+        updated_at,
+        unidades!inner(grupo)
       `)
       .eq('id', ticketId)
       .single();
@@ -100,11 +101,13 @@ Deno.serve(async (req) => {
         body: {
           type: 'franqueado_respondeu',
           title: 'Franqueado Respondeu!',
-          message: `Franqueado respondeu o ticket ${ticket.codigo_ticket}`,
+          message: `Franqueado respondeu o ticket ${ticket.titulo || ticket.codigo_ticket}`,
           equipe_id: ticket.equipe_responsavel_id,
           payload: {
             ticket_id: ticketId,
             codigo_ticket: ticket.codigo_ticket,
+            titulo_ticket: ticket.titulo,
+            unidade_nome: ticket.unidades?.grupo,
             texto_resposta: texto
           }
         }
@@ -132,6 +135,8 @@ Deno.serve(async (req) => {
           payload: {
             ticket_id: ticketId,
             codigo_ticket: ticket.codigo_ticket,
+            titulo_ticket: ticket.titulo,
+            unidade_nome: ticket.unidades?.grupo,
             texto_resposta: texto
           },
           status: 'pending'
