@@ -1130,23 +1130,32 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                         <p className="text-sm text-muted-foreground">Nenhuma mensagem ainda</p>
                       </div>
                     ) : (
-                      messages.map((message) => {
-                        // ✅ Lógica corrigida de identificação do remetente
-                        // Franqueado: mensagens de ENTRADA sem usuario_id (vindas de fora do sistema)
-                        const isFranqueado = message.direcao === 'entrada' && !message.usuario_id;
-                        
-                        // Suporte: mensagens de SAÍDA com usuario_id (colaborador do sistema)
-                        const isSuporte = message.direcao === 'saida' && message.usuario_id && message.profiles?.nome_completo;
-                        
-                        // Sistema: mensagens sem identificação clara
-                        const isSystem = !isFranqueado && !isSuporte;
-                        
-                        // Nome a exibir
-                        const displayName = isFranqueado 
-                          ? (ticket.franqueados?.name || 'Franqueado')
-                          : isSuporte 
-                            ? message.profiles?.nome_completo 
-                            : 'Sistema';
+          messages.map((message) => {
+            // Extrair nome do profile (pode vir como objeto ou array)
+            let profileName: string | null = null;
+            if (message.profiles) {
+              if (Array.isArray(message.profiles) && message.profiles.length > 0) {
+                profileName = message.profiles[0]?.nome_completo || null;
+              } else if (typeof message.profiles === 'object') {
+                profileName = (message.profiles as any).nome_completo || null;
+              }
+            }
+
+            // Franqueado: mensagens de ENTRADA sem usuario_id (vindas de fora do sistema)
+            const isFranqueado = message.direcao === 'entrada' && !message.usuario_id;
+            
+            // Suporte: mensagens de SAÍDA com usuario_id E com nome no profile
+            const isSuporte = message.direcao === 'saida' && !!message.usuario_id && !!profileName;
+            
+            // Sistema: mensagens sem identificação clara
+            const isSystem = !isFranqueado && !isSuporte;
+            
+            // Nome a exibir
+            const displayName = isFranqueado 
+              ? (ticket.franqueados?.name || 'Franqueado')
+              : isSuporte 
+                ? profileName 
+                : 'Sistema';
                         
                         return (
                           <div key={message.id} className="flex gap-3 p-3 bg-muted/20 rounded-lg">
