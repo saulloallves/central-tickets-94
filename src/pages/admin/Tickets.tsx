@@ -57,7 +57,9 @@ const Tickets = () => {
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [localFilters, setLocalFilters] = useState({
+  
+  // ✅ FILTRO INSTANTÂNEO - Sem debounce, sem complicação
+  const [filters, setFilters] = useState({
     search: '',
     status: 'all',
     categoria: 'all',
@@ -66,33 +68,15 @@ const Tickets = () => {
     status_sla: 'all',
     equipe_id: 'all'
   });
-  
-  // Debounced filters para evitar piscamento
-  const [debouncedFilters, setDebouncedFilters] = useState(localFilters);
-  const [isFilterChanged, setIsFilterChanged] = useState(false);
 
-  // Detectar se os filtros mudaram
-  useEffect(() => {
-    const hasChanged = JSON.stringify(localFilters) !== JSON.stringify(debouncedFilters);
-    setIsFilterChanged(hasChanged);
-  }, [localFilters, debouncedFilters]);
-
-  // Função para aplicar filtros manualmente
-  const handleApplyFilters = () => {
-    console.log('🔍 ANTES - Filtros atuais:', debouncedFilters);
-    console.log('🔍 APLICANDO - Novos filtros:', localFilters);
-    setDebouncedFilters(localFilters);
-    setIsFilterChanged(false);
-    // Small delay to ensure state update
-    setTimeout(() => {
-      console.log('🔄 Forçando refetch após aplicar filtros');
-      refetch();
-    }, 100);
+  // Função para limpar apenas a busca
+  const handleClearSearch = () => {
+    setFilters(prev => ({ ...prev, search: '' }));
   };
 
-  // Função para limpar filtros
-  const handleClearFilters = () => {
-    const clearedFilters = {
+  // Função para limpar todos os filtros
+  const handleClearAllFilters = () => {
+    setFilters({
       search: '',
       status: 'all',
       categoria: 'all',
@@ -100,11 +84,7 @@ const Tickets = () => {
       unidade_id: 'all',
       status_sla: 'all',
       equipe_id: 'all'
-    };
-    setLocalFilters(clearedFilters);
-    setDebouncedFilters(clearedFilters);
-    setIsFilterChanged(false);
-    refetch();
+    });
   };
   
   const {
@@ -117,7 +97,7 @@ const Tickets = () => {
     updateTicket,
     deleteTicket,
     moveTicket,
-  } = useTicketsEdgeFunctions(debouncedFilters);
+  } = useTicketsEdgeFunctions(filters);
 
   // Listen for ticket transferred events to update Kanban (MOVED AFTER refetch declaration)
   useEffect(() => {
@@ -175,7 +155,7 @@ const Tickets = () => {
                 Gerencie tickets de suporte e acompanhe SLAs
               </p>
             </div>
-            {(debouncedFilters.search || debouncedFilters.status !== 'all' || debouncedFilters.prioridade !== 'all' || debouncedFilters.equipe_id !== 'all') && (
+            {filters.search && (
               <Badge variant="secondary" className="text-sm">
                 {tickets.length} {tickets.length === 1 ? 'resultado' : 'resultados'}
               </Badge>
@@ -224,24 +204,24 @@ const Tickets = () => {
         </div>
 
         {/* Badge de filtros ativos */}
-        {(localFilters.search || 
-          localFilters.status !== 'all' || 
-          localFilters.prioridade !== 'all' ||
-          localFilters.equipe_id !== 'all') && (
+        {(filters.search || 
+          filters.status !== 'all' || 
+          filters.prioridade !== 'all' ||
+          filters.equipe_id !== 'all') && (
           <div className="flex items-center gap-2 mb-4 p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
             <Filter className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             <span className="text-sm text-blue-700 dark:text-blue-300 font-medium flex-1">
               {[
-                localFilters.search && `Busca: "${localFilters.search}"`,
-                localFilters.status !== 'all' && `Status: ${localFilters.status}`,
-                localFilters.prioridade !== 'all' && `Prioridade: ${localFilters.prioridade}`,
-                localFilters.equipe_id !== 'all' && `Equipe filtrada`
+                filters.search && `Busca: "${filters.search}"`,
+                filters.status !== 'all' && `Status: ${filters.status}`,
+                filters.prioridade !== 'all' && `Prioridade: ${filters.prioridade}`,
+                filters.equipe_id !== 'all' && `Equipe filtrada`
               ].filter(Boolean).join(' • ')}
             </span>
             <Button 
               variant="ghost" 
               size="sm"
-              onClick={handleClearFilters}
+              onClick={handleClearAllFilters}
             >
               <X className="h-4 w-4 mr-1" />
               Limpar filtros
@@ -249,120 +229,80 @@ const Tickets = () => {
           </div>
         )}
 
-        {/* Collapsible Filters */}
-        {showFilters && <Card className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border border-border/40">
-            <CardContent className="p-4">
-              <div className="flex gap-4 items-center flex-wrap">
-                <div className="relative">
-                  <Input 
-                    placeholder="Buscar tickets..." 
-                    value={localFilters.search} 
-                    onChange={e => setLocalFilters(prev => ({
-                      ...prev,
-                      search: e.target.value
-                    }))} 
-                    className={cn(
-                      "max-w-xs pr-8",
-                      isFilterChanged && localFilters.search !== debouncedFilters.search && "border-yellow-500 border-2"
-                    )}
-                  />
-                  {isFilterChanged && localFilters.search !== debouncedFilters.search && (
-                    <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                      <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-500 text-xs">
-                        Não aplicado
-                      </Badge>
-                    </div>
+        {/* Barra de busca INSTANTÂNEA */}
+        <Card className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border border-border/40">
+          <CardContent className="p-4">
+            <div className="flex gap-4 items-center flex-wrap">
+              <div className="relative flex-1 max-w-md">
+                <Input 
+                  placeholder="🔍 Buscar por código, unidade, título, cidade..." 
+                  value={filters.search} 
+                  onChange={e => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                  className="w-full"
+                />
+                {filters.search && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleClearSearch}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 h-7 px-2"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+              
+              <Select 
+                value={filters.prioridade} 
+                onValueChange={value => setFilters(prev => ({ ...prev, prioridade: value }))}
+              >
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Prioridade" />
+                </SelectTrigger>
+                <SelectContent className="bg-background border-border z-50 shadow-lg">
+                  <SelectItem value="all">Todas</SelectItem>
+                  <SelectItem value="crise">Crise</SelectItem>
+                  <SelectItem value="imediato">Imediato (15min)</SelectItem>
+                  <SelectItem value="alto">Alto (1 hora)</SelectItem>
+                  <SelectItem value="medio">Médio (10 horas)</SelectItem>
+                  <SelectItem value="baixo">Baixo (24 horas)</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select 
+                value={filters.equipe_id} 
+                onValueChange={value => setFilters(prev => ({ ...prev, equipe_id: value }))}
+              >
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Equipe" />
+                </SelectTrigger>
+                <SelectContent className="bg-background border-border z-50 shadow-lg">
+                  <SelectItem value="all">Todas Equipes</SelectItem>
+                  {userEquipes.length > 0 && <SelectItem value="minhas_equipes">Minhas Equipes</SelectItem>}
+                  {equipes.map(equipe => 
+                    <SelectItem key={equipe.id} value={equipe.id}>
+                      {equipe.nome}
+                    </SelectItem>
                   )}
-                </div>
-                
+                </SelectContent>
+              </Select>
+
+              {(isAdmin || isSupervisor) && (
                 <Select 
-                  value={localFilters.prioridade} 
-                  onValueChange={value => setLocalFilters(prev => ({
-                    ...prev,
-                    prioridade: value
-                  }))}
+                  value={filters.unidade_id} 
+                  onValueChange={value => setFilters(prev => ({ ...prev, unidade_id: value }))}
                 >
                   <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Prioridade" />
+                    <SelectValue placeholder="Unidade" />
                   </SelectTrigger>
                   <SelectContent className="bg-background border-border z-50 shadow-lg">
                     <SelectItem value="all">Todas</SelectItem>
-                    <SelectItem value="crise">Crise</SelectItem>
-                    <SelectItem value="imediato">Imediato (15min)</SelectItem>
-                    <SelectItem value="alto">Alto (1 hora)</SelectItem>
-                    <SelectItem value="medio">Médio (10 horas)</SelectItem>
-                    <SelectItem value="baixo">Baixo (24 horas)</SelectItem>
                   </SelectContent>
                 </Select>
-                
-                <Select 
-                  value={localFilters.equipe_id} 
-                  onValueChange={value => setLocalFilters(prev => ({
-                    ...prev,
-                    equipe_id: value
-                  }))}
-                >
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Equipe" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background border-border z-50 shadow-lg">
-                    <SelectItem value="all">Todas Equipes</SelectItem>
-                    {userEquipes.length > 0 && <SelectItem value="minhas_equipes">Minhas Equipes</SelectItem>}
-                    {equipes.map(equipe => <SelectItem key={equipe.id} value={equipe.id}>
-                        {equipe.nome}
-                      </SelectItem>)}
-                  </SelectContent>
-                </Select>
-
-                {(isAdmin || isSupervisor) && <Select 
-                  value={localFilters.unidade_id} 
-                  onValueChange={value => setLocalFilters(prev => ({
-                    ...prev,
-                    unidade_id: value
-                  }))}
-                >
-                    <SelectTrigger className="w-40">
-                      <SelectValue placeholder="Unidade" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background border-border z-50 shadow-lg">
-                      <SelectItem value="all">Todas</SelectItem>
-                    </SelectContent>
-                  </Select>}
-                
-                {/* Botões de ação dos filtros */}
-                <div className="flex gap-2 items-center ml-auto">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleClearFilters}
-                    disabled={!isFilterChanged && localFilters.search === '' && localFilters.prioridade === 'all' && localFilters.equipe_id === 'all'}
-                  >
-                    <X className="h-4 w-4 mr-2" />
-                    Limpar
-                  </Button>
-                  
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={handleApplyFilters}
-                    disabled={!isFilterChanged}
-                    className={cn(
-                      "min-w-[140px]",
-                      isFilterChanged && "animate-pulse bg-primary"
-                    )}
-                  >
-                    <Filter className="h-4 w-4 mr-2" />
-                    Aplicar Filtros
-                    {isFilterChanged && (
-                      <Badge variant="secondary" className="ml-2 bg-yellow-500 text-white">
-                        !
-                      </Badge>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>}
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Main Content */}
         <TicketsKanban 

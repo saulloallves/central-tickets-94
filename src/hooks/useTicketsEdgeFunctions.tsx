@@ -151,7 +151,7 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
       const allTickets = (data as any) || [];
       console.log('📦 PASSO 1: Tickets do banco:', allTickets.length);
       
-      // ⬇️ FILTRO CLIENT-SIDE PARA NOME DA UNIDADE
+      // ⬇️ FILTRO CLIENT-SIDE AMPLIADO - Busca em TODOS os campos
       let filteredTickets = allTickets;
 
       if (filters.search && filters.search.trim()) {
@@ -159,17 +159,28 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
         console.log('🔍 Aplicando filtro de busca:', searchLower);
         
         filteredTickets = allTickets.filter((ticket: any) => {
-          // Buscar em todos os campos relevantes
+          // Campos básicos do ticket
           const codigo = ticket.codigo_ticket?.toLowerCase() || '';
           const titulo = ticket.titulo?.toLowerCase() || '';
           const descricao = ticket.descricao_problema?.toLowerCase() || '';
-          const unidadeNome = ticket.unidades?.grupo?.toLowerCase() || '';
           
+          // Dados da unidade
+          const unidadeNome = ticket.unidades?.grupo?.toLowerCase() || '';
+          const unidadeCidade = ticket.unidades?.cidade?.toLowerCase() || '';
+          const unidadeUF = ticket.unidades?.uf?.toLowerCase() || '';
+          
+          // Dados do colaborador
+          const colaboradorNome = ticket.colaboradores?.nome_completo?.toLowerCase() || '';
+          
+          // Buscar em TODOS os campos
           const match = (
             codigo.includes(searchLower) ||
             titulo.includes(searchLower) ||
             descricao.includes(searchLower) ||
-            unidadeNome.includes(searchLower)  // ⬅️ BUSCA POR NOME DA UNIDADE
+            unidadeNome.includes(searchLower) ||
+            unidadeCidade.includes(searchLower) ||
+            unidadeUF.includes(searchLower) ||
+            colaboradorNome.includes(searchLower)
           );
           
           return match;
@@ -260,7 +271,7 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
     } finally {
       setLoading(false);
     }
-  }, [user, roleLoading, filters, userEquipes, toast]);
+  }, [user, roleLoading, filters.search, filters.status, filters.categoria, filters.prioridade, filters.unidade_id, filters.status_sla, filters.equipe_id, userEquipes, toast]);
 
   // Calculate stats from current tickets - memoized to prevent recreation
   const calculateStats = useCallback((ticketsList: Ticket[]) => {
@@ -447,17 +458,6 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
     
     initialize();
   }, [user?.id, roleLoading]); // Removed fetchTickets and setupRealtime to prevent infinite loop
-
-  // Monitor filter changes and refetch when they change
-  useEffect(() => {
-    if (!fetchedRef.current || !user) return;
-    
-    console.log('🔍 Filtros alterados - forçando refetch:', filters);
-    fetchTickets(true);
-  }, [JSON.stringify(filters)]); // Use JSON.stringify to detect deep changes
-
-  // REMOVED: Filter-based refetch duplicates debounce in parent component (Tickets.tsx)
-  // Parent already handles debounced filters via useDebounce hook
 
   // Recalculate stats when tickets change
   useEffect(() => {
