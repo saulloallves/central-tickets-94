@@ -178,8 +178,8 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
         console.log(`🔍 PASSO 2: Após filtro de busca: ${filteredTickets.length} tickets (de ${allTickets.length})`);
       }
       
-      // Debug: Log newest tickets
-      const sortedByDate = filteredTickets.sort((a: any, b: any) => 
+      // Debug: Log newest tickets (create copy to avoid mutation)
+      const sortedByDate = [...filteredTickets].sort((a: any, b: any) => 
         new Date(b.data_abertura).getTime() - new Date(a.data_abertura).getTime()
       );
       if (sortedByDate.length > 0) {

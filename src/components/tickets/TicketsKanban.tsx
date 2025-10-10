@@ -525,11 +525,13 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
     console.log('🔄 Recalculando displayTickets:', {
       baseCount: tickets.length,
       optimisticCount: optimisticTickets.length,
-      pendingCount: pendingMoves.size
+      pendingCount: pendingMoves.size,
+      lastUpdate
     });
 
-    // Se não tem nada otimista, retorna os tickets base
+    // Se não tem nada otimista, retorna os tickets base diretamente
     if (pendingMoves.size === 0 && optimisticTickets.length === 0) {
+      console.log('✅ Usando tickets base (sem estado otimista):', tickets.length);
       return tickets;
     }
     
@@ -537,7 +539,7 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
     const optimisticMap = new Map(optimisticTickets.map(t => [t.id, t]));
     
     // Criar array base e aplicar otimistas
-    return tickets.map(ticket => {
+    const result = tickets.map(ticket => {
       const pendingTimestamp = pendingMoves.get(ticket.id);
       const ignoreUntil = ignoreRealtimeUntil.current.get(ticket.id) || 0;
       
@@ -558,7 +560,10 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
       
       return ticket;
     });
-  }, [tickets, optimisticTickets, pendingMoves.size, lastUpdate]);
+    
+    console.log('✅ displayTickets calculados:', result.length);
+    return result;
+  }, [tickets, optimisticTickets, pendingMoves, lastUpdate]);
 
   // Cleanup de operações antigas
   useEffect(() => {
