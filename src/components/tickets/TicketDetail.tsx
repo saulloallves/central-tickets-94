@@ -1356,10 +1356,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                       <Textarea
                         placeholder="Digite sua mensagem..."
                         value={newMessage}
-                        onChange={(e) => {
-                          setNewMessage(e.target.value);
-                          if (isFormatted) setIsFormatted(false);
-                        }}
+                        onChange={(e) => setNewMessage(e.target.value)}
                         onKeyPress={(e) => {
                           if (e.key === 'Enter' && !e.shiftKey) {
                             e.preventDefault();
