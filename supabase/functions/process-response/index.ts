@@ -256,7 +256,9 @@ IMPORTANTE: Você deve corrigir e padronizar a resposta do atendente seguindo es
 - REJEITE: outros negócios, temas não relacionados, informações genéricas
 
 📋 FORMATO DE SAÍDA:
-Retorne apenas a versão corrigida e padronizada da resposta, ou indique se o assunto está fora do escopo da Cresci & Perdi.`;
+CRÍTICO: Retorne APENAS a versão corrigida e padronizada da resposta PRONTA PARA ENVIAR AO CLIENTE.
+NÃO inclua frases como "Claro! Aqui está a resposta formatada..." ou "Segue a resposta corrigida...".
+Retorne DIRETAMENTE a resposta formatada, sem introduções ou explicações sobre o processo.`;
 
     console.log(`🎯 Usando prompt ${customPrompt ? 'personalizado' : 'padrão'} para formatação`);
 
@@ -319,7 +321,9 @@ INSTRUÇÕES:
 6. Mantenha exatamente o mesmo significado e informações
 
 FORMATO DE SAÍDA:
-Retorne apenas a versão corrigida da resposta, sem explicações adicionais.`;
+CRÍTICO: Retorne APENAS a versão corrigida da resposta PRONTA PARA ENVIAR AO CLIENTE.
+NÃO inclua frases como "Claro! Aqui está a resposta formatada..." ou "Segue a resposta corrigida...".
+Retorne DIRETAMENTE a resposta formatada, sem introduções ou explicações.`;
 
     const promptParaUsar = customPrompt || defaultGrammarPrompt;
     console.log('📝 Usando prompt:', customPrompt ? 'PERSONALIZADO' : 'PADRÃO (fallback)');
