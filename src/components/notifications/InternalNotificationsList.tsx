@@ -235,12 +235,16 @@ export const InternalNotificationsList = () => {
                           {notification.title}
                         </h4>
                         <div className="flex gap-1">
-                          <Badge 
-                            variant={getNotificationVariant(notification.type)}
-                            className="text-xs h-4 shrink-0"
-                          >
-                            {notification.type === 'franqueado_respondeu' ? 'Resposta' : notification.type}
-                          </Badge>
+                          {notification.type !== 'ticket_forwarded' && 
+                           notification.type !== 'sla_breach' && 
+                           notification.type !== 'sla_half' && (
+                            <Badge 
+                              variant={getNotificationVariant(notification.type)}
+                              className="text-xs h-4 shrink-0"
+                            >
+                              {notification.type === 'franqueado_respondeu' ? 'Resposta' : notification.type}
+                            </Badge>
+                          )}
                           {notification.equipe?.nome && (
                             <Badge variant="outline" className="text-xs h-4 shrink-0">
                               {notification.equipe.nome}

@@ -9,7 +9,7 @@ export interface InternalNotification {
   id: string;
   title: string;
   message: string;
-  type: 'ticket' | 'sla' | 'alert' | 'info' | 'crisis' | 'franqueado_respondeu' | 'ticket_forwarded';
+  type: 'ticket' | 'sla' | 'alert' | 'info' | 'crisis' | 'franqueado_respondeu' | 'ticket_forwarded' | 'sla_breach' | 'sla_half';
   equipe_id?: string | null;
   created_by?: string | null;
   created_at: string;

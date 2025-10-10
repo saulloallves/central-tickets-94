@@ -304,12 +304,12 @@ export const useInternalAlerts = () => {
               case 'sla_half':
                 soundType = 'warning';
                 title = "⏰ SLA 50%";
-                description = `Ticket ${newAlert.payload?.codigo_ticket || ''}${equipeInfo} atingiu 50% do prazo`;
+                description = `${newAlert.payload?.titulo || 'Ticket sem título'}${equipeInfo} atingiu 50% do prazo`;
                 break;
               case 'sla_breach':
                 soundType = 'critical';
                 title = "🚨 SLA Vencido";
-                description = `Ticket ${newAlert.payload?.codigo_ticket || ''}${equipeInfo} está vencido`;
+                description = `${newAlert.payload?.titulo || 'Ticket sem título'}${equipeInfo} está vencido`;
                 break;
               case 'crisis':
                 soundType = 'critical';

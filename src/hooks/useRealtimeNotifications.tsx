@@ -102,7 +102,7 @@ export const useRealtimeNotifications = () => {
       case 'sla_breach':
         toast({
           title: '🚨 SLA Vencido!',
-          description: `Ticket ${payload?.codigo_ticket} teve o SLA vencido e foi escalado automaticamente`,
+          description: `"${payload?.titulo || 'Ticket sem título'}" teve o SLA vencido e foi escalado automaticamente`,
           variant: 'destructive',
         });
         break;
@@ -110,7 +110,7 @@ export const useRealtimeNotifications = () => {
       case 'sla_half':
         toast({
           title: '⚠️ SLA 50%',
-          description: `Ticket ${payload?.codigo_ticket} atingiu 50% do SLA`,
+          description: `"${payload?.titulo || 'Ticket sem título'}" atingiu 50% do SLA`,
           variant: 'default',
         });
         break;
