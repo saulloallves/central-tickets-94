@@ -229,18 +229,6 @@ const Tickets = () => {
           </div>
         )}
 
-        {/* Botão Mostrar/Ocultar Filtros */}
-        <div className="flex justify-end mb-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            <Filter className="h-4 w-4 mr-2" />
-            {showFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}
-          </Button>
-        </div>
-
         {/* Barra de busca INSTANTÂNEA */}
         {showFilters && (
           <Card className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border border-border/40 mb-4">
