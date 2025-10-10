@@ -119,8 +119,7 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
             )
           )
         `)
-        .order('status', { ascending: true })
-        .order('position', { ascending: true });
+        .order('data_abertura', { ascending: false }); // Mais novos no topo
 
       // Apply filters
       if (filters.search) {
