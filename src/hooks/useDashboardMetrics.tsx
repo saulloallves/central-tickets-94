@@ -236,14 +236,14 @@ export const useDashboardMetrics = () => {
       // Map the database response to match our interface
       const mappedData = (data || []).map((unit: any) => ({
         unidade_id: unit.unidade_id,
-        unidade_nome: unitNamesMap[unit.unidade_id] || unit.unidade_nome || unit.unidade_id,
-        total_tickets_mes: unit.total_tickets || 0, // Map from total_tickets
-        tickets_resolvidos: unit.tickets_concluidos || 0, // Map from tickets_concluidos
-        tickets_abertos: unit.total_tickets - unit.tickets_concluidos || 0,
-        percentual_sla: unit.sla_percentage || 0, // Map from sla_percentage
+        unidade_nome: unit.unidade_nome || unitNamesMap[unit.unidade_id] || unit.unidade_id,
+        total_tickets_mes: unit.total_tickets_mes || 0,
+        tickets_resolvidos: unit.tickets_resolvidos || 0,
+        tickets_abertos: unit.tickets_abertos || 0,
+        percentual_sla: unit.percentual_sla || 0,
         tempo_medio_resolucao: unit.tempo_medio_resolucao || 0,
         tickets_crise: unit.tickets_crise || 0,
-        ia_bem_sucedida: 0 // Not available in current function, set to 0
+        ia_bem_sucedida: unit.ia_bem_sucedida || 0
       }));
 
       setUnitMetrics(mappedData);
