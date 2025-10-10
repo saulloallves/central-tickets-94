@@ -10,6 +10,7 @@ import { ProtectedRoute } from "./components/ProtectedRouteSimple";
 import LoadingSpinner from "./components/LoadingSpinner";
 import { GlobalNotificationListener } from "./components/GlobalNotificationListener";
 import { PWAInstallPrompt } from "./components/PWAInstallPrompt";
+import { AutoCacheCleaner } from "./components/AutoCacheCleaner";
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -76,6 +77,7 @@ const App = () => (
         <BrowserRouter>
           <GlobalNotificationListener />
           <PWAInstallPrompt />
+          <AutoCacheCleaner />
           <Suspense fallback={<LoadingSpinner />}>
             <Routes>
                 <Route path="/" element={<Index />} />
