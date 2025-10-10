@@ -271,7 +271,7 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
     } finally {
       setLoading(false);
     }
-  }, [user, roleLoading, filters.search, filters.status, filters.categoria, filters.prioridade, filters.unidade_id, filters.status_sla, filters.equipe_id, userEquipes, toast]);
+  }, [user, roleLoading, JSON.stringify(filters), userEquipes, toast]);
 
   // Calculate stats from current tickets - memoized to prevent recreation
   const calculateStats = useCallback((ticketsList: Ticket[]) => {
@@ -447,7 +447,7 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
     console.log('🚀 Initializing tickets system for user:', user.id);
     
     // Force fresh initialization each time for realtime reliability
-    fetchedRef.current = true;
+    fetchedRef.current = false; // Reset to allow fetch
     
     const initialize = async () => {
       console.log('📊 Fetching fresh tickets...');
@@ -457,7 +457,7 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
     };
     
     initialize();
-  }, [user?.id, roleLoading]); // Removed fetchTickets and setupRealtime to prevent infinite loop
+  }, [user?.id, roleLoading, JSON.stringify(filters)]); // Added filters to refetch when they change
 
   // Recalculate stats when tickets change
   useEffect(() => {
