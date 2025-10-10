@@ -72,8 +72,9 @@ const Tickets = () => {
   
   useEffect(() => {
     const handler = setTimeout(() => {
+      console.log('🔍 Aplicando filtros:', localFilters);
       setDebouncedFilters(localFilters);
-    }, 800); // Debounce de 800ms para filtros
+    }, 300); // Debounce de 300ms para filtros (mais responsivo)
     
     return () => clearTimeout(handler);
   }, [localFilters]);

@@ -154,8 +154,10 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
       // ⬇️ FILTRO CLIENT-SIDE PARA NOME DA UNIDADE
       let filteredTickets = allTickets;
 
-      if (filters.search) {
-        const searchLower = filters.search.toLowerCase();
+      if (filters.search && filters.search.trim()) {
+        const searchLower = filters.search.toLowerCase().trim();
+        console.log('🔍 Aplicando filtro de busca:', searchLower);
+        
         filteredTickets = allTickets.filter((ticket: any) => {
           // Buscar em todos os campos relevantes
           const codigo = ticket.codigo_ticket?.toLowerCase() || '';
@@ -163,15 +165,21 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
           const descricao = ticket.descricao_problema?.toLowerCase() || '';
           const unidadeNome = ticket.unidades?.grupo?.toLowerCase() || '';
           
-          return (
+          const match = (
             codigo.includes(searchLower) ||
             titulo.includes(searchLower) ||
             descricao.includes(searchLower) ||
             unidadeNome.includes(searchLower)  // ⬅️ BUSCA POR NOME DA UNIDADE
           );
+          
+          if (match) {
+            console.log('✅ Ticket match:', { codigo, titulo, unidadeNome });
+          }
+          
+          return match;
         });
         
-        console.log(`🔍 Filtered by search "${filters.search}": ${filteredTickets.length} tickets`);
+        console.log(`🔍 Busca por "${filters.search}": ${allTickets.length} tickets -> ${filteredTickets.length} após filtro`);
       }
       
       // Debug: Log newest tickets
