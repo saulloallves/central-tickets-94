@@ -309,7 +309,7 @@ async function getMessageTemplate(supabase: any, templateKey: string): Promise<s
 
   // Default templates as fallback with enriched variables
   const defaultTemplates: Record<string, string> = {
-    'ticket_created': `🎫 *NOVO TICKET CRIADO*
+    'ticket_created': `🎫 *NOVO TICKET*
 
 📋 *Ticket:* {{codigo_ticket}}
 📝 *Título:* {{titulo_ticket}}
