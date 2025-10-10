@@ -3969,11 +3969,9 @@ export type Database = {
       reprocess_pending_ticket_forwarded_notifications: {
         Args: Record<PropertyKey, never>
         Returns: {
-          equipe_id: string
-          members_notified: number
-          notification_id: string
-          status: string
-          ticket_id: string
+          details: Json
+          failed_count: number
+          processed_count: number
         }[]
       }
       resolve_crise_close_tickets: {
