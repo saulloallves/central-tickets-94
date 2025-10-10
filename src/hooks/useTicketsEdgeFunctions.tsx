@@ -121,10 +121,8 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
         `)
         .order('data_abertura', { ascending: false }); // Mais novos no topo
 
-      // Apply filters
-      if (filters.search) {
-        query = query.or(`codigo_ticket.ilike.%${filters.search}%,descricao_problema.ilike.%${filters.search}%,titulo.ilike.%${filters.search}%`);
-      }
+      // Apply filters (search filter is done client-side to include unit name)
+      // Removed backend search filter to allow client-side filtering with unidades.grupo
       if (filters.status && filters.status !== 'all') query = query.eq('status', filters.status as any);
       if (filters.categoria && filters.categoria !== 'all') query = query.eq('categoria', filters.categoria as any);
       if (filters.prioridade && filters.prioridade !== 'all') query = query.eq('prioridade', filters.prioridade as any);
