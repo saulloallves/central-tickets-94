@@ -448,6 +448,14 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
     initialize();
   }, [user?.id, roleLoading]); // Removed fetchTickets and setupRealtime to prevent infinite loop
 
+  // Monitor filter changes and refetch when they change
+  useEffect(() => {
+    if (!fetchedRef.current || !user) return;
+    
+    console.log('🔍 Filtros alterados - forçando refetch:', filters);
+    fetchTickets(true);
+  }, [JSON.stringify(filters)]); // Use JSON.stringify to detect deep changes
+
   // REMOVED: Filter-based refetch duplicates debounce in parent component (Tickets.tsx)
   // Parent already handles debounced filters via useDebounce hook
 

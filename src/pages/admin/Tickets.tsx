@@ -79,10 +79,15 @@ const Tickets = () => {
 
   // Função para aplicar filtros manualmente
   const handleApplyFilters = () => {
-    console.log('🔍 Aplicando filtros manualmente:', localFilters);
+    console.log('🔍 ANTES - Filtros atuais:', debouncedFilters);
+    console.log('🔍 APLICANDO - Novos filtros:', localFilters);
     setDebouncedFilters(localFilters);
     setIsFilterChanged(false);
-    refetch(); // Força refresh do Kanban
+    // Small delay to ensure state update
+    setTimeout(() => {
+      console.log('🔄 Forçando refetch após aplicar filtros');
+      refetch();
+    }, 100);
   };
 
   // Função para limpar filtros
