@@ -1018,37 +1018,35 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                 <Collapsible open={isSuggestionOpen} onOpenChange={setIsSuggestionOpen}>
                   <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50">
                     <CollapsibleTrigger asChild>
-                      <CardHeader className="pb-3 cursor-pointer hover:bg-muted/50 transition-colors">
-                        <div className="flex items-center justify-between w-full">
-                          <CardTitle className="text-base flex items-center gap-2">
-                            <Bot className="h-4 w-4" />
-                            Sugestão IA
-                            <ChevronDown 
-                              className={`h-4 w-4 transition-transform duration-200 ${
-                                isSuggestionOpen ? 'transform rotate-180' : ''
-                              }`} 
-                            />
-                          </CardTitle>
-                          {isSuggestionOpen && (
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                generateSuggestion();
-                              }}
-                              disabled={suggestionLoading}
-                              className="h-8"
-                            >
-                              {suggestionLoading ? (
-                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                              ) : (
-                                <Zap className="h-4 w-4" />
-                              )}
-                              {suggestionLoading ? 'Gerando...' : 'Gerar'}
-                            </Button>
-                          )}
-                        </div>
+                      <CardHeader className="pb-3 cursor-pointer hover:bg-muted/50 transition-colors flex flex-row items-center justify-between space-y-0 py-4">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <Bot className="h-4 w-4" />
+                          Sugestão IA
+                          <ChevronDown 
+                            className={`h-4 w-4 transition-transform duration-200 ${
+                              isSuggestionOpen ? 'transform rotate-180' : ''
+                            }`} 
+                          />
+                        </CardTitle>
+                        {isSuggestionOpen && (
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              generateSuggestion();
+                            }}
+                            disabled={suggestionLoading}
+                            className="h-8"
+                          >
+                            {suggestionLoading ? (
+                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                            ) : (
+                              <Zap className="h-4 w-4" />
+                            )}
+                            {suggestionLoading ? 'Gerando...' : 'Gerar'}
+                          </Button>
+                        )}
                       </CardHeader>
                     </CollapsibleTrigger>
                     
