@@ -153,8 +153,31 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
       const allTickets = (data as any) || [];
       console.log('🎫 Tickets fetched successfully:', allTickets.length);
       
+      // ⬇️ FILTRO CLIENT-SIDE PARA NOME DA UNIDADE
+      let filteredTickets = allTickets;
+
+      if (filters.search) {
+        const searchLower = filters.search.toLowerCase();
+        filteredTickets = allTickets.filter((ticket: any) => {
+          // Buscar em todos os campos relevantes
+          const codigo = ticket.codigo_ticket?.toLowerCase() || '';
+          const titulo = ticket.titulo?.toLowerCase() || '';
+          const descricao = ticket.descricao_problema?.toLowerCase() || '';
+          const unidadeNome = ticket.unidades?.grupo?.toLowerCase() || '';
+          
+          return (
+            codigo.includes(searchLower) ||
+            titulo.includes(searchLower) ||
+            descricao.includes(searchLower) ||
+            unidadeNome.includes(searchLower)  // ⬅️ BUSCA POR NOME DA UNIDADE
+          );
+        });
+        
+        console.log(`🔍 Filtered by search "${filters.search}": ${filteredTickets.length} tickets`);
+      }
+      
       // Debug: Log newest tickets
-      const sortedByDate = allTickets.sort((a: any, b: any) => 
+      const sortedByDate = filteredTickets.sort((a: any, b: any) => 
         new Date(b.data_abertura).getTime() - new Date(a.data_abertura).getTime()
       );
       if (sortedByDate.length > 0) {
@@ -167,7 +190,7 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
       }
       
       // Filter out tickets that are linked to active crises
-      const visibleTickets = allTickets.filter((ticket: any) => {
+      const visibleTickets = filteredTickets.filter((ticket: any) => {
         // If ticket has no crisis links, show it
         if (!ticket.crise_links || ticket.crise_links.length === 0) {
           return true;
