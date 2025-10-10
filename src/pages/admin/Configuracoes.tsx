@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings, Brain, BookOpen, TrendingUp, AlertTriangle, Image, Bell, Users, MessageSquare, Headphones, Zap } from "lucide-react";
+import { Settings, Brain, BookOpen, TrendingUp, AlertTriangle, Image, Bell, Users, MessageSquare, Headphones, Zap, Database } from "lucide-react";
 import { IASettingsTab } from "@/components/configuracoes/IASettingsTab";
 import KnowledgeHubTab from "@/components/configuracoes/KnowledgeHubTab";
 import { RelatoriosTab } from "@/components/configuracoes/RelatoriosTab";
@@ -18,6 +18,7 @@ import CrisisAISettingsTab from '@/components/configuracoes/CrisisAISettingsTab'
 import { AtendentesTab } from '@/components/configuracoes/AtendentesTab';
 import { AIClassifierAdvancedTab } from '@/components/configuracoes/AIClassifierAdvancedTab';
 import { ZAPIInstancesTab } from '@/components/configuracoes/ZAPIInstancesTab';
+import { CleanupTicketsButton } from '@/components/admin/CleanupTicketsButton';
 
 export default function Configuracoes() {
   const [searchParams] = useSearchParams();
@@ -101,6 +102,10 @@ export default function Configuracoes() {
               <Zap className="h-4 w-4" />
               Z-API Instâncias
             </TabsTrigger>
+            <TabsTrigger value="manutencao" className="flex items-center gap-2">
+              <Database className="h-4 w-4" />
+              Manutenção
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="logo" className="space-y-6 animate-fade-in">
@@ -150,6 +155,35 @@ export default function Configuracoes() {
 
           <TabsContent value="zapi-instances" className="space-y-6 animate-fade-in">
             <ZAPIInstancesTab />
+          </TabsContent>
+
+          <TabsContent value="manutencao" className="space-y-6 animate-fade-in">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Database className="h-5 w-5" />
+                  Manutenção do Banco de Dados
+                </CardTitle>
+                <CardDescription>
+                  Ferramentas de limpeza e manutenção do sistema
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="border border-destructive/20 rounded-lg p-4 space-y-3">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="h-5 w-5 text-destructive mt-0.5" />
+                    <div className="space-y-2 flex-1">
+                      <h3 className="font-semibold text-foreground">Limpeza de Tickets</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Remove todos os tickets, mensagens e chamados do banco de dados. 
+                        Esta ação é <strong>irreversível</strong>.
+                      </p>
+                      <CleanupTicketsButton />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
         </Tabs>
