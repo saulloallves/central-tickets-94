@@ -7,16 +7,16 @@ import { RefreshCw, X } from 'lucide-react';
 export const AutoCacheCleaner = () => {
   const [showWarning, setShowWarning] = useState(false);
   const [countdown, setCountdown] = useState(30);
-  const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const mainTimerRef = useRef<NodeJS.Timeout | null>(null);
   const warningTimerRef = useRef<NodeJS.Timeout | null>(null);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
 
-  const INACTIVITY_TIME = 10 * 60 * 1000; // 10 minutos
+  const MAIN_TIME = 10 * 60 * 1000; // 10 minutos
   const WARNING_TIME = 30 * 1000; // 30 segundos antes
 
   const clearAllTimers = () => {
-    if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
+    if (mainTimerRef.current) clearTimeout(mainTimerRef.current);
     if (warningTimerRef.current) clearTimeout(warningTimerRef.current);
     if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
   };
@@ -70,48 +70,30 @@ export const AutoCacheCleaner = () => {
     console.log('🚫 Recarregamento cancelado pelo usuário');
     clearAllTimers();
     setShowWarning(false);
-    resetInactivityTimer();
+    
+    // Reiniciar o timer de 10 minutos
+    mainTimerRef.current = setTimeout(() => {
+      startWarning();
+    }, MAIN_TIME);
     
     toast({
       title: "Recarregamento cancelado",
-      description: "O timer foi reiniciado",
+      description: "O timer foi reiniciado por mais 10 minutos",
     });
-  };
-
-  const resetInactivityTimer = () => {
-    clearAllTimers();
-    setShowWarning(false);
-
-    // Timer principal (10 minutos)
-    inactivityTimerRef.current = setTimeout(() => {
-      startWarning();
-    }, INACTIVITY_TIME);
   };
 
   useEffect(() => {
-    // Eventos de atividade do usuário
-    const events = ['mousedown', 'keydown', 'scroll', 'touchstart'];
+    console.log('⏰ Timer de auto-limpeza iniciado: 10 minutos');
     
-    const handleActivity = () => {
-      if (!showWarning) {
-        resetInactivityTimer();
-      }
-    };
-
-    events.forEach(event => {
-      window.addEventListener(event, handleActivity);
-    });
-
-    // Iniciar timer
-    resetInactivityTimer();
+    // Timer principal (10 minutos após carregar a página)
+    mainTimerRef.current = setTimeout(() => {
+      startWarning();
+    }, MAIN_TIME);
 
     return () => {
       clearAllTimers();
-      events.forEach(event => {
-        window.removeEventListener(event, handleActivity);
-      });
     };
-  }, [showWarning]);
+  }, []);
 
   if (!showWarning) return null;
 
