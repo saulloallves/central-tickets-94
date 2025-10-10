@@ -235,7 +235,7 @@ const Tickets = () => {
             <div className="flex gap-4 items-center flex-wrap">
               <div className="relative flex-1 max-w-md">
                 <Input 
-                  placeholder="🔍 Buscar por código, unidade, título, cidade..." 
+                  placeholder="Buscar por código, unidade, título, cidade..." 
                   value={filters.search} 
                   onChange={e => setFilters(prev => ({ ...prev, search: e.target.value }))}
                   className="w-full"
@@ -252,54 +252,68 @@ const Tickets = () => {
                 )}
               </div>
               
-              <Select 
-                value={filters.prioridade} 
-                onValueChange={value => setFilters(prev => ({ ...prev, prioridade: value }))}
-              >
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Prioridade" />
-                </SelectTrigger>
-                <SelectContent className="bg-background border-border z-50 shadow-lg">
-                  <SelectItem value="all">Todas</SelectItem>
-                  <SelectItem value="crise">Crise</SelectItem>
-                  <SelectItem value="imediato">Imediato (15min)</SelectItem>
-                  <SelectItem value="alto">Alto (1 hora)</SelectItem>
-                  <SelectItem value="medio">Médio (10 horas)</SelectItem>
-                  <SelectItem value="baixo">Baixo (24 horas)</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <Select 
-                value={filters.equipe_id} 
-                onValueChange={value => setFilters(prev => ({ ...prev, equipe_id: value }))}
-              >
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Equipe" />
-                </SelectTrigger>
-                <SelectContent className="bg-background border-border z-50 shadow-lg">
-                  <SelectItem value="all">Todas Equipes</SelectItem>
-                  {userEquipes.length > 0 && <SelectItem value="minhas_equipes">Minhas Equipes</SelectItem>}
-                  {equipes.map(equipe => 
-                    <SelectItem key={equipe.id} value={equipe.id}>
-                      {equipe.nome}
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
+              {showFilters && (
+                <>
+                  <Select 
+                    value={filters.prioridade} 
+                    onValueChange={value => setFilters(prev => ({ ...prev, prioridade: value }))}
+                  >
+                    <SelectTrigger className="w-40">
+                      <SelectValue placeholder="Prioridade" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background border-border z-50 shadow-lg">
+                      <SelectItem value="all">Todas</SelectItem>
+                      <SelectItem value="crise">Crise</SelectItem>
+                      <SelectItem value="imediato">Imediato (15min)</SelectItem>
+                      <SelectItem value="alto">Alto (1 hora)</SelectItem>
+                      <SelectItem value="medio">Médio (10 horas)</SelectItem>
+                      <SelectItem value="baixo">Baixo (24 horas)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  <Select 
+                    value={filters.equipe_id} 
+                    onValueChange={value => setFilters(prev => ({ ...prev, equipe_id: value }))}
+                  >
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="Equipe" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background border-border z-50 shadow-lg">
+                      <SelectItem value="all">Todas Equipes</SelectItem>
+                      {userEquipes.length > 0 && <SelectItem value="minhas_equipes">Minhas Equipes</SelectItem>}
+                      {equipes.map(equipe => 
+                        <SelectItem key={equipe.id} value={equipe.id}>
+                          {equipe.nome}
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
 
-              {(isAdmin || isSupervisor) && (
-                <Select 
-                  value={filters.unidade_id} 
-                  onValueChange={value => setFilters(prev => ({ ...prev, unidade_id: value }))}
-                >
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Unidade" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background border-border z-50 shadow-lg">
-                    <SelectItem value="all">Todas</SelectItem>
-                  </SelectContent>
-                </Select>
+                  {(isAdmin || isSupervisor) && (
+                    <Select 
+                      value={filters.unidade_id} 
+                      onValueChange={value => setFilters(prev => ({ ...prev, unidade_id: value }))}
+                    >
+                      <SelectTrigger className="w-40">
+                        <SelectValue placeholder="Unidade" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background border-border z-50 shadow-lg">
+                        <SelectItem value="all">Todas</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                </>
               )}
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowFilters(!showFilters)}
+                className="ml-auto"
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                {showFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}
+              </Button>
             </div>
           </CardContent>
         </Card>
