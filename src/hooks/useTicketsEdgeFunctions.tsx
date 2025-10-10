@@ -149,7 +149,7 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
       }
 
       const allTickets = (data as any) || [];
-      console.log('🎫 Tickets fetched successfully:', allTickets.length);
+      console.log('📦 PASSO 1: Tickets do banco:', allTickets.length);
       
       // ⬇️ FILTRO CLIENT-SIDE PARA NOME DA UNIDADE
       let filteredTickets = allTickets;
@@ -172,14 +172,10 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
             unidadeNome.includes(searchLower)  // ⬅️ BUSCA POR NOME DA UNIDADE
           );
           
-          if (match) {
-            console.log('✅ Ticket match:', { codigo, titulo, unidadeNome });
-          }
-          
           return match;
         });
         
-        console.log(`🔍 Busca por "${filters.search}": ${allTickets.length} tickets -> ${filteredTickets.length} após filtro`);
+        console.log(`🔍 PASSO 2: Após filtro de busca: ${filteredTickets.length} tickets (de ${allTickets.length})`);
       }
       
       // Debug: Log newest tickets
@@ -207,14 +203,20 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
           link.crises && link.crises.is_active
         );
         
-        if (hasActiveCrisis) {
-          console.log('🚫 Hiding ticket due to active crisis:', ticket.codigo_ticket);
-        }
-        
         return !hasActiveCrisis;
       });
       
-      console.log('✅ Visible tickets (after filtering crises):', visibleTickets.length);
+      console.log('🚫 PASSO 3: Após filtro de crises:', visibleTickets.length);
+
+      // ⬇️ VALIDAÇÃO: Alertar se o filtro de busca resultou em 0 tickets
+      if (visibleTickets.length === 0 && filters.search && filters.search.trim()) {
+        console.warn('⚠️ ATENÇÃO: Filtro de busca resultou em 0 tickets!');
+        console.warn('🔍 Termo buscado:', filters.search);
+        console.warn('📊 Tickets antes da busca:', allTickets.length);
+      }
+
+      console.log('✅ PASSO 4: Tickets enviados ao Kanban:', visibleTickets.length);
+      
       setTickets(visibleTickets);
       
       // Force immediate update for realtime responsiveness

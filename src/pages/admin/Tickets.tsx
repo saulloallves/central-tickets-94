@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTicketNotifications } from '@/hooks/useTicketNotifications';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
-import { Plus, Filter, Calendar, Users, Clock, AlertTriangle, Brain } from 'lucide-react';
+import { Plus, Filter, Calendar, Users, Clock, AlertTriangle, Brain, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -140,11 +140,18 @@ const Tickets = () => {
         <CrisisBanner />
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-xl md:text-3xl font-bold tracking-tight">Tickets de Suporte</h1>
-            <p className="text-sm md:text-base text-muted-foreground">
-              Gerencie tickets de suporte e acompanhe SLAs
-            </p>
+          <div className="flex items-center gap-3">
+            <div>
+              <h1 className="text-xl md:text-3xl font-bold tracking-tight">Tickets de Suporte</h1>
+              <p className="text-sm md:text-base text-muted-foreground">
+                Gerencie tickets de suporte e acompanhe SLAs
+              </p>
+            </div>
+            {(debouncedFilters.search || debouncedFilters.status !== 'all' || debouncedFilters.prioridade !== 'all' || debouncedFilters.equipe_id !== 'all') && (
+              <Badge variant="secondary" className="text-sm">
+                {tickets.length} {tickets.length === 1 ? 'resultado' : 'resultados'}
+              </Badge>
+            )}
           </div>
           
           <div className="flex flex-wrap gap-1 md:gap-2">
@@ -188,19 +195,60 @@ const Tickets = () => {
           </Card>
         </div>
 
+        {/* Badge de filtros ativos */}
+        {(localFilters.search || 
+          localFilters.status !== 'all' || 
+          localFilters.prioridade !== 'all' ||
+          localFilters.equipe_id !== 'all') && (
+          <div className="flex items-center gap-2 mb-4 p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <Filter className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <span className="text-sm text-blue-700 dark:text-blue-300 font-medium flex-1">
+              {[
+                localFilters.search && `Busca: "${localFilters.search}"`,
+                localFilters.status !== 'all' && `Status: ${localFilters.status}`,
+                localFilters.prioridade !== 'all' && `Prioridade: ${localFilters.prioridade}`,
+                localFilters.equipe_id !== 'all' && `Equipe filtrada`
+              ].filter(Boolean).join(' • ')}
+            </span>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => setLocalFilters({
+                search: '',
+                status: 'all',
+                categoria: 'all',
+                prioridade: 'all',
+                unidade_id: 'all',
+                status_sla: 'all',
+                equipe_id: 'all'
+              })}
+            >
+              <X className="h-4 w-4 mr-1" />
+              Limpar filtros
+            </Button>
+          </div>
+        )}
+
         {/* Collapsible Filters */}
         {showFilters && <Card className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border border-border/40">
             <CardContent className="p-4">
               <div className="flex gap-4 items-center flex-wrap">
-                <Input 
-                  placeholder="Buscar tickets..." 
-                  value={localFilters.search} 
-                  onChange={e => setLocalFilters(prev => ({
-                    ...prev,
-                    search: e.target.value
-                  }))} 
-                  className="max-w-xs" 
-                />
+                <div className="relative">
+                  <Input 
+                    placeholder="Buscar tickets..." 
+                    value={localFilters.search} 
+                    onChange={e => setLocalFilters(prev => ({
+                      ...prev,
+                      search: e.target.value
+                    }))} 
+                    className="max-w-xs pr-8" 
+                  />
+                  {localFilters.search !== debouncedFilters.search && localFilters.search && (
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    </div>
+                  )}
+                </div>
                 
                 <Select 
                   value={localFilters.prioridade} 
