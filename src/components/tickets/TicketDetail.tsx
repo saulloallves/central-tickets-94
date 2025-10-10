@@ -1353,28 +1353,6 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                     )}
                     
                     <div className="flex gap-2">
-                      <input
-                        id="file-upload"
-                        type="file"
-                        multiple
-                        onChange={handleFileSelect}
-                        className="hidden"
-                        accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx"
-                      />
-                      <label htmlFor="file-upload">
-                        <Button 
-                          variant="outline" 
-                          size="icon" 
-                          type="button" 
-                          className="h-10 w-10 shrink-0"
-                          asChild
-                        >
-                          <span>
-                            <Paperclip className="h-4 w-4" />
-                          </span>
-                        </Button>
-                      </label>
-                      
                       <Textarea
                         placeholder="Digite sua mensagem..."
                         value={newMessage}
