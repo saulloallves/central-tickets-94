@@ -69,15 +69,38 @@ const Tickets = () => {
   
   // Debounced filters para evitar piscamento
   const [debouncedFilters, setDebouncedFilters] = useState(localFilters);
-  
+  const [isFilterChanged, setIsFilterChanged] = useState(false);
+
+  // Detectar se os filtros mudaram
   useEffect(() => {
-    const handler = setTimeout(() => {
-      console.log('🔍 Aplicando filtros:', localFilters);
-      setDebouncedFilters(localFilters);
-    }, 300); // Debounce de 300ms para filtros (mais responsivo)
-    
-    return () => clearTimeout(handler);
-  }, [localFilters]);
+    const hasChanged = JSON.stringify(localFilters) !== JSON.stringify(debouncedFilters);
+    setIsFilterChanged(hasChanged);
+  }, [localFilters, debouncedFilters]);
+
+  // Função para aplicar filtros manualmente
+  const handleApplyFilters = () => {
+    console.log('🔍 Aplicando filtros manualmente:', localFilters);
+    setDebouncedFilters(localFilters);
+    setIsFilterChanged(false);
+    refetch(); // Força refresh do Kanban
+  };
+
+  // Função para limpar filtros
+  const handleClearFilters = () => {
+    const clearedFilters = {
+      search: '',
+      status: 'all',
+      categoria: 'all',
+      prioridade: 'all',
+      unidade_id: 'all',
+      status_sla: 'all',
+      equipe_id: 'all'
+    };
+    setLocalFilters(clearedFilters);
+    setDebouncedFilters(clearedFilters);
+    setIsFilterChanged(false);
+    refetch();
+  };
   
   const {
     tickets,
@@ -213,15 +236,7 @@ const Tickets = () => {
             <Button 
               variant="ghost" 
               size="sm"
-              onClick={() => setLocalFilters({
-                search: '',
-                status: 'all',
-                categoria: 'all',
-                prioridade: 'all',
-                unidade_id: 'all',
-                status_sla: 'all',
-                equipe_id: 'all'
-              })}
+              onClick={handleClearFilters}
             >
               <X className="h-4 w-4 mr-1" />
               Limpar filtros
@@ -241,11 +256,16 @@ const Tickets = () => {
                       ...prev,
                       search: e.target.value
                     }))} 
-                    className="max-w-xs pr-8" 
+                    className={cn(
+                      "max-w-xs pr-8",
+                      isFilterChanged && localFilters.search !== debouncedFilters.search && "border-yellow-500 border-2"
+                    )}
                   />
-                  {localFilters.search !== debouncedFilters.search && localFilters.search && (
+                  {isFilterChanged && localFilters.search !== debouncedFilters.search && (
                     <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                      <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-500 text-xs">
+                        Não aplicado
+                      </Badge>
                     </div>
                   )}
                 </div>
@@ -303,6 +323,38 @@ const Tickets = () => {
                       <SelectItem value="all">Todas</SelectItem>
                     </SelectContent>
                   </Select>}
+                
+                {/* Botões de ação dos filtros */}
+                <div className="flex gap-2 items-center ml-auto">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleClearFilters}
+                    disabled={!isFilterChanged && localFilters.search === '' && localFilters.prioridade === 'all' && localFilters.equipe_id === 'all'}
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Limpar
+                  </Button>
+                  
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={handleApplyFilters}
+                    disabled={!isFilterChanged}
+                    className={cn(
+                      "min-w-[140px]",
+                      isFilterChanged && "animate-pulse bg-primary"
+                    )}
+                  >
+                    <Filter className="h-4 w-4 mr-2" />
+                    Aplicar Filtros
+                    {isFilterChanged && (
+                      <Badge variant="secondary" className="ml-2 bg-yellow-500 text-white">
+                        !
+                      </Badge>
+                    )}
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>}
