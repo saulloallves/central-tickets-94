@@ -107,7 +107,7 @@ serve(async (req) => {
     // 2. Buscar crises ativas da equipe para verificar se podemos vincular tickets
     const { data: activeCrises, error: crisesError } = await supabase
       .from('crises')
-      .select('id, titulo, similar_terms, keywords, problem_signature')
+      .select('id, titulo, similar_terms, palavras_chave, problem_signature')
       .eq('equipe_id', equipe_id)
       .eq('is_active', true)
       .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // Últimas 24 horas
