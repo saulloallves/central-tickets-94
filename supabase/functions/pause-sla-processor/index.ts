@@ -143,10 +143,27 @@ Deno.serve(async (req) => {
           const currentSlaLimit = new Date(ticket.data_limite_sla);
           const newSlaLimit = new Date(currentSlaLimit.getTime() + minutesPaused * 60 * 1000);
 
-          // Recalcular sla_half_time
+          // Recalcular sla_half_time baseado no SLA efetivo (sem tempo pausado)
           const createdAt = new Date(ticket.data_abertura);
-          const totalSlaTime = newSlaLimit.getTime() - createdAt.getTime();
-          const halfSlaTime = new Date(createdAt.getTime() + totalSlaTime / 2);
+          
+          // Calcular SLA total original em minutos
+          const totalSlaMinutes = (newSlaLimit.getTime() - createdAt.getTime()) / (1000 * 60);
+          
+          // SLA efetivo = SLA total - tempo pausado acumulado
+          const effectiveSlaMinutes = totalSlaMinutes - totalPausedMinutes;
+          
+          // 50% do SLA efetivo
+          const halfSlaTime = new Date(createdAt.getTime() + (effectiveSlaMinutes / 2) * 60 * 1000);
+
+          // Log detalhado para debugging
+          console.log(`📊 SLA Calculation for ${ticket.codigo_ticket}:`);
+          console.log(`  - Data abertura: ${createdAt.toISOString()}`);
+          console.log(`  - Total SLA: ${totalSlaMinutes.toFixed(2)} min`);
+          console.log(`  - Tempo pausado acumulado: ${totalPausedMinutes} min`);
+          console.log(`  - SLA efetivo: ${effectiveSlaMinutes.toFixed(2)} min`);
+          console.log(`  - 50% do SLA efetivo: ${(effectiveSlaMinutes / 2).toFixed(2)} min`);
+          console.log(`  - sla_half_time calculado: ${halfSlaTime.toISOString()}`);
+          console.log(`  - data_limite_sla: ${newSlaLimit.toISOString()}`);
 
           // Despausar ticket
           const { error: updateError } = await supabase
