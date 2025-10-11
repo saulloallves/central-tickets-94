@@ -228,10 +228,10 @@ serve(async (req: Request) => {
       Deno.env.get("FUNCTIONS_BASE_URL") ||
       `https://hryurntaljdisohawpqf.supabase.co/functions/v1`;
 
-    // 🔹 MENU INICIAL - Verificação com debug
+    // 🔹 MENU INICIAL - Verificação EXATA (não frases que contenham)
     console.log("🔍 Verificando keywords:", KEYWORDS);
     console.log("🔍 Message para verificar:", `"${message}"`);
-    const keywordMatch = KEYWORDS.some((k) => message.includes(k.toLowerCase()));
+    const keywordMatch = KEYWORDS.some((k) => message.trim() === k.toLowerCase());
     console.log("🔍 Keyword match encontrado:", keywordMatch);
     
     if (keywordMatch) {
