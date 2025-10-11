@@ -222,7 +222,7 @@ serve(async (req: Request) => {
     const chatId = body?.phone;
 
     // Palavras-chave que disparam menu inicial
-    const KEYWORDS = ["testerobo", "menu", "robo", "ola robo", "olá robô"];
+    const KEYWORDS = ["testerobo", "menu", "robo", "ola robo", "olá robô", "ola robo"];
 
     const functionsBaseUrl =
       Deno.env.get("FUNCTIONS_BASE_URL") ||
