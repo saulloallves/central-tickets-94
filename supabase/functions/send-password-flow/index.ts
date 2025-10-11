@@ -41,6 +41,7 @@ serve(async (req: Request) => {
 
     console.log("🔐 Iniciando fluxo de senha para:", participantPhone);
 
+
     // Load Z-API configuration
     const { instanceId, instanceToken, clientToken, baseUrl } = await loadZAPIConfig();
 
