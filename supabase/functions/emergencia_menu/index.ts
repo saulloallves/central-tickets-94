@@ -41,11 +41,12 @@ serve(async (req: Request) => {
         Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") ?? ''
       );
 
-      // Buscar unidade pelo código do grupo no Supabase externo via unidades_whatsapp
+      // Buscar unidade pelo id_grupo_branco na atendente_unidades
       const { data: whatsappGroup } = await supabase
-        .from('unidades_whatsapp')
-        .select('codigo_grupo')
+        .from('atendente_unidades')
+        .select('codigo_grupo, grupo, concierge_name, concierge_phone')
         .eq('id_grupo_branco', phone)
+        .eq('ativo', true)
         .maybeSingle();
 
       if (!whatsappGroup) {
@@ -229,13 +230,14 @@ serve(async (req: Request) => {
       Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") ?? ''
     );
 
-    // Buscar unidade pelo código do grupo no Supabase externo via unidades_whatsapp
+    // Buscar unidade pelo id_grupo_branco na atendente_unidades
     console.log(`🔍 Buscando unidade com id_grupo_branco: ${phone}`);
     
     const { data: whatsappGroup, error: whatsappError } = await supabase
-      .from('unidades_whatsapp')
-      .select('codigo_grupo')
+      .from('atendente_unidades')
+      .select('codigo_grupo, grupo, concierge_name, concierge_phone')
       .eq('id_grupo_branco', phone)
+      .eq('ativo', true)
       .maybeSingle();
 
     if (whatsappError || !whatsappGroup) {
