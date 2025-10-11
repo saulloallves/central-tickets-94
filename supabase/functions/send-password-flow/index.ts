@@ -63,13 +63,23 @@ serve(async (req: Request) => {
     const normalizedPhone = normalizePhone(participantPhone);
     console.log("📞 Telefone normalizado:", normalizedPhone);
 
-    // Step 1: Search for franchisee in franqueados table
-    console.log("🔍 Buscando franqueado na tabela franqueados...");
-    
+    // Remove "55" prefix to match database format (phone column doesn't have 55)
+    let searchPhone = normalizedPhone;
+    if (searchPhone.startsWith('55')) {
+      searchPhone = searchPhone.substring(2);
+    }
+
+    console.log("🔍 Buscando franqueado:", {
+      phone_original: participantPhone,
+      phone_normalizado: normalizedPhone,
+      phone_busca: searchPhone
+    });
+
+    // Step 1: Search for franchisee in franqueados table using phone column
     const { data: franqueado, error: searchError } = await supabase
       .from('franqueados')
       .select('id, phone, normalized_phone, web_password, name, email')
-      .eq('normalized_phone', normalizedPhone)
+      .eq('phone', searchPhone)
       .maybeSingle();
     
     console.log("🔍 Resultado da busca:", { 
