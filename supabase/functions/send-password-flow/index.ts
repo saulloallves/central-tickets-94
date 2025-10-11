@@ -77,17 +77,36 @@ serve(async (req: Request) => {
     });
 
     // Step 1: Search for franchisee in franqueados table using phone column
-    const { data: franqueado, error: searchError } = await supabase
+    let { data: franqueado, error: searchError } = await supabase
       .from('franqueados')
       .select('id, phone, normalized_phone, web_password, name, email')
       .eq('phone', searchPhone)
       .maybeSingle();
     
-    console.log("🔍 Resultado da busca:", { 
+    console.log("🔍 Resultado da busca (tentativa 1):", { 
       found: !!franqueado, 
       hasPassword: !!franqueado?.web_password,
       error: searchError 
     });
+
+    // Step 1.5: Se não encontrou e o número tem 10 dígitos (DD+8), tentar com 9 adicional (DD+9+8)
+    if (!franqueado && searchPhone.length === 10) {
+      const searchPhoneWith9 = searchPhone.substring(0, 2) + '9' + searchPhone.substring(2);
+      console.log("🔄 Tentando busca com 9 adicional:", searchPhoneWith9);
+      
+      const result = await supabase
+        .from('franqueados')
+        .select('id, phone, normalized_phone, web_password, name, email')
+        .eq('phone', searchPhoneWith9)
+        .maybeSingle();
+      
+      franqueado = result.data;
+      
+      console.log("🔍 Resultado da busca (tentativa 2 com 9):", { 
+        found: !!franqueado, 
+        hasPassword: !!franqueado?.web_password
+      });
+    }
 
     // Step 2: Handle different scenarios
     if (!franqueado) {
