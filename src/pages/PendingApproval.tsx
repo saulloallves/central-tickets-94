@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ClipboardList, Clock, Shield, CheckCircle, AlertCircle } from 'lucide-react';
+import { ClipboardList, Clock, Shield, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
 import { useInternalAccessRequests } from '@/hooks/useInternalAccessRequests';
 import { useAuth } from '@/hooks/useAuth';
 import { Navigate } from 'react-router-dom';
@@ -26,6 +26,18 @@ export const PendingApproval = () => {
 
   const handleSignOut = async () => {
     await signOut();
+  };
+
+  const handleRefreshStatus = () => {
+    console.log('🔄 [PendingApproval] Forcing roles refresh...');
+    
+    // Disparar evento de atualização de roles
+    window.dispatchEvent(new Event('roles-updated'));
+    
+    // Aguardar 1 segundo e recarregar página
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
   };
 
   return (
@@ -79,6 +91,15 @@ export const PendingApproval = () => {
             </div>
 
             <div className="space-y-2 pt-2">
+              <Button 
+                onClick={handleRefreshStatus}
+                variant="default"
+                className="w-full h-11 mb-2"
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Atualizar Status de Acesso
+              </Button>
+
               <Button 
                 onClick={handleSignOut}
                 variant="outline"

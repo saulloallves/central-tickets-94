@@ -13,7 +13,7 @@ interface ProtectedRouteProps {
 
 export const ProtectedRoute = ({ children, requiredRole, requiredRoles }: ProtectedRouteProps) => {
   const { user, loading, emailConfirmed } = useAuth();
-  const { hasRole, loading: roleLoading, hasPendingAccess } = useRole();
+  const { hasRole, roles, loading: roleLoading, hasPendingAccess } = useRole();
   const location = useLocation();
   const [isImportedUser, setIsImportedUser] = useState<boolean | null>(null);
   const [checkingImport, setCheckingImport] = useState(true);
@@ -70,8 +70,13 @@ export const ProtectedRoute = ({ children, requiredRole, requiredRoles }: Protec
     return <EmailConfirmationRequired />;
   }
 
-  // Se o usuário tem solicitação pendente e não tem nenhuma role aprovada
-  if (hasPendingAccess && !hasRole('admin') && !hasRole('supervisor') && !hasRole('colaborador') && !hasRole('franqueado') && !hasRole('diretoria')) {
+  // Se o usuário tem solicitação pendente E não tem NENHUMA role aprovada
+  const hasAnyApprovedRole = roles && roles.length > 0;
+  
+  console.log('🔒 [ProtectedRoute] hasPendingAccess:', hasPendingAccess, 'hasAnyApprovedRole:', hasAnyApprovedRole);
+
+  if (hasPendingAccess && !hasAnyApprovedRole) {
+    console.log('🚫 User has pending access and no approved roles, redirecting to /pending-approval');
     return <Navigate to="/pending-approval" replace />;
   }
 

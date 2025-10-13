@@ -198,6 +198,10 @@ export const useInternalAccessRequests = () => {
         throw error;
       }
 
+      // Disparar evento para limpar cache do useRole
+      window.dispatchEvent(new Event('roles-updated'));
+      console.log('🔄 [approveRequest] roles-updated event dispatched');
+
       toast({
         title: "Solicitação aprovada",
         description: "O usuário foi adicionado à equipe com sucesso."
@@ -235,6 +239,10 @@ export const useInternalAccessRequests = () => {
         console.error('Error rejecting request:', error);
         throw error;
       }
+
+      // Disparar evento para limpar cache do useRole
+      window.dispatchEvent(new Event('roles-updated'));
+      console.log('🔄 [rejectRequest] roles-updated event dispatched');
 
       toast({
         title: "Solicitação recusada",
