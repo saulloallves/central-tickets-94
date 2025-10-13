@@ -215,10 +215,15 @@ function getLegacyDestination(type: string, ticket: any): string | null {
     case 'resposta_ticket':
     case 'ticket_created':
     case 'sla_half':
-    case 'sla_breach':
+      // ⚠️ sla_breach REMOVIDO do fallback - deve usar apenas configuração explícita
       const destination = ticket.unidades?.id_grupo_branco || null;
       console.log(`📱 Legacy destination result: ${destination}`);
       return destination;
+    
+    case 'sla_breach':
+      // ❌ SLA breach não usa fallback para grupo branco
+      console.log(`❌ SLA breach não permite fallback - configuração obrigatória`);
+      return null;
     
     default:
       console.log(`❌ No legacy destination configured for type: ${type}`);
