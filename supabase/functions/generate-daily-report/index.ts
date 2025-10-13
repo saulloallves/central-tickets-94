@@ -79,11 +79,6 @@ function formatReportMessage(data: any): string {
 👥 Equipe destaque: *${data.equipe_mais_chamados?.nome || 'N/A'}* (${data.equipe_mais_chamados?.total || 0} tickets)
 🏢 Unidade destaque: *${data.unidade_mais_chamados?.nome || 'N/A'}* (${data.unidade_mais_chamados?.total || 0} tickets)
 
-📂 *DISTRIBUIÇÃO POR CATEGORIA*
-${Object.entries(data.tickets_por_categoria || {})
-  .map(([cat, count]) => `• ${cat}: ${count}`)
-  .join('\n') || '• Nenhuma'}
-
 ⚡ *DISTRIBUIÇÃO POR PRIORIDADE*
 ${Object.entries(data.tickets_por_prioridade || {})
   .map(([pri, count]) => `• ${pri}: ${count}`)
@@ -126,9 +121,7 @@ Deno.serve(async (req) => {
     // 2. Calcular KPIs
     const totalAbertos = ticketsHoje?.length || 0;
     const totalConcluidos = ticketsHoje?.filter(t => t.status === 'concluido').length || 0;
-    const totalEmAndamento = ticketsHoje?.filter(t => 
-      ['novo', 'em_andamento', 'aguardando_resposta'].includes(t.status)
-    ).length || 0;
+    const totalEmAndamento = totalAbertos - totalConcluidos; // Cálculo correto: abertos - concluídos
     
     const ticketsSlaOk = ticketsHoje?.filter(t => 
       t.status_sla === 'dentro_prazo' && t.status === 'concluido'
@@ -175,15 +168,7 @@ Deno.serve(async (req) => {
     const topUnidade = Object.entries(unidadesCount)
       .sort(([,a], [,b]) => b - a)[0];
 
-    // 6. Distribuição por categoria
-    const categorias = ticketsHoje?.reduce((acc, t) => {
-      if (t.categoria) {
-        acc[t.categoria] = (acc[t.categoria] || 0) + 1;
-      }
-      return acc;
-    }, {} as Record<string, number>) || {};
-
-    // 7. Distribuição por prioridade
+    // 6. Distribuição por prioridade
     const prioridades = ticketsHoje?.reduce((acc, t) => {
       if (t.prioridade) {
         acc[t.prioridade] = (acc[t.prioridade] || 0) + 1;
@@ -207,7 +192,6 @@ Deno.serve(async (req) => {
       tickets_crise: ticketsCrise,
       equipe_mais_chamados: topEquipe ? { nome: topEquipe[0], total: topEquipe[1] } : null,
       unidade_mais_chamados: topUnidade ? { nome: topUnidade[0], total: topUnidade[1] } : null,
-      tickets_por_categoria: categorias,
       tickets_por_prioridade: prioridades
     };
 
