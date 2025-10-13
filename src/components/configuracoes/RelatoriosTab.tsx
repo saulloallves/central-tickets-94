@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -15,11 +16,14 @@ import {
   Brain,
   Clock,
   Users,
-  FileCheck
+  FileCheck,
+  Send,
+  Loader2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useToast } from "@/hooks/use-toast";
 
 interface ArticleStats {
   article_id: string;
@@ -44,7 +48,9 @@ interface KnowledgeMetrics {
 }
 
 export function RelatoriosTab() {
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [sendingReport, setSendingReport] = useState(false);
   const [metrics, setMetrics] = useState<KnowledgeMetrics>({
     total_articles: 0,
     approved_articles: 0,
@@ -57,6 +63,29 @@ export function RelatoriosTab() {
   const [articleStats, setArticleStats] = useState<ArticleStats[]>([]);
   const [resolutionStats, setResolutionStats] = useState<any[]>([]);
   const [filterPeriod, setFilterPeriod] = useState('30'); // dias
+
+  const handleSendDailyReport = async () => {
+    setSendingReport(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-daily-report');
+      
+      if (error) throw error;
+      
+      toast({
+        title: "✅ Relatório disparado!",
+        description: `Relatório enviado com sucesso para WhatsApp. Total de tickets hoje: ${data.summary?.total_abertos || 0}`,
+      });
+    } catch (error: any) {
+      console.error('Erro ao disparar relatório:', error);
+      toast({
+        title: "❌ Erro ao disparar relatório",
+        description: error.message || "Tente novamente mais tarde",
+        variant: "destructive",
+      });
+    } finally {
+      setSendingReport(false);
+    }
+  };
 
   const fetchMetrics = async () => {
     setLoading(true);
@@ -136,15 +165,55 @@ export function RelatoriosTab() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 rounded-lg bg-gradient-primary">
-          <TrendingUp className="h-6 w-6 text-primary-foreground" />
-        </div>
-        <div>
-          <h2 className="text-2xl font-bold">Relatórios e Analytics</h2>
-          <p className="text-muted-foreground">Acompanhe o desempenho da base de conhecimento e eficácia da IA</p>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-gradient-primary">
+            <TrendingUp className="h-6 w-6 text-primary-foreground" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold">Relatórios e Analytics</h2>
+            <p className="text-muted-foreground">Acompanhe o desempenho da base de conhecimento e eficácia da IA</p>
+          </div>
         </div>
       </div>
+
+      {/* Relatório Diário WhatsApp */}
+      <Card className="border-blue-200 bg-blue-50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-blue-900">
+            <Send className="h-5 w-5" />
+            Relatório Diário via WhatsApp
+          </CardTitle>
+          <CardDescription className="text-blue-800">
+            Dispare o relatório diário manualmente ou aguarde o envio automático às 20h
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-4">
+            <Button 
+              onClick={handleSendDailyReport}
+              disabled={sendingReport}
+              className="gap-2"
+            >
+              {sendingReport ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Enviando...
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4" />
+                  Disparar Relatório Agora
+                </>
+              )}
+            </Button>
+            <div className="text-sm text-muted-foreground">
+              <p>📱 Destino: 5511977256029</p>
+              <p>⏰ Próximo envio automático: Hoje às 20:00</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
       
       <Alert className="border-green-200 bg-green-50">
         <BarChart3 className="h-4 w-4" />
