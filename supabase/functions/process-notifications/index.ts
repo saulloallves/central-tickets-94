@@ -1208,18 +1208,21 @@ serve(async (req) => {
         break;
 
       case 'sla_breach':
-        console.log('🚨 Processing sla_breach notification');
-        console.log('📋 Ticket details:', {
-          id: ticket?.id,
-          codigo_ticket: ticket?.codigo_ticket,
-          unidade_id: ticket?.unidade_id,
-          status: ticket?.status,
-          has_unidades: !!ticket?.unidades,
-          id_grupo_branco: ticket?.unidades?.id_grupo_branco
-        });
+        console.log('\n🚨 ===== PROCESSANDO SLA BREACH =====');
+        console.log('🎫 Ticket ID:', ticket?.id);
+        console.log('📋 Código Ticket:', ticket?.codigo_ticket);
+        console.log('🏢 Unidade ID:', ticket?.unidade_id);
+        console.log('📊 Status atual:', ticket?.status);
+        console.log('🔍 Tem dados de unidades?', !!ticket?.unidades);
+        console.log('📞 id_grupo_branco:', ticket?.unidades?.id_grupo_branco);
+        console.log('📞 id_grupo_azul:', ticket?.unidades?.id_grupo_azul);
+        console.log('📞 id_grupo_vermelho:', ticket?.unidades?.id_grupo_vermelho);
+        console.log('📞 Todos os dados da unidade:', JSON.stringify(ticket?.unidades, null, 2));
         
         if (!ticket) {
-          throw new Error('Ticket data is required for sla_breach notifications');
+          const errorMsg = 'Ticket data is required for sla_breach notifications';
+          console.error('❌ ERRO CRÍTICO:', errorMsg);
+          throw new Error(errorMsg);
         }
         
         // First, escalate the ticket automatically if not already concluded
@@ -1253,16 +1256,22 @@ serve(async (req) => {
           }
         }
         
-        console.log(`📞 Custom destination from getDestinationNumber: ${customDestination}`);
+        console.log(`\n🎯 ===== DETECTANDO DESTINO PARA SLA BREACH =====`);
+        console.log(`📞 Custom destination recebido: ${customDestination}`);
         
-        if (customDestination) {
-          destinoFinal = customDestination;
-          console.log(`✅ Using configured destination for sla_breach: ${destinoFinal}`);
-        } else {
-          console.error(`❌ No destination configuration found for sla_breach in unit ${ticket.unidade_id}`);
-          console.error(`🔍 Available unit data:`, ticket.unidades);
-          throw new Error(`Nenhuma configuração de origem encontrada para sla_breach na unidade ${ticket.unidade_id}`);
+        if (!customDestination) {
+          console.error(`\n❌ ===== ERRO: NENHUM DESTINO ENCONTRADO =====`);
+          console.error(`❌ Unidade ID: ${ticket.unidade_id}`);
+          console.error(`❌ Dados disponíveis da unidade:`, JSON.stringify(ticket.unidades, null, 2));
+          console.error(`❌ Verificar se existe configuração em notification_source_config para 'sla_breach'`);
+          console.error(`❌ Verificar se unidade tem id_grupo_branco configurado`);
+          throw new Error(`CRÍTICO: Nenhuma configuração de destino encontrada para sla_breach na unidade ${ticket.unidade_id}`);
         }
+        
+        destinoFinal = customDestination;
+        console.log(`✅ ===== DESTINO CONFIRMADO PARA SLA BREACH =====`);
+        console.log(`📱 Destino final: ${destinoFinal}`);
+        console.log(`📋 Será enviado para: ${destinoFinal}`);
 
         const templateSLABreach = await getMessageTemplate(supabase, 'sla_breach');
         
@@ -1279,7 +1288,7 @@ serve(async (req) => {
           .eq('id', ticket.equipe_responsavel_id)
           .single();
 
-        console.log('📝 Preparing SLA breach message...');
+        console.log('\n📝 ===== PREPARANDO MENSAGEM SLA BREACH =====');
         const mensagemSLABreach = processTemplate(templateSLABreach, {
           codigo_ticket: formatTicketTitle(ticket),
           titulo_ticket: ticket.titulo || 'Ticket sem título',
@@ -1293,29 +1302,50 @@ serve(async (req) => {
           data_abertura: new Date(ticket.data_abertura).toLocaleString('pt-BR'),
           data_limite_sla: new Date(ticket.data_limite_sla).toLocaleString('pt-BR')
         });
+        console.log('✅ Mensagem preparada com sucesso');
 
-        console.log('📱 Normalizing destination phone for SLA breach...');
-        console.log(`📞 Raw destination: ${destinoFinal}`);
+        console.log('\n📱 ===== NORMALIZANDO NÚMERO DE DESTINO =====');
+        console.log(`📞 Destino bruto: ${destinoFinal}`);
+        console.log(`📞 Tipo do destino: ${typeof destinoFinal}`);
         
         const normalizedPhone = normalizePhoneNumber(destinoFinal);
-        console.log(`📞 Normalized phone: ${normalizedPhone}`);
+        console.log(`📞 Número normalizado: ${normalizedPhone}`);
         
         if (!normalizedPhone) {
-          console.error(`❌ Failed to normalize phone number: ${destinoFinal}`);
-          throw new Error(`Número de telefone inválido: ${destinoFinal}`);
+          console.error('\n❌ ===== FALHA NA NORMALIZAÇÃO DO NÚMERO =====');
+          console.error(`❌ Destino original: ${destinoFinal}`);
+          console.error(`❌ Não foi possível normalizar o número`);
+          console.error(`❌ Verificar se o número está em formato válido`);
+          throw new Error(`CRÍTICO: Número de telefone inválido para sla_breach: ${destinoFinal}`);
         }
         
-        console.log('📤 Sending SLA breach message...');
-        console.log(`📱 To: ${normalizedPhone}`);
-        console.log(`📝 Message preview: ${mensagemSLABreach.substring(0, 100)}...`);
+        console.log('\n📤 ===== ENVIANDO MENSAGEM SLA BREACH =====');
+        console.log(`📱 Destinatário: ${normalizedPhone}`);
+        console.log(`📝 Preview da mensagem (100 chars): ${mensagemSLABreach.substring(0, 100)}...`);
+        console.log(`📊 Tamanho da mensagem: ${mensagemSLABreach.length} caracteres`);
         
-        resultadoEnvio = await sendZapiMessage(normalizedPhone, mensagemSLABreach);
+        try {
+          resultadoEnvio = await sendZapiMessage(normalizedPhone, mensagemSLABreach);
+          
+          console.log('\n✅ ===== RESULTADO DO ENVIO SLA BREACH =====');
+          console.log(`✅ Sucesso: ${resultadoEnvio.success}`);
+          console.log(`📱 Destino: ${normalizedPhone}`);
+          console.log(`📋 Resposta da API:`, JSON.stringify(resultadoEnvio.data, null, 2));
+          
+          if (!resultadoEnvio.success) {
+            console.error('\n❌ ===== ERRO NO ENVIO DO WHATSAPP =====');
+            console.error('❌ A mensagem NÃO foi enviada com sucesso');
+            console.error('❌ Resposta da Z-API:', resultadoEnvio);
+            throw new Error(`Falha no envio do WhatsApp: ${resultadoEnvio.error || 'Erro desconhecido'}`);
+          }
+        } catch (sendError) {
+          console.error('\n❌ ===== EXCEÇÃO NO ENVIO =====');
+          console.error('❌ Erro:', sendError.message);
+          console.error('❌ Stack:', sendError.stack);
+          throw sendError; // Re-lançar para não marcar como processado
+        }
         
-        console.log('📨 SLA breach notification result:', {
-          success: resultadoEnvio.success,
-          destination: normalizedPhone,
-          response_preview: JSON.stringify(resultadoEnvio.data).substring(0, 200)
-        });
+        console.log('✅ ===== SLA BREACH PROCESSADO COM SUCESSO =====\n');
         break;
 
       case 'crisis_broadcast':

@@ -2234,6 +2234,41 @@ export type Database = {
           },
         ]
       }
+      pausas_sla: {
+        Row: {
+          created_at: string | null
+          id: string
+          motivo: string | null
+          pausa_fim: string | null
+          pausa_inicio: string
+          ticket_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          motivo?: string | null
+          pausa_fim?: string | null
+          pausa_inicio: string
+          ticket_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          motivo?: string | null
+          pausa_fim?: string | null
+          pausa_inicio?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pausas_sla_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -3593,6 +3628,10 @@ export type Database = {
           p_mensagem: string
         }
         Returns: undefined
+      }
+      calcular_tempo_pausado: {
+        Args: { p_ticket_id: string }
+        Returns: unknown
       }
       calculate_new_position: {
         Args: { p_after_id?: string; p_before_id?: string; p_status: string }
