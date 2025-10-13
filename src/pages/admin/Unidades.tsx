@@ -55,7 +55,7 @@ const Unidades = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [searchLoading, setSearchLoading] = useState(false);
 
-  const ITEMS_PER_PAGE = 12; // 12 items per page
+  const ITEMS_PER_PAGE = 24; // 12 items per page
 
   useEffect(() => {
     fetchUnidades();
