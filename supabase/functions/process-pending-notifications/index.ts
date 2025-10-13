@@ -20,13 +20,14 @@ serve(async (req) => {
 
     console.log('Starting process of pending notifications...');
 
-    // Get pending notifications
+    // ✅ ATOMIC UPDATE: Get and mark as 'processing' atomically to prevent duplicates
     const { data: pendingNotifications, error: fetchError } = await supabase
       .from('notifications_queue')
-      .select('*')
+      .update({ status: 'processing' })
       .eq('status', 'pending')
       .order('created_at', { ascending: true })
-      .limit(10);
+      .limit(10)
+      .select();
 
     if (fetchError) {
       throw fetchError;
@@ -92,6 +93,13 @@ serve(async (req) => {
 
       } catch (error) {
         console.error(`Error processing notification ${notification.id}:`, error);
+        
+        // Return to pending on error
+        await supabase
+          .from('notifications_queue')
+          .update({ status: 'pending' })
+          .eq('id', notification.id);
+        
         errors.push({
           notificationId: notification.id,
           error: error.message

@@ -45,14 +45,16 @@ serve(async (req) => {
     // 3. Processar notificações não enviadas ao WhatsApp (apenas PENDING)
     console.log('📤 Buscando notificações PENDING não enviadas ao WhatsApp...');
     
+    // ✅ ATOMIC UPDATE: Pega e marca como 'processing' atomicamente para evitar duplicatas
     const { data: pendingNotifications, error: notificationError } = await supabaseClient
       .from('notifications_queue')
-      .select('*')
+      .update({ status: 'processing' })
       .eq('status', 'pending')  // ✅ APENAS PENDING
       .eq('sent_to_whatsapp', false)
       .in('type', ['sla_breach', 'sla_half'])
       .gte('created_at', new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString())
-      .limit(20);
+      .limit(20)
+      .select();
     
     console.log(`📊 Encontradas ${pendingNotifications?.length || 0} notificações para processar`);
     if (pendingNotifications && pendingNotifications.length > 0) {
@@ -93,10 +95,11 @@ serve(async (req) => {
         if (processError) {
           console.error(`❌ Erro ao processar notificação ${notification.id}:`, processError);
           
-          // Incrementar tentativas sem marcar como falha ainda
+          // Voltar para pending em caso de erro
           await supabaseClient
             .from('notifications_queue')
             .update({ 
+              status: 'pending',
               attempts: (notification.attempts || 0) + 1
             })
             .eq('id', notification.id);
@@ -106,6 +109,15 @@ serve(async (req) => {
         }
       } catch (error) {
         console.error(`❌ Erro ao processar notificação ${notification.id}:`, error);
+        
+        // Voltar para pending em caso de erro
+        await supabaseClient
+          .from('notifications_queue')
+          .update({ 
+            status: 'pending',
+            attempts: (notification.attempts || 0) + 1
+          })
+          .eq('id', notification.id);
       }
     }
 
