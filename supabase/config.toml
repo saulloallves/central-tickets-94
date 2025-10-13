@@ -196,6 +196,9 @@ verify_jwt = false
 [functions.zapi-whatsapp]
 verify_jwt = false
 
+[functions.generate-daily-report]
+verify_jwt = false
+
 [functions.sync-atendentes]
 verify_jwt = false
 

@@ -807,6 +807,75 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_reports: {
+        Row: {
+          created_at: string
+          equipe_mais_chamados: Json | null
+          generated_at: string
+          id: string
+          percentual_sla: number | null
+          report_date: string
+          taxa_conclusao: number | null
+          tempo_medio_resolucao_horas: number | null
+          tickets_crise: number
+          tickets_por_categoria: Json | null
+          tickets_por_prioridade: Json | null
+          tickets_sla_ok: number
+          tickets_sla_vencido: number
+          total_tickets_abertos: number
+          total_tickets_concluidos: number
+          total_tickets_em_andamento: number
+          unidade_mais_chamados: Json | null
+          whatsapp_enviado: boolean | null
+          whatsapp_enviado_em: string | null
+          whatsapp_erro: string | null
+        }
+        Insert: {
+          created_at?: string
+          equipe_mais_chamados?: Json | null
+          generated_at?: string
+          id?: string
+          percentual_sla?: number | null
+          report_date: string
+          taxa_conclusao?: number | null
+          tempo_medio_resolucao_horas?: number | null
+          tickets_crise?: number
+          tickets_por_categoria?: Json | null
+          tickets_por_prioridade?: Json | null
+          tickets_sla_ok?: number
+          tickets_sla_vencido?: number
+          total_tickets_abertos?: number
+          total_tickets_concluidos?: number
+          total_tickets_em_andamento?: number
+          unidade_mais_chamados?: Json | null
+          whatsapp_enviado?: boolean | null
+          whatsapp_enviado_em?: string | null
+          whatsapp_erro?: string | null
+        }
+        Update: {
+          created_at?: string
+          equipe_mais_chamados?: Json | null
+          generated_at?: string
+          id?: string
+          percentual_sla?: number | null
+          report_date?: string
+          taxa_conclusao?: number | null
+          tempo_medio_resolucao_horas?: number | null
+          tickets_crise?: number
+          tickets_por_categoria?: Json | null
+          tickets_por_prioridade?: Json | null
+          tickets_sla_ok?: number
+          tickets_sla_vencido?: number
+          total_tickets_abertos?: number
+          total_tickets_concluidos?: number
+          total_tickets_em_andamento?: number
+          unidade_mais_chamados?: Json | null
+          whatsapp_enviado?: boolean | null
+          whatsapp_enviado_em?: string | null
+          whatsapp_erro?: string | null
+        }
+        Relationships: []
+      }
       documentos: {
         Row: {
           artigo_id: string
