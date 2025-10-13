@@ -4016,6 +4016,16 @@ export type Database = {
           processed_count: number
         }[]
       }
+      reprocess_stuck_sla_notifications: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          new_status: string
+          notification_id: string
+          notification_type: string
+          previous_status: string
+          ticket_id: string
+        }[]
+      }
       resolve_crise_close_tickets: {
         Args: {
           p_by?: string
