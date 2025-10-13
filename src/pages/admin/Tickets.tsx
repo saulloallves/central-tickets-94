@@ -29,24 +29,36 @@ const Tickets = () => {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  // Mostrar loading enquanto verifica permissões
-  if (roleLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-          <p className="mt-4 text-muted-foreground">Carregando tickets...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Remove useRealtimeNotifications from here to avoid conflicts
-  // useRealtimeNotifications();
+  // ✅ TODOS OS HOOKS ANTES DO EARLY RETURN
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [ticketModalOpen, setTicketModalOpen] = useState(false);
   const [bulkAnalysisOpen, setBulkAnalysisOpen] = useState(false);
   const [selectedEquipeForAnalysis, setSelectedEquipeForAnalysis] = useState<string>('');
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  
+  // ✅ FILTRO INSTANTÂNEO - Sem debounce, sem complicação
+  const [filters, setFilters] = useState({
+    search: '',
+    status: 'all',
+    categoria: 'all',
+    prioridade: 'all',
+    unidade_id: 'all',
+    status_sla: 'all',
+    equipe_id: 'all'
+  });
+
+  const {
+    tickets,
+    loading,
+    ticketStats,
+    lastUpdate,
+    refetch,
+    createTicket,
+    updateTicket,
+    deleteTicket,
+    moveTicket,
+  } = useTicketsEdgeFunctions(filters);
 
   // Listen for notification ticket modal events
   useEffect(() => {
@@ -61,19 +73,29 @@ const Tickets = () => {
     };
   }, []);
 
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
-  
-  // ✅ FILTRO INSTANTÂNEO - Sem debounce, sem complicação
-  const [filters, setFilters] = useState({
-    search: '',
-    status: 'all',
-    categoria: 'all',
-    prioridade: 'all',
-    unidade_id: 'all',
-    status_sla: 'all',
-    equipe_id: 'all'
-  });
+  // Listen for ticket transferred events to update Kanban
+  useEffect(() => {
+    const handleTicketTransferred = (event: CustomEvent) => {
+      console.log('🔄 Ticket transferido detectado. Atualizando Kanban...', event.detail);
+      refetch();
+    };
+    window.addEventListener('ticket-transferred', handleTicketTransferred as EventListener);
+    return () => {
+      window.removeEventListener('ticket-transferred', handleTicketTransferred as EventListener);
+    };
+  }, [refetch]);
+
+  // ✅ AGORA SIM: Early return DEPOIS de todos os hooks
+  if (roleLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+          <p className="mt-4 text-muted-foreground">Carregando tickets...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Função para limpar apenas a busca
   const handleClearSearch = () => {
@@ -92,30 +114,6 @@ const Tickets = () => {
       equipe_id: 'all'
     });
   };
-  
-  const {
-    tickets,
-    loading,
-    ticketStats,
-    lastUpdate,
-    refetch,
-    createTicket,
-    updateTicket,
-    deleteTicket,
-    moveTicket,
-  } = useTicketsEdgeFunctions(filters);
-
-  // Listen for ticket transferred events to update Kanban (MOVED AFTER refetch declaration)
-  useEffect(() => {
-    const handleTicketTransferred = (event: CustomEvent) => {
-      console.log('🔄 Ticket transferido detectado. Atualizando Kanban...', event.detail);
-      refetch();
-    };
-    window.addEventListener('ticket-transferred', handleTicketTransferred as EventListener);
-    return () => {
-      window.removeEventListener('ticket-transferred', handleTicketTransferred as EventListener);
-    };
-  }, [refetch]);
 
   // OPTIMIZED: Use userEquipes instead of separate fetch
   // Convert userEquipes to format for compatibility
