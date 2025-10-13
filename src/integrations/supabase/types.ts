@@ -2245,6 +2245,7 @@ export type Database = {
           pausa_fim: string | null
           pausa_inicio: string
           ticket_id: string
+          tipo_pausa: string | null
         }
         Insert: {
           created_at?: string | null
@@ -2253,6 +2254,7 @@ export type Database = {
           pausa_fim?: string | null
           pausa_inicio: string
           ticket_id: string
+          tipo_pausa?: string | null
         }
         Update: {
           created_at?: string | null
@@ -2261,6 +2263,7 @@ export type Database = {
           pausa_fim?: string | null
           pausa_inicio?: string
           ticket_id?: string
+          tipo_pausa?: string | null
         }
         Relationships: [
           {
@@ -2955,6 +2958,7 @@ export type Database = {
           sla_half_time: string | null
           sla_pausado: boolean | null
           sla_pausado_em: string | null
+          sla_pausado_mensagem: boolean | null
           status: Database["public"]["Enums"]["ticket_status"]
           status_sla: Database["public"]["Enums"]["ticket_sla_status"]
           subcategoria: string | null
@@ -2993,6 +2997,7 @@ export type Database = {
           sla_half_time?: string | null
           sla_pausado?: boolean | null
           sla_pausado_em?: string | null
+          sla_pausado_mensagem?: boolean | null
           status?: Database["public"]["Enums"]["ticket_status"]
           status_sla?: Database["public"]["Enums"]["ticket_sla_status"]
           subcategoria?: string | null
@@ -3031,6 +3036,7 @@ export type Database = {
           sla_half_time?: string | null
           sla_pausado?: boolean | null
           sla_pausado_em?: string | null
+          sla_pausado_mensagem?: boolean | null
           status?: Database["public"]["Enums"]["ticket_status"]
           status_sla?: Database["public"]["Enums"]["ticket_sla_status"]
           subcategoria?: string | null
