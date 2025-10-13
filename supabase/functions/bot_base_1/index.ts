@@ -306,7 +306,8 @@ serve(async (req: Request) => {
       return await proxy(functionsBaseUrl, "autoatendimento_midias", body);
     }
     if (buttonId === "autoatendimento_ticket") {
-      return await proxy(functionsBaseUrl, "autoatendimento_ticket", body);
+      // Redireciona para autoatendimento padrão (mensagem de boas-vindas + senha)
+      return await proxy(functionsBaseUrl, "autoatendimento", body);
     }
     if (buttonId === "autoatendimento_nao_sei_senha") {
       return await proxy(functionsBaseUrl, "autoatendimento_nao_sei_senha", body);
