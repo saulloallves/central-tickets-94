@@ -560,6 +560,13 @@ serve(async (req) => {
 
   try {
     const { ticketId, type, textoResposta, testPhone, payload } = await req.json()
+    const notificationId = payload?.notificationId;
+
+    console.log(`🔔 [${type}] ====== INÍCIO DO PROCESSAMENTO ======`);
+    console.log(`🎫 Ticket ID: ${ticketId}`);
+    console.log(`📋 Notification Type: ${type}`);
+    console.log(`🔑 Notification ID: ${notificationId}`);
+    console.log(`📦 Payload recebido:`, JSON.stringify(payload, null, 2));
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -1336,8 +1343,56 @@ serve(async (req) => {
             console.error('\n❌ ===== ERRO NO ENVIO DO WHATSAPP =====');
             console.error('❌ A mensagem NÃO foi enviada com sucesso');
             console.error('❌ Resposta da Z-API:', resultadoEnvio);
+            
+            // Incrementar tentativas na notificação se houver ID
+            if (notificationId) {
+              console.log(`📝 Incrementando tentativas da notificação ${notificationId}...`);
+              
+              const { data: currentNotification } = await supabase
+                .from('notifications_queue')
+                .select('attempts')
+                .eq('id', notificationId)
+                .single();
+              
+              const attempts = (currentNotification?.attempts || 0) + 1;
+              const shouldMarkAsFailed = attempts >= 3;
+              
+              await supabase
+                .from('notifications_queue')
+                .update({ 
+                  status: shouldMarkAsFailed ? 'failed' : 'pending',
+                  attempts,
+                  ...(shouldMarkAsFailed && { processed_at: new Date().toISOString() })
+                })
+                .eq('id', notificationId);
+              
+              console.log(`📊 Tentativas: ${attempts}${shouldMarkAsFailed ? ' - MARCADA COMO FALHA' : ''}`);
+            }
+            
             throw new Error(`Falha no envio do WhatsApp: ${resultadoEnvio.error || 'Erro desconhecido'}`);
           }
+          
+          // ✅ Sucesso - Marcar notificação como enviada ao WhatsApp
+          if (notificationId) {
+            console.log(`📝 Marcando notificação ${notificationId} como enviada...`);
+            
+            const { error: updateError } = await supabase
+              .from('notifications_queue')
+              .update({ 
+                status: 'processed',
+                sent_to_whatsapp: true,
+                processed_at: new Date().toISOString()
+              })
+              .eq('id', notificationId);
+            
+            if (updateError) {
+              console.error(`❌ Erro ao marcar notificação como enviada:`, updateError);
+            } else {
+              console.log(`✅ Notificação marcada como enviada ao WhatsApp`);
+            }
+          }
+          
+          console.log(`🔔 [sla_breach] ====== FIM DO PROCESSAMENTO ======`);
         } catch (sendError) {
           console.error('\n❌ ===== EXCEÇÃO NO ENVIO =====');
           console.error('❌ Erro:', sendError.message);

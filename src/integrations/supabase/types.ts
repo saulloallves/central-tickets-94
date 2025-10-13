@@ -2187,6 +2187,7 @@ export type Database = {
           payload: Json
           processed_at: string | null
           scheduled_at: string
+          sent_to_whatsapp: boolean | null
           status: string
           ticket_id: string | null
           type: string
@@ -2200,6 +2201,7 @@ export type Database = {
           payload?: Json
           processed_at?: string | null
           scheduled_at?: string
+          sent_to_whatsapp?: boolean | null
           status?: string
           ticket_id?: string | null
           type: string
@@ -2213,6 +2215,7 @@ export type Database = {
           payload?: Json
           processed_at?: string | null
           scheduled_at?: string
+          sent_to_whatsapp?: boolean | null
           status?: string
           ticket_id?: string | null
           type?: string

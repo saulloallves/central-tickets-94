@@ -42,14 +42,28 @@ serve(async (req) => {
 
     console.log(`✅ Avisos de 50% SLA processados: ${halfResult} notificações`);
 
-    // 3. Processar notificações pendentes (apenas das últimas 2 horas)
+    // 3. Processar notificações não enviadas ao WhatsApp (últimas 2 horas)
+    console.log('📤 Buscando notificações não enviadas ao WhatsApp...');
+    
     const { data: pendingNotifications, error: notificationError } = await supabaseClient
       .from('notifications_queue')
       .select('*')
-      .eq('status', 'pending')
+      .eq('sent_to_whatsapp', false)
       .in('type', ['sla_breach', 'sla_half'])
-      .gte('created_at', new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()) // Apenas últimas 2 horas
-      .limit(10);
+      .gte('created_at', new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString())
+      .limit(20);
+    
+    console.log(`📊 Encontradas ${pendingNotifications?.length || 0} notificações para processar`);
+    if (pendingNotifications && pendingNotifications.length > 0) {
+      console.log(`📤 Detalhes:`, pendingNotifications.map(n => ({ 
+        id: n.id, 
+        ticket_id: n.ticket_id, 
+        type: n.type,
+        status: n.status,
+        sent_to_whatsapp: n.sent_to_whatsapp,
+        attempts: n.attempts 
+      })));
+    }
 
     if (notificationError) {
       console.error('❌ Erro ao buscar notificações pendentes:', notificationError);
@@ -63,39 +77,30 @@ serve(async (req) => {
       try {
         console.log(`📤 Processando notificação ${notification.type} para ticket ${notification.ticket_id}`);
 
-        // Chamar a função process-notifications
+        // Chamar a função process-notifications com o notification ID
         const { error: processError } = await supabaseClient.functions.invoke('process-notifications', {
           body: {
             ticketId: notification.ticket_id,
             type: notification.type,
-            payload: notification.payload
+            payload: {
+              ...notification.payload,
+              notificationId: notification.id
+            }
           }
         });
 
         if (processError) {
           console.error(`❌ Erro ao processar notificação ${notification.id}:`, processError);
           
-          // Marcar como falha se exceder tentativas
+          // Incrementar tentativas sem marcar como falha ainda
           await supabaseClient
             .from('notifications_queue')
             .update({ 
-              status: 'failed',
-              attempts: (notification.attempts || 0) + 1,
-              processed_at: new Date().toISOString()
+              attempts: (notification.attempts || 0) + 1
             })
             .eq('id', notification.id);
         } else {
-          console.log(`✅ Notificação ${notification.id} processada com sucesso`);
-          
-          // Marcar como processada
-          await supabaseClient
-            .from('notifications_queue')
-            .update({ 
-              status: 'processed',
-              processed_at: new Date().toISOString()
-            })
-            .eq('id', notification.id);
-            
+          console.log(`✅ Notificação ${notification.id} enviada ao WhatsApp com sucesso`);
           notificationsProcessed++;
         }
       } catch (error) {
