@@ -16,6 +16,7 @@ interface SLATicket {
   ticketId: string;
   codigoTicket: string;
   dataLimiteSLA: string | null;
+  tempoPausadoTotal?: string; // ✅ NOVO: Intervalo PostgreSQL (ex: "11:30:00")
   status: string;
   slaPausado: boolean;
   slaPausadoMensagem: boolean;
@@ -91,7 +92,15 @@ class SLATimerManager {
 
     const now = new Date();
     const slaDate = new Date(ticket.dataLimiteSLA);
-    const diffMs = slaDate.getTime() - now.getTime();
+    
+    // ✅ NOVO: Adicionar tempo pausado ao deadline (data limite efetiva)
+    let effectiveDeadline = slaDate;
+    if (ticket.tempoPausadoTotal) {
+      const pausedMs = this.parsePostgresInterval(ticket.tempoPausadoTotal);
+      effectiveDeadline = new Date(slaDate.getTime() + pausedMs);
+    }
+    
+    const diffMs = effectiveDeadline.getTime() - now.getTime();
     
     if (diffMs <= 0) {
       return { hours: 0, minutes: 0, seconds: 0, isOverdue: true, isPaused: false, totalSeconds: 0 };
@@ -103,6 +112,19 @@ class SLATimerManager {
     const seconds = totalSeconds % 60;
 
     return { hours, minutes, seconds, isOverdue: false, isPaused: false, totalSeconds };
+  }
+
+  // ✅ NOVO: Converter intervalo PostgreSQL para milissegundos
+  private parsePostgresInterval(interval: string): number {
+    // Formato: "HH:MM:SS" ou "HH:MM:SS.mmm"
+    const parts = interval.split(':');
+    if (parts.length === 3) {
+      const hours = parseInt(parts[0], 10);
+      const minutes = parseInt(parts[1], 10);
+      const seconds = parseFloat(parts[2]);
+      return (hours * 3600 + minutes * 60 + seconds) * 1000;
+    }
+    return 0;
   }
 }
 

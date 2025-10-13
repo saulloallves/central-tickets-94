@@ -6,6 +6,7 @@ interface SLATimerProps {
   ticketId: string;
   codigoTicket: string;
   dataLimiteSLA: string | null;
+  tempoPausadoTotal?: string; // ✅ NOVO: Tempo pausado acumulado
   status: string;
   slaPausado?: boolean;
   slaPausadoMensagem?: boolean;
@@ -16,6 +17,7 @@ export const SLATimer = ({
   ticketId, 
   codigoTicket, 
   dataLimiteSLA, 
+  tempoPausadoTotal, // ✅ NOVO
   status, 
   slaPausado = false,
   slaPausadoMensagem = false,
@@ -38,6 +40,7 @@ export const SLATimer = ({
       ticketId,
       codigoTicket,
       dataLimiteSLA,
+      tempoPausadoTotal, // ✅ NOVO: Passar tempo pausado para o manager
       status,
       slaPausado,
       slaPausadoMensagem,
@@ -58,7 +61,7 @@ export const SLATimer = ({
     return () => {
       slaTimerManager.unregister(ticketId);
     };
-  }, [ticketId, codigoTicket, dataLimiteSLA, status, slaPausado, slaPausadoMensagem, onSLAExpired, toast]);
+  }, [ticketId, codigoTicket, dataLimiteSLA, tempoPausadoTotal, status, slaPausado, slaPausadoMensagem, onSLAExpired, toast]);
 
   if (!dataLimiteSLA || status === 'concluido') {
     return null;
