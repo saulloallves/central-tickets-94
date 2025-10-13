@@ -24,16 +24,22 @@ import { cn } from '@/lib/utils';
 import { TestFranqueadoNotification } from '@/components/notifications/TestFranqueadoNotification';
 
 const Tickets = () => {
-  const { isAdmin, isSupervisor } = useRole();
-  const {
-    userEquipes
-  } = useUserEquipes();
-  const {
-    user
-  } = useAuth();
-  const {
-    toast
-  } = useToast();
+  const { isAdmin, isSupervisor, loading: roleLoading } = useRole();
+  const { userEquipes } = useUserEquipes();
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  // Mostrar loading enquanto verifica permissões
+  if (roleLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+          <p className="mt-4 text-muted-foreground">Carregando tickets...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Remove useRealtimeNotifications from here to avoid conflicts
   // useRealtimeNotifications();
