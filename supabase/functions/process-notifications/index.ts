@@ -1105,6 +1105,26 @@ serve(async (req) => {
           throw new Error(`Número de telefone inválido para sla_half: ${destinoFinal}`);
         }
         resultadoEnvio = await sendZapiMessage(normalizedPhoneSLAHalf, mensagemSLAHalf);
+        
+        // ✅ Mark notification as sent to WhatsApp to prevent duplicates
+        if (resultadoEnvio.success && notificationId) {
+          console.log(`📝 Marcando notificação SLA Half ${notificationId} como enviada...`);
+          
+          const { error: updateError } = await supabase
+            .from('notifications_queue')
+            .update({ 
+              status: 'processed',
+              sent_to_whatsapp: true,
+              processed_at: new Date().toISOString()
+            })
+            .eq('id', notificationId);
+          
+          if (updateError) {
+            console.error(`❌ Erro ao marcar notificação SLA Half como enviada:`, updateError);
+          } else {
+            console.log(`✅ Notificação SLA Half marcada como enviada ao WhatsApp`);
+          }
+        }
         break;
 
       case 'ticket_forwarded':
