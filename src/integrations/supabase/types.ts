@@ -3799,6 +3799,10 @@ export type Database = {
         }
         Returns: number
       }
+      get_next_business_hour_start: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_realtime_kpis: {
         Args: {
           p_equipe_filter?: string
@@ -3943,6 +3947,10 @@ export type Database = {
       }
       is_active_member_of_equipe: {
         Args: { p_equipe_id: string; p_user_id: string }
+        Returns: boolean
+      }
+      is_business_hours: {
+        Args: Record<PropertyKey, never>
         Returns: boolean
       }
       ivfflat_bit_support: {

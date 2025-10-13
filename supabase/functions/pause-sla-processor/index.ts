@@ -38,11 +38,11 @@ Deno.serve(async (req) => {
       // PAUSAR SLA (às 18h30)
       // ========================================
       
-      // Buscar tickets que precisam ser pausados
+      // Buscar tickets que precisam ser pausados (incluindo aguardando_resposta)
       const { data: ticketsToPause, error: fetchError } = await supabase
         .from('tickets')
         .select('id, codigo_ticket, data_limite_sla, data_abertura')
-        .in('status', ['aberto', 'em_atendimento'])
+        .in('status', ['aberto', 'em_atendimento', 'aguardando_resposta'])
         .eq('sla_pausado', false)
         .not('data_limite_sla', 'is', null);
 
@@ -111,11 +111,12 @@ Deno.serve(async (req) => {
       // DESPAUSAR SLA (às 8h30)
       // ========================================
       
-      // Buscar tickets pausados
+      // Buscar tickets pausados (apenas os que devem ser despausados)
       const { data: ticketsToResume, error: fetchError } = await supabase
         .from('tickets')
-        .select('id, codigo_ticket, data_limite_sla, sla_pausado_em, tempo_pausado_total, data_abertura')
+        .select('id, codigo_ticket, data_limite_sla, sla_pausado_em, tempo_pausado_total, data_abertura, status')
         .eq('sla_pausado', true)
+        .in('status', ['aberto', 'em_atendimento', 'aguardando_resposta'])
         .not('sla_pausado_em', 'is', null);
 
       if (fetchError) {
