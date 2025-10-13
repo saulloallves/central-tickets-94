@@ -107,7 +107,7 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
         .from('tickets')
         .select(`
           *,
-          equipes!equipe_responsavel_id(nome),
+          equipes:equipe_responsavel_id(id, nome),
           unidades(id, grupo, cidade, uf),
           colaboradores(nome_completo),
           crise_links:crise_ticket_links!left(
