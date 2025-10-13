@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, MapPin, Phone, Mail, Building, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, MapPin, Phone, Mail, Building, Calendar, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { ImportUnidadesButton } from '@/components/unidades/ImportUnidadesButton';
+import { cn } from '@/lib/utils';
 
 interface Unidade {
   id: string;
@@ -185,12 +186,6 @@ const Unidades = () => {
             </div>
           </div>
 
-          {searchLoading && (
-            <div className="text-center text-sm text-muted-foreground">
-              Carregando...
-            </div>
-          )}
-
           {unidades.length === 0 && !searchLoading ? (
             <Card>
               <CardContent className="text-center py-8">
@@ -201,11 +196,24 @@ const Unidades = () => {
             </Card>
           ) : (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
+              <div className="relative">
+                {searchLoading && (
+                  <div className="absolute inset-0 bg-background/50 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg min-h-[400px]">
+                    <div className="flex flex-col items-center gap-3">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                      <p className="text-sm text-muted-foreground font-medium">Carregando unidades...</p>
+                    </div>
+                  </div>
+                )}
+                
+                <div className={cn(
+                  "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-4 md:gap-5 lg:gap-6 transition-opacity duration-200",
+                  searchLoading && "opacity-50 pointer-events-none"
+                )}>
                 {unidades.map((unidade) => (
                   <Dialog key={unidade.id}>
                     <DialogTrigger asChild>
-                      <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border bg-white dark:bg-card relative overflow-hidden">
+                      <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.02] border bg-white dark:bg-card relative overflow-hidden">
                         <CardHeader className="pb-2 pt-2 md:pt-3 px-3 md:px-4">
                           <div className="flex items-start justify-between mb-1 md:mb-2">
                             <div className="p-1 bg-blue-50 dark:bg-blue-900/20 rounded-md">
@@ -330,6 +338,7 @@ const Unidades = () => {
                     </DialogContent>
                   </Dialog>
                 ))}
+                </div>
               </div>
 
               {/* Controles de paginação */}
