@@ -391,6 +391,28 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
           }
         }
       )
+      // ✅ CRITICAL: Listen to ticket_mensagens to update SLA pause status in real-time
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'ticket_mensagens',
+        },
+        (payload) => {
+          console.log('💬 MENSAGEM INSERIDA - Atualizando SLA pausado:', {
+            ticket_id: (payload.new as any)?.ticket_id,
+            direcao: (payload.new as any)?.direcao,
+            timestamp: new Date().toISOString()
+          });
+          
+          // Refetch immediately to get updated sla_pausado_mensagem flag
+          fetchTickets(true).then(() => {
+            console.log('✅ Tickets atualizados após nova mensagem - SLA pausado atualizado');
+            setLastUpdate(Date.now()); // Force Kanban re-render
+          });
+        }
+      )
       .subscribe((status) => {
         console.log('📡 Realtime subscription status:', status);
         
