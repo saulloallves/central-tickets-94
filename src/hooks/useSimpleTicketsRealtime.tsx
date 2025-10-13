@@ -52,6 +52,28 @@ export const useSimpleTicketsRealtime = ({
           }
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'ticket_mensagens'
+        },
+        async (payload) => {
+          console.log('📨 Nova mensagem - atualizando ticket:', payload.new.ticket_id);
+          
+          // Buscar ticket atualizado com sla_pausado_mensagem atualizado
+          const { data: ticket } = await supabase
+            .from('tickets')
+            .select('*')
+            .eq('id', payload.new.ticket_id)
+            .single();
+          
+          if (ticket) {
+            onTicketUpdate(ticket as any);
+          }
+        }
+      )
       .subscribe((status) => {
         console.log('📡 Simple realtime status:', status);
       });
