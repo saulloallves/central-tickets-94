@@ -328,8 +328,11 @@ const KanbanTicketCard = memo(({ ticket, isSelected, onSelect, equipes }: Kanban
   );
 }, (prevProps, nextProps) => {
   // Custom comparison for memo - only re-render if these props change
+  // ✅ CRITICAL: Include SLA pause flags to update timer display
   return (
     prevProps.ticket.id === nextProps.ticket.id &&
+    prevProps.ticket.sla_pausado === nextProps.ticket.sla_pausado &&
+    prevProps.ticket.sla_pausado_mensagem === nextProps.ticket.sla_pausado_mensagem &&
     prevProps.ticket.status === nextProps.ticket.status &&
     prevProps.ticket.titulo === nextProps.ticket.titulo &&
     prevProps.ticket.prioridade === nextProps.ticket.prioridade &&
