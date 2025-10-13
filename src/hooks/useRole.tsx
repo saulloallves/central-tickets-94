@@ -39,17 +39,10 @@ export const useRole = () => {
           .select('role, approved')
           .eq('user_id', user.id);
 
-        // Verificar se há solicitação pendente
-        const { data: pendingRequest } = await supabase
-          .from('internal_access_requests')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('status', 'pending')
-          .maybeSingle();
-
         if (error) {
           console.error('🔑 Error fetching roles:', error);
           setRoles([]);
+          setHasPendingAccess(false);
         } else {
           // Filtrar apenas roles aprovadas
           let userRoles = data?.filter(r => r.approved).map(r => r.role as AppRole) || [];
@@ -69,20 +62,43 @@ export const useRole = () => {
           
           console.log('🔑 User roles found:', userRoles);
           setRoles(userRoles);
+
+          // ✅ SÓ verificar pending se NÃO tiver roles aprovadas
+          let hasPending = false;
+          if (userRoles.length === 0) {
+            try {
+              const { data: pendingRequest, error: pendingError } = await supabase
+                .from('internal_access_requests')
+                .select('id')
+                .eq('user_id', user.id)
+                .eq('status', 'pending')
+                .maybeSingle();
+
+              if (pendingError) {
+                console.warn('⚠️ Error checking pending access (ignoring):', pendingError);
+                hasPending = false;
+              } else {
+                hasPending = !!pendingRequest;
+              }
+            } catch (err) {
+              console.warn('⚠️ Exception checking pending access (ignoring):', err);
+              hasPending = false;
+            }
+          }
+
+          console.log('🔑 Has pending access:', hasPending);
+          setHasPendingAccess(hasPending);
           
           // Cache the results
           setRoleCache(prev => ({
             ...prev,
             [user.id]: {
               roles: userRoles,
-              pending: !!pendingRequest,
+              pending: hasPending,
               timestamp: Date.now()
             }
           }));
         }
-
-        // Definir se há acesso pendente
-        setHasPendingAccess(!!pendingRequest);
       } catch (error) {
         console.error('🔑 Error fetching roles:', error);
         setRoles([]);
