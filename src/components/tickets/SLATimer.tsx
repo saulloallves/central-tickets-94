@@ -8,6 +8,7 @@ interface SLATimerProps {
   dataLimiteSLA: string | null;
   status: string;
   slaPausado?: boolean;
+  slaPausadoMensagem?: boolean;
   onSLAExpired?: (ticketId: string) => void;
 }
 
@@ -17,6 +18,7 @@ export const SLATimer = ({
   dataLimiteSLA, 
   status, 
   slaPausado = false,
+  slaPausadoMensagem = false,
   onSLAExpired 
 }: SLATimerProps) => {
   const [timeRemaining, setTimeRemaining] = useState<{
@@ -38,6 +40,7 @@ export const SLATimer = ({
       dataLimiteSLA,
       status,
       slaPausado,
+      slaPausadoMensagem,
       callback: setTimeRemaining,
       onExpired: (id) => {
         toast({
@@ -55,7 +58,7 @@ export const SLATimer = ({
     return () => {
       slaTimerManager.unregister(ticketId);
     };
-  }, [ticketId, codigoTicket, dataLimiteSLA, status, slaPausado, onSLAExpired, toast]);
+  }, [ticketId, codigoTicket, dataLimiteSLA, status, slaPausado, slaPausadoMensagem, onSLAExpired, toast]);
 
   if (!dataLimiteSLA || status === 'concluido') {
     return null;
@@ -64,10 +67,12 @@ export const SLATimer = ({
   const formatTime = (value: number) => value.toString().padStart(2, '0');
 
   if (timeRemaining.isPaused) {
+    const pauseReason = slaPausado ? 'Fora do horário' : 'Aguardando resposta';
+    
     return (
       <div className="flex items-center gap-1 text-amber-600 text-sm font-medium">
         <span className="w-2 h-2 bg-amber-600 rounded-full"></span>
-        <span>SLA Pausado (Fora do horário)</span>
+        <span>SLA Pausado ({pauseReason})</span>
       </div>
     );
   }

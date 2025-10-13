@@ -18,6 +18,7 @@ interface SLATicket {
   dataLimiteSLA: string | null;
   status: string;
   slaPausado: boolean;
+  slaPausadoMensagem: boolean;
   callback: SLAUpdateCallback;
   onExpired?: (ticketId: string) => void;
 }
@@ -83,7 +84,8 @@ class SLATimerManager {
       return { hours: 0, minutes: 0, seconds: 0, isOverdue: false, isPaused: false, totalSeconds: 0 };
     }
 
-    if (ticket.slaPausado) {
+    // SLA pausado se QUALQUER uma das condições for verdadeira
+    if (ticket.slaPausado || ticket.slaPausadoMensagem) {
       return { hours: 0, minutes: 0, seconds: 0, isOverdue: false, isPaused: true, totalSeconds: 0 };
     }
 
