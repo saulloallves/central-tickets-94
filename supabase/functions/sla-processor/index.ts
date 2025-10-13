@@ -42,12 +42,13 @@ serve(async (req) => {
 
     console.log(`✅ Avisos de 50% SLA processados: ${halfResult} notificações`);
 
-    // 3. Processar notificações não enviadas ao WhatsApp (últimas 2 horas)
-    console.log('📤 Buscando notificações não enviadas ao WhatsApp...');
+    // 3. Processar notificações não enviadas ao WhatsApp (apenas PENDING)
+    console.log('📤 Buscando notificações PENDING não enviadas ao WhatsApp...');
     
     const { data: pendingNotifications, error: notificationError } = await supabaseClient
       .from('notifications_queue')
       .select('*')
+      .eq('status', 'pending')  // ✅ APENAS PENDING
       .eq('sent_to_whatsapp', false)
       .in('type', ['sla_breach', 'sla_half'])
       .gte('created_at', new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString())
