@@ -78,15 +78,14 @@ serve(async (req) => {
       try {
         console.log(`📤 Processando notificação ${notification.type} para ticket ${notification.ticket_id}`);
 
-        // Chamar a função process-notifications com o notification ID
+        // Chamar a função process-notifications passando o notification como payload
         const { error: processError } = await supabaseClient.functions.invoke('process-notifications', {
           body: {
-            ticketId: notification.ticket_id, // ← Explicitamente passar o ticket_id
             type: notification.type,
+            ticketId: notification.ticket_id,
             payload: {
               ...notification.payload,
-              notificationId: notification.id,
-              ticket_id: notification.ticket_id // ← Também no payload para backup
+              notificationId: notification.id
             }
           }
         });
