@@ -1331,8 +1331,8 @@ serve(async (req) => {
           status: ticket.status,
           equipe_responsavel: equipeDataSLABreach?.nome || 'Não atribuída',
           descricao_problema: ticket.descricao_problema,
-          data_abertura: new Date(ticket.data_abertura).toLocaleString('pt-BR'),
-          data_limite_sla: new Date(ticket.data_limite_sla).toLocaleString('pt-BR')
+          data_abertura: ticket.data_abertura ? new Date(ticket.data_abertura).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : 'Não informada',
+          data_limite_sla: ticket.data_limite_sla ? new Date(ticket.data_limite_sla).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : 'Não informada'
         });
         console.log('✅ Mensagem preparada com sucesso');
 
