@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { calculateTimeRemaining } from '@/lib/date-utils';
-import { useToast } from '@/hooks/use-toast';
 
 export interface SLAAlert {
   ticketId: string;
@@ -16,7 +15,6 @@ export interface SLAAlert {
 export const useSLAMonitor = () => {
   const [slaAlerts, setSlaAlerts] = useState<SLAAlert[]>([]);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
 
   const checkSLAStatus = async () => {
     try {
@@ -56,24 +54,6 @@ export const useSLAMonitor = () => {
       });
 
       setSlaAlerts(alerts);
-
-      // Mostrar toast para SLAs críticos
-      const overdueCount = alerts.filter(a => a.is_overdue).length;
-      const criticalCount = alerts.filter(a => !a.is_overdue && a.sla_percentage >= 80).length;
-
-      if (overdueCount > 0) {
-        toast({
-          title: `🚨 ${overdueCount} SLA(s) Vencido(s)`,
-          description: "Ação imediata necessária!",
-          variant: "destructive",
-        });
-      } else if (criticalCount > 0) {
-        toast({
-          title: `⚠️ ${criticalCount} SLA(s) Crítico(s)`,
-          description: "SLAs próximos do vencimento",
-          variant: "destructive",
-        });
-      }
 
     } catch (error) {
       console.error('Error checking SLA status:', error);
