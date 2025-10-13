@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -7,16 +7,10 @@ const corsHeaders = {
 };
 
 // Cliente Supabase com ANON_KEY (para operações gerais)
-const supabase = createClient(
-  Deno.env.get('SUPABASE_URL') ?? '',
-  Deno.env.get('SUPABASE_ANON_KEY') ?? ''
-)
+const supabase = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_ANON_KEY") ?? "");
 
 // Cliente Supabase com SERVICE_ROLE_KEY (para bypass RLS em webhooks)
-const supabaseAdmin = createClient(
-  Deno.env.get('SUPABASE_URL') ?? '',
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-)
+const supabaseAdmin = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "");
 
 // ✅ Usando banco principal - tabela atendente_unidades migrada
 
@@ -28,83 +22,86 @@ class BotZAPIClient {
   private baseUrl: string;
 
   constructor() {
-    this.instanceId = '';
-    this.token = '';
-    this.clientToken = '';
-    this.baseUrl = 'https://api.z-api.io';
+    this.instanceId = "";
+    this.token = "";
+    this.clientToken = "";
+    this.baseUrl = "https://api.z-api.io";
   }
 
   async loadConfig() {
-    console.log('🔧 Carregando configuração do bot...');
-    
+    console.log("🔧 Carregando configuração do bot...");
+
     // Primeiro, tenta buscar da configuração do banco
     try {
       const { data: config, error } = await supabase
-        .from('messaging_providers')
-        .select('instance_id, instance_token, client_token, base_url')
-        .eq('provider_name', 'zapi_bot')
-        .eq('is_active', true)
+        .from("messaging_providers")
+        .select("instance_id, instance_token, client_token, base_url")
+        .eq("provider_name", "zapi_bot")
+        .eq("is_active", true)
         .maybeSingle();
 
       if (!error && config && config.instance_id) {
-        console.log('✅ Configuração encontrada no banco:', config.instance_id?.substring(0, 8) + '...');
+        console.log("✅ Configuração encontrada no banco:", config.instance_id?.substring(0, 8) + "...");
         this.instanceId = config.instance_id;
         this.token = config.instance_token;
         this.clientToken = config.client_token;
-        this.baseUrl = config.base_url || 'https://api.z-api.io';
+        this.baseUrl = config.base_url || "https://api.z-api.io";
         return;
       } else {
-        console.log('⚠️ Configuração não encontrada no banco, usando env vars:', error?.message || 'Config não encontrada');
+        console.log(
+          "⚠️ Configuração não encontrada no banco, usando env vars:",
+          error?.message || "Config não encontrada",
+        );
       }
     } catch (error) {
-      console.error('❌ Erro ao buscar configuração no banco:', error);
+      console.error("❌ Erro ao buscar configuração no banco:", error);
     }
 
     // Fallback para variáveis de ambiente
-    this.instanceId = Deno.env.get('BOT_ZAPI_INSTANCE_ID') || Deno.env.get('ZAPI_INSTANCE_ID') || '';
-    this.token = Deno.env.get('BOT_ZAPI_TOKEN') || Deno.env.get('ZAPI_TOKEN') || '';
-    this.clientToken = Deno.env.get('BOT_ZAPI_CLIENT_TOKEN') || Deno.env.get('ZAPI_CLIENT_TOKEN') || '';
-    this.baseUrl = Deno.env.get('BOT_ZAPI_BASE_URL') || Deno.env.get('ZAPI_BASE_URL') || 'https://api.z-api.io';
-    
-    console.log('📝 Usando configuração das env vars:', this.instanceId?.substring(0, 8) + '...');
+    this.instanceId = Deno.env.get("BOT_ZAPI_INSTANCE_ID") || Deno.env.get("ZAPI_INSTANCE_ID") || "";
+    this.token = Deno.env.get("BOT_ZAPI_TOKEN") || Deno.env.get("ZAPI_TOKEN") || "";
+    this.clientToken = Deno.env.get("BOT_ZAPI_CLIENT_TOKEN") || Deno.env.get("ZAPI_CLIENT_TOKEN") || "";
+    this.baseUrl = Deno.env.get("BOT_ZAPI_BASE_URL") || Deno.env.get("ZAPI_BASE_URL") || "https://api.z-api.io";
+
+    console.log("📝 Usando configuração das env vars:", this.instanceId?.substring(0, 8) + "...");
   }
 
   async sendMessage(phone: string, message: string, buttons?: any[]): Promise<boolean> {
     if (!this.instanceId || !this.token || !this.clientToken) {
-      console.error('BOT Z-API credentials not configured');
+      console.error("BOT Z-API credentials not configured");
       return false;
     }
 
     try {
-      let endpoint = 'send-text';
+      let endpoint = "send-text";
       let body: any = {
         phone: phone,
-        message: message
+        message: message,
       };
 
       if (buttons && buttons.length > 0) {
-        endpoint = 'send-button-list';
+        endpoint = "send-button-list";
         body.buttonList = { buttons };
       }
 
       const response = await fetch(`${this.baseUrl}/instances/${this.instanceId}/token/${this.token}/${endpoint}`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Client-Token': this.clientToken,
+          "Content-Type": "application/json",
+          "Client-Token": this.clientToken,
         },
         body: JSON.stringify(body),
       });
 
       if (!response.ok) {
-        console.error('Failed to send BOT Z-API message:', await response.text());
+        console.error("Failed to send BOT Z-API message:", await response.text());
         return false;
       }
 
-      console.log('✅ BOT message sent successfully via Z-API');
+      console.log("✅ BOT message sent successfully via Z-API");
       return true;
     } catch (error) {
-      console.error('Error sending BOT Z-API message:', error);
+      console.error("Error sending BOT Z-API message:", error);
       return false;
     }
   }
@@ -122,33 +119,35 @@ async function checkGroupInDatabase(groupId: string): Promise<boolean> {
     console.log(`🔍 Verificando grupo ${groupId} na tabela atendente_unidades...`);
     console.log(`🔍 Buscando por id_grupo_branco: "${groupId}"`);
     console.log(`🔑 Usando SERVICE_ROLE_KEY para bypass de RLS (webhook não tem auth)`);
-    
+
     // Usar supabaseAdmin para bypass de RLS (webhooks não têm auth.uid())
     const { data, error, count } = await supabaseAdmin
-      .from('atendente_unidades')
-      .select('id, codigo_grupo, id_grupo_branco, grupo, ativo', { count: 'exact' })
-      .eq('id_grupo_branco', groupId)
-      .eq('ativo', true);
+      .from("atendente_unidades")
+      .select("id, codigo_grupo, id_grupo_branco, grupo, ativo", { count: "exact" })
+      .eq("id_grupo_branco", groupId)
+      .eq("ativo", true);
 
     console.log(`📊 Query completa - Error:`, error);
     console.log(`📊 Query completa - Count:`, count);
     console.log(`📊 Query completa - Data length:`, data?.length || 0);
 
     if (error) {
-      console.error('❌ Erro ao consultar tabela atendente_unidades:', error);
+      console.error("❌ Erro ao consultar tabela atendente_unidades:", error);
       return false;
     }
 
     if (data && data.length > 0) {
-      console.log(`✅ Grupo ${groupId} encontrado! Registro(s):`, 
-        data.map(d => `${d.grupo} (código: ${d.codigo_grupo}, id_branco: ${d.id_grupo_branco})`));
+      console.log(
+        `✅ Grupo ${groupId} encontrado! Registro(s):`,
+        data.map((d) => `${d.grupo} (código: ${d.codigo_grupo}, id_branco: ${d.id_grupo_branco})`),
+      );
       return true;
     } else {
       console.log(`🚫 Grupo NÃO encontrado para id_grupo_branco: "${groupId}"`);
       return false;
     }
   } catch (error) {
-    console.error('❌ Erro na verificação de grupo:', error);
+    console.error("❌ Erro na verificação de grupo:", error);
     return false;
   }
 }
@@ -157,7 +156,7 @@ async function checkGroupInDatabase(groupId: string): Promise<boolean> {
 async function sendUnauthorizedGroupNotification(groupId: string) {
   try {
     console.log(`📢 Enviando notificação para grupo não autorizado: ${groupId}`);
-    
+
     const notificationBody = {
       title: "🚫 Grupo não autorizado tentou usar o bot",
       message: `O grupo ${groupId} tentou usar o bot_base_1 mas não está cadastrado na tabela atendente_unidades`,
@@ -165,21 +164,21 @@ async function sendUnauthorizedGroupNotification(groupId: string) {
       payload: {
         group_id: groupId,
         timestamp: new Date().toISOString(),
-        function: "bot_base_1"
-      }
+        function: "bot_base_1",
+      },
     };
 
-    const response = await supabase.functions.invoke('create-internal-notification', {
-      body: notificationBody
+    const response = await supabase.functions.invoke("create-internal-notification", {
+      body: notificationBody,
     });
 
     if (response.error) {
-      console.error('❌ Erro ao enviar notificação:', response.error);
+      console.error("❌ Erro ao enviar notificação:", response.error);
     } else {
-      console.log('✅ Notificação enviada com sucesso:', response.data);
+      console.log("✅ Notificação enviada com sucesso:", response.data);
     }
   } catch (error) {
-    console.error('❌ Erro ao enviar notificação de grupo não autorizado:', error);
+    console.error("❌ Erro ao enviar notificação de grupo não autorizado:", error);
   }
 }
 
@@ -197,7 +196,7 @@ serve(async (req: Request) => {
     console.log("🚀 BOT_BASE_1 INICIADO - Recebendo requisição");
     console.log("🌍 Request URL:", req.url);
     console.log("📝 Request method:", req.method);
-    
+
     const body = await req.json();
     console.log("📦 Body parseado:", JSON.stringify(body, null, 2));
 
@@ -206,10 +205,10 @@ serve(async (req: Request) => {
     const buttonId2 = body?.buttonId;
     const buttonId3 = body?.button?.id;
     const buttonId4 = body?.selectedButtonId;
-    
+
     const buttonId = buttonId1 || buttonId2 || buttonId3 || buttonId4 || "";
-    
-    // Extrai phone e message 
+
+    // Extrai phone e message
     const phone = body?.phone || body?.participantPhone;
     const message = (body?.text?.message || body?.message || "").toLowerCase();
 
@@ -217,48 +216,50 @@ serve(async (req: Request) => {
     console.log("Phone:", phone);
     console.log("ButtonId:", buttonId);
     console.log("Message:", message);
-    
+
     const isGroup = body?.isGroup;
     const chatId = body?.phone;
 
     // Palavras-chave que disparam menu inicial
-    const KEYWORDS = ["testerobo", "menu", "robo", "ola robo", "olá robô", "ola robo"];
+    const KEYWORDS = ["testerobo", "menu", "robo", "ola robo", "olá robô", "ola robo", "olá robo"];
 
     const functionsBaseUrl =
-      Deno.env.get("FUNCTIONS_BASE_URL") ||
-      `https://hryurntaljdisohawpqf.supabase.co/functions/v1`;
+      Deno.env.get("FUNCTIONS_BASE_URL") || `https://hryurntaljdisohawpqf.supabase.co/functions/v1`;
 
     // 🔹 MENU INICIAL - Verificação EXATA (não frases que contenham)
     console.log("🔍 Verificando keywords:", KEYWORDS);
     console.log("🔍 Message para verificar:", `"${message}"`);
     const keywordMatch = KEYWORDS.some((k) => message.trim() === k.toLowerCase());
     console.log("🔍 Keyword match encontrado:", keywordMatch);
-    
+
     if (keywordMatch) {
       // FILTRO DINÂMICO: Verificar grupos na tabela unidades APENAS quando usar palavras-chave
       if (isGroup) {
         const isAuthorized = await checkGroupInDatabase(chatId);
-        
+
         if (!isAuthorized) {
           console.log(`🚫 BOT_BASE_1: Grupo não autorizado (${chatId})`);
-          
+
           // Enviar notificação para admins
           await sendUnauthorizedGroupNotification(chatId);
-          
-          return new Response(JSON.stringify({ 
-            success: false, 
-            message: "Bot only processes messages from authorized groups" 
-          }), {
-            headers: { "Content-Type": "application/json", ...corsHeaders },
-            status: 403
-          });
+
+          return new Response(
+            JSON.stringify({
+              success: false,
+              message: "Bot only processes messages from authorized groups",
+            }),
+            {
+              headers: { "Content-Type": "application/json", ...corsHeaders },
+              status: 403,
+            },
+          );
         }
-        
+
         console.log("✅ BOT_BASE_1: Grupo autorizado - prosseguindo para menu");
       } else {
         console.log("📱 BOT_BASE_1: Mensagem privada - prosseguindo para menu");
       }
-      
+
       console.log("📞 Chamando menu_principal...");
       const res = await fetch(`${functionsBaseUrl}/menu_principal`, {
         method: "POST",
@@ -268,10 +269,10 @@ serve(async (req: Request) => {
         },
         body: JSON.stringify(body),
       });
-      
+
       const responseText = await res.text();
       console.log("📤 Resposta do menu_principal:", responseText);
-      
+
       return new Response(responseText, {
         headers: { "Content-Type": "application/json", ...corsHeaders },
         status: res.status,
@@ -295,7 +296,7 @@ serve(async (req: Request) => {
     }
 
     // 🔹 SUBMENUS DO AUTOATENDIMENTO
-    
+
     // Calendário
     if (buttonId === "autoatendimento_calendario") {
       return await proxy(functionsBaseUrl, "autoatendimento_calendario", body);
@@ -386,10 +387,10 @@ serve(async (req: Request) => {
     // ❌ Pula DFCom por enquanto
     if (buttonId === "autoatendimento_dfcom") {
       console.log("🚫 DFCom desativado por enquanto");
-      return new Response(
-        JSON.stringify({ success: false, message: "DFCom ainda não implementado" }),
-        { headers: { "Content-Type": "application/json", ...corsHeaders }, status: 200 }
-      );
+      return new Response(JSON.stringify({ success: false, message: "DFCom ainda não implementado" }), {
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+        status: 200,
+      });
     }
 
     // Caso não reconheça
@@ -401,10 +402,10 @@ serve(async (req: Request) => {
     });
   } catch (err) {
     console.error("❌ Erro no bot_base_1:", err);
-    return new Response(
-      JSON.stringify({ error: "Erro interno", details: err.message }),
-      { headers: { "Content-Type": "application/json", ...corsHeaders }, status: 500 }
-    );
+    return new Response(JSON.stringify({ error: "Erro interno", details: err.message }), {
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+      status: 500,
+    });
   }
 });
 
@@ -430,9 +431,9 @@ async function proxy(baseUrl: string, functionName: string, body: any) {
     });
   } catch (error) {
     console.error(`❌ Erro no proxy para ${functionName}:`, error);
-    return new Response(
-      JSON.stringify({ error: `Erro no proxy para ${functionName}`, details: error.message }),
-      { headers: { "Content-Type": "application/json", ...corsHeaders }, status: 500 }
-    );
+    return new Response(JSON.stringify({ error: `Erro no proxy para ${functionName}`, details: error.message }), {
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+      status: 500,
+    });
   }
 }
