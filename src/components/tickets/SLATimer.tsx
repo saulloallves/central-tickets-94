@@ -70,7 +70,12 @@ export const SLATimer = ({
   const formatTime = (value: number) => value.toString().padStart(2, '0');
 
   if (timeRemaining.isPaused) {
-    const pauseReason = slaPausado ? 'Fora do horário' : 'Aguardando resposta';
+    // Detectar múltiplas razões de pausa
+    const reasons: string[] = [];
+    if (slaPausado) reasons.push('Fora do horário');
+    if (slaPausadoMensagem) reasons.push('Aguardando resposta');
+    
+    const pauseReason = reasons.length > 0 ? reasons.join(' + ') : 'Pausado';
     
     return (
       <div className="flex items-center gap-1 text-amber-600 text-sm font-medium">

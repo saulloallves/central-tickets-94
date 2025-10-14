@@ -3019,6 +3019,7 @@ export type Database = {
           franqueado_id: string | null
           id: string
           log_ia: Json | null
+          pode_despausar_as_0830: boolean | null
           position: number
           prioridade: Database["public"]["Enums"]["ticket_prioridade"]
           reaberto_count: number
@@ -3058,6 +3059,7 @@ export type Database = {
           franqueado_id?: string | null
           id?: string
           log_ia?: Json | null
+          pode_despausar_as_0830?: boolean | null
           position?: number
           prioridade?: Database["public"]["Enums"]["ticket_prioridade"]
           reaberto_count?: number
@@ -3097,6 +3099,7 @@ export type Database = {
           franqueado_id?: string | null
           id?: string
           log_ia?: Json | null
+          pode_despausar_as_0830?: boolean | null
           position?: number
           prioridade?: Database["public"]["Enums"]["ticket_prioridade"]
           reaberto_count?: number
@@ -4074,8 +4077,10 @@ export type Database = {
       pause_sla_tickets: {
         Args: Record<PropertyKey, never>
         Returns: {
-          tickets_pausados: number
-          tickets_resumidos: number
+          despausados: number
+          detalhes: Json
+          mantidos_pausados: number
+          pausados: number
         }[]
       }
       process_overdue_slas: {
