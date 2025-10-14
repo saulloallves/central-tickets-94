@@ -34,3 +34,38 @@ export const useProcessPendingNotifications = () => {
     },
   });
 };
+
+export const useResumeSLA = () => {
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke('pause-sla-processor', {
+        body: { action: 'resume' }
+      });
+
+      if (error) {
+        console.error('Error resuming SLA:', error);
+        throw error;
+      }
+
+      return data;
+    },
+    onSuccess: (data) => {
+      console.log('SLA resumed successfully:', data);
+      
+      toast({
+        title: "SLA Despausado",
+        description: `${data.updated || 0} tickets foram despausados com sucesso`,
+      });
+    },
+    onError: (error: any) => {
+      console.error('Failed to resume SLA:', error);
+      toast({
+        title: "Erro ao Despausar SLA",
+        description: error.message || "Não foi possível despausar os tickets",
+        variant: "destructive",
+      });
+    },
+  });
+};

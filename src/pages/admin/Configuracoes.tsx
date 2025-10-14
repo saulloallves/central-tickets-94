@@ -19,6 +19,7 @@ import { AtendentesTab } from '@/components/configuracoes/AtendentesTab';
 import { AIClassifierAdvancedTab } from '@/components/configuracoes/AIClassifierAdvancedTab';
 import { ZAPIInstancesTab } from '@/components/configuracoes/ZAPIInstancesTab';
 import { CleanupTicketsButton } from '@/components/admin/CleanupTicketsButton';
+import { ManualSLAResumeButton } from '@/components/admin/ManualSLAResumeButton';
 
 export default function Configuracoes() {
   const [searchParams] = useSearchParams();
@@ -178,7 +179,10 @@ export default function Configuracoes() {
                         Remove todos os tickets, mensagens e chamados do banco de dados. 
                         Esta ação é <strong>irreversível</strong>.
                       </p>
-                      <CleanupTicketsButton />
+                      <div className="flex gap-2">
+                        <ManualSLAResumeButton />
+                        <CleanupTicketsButton />
+                      </div>
                     </div>
                   </div>
                 </div>
