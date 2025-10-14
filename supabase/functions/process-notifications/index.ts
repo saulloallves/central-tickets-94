@@ -795,11 +795,9 @@ serve(async (req) => {
       throw new Error('Missing required Z-API configuration');
     }
 
-    // Função para formatar o título do ticket
+    // Função para retornar apenas o código do ticket
     const formatTicketTitle = (ticket: any) => {
-      const titulo = ticket.titulo || 'Problema reportado'
-      const codigo = ticket.codigo_ticket
-      return `${titulo} (${codigo})`
+      return ticket.codigo_ticket || 'Sem código'
     }
 
     // Função para normalizar número de telefone (pula grupos)
