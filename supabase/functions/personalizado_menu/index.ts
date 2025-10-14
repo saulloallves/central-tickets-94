@@ -32,7 +32,7 @@ serve(async (req: Request) => {
       
       const outOfHoursPayload = {
         phone,
-        message: "❌ *Agora estamos fora do horário de atendimento.*\n\n⏰ Nosso time atende de segunda a sábado, das *9h às 18h.*\n\n📝 Você pode abrir um ticket agora mesmo. Sua solicitação será registrada e respondida pela equipe assim que possível.",
+        message: "❌ *Agora estamos fora do horário de atendimento.*\n\n⏰ Nosso time atende de segunda a sábado, das *8h30 às 17h30.*\n\n📝 Você pode abrir um ticket agora mesmo. Sua solicitação será registrada e respondida pela equipe assim que possível.",
         buttonList: {
           buttons: [
             {
