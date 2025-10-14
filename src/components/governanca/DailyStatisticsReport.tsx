@@ -136,9 +136,12 @@ export const DailyStatisticsReport = () => {
     csvParts.push('\n');
 
     // 14. ESCALAÇÕES
-    csvParts.push('ESCALAÇÕES');
+    csvParts.push('ESCALAÇÕES (TICKETS ÚNICOS ESCALADOS)');
     csvParts.push('Métrica,Valor');
-    csvParts.push(`Total de Escalações,${reportData.data.escalations.total}`);
+    csvParts.push(`Total de Tickets Escalados,${reportData.data.escalations.total}`);
+    csvParts.push(`Total de Eventos de Escalação,${reportData.data.escalations.total_eventos || 0}`);
+    csvParts.push('\nDistribuição por Nível (Nível Máximo por Ticket)');
+    csvParts.push('Nível,Quantidade');
     Object.entries(reportData.data.escalations.por_nivel || {}).forEach(([nivel, count]) => {
       csvParts.push(`${nivel},${count}`);
     });
