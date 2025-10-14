@@ -50,48 +50,10 @@ export const useRealtimeNotifications = () => {
         }
       });
 
-    // Canal para SLAs vencidos em tickets
-    const slaChannel = supabase
-      .channel('sla-realtime')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'tickets',
-          filter: `status_sla=eq.vencido`
-        },
-        (payload) => {
-          console.log('⏰ 🚨 SLA VENCIDO DETECTADO:', payload);
-          handleSLABreach(payload.new);
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'tickets',
-          filter: `status=eq.escalonado`
-        },
-        (payload) => {
-          console.log('📈 ⬆️ TICKET ESCALADO:', payload);
-          handleTicketEscalation(payload.new);
-        }
-      )
-      .subscribe((status) => {
-        console.log('🔔 📡 STATUS SLA REALTIME:', status);
-        if (status === 'SUBSCRIBED') {
-          console.log('🔔 ✅ SLA REALTIME CONECTADO!');
-        } else if (status === 'CLOSED') {
-          console.log('🔔 ❌ SLA REALTIME DESCONECTADO!');
-        }
-      });
 
     return () => {
       console.log('🔕 🧹 DESCONECTANDO NOTIFICAÇÕES EM TEMPO REAL...');
       supabase.removeChannel(notificationsChannel);
-      supabase.removeChannel(slaChannel);
     };
   }, [user, toast]);
 
@@ -171,19 +133,4 @@ export const useRealtimeNotifications = () => {
     }
   };
 
-  const handleSLABreach = (ticket: any) => {
-    toast({
-      title: '🚨 SLA Vencido!',
-      description: `Ticket ${ticket.codigo_ticket} teve o SLA vencido`,
-      variant: 'destructive',
-    });
-  };
-
-  const handleTicketEscalation = (ticket: any) => {
-    toast({
-      title: '📈 Ticket Escalado',
-      description: `Ticket ${ticket.codigo_ticket} foi escalado automaticamente (Nível ${ticket.escalonamento_nivel})`,
-      variant: 'default',
-    });
-  };
 };
