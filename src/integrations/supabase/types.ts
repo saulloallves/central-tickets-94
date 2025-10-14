@@ -4071,6 +4071,13 @@ export type Database = {
         Args: { p_unidade_id: string }
         Returns: string
       }
+      pause_sla_tickets: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          tickets_pausados: number
+          tickets_resumidos: number
+        }[]
+      }
       process_overdue_slas: {
         Args: Record<PropertyKey, never>
         Returns: number
