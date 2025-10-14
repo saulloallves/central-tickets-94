@@ -354,9 +354,9 @@ serve(async (req) => {
       colaborador_nome: ticket.colaboradores?.nome_completo || 'Não definido',
       colaborador_responsavel: ticket.colaboradores?.nome_completo || 'Não definido',
       descricao_problema: ticket.descricao_problema || 'Não informado',
-      data_criacao: new Date(ticket.created_at).toLocaleString('pt-BR'),
-      data_abertura: new Date(ticket.data_abertura || ticket.created_at).toLocaleString('pt-BR'),
-      data_limite_sla: ticket.data_limite_sla ? new Date(ticket.data_limite_sla).toLocaleString('pt-BR') : 'Não definido',
+      data_criacao: new Date(ticket.created_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
+      data_abertura: new Date(ticket.data_abertura || ticket.created_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
+      data_limite_sla: ticket.data_limite_sla ? new Date(ticket.data_limite_sla).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : 'Não definido',
       // Variáveis específicas para resposta_ticket
       texto_resposta: resposta_real || 'Resposta disponível no sistema de atendimento',
       franqueado_nome: extra_data?.franqueado_nome || ticket.franqueado_nome || 'Franqueado',

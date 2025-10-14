@@ -913,11 +913,11 @@ serve(async (req) => {
           categoria: ticket.categoria || 'Não informada',
           prioridade: ticket.prioridade,
           descricao_problema: ticket.descricao_problema,
-          data_abertura: new Date(ticket.data_abertura).toLocaleString('pt-BR'),
+          data_abertura: new Date(ticket.data_abertura).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
           equipe_responsavel: equipeData?.nome || 'Não atribuída',
           colaborador_responsavel: colaboradorData?.nome_completo || 'Não atribuído',
           status: ticket.status,
-          data_limite_sla: ticket.data_limite_sla ? new Date(ticket.data_limite_sla).toLocaleString('pt-BR') : 'Não definido'
+          data_limite_sla: ticket.data_limite_sla ? new Date(ticket.data_limite_sla).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : 'Não definido'
         });
 
         const normalizedPhoneTicket = normalizePhoneNumber(destinoFinal);
@@ -997,7 +997,7 @@ serve(async (req) => {
             status: ticket.status,
             equipe_responsavel: equipeDataResp?.nome || 'Não atribuída',
             texto_resposta: textoResposta,
-            timestamp: new Date().toLocaleString('pt-BR')
+            timestamp: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
           });
 
           const normalizedPhoneResp = normalizePhoneNumber(destinoFinal);
@@ -1050,10 +1050,10 @@ serve(async (req) => {
           status: ticket.status,
           equipe_responsavel: equipeDataFranqueado?.nome || 'Não atribuída',
           descricao_problema: ticket.descricao_problema,
-          data_abertura: new Date(ticket.data_abertura).toLocaleString('pt-BR'),
-          data_limite_sla: ticket.data_limite_sla ? new Date(ticket.data_limite_sla).toLocaleString('pt-BR') : 'Não definido',
+          data_abertura: new Date(ticket.data_abertura).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
+          data_limite_sla: ticket.data_limite_sla ? new Date(ticket.data_limite_sla).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : 'Não definido',
           texto_resposta: textoResposta,
-          timestamp: new Date().toLocaleString('pt-BR')
+          timestamp: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
         });
 
         resultadoEnvio = await sendZapiMessage(franqueadoSolicitante.phone, mensagemFranqueado);
@@ -1099,8 +1099,8 @@ serve(async (req) => {
           status: ticket.status,
           equipe_responsavel: equipeDataSLAHalf?.nome || 'Não atribuída',
           descricao_problema: ticket.descricao_problema,
-          data_abertura: new Date(ticket.data_abertura).toLocaleString('pt-BR'),
-          data_limite_sla: new Date(ticket.data_limite_sla).toLocaleString('pt-BR')
+          data_abertura: new Date(ticket.data_abertura).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
+          data_limite_sla: new Date(ticket.data_limite_sla).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
         });
 
         const normalizedPhoneSLAHalf = normalizePhoneNumber(destinoFinal);
@@ -1197,8 +1197,8 @@ serve(async (req) => {
           status: ticket.status,
           equipe_responsavel: equipeDataForwarded?.nome || 'Não atribuída',
           descricao_problema: ticket.descricao_problema,
-          timestamp: new Date().toLocaleString('pt-BR'),
-          data_limite_sla: ticket.data_limite_sla ? new Date(ticket.data_limite_sla).toLocaleString('pt-BR') : 'Não definido'
+          timestamp: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
+          data_limite_sla: ticket.data_limite_sla ? new Date(ticket.data_limite_sla).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : 'Não definido'
         });
         
         // Send to all team members
