@@ -152,6 +152,54 @@ async function checkGroupInDatabase(groupId: string): Promise<boolean> {
   }
 }
 
+// Nova função para verificar se a unidade está cadastrada
+async function checkUnitRegistration(groupId: string): Promise<{
+  isRegistered: boolean;
+  codigoGrupo?: string;
+  nomeGrupo?: string;
+}> {
+  try {
+    console.log(`🏢 Verificando cadastro da unidade para grupo ${groupId}...`);
+
+    const { data, error } = await supabaseAdmin
+      .from("unidades")
+      .select("codigo_grupo, grupo, id_grupo_branco")
+      .eq("id_grupo_branco", groupId)
+      .maybeSingle();
+
+    if (error) {
+      console.error("❌ Erro ao verificar cadastro da unidade:", error);
+      return { isRegistered: false };
+    }
+
+    if (data) {
+      console.log(`✅ Unidade cadastrada: ${data.grupo} (código: ${data.codigo_grupo})`);
+      return {
+        isRegistered: true,
+        codigoGrupo: data.codigo_grupo,
+        nomeGrupo: data.grupo,
+      };
+    }
+
+    // Buscar informações em atendente_unidades para a mensagem
+    const { data: atendenteData } = await supabaseAdmin
+      .from("atendente_unidades")
+      .select("codigo_grupo, grupo")
+      .eq("id_grupo_branco", groupId)
+      .maybeSingle();
+
+    console.log(`🚫 Unidade NÃO cadastrada no sistema`);
+    return {
+      isRegistered: false,
+      codigoGrupo: atendenteData?.codigo_grupo,
+      nomeGrupo: atendenteData?.grupo,
+    };
+  } catch (error) {
+    console.error("❌ Erro ao verificar cadastro da unidade:", error);
+    return { isRegistered: false };
+  }
+}
+
 // Função para enviar notificação de grupo não autorizado
 async function sendUnauthorizedGroupNotification(groupId: string) {
   try {
@@ -233,14 +281,13 @@ serve(async (req: Request) => {
     console.log("🔍 Keyword match encontrado:", keywordMatch);
 
     if (keywordMatch) {
-      // FILTRO DINÂMICO: Verificar grupos na tabela unidades APENAS quando usar palavras-chave
+      // FILTRO DINÂMICO: Verificar grupos quando usar palavras-chave
       if (isGroup) {
+        // 1️⃣ PRIMEIRA VALIDAÇÃO: Grupo autorizado em atendente_unidades
         const isAuthorized = await checkGroupInDatabase(chatId);
 
         if (!isAuthorized) {
           console.log(`🚫 BOT_BASE_1: Grupo não autorizado (${chatId})`);
-
-          // Enviar notificação para admins
           await sendUnauthorizedGroupNotification(chatId);
 
           return new Response(
@@ -255,7 +302,57 @@ serve(async (req: Request) => {
           );
         }
 
-        console.log("✅ BOT_BASE_1: Grupo autorizado - prosseguindo para menu");
+        console.log("✅ BOT_BASE_1: Grupo autorizado - verificando cadastro da unidade");
+
+        // 2️⃣ SEGUNDA VALIDAÇÃO: Unidade cadastrada em 'unidades'
+        const unitCheck = await checkUnitRegistration(chatId);
+
+        if (!unitCheck.isRegistered) {
+          console.log(`🚫 BOT_BASE_1: Unidade não cadastrada (${chatId})`);
+
+          // Enviar mensagem no grupo informando sobre falta de cadastro
+          const message = `🚫 *Unidade não cadastrada*\n\n` +
+            `Olá! Identificamos que esta unidade ainda não possui cadastro completo no sistema.\n\n` +
+            `📋 *Código da unidade:* ${unitCheck.codigoGrupo || "Não identificado"}\n` +
+            `🏢 *Nome:* ${unitCheck.nomeGrupo || "Não identificado"}\n\n` +
+            `Para utilizar o bot, é necessário completar o cadastro da unidade.\n\n` +
+            `👉 *Acesse:* cadastro.girabot.com.br\n\n` +
+            `Após o cadastro, você poderá usar todas as funcionalidades do bot! 🤖`;
+
+          await botZapi.sendMessage(chatId, message);
+
+          // Enviar notificação interna para admins
+          await supabase.functions.invoke("create-internal-notification", {
+            body: {
+              title: "⚠️ Grupo sem cadastro de unidade tentou usar o bot",
+              message: `Grupo ${unitCheck.nomeGrupo || chatId} (código: ${unitCheck.codigoGrupo || "N/A"}) tentou usar o bot mas não tem cadastro na tabela unidades`,
+              type: "alert",
+              payload: {
+                group_id: chatId,
+                codigo_grupo: unitCheck.codigoGrupo,
+                nome_grupo: unitCheck.nomeGrupo,
+                timestamp: new Date().toISOString(),
+                function: "bot_base_1",
+                missing_registration: true,
+              },
+            },
+          });
+
+          return new Response(
+            JSON.stringify({
+              success: false,
+              message: "Unit not registered in system",
+              codigo_grupo: unitCheck.codigoGrupo,
+              nome_grupo: unitCheck.nomeGrupo,
+            }),
+            {
+              headers: { "Content-Type": "application/json", ...corsHeaders },
+              status: 403,
+            },
+          );
+        }
+
+        console.log(`✅ BOT_BASE_1: Unidade cadastrada - ${unitCheck.nomeGrupo} (${unitCheck.codigoGrupo})`);
       } else {
         console.log("📱 BOT_BASE_1: Mensagem privada - prosseguindo para menu");
       }
