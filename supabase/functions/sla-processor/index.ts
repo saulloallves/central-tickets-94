@@ -45,32 +45,45 @@ serve(async (req) => {
     // 3. Processar notificações não enviadas ao WhatsApp (apenas PENDING)
     console.log('📤 Buscando notificações PENDING não enviadas ao WhatsApp...');
     
-    // ✅ ATOMIC UPDATE: Pega e marca como 'processing' atomicamente para evitar duplicatas
+    // ✅ SELECT primeiro com ORDER, depois UPDATE em lote
     const { data: pendingNotifications, error: notificationError } = await supabaseClient
       .from('notifications_queue')
-      .update({ status: 'processing' })
-      .eq('status', 'pending')  // ✅ APENAS PENDING
+      .select('*')
+      .eq('status', 'pending')
       .eq('sent_to_whatsapp', false)
       .in('type', ['sla_breach', 'sla_half'])
       .gte('created_at', new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString())
-      .limit(20)
-      .select();
-    
+      .order('created_at', { ascending: true })  // ✅ ORDER adicionado para evitar PGRST109
+      .limit(20);
+
     console.log(`📊 Encontradas ${pendingNotifications?.length || 0} notificações para processar`);
-    if (pendingNotifications && pendingNotifications.length > 0) {
-      console.log(`📤 Detalhes:`, pendingNotifications.map(n => ({ 
-        id: n.id, 
-        ticket_id: n.ticket_id, 
-        type: n.type,
-        status: n.status,
-        sent_to_whatsapp: n.sent_to_whatsapp,
-        attempts: n.attempts 
-      })));
-    }
 
     if (notificationError) {
       console.error('❌ Erro ao buscar notificações pendentes:', notificationError);
       throw notificationError;
+    }
+
+    // ✅ Marcar como 'processing' em lote DEPOIS de buscar
+    if (pendingNotifications && pendingNotifications.length > 0) {
+      const notificationIds = pendingNotifications.map(n => n.id);
+      
+      const { error: updateError } = await supabaseClient
+        .from('notifications_queue')
+        .update({ status: 'processing' })
+        .in('id', notificationIds);
+      
+      if (updateError) {
+        console.error('❌ Erro ao marcar notificações como processing:', updateError);
+      } else {
+        console.log(`✅ ${notificationIds.length} notificações marcadas como processing`);
+      }
+      
+      console.log(`📤 Detalhes:`, pendingNotifications.map(n => ({ 
+        id: n.id, 
+        ticket_id: n.ticket_id, 
+        type: n.type,
+        created_at: n.created_at
+      })));
     }
 
     let notificationsProcessed = 0;
