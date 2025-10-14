@@ -3784,6 +3784,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      force_delete_user: {
+        Args: { uid: string }
+        Returns: undefined
+      }
       get_all_users_except_current: {
         Args: Record<PropertyKey, never>
         Returns: {
