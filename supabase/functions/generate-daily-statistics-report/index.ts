@@ -142,21 +142,36 @@ serve(async (req) => {
       })
     );
 
-    // 7. DESEMPENHO POR UNIDADE
-    const { data: unidades } = await supabase
-      .from('unidades')
-      .select('id, grupo');
+    // 7. DESEMPENHO POR UNIDADE (apenas unidades com tickets no período)
+    const { data: ticketsWithUnits } = await supabase
+      .from('tickets')
+      .select('unidade_id')
+      .gte('data_abertura', startDateTime)
+      .lte('data_abertura', endDateTime);
 
-    const unit_performance = await Promise.all(
-      (unidades || []).slice(0, 50).map(async (unidade) => {
+    // Extrair IDs únicos de unidades que tiveram tickets
+    const uniqueUnidadeIds = [...new Set(ticketsWithUnits?.map(t => t.unidade_id).filter(id => id != null))];
+
+    const unit_performance_raw = await Promise.all(
+      uniqueUnidadeIds.map(async (unidadeId) => {
+        // Buscar nome da unidade
+        const { data: unidadeData } = await supabase
+          .from('unidades')
+          .select('id, grupo')
+          .eq('id', unidadeId)
+          .single();
+
+        if (!unidadeData) return null;
+
+        // Tickets criados no período
         const { data: unitTickets } = await supabase
           .from('tickets')
           .select('*')
-          .eq('unidade_id', unidade.id)
+          .eq('unidade_id', unidadeId)
           .gte('data_abertura', startDateTime)
           .lte('data_abertura', endDateTime);
 
-        // Buscar tickets em aberto (independente da data de criação)
+        // Tickets em aberto (independente da data de criação)
         const { data: unitTicketsOpen } = await supabase
           .from('tickets')
           .select(`
@@ -168,7 +183,7 @@ serve(async (req) => {
             data_abertura,
             status_sla
           `)
-          .eq('unidade_id', unidade.id)
+          .eq('unidade_id', unidadeId)
           .not('status', 'in', '("concluido","cancelado")')
           .order('data_abertura', { ascending: false })
           .limit(10);
@@ -178,7 +193,7 @@ serve(async (req) => {
         const atrasados = unitTickets?.filter(t => t.status_sla === 'vencido').length || 0;
 
         return {
-          unidade: unidade.grupo,
+          unidade: unidadeData.grupo,
           total_tickets: total,
           resolvidos,
           atrasados,
@@ -188,6 +203,11 @@ serve(async (req) => {
         };
       })
     );
+
+    // Filtrar valores null e ordenar por total de tickets (maior para menor)
+    const unit_performance = unit_performance_raw
+      .filter(u => u != null)
+      .sort((a, b) => b!.total_tickets - a!.total_tickets);
 
     // 8. ANÁLISE HORÁRIA
     const hourly_analysis = Array.from({ length: 24 }, (_, hour) => {
