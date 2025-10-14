@@ -112,11 +112,12 @@ Deno.serve(async (req) => {
       // ========================================
       
       // Buscar tickets pausados (apenas os que devem ser despausados)
+      // ⚠️ NÃO despausar tickets em 'aguardando_resposta' (pausados intencionalmente)
       const { data: ticketsToResume, error: fetchError } = await supabase
         .from('tickets')
         .select('id, codigo_ticket, data_limite_sla, sla_pausado_em, tempo_pausado_total, data_abertura, status')
         .eq('sla_pausado', true)
-        .in('status', ['aberto', 'em_atendimento', 'aguardando_resposta'])
+        .in('status', ['aberto', 'em_atendimento'])
         .not('sla_pausado_em', 'is', null);
 
       if (fetchError) {
