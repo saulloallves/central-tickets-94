@@ -15,6 +15,7 @@ import { BottleneckDetection } from "@/components/governanca/BottleneckDetection
 import { UsageReports } from "@/components/governanca/UsageReports";
 import { AccessPermissionsControl } from "@/components/governanca/AccessPermissionsControl";
 import { MetricsSection } from "@/components/governanca/MetricsSection";
+import { DailyStatisticsReport } from "@/components/governanca/DailyStatisticsReport";
 
 export default function Governanca() {
   const { isAdmin } = useRole();
@@ -130,6 +131,9 @@ export default function Governanca() {
             <TabsTrigger value="uso-sistema" className="flex items-center space-x-2">
               <span>Uso do Sistema</span>
             </TabsTrigger>
+            <TabsTrigger value="estatisticas" className="flex items-center space-x-2">
+              <span>Estatísticas</span>
+            </TabsTrigger>
             <TabsTrigger value="acessos" className="flex items-center space-x-2">
               <span>Acessos & Permissões</span>
             </TabsTrigger>
@@ -153,6 +157,10 @@ export default function Governanca() {
 
           <TabsContent value="uso-sistema" className="space-y-6">
             <UsageReports />
+          </TabsContent>
+
+          <TabsContent value="estatisticas" className="space-y-6">
+            <DailyStatisticsReport />
           </TabsContent>
 
           <TabsContent value="acessos" className="space-y-6">
