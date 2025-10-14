@@ -113,6 +113,43 @@ class BotZAPIClient {
 
 const botZapi = new BotZAPIClient();
 
+// ✅ Função para verificar se grupo existe em unidades_whatsapp
+async function checkGroupInWhatsappTable(groupId: string): Promise<{
+  exists: boolean;
+  codigoGrupo?: string;
+  nomeGrupo?: string;
+}> {
+  try {
+    console.log(`📱 Verificando grupo ${groupId} na tabela unidades_whatsapp...`);
+
+    const { data, error } = await supabaseAdmin
+      .from("unidades_whatsapp")
+      .select("codigo_grupo, nome_grupo")
+      .eq("id_grupo_branco", groupId)
+      .maybeSingle();
+
+    if (error) {
+      console.error("❌ Erro ao consultar unidades_whatsapp:", error);
+      return { exists: false };
+    }
+
+    if (data) {
+      console.log(`✅ Grupo encontrado em unidades_whatsapp: ${data.nome_grupo} (código: ${data.codigo_grupo})`);
+      return {
+        exists: true,
+        codigoGrupo: data.codigo_grupo,
+        nomeGrupo: data.nome_grupo,
+      };
+    }
+
+    console.log(`🚫 Grupo NÃO encontrado em unidades_whatsapp`);
+    return { exists: false };
+  } catch (error) {
+    console.error("❌ Erro na verificação de unidades_whatsapp:", error);
+    return { exists: false };
+  }
+}
+
 // ✅ Função corrigida - sintaxe correta do Supabase
 async function checkGroupInDatabase(groupId: string): Promise<boolean> {
   try {
@@ -293,19 +330,78 @@ serve(async (req: Request) => {
         const isAuthorized = await checkGroupInDatabase(chatId);
 
         if (!isAuthorized) {
-          console.log(`🚫 BOT_BASE_1: Grupo não autorizado (${chatId})`);
-          await sendUnauthorizedGroupNotification(chatId);
+          console.log(`🚫 BOT_BASE_1: Grupo não autorizado em atendente_unidades (${chatId})`);
+          
+          // Verificar se existe em unidades_whatsapp
+          const whatsappCheck = await checkGroupInWhatsappTable(chatId);
+          
+          if (whatsappCheck.exists) {
+            console.log(`📱 Grupo encontrado em unidades_whatsapp - enviando orientação de cadastro`);
+            
+            // Enviar mensagem de orientação de cadastro
+            const message = `🚫 *Unidade não vinculada*\n\n` +
+              `Olá! Identificamos que esta unidade ainda não está vinculada ao sistema.\n\n` +
+              `📋 *Código da unidade:* ${whatsappCheck.codigoGrupo || "Não identificado"}\n` +
+              `🏢 *Nome:* ${whatsappCheck.nomeGrupo || "Não identificado"}\n\n` +
+              `Para utilizar o bot, é necessário completar o cadastro da unidade.\n\n` +
+              `👉 *Acesse:* cadastro.girabot.com.br\n\n` +
+              `Após o cadastro, você poderá usar todas as funcionalidades do bot! 🤖`;
 
-          return new Response(
-            JSON.stringify({
-              success: false,
-              message: "Bot only processes messages from authorized groups",
-            }),
-            {
-              headers: { "Content-Type": "application/json", ...corsHeaders },
-              status: 403,
-            },
-          );
+            await botZapi.sendMessage(chatId, message);
+
+            // Enviar notificação interna
+            try {
+              await fetch(`${functionsBaseUrl}/create-internal-notification`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+                },
+                body: JSON.stringify({
+                  title: "⚠️ Grupo não vinculado tentou usar o bot",
+                  message: `Grupo ${whatsappCheck.nomeGrupo || chatId} (código: ${whatsappCheck.codigoGrupo || "N/A"}) existe em unidades_whatsapp mas não está vinculado em atendente_unidades`,
+                  type: "alert",
+                  payload: {
+                    group_id: chatId,
+                    codigo_grupo: whatsappCheck.codigoGrupo,
+                    nome_grupo: whatsappCheck.nomeGrupo,
+                    timestamp: new Date().toISOString(),
+                    function: "bot_base_1",
+                    needs_linking: true,
+                  },
+                }),
+              });
+            } catch (notificationError) {
+              console.error("❌ Erro ao enviar notificação interna:", notificationError);
+            }
+
+            return new Response(
+              JSON.stringify({
+                success: false,
+                message: "Group exists but not linked - registration required",
+                codigo_grupo: whatsappCheck.codigoGrupo,
+                nome_grupo: whatsappCheck.nomeGrupo,
+              }),
+              {
+                headers: { "Content-Type": "application/json", ...corsHeaders },
+                status: 403,
+              },
+            );
+          } else {
+            console.log(`🚫 Grupo completamente não autorizado - não existe em nenhuma tabela`);
+            await sendUnauthorizedGroupNotification(chatId);
+
+            return new Response(
+              JSON.stringify({
+                success: false,
+                message: "Bot only processes messages from authorized groups",
+              }),
+              {
+                headers: { "Content-Type": "application/json", ...corsHeaders },
+                status: 403,
+              },
+            );
+          }
         }
 
         console.log("✅ BOT_BASE_1: Grupo autorizado - verificando cadastro da unidade");
