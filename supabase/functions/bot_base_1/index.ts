@@ -205,25 +205,31 @@ async function sendUnauthorizedGroupNotification(groupId: string) {
   try {
     console.log(`📢 Enviando notificação para grupo não autorizado: ${groupId}`);
 
-    const notificationBody = {
-      title: "🚫 Grupo não autorizado tentou usar o bot",
-      message: `O grupo ${groupId} tentou usar o bot_base_1 mas não está cadastrado na tabela atendente_unidades`,
-      type: "alert",
-      payload: {
-        group_id: groupId,
-        timestamp: new Date().toISOString(),
-        function: "bot_base_1",
-      },
-    };
+    const functionsBaseUrl =
+      Deno.env.get("FUNCTIONS_BASE_URL") || `https://hryurntaljdisohawpqf.supabase.co/functions/v1`;
 
-    const response = await supabase.functions.invoke("create-internal-notification", {
-      body: notificationBody,
+    const response = await fetch(`${functionsBaseUrl}/create-internal-notification`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+      },
+      body: JSON.stringify({
+        title: "🚫 Grupo não autorizado tentou usar o bot",
+        message: `O grupo ${groupId} tentou usar o bot_base_1 mas não está cadastrado na tabela atendente_unidades`,
+        type: "alert",
+        payload: {
+          group_id: groupId,
+          timestamp: new Date().toISOString(),
+          function: "bot_base_1",
+        },
+      }),
     });
 
-    if (response.error) {
-      console.error("❌ Erro ao enviar notificação:", response.error);
+    if (!response.ok) {
+      console.error("❌ Erro ao enviar notificação:", await response.text());
     } else {
-      console.log("✅ Notificação enviada com sucesso:", response.data);
+      console.log("✅ Notificação enviada com sucesso");
     }
   } catch (error) {
     console.error("❌ Erro ao enviar notificação de grupo não autorizado:", error);
@@ -322,21 +328,30 @@ serve(async (req: Request) => {
           await botZapi.sendMessage(chatId, message);
 
           // Enviar notificação interna para admins
-          await supabase.functions.invoke("create-internal-notification", {
-            body: {
-              title: "⚠️ Grupo sem cadastro de unidade tentou usar o bot",
-              message: `Grupo ${unitCheck.nomeGrupo || chatId} (código: ${unitCheck.codigoGrupo || "N/A"}) tentou usar o bot mas não tem cadastro na tabela unidades`,
-              type: "alert",
-              payload: {
-                group_id: chatId,
-                codigo_grupo: unitCheck.codigoGrupo,
-                nome_grupo: unitCheck.nomeGrupo,
-                timestamp: new Date().toISOString(),
-                function: "bot_base_1",
-                missing_registration: true,
+          try {
+            await fetch(`${functionsBaseUrl}/create-internal-notification`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
               },
-            },
-          });
+              body: JSON.stringify({
+                title: "⚠️ Grupo sem cadastro de unidade tentou usar o bot",
+                message: `Grupo ${unitCheck.nomeGrupo || chatId} (código: ${unitCheck.codigoGrupo || "N/A"}) tentou usar o bot mas não tem cadastro na tabela unidades`,
+                type: "alert",
+                payload: {
+                  group_id: chatId,
+                  codigo_grupo: unitCheck.codigoGrupo,
+                  nome_grupo: unitCheck.nomeGrupo,
+                  timestamp: new Date().toISOString(),
+                  function: "bot_base_1",
+                  missing_registration: true,
+                },
+              }),
+            });
+          } catch (notificationError) {
+            console.error("❌ Erro ao enviar notificação interna:", notificationError);
+          }
 
           return new Response(
             JSON.stringify({
