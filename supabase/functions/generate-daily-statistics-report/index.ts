@@ -148,13 +148,30 @@ serve(async (req) => {
       .select('id, grupo');
 
     const unit_performance = await Promise.all(
-      (unidades || []).slice(0, 20).map(async (unidade) => {
+      (unidades || []).slice(0, 50).map(async (unidade) => {
         const { data: unitTickets } = await supabase
           .from('tickets')
           .select('*')
           .eq('unidade_id', unidade.id)
           .gte('data_abertura', startDateTime)
           .lte('data_abertura', endDateTime);
+
+        // Buscar tickets em aberto (independente da data de criação)
+        const { data: unitTicketsOpen } = await supabase
+          .from('tickets')
+          .select(`
+            codigo_ticket,
+            titulo,
+            descricao_problema,
+            status,
+            prioridade,
+            data_abertura,
+            status_sla
+          `)
+          .eq('unidade_id', unidade.id)
+          .not('status', 'in', '("concluido","cancelado")')
+          .order('data_abertura', { ascending: false })
+          .limit(10);
 
         const total = unitTickets?.length || 0;
         const resolvidos = unitTickets?.filter(t => t.status === 'concluido').length || 0;
@@ -166,6 +183,8 @@ serve(async (req) => {
           resolvidos,
           atrasados,
           taxa_resolucao: total > 0 ? ((resolvidos / total) * 100).toFixed(2) + '%' : '0%',
+          tickets_em_aberto: unitTicketsOpen || [],
+          total_abertos_atual: unitTicketsOpen?.length || 0,
         };
       })
     );
@@ -204,6 +223,7 @@ serve(async (req) => {
       return {
         codigo: t.codigo_ticket,
         titulo: t.titulo,
+        descricao_problema: t.descricao_problema || 'Sem descrição',
         prioridade: t.prioridade,
         data_abertura: new Date(t.data_abertura).toLocaleString('pt-BR'),
         data_limite_sla: dataLimite?.toLocaleString('pt-BR') || 'N/A',
@@ -211,6 +231,7 @@ serve(async (req) => {
         equipe: t.equipes?.nome || 'Não atribuído',
         responsavel: t.profiles?.nome || 'Não atribuído',
         status: t.status,
+        conversa_resumida: t.conversa ? `${(t.conversa as any[]).length} mensagens` : 'Sem conversa',
       };
     });
 
@@ -244,7 +265,8 @@ serve(async (req) => {
     // 13. PERFORMANCE DE ATENDENTES
     const { data: atendentes } = await supabase
       .from('atendentes')
-      .select('id, nome');
+      .select('id, nome, status, ativo')
+      .eq('ativo', true);
 
     const attendant_performance = await Promise.all(
       (atendentes || []).map(async (atendente) => {
@@ -260,6 +282,7 @@ serve(async (req) => {
 
         return {
           atendente: atendente.nome,
+          status_atendente: atendente.status,
           tickets_atendidos: total,
           concluidos,
           em_andamento: total - concluidos,

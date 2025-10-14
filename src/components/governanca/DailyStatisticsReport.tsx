@@ -83,9 +83,21 @@ export const DailyStatisticsReport = () => {
 
     // 7. DESEMPENHO POR UNIDADE
     csvParts.push('DESEMPENHO POR UNIDADE');
-    csvParts.push('Unidade,Total Tickets,Resolvidos,Atrasados,Taxa Resolução');
+    csvParts.push('Unidade,Total Tickets,Resolvidos,Atrasados,Taxa Resolução,Tickets Abertos Atualmente');
     reportData.data.unit_performance.forEach((u: any) => {
-      csvParts.push(`${u.unidade},${u.total_tickets},${u.resolvidos},${u.atrasados},${u.taxa_resolucao}`);
+      csvParts.push(`${u.unidade},${u.total_tickets},${u.resolvidos},${u.atrasados},${u.taxa_resolucao},${u.total_abertos_atual}`);
+    });
+    csvParts.push('\n');
+
+    // 7.1. TICKETS EM ABERTO POR UNIDADE (DETALHADO)
+    csvParts.push('TICKETS EM ABERTO POR UNIDADE (DETALHADO)');
+    csvParts.push('Unidade,Código Ticket,Título,Descrição,Status,Prioridade,Data Abertura,SLA Status');
+    reportData.data.unit_performance.forEach((u: any) => {
+      u.tickets_em_aberto?.forEach((ticket: any) => {
+        const descricao = (ticket.descricao_problema || 'Sem descrição').replace(/"/g, '""');
+        const titulo = (ticket.titulo || 'Sem título').replace(/"/g, '""');
+        csvParts.push(`${u.unidade},${ticket.codigo_ticket},"${titulo}","${descricao}",${ticket.status},${ticket.prioridade},${new Date(ticket.data_abertura).toLocaleString('pt-BR')},${ticket.status_sla || 'N/A'}`);
+      });
     });
     csvParts.push('\n');
 
@@ -99,9 +111,11 @@ export const DailyStatisticsReport = () => {
 
     // 9. TICKETS ATRASADOS
     csvParts.push('TICKETS ATRASADOS (DETALHADO)');
-    csvParts.push('Código,Título,Prioridade,Data Abertura,Data Limite SLA,Horas Atrasadas,Equipe,Responsável,Status');
+    csvParts.push('Código,Título,Descrição Problema,Prioridade,Data Abertura,Data Limite SLA,Horas Atrasadas,Equipe,Responsável,Status,Conversa');
     reportData.data.delayed_tickets.forEach((t: any) => {
-      csvParts.push(`${t.codigo},"${t.titulo}",${t.prioridade},${t.data_abertura},${t.data_limite_sla},${t.horas_atrasadas},${t.equipe},${t.responsavel},${t.status}`);
+      const descricao = (t.descricao_problema || 'Sem descrição').replace(/"/g, '""');
+      const titulo = (t.titulo || 'Sem título').replace(/"/g, '""');
+      csvParts.push(`${t.codigo},"${titulo}","${descricao}",${t.prioridade},${t.data_abertura},${t.data_limite_sla},${t.horas_atrasadas},${t.equipe},${t.responsavel},${t.status},${t.conversa_resumida}`);
     });
     csvParts.push('\n');
 
@@ -114,10 +128,10 @@ export const DailyStatisticsReport = () => {
     csvParts.push('\n');
 
     // 13. PERFORMANCE ATENDENTES
-    csvParts.push('PERFORMANCE DE ATENDENTES');
-    csvParts.push('Atendente,Tickets Atendidos,Concluídos,Em Andamento,Taxa Resolução');
+    csvParts.push('PERFORMANCE DE ATENDENTES (APENAS ATIVOS)');
+    csvParts.push('Atendente,Status,Tickets Atendidos,Concluídos,Em Andamento,Taxa Resolução');
     reportData.data.attendant_performance.forEach((a: any) => {
-      csvParts.push(`${a.atendente},${a.tickets_atendidos},${a.concluidos},${a.em_andamento},${a.taxa_resolucao}`);
+      csvParts.push(`${a.atendente},${a.status_atendente},${a.tickets_atendidos},${a.concluidos},${a.em_andamento},${a.taxa_resolucao}`);
     });
     csvParts.push('\n');
 
