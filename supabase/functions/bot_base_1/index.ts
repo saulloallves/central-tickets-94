@@ -312,7 +312,18 @@ serve(async (req: Request) => {
     const chatId = body?.phone;
 
     // Palavras-chave que disparam menu inicial
-    const KEYWORDS = ["testerobo", "menu", "robo", "ola robo", "olá robô", "ola robo", "olá robo"];
+    const KEYWORDS = [
+      "testerobo",
+      "testerobô",
+      "menu",
+      "menú",
+      "robo",
+      "robô",
+      "ola robo",
+      "ola robô",
+      "olá robo",
+      "olá robô"
+    ];
 
     const functionsBaseUrl =
       Deno.env.get("FUNCTIONS_BASE_URL") || `https://hryurntaljdisohawpqf.supabase.co/functions/v1`;
@@ -320,7 +331,7 @@ serve(async (req: Request) => {
     // 🔹 MENU INICIAL - Verificação EXATA (não frases que contenham)
     console.log("🔍 Verificando keywords:", KEYWORDS);
     console.log("🔍 Message para verificar:", `"${message}"`);
-    const keywordMatch = KEYWORDS.some((k) => message.trim() === k.toLowerCase());
+    const keywordMatch = KEYWORDS.some((k) => message.trim().toLowerCase() === k.toLowerCase());
     console.log("🔍 Keyword match encontrado:", keywordMatch);
 
     if (keywordMatch) {
