@@ -317,8 +317,8 @@ const KanbanTicketCard = memo(({ ticket, isSelected, onSelect, equipes }: Kanban
           <SLATimer
             ticketId={ticket.id}
             codigoTicket={ticket.codigo_ticket}
-            dataLimiteSLA={ticket.data_limite_sla}
-            tempoPausadoTotal={ticket.tempo_pausado_total} // ✅ NOVO
+            slaMinutosRestantes={ticket.sla_minutos_restantes}
+            slaMinutosTotais={ticket.sla_minutos_totais}
             status={ticket.status}
             slaPausado={ticket.sla_pausado || false}
             slaPausadoMensagem={ticket.sla_pausado_mensagem || false}

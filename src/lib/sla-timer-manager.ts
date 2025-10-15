@@ -15,8 +15,8 @@ type SLAUpdateCallback = (timeRemaining: {
 interface SLATicket {
   ticketId: string;
   codigoTicket: string;
-  dataLimiteSLA: string | null;
-  tempoPausadoTotal?: string; // ✅ NOVO: Intervalo PostgreSQL (ex: "11:30:00")
+  slaMinutosRestantes: number | null; // ✅ NOVO: Contador real de minutos
+  slaMinutosTotais: number | null;
   status: string;
   slaPausado: boolean;
   slaPausadoMensagem: boolean;
@@ -81,50 +81,27 @@ class SLATimerManager {
   }
 
   private calculateTimeRemaining(ticket: SLATicket) {
-    if (!ticket.dataLimiteSLA || ticket.status === 'concluido') {
+    if (!ticket.slaMinutosRestantes || ticket.status === 'concluido') {
       return { hours: 0, minutes: 0, seconds: 0, isOverdue: false, isPaused: false, totalSeconds: 0 };
     }
 
-    // SLA pausado se QUALQUER uma das condições for verdadeira
+    // ✅ Se pausado, retornar estado pausado (contador congelado)
     if (ticket.slaPausado || ticket.slaPausadoMensagem) {
       return { hours: 0, minutes: 0, seconds: 0, isOverdue: false, isPaused: true, totalSeconds: 0 };
     }
 
-    const now = new Date();
-    const slaDate = new Date(ticket.dataLimiteSLA);
-    
-    // ✅ NOVO: Adicionar tempo pausado ao deadline (data limite efetiva)
-    let effectiveDeadline = slaDate;
-    if (ticket.tempoPausadoTotal) {
-      const pausedMs = this.parsePostgresInterval(ticket.tempoPausadoTotal);
-      effectiveDeadline = new Date(slaDate.getTime() + pausedMs);
-    }
-    
-    const diffMs = effectiveDeadline.getTime() - now.getTime();
-    
-    if (diffMs <= 0) {
+    // ✅ SLA vencido se minutos restantes <= 0
+    if (ticket.slaMinutosRestantes <= 0) {
       return { hours: 0, minutes: 0, seconds: 0, isOverdue: true, isPaused: false, totalSeconds: 0 };
     }
 
-    const totalSeconds = Math.floor(diffMs / 1000);
+    // ✅ Converter minutos restantes para horas:minutos:segundos
+    const totalSeconds = ticket.slaMinutosRestantes * 60;
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
 
     return { hours, minutes, seconds, isOverdue: false, isPaused: false, totalSeconds };
-  }
-
-  // ✅ NOVO: Converter intervalo PostgreSQL para milissegundos
-  private parsePostgresInterval(interval: string): number {
-    // Formato: "HH:MM:SS" ou "HH:MM:SS.mmm"
-    const parts = interval.split(':');
-    if (parts.length === 3) {
-      const hours = parseInt(parts[0], 10);
-      const minutes = parseInt(parts[1], 10);
-      const seconds = parseFloat(parts[2]);
-      return (hours * 3600 + minutes * 60 + seconds) * 1000;
-    }
-    return 0;
   }
 }
 

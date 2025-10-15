@@ -5,8 +5,8 @@ import { slaTimerManager } from '@/lib/sla-timer-manager';
 interface SLATimerProps {
   ticketId: string;
   codigoTicket: string;
-  dataLimiteSLA: string | null;
-  tempoPausadoTotal?: string; // ✅ NOVO: Tempo pausado acumulado
+  slaMinutosRestantes: number | null; // ✅ Contador real de minutos
+  slaMinutosTotais: number | null;
   status: string;
   slaPausado?: boolean;
   slaPausadoMensagem?: boolean;
@@ -16,8 +16,8 @@ interface SLATimerProps {
 export const SLATimer = ({ 
   ticketId, 
   codigoTicket, 
-  dataLimiteSLA, 
-  tempoPausadoTotal, // ✅ NOVO
+  slaMinutosRestantes, // ✅ Contador real
+  slaMinutosTotais,
   status, 
   slaPausado = false,
   slaPausadoMensagem = false,
@@ -39,8 +39,8 @@ export const SLATimer = ({
     slaTimerManager.register({
       ticketId,
       codigoTicket,
-      dataLimiteSLA,
-      tempoPausadoTotal, // ✅ NOVO: Passar tempo pausado para o manager
+      slaMinutosRestantes, // ✅ Passar contador de minutos
+      slaMinutosTotais,
       status,
       slaPausado,
       slaPausadoMensagem,
@@ -61,9 +61,9 @@ export const SLATimer = ({
     return () => {
       slaTimerManager.unregister(ticketId);
     };
-  }, [ticketId, codigoTicket, dataLimiteSLA, tempoPausadoTotal, status, slaPausado, slaPausadoMensagem, onSLAExpired, toast]);
+  }, [ticketId, codigoTicket, slaMinutosRestantes, slaMinutosTotais, status, slaPausado, slaPausadoMensagem, onSLAExpired, toast]);
 
-  if (!dataLimiteSLA || status === 'concluido') {
+  if (!slaMinutosRestantes || status === 'concluido') {
     return null;
   }
 
@@ -96,11 +96,14 @@ export const SLATimer = ({
 
   // Calcula a porcentagem do SLA consumido para determinar a cor
   const getSLAColor = () => {
-    const totalTime = timeRemaining.totalSeconds;
-    if (totalTime > 3600) return 'text-muted-foreground'; // Mais de 1 hora - normal
-    if (totalTime > 1800) return 'text-yellow-600'; // 30-60 min - atenção
-    if (totalTime > 600) return 'text-orange-600'; // 10-30 min - alerta
-    return 'text-destructive'; // Menos de 10 min - crítico
+    if (!slaMinutosTotais) return 'text-muted-foreground';
+    
+    const percentualRestante = (slaMinutosRestantes || 0) / slaMinutosTotais;
+    
+    if (percentualRestante > 0.5) return 'text-muted-foreground'; // Mais de 50% - normal
+    if (percentualRestante > 0.25) return 'text-yellow-600'; // 25-50% - atenção
+    if (percentualRestante > 0.1) return 'text-orange-600'; // 10-25% - alerta
+    return 'text-destructive'; // Menos de 10% - crítico
   };
 
   return (
