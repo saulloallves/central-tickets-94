@@ -137,6 +137,22 @@ serve(async (req) => {
       // Salvar estado conversacional
       await saveConversationState(supabase, phone, instanceId, ticketId);
 
+      // ✅ CRITICAL: Pausar o SLA marcando APENAS sla_pausado_mensagem
+      // sla_pausado será calculado automaticamente (mensagem OR horário)
+      const { error: pauseError } = await supabase
+        .from('tickets')
+        .update({ 
+          sla_pausado_mensagem: true,  // ← Flag específica de aguardando resposta
+          sla_pausado_em: new Date().toISOString()
+        })
+        .eq('id', ticketId);
+      
+      if (pauseError) {
+        console.error('❌ Erro ao pausar SLA (aguardando resposta):', pauseError);
+      } else {
+        console.log(`✅ SLA pausado: aguardando resposta do franqueado (ticket #${ticket.codigo_ticket})`);
+      }
+
       // Enviar mensagem pedindo resposta
       const message = `📝 *Responder Ticket #${ticket.codigo_ticket}*
 

@@ -3030,6 +3030,7 @@ export type Database = {
           sla_minutos_totais: number | null
           sla_pausado: boolean | null
           sla_pausado_em: string | null
+          sla_pausado_horario: boolean | null
           sla_pausado_mensagem: boolean | null
           sla_ultima_atualizacao: string | null
           sla_vencido_em: string | null
@@ -3074,6 +3075,7 @@ export type Database = {
           sla_minutos_totais?: number | null
           sla_pausado?: boolean | null
           sla_pausado_em?: string | null
+          sla_pausado_horario?: boolean | null
           sla_pausado_mensagem?: boolean | null
           sla_ultima_atualizacao?: string | null
           sla_vencido_em?: string | null
@@ -3118,6 +3120,7 @@ export type Database = {
           sla_minutos_totais?: number | null
           sla_pausado?: boolean | null
           sla_pausado_em?: string | null
+          sla_pausado_horario?: boolean | null
           sla_pausado_mensagem?: boolean | null
           sla_ultima_atualizacao?: string | null
           sla_vencido_em?: string | null

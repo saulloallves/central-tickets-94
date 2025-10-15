@@ -38,12 +38,13 @@ Deno.serve(async (req) => {
       // PAUSAR SLA (às 18h30)
       // ========================================
       
-      // Buscar tickets que precisam ser pausados (incluindo aguardando_resposta)
+      // Buscar tickets ATIVOS que ainda não estão pausados por horário
+      // Não incluir "aguardando_resposta" pois esses já estão pausados por MENSAGEM
       const { data: ticketsToPause, error: fetchError } = await supabase
         .from('tickets')
-        .select('id, codigo_ticket, data_limite_sla, data_abertura')
-        .in('status', ['aberto', 'em_atendimento', 'aguardando_resposta'])
-        .eq('sla_pausado', false)
+        .select('id, codigo_ticket, data_limite_sla, data_abertura, sla_pausado_mensagem')
+        .in('status', ['aberto', 'em_atendimento', 'escalonado'])
+        .eq('sla_pausado_horario', false) // ← Filtro específico!
         .not('data_limite_sla', 'is', null);
 
       if (fetchError) {
@@ -61,11 +62,12 @@ Deno.serve(async (req) => {
           const slaLimit = new Date(ticket.data_limite_sla);
           const timeRemaining = Math.floor((slaLimit.getTime() - now.getTime()) / 1000 / 60); // minutos
 
-          // Pausar ticket
+          // ✅ CRITICAL: Pausar marcando APENAS sla_pausado_horario
+          // sla_pausado será calculado automaticamente (mensagem OR horário)
           const { error: updateError } = await supabase
             .from('tickets')
             .update({
-              sla_pausado: true,
+              sla_pausado_horario: true,  // ← Flag específica de horário
               sla_pausado_em: now.toISOString(),
             })
             .eq('id', ticket.id);
@@ -111,13 +113,11 @@ Deno.serve(async (req) => {
       // DESPAUSAR SLA (às 8h30)
       // ========================================
       
-      // Buscar tickets pausados (apenas os que devem ser despausados)
-      // ⚠️ NÃO despausar tickets em 'aguardando_resposta' (pausados intencionalmente)
+      // Buscar tickets pausados POR HORÁRIO (não incluir os pausados por mensagem!)
       const { data: ticketsToResume, error: fetchError } = await supabase
         .from('tickets')
-        .select('id, codigo_ticket, data_limite_sla, sla_pausado_em, tempo_pausado_total, data_abertura, status')
-        .eq('sla_pausado', true)
-        .in('status', ['aberto', 'em_atendimento'])
+        .select('id, codigo_ticket, data_limite_sla, sla_pausado_em, tempo_pausado_total, data_abertura, status, sla_pausado_mensagem')
+        .eq('sla_pausado_horario', true)  // ← Filtro específico para pausa de horário!
         .not('sla_pausado_em', 'is', null);
 
       if (fetchError) {
@@ -167,12 +167,13 @@ Deno.serve(async (req) => {
           console.log(`  - sla_half_time calculado: ${halfSlaTime.toISOString()}`);
           console.log(`  - data_limite_sla: ${newSlaLimit.toISOString()}`);
 
-          // Despausar ticket
+          // ✅ CRITICAL: Despausar APENAS o horário, mantém sla_pausado_mensagem se estiver TRUE
           const { error: updateError } = await supabase
             .from('tickets')
             .update({
-              sla_pausado: false,
-              sla_pausado_em: null,
+              sla_pausado_horario: false,  // ← Despausa APENAS horário
+              // sla_pausado será calculado automaticamente: sla_pausado_mensagem OR sla_pausado_horario
+              sla_pausado_em: ticket.sla_pausado_mensagem ? ticket.sla_pausado_em : null,
               data_limite_sla: newSlaLimit.toISOString(),
               sla_half_time: halfSlaTime.toISOString(),
               tempo_pausado_total: `${totalPausedMinutes} minutes`,
@@ -200,7 +201,8 @@ Deno.serve(async (req) => {
             p_canal: 'painel_interno',
           });
 
-          console.log(`▶️ Ticket ${ticket.codigo_ticket} - SLA despausado (+${minutesPaused} min)`);
+          const stillPaused = ticket.sla_pausado_mensagem ? ' (ainda pausado aguardando resposta)' : '';
+          console.log(`▶️ Ticket ${ticket.codigo_ticket} - SLA despausado de horário${stillPaused} (+${minutesPaused} min)`);
         }
       }
 
