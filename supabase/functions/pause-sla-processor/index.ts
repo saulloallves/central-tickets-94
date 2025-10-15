@@ -38,12 +38,14 @@ Deno.serve(async (req) => {
       // PAUSAR SLA (às 18h30)
       // ========================================
       
-      // Buscar tickets que precisam ser pausados (incluindo aguardando_resposta)
+      // Buscar tickets que precisam ser pausados (apenas aberto e em_atendimento)
+      // ⚠️ Tickets em aguardando_resposta NÃO devem ser pausados automaticamente
       const { data: ticketsToPause, error: fetchError } = await supabase
         .from('tickets')
         .select('id, codigo_ticket, data_limite_sla, data_abertura')
-        .in('status', ['aberto', 'em_atendimento', 'aguardando_resposta'])
+        .in('status', ['aberto', 'em_atendimento'])
         .eq('sla_pausado', false)
+        .eq('sla_pausado_mensagem', false)
         .not('data_limite_sla', 'is', null);
 
       if (fetchError) {
