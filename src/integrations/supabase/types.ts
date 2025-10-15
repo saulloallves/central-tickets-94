@@ -3766,6 +3766,13 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      corrigir_tickets_sla_vencido: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          detalhes: Json
+          tickets_corrigidos: number
+        }[]
+      }
       create_crise: {
         Args: {
           p_abriu_por?: string
