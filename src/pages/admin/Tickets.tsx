@@ -170,6 +170,18 @@ const Tickets = () => {
           
           <div className="flex flex-wrap gap-1 md:gap-2">
             <Button 
+              variant={showFilters ? "default" : "outline"}
+              size="sm"
+              onClick={() => setShowFilters(!showFilters)}
+              className="gap-2"
+            >
+              <Filter className="h-4 w-4" />
+              <span className="hidden md:inline">
+                {showFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}
+              </span>
+            </Button>
+            
+            <Button 
               variant="outline" 
               size="sm"
               onClick={() => setAdvancedSearchOpen(true)}
