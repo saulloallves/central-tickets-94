@@ -71,11 +71,8 @@ export function useAdvancedTicketSearch(filters: SearchFilters, page: number, pa
 
       // Filtro de busca por texto
       if (filters.search && filters.search.trim() !== '') {
-        query = query.or(`
-          codigo_ticket.ilike.%${filters.search}%,
-          titulo.ilike.%${filters.search}%,
-          descricao_problema.ilike.%${filters.search}%
-        `);
+        const searchTerm = filters.search.trim();
+        query = query.or(`codigo_ticket.ilike.%${searchTerm}%,titulo.ilike.%${searchTerm}%,descricao_problema.ilike.%${searchTerm}%`);
       }
 
       // Filtro de data início
