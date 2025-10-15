@@ -16,7 +16,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useRole } from '@/hooks/useRole';
 import { useOptimisticTicketActions } from '@/hooks/useOptimisticTicketActions';
 import { ImageModal } from '@/components/ui/image-modal';
-
+import { SLATimer } from './SLATimer';
 
 import { TicketActions } from './TicketActions';
 import { supabase } from '@/integrations/supabase/client';
@@ -568,37 +568,6 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
     }
   };
 
-  const getSLAStatus = () => {
-    if (!ticket?.data_limite_sla) return null;
-    
-    const now = Date.now();
-    const deadline = new Date(ticket.data_limite_sla).getTime();
-    const remaining = deadline - now;
-    const isOverdue = remaining < 0;
-    
-    if (isOverdue) {
-      return {
-        color: 'text-red-600',
-        icon: <AlertTriangle className="h-4 w-4" />,
-        text: `Vencido há ${Math.abs(Math.round(remaining / (1000 * 60)))} min`
-      };
-    }
-    
-    const hoursRemaining = Math.round(remaining / (1000 * 60 * 60));
-    if (hoursRemaining < 2) {
-      return {
-        color: 'text-orange-600',
-        icon: <Clock className="h-4 w-4" />,
-        text: `${Math.round(remaining / (1000 * 60))} min restantes`
-      };
-    }
-    
-    return {
-      color: 'text-green-600',
-      icon: <Clock className="h-4 w-4" />,
-      text: `${hoursRemaining}h restantes`
-    };
-  };
 
   const getTicketDisplayTitle = (ticket: any) => {
     if (ticket?.titulo) {
@@ -632,7 +601,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
     );
   }
 
-  const slaStatus = getSLAStatus();
+  
 
   const handleStartAttendance = async () => {
     if (!ticket || isTicketPending(ticketId)) return;
@@ -858,13 +827,16 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                 <span className="text-xs text-muted-foreground font-medium">Aguardando Atendimento</span>
               </div>
             </div>
-            {/* SLA inline */}
-            {slaStatus && (
-              <Badge variant="outline" className={`${slaStatus.color} flex items-center gap-1 bg-background/50 w-fit`}>
-                {slaStatus.icon}
-                <span className="text-xs font-medium">{slaStatus.text}</span>
-              </Badge>
-            )}
+            {/* SLA Timer */}
+            <SLATimer
+              ticketId={ticket.id}
+              codigoTicket={ticket.codigo_ticket}
+              slaMinutosRestantes={ticket.sla_minutos_restantes}
+              slaMinutosTotais={ticket.sla_minutos_totais}
+              status={ticket.status}
+              slaPausado={ticket.sla_pausado || false}
+              slaPausadoMensagem={ticket.sla_pausado_mensagem || false}
+            />
           </div>
         </div>
 
@@ -994,20 +966,18 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
           </div>
         </div>
         
-        {/* SLA Status Row */}
-        {slaStatus && (
-          <div className="flex items-center gap-3 pt-2">
-            <Badge variant="outline" className={`${slaStatus.color} flex items-center gap-1 bg-background/50`}>
-              {slaStatus.icon}
-              <span className="text-xs font-medium">{slaStatus.text}</span>
-            </Badge>
-            {ticket.data_limite_sla && (
-              <span className="text-xs text-muted-foreground">
-                Vence em {new Date(ticket.data_limite_sla).toLocaleString('pt-BR')}
-              </span>
-            )}
-          </div>
-        )}
+        {/* SLA Timer */}
+        <div className="pt-2">
+          <SLATimer
+            ticketId={ticket.id}
+            codigoTicket={ticket.codigo_ticket}
+            slaMinutosRestantes={ticket.sla_minutos_restantes}
+            slaMinutosTotais={ticket.sla_minutos_totais}
+            status={ticket.status}
+            slaPausado={ticket.sla_pausado || false}
+            slaPausadoMensagem={ticket.sla_pausado_mensagem || false}
+          />
+        </div>
       </div>
 
       {/* Content - Scrollable */}
