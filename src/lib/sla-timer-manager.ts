@@ -12,10 +12,10 @@ type SLAUpdateCallback = (timeRemaining: {
   totalSeconds: number;
 }) => void;
 
-interface SLATicket {
+interface SLATicketInput {
   ticketId: string;
   codigoTicket: string;
-  slaMinutosRestantes: number | null; // ✅ NOVO: Contador real de minutos
+  slaMinutosRestantes: number | null;
   slaMinutosTotais: number | null;
   status: string;
   slaPausado: boolean;
@@ -24,13 +24,26 @@ interface SLATicket {
   onExpired?: (ticketId: string) => void;
 }
 
+interface SLATicket extends SLATicketInput {
+  localSecondsRemaining: number; // ✅ Contador local em segundos (UI)
+  lastSyncedMinutes: number | null; // ✅ Último valor sincronizado do banco
+}
+
 class SLATimerManager {
   private tickets: Map<string, SLATicket> = new Map();
   private intervalId: NodeJS.Timeout | null = null;
   private lastExpiredCheck: Map<string, boolean> = new Map();
 
-  register(ticket: SLATicket) {
-    this.tickets.set(ticket.ticketId, ticket);
+  register(ticket: SLATicketInput) {
+    // ✅ Inicializar contador local em segundos
+    const initialSeconds = (ticket.slaMinutosRestantes || 0) * 60;
+    const ticketWithLocalTimer: SLATicket = {
+      ...ticket,
+      localSecondsRemaining: initialSeconds,
+      lastSyncedMinutes: ticket.slaMinutosRestantes
+    };
+    
+    this.tickets.set(ticket.ticketId, ticketWithLocalTimer);
     this.lastExpiredCheck.set(ticket.ticketId, false);
     
     // Start global timer if not running
@@ -55,7 +68,18 @@ class SLATimerManager {
 
   private startTimer() {
     this.intervalId = setInterval(() => {
-      this.tickets.forEach((_, ticketId) => {
+      this.tickets.forEach((ticket, ticketId) => {
+        // ✅ Resincronizar se o banco atualizou (via realtime)
+        if (ticket.lastSyncedMinutes !== ticket.slaMinutosRestantes) {
+          ticket.localSecondsRemaining = (ticket.slaMinutosRestantes || 0) * 60;
+          ticket.lastSyncedMinutes = ticket.slaMinutosRestantes;
+        }
+        
+        // ✅ Decrementar contador local se não estiver pausado
+        if (!ticket.slaPausado && !ticket.slaPausadoMensagem && ticket.status !== 'concluido') {
+          ticket.localSecondsRemaining = Math.max(0, ticket.localSecondsRemaining - 1);
+        }
+        
         this.updateTicket(ticketId);
       });
     }, 1000);
@@ -90,13 +114,13 @@ class SLATimerManager {
       return { hours: 0, minutes: 0, seconds: 0, isOverdue: false, isPaused: true, totalSeconds: 0 };
     }
 
-    // ✅ SLA vencido se minutos restantes <= 0
-    if (ticket.slaMinutosRestantes <= 0) {
+    // ✅ SLA vencido se contador local chegou a zero
+    if (ticket.localSecondsRemaining <= 0) {
       return { hours: 0, minutes: 0, seconds: 0, isOverdue: true, isPaused: false, totalSeconds: 0 };
     }
 
-    // ✅ Converter minutos restantes para horas:minutos:segundos
-    const totalSeconds = ticket.slaMinutosRestantes * 60;
+    // ✅ Usar contador local (em segundos) para exibição em tempo real
+    const totalSeconds = ticket.localSecondsRemaining;
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
