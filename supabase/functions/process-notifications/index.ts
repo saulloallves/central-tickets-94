@@ -1330,23 +1330,23 @@ serve(async (req) => {
         console.log('\n📝 ===== PREPARANDO MENSAGEM SLA BREACH =====');
         
         // Calcular tempo desde que venceu usando sla_vencido_em
-        let tempoRestanteSLA: string;
+        let tempoVencidoSLA: string;
         
         if (ticket.sla_minutos_restantes > 0) {
           // Ainda não venceu
           const horas = Math.floor(ticket.sla_minutos_restantes / 60);
           const minutos = ticket.sla_minutos_restantes % 60;
-          tempoRestanteSLA = `${horas}h ${minutos}min restantes`;
+          tempoVencidoSLA = `${horas}h ${minutos}min restantes`;
         } else if (ticket.sla_vencido_em) {
           // Calcular há quanto tempo venceu
           const tempoVencidoMs = Date.now() - new Date(ticket.sla_vencido_em).getTime();
           const minutosVencido = Math.floor(tempoVencidoMs / 60000);
           const horas = Math.floor(minutosVencido / 60);
           const minutos = minutosVencido % 60;
-          tempoRestanteSLA = `Vencido há ${horas}h ${minutos}min`;
+          tempoVencidoSLA = `Vencido há ${horas}h ${minutos}min`;
         } else {
           // Fallback (não deveria acontecer)
-          tempoRestanteSLA = 'SLA vencido';
+          tempoVencidoSLA = 'SLA vencido';
         }
 
         const mensagemSLABreach = processTemplate(templateSLABreach, {
@@ -1359,7 +1359,7 @@ serve(async (req) => {
           status: ticket.status,
           equipe_responsavel: equipeDataSLABreach?.nome || 'Não atribuída',
           descricao_problema: ticket.descricao_problema,
-          tempo_restante_sla: tempoRestanteSLA,
+          tempo_restante_sla: tempoVencidoSLA,
           data_abertura: ticket.data_abertura ? new Date(ticket.data_abertura).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : 'Não informada',
           data_limite_sla: ticket.data_limite_sla ? new Date(ticket.data_limite_sla).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : 'Não informada'
         });
