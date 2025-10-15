@@ -35,16 +35,33 @@ class SLATimerManager {
   private lastExpiredCheck: Map<string, boolean> = new Map();
 
   register(ticket: SLATicketInput) {
-    // ✅ Inicializar contador local em segundos
-    const initialSeconds = (ticket.slaMinutosRestantes || 0) * 60;
+    const existingTicket = this.tickets.get(ticket.ticketId);
+    
+    let localSecondsRemaining: number;
+    
+    // ✅ Se ticket já existe E o banco não mudou, preservar contador local
+    if (existingTicket && existingTicket.lastSyncedMinutes === ticket.slaMinutosRestantes) {
+      localSecondsRemaining = existingTicket.localSecondsRemaining;
+      console.log(`⏱️ Preservando timer local do ticket ${ticket.codigoTicket}: ${localSecondsRemaining}s`);
+    } else {
+      // ✅ Ticket novo OU banco atualizou: inicializar/resincronizar
+      localSecondsRemaining = (ticket.slaMinutosRestantes || 0) * 60;
+      if (existingTicket) {
+        console.log(`🔄 Ressincronizando timer do ticket ${ticket.codigoTicket}: ${ticket.slaMinutosRestantes} min`);
+      }
+    }
+    
     const ticketWithLocalTimer: SLATicket = {
       ...ticket,
-      localSecondsRemaining: initialSeconds,
+      localSecondsRemaining,
       lastSyncedMinutes: ticket.slaMinutosRestantes
     };
     
     this.tickets.set(ticket.ticketId, ticketWithLocalTimer);
-    this.lastExpiredCheck.set(ticket.ticketId, false);
+    
+    if (!existingTicket) {
+      this.lastExpiredCheck.set(ticket.ticketId, false);
+    }
     
     // Start global timer if not running
     if (!this.intervalId) {
