@@ -5,8 +5,10 @@ import { slaTimerManager } from '@/lib/sla-timer-manager';
 interface SLATimerProps {
   ticketId: string;
   codigoTicket: string;
-  slaMinutosRestantes: number | null; // ✅ Contador real de minutos
+  dataAbertura: string; // ✅ Data de abertura para cálculo real
+  slaMinutosRestantes: number | null;
   slaMinutosTotais: number | null;
+  tempoPausadoTotal?: number; // ✅ Tempo pausado em minutos
   status: string;
   slaPausado?: boolean;
   slaPausadoMensagem?: boolean;
@@ -15,9 +17,11 @@ interface SLATimerProps {
 
 export const SLATimer = ({ 
   ticketId, 
-  codigoTicket, 
-  slaMinutosRestantes, // ✅ Contador real
+  codigoTicket,
+  dataAbertura, // ✅ Receber data de abertura
+  slaMinutosRestantes,
   slaMinutosTotais,
+  tempoPausadoTotal = 0, // ✅ Receber tempo pausado
   status, 
   slaPausado = false,
   slaPausadoMensagem = false,
@@ -39,8 +43,10 @@ export const SLATimer = ({
     slaTimerManager.register({
       ticketId,
       codigoTicket,
-      slaMinutosRestantes, // ✅ Passar contador de minutos
+      dataAbertura, // ✅ Passar data de abertura
+      slaMinutosRestantes,
       slaMinutosTotais,
+      tempoPausadoTotal, // ✅ Passar tempo pausado
       status,
       slaPausado,
       slaPausadoMensagem,
@@ -61,7 +67,7 @@ export const SLATimer = ({
     return () => {
       slaTimerManager.unregister(ticketId);
     };
-  }, [ticketId, codigoTicket, slaMinutosRestantes, slaMinutosTotais, status, slaPausado, slaPausadoMensagem, onSLAExpired, toast]);
+  }, [ticketId, codigoTicket, dataAbertura, slaMinutosRestantes, slaMinutosTotais, tempoPausadoTotal, status, slaPausado, slaPausadoMensagem, onSLAExpired, toast]);
 
   if (slaMinutosRestantes == null || status === 'concluido') {
     return null;

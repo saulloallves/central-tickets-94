@@ -20,6 +20,17 @@ serve(async (req) => {
 
     console.log('🕐 Iniciando processamento de SLAs...');
 
+    // 0. ✅ Decrementar SLAs de tickets ativos (conta o tempo passado)
+    console.log('⏱️ Decrementando SLAs de tickets ativos...');
+    const { data: decrementResult, error: decrementError } = await supabaseClient
+      .rpc('decrementar_sla_minutos');
+
+    if (decrementError) {
+      console.error('❌ Erro ao decrementar SLAs:', decrementError);
+    } else {
+      console.log(`✅ SLAs decrementados: ${decrementResult?.tickets_atualizados || 0} tickets atualizados, ${decrementResult?.tickets_vencidos || 0} vencidos`);
+    }
+
     // 1. Processar SLAs vencidos
     const { data: overdueResult, error: overdueError } = await supabaseClient
       .rpc('process_overdue_slas');
