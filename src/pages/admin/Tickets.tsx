@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTicketNotifications } from '@/hooks/useTicketNotifications';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
-import { Plus, Filter, Calendar, Users, Clock, AlertTriangle, Brain, X, Loader2 } from 'lucide-react';
+import { Plus, Filter, Calendar, Users, Clock, AlertTriangle, Brain, X, Loader2, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -22,6 +22,7 @@ import { useUserEquipes } from '@/hooks/useUserEquipes';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { TestFranqueadoNotification } from '@/components/notifications/TestFranqueadoNotification';
+import { AdvancedTicketSearch } from '@/components/tickets/AdvancedTicketSearch';
 
 const Tickets = () => {
   const { isAdmin, isSupervisor, loading: roleLoading } = useRole();
@@ -36,6 +37,7 @@ const Tickets = () => {
   const [selectedEquipeForAnalysis, setSelectedEquipeForAnalysis] = useState<string>('');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [advancedSearchOpen, setAdvancedSearchOpen] = useState(false);
   
   // ✅ FILTRO INSTANTÂNEO - Sem debounce, sem complicação
   const [filters, setFilters] = useState({
@@ -167,6 +169,15 @@ const Tickets = () => {
           </div>
           
           <div className="flex flex-wrap gap-1 md:gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setAdvancedSearchOpen(true)}
+              className="gap-2"
+            >
+              <Search className="h-4 w-4" />
+              <span className="hidden md:inline">Consulta Avançada</span>
+            </Button>
             <NotificationButton isExpanded={false} variant="tickets" />
           </div>
         </div>
@@ -348,6 +359,16 @@ const Tickets = () => {
           onOpenChange={setBulkAnalysisOpen}
           equipeId={selectedEquipeForAnalysis || equipes[0]?.id || ''}
           equipeNome={equipes.find(e => e.id === selectedEquipeForAnalysis)?.nome || equipes[0]?.nome || 'Equipe'}
+        />
+
+        {/* Advanced Search Dialog */}
+        <AdvancedTicketSearch 
+          open={advancedSearchOpen}
+          onOpenChange={setAdvancedSearchOpen}
+          onTicketSelect={(ticketId) => {
+            setSelectedTicketId(ticketId);
+            setTicketModalOpen(true);
+          }}
         />
       </div>
     </div>;
