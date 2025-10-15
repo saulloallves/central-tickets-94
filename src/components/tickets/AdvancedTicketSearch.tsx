@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { Search, CalendarIcon, Download, X, Eye, Filter } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -34,7 +34,7 @@ export function AdvancedTicketSearch({ open, onOpenChange, onTicketSelect }: Adv
   const [page, setPage] = useState(1);
   const pageSize = 50;
 
-  const { tickets, totalCount, loading, unidades } = useAdvancedTicketSearch(filters, page, pageSize);
+  const { tickets, totalCount, loading, unidades } = useAdvancedTicketSearch(filters, page, pageSize, open);
 
   const handleClearFilters = () => {
     setFilters({
@@ -131,6 +131,9 @@ export function AdvancedTicketSearch({ open, onOpenChange, onTicketSelect }: Adv
             <Search className="h-5 w-5" />
             Consulta Avançada de Tickets
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Pesquise e filtre tickets com múltiplos critérios combinados
+          </DialogDescription>
         </DialogHeader>
 
         {/* Painel de Filtros */}

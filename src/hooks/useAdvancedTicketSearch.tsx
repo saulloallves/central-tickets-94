@@ -19,10 +19,10 @@ interface Unidade {
   codigo_grupo: string;
 }
 
-export function useAdvancedTicketSearch(filters: SearchFilters, page: number, pageSize: number) {
+export function useAdvancedTicketSearch(filters: SearchFilters, page: number, pageSize: number, isOpen: boolean) {
   const [tickets, setTickets] = useState<any[]>([]);
   const [totalCount, setTotalCount] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // ✅ Começa como true
   const [unidades, setUnidades] = useState<Unidade[]>([]);
   const { toast } = useToast();
 
@@ -46,7 +46,14 @@ export function useAdvancedTicketSearch(filters: SearchFilters, page: number, pa
 
   // Fetch tickets com filtros
   useEffect(() => {
+    // ✅ Só busca quando o modal está aberto
+    if (!isOpen) {
+      console.log('🔍 Advanced Search - Modal fechado, pulando busca');
+      return;
+    }
+
     const fetchTickets = async () => {
+      console.log('🔍 Advanced Search - Iniciando busca com filtros:', filters);
       setLoading(true);
       
       let query = supabase
@@ -109,6 +116,12 @@ export function useAdvancedTicketSearch(filters: SearchFilters, page: number, pa
 
       const { data, error, count } = await query;
       
+      console.log('🔍 Advanced Search - Resultado:', { 
+        tickets: data?.length || 0, 
+        total: count,
+        error: error?.message 
+      });
+      
       if (error) {
         console.error('Erro ao buscar tickets:', error);
         toast({
@@ -127,7 +140,7 @@ export function useAdvancedTicketSearch(filters: SearchFilters, page: number, pa
     };
 
     fetchTickets();
-  }, [filters, page, pageSize, toast]);
+  }, [filters, page, pageSize, toast, isOpen]);
 
   return { tickets, totalCount, loading, unidades };
 }
