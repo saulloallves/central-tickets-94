@@ -61,8 +61,7 @@ export function useAdvancedTicketSearch(filters: SearchFilters, page: number, pa
         .select(`
           *,
           unidades!tickets_unidade_id_fkey(id, grupo, codigo_grupo),
-          equipes!tickets_equipe_responsavel_id_fkey(id, nome),
-          profiles!tickets_criado_por_fkey(id, nome, email)
+          equipes!tickets_equipe_responsavel_id_fkey(id, nome)
         `, { count: 'exact' });
 
       // Filtro de busca por texto

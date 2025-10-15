@@ -66,10 +66,10 @@ export function AdvancedTicketSearch({ open, onOpenChange, onTicketSelect }: Adv
     ];
 
     const rows = tickets.map(t => [
-      t.codigo_ticket || '',
+      t.codigo_ticket,
       format(new Date(t.data_abertura), 'dd/MM/yyyy HH:mm'),
       t.unidades?.grupo || '',
-      t.profiles?.nome || '',
+      t.unidades?.codigo_grupo || '',
       t.titulo || '',
       t.descricao_problema || '',
       t.status || '',
@@ -301,7 +301,7 @@ export function AdvancedTicketSearch({ open, onOpenChange, onTicketSelect }: Adv
                   <TableHead>Código</TableHead>
                   <TableHead>Data Abertura</TableHead>
                   <TableHead>Unidade</TableHead>
-                  <TableHead>Franqueado</TableHead>
+                  <TableHead>Código Grupo</TableHead>
                   <TableHead>Título</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Prioridade</TableHead>
@@ -316,7 +316,7 @@ export function AdvancedTicketSearch({ open, onOpenChange, onTicketSelect }: Adv
                     <TableCell className="font-mono text-sm">{ticket.codigo_ticket}</TableCell>
                     <TableCell className="text-sm">{format(new Date(ticket.data_abertura), 'dd/MM/yyyy HH:mm')}</TableCell>
                     <TableCell className="text-sm">{ticket.unidades?.grupo || 'N/A'}</TableCell>
-                    <TableCell className="text-sm">{ticket.profiles?.nome || 'N/A'}</TableCell>
+                    <TableCell className="text-sm">{ticket.unidades?.codigo_grupo || ticket.codigo_ticket?.split('-')[0] || 'N/A'}</TableCell>
                     <TableCell className="max-w-xs truncate text-sm">{ticket.titulo}</TableCell>
                     <TableCell>
                       <Badge variant={getStatusVariant(ticket.status)}>
