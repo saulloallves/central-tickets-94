@@ -26,8 +26,6 @@ export function AdvancedTicketSearch({ open, onOpenChange, onTicketSelect }: Adv
     search: '',
     dataInicio: undefined as Date | undefined,
     dataFim: undefined as Date | undefined,
-    dataFinalizacaoInicio: undefined as Date | undefined,
-    dataFinalizacaoFim: undefined as Date | undefined,
     unidade_id: 'all',
     status: 'all',
     prioridade: 'all',
@@ -45,8 +43,6 @@ export function AdvancedTicketSearch({ open, onOpenChange, onTicketSelect }: Adv
       search: '',
       dataInicio: undefined,
       dataFim: undefined,
-      dataFinalizacaoInicio: undefined,
-      dataFinalizacaoFim: undefined,
       unidade_id: 'all',
       status: 'all',
       prioridade: 'all',
@@ -231,52 +227,6 @@ export function AdvancedTicketSearch({ open, onOpenChange, onTicketSelect }: Adv
             </div>
           </div>
 
-          {/* Linha 3: Datas de Finalização */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Date Picker - Data Finalização Início */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Data Finalização (Início)</label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn("w-full justify-start text-left", !filters.dataFinalizacaoInicio && "text-muted-foreground")}>
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {filters.dataFinalizacaoInicio ? format(filters.dataFinalizacaoInicio, 'dd/MM/yyyy') : 'Selecionar data'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar 
-                    mode="single"
-                    selected={filters.dataFinalizacaoInicio}
-                    onSelect={date => setFilters(prev => ({ ...prev, dataFinalizacaoInicio: date }))}
-                    initialFocus
-                    className="pointer-events-auto"
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            {/* Date Picker - Data Finalização Fim */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Data Finalização (Fim)</label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn("w-full justify-start text-left", !filters.dataFinalizacaoFim && "text-muted-foreground")}>
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {filters.dataFinalizacaoFim ? format(filters.dataFinalizacaoFim, 'dd/MM/yyyy') : 'Selecionar data'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar 
-                    mode="single"
-                    selected={filters.dataFinalizacaoFim}
-                    onSelect={date => setFilters(prev => ({ ...prev, dataFinalizacaoFim: date }))}
-                    initialFocus
-                    className="pointer-events-auto"
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-          </div>
 
           {/* Linha 4: Selects de Filtros */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">

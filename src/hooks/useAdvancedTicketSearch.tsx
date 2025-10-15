@@ -11,8 +11,6 @@ interface SearchFilters {
   search: string;
   dataInicio?: Date;
   dataFim?: Date;
-  dataFinalizacaoInicio?: Date;
-  dataFinalizacaoFim?: Date;
   unidade_id: string;
   status: string | 'all';
   prioridade: string | 'all';
@@ -77,32 +75,18 @@ export function useAdvancedTicketSearch(filters: SearchFilters, page: number, pa
         query = query.or(`codigo_ticket.ilike.%${searchTerm}%,titulo.ilike.%${searchTerm}%,descricao_problema.ilike.%${searchTerm}%`);
       }
 
-      // Filtro de data abertura início
+      // Filtro de data início
       if (filters.dataInicio) {
         const startOfDay = new Date(filters.dataInicio);
         startOfDay.setHours(0, 0, 0, 0);
         query = query.gte('data_abertura', startOfDay.toISOString());
       }
 
-      // Filtro de data abertura fim
+      // Filtro de data fim
       if (filters.dataFim) {
         const endOfDay = new Date(filters.dataFim);
         endOfDay.setHours(23, 59, 59, 999);
         query = query.lte('data_abertura', endOfDay.toISOString());
-      }
-
-      // Filtro de data finalização início
-      if (filters.dataFinalizacaoInicio) {
-        const startOfDay = new Date(filters.dataFinalizacaoInicio);
-        startOfDay.setHours(0, 0, 0, 0);
-        query = query.gte('data_conclusao', startOfDay.toISOString());
-      }
-
-      // Filtro de data finalização fim
-      if (filters.dataFinalizacaoFim) {
-        const endOfDay = new Date(filters.dataFinalizacaoFim);
-        endOfDay.setHours(23, 59, 59, 999);
-        query = query.lte('data_conclusao', endOfDay.toISOString());
       }
 
       // Filtros exatos
