@@ -1,0 +1,142 @@
+import { useState, useEffect } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { slaTimerManager } from '@/lib/sla-timer-manager';
+
+interface SLATimerDetailProps {
+  ticketId: string;
+  codigoTicket: string;
+  slaMinutosRestantes: number | null;
+  slaMinutosTotais: number | null;
+  status: string;
+  slaPausado?: boolean;
+  slaPausadoMensagem?: boolean;
+  onSLAExpired?: (ticketId: string) => void;
+}
+
+export const SLATimerDetail = ({ 
+  ticketId, 
+  codigoTicket, 
+  slaMinutosRestantes,
+  slaMinutosTotais,
+  status, 
+  slaPausado = false,
+  slaPausadoMensagem = false,
+  onSLAExpired 
+}: SLATimerDetailProps) => {
+  const [timeRemaining, setTimeRemaining] = useState<{
+    hours: number;
+    minutes: number;
+    seconds: number;
+    isOverdue: boolean;
+    isPaused: boolean;
+    totalSeconds: number;
+  }>({ hours: 0, minutes: 0, seconds: 0, isOverdue: false, isPaused: false, totalSeconds: 0 });
+  
+  const { toast } = useToast();
+
+  useEffect(() => {
+    slaTimerManager.register({
+      ticketId,
+      codigoTicket,
+      slaMinutosRestantes,
+      slaMinutosTotais,
+      status,
+      slaPausado,
+      slaPausadoMensagem,
+      callback: setTimeRemaining,
+      onExpired: (id) => {
+        toast({
+          title: '🚨 SLA Vencido!',
+          description: `Ticket ${codigoTicket} teve o SLA vencido e será escalado automaticamente`,
+          variant: 'destructive',
+        });
+        
+        if (onSLAExpired) {
+          onSLAExpired(id);
+        }
+      }
+    });
+
+    return () => {
+      slaTimerManager.unregister(ticketId);
+    };
+  }, [ticketId, codigoTicket, slaMinutosRestantes, slaMinutosTotais, status, slaPausado, slaPausadoMensagem, onSLAExpired, toast]);
+
+  if (slaMinutosRestantes == null || status === 'concluido') {
+    return null;
+  }
+
+  const formatTime = (value: number) => value.toString().padStart(2, '0');
+
+  const formatReadableTime = () => {
+    if (slaMinutosRestantes == null) return '';
+    
+    const minutos = Math.abs(slaMinutosRestantes);
+    const horas = Math.floor(minutos / 60);
+    const minutosRestantes = minutos % 60;
+    
+    if (horas > 0) {
+      if (minutosRestantes > 0) {
+        return `${horas}h ${minutosRestantes}min restantes`;
+      }
+      return `${horas}h restantes`;
+    }
+    
+    return `${minutos} minutos restantes`;
+  };
+
+  if (timeRemaining.isPaused) {
+    const reasons: string[] = [];
+    if (slaPausado) reasons.push('Fora do horário');
+    if (slaPausadoMensagem) reasons.push('Aguardando resposta');
+    
+    const pauseReason = reasons.length > 0 ? reasons.join(' + ') : 'Pausado';
+    const readableTime = formatReadableTime();
+    
+    return (
+      <div className="text-amber-600 text-sm font-medium">
+        {readableTime} (Pausado - {pauseReason})
+      </div>
+    );
+  }
+
+  if (timeRemaining.isOverdue) {
+    const minutosVencidos = Math.abs(slaMinutosRestantes || 0);
+    const horasVencidas = Math.floor(minutosVencidos / 60);
+    const minutosRestantes = minutosVencidos % 60;
+    
+    let overdueText = 'SLA Vencido há ';
+    if (horasVencidas > 0) {
+      overdueText += `${horasVencidas}h`;
+      if (minutosRestantes > 0) {
+        overdueText += ` ${minutosRestantes}min`;
+      }
+    } else {
+      overdueText += `${minutosVencidos} minutos`;
+    }
+    
+    return (
+      <div className="text-destructive text-sm font-medium">
+        {overdueText}
+      </div>
+    );
+  }
+
+  const getSLAColor = () => {
+    if (!slaMinutosTotais) return 'text-muted-foreground';
+    
+    const percentualRestante = (slaMinutosRestantes || 0) / slaMinutosTotais;
+    
+    if (percentualRestante > 0.5) return 'text-muted-foreground';
+    if (percentualRestante > 0.25) return 'text-yellow-600';
+    if (percentualRestante > 0.1) return 'text-orange-600';
+    return 'text-destructive';
+  };
+
+  return (
+    <div className={`text-sm font-mono ${getSLAColor()}`}>
+      {timeRemaining.hours > 0 && `${formatTime(timeRemaining.hours)}:`}
+      {formatTime(timeRemaining.minutes)}:{formatTime(timeRemaining.seconds)} restantes
+    </div>
+  );
+};

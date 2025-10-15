@@ -16,7 +16,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useRole } from '@/hooks/useRole';
 import { useOptimisticTicketActions } from '@/hooks/useOptimisticTicketActions';
 import { ImageModal } from '@/components/ui/image-modal';
-import { SLATimer } from './SLATimer';
+import { SLATimerDetail } from './SLATimerDetail';
 
 import { TicketActions } from './TicketActions';
 import { supabase } from '@/integrations/supabase/client';
@@ -828,7 +828,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
               </div>
             </div>
             {/* SLA Timer */}
-            <SLATimer
+            <SLATimerDetail
               ticketId={ticket.id}
               codigoTicket={ticket.codigo_ticket}
               slaMinutosRestantes={ticket.sla_minutos_restantes}
@@ -968,7 +968,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
         
         {/* SLA Timer */}
         <div className="pt-2">
-          <SLATimer
+          <SLATimerDetail
             ticketId={ticket.id}
             codigoTicket={ticket.codigo_ticket}
             slaMinutosRestantes={ticket.sla_minutos_restantes}
