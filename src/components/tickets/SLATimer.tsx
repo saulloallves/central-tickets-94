@@ -88,12 +88,10 @@ export const SLATimer = ({
   };
 
   if (timeRemaining.isPaused) {
-    const readableTime = formatReadableTime();
-    
     return (
       <div className="flex items-center gap-1 text-amber-600 text-sm font-medium">
         <span className="w-2 h-2 bg-amber-600 rounded-full"></span>
-        <span>{readableTime} (Pausado - Aguardando resposta)</span>
+        <span>Pausado - Aguardando resposta</span>
       </div>
     );
   }
