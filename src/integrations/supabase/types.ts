@@ -3804,10 +3804,7 @@ export type Database = {
       }
       decrementar_sla_minutos: {
         Args: Record<PropertyKey, never>
-        Returns: {
-          tickets_atualizados: number
-          tickets_vencidos: number
-        }[]
+        Returns: number
       }
       fix_missing_colaborador_roles: {
         Args: Record<PropertyKey, never>
@@ -4103,6 +4100,13 @@ export type Database = {
       next_ticket_code: {
         Args: { p_unidade_id: string }
         Returns: string
+      }
+      pausar_todos_tickets_abertos: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          detalhes: Json
+          tickets_pausados: number
+        }[]
       }
       pause_sla_tickets: {
         Args: Record<PropertyKey, never>
