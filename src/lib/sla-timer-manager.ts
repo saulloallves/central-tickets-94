@@ -41,29 +41,40 @@ class SLATimerManager {
     
     let localSecondsRemaining: number;
     
-    // ✅ Calcular tempo REAL baseado em data de abertura
-    if (ticket.dataAbertura && ticket.slaMinutosTotais) {
-      const abertura = new Date(ticket.dataAbertura).getTime();
-      const agora = Date.now();
-      const tempoDecorridoMinutos = (agora - abertura) / 60000;
-      const tempoPausadoMinutos = ticket.tempoPausadoTotal || 0;
-      const tempoRestanteMinutos = ticket.slaMinutosTotais - tempoDecorridoMinutos + tempoPausadoMinutos;
+    // ✅ Se o ticket JÁ EXISTE, SEMPRE preservar o contador local (continuar contando)
+    if (existingTicket) {
+      localSecondsRemaining = existingTicket.localSecondsRemaining;
       
-      localSecondsRemaining = Math.max(0, Math.floor(tempoRestanteMinutos * 60));
-      
-      // Se já existe e está próximo (diferença < 5s), preservar para evitar saltos
-      if (existingTicket && Math.abs(existingTicket.localSecondsRemaining - localSecondsRemaining) < 5) {
-        localSecondsRemaining = existingTicket.localSecondsRemaining;
-      } else if (!existingTicket) {
+      // Apenas resincronizar com o banco se houver mudança significativa (>1 min)
+      if (ticket.slaMinutosRestantes !== existingTicket.lastSyncedMinutes) {
+        const bancoSegundos = (ticket.slaMinutosRestantes || 0) * 60;
+        const diferencaSegundos = Math.abs(bancoSegundos - localSecondsRemaining);
+        
+        if (diferencaSegundos > 60) {
+          console.log(`⏱️ Resincronizando timer ${ticket.codigoTicket}: banco=${bancoSegundos}s, local=${localSecondsRemaining}s`);
+          localSecondsRemaining = bancoSegundos;
+        }
+      }
+    } else {
+      // ✅ Ticket NOVO: calcular tempo REAL baseado em data de abertura
+      if (ticket.dataAbertura && ticket.slaMinutosTotais) {
+        const abertura = new Date(ticket.dataAbertura).getTime();
+        const agora = Date.now();
+        const tempoDecorridoMinutos = (agora - abertura) / 60000;
+        const tempoPausadoMinutos = ticket.tempoPausadoTotal || 0;
+        const tempoRestanteMinutos = ticket.slaMinutosTotais - tempoDecorridoMinutos + tempoPausadoMinutos;
+        
+        localSecondsRemaining = Math.max(0, Math.floor(tempoRestanteMinutos * 60));
+        
         console.log(`⏱️ Iniciando timer real do ticket ${ticket.codigoTicket}:
           - Aberto há: ${tempoDecorridoMinutos.toFixed(1)} min
           - SLA total: ${ticket.slaMinutosTotais} min
           - Tempo pausado: ${tempoPausadoMinutos} min
           - Restante: ${tempoRestanteMinutos.toFixed(1)} min (${localSecondsRemaining}s)`);
+      } else {
+        // Fallback: usar valor do banco se não tiver data de abertura
+        localSecondsRemaining = (ticket.slaMinutosRestantes || 0) * 60;
       }
-    } else {
-      // Fallback: usar valor do banco se não tiver data de abertura
-      localSecondsRemaining = (ticket.slaMinutosRestantes || 0) * 60;
     }
     
     const ticketWithLocalTimer: SLATicket = {
