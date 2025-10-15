@@ -63,7 +63,7 @@ export const SLATimer = ({
     };
   }, [ticketId, codigoTicket, slaMinutosRestantes, slaMinutosTotais, status, slaPausado, slaPausadoMensagem, onSLAExpired, toast]);
 
-  if (!slaMinutosRestantes || status === 'concluido') {
+  if (slaMinutosRestantes == null || status === 'concluido') {
     return null;
   }
 
