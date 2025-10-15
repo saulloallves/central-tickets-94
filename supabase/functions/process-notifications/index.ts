@@ -1329,13 +1329,25 @@ serve(async (req) => {
 
         console.log('\n📝 ===== PREPARANDO MENSAGEM SLA BREACH =====');
         
-        // Calcular tempo restante formatado (com valor negativo para vencidos)
-        const minutosRestantes = ticket.sla_minutos_restantes || 0;
-        const horas = Math.floor(Math.abs(minutosRestantes) / 60);
-        const minutos = Math.abs(minutosRestantes) % 60;
-        const tempoRestanteSLA = minutosRestantes > 0 
-          ? `${horas}h ${minutos}min restantes` 
-          : `Vencido há ${horas}h ${minutos}min`;
+        // Calcular tempo desde que venceu usando sla_vencido_em
+        let tempoRestanteSLA: string;
+        
+        if (ticket.sla_minutos_restantes > 0) {
+          // Ainda não venceu
+          const horas = Math.floor(ticket.sla_minutos_restantes / 60);
+          const minutos = ticket.sla_minutos_restantes % 60;
+          tempoRestanteSLA = `${horas}h ${minutos}min restantes`;
+        } else if (ticket.sla_vencido_em) {
+          // Calcular há quanto tempo venceu
+          const tempoVencidoMs = Date.now() - new Date(ticket.sla_vencido_em).getTime();
+          const minutosVencido = Math.floor(tempoVencidoMs / 60000);
+          const horas = Math.floor(minutosVencido / 60);
+          const minutos = minutosVencido % 60;
+          tempoRestanteSLA = `Vencido há ${horas}h ${minutos}min`;
+        } else {
+          // Fallback (não deveria acontecer)
+          tempoRestanteSLA = 'SLA vencido';
+        }
 
         const mensagemSLABreach = processTemplate(templateSLABreach, {
           codigo_ticket: formatTicketTitle(ticket),

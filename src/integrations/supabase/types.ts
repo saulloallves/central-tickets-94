@@ -3032,6 +3032,7 @@ export type Database = {
           sla_pausado_em: string | null
           sla_pausado_mensagem: boolean | null
           sla_ultima_atualizacao: string | null
+          sla_vencido_em: string | null
           status: Database["public"]["Enums"]["ticket_status"]
           status_sla: Database["public"]["Enums"]["ticket_sla_status"]
           subcategoria: string | null
@@ -3075,6 +3076,7 @@ export type Database = {
           sla_pausado_em?: string | null
           sla_pausado_mensagem?: boolean | null
           sla_ultima_atualizacao?: string | null
+          sla_vencido_em?: string | null
           status?: Database["public"]["Enums"]["ticket_status"]
           status_sla?: Database["public"]["Enums"]["ticket_sla_status"]
           subcategoria?: string | null
@@ -3118,6 +3120,7 @@ export type Database = {
           sla_pausado_em?: string | null
           sla_pausado_mensagem?: boolean | null
           sla_ultima_atualizacao?: string | null
+          sla_vencido_em?: string | null
           status?: Database["public"]["Enums"]["ticket_status"]
           status_sla?: Database["public"]["Enums"]["ticket_sla_status"]
           subcategoria?: string | null
