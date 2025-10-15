@@ -29,6 +29,8 @@ interface SLATicketInput {
 interface SLATicket extends SLATicketInput {
   localSecondsRemaining: number; // ✅ Contador local em segundos (UI)
   lastSyncedMinutes: number | null; // ✅ Último valor sincronizado do banco
+  refCount: number; // ✅ Contador de componentes registrados
+  callbacks: Set<SLAUpdateCallback>; // ✅ Múltiplos callbacks (card + modal)
 }
 
 class SLATimerManager {
@@ -45,6 +47,12 @@ class SLATimerManager {
     if (existingTicket) {
       localSecondsRemaining = existingTicket.localSecondsRemaining;
       
+      // ✅ Incrementar contador de referências e adicionar callback
+      existingTicket.refCount++;
+      existingTicket.callbacks.add(ticket.callback);
+      
+      console.log(`⏱️ Registrando instância adicional do ticket ${ticket.codigoTicket} (refCount: ${existingTicket.refCount})`);
+      
       // Apenas resincronizar com o banco se houver mudança significativa (>1 min)
       if (ticket.slaMinutosRestantes !== existingTicket.lastSyncedMinutes) {
         const bancoSegundos = (ticket.slaMinutosRestantes || 0) * 60;
@@ -53,34 +61,42 @@ class SLATimerManager {
         if (diferencaSegundos > 60) {
           console.log(`⏱️ Resincronizando timer ${ticket.codigoTicket}: banco=${bancoSegundos}s, local=${localSecondsRemaining}s`);
           localSecondsRemaining = bancoSegundos;
+          existingTicket.localSecondsRemaining = localSecondsRemaining;
+          existingTicket.lastSyncedMinutes = ticket.slaMinutosRestantes;
         }
       }
+      
+      // Calcular e enviar imediatamente para o novo callback
+      this.updateTicket(ticket.ticketId);
+      return;
+    }
+    
+    // ✅ Ticket NOVO: calcular tempo REAL baseado em data de abertura
+    if (ticket.dataAbertura && ticket.slaMinutosTotais) {
+      const abertura = new Date(ticket.dataAbertura).getTime();
+      const agora = Date.now();
+      const tempoDecorridoMinutos = (agora - abertura) / 60000;
+      const tempoPausadoMinutos = ticket.tempoPausadoTotal || 0;
+      const tempoRestanteMinutos = ticket.slaMinutosTotais - tempoDecorridoMinutos + tempoPausadoMinutos;
+      
+      localSecondsRemaining = Math.max(0, Math.floor(tempoRestanteMinutos * 60));
+      
+      console.log(`⏱️ Iniciando timer real do ticket ${ticket.codigoTicket}:
+        - Aberto há: ${tempoDecorridoMinutos.toFixed(1)} min
+        - SLA total: ${ticket.slaMinutosTotais} min
+        - Tempo pausado: ${tempoPausadoMinutos} min
+        - Restante: ${tempoRestanteMinutos.toFixed(1)} min (${localSecondsRemaining}s)`);
     } else {
-      // ✅ Ticket NOVO: calcular tempo REAL baseado em data de abertura
-      if (ticket.dataAbertura && ticket.slaMinutosTotais) {
-        const abertura = new Date(ticket.dataAbertura).getTime();
-        const agora = Date.now();
-        const tempoDecorridoMinutos = (agora - abertura) / 60000;
-        const tempoPausadoMinutos = ticket.tempoPausadoTotal || 0;
-        const tempoRestanteMinutos = ticket.slaMinutosTotais - tempoDecorridoMinutos + tempoPausadoMinutos;
-        
-        localSecondsRemaining = Math.max(0, Math.floor(tempoRestanteMinutos * 60));
-        
-        console.log(`⏱️ Iniciando timer real do ticket ${ticket.codigoTicket}:
-          - Aberto há: ${tempoDecorridoMinutos.toFixed(1)} min
-          - SLA total: ${ticket.slaMinutosTotais} min
-          - Tempo pausado: ${tempoPausadoMinutos} min
-          - Restante: ${tempoRestanteMinutos.toFixed(1)} min (${localSecondsRemaining}s)`);
-      } else {
-        // Fallback: usar valor do banco se não tiver data de abertura
-        localSecondsRemaining = (ticket.slaMinutosRestantes || 0) * 60;
-      }
+      // Fallback: usar valor do banco se não tiver data de abertura
+      localSecondsRemaining = (ticket.slaMinutosRestantes || 0) * 60;
     }
     
     const ticketWithLocalTimer: SLATicket = {
       ...ticket,
       localSecondsRemaining,
-      lastSyncedMinutes: ticket.slaMinutosRestantes
+      lastSyncedMinutes: ticket.slaMinutosRestantes,
+      refCount: 1, // ✅ Primeira instância
+      callbacks: new Set([ticket.callback]) // ✅ Primeiro callback
     };
     
     this.tickets.set(ticket.ticketId, ticketWithLocalTimer);
@@ -98,14 +114,27 @@ class SLATimerManager {
     this.updateTicket(ticket.ticketId);
   }
 
-  unregister(ticketId: string) {
-    this.tickets.delete(ticketId);
-    this.lastExpiredCheck.delete(ticketId);
+  unregister(ticketId: string, callback: SLAUpdateCallback) {
+    const ticket = this.tickets.get(ticketId);
+    if (!ticket) return;
     
-    // Stop timer if no tickets
-    if (this.tickets.size === 0 && this.intervalId) {
-      clearInterval(this.intervalId);
-      this.intervalId = null;
+    // ✅ Remover callback específico
+    ticket.callbacks.delete(callback);
+    ticket.refCount--;
+    
+    console.log(`⏱️ Desregistrando instância do ticket ${ticketId} (refCount: ${ticket.refCount})`);
+    
+    // ✅ Só remover completamente quando não houver mais componentes
+    if (ticket.refCount <= 0) {
+      console.log(`⏱️ Removendo ticket ${ticketId} completamente (sem mais referências)`);
+      this.tickets.delete(ticketId);
+      this.lastExpiredCheck.delete(ticketId);
+      
+      // Stop timer if no tickets
+      if (this.tickets.size === 0 && this.intervalId) {
+        clearInterval(this.intervalId);
+        this.intervalId = null;
+      }
     }
   }
 
@@ -144,7 +173,9 @@ class SLATimerManager {
     }
     
     this.lastExpiredCheck.set(ticketId, timeRemaining.isOverdue);
-    ticket.callback(timeRemaining);
+    
+    // ✅ Chamar TODOS os callbacks registrados (card + modal)
+    ticket.callbacks.forEach(callback => callback(timeRemaining));
   }
 
   private calculateTimeRemaining(ticket: SLATicket) {

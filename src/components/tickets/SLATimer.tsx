@@ -65,7 +65,7 @@ export const SLATimer = ({
     });
 
     return () => {
-      slaTimerManager.unregister(ticketId);
+      slaTimerManager.unregister(ticketId, setTimeRemaining);
     };
   }, [ticketId, codigoTicket, dataAbertura, slaMinutosRestantes, slaMinutosTotais, tempoPausadoTotal, status, slaPausado, slaPausadoMensagem, onSLAExpired, toast]);
 
