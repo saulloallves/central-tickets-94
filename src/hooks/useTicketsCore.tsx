@@ -23,6 +23,9 @@ export interface Ticket {
   sla_pausado?: boolean;
   sla_pausado_em?: string;
   tempo_pausado_total?: string;
+  sla_minutos_restantes?: number;
+  sla_minutos_totais?: number;
+  sla_ultima_atualizacao?: string;
   equipe_responsavel_id?: string;
   escalonado_para?: string;
   status_sla: 'dentro_prazo' | 'alerta' | 'vencido';
