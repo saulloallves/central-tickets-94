@@ -3026,9 +3026,12 @@ export type Database = {
           resolvido_em: string | null
           resposta_resolucao: string | null
           sla_half_time: string | null
+          sla_minutos_restantes: number | null
+          sla_minutos_totais: number | null
           sla_pausado: boolean | null
           sla_pausado_em: string | null
           sla_pausado_mensagem: boolean | null
+          sla_ultima_atualizacao: string | null
           status: Database["public"]["Enums"]["ticket_status"]
           status_sla: Database["public"]["Enums"]["ticket_sla_status"]
           subcategoria: string | null
@@ -3066,9 +3069,12 @@ export type Database = {
           resolvido_em?: string | null
           resposta_resolucao?: string | null
           sla_half_time?: string | null
+          sla_minutos_restantes?: number | null
+          sla_minutos_totais?: number | null
           sla_pausado?: boolean | null
           sla_pausado_em?: string | null
           sla_pausado_mensagem?: boolean | null
+          sla_ultima_atualizacao?: string | null
           status?: Database["public"]["Enums"]["ticket_status"]
           status_sla?: Database["public"]["Enums"]["ticket_sla_status"]
           subcategoria?: string | null
@@ -3106,9 +3112,12 @@ export type Database = {
           resolvido_em?: string | null
           resposta_resolucao?: string | null
           sla_half_time?: string | null
+          sla_minutos_restantes?: number | null
+          sla_minutos_totais?: number | null
           sla_pausado?: boolean | null
           sla_pausado_em?: string | null
           sla_pausado_mensagem?: boolean | null
+          sla_ultima_atualizacao?: string | null
           status?: Database["public"]["Enums"]["ticket_status"]
           status_sla?: Database["public"]["Enums"]["ticket_sla_status"]
           subcategoria?: string | null
@@ -3710,6 +3719,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      calcular_minutos_restantes_inicial: {
+        Args: { p_ticket_id: string }
+        Returns: number
+      }
       calcular_tempo_pausado: {
         Args: { p_ticket_id: string }
         Returns: unknown
@@ -3778,6 +3791,13 @@ export type Database = {
           p_ticket_id: string
         }
         Returns: string
+      }
+      decrementar_sla_minutos: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          tickets_atualizados: number
+          tickets_vencidos: number
+        }[]
       }
       fix_missing_colaborador_roles: {
         Args: Record<PropertyKey, never>
