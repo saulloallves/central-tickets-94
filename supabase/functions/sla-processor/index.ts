@@ -42,18 +42,7 @@ serve(async (req) => {
 
     console.log(`✅ SLAs vencidos processados: ${overdueResult} tickets`);
 
-    // 2. Processar SLAs em 50%
-    const { data: halfResult, error: halfError } = await supabaseClient
-      .rpc('process_sla_half_warnings');
-
-    if (halfError) {
-      console.error('❌ Erro ao processar avisos de 50% SLA:', halfError);
-      throw halfError;
-    }
-
-    console.log(`✅ Avisos de 50% SLA processados: ${halfResult} notificações`);
-
-    // 3. Processar notificações não enviadas ao WhatsApp (apenas PENDING)
+    // 2. Processar notificações não enviadas ao WhatsApp (apenas PENDING)
     console.log('📤 Buscando notificações PENDING não enviadas ao WhatsApp...');
     
     // ✅ SELECT primeiro com ORDER, depois UPDATE em lote
@@ -62,7 +51,7 @@ serve(async (req) => {
       .select('*')
       .eq('status', 'pending')
       .eq('sent_to_whatsapp', false)
-      .in('type', ['sla_breach', 'sla_half'])
+      .eq('type', 'sla_breach')
       .gte('created_at', new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString())
       .order('created_at', { ascending: true })  // ✅ ORDER adicionado para evitar PGRST109
       .limit(20);
@@ -148,7 +137,6 @@ serve(async (req) => {
     const result = {
       success: true,
       slas_vencidos_processados: overdueResult || 0,
-      avisos_50_criados: halfResult || 0,
       notificacoes_processadas: notificationsProcessed,
       timestamp: new Date().toISOString()
     };
