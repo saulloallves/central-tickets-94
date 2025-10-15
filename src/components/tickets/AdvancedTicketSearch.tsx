@@ -11,15 +11,17 @@ import { Calendar } from '@/components/ui/calendar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAdvancedTicketSearch } from '@/hooks/useAdvancedTicketSearch';
+import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 interface AdvancedTicketSearchProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onTicketSelect?: (ticketId: string) => void;
+  onTicketSelect: (ticketId: string) => void;
 }
 
 export function AdvancedTicketSearch({ open, onOpenChange, onTicketSelect }: AdvancedTicketSearchProps) {
+  const { toast } = useToast();
   const [filters, setFilters] = useState({
     search: '',
     dataInicio: undefined as Date | undefined,
@@ -121,6 +123,37 @@ export function AdvancedTicketSearch({ open, onOpenChange, onTicketSelect }: Adv
     return variants[status_sla] || 'outline';
   };
 
+  // Helper functions para labels formatados
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      'aberto': 'Aberto',
+      'em_atendimento': 'Em Atendimento',
+      'escalonado': 'Escalonado',
+      'concluido': 'Concluído'
+    };
+    return labels[status] || status;
+  };
+
+  const getPrioridadeLabel = (prioridade: string) => {
+    const labels: Record<string, string> = {
+      'baixo': 'Baixo',
+      'medio': 'Médio',
+      'alto': 'Alto',
+      'imediato': 'Imediato',
+      'crise': 'CRISE'
+    };
+    return labels[prioridade] || prioridade;
+  };
+
+  const getSLALabel = (sla: string) => {
+    const labels: Record<string, string> = {
+      'dentro_prazo': 'Dentro do Prazo',
+      'alerta': 'Alerta',
+      'vencido': 'Vencido'
+    };
+    return labels[sla] || sla;
+  };
+
   const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
@@ -208,11 +241,11 @@ export function AdvancedTicketSearch({ open, onOpenChange, onTicketSelect }: Adv
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="all">Todos Status</SelectItem>
                 <SelectItem value="aberto">Aberto</SelectItem>
                 <SelectItem value="em_atendimento">Em Atendimento</SelectItem>
+                <SelectItem value="escalonado">Escalonado</SelectItem>
                 <SelectItem value="concluido">Concluído</SelectItem>
-                <SelectItem value="cancelado">Cancelado</SelectItem>
               </SelectContent>
             </Select>
 
@@ -222,12 +255,12 @@ export function AdvancedTicketSearch({ open, onOpenChange, onTicketSelect }: Adv
                 <SelectValue placeholder="Prioridade" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todas</SelectItem>
-                <SelectItem value="crise">Crise</SelectItem>
-                <SelectItem value="imediato">Imediato</SelectItem>
-                <SelectItem value="alto">Alto</SelectItem>
-                <SelectItem value="medio">Médio</SelectItem>
+                <SelectItem value="all">Todas Prioridades</SelectItem>
                 <SelectItem value="baixo">Baixo</SelectItem>
+                <SelectItem value="medio">Médio</SelectItem>
+                <SelectItem value="alto">Alto</SelectItem>
+                <SelectItem value="imediato">Imediato</SelectItem>
+                <SelectItem value="crise">CRISE</SelectItem>
               </SelectContent>
             </Select>
 
@@ -237,9 +270,9 @@ export function AdvancedTicketSearch({ open, onOpenChange, onTicketSelect }: Adv
                 <SelectValue placeholder="SLA" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="all">Todos SLA</SelectItem>
                 <SelectItem value="dentro_prazo">Dentro do Prazo</SelectItem>
-                <SelectItem value="alerta">Alerta</SelectItem>
+                <SelectItem value="alerta">Alerta (50%)</SelectItem>
                 <SelectItem value="vencido">Vencido</SelectItem>
               </SelectContent>
             </Select>
@@ -250,11 +283,14 @@ export function AdvancedTicketSearch({ open, onOpenChange, onTicketSelect }: Adv
                 <SelectValue placeholder="Categoria" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todas</SelectItem>
-                <SelectItem value="suporte_tecnico">Suporte Técnico</SelectItem>
-                <SelectItem value="comercial">Comercial</SelectItem>
+                <SelectItem value="all">Todas Categorias</SelectItem>
+                <SelectItem value="juridico">Jurídico</SelectItem>
+                <SelectItem value="sistema">Sistema</SelectItem>
+                <SelectItem value="midia">Mídia</SelectItem>
+                <SelectItem value="operacoes">Operações</SelectItem>
+                <SelectItem value="rh">RH</SelectItem>
                 <SelectItem value="financeiro">Financeiro</SelectItem>
-                <SelectItem value="operacional">Operacional</SelectItem>
+                <SelectItem value="outro">Outro</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -320,17 +356,17 @@ export function AdvancedTicketSearch({ open, onOpenChange, onTicketSelect }: Adv
                     <TableCell className="max-w-xs truncate text-sm">{ticket.titulo}</TableCell>
                     <TableCell>
                       <Badge variant={getStatusVariant(ticket.status)}>
-                        {ticket.status}
+                        {getStatusLabel(ticket.status)}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <Badge variant={getPriorityVariant(ticket.prioridade)}>
-                        {ticket.prioridade}
+                        {getPrioridadeLabel(ticket.prioridade)}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <Badge variant={getSLAVariant(ticket.status_sla || 'dentro_prazo')}>
-                        {ticket.status_sla || 'N/A'}
+                        {getSLALabel(ticket.status_sla || 'dentro_prazo')}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-sm">{ticket.equipes?.nome || 'Não atribuído'}</TableCell>
@@ -339,7 +375,11 @@ export function AdvancedTicketSearch({ open, onOpenChange, onTicketSelect }: Adv
                         size="sm" 
                         variant="ghost"
                         onClick={() => {
-                          onTicketSelect?.(ticket.id);
+                          toast({
+                            title: "Abrindo ticket",
+                            description: `Ticket ${ticket.codigo_ticket}`,
+                          });
+                          onTicketSelect(ticket.id);
                           onOpenChange(false);
                         }}
                       >

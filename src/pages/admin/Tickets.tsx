@@ -366,6 +366,7 @@ const Tickets = () => {
           open={advancedSearchOpen}
           onOpenChange={setAdvancedSearchOpen}
           onTicketSelect={(ticketId) => {
+            console.log('🎫 Abrindo ticket da consulta avançada:', ticketId);
             setSelectedTicketId(ticketId);
             setTicketModalOpen(true);
           }}

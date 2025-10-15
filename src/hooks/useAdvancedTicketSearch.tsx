@@ -2,15 +2,20 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+type TicketStatus = 'aberto' | 'em_atendimento' | 'escalonado' | 'concluido';
+type TicketPrioridade = 'baixo' | 'medio' | 'alto' | 'imediato' | 'crise';
+type TicketSLAStatus = 'dentro_prazo' | 'alerta' | 'vencido';
+type TicketCategoria = 'juridico' | 'sistema' | 'midia' | 'operacoes' | 'rh' | 'financeiro' | 'outro';
+
 interface SearchFilters {
   search: string;
   dataInicio?: Date;
   dataFim?: Date;
   unidade_id: string;
-  status: string;
-  prioridade: string;
-  status_sla: string;
-  categoria: string;
+  status: string | 'all';
+  prioridade: string | 'all';
+  status_sla: string | 'all';
+  categoria: string | 'all';
 }
 
 interface Unidade {
@@ -93,19 +98,19 @@ export function useAdvancedTicketSearch(filters: SearchFilters, page: number, pa
       }
       
       if (filters.status !== 'all') {
-        query = query.eq('status', filters.status as any);
+        query = query.eq('status', filters.status as TicketStatus);
       }
       
       if (filters.prioridade !== 'all') {
-        query = query.eq('prioridade', filters.prioridade as any);
+        query = query.eq('prioridade', filters.prioridade as TicketPrioridade);
       }
       
       if (filters.status_sla !== 'all') {
-        query = query.eq('status_sla', filters.status_sla as any);
+        query = query.eq('status_sla', filters.status_sla as TicketSLAStatus);
       }
 
       if (filters.categoria !== 'all') {
-        query = query.eq('categoria', filters.categoria as any);
+        query = query.eq('categoria', filters.categoria as TicketCategoria);
       }
 
       // Paginação
