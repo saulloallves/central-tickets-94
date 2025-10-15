@@ -4109,7 +4109,10 @@ export type Database = {
       }
       process_sla_half_warnings: {
         Args: Record<PropertyKey, never>
-        Returns: number
+        Returns: {
+          detalhes: Json
+          tickets_notificados: number
+        }[]
       }
       refresh_user_permissions: {
         Args: { p_user_id: string }
