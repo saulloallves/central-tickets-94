@@ -86,16 +86,11 @@ export const SLATimerDetail = ({
   };
 
   if (timeRemaining.isPaused) {
-    const reasons: string[] = [];
-    if (slaPausado) reasons.push('Fora do horário');
-    if (slaPausadoMensagem) reasons.push('Aguardando resposta');
-    
-    const pauseReason = reasons.length > 0 ? reasons.join(' + ') : 'Pausado';
     const readableTime = formatReadableTime();
     
     return (
       <div className="text-amber-600 text-sm font-medium">
-        {readableTime} (Pausado - {pauseReason})
+        {readableTime} (Pausado - Aguardando resposta)
       </div>
     );
   }

@@ -88,18 +88,12 @@ export const SLATimer = ({
   };
 
   if (timeRemaining.isPaused) {
-    // Detectar múltiplas razões de pausa
-    const reasons: string[] = [];
-    if (slaPausado) reasons.push('Fora do horário');
-    if (slaPausadoMensagem) reasons.push('Aguardando resposta');
-    
-    const pauseReason = reasons.length > 0 ? reasons.join(' + ') : 'Pausado';
     const readableTime = formatReadableTime();
     
     return (
       <div className="flex items-center gap-1 text-amber-600 text-sm font-medium">
         <span className="w-2 h-2 bg-amber-600 rounded-full"></span>
-        <span>{readableTime} (Pausado - {pauseReason})</span>
+        <span>{readableTime} (Pausado - Aguardando resposta)</span>
       </div>
     );
   }
