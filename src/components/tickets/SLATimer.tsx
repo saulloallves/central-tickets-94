@@ -69,6 +69,24 @@ export const SLATimer = ({
 
   const formatTime = (value: number) => value.toString().padStart(2, '0');
 
+  // Formata o tempo em formato legível (ex: "8h restantes", "30 minutos restantes")
+  const formatReadableTime = () => {
+    if (slaMinutosRestantes == null) return '';
+    
+    const minutos = Math.abs(slaMinutosRestantes);
+    const horas = Math.floor(minutos / 60);
+    const minutosRestantes = minutos % 60;
+    
+    if (horas > 0) {
+      if (minutosRestantes > 0) {
+        return `${horas}h ${minutosRestantes}min restantes`;
+      }
+      return `${horas}h restantes`;
+    }
+    
+    return `${minutos} minutos restantes`;
+  };
+
   if (timeRemaining.isPaused) {
     // Detectar múltiplas razões de pausa
     const reasons: string[] = [];
@@ -76,20 +94,35 @@ export const SLATimer = ({
     if (slaPausadoMensagem) reasons.push('Aguardando resposta');
     
     const pauseReason = reasons.length > 0 ? reasons.join(' + ') : 'Pausado';
+    const readableTime = formatReadableTime();
     
     return (
       <div className="flex items-center gap-1 text-amber-600 text-sm font-medium">
         <span className="w-2 h-2 bg-amber-600 rounded-full"></span>
-        <span>SLA Pausado ({pauseReason})</span>
+        <span>{readableTime} (Pausado - {pauseReason})</span>
       </div>
     );
   }
 
   if (timeRemaining.isOverdue) {
+    const minutosVencidos = Math.abs(slaMinutosRestantes || 0);
+    const horasVencidas = Math.floor(minutosVencidos / 60);
+    const minutosRestantes = minutosVencidos % 60;
+    
+    let overdueText = 'SLA Vencido há ';
+    if (horasVencidas > 0) {
+      overdueText += `${horasVencidas}h`;
+      if (minutosRestantes > 0) {
+        overdueText += ` ${minutosRestantes}min`;
+      }
+    } else {
+      overdueText += `${minutosVencidos} minutos`;
+    }
+    
     return (
       <div className="flex items-center gap-1 text-destructive text-sm font-medium">
         <span className="w-2 h-2 bg-destructive rounded-full animate-pulse"></span>
-        <span>SLA Vencido</span>
+        <span>{overdueText}</span>
       </div>
     );
   }
