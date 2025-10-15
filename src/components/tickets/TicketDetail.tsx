@@ -838,6 +838,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
               status={ticket.status}
               slaPausado={ticket.sla_pausado || false}
               slaPausadoMensagem={ticket.sla_pausado_mensagem || false}
+              slaPausadoHorario={ticket.sla_pausado_horario || false}
             />
           </div>
         </div>
@@ -980,6 +981,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
             status={ticket.status}
             slaPausado={ticket.sla_pausado || false}
             slaPausadoMensagem={ticket.sla_pausado_mensagem || false}
+            slaPausadoHorario={ticket.sla_pausado_horario || false}
           />
         </div>
       </div>

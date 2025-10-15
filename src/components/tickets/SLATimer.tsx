@@ -12,6 +12,7 @@ interface SLATimerProps {
   status: string;
   slaPausado?: boolean;
   slaPausadoMensagem?: boolean;
+  slaPausadoHorario?: boolean; // ✅ NOVO - Pausado por horário comercial
   onSLAExpired?: (ticketId: string) => void;
 }
 
@@ -25,6 +26,7 @@ export const SLATimer = ({
   status, 
   slaPausado = false,
   slaPausadoMensagem = false,
+  slaPausadoHorario = false, // ✅ NOVO
   onSLAExpired 
 }: SLATimerProps) => {
   const [timeRemaining, setTimeRemaining] = useState<{
@@ -50,6 +52,7 @@ export const SLATimer = ({
       status,
       slaPausado,
       slaPausadoMensagem,
+      slaPausadoHorario,
       callback: setTimeRemaining,
       onExpired: (id) => {
         toast({
@@ -67,7 +70,7 @@ export const SLATimer = ({
     return () => {
       slaTimerManager.unregister(ticketId, setTimeRemaining);
     };
-  }, [ticketId, codigoTicket, dataAbertura, slaMinutosRestantes, slaMinutosTotais, tempoPausadoTotal, status, slaPausado, slaPausadoMensagem, onSLAExpired, toast]);
+  }, [ticketId, codigoTicket, dataAbertura, slaMinutosRestantes, slaMinutosTotais, tempoPausadoTotal, status, slaPausado, slaPausadoMensagem, slaPausadoHorario, onSLAExpired, toast]);
 
   if (slaMinutosRestantes == null || status === 'concluido') {
     return null;
@@ -94,10 +97,19 @@ export const SLATimer = ({
   };
 
   if (timeRemaining.isPaused) {
+    // Prioridade: Fora do horário > Aguardando resposta
+    let pauseLabel = 'Pausado';
+    
+    if (slaPausadoHorario) {
+      pauseLabel = 'Pausado - Fora do horário';
+    } else if (slaPausadoMensagem) {
+      pauseLabel = 'Pausado - Aguardando resposta';
+    }
+    
     return (
       <div className="flex items-center gap-1 text-amber-600 text-sm font-medium">
         <span className="w-2 h-2 bg-amber-600 rounded-full"></span>
-        <span>Pausado - Aguardando resposta</span>
+        <span>{pauseLabel}</span>
       </div>
     );
   }

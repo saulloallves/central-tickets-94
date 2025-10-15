@@ -22,6 +22,7 @@ interface SLATicketInput {
   status: string;
   slaPausado: boolean;
   slaPausadoMensagem: boolean;
+  slaPausadoHorario?: boolean; // ✅ NOVO - Pausado por horário comercial
   callback: SLAUpdateCallback;
   onExpired?: (ticketId: string) => void;
 }
@@ -148,7 +149,7 @@ class SLATimerManager {
         }
         
         // ✅ Decrementar contador local se não estiver pausado
-        if (!ticket.slaPausado && !ticket.slaPausadoMensagem && ticket.status !== 'concluido') {
+        if (!ticket.slaPausado && !ticket.slaPausadoMensagem && !ticket.slaPausadoHorario && ticket.status !== 'concluido') {
           ticket.localSecondsRemaining = Math.max(0, ticket.localSecondsRemaining - 1);
         }
         
@@ -184,7 +185,7 @@ class SLATimerManager {
     }
 
     // ✅ Se pausado, retornar estado pausado (contador congelado)
-    if (ticket.slaPausado || ticket.slaPausadoMensagem) {
+    if (ticket.slaPausado || ticket.slaPausadoMensagem || ticket.slaPausadoHorario) {
       return { hours: 0, minutes: 0, seconds: 0, isOverdue: false, isPaused: true, totalSeconds: 0 };
     }
 

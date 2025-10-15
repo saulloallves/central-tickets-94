@@ -22,6 +22,7 @@ export interface Ticket {
   data_limite_sla?: string;
   sla_pausado?: boolean;
   sla_pausado_mensagem?: boolean;
+  sla_pausado_horario?: boolean;
   sla_pausado_em?: string;
   tempo_pausado_total?: string;
   sla_minutos_restantes?: number;
