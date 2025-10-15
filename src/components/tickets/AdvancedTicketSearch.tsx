@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { Search, CalendarIcon, Download, X, Eye, Filter } from 'lucide-react';
+import { Search, CalendarIcon, Download, X, Eye, Filter, Check, ChevronsUpDown } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -32,6 +33,8 @@ export function AdvancedTicketSearch({ open, onOpenChange, onTicketSelect }: Adv
     status_sla: 'all',
     categoria: 'all'
   });
+  
+  const [unidadeOpen, setUnidadeOpen] = useState(false);
 
   const [page, setPage] = useState(1);
   const pageSize = 50;
@@ -230,20 +233,65 @@ export function AdvancedTicketSearch({ open, onOpenChange, onTicketSelect }: Adv
 
           {/* Linha 4: Selects de Filtros */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            {/* Select Unidade */}
-            <Select value={filters.unidade_id} onValueChange={value => setFilters(prev => ({ ...prev, unidade_id: value }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Unidade" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas Unidades</SelectItem>
-                {unidades.map(u => (
-                  <SelectItem key={u.id} value={u.id}>
-                    {u.grupo}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* Combobox Unidade com Busca */}
+            <Popover open={unidadeOpen} onOpenChange={setUnidadeOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={unidadeOpen}
+                  className="w-full justify-between"
+                >
+                  {filters.unidade_id === 'all'
+                    ? 'Todas Unidades'
+                    : unidades.find((u) => u.id === filters.unidade_id)?.grupo || 'Selecionar unidade'}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[300px] p-0 bg-background" align="start">
+                <Command>
+                  <CommandInput placeholder="Buscar unidade..." />
+                  <CommandList>
+                    <CommandEmpty>Nenhuma unidade encontrada.</CommandEmpty>
+                    <CommandGroup>
+                      <CommandItem
+                        value="all"
+                        onSelect={() => {
+                          setFilters(prev => ({ ...prev, unidade_id: 'all' }));
+                          setUnidadeOpen(false);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            filters.unidade_id === 'all' ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        Todas Unidades
+                      </CommandItem>
+                      {unidades.map((unidade) => (
+                        <CommandItem
+                          key={unidade.id}
+                          value={unidade.grupo}
+                          onSelect={() => {
+                            setFilters(prev => ({ ...prev, unidade_id: unidade.id }));
+                            setUnidadeOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              filters.unidade_id === unidade.id ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {unidade.grupo}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
 
             {/* Select Status */}
             <Select value={filters.status} onValueChange={value => setFilters(prev => ({ ...prev, status: value }))}>
