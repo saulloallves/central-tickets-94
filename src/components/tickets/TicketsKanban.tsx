@@ -891,21 +891,6 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
       onDragEnd={handleDragEnd}
     >
       <div className="space-y-4">
-        {/* Controls */}
-        <div className="flex justify-end items-center gap-2">
-          {onToggleFilters && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onToggleFilters}
-              className="text-xs"
-            >
-              <Filter className="h-3 w-3 mr-1" />
-              {showFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}
-            </Button>
-          )}
-        </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {Object.keys(COLUMN_STATUS).map((status) => {
             const { individualTickets } = getGroupedTicketsAndCrises(status as keyof typeof COLUMN_STATUS);
