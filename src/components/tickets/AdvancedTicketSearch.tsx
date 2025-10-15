@@ -438,7 +438,6 @@ export function AdvancedTicketSearch({ open, onOpenChange, onTicketSelect }: Adv
                             description: `Ticket ${ticket.codigo_ticket}`,
                           });
                           onTicketSelect(ticket.id);
-                          onOpenChange(false);
                         }}
                       >
                         <Eye className="h-4 w-4" />
