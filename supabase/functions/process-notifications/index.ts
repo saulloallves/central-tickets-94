@@ -386,7 +386,7 @@ Para mais detalhes, acesse o sistema.`,
 {{descricao_problema}}
 
 🕐 *Aberto em:* {{data_abertura}}
-⏰ *Prazo limite:* {{data_limite_sla}}
+⏰ *Tempo restante:* {{tempo_restante_sla}}
 
 ⚡ Atenção necessária!`,
 
@@ -404,7 +404,7 @@ Para mais detalhes, acesse o sistema.`,
 {{descricao_problema}}
 
 🕐 *Aberto em:* {{data_abertura}}
-⏰ *Venceu em:* {{data_limite_sla}}
+⏰ *Status SLA:* {{tempo_restante_sla}}
 
 🔥 AÇÃO IMEDIATA NECESSÁRIA!`,
 
@@ -1089,6 +1089,14 @@ serve(async (req) => {
           .eq('id', ticket.equipe_responsavel_id)
           .single();
 
+        // Calcular tempo restante formatado
+        const minutosRestantes = ticket.sla_minutos_restantes || 0;
+        const horas = Math.floor(minutosRestantes / 60);
+        const minutos = minutosRestantes % 60;
+        const tempoRestanteSLA = minutosRestantes > 0 
+          ? `${horas}h ${minutos}min` 
+          : 'SLA vencido';
+
         const mensagemSLAHalf = processTemplate(templateSLAHalf, {
           codigo_ticket: formatTicketTitle(ticket),
           titulo_ticket: ticket.titulo || 'Ticket sem título',
@@ -1099,6 +1107,7 @@ serve(async (req) => {
           status: ticket.status,
           equipe_responsavel: equipeDataSLAHalf?.nome || 'Não atribuída',
           descricao_problema: ticket.descricao_problema,
+          tempo_restante_sla: tempoRestanteSLA,
           data_abertura: new Date(ticket.data_abertura).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
           data_limite_sla: new Date(ticket.data_limite_sla).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
         });
@@ -1319,6 +1328,15 @@ serve(async (req) => {
           .single();
 
         console.log('\n📝 ===== PREPARANDO MENSAGEM SLA BREACH =====');
+        
+        // Calcular tempo restante formatado (com valor negativo para vencidos)
+        const minutosRestantes = ticket.sla_minutos_restantes || 0;
+        const horas = Math.floor(Math.abs(minutosRestantes) / 60);
+        const minutos = Math.abs(minutosRestantes) % 60;
+        const tempoRestanteSLA = minutosRestantes > 0 
+          ? `${horas}h ${minutos}min restantes` 
+          : `Vencido há ${horas}h ${minutos}min`;
+
         const mensagemSLABreach = processTemplate(templateSLABreach, {
           codigo_ticket: formatTicketTitle(ticket),
           titulo_ticket: ticket.titulo || 'Ticket sem título',
@@ -1329,6 +1347,7 @@ serve(async (req) => {
           status: ticket.status,
           equipe_responsavel: equipeDataSLABreach?.nome || 'Não atribuída',
           descricao_problema: ticket.descricao_problema,
+          tempo_restante_sla: tempoRestanteSLA,
           data_abertura: ticket.data_abertura ? new Date(ticket.data_abertura).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : 'Não informada',
           data_limite_sla: ticket.data_limite_sla ? new Date(ticket.data_limite_sla).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : 'Não informada'
         });
