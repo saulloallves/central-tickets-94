@@ -106,7 +106,8 @@ serve(async (req) => {
       .from("unidades")
       .select("id, grupo, codigo_grupo, concierge_name, concierge_phone")
       .eq("id_grupo_branco", phone)
-      .maybeSingle();
+      .limit(1)
+      .single();
 
     if (unidadeError || !unidadeExterna) {
       console.error("❌ Unidade externa não encontrada:", unidadeError);
