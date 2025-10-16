@@ -398,21 +398,34 @@ serve(async (req: Request) => {
                 status: 403,
               },
             );
-          } else {
-            console.log(`🚫 Grupo completamente não autorizado - não existe em nenhuma tabela`);
-            await sendUnauthorizedGroupNotification(chatId);
+    } else {
+      console.log(`🚫 Grupo completamente não autorizado - não existe em nenhuma tabela`);
+      
+      // Enviar mensagem ao grupo informando que não está cadastrado
+      const notRegisteredMessage = `🚫 *Grupo não cadastrado*\n\n` +
+        `Olá! Este grupo ainda não está cadastrado no sistema Girabot.\n\n` +
+        `Para utilizar o bot, é necessário realizar o cadastro completo da sua unidade.\n\n` +
+        `👉 *Acesse:* cadastro.girabot.com.br\n\n` +
+        `Após o cadastro, você terá acesso a todas as funcionalidades do bot! 🤖\n\n` +
+        `_Se você já realizou o cadastro, entre em contato com o suporte._`;
 
-            return new Response(
-              JSON.stringify({
-                success: false,
-                message: "Bot only processes messages from authorized groups",
-              }),
-              {
-                headers: { "Content-Type": "application/json", ...corsHeaders },
-                status: 403,
-              },
-            );
-          }
+      await botZapi.sendMessage(chatId, notRegisteredMessage);
+      
+      // Continuar enviando notificação interna para admins
+      await sendUnauthorizedGroupNotification(chatId);
+
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message: "Group not registered - message sent to group",
+          group_id: chatId,
+        }),
+        {
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+          status: 403,
+        },
+      );
+    }
         }
 
         console.log("✅ BOT_BASE_1: Grupo autorizado - verificando cadastro da unidade");
