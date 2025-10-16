@@ -16,6 +16,10 @@ serve(async (req: Request) => {
     const body = await req.json();
     console.log("📦 Body parseado:", JSON.stringify(body, null, 2));
     
+    // Verificar modo silencioso (para integração com Typebot)
+    const silentMode = body?.silent_mode === true;
+    console.log(`🔇 Silent Mode: ${silentMode}`);
+    
     const phone = body?.body?.phone || body?.phone || body?.participantPhone;
     console.log("📞 Telefone extraído:", phone);
 
@@ -47,21 +51,31 @@ serve(async (req: Request) => {
     const zapiUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}/send-text`;
     console.log(`📤 Enviando senha info para Z-API: ${zapiUrl.replace(instanceToken, '****')}`);
 
-    const res = await fetch(zapiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Client-Token": clientToken,
-      },
-      body: JSON.stringify(payload),
-    });
+    if (!silentMode) {
+      const res = await fetch(zapiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Client-Token": clientToken,
+        },
+        body: JSON.stringify(payload),
+      });
 
-    const data = await res.json();
-    console.log("📤 Senha info enviado:", data);
+      const data = await res.json();
+      console.log("📤 Senha info enviado:", data);
 
-    return new Response(JSON.stringify(data), {
+      return new Response(JSON.stringify(data), {
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+        status: res.status,
+      });
+    }
+
+    return new Response(JSON.stringify({ 
+      success: true, 
+      mensagem_gerada: payload.message 
+    }), {
       headers: { "Content-Type": "application/json", ...corsHeaders },
-      status: res.status,
+      status: 200,
     });
   } catch (err) {
     console.error("❌ Erro no autoatendimento_nao_sei_senha:", err);

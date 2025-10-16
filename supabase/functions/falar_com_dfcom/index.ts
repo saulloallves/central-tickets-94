@@ -13,12 +13,16 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  try {
-    const body = await req.json();
-    console.log("📩 Webhook DFCom recebido:", body);
+    try {
+      const body = await req.json();
+      console.log("📩 Webhook DFCom recebido:", body);
 
-    // Extrai o phone do grupo
-    const phone = body?.body?.phone || body?.phone || body?.participantPhone;
+      // Verificar modo silencioso (para integração com Typebot)
+      const silentMode = body?.silent_mode === true;
+      console.log(`🔇 Silent Mode: ${silentMode}`);
+
+      // Extrai o phone do grupo
+      const phone = body?.body?.phone || body?.phone || body?.participantPhone;
     if (!phone) {
       return new Response(JSON.stringify({ error: "Telefone não encontrado no payload" }), {
         headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -283,18 +287,25 @@ serve(async (req) => {
     // 5. Mensagem com posição na fila
     const mensagem = `🧾 Seu número na fila é: *#${posicao}*\n\nPor favor, permaneça aqui. Assim que for sua vez, você receberá uma mensagem diretamente por aqui.\n\nSe desejar encerrar o atendimento ou alterar a maneira de atendimento para autoatendimento, selecione um dos botões abaixo:`;
 
-    await enviarZapi("send-button-list", {
-      phone,
-      message: mensagem,
-      buttonList: {
-        buttons: [
-          { id: "personalizado_finalizar", label: "✅ Finalizar atendimento" },
-          { id: "autoatendimento_menu", label: "🔄 Transferir para autoatendimento" },
-        ],
-      },
-    });
+    if (!silentMode) {
+      await enviarZapi("send-button-list", {
+        phone,
+        message: mensagem,
+        buttonList: {
+          buttons: [
+            { id: "personalizado_finalizar", label: "✅ Finalizar atendimento" },
+            { id: "autoatendimento_menu", label: "🔄 Transferir para autoatendimento" },
+          ],
+        },
+      });
+    }
 
-    return new Response(JSON.stringify({ success: true, chamado, posicao }), {
+    return new Response(JSON.stringify({ 
+      success: true, 
+      chamado, 
+      posicao,
+      mensagem_gerada: mensagem 
+    }), {
       headers: { "Content-Type": "application/json", ...corsHeaders },
       status: 200,
     });

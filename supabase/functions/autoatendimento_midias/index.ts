@@ -10,6 +10,11 @@ serve(async (req) => {
   try {
     console.log("🖼️ AUTOATENDIMENTO_MIDIAS - INICIADO -", new Date().toISOString());
     const body = await req.json();
+
+    // Verificar modo silencioso (para integração com Typebot)
+    const silentMode = body?.silent_mode === true;
+    console.log(`🔇 Silent Mode: ${silentMode}`);
+
     const phone = body?.body?.phone || body?.phone || body?.participantPhone;
     if (!phone) return new Response(JSON.stringify({ error: "Telefone não encontrado" }), { headers: { "Content-Type": "application/json", ...corsHeaders }, status: 400 });
 
@@ -31,8 +36,16 @@ serve(async (req) => {
     };
 
     const zapiUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}/send-link`;
-    const res = await fetch(zapiUrl, { method: "POST", headers: { "Content-Type": "application/json", "Client-Token": clientToken }, body: JSON.stringify(payload) });
-    return new Response(await res.text(), { headers: { "Content-Type": "application/json", ...corsHeaders }, status: res.status });
+    
+    if (!silentMode) {
+      const res = await fetch(zapiUrl, { method: "POST", headers: { "Content-Type": "application/json", "Client-Token": clientToken }, body: JSON.stringify(payload) });
+      return new Response(await res.text(), { headers: { "Content-Type": "application/json", ...corsHeaders }, status: res.status });
+    }
+    
+    return new Response(JSON.stringify({ 
+      success: true, 
+      mensagem_gerada: payload.message 
+    }), { headers: { "Content-Type": "application/json", ...corsHeaders }, status: 200 });
   } catch (err) {
     console.error("❌ Erro no autoatendimento_midias:", err);
     return new Response(JSON.stringify({ error: "Erro interno", details: err.message }), { headers: { "Content-Type": "application/json", ...corsHeaders }, status: 500 });

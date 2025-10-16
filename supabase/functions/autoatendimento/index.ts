@@ -15,6 +15,10 @@ serve(async (req: Request) => {
     const body = await req.json();
     const phone = body?.phone || body?.participantPhone;
 
+    // Verificar modo silencioso (para integração com Typebot)
+    const silentMode = body?.silent_mode === true;
+    console.log(`🔇 Silent Mode: ${silentMode}`);
+
     if (!phone) {
       return new Response(JSON.stringify({ error: "Telefone não encontrado" }), {
         headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -49,17 +53,19 @@ serve(async (req: Request) => {
       linkDescription: "Acesse quando quiser fazer solicitações, consultar mídias, falar com a DFCom ou abrir tickets."
     };
 
-    // Envia via Z-API
-    const res = await fetch(zapiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Client-Token": clientToken,
-      },
-      body: JSON.stringify(linkPayload),
-    });
+    // Envia via Z-API (se não for silent mode)
+    if (!silentMode) {
+      const res = await fetch(zapiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Client-Token": clientToken,
+        },
+        body: JSON.stringify(linkPayload),
+      });
 
-    console.log("📤 Menu Autoatendimento enviado:", res.status);
+      console.log("📤 Menu Autoatendimento enviado:", res.status);
+    }
 
     // Trigger password flow after sending GiraBot link
     console.log("🔐 Iniciando fluxo de envio de senha...");
@@ -86,7 +92,11 @@ serve(async (req: Request) => {
       // Don't fail the main flow if password flow fails
     }
 
-    return new Response(JSON.stringify({ success: true, step: "menu_autoatendimento_with_password" }), {
+    return new Response(JSON.stringify({ 
+      success: true, 
+      step: "menu_autoatendimento_with_password",
+      mensagem_gerada: linkPayload.message
+    }), {
       headers: { "Content-Type": "application/json", ...corsHeaders },
       status: 200,
     });

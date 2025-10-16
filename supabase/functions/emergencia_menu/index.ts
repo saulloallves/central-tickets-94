@@ -15,6 +15,11 @@ serve(async (req: Request) => {
 
   try {
     const body = await req.json();
+
+    // Verificar modo silencioso (para integração com Typebot)
+    const silentMode = body?.silent_mode === true;
+    console.log(`🔇 Silent Mode: ${silentMode}`);
+
     const phone = body?.body?.phone || body?.phone || body?.participantPhone;
     
     if (!phone) {

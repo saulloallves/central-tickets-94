@@ -16,6 +16,10 @@ serve(async (req) => {
     const body = await req.json();
     console.log("📩 Finalizando atendimento:", body);
 
+    // Verificar modo silencioso (para integração com Typebot)
+    const silentMode = body?.silent_mode === true;
+    console.log(`🔇 Silent Mode: ${silentMode}`);
+
     // Extrai o phone do grupo
     const phone = body?.phone || body?.participantPhone;
     if (!phone) {
@@ -101,34 +105,39 @@ serve(async (req) => {
     const { instanceId, instanceToken, clientToken, baseUrl } = await loadZAPIConfig();
     const zapiUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}`;
 
-    // 4. Envia mensagem de confirmação com botões de avaliação
-    try {
-      const response = await fetch(`${zapiUrl}/send-button-list`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Client-Token": clientToken },
-        body: JSON.stringify({
-          phone,
-          message: "✅ *Atendimento finalizado*\n\n🗣️ *Como você avalia esse atendimento?*",
-          buttonList: {
-            buttons: [
-              { id: `avaliacao_otimo_${chamado.id}`, label: "😊 Consegui resolver tudo" },
-              { id: `avaliacao_bom_${chamado.id}`, label: "😐 Foi útil, mas poderia melhorar" },
-              { id: `avaliacao_ruim_${chamado.id}`, label: "😞 Não resolveu o que eu precisava" }
-            ]
-          }
-        }),
-      });
-      
-      const zapiData = await response.json();
-      console.log("📤 Mensagem de finalização enviada:", zapiData);
-    } catch (err) {
-      console.error("❌ Erro ao enviar mensagem de confirmação:", err);
+    // 4. Envia mensagem de confirmação com botões de avaliação (se não for silent mode)
+    const mensagemFinalizacao = "✅ *Atendimento finalizado*\n\n🗣️ *Como você avalia esse atendimento?*";
+    
+    if (!silentMode) {
+      try {
+        const response = await fetch(`${zapiUrl}/send-button-list`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Client-Token": clientToken },
+          body: JSON.stringify({
+            phone,
+            message: mensagemFinalizacao,
+            buttonList: {
+              buttons: [
+                { id: `avaliacao_otimo_${chamado.id}`, label: "😊 Consegui resolver tudo" },
+                { id: `avaliacao_bom_${chamado.id}`, label: "😐 Foi útil, mas poderia melhorar" },
+                { id: `avaliacao_ruim_${chamado.id}`, label: "😞 Não resolveu o que eu precisava" }
+              ]
+            }
+          }),
+        });
+        
+        const zapiData = await response.json();
+        console.log("📤 Mensagem de finalização enviada:", zapiData);
+      } catch (err) {
+        console.error("❌ Erro ao enviar mensagem de confirmação:", err);
+      }
     }
 
     return new Response(JSON.stringify({ 
       success: true, 
       message: "Atendimento finalizado com sucesso",
-      chamado_id: chamado.id 
+      chamado_id: chamado.id,
+      mensagem_gerada: mensagemFinalizacao
     }), {
       headers: { "Content-Type": "application/json", ...corsHeaders },
       status: 200,

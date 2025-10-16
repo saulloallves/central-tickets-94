@@ -17,6 +17,10 @@ serve(async (req) => {
     const body = await req.json();
     console.log("📩 Webhook acompanhar_chamado recebido:", body);
 
+    // Verificar modo silencioso (para integração com Typebot)
+    const silentMode = body?.silent_mode === true;
+    console.log(`🔇 Silent Mode: ${silentMode}`);
+
     // Extrai o phone do grupo
     const phone = body?.body?.phone || body?.phone || body?.participantPhone;
     if (!phone) {
@@ -102,20 +106,25 @@ serve(async (req) => {
 
     if (!chamadoAtivo) {
       // Não há atendimento em andamento
-      await enviarZapi("send-button-list", {
-        phone,
-        message: "📋 *Acompanhar Chamado*\n\nVocê não possui nenhum atendimento em andamento no momento.\n\nDeseja iniciar um novo atendimento?",
-        buttonList: {
-          buttons: [
-            { id: "concierge_falar", label: "🔵 Iniciar Atendimento" },
-            { id: "autoatendimento_menu", label: "🔄 Autoatendimento" },
-          ],
-        },
-      });
+      const mensagemSemAtendimento = "📋 *Acompanhar Chamado*\n\nVocê não possui nenhum atendimento em andamento no momento.\n\nDeseja iniciar um novo atendimento?";
+      
+      if (!silentMode) {
+        await enviarZapi("send-button-list", {
+          phone,
+          message: mensagemSemAtendimento,
+          buttonList: {
+            buttons: [
+              { id: "concierge_falar", label: "🔵 Iniciar Atendimento" },
+              { id: "autoatendimento_menu", label: "🔄 Autoatendimento" },
+            ],
+          },
+        });
+      }
 
       return new Response(JSON.stringify({ 
         success: true, 
-        tem_atendimento: false 
+        tem_atendimento: false,
+        mensagem_gerada: mensagemSemAtendimento
       }), {
         headers: { "Content-Type": "application/json", ...corsHeaders },
         status: 200,
@@ -162,22 +171,26 @@ serve(async (req) => {
       mensagem += `\nVocê está sendo atendido agora por nossa equipe.`;
     }
 
-    await enviarZapi("send-button-list", {
-      phone,
-      message: mensagem,
-      buttonList: {
-        buttons: [
-          { id: "personalizado_finalizar", label: "✅ Finalizar atendimento" },
-          { id: "autoatendimento_menu", label: "🔄 Transferir para autoatendimento" },
-        ],
-      },
-    });
+    if (!silentMode) {
+      await enviarZapi("send-button-list", {
+        phone,
+        message: mensagem,
+        buttonList: {
+          buttons: [
+            { id: "personalizado_finalizar", label: "✅ Finalizar atendimento" },
+            { id: "autoatendimento_menu", label: "🔄 Transferir para autoatendimento" },
+          ],
+        },
+      });
+    }
 
     return new Response(JSON.stringify({ 
       success: true, 
       tem_atendimento: true,
       chamado: chamadoAtivo,
-      tempo_espera: tempoEspera
+      tempo_espera: tempoEspera,
+      status: chamadoAtivo.status,
+      mensagem_gerada: mensagem
     }), {
       headers: { "Content-Type": "application/json", ...corsHeaders },
       status: 200,

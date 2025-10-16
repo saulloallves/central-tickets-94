@@ -14,6 +14,11 @@ serve(async (req: Request) => {
   try {
     console.log("⚫ SUPORTE_DFCOM - INICIADO -", new Date().toISOString());
     const body = await req.json();
+
+    // Verificar modo silencioso (para integração com Typebot)
+    const silentMode = body?.silent_mode === true;
+    console.log(`🔇 Silent Mode: ${silentMode}`);
+
     const phone = body?.body?.phone || body?.phone || body?.participantPhone;
     
     if (!phone) {
@@ -52,45 +57,55 @@ serve(async (req: Request) => {
     const zapiUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}/send-button-list`;
     console.log(`📤 Enviando suporte_dfcom para Z-API: ${zapiUrl.replace(instanceToken, '****')}`);
 
-    const res = await fetch(zapiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Client-Token": clientToken,
-      },
-      body: JSON.stringify(payload),
-    });
+    if (!silentMode) {
+      const res = await fetch(zapiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Client-Token": clientToken,
+        },
+        body: JSON.stringify(payload),
+      });
 
-    console.log(`📊 Z-API Response Status: ${res.status} ${res.statusText}`);
-    
-    let data;
-    const responseText = await res.text();
-    
-    if (responseText.trim()) {
-      try {
-        data = JSON.parse(responseText);
-        console.log("📤 Suporte DFCom enviado:", data);
-      } catch (parseError) {
-        console.error("❌ Erro ao fazer parse da resposta Z-API:", parseError);
-        console.log("📜 Resposta Z-API raw:", responseText);
+      console.log(`📊 Z-API Response Status: ${res.status} ${res.statusText}`);
+      
+      let data;
+      const responseText = await res.text();
+      
+      if (responseText.trim()) {
+        try {
+          data = JSON.parse(responseText);
+          console.log("📤 Suporte DFCom enviado:", data);
+        } catch (parseError) {
+          console.error("❌ Erro ao fazer parse da resposta Z-API:", parseError);
+          console.log("📜 Resposta Z-API raw:", responseText);
+          data = { 
+            success: false, 
+            error: "Resposta inválida da Z-API",
+            rawResponse: responseText
+          };
+        }
+      } else {
+        console.log("⚠️ Resposta Z-API vazia");
         data = { 
-          success: false, 
-          error: "Resposta inválida da Z-API",
-          rawResponse: responseText
+          success: res.ok, 
+          message: res.ok ? "Mensagem enviada" : "Erro na Z-API",
+          status: res.status
         };
       }
-    } else {
-      console.log("⚠️ Resposta Z-API vazia");
-      data = { 
-        success: res.ok, 
-        message: res.ok ? "Mensagem enviada" : "Erro na Z-API",
-        status: res.status
-      };
+
+      return new Response(JSON.stringify(data), {
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+        status: res.status,
+      });
     }
 
-    return new Response(JSON.stringify(data), {
+    return new Response(JSON.stringify({ 
+      success: true, 
+      mensagem_gerada: payload.message 
+    }), {
       headers: { "Content-Type": "application/json", ...corsHeaders },
-      status: res.status,
+      status: 200,
     });
   } catch (err) {
     console.error("❌ Erro no suporte_dfcom:", err);

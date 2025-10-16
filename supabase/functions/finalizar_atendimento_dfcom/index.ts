@@ -17,6 +17,10 @@ serve(async (req) => {
     const uniqueId = Math.random().toString(36).substring(7);
     console.log(`📩 [${uniqueId}] Finalizando atendimento DFCom:`, body);
 
+    // Verificar modo silencioso (para integração com Typebot)
+    const silentMode = body?.silent_mode === true;
+    console.log(`🔇 Silent Mode: ${silentMode}`);
+
     // Extrai o phone do grupo
     const phone = body?.phone || body?.participantPhone;
     if (!phone) {

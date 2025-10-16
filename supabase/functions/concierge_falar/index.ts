@@ -17,6 +17,10 @@ serve(async (req) => {
     const body = await req.json();
     console.log("📩 Webhook concierge recebido:", body);
 
+    // Verificar modo silencioso (para integração com Typebot)
+    const silentMode = body?.silent_mode === true;
+    console.log(`🔇 Silent Mode: ${silentMode}`);
+
     // Extrai o phone do grupo
     const phone = body?.body?.phone || body?.phone || body?.participantPhone;
     if (!phone) {
@@ -315,18 +319,25 @@ serve(async (req) => {
       mensagem = `⏳ *Você entrou na fila de atendimento personalizado*\n\n👤 Atendente: *${atendenteNome}*\n📊 Número de chamados na sua frente: *${totalNaFrente}*\n${emAtendimento.length > 0 ? `   (${emAtendimento.length} em atendimento + ${posicao - 1} aguardando)\n` : ''}\nPor favor, permaneça aqui. Assim que for sua vez, você receberá uma mensagem diretamente.\n\nSe desejar encerrar ou transferir para autoatendimento, selecione abaixo:`;
     }
 
-    await enviarZapi("send-button-list", {
-      phone,
-      message: mensagem,
-      buttonList: {
-        buttons: [
-          { id: "personalizado_finalizar", label: "✅ Finalizar atendimento" },
-          { id: "autoatendimento_menu", label: "🔄 Transferir para autoatendimento" },
-        ],
-      },
-    });
+    if (!silentMode) {
+      await enviarZapi("send-button-list", {
+        phone,
+        message: mensagem,
+        buttonList: {
+          buttons: [
+            { id: "personalizado_finalizar", label: "✅ Finalizar atendimento" },
+            { id: "autoatendimento_menu", label: "🔄 Transferir para autoatendimento" },
+          ],
+        },
+      });
+    }
 
-    return new Response(JSON.stringify({ success: true, chamado, posicao }), {
+    return new Response(JSON.stringify({ 
+      success: true, 
+      chamado, 
+      posicao,
+      mensagem_gerada: mensagem 
+    }), {
       headers: { "Content-Type": "application/json", ...corsHeaders },
       status: 200,
     });
