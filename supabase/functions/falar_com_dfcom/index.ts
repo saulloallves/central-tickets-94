@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { loadZAPIConfig } from "../_shared/zapi-config.ts";
-import { isBusinessHours } from "../_shared/business-hours.ts";
+import { isDFCOMBusinessHours } from "../_shared/business-hours.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -30,11 +30,11 @@ serve(async (req) => {
       });
     }
 
-    // Verificar se está dentro do horário de atendimento
-    if (!isBusinessHours()) {
-      console.log("⏰ Fora do horário de atendimento - redirecionando para autoatendimento");
+    // Verificar se está dentro do horário de atendimento DFCOM (estendido até 18h30)
+    if (!isDFCOMBusinessHours()) {
+      console.log("⏰ Fora do horário de atendimento DFCOM - redirecionando para autoatendimento");
       
-      const mensagemForaHorario = "❌ *Agora estamos fora do horário de atendimento.*\n\n⏰ Nosso time atende de segunda a sábado, das *8h30 às 17h30.*\n\n📝 Você pode abrir um ticket agora mesmo. Sua solicitação será registrada e respondida pela equipe assim que possível.";
+      const mensagemForaHorario = "❌ *Agora estamos fora do horário de atendimento.*\n\n⏰ Nosso time DFCom atende de segunda a sábado, das *8h30 às 18h30.*\n\n📝 Você pode abrir um ticket agora mesmo. Sua solicitação será registrada e respondida pela equipe assim que possível.";
       
       if (!silentMode) {
         // Carrega configurações Z-API para enviar mensagem de fora do horário
