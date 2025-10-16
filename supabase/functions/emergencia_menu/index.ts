@@ -240,7 +240,7 @@ serve(async (req: Request) => {
     
     const { data: whatsappGroup, error: whatsappError } = await supabase
       .from('atendente_unidades')
-      .select('codigo_grupo, grupo, concierge_name, concierge_phone')
+      .select('unidade_id, codigo_grupo, grupo, concierge_name, concierge_phone')
       .eq('id_grupo_branco', phone)
       .eq('ativo', true)
       .maybeSingle();
@@ -332,6 +332,7 @@ serve(async (req: Request) => {
     const { data: chamado, error: chamadoError } = await supabase
       .from('chamados')
       .insert({
+        unidade_id: whatsappGroup.unidade_id,
         franqueado_nome: unidade.grupo || 'Emergência',
         telefone: phone,
         descricao: '🚨 EMERGÊNCIA - Atendimento prioritário solicitado',
