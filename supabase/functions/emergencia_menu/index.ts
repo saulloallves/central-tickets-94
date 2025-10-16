@@ -332,7 +332,6 @@ serve(async (req: Request) => {
     const { data: chamado, error: chamadoError } = await supabase
       .from('chamados')
       .insert({
-        unidade_id: unidade.id,
         franqueado_nome: unidade.grupo || 'Emergência',
         telefone: phone,
         descricao: '🚨 EMERGÊNCIA - Atendimento prioritário solicitado',
