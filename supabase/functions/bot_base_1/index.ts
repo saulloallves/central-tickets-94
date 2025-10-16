@@ -198,10 +198,26 @@ async function checkUnitRegistration(groupId: string): Promise<{
   try {
     console.log(`🏢 Verificando cadastro da unidade para grupo ${groupId}...`);
 
-    const { data, error } = await supabaseAdmin
-      .from("unidades")
+    // 1️⃣ Buscar unidade na tabela unidades pelo codigo_grupo de atendente_unidades
+    const { data: atendenteData } = await supabaseAdmin
+      .from("atendente_unidades")
       .select("codigo_grupo, grupo, id_grupo_branco")
       .eq("id_grupo_branco", groupId)
+      .eq("ativo", true)
+      .maybeSingle();
+
+    if (!atendenteData) {
+      console.log(`🚫 Grupo não encontrado em atendente_unidades`);
+      return { isRegistered: false };
+    }
+
+    console.log(`📋 Grupo encontrado em atendente_unidades: ${atendenteData.grupo} (código: ${atendenteData.codigo_grupo})`);
+
+    // 2️⃣ Verificar se existe na tabela unidades usando codigo_grupo
+    const { data: unidadeData, error } = await supabaseAdmin
+      .from("unidades")
+      .select("codigo_grupo, grupo, id_grupo_branco")
+      .eq("codigo_grupo", atendenteData.codigo_grupo)
       .maybeSingle();
 
     if (error) {
@@ -209,27 +225,53 @@ async function checkUnitRegistration(groupId: string): Promise<{
       return { isRegistered: false };
     }
 
-    if (data) {
-      console.log(`✅ Unidade cadastrada: ${data.grupo} (código: ${data.codigo_grupo})`);
+    if (!unidadeData) {
+      console.log(`🚫 Unidade NÃO cadastrada em 'unidades' (código: ${atendenteData.codigo_grupo})`);
       return {
-        isRegistered: true,
-        codigoGrupo: data.codigo_grupo,
-        nomeGrupo: data.grupo,
+        isRegistered: false,
+        codigoGrupo: atendenteData.codigo_grupo,
+        nomeGrupo: atendenteData.grupo,
       };
     }
 
-    // Buscar informações em atendente_unidades para a mensagem
-    const { data: atendenteData } = await supabaseAdmin
-      .from("atendente_unidades")
-      .select("codigo_grupo, grupo")
-      .eq("id_grupo_branco", groupId)
-      .maybeSingle();
+    // 3️⃣ Verificar se tem id_grupo_branco na tabela unidades
+    if (!unidadeData.id_grupo_branco) {
+      console.log(`⚠️ Unidade encontrada mas sem id_grupo_branco - buscando em outras tabelas...`);
+      
+      // Tentar atualizar com id_grupo_branco de atendente_unidades
+      if (atendenteData.id_grupo_branco) {
+        console.log(`🔄 Atualizando id_grupo_branco na tabela unidades...`);
+        await supabaseAdmin
+          .from("unidades")
+          .update({ id_grupo_branco: atendenteData.id_grupo_branco })
+          .eq("codigo_grupo", atendenteData.codigo_grupo);
+        
+        console.log(`✅ id_grupo_branco atualizado com sucesso`);
+      } else {
+        // Buscar em unidades_whatsapp como fallback
+        const { data: whatsappData } = await supabaseAdmin
+          .from("unidades_whatsapp")
+          .select("id_grupo_branco")
+          .eq("codigo_grupo", atendenteData.codigo_grupo)
+          .maybeSingle();
+        
+        if (whatsappData?.id_grupo_branco) {
+          console.log(`🔄 Atualizando id_grupo_branco de unidades_whatsapp...`);
+          await supabaseAdmin
+            .from("unidades")
+            .update({ id_grupo_branco: whatsappData.id_grupo_branco })
+            .eq("codigo_grupo", atendenteData.codigo_grupo);
+          
+          console.log(`✅ id_grupo_branco atualizado com sucesso`);
+        }
+      }
+    }
 
-    console.log(`🚫 Unidade NÃO cadastrada no sistema`);
+    console.log(`✅ Unidade cadastrada: ${unidadeData.grupo} (código: ${unidadeData.codigo_grupo})`);
     return {
-      isRegistered: false,
-      codigoGrupo: atendenteData?.codigo_grupo,
-      nomeGrupo: atendenteData?.grupo,
+      isRegistered: true,
+      codigoGrupo: unidadeData.codigo_grupo,
+      nomeGrupo: unidadeData.grupo,
     };
   } catch (error) {
     console.error("❌ Erro ao verificar cadastro da unidade:", error);
