@@ -291,15 +291,6 @@ serve(async (req: Request) => {
     const body = await req.json();
     console.log("📦 Body parseado:", JSON.stringify(body, null, 2));
 
-    // 🚫 FILTRO: Ignorar mensagens enviadas pelo próprio bot
-    if (body?.fromMe === true) {
-      console.log("⏭️ Ignorando mensagem do próprio bot (fromMe: true)");
-      return new Response(
-        JSON.stringify({ success: true, message: "Ignored: message from bot itself" }),
-        { headers: { "Content-Type": "application/json", ...corsHeaders }, status: 200 }
-      );
-    }
-
     // Tenta extrair buttonId de várias formas possíveis
     const buttonId1 = body?.buttonsResponseMessage?.buttonId;
     const buttonId2 = body?.buttonId;
