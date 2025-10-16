@@ -171,7 +171,7 @@ export function CrisisBanner() {
 
   return (
     <>
-      <div className="space-y-2 mb-4">
+      <div className="fixed top-0 left-0 right-0 z-50 space-y-2 p-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 shadow-lg">
         {visibleCrises.map((crisis) => (
           <Alert key={crisis.id} className="border-destructive bg-destructive/10">
             <AlertTriangle className="h-4 w-4 text-destructive" />

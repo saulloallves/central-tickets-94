@@ -149,7 +149,7 @@ const Tickets = () => {
       {/* New Crisis Alert Banner */}
       {/* Sistema de crises removido */}
       
-      <div className="w-full p-3 md:p-6 space-y-3 md:space-y-4">
+      <div className="w-full p-3 md:p-6 space-y-3 md:space-y-4 pt-24">
         {/* Banner de Crises */}
         <CrisisBanner />
 
