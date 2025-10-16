@@ -126,13 +126,15 @@ serve(async (req: Request) => {
       }
 
       // Criar chamado de emergência (mesmo fora do horário)
+      const chamadoId = crypto.randomUUID();
       const { data: chamado, error: chamadoError } = await supabase
         .from('chamados')
         .insert({
-          unidade_id: unidade.id,
+          id: chamadoId,
+          unidade_id: chamadoId, // Usar o mesmo UUID já que não temos UUID da unidade externa
           franqueado_nome: unidade.grupo || 'Emergência',
           telefone: phone,
-          descricao: '🚨 EMERGÊNCIA FORA DO HORÁRIO - Atendimento prioritário solicitado',
+          descricao: `🚨 EMERGÊNCIA FORA DO HORÁRIO - ${unidade.grupo} (Código: ${unidade.codigo_grupo})`,
           tipo_atendimento: 'emergencia',
           status: 'emergencia',
           prioridade: 'urgente',
@@ -328,14 +330,16 @@ serve(async (req: Request) => {
       });
     }
 
-    // Criar chamado de emergência
+    // Criar chamado de emergência (gerar UUID porque unidade externa tem ID integer)
+    const chamadoId = crypto.randomUUID();
     const { data: chamado, error: chamadoError } = await supabase
       .from('chamados')
       .insert({
-        unidade_id: unidade.id,
+        id: chamadoId,
+        unidade_id: chamadoId, // Usar o mesmo UUID já que não temos UUID da unidade externa
         franqueado_nome: unidade.grupo || 'Emergência',
         telefone: phone,
-        descricao: '🚨 EMERGÊNCIA - Atendimento prioritário solicitado',
+        descricao: `🚨 EMERGÊNCIA - ${unidade.grupo} (Código: ${unidade.codigo_grupo})`,
         tipo_atendimento: 'emergencia',
         status: 'emergencia',
         prioridade: 'urgente',
