@@ -211,7 +211,9 @@ async function checkUnitRegistration(groupId: string): Promise<{
       return { isRegistered: false };
     }
 
-    console.log(`📋 Grupo encontrado em atendente_unidades: ${atendenteData.grupo} (código: ${atendenteData.codigo_grupo})`);
+    console.log(
+      `📋 Grupo encontrado em atendente_unidades: ${atendenteData.grupo} (código: ${atendenteData.codigo_grupo})`,
+    );
 
     // 2️⃣ Verificar se existe na tabela unidades usando codigo_grupo
     const { data: unidadeData, error } = await supabaseAdmin
@@ -237,7 +239,7 @@ async function checkUnitRegistration(groupId: string): Promise<{
     // 3️⃣ Verificar se tem id_grupo_branco na tabela unidades
     if (!unidadeData.id_grupo_branco) {
       console.log(`⚠️ Unidade encontrada mas sem id_grupo_branco - buscando em outras tabelas...`);
-      
+
       // Tentar atualizar com id_grupo_branco de atendente_unidades
       if (atendenteData.id_grupo_branco) {
         console.log(`🔄 Atualizando id_grupo_branco na tabela unidades...`);
@@ -245,7 +247,7 @@ async function checkUnitRegistration(groupId: string): Promise<{
           .from("unidades")
           .update({ id_grupo_branco: atendenteData.id_grupo_branco })
           .eq("codigo_grupo", atendenteData.codigo_grupo);
-        
+
         console.log(`✅ id_grupo_branco atualizado com sucesso`);
       } else {
         // Buscar em unidades_whatsapp como fallback
@@ -254,14 +256,14 @@ async function checkUnitRegistration(groupId: string): Promise<{
           .select("id_grupo_branco")
           .eq("codigo_grupo", atendenteData.codigo_grupo)
           .maybeSingle();
-        
+
         if (whatsappData?.id_grupo_branco) {
           console.log(`🔄 Atualizando id_grupo_branco de unidades_whatsapp...`);
           await supabaseAdmin
             .from("unidades")
             .update({ id_grupo_branco: whatsappData.id_grupo_branco })
             .eq("codigo_grupo", atendenteData.codigo_grupo);
-          
+
           console.log(`✅ id_grupo_branco atualizado com sucesso`);
         }
       }
@@ -364,7 +366,7 @@ serve(async (req: Request) => {
       "ola robo",
       "ola robô",
       "olá robo",
-      "olá robô"
+      "olá robô",
     ];
 
     const functionsBaseUrl =
@@ -384,15 +386,16 @@ serve(async (req: Request) => {
 
         if (!isAuthorized) {
           console.log(`🚫 BOT_BASE_1: Grupo não autorizado em atendente_unidades (${chatId})`);
-          
+
           // Verificar se existe em unidades_whatsapp
           const whatsappCheck = await checkGroupInWhatsappTable(chatId);
-          
+
           if (whatsappCheck.exists) {
             console.log(`📱 Grupo encontrado em unidades_whatsapp - enviando orientação de cadastro`);
-            
+
             // Enviar mensagem de orientação de cadastro
-            const message = `🚨 *Unidade não Cadastrada!*\n` +
+            const message =
+              `🚨 *Unidade não Cadastrada!*\n` +
               `Isso pode acontecer porque a unidade ainda não está vinculada a nenhum franqueado.\n\n` +
               `👉 *Pra resolver:*\n\n` +
               `Acesse *cadastro.girabot.com* ou *cadastro.girabot.com.br*.\n\n` +
@@ -441,36 +444,37 @@ serve(async (req: Request) => {
                 status: 403,
               },
             );
-    } else {
-      console.log(`🚫 Grupo completamente não autorizado - não existe em nenhuma tabela`);
-      
-      // Enviar mensagem ao grupo informando que não está cadastrado
-      const notRegisteredMessage = `🚨 *Unidade não Cadastrada!*\n` +
-        `Isso pode acontecer porque a unidade ainda não está vinculada a nenhum franqueado.\n\n` +
-        `👉 *Pra resolver:*\n\n` +
-        `Acesse *cadastro.girabot.com* ou *cadastro.girabot.com.br*.\n\n` +
-        `Faça login com seu CPF (o sistema vai identificar que o CPF já tem cadastro).\n\n` +
-        `Clique em *Adicionar unidade* e cadastre sua unidade.\n\n` +
-        `Depois é só concluir.\n\n` +
-        `Em seguida, volte aqui e acione o robô novamente para continuar o atendimento.`;
+          } else {
+            console.log(`🚫 Grupo completamente não autorizado - não existe em nenhuma tabela`);
 
-      await botZapi.sendMessage(chatId, notRegisteredMessage);
-      
-      // Continuar enviando notificação interna para admins
-      await sendUnauthorizedGroupNotification(chatId);
+            // Enviar mensagem ao grupo informando que não está cadastrado
+            const notRegisteredMessage =
+              `🚨 *Unidade não Cadastrada!*\n` +
+              `Isso pode acontecer porque a unidade ainda não está vinculada a nenhum franqueado.\n\n` +
+              `👉 *Pra resolver:*\n\n` +
+              `Acesse *cadastro.girabot.com.br*\n\n` +
+              `Faça login com seu CPF (o sistema vai identificar que o CPF já tem cadastro).\n\n` +
+              `Clique em *Adicionar unidade* e cadastre sua unidade.\n\n` +
+              `Depois é só concluir.\n\n` +
+              `Em seguida, volte aqui e acione o robô novamente para continuar o atendimento.`;
 
-      return new Response(
-        JSON.stringify({
-          success: false,
-          message: "Group not registered - message sent to group",
-          group_id: chatId,
-        }),
-        {
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-          status: 403,
-        },
-      );
-    }
+            await botZapi.sendMessage(chatId, notRegisteredMessage);
+
+            // Continuar enviando notificação interna para admins
+            await sendUnauthorizedGroupNotification(chatId);
+
+            return new Response(
+              JSON.stringify({
+                success: false,
+                message: "Group not registered - message sent to group",
+                group_id: chatId,
+              }),
+              {
+                headers: { "Content-Type": "application/json", ...corsHeaders },
+                status: 403,
+              },
+            );
+          }
         }
 
         console.log("✅ BOT_BASE_1: Grupo autorizado - verificando cadastro da unidade");
@@ -482,10 +486,11 @@ serve(async (req: Request) => {
           console.log(`🚫 BOT_BASE_1: Unidade não cadastrada (${chatId})`);
 
           // Enviar mensagem no grupo informando sobre falta de cadastro
-          const message = `🚨 *Unidade não Cadastrada!*\n` +
+          const message =
+            `🚨 *Unidade não Cadastrada!*\n` +
             `Isso pode acontecer porque a unidade ainda não está vinculada a nenhum franqueado.\n\n` +
             `👉 *Pra resolver:*\n\n` +
-            `Acesse *cadastro.girabot.com*.\n\n` +
+            `Acesse *cadastro.girabot.com.br*\n\n` +
             `Faça login com seu CPF (o sistema vai identificar que o CPF já tem cadastro).\n\n` +
             `Clique em *Adicionar unidade* e cadastre sua unidade.\n\n` +
             `Depois é só concluir.\n\n` +
