@@ -31,7 +31,7 @@ export function AdvancedTicketSearch({ open, onOpenChange, onTicketSelect }: Adv
     status: 'all',
     prioridade: 'all',
     status_sla: 'all',
-    categoria: 'all'
+    equipe_id: 'all'
   });
   
   const [unidadeOpen, setUnidadeOpen] = useState(false);
@@ -39,7 +39,7 @@ export function AdvancedTicketSearch({ open, onOpenChange, onTicketSelect }: Adv
   const [page, setPage] = useState(1);
   const pageSize = 50;
 
-  const { tickets, totalCount, loading, unidades } = useAdvancedTicketSearch(filters, page, pageSize, open);
+  const { tickets, totalCount, loading, unidades, equipes } = useAdvancedTicketSearch(filters, page, pageSize, open);
 
   const handleClearFilters = () => {
     setFilters({
@@ -50,7 +50,7 @@ export function AdvancedTicketSearch({ open, onOpenChange, onTicketSelect }: Adv
       status: 'all',
       prioridade: 'all',
       status_sla: 'all',
-      categoria: 'all'
+      equipe_id: 'all'
     });
     setPage(1);
   };
@@ -335,22 +335,20 @@ export function AdvancedTicketSearch({ open, onOpenChange, onTicketSelect }: Adv
               </SelectContent>
             </Select>
 
-            {/* Select Categoria */}
-            <Select value={filters.categoria} onValueChange={value => setFilters(prev => ({ ...prev, categoria: value }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Categoria" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas Categorias</SelectItem>
-                <SelectItem value="juridico">Jurídico</SelectItem>
-                <SelectItem value="sistema">Sistema</SelectItem>
-                <SelectItem value="midia">Mídia</SelectItem>
-                <SelectItem value="operacoes">Operações</SelectItem>
-                <SelectItem value="rh">RH</SelectItem>
-                <SelectItem value="financeiro">Financeiro</SelectItem>
-                <SelectItem value="outro">Outro</SelectItem>
-              </SelectContent>
-            </Select>
+                {/* Select Equipe */}
+                <Select value={filters.equipe_id} onValueChange={value => setFilters(prev => ({ ...prev, equipe_id: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Equipe" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas Equipes</SelectItem>
+                    {equipes.map(equipe => (
+                      <SelectItem key={equipe.id} value={equipe.id}>
+                        {equipe.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
           </div>
 
           {/* Botões de Ação */}

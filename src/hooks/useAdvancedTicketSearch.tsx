@@ -5,7 +5,6 @@ import { useToast } from '@/hooks/use-toast';
 type TicketStatus = 'aberto' | 'em_atendimento' | 'escalonado' | 'concluido';
 type TicketPrioridade = 'baixo' | 'medio' | 'alto' | 'imediato' | 'crise';
 type TicketSLAStatus = 'dentro_prazo' | 'alerta' | 'vencido';
-type TicketCategoria = 'juridico' | 'sistema' | 'midia' | 'operacoes' | 'rh' | 'financeiro' | 'outro';
 
 interface SearchFilters {
   search: string;
@@ -15,7 +14,7 @@ interface SearchFilters {
   status: string | 'all';
   prioridade: string | 'all';
   status_sla: string | 'all';
-  categoria: string | 'all';
+  equipe_id: string | 'all';
 }
 
 interface Unidade {
@@ -24,11 +23,17 @@ interface Unidade {
   codigo_grupo: string;
 }
 
+interface Equipe {
+  id: string;
+  nome: string;
+}
+
 export function useAdvancedTicketSearch(filters: SearchFilters, page: number, pageSize: number, isOpen: boolean) {
   const [tickets, setTickets] = useState<any[]>([]);
   const [totalCount, setTotalCount] = useState(0);
-  const [loading, setLoading] = useState(true); // ✅ Começa como true
+  const [loading, setLoading] = useState(true);
   const [unidades, setUnidades] = useState<Unidade[]>([]);
+  const [equipes, setEquipes] = useState<Equipe[]>([]);
   const { toast } = useToast();
 
   // Fetch unidades para dropdown
@@ -47,6 +52,25 @@ export function useAdvancedTicketSearch(filters: SearchFilters, page: number, pa
     };
 
     fetchUnidades();
+  }, []);
+
+  // Fetch equipes para dropdown
+  useEffect(() => {
+    const fetchEquipes = async () => {
+      const { data, error } = await supabase
+        .from('equipes')
+        .select('id, nome')
+        .eq('ativo', true)
+        .order('nome');
+
+      if (error) {
+        console.error('Erro ao buscar equipes:', error);
+      } else {
+        setEquipes(data || []);
+      }
+    };
+
+    fetchEquipes();
   }, []);
 
   // Fetch tickets com filtros
@@ -106,8 +130,8 @@ export function useAdvancedTicketSearch(filters: SearchFilters, page: number, pa
         query = query.eq('status_sla', filters.status_sla as TicketSLAStatus);
       }
 
-      if (filters.categoria !== 'all') {
-        query = query.eq('categoria', filters.categoria as TicketCategoria);
+      if (filters.equipe_id !== 'all') {
+        query = query.eq('equipe_responsavel_id', filters.equipe_id);
       }
 
       // Paginação
@@ -143,5 +167,5 @@ export function useAdvancedTicketSearch(filters: SearchFilters, page: number, pa
     fetchTickets();
   }, [filters, page, pageSize, toast, isOpen]);
 
-  return { tickets, totalCount, loading, unidades };
+  return { tickets, totalCount, loading, unidades, equipes };
 }
