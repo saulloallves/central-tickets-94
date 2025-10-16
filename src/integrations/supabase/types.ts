@@ -3582,6 +3582,79 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_group_actions: {
+        Row: {
+          action_type: string
+          created_at: string | null
+          details: Json | null
+          group_id: string
+          id: string
+          performed_by: string | null
+        }
+        Insert: {
+          action_type: string
+          created_at?: string | null
+          details?: Json | null
+          group_id: string
+          id?: string
+          performed_by?: string | null
+        }
+        Update: {
+          action_type?: string
+          created_at?: string | null
+          details?: Json | null
+          group_id?: string
+          id?: string
+          performed_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_group_actions_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_group_admins: {
+        Row: {
+          added_at: string | null
+          added_by: string | null
+          group_id: string
+          id: string
+          is_active: boolean | null
+          nome: string | null
+          phone: string
+        }
+        Insert: {
+          added_at?: string | null
+          added_by?: string | null
+          group_id: string
+          id?: string
+          is_active?: boolean | null
+          nome?: string | null
+          phone: string
+        }
+        Update: {
+          added_at?: string | null
+          added_by?: string | null
+          group_id?: string
+          id?: string
+          is_active?: boolean | null
+          nome?: string | null
+          phone?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_group_admins_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_group_states: {
         Row: {
           awaiting_ticket_response: boolean
@@ -3609,6 +3682,39 @@ export type Database = {
           id?: string
           ticket_id?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      whatsapp_groups: {
+        Row: {
+          created_at: string | null
+          descricao: string | null
+          group_id: string
+          id: string
+          is_active: boolean | null
+          nome: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          descricao?: string | null
+          group_id: string
+          id?: string
+          is_active?: boolean | null
+          nome: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          descricao?: string | null
+          group_id?: string
+          id?: string
+          is_active?: boolean | null
+          nome?: string
+          status?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
