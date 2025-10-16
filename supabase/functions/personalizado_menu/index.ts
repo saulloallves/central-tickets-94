@@ -15,6 +15,10 @@ serve(async (req: Request) => {
   try {
     const body = await req.json();
 
+    // Verificar modo silencioso (para integração com Typebot)
+    const silentMode = body?.silent_mode === true;
+    console.log(`🔇 Silent Mode: ${silentMode}`);
+
     const phone = body?.body?.phone || body?.phone || body?.participantPhone;
     if (!phone) {
       return new Response(JSON.stringify({ error: "Telefone não encontrado" }), {
@@ -27,41 +31,45 @@ serve(async (req: Request) => {
     if (!isBusinessHours()) {
       console.log("⏰ Fora do horário de atendimento - redirecionando para autoatendimento");
       
-      // Carrega configurações Z-API para enviar mensagem de fora do horário
-      const { instanceId, instanceToken, clientToken, baseUrl } = await loadZAPIConfig();
+      const mensagemForaHorario = "❌ *Agora estamos fora do horário de atendimento.*\n\n⏰ Nosso time atende de segunda a sábado, das *8h30 às 17h30.*\n\n📝 Você pode abrir um ticket agora mesmo. Sua solicitação será registrada e respondida pela equipe assim que possível.";
       
-      const outOfHoursPayload = {
-        phone,
-        message: "❌ *Agora estamos fora do horário de atendimento.*\n\n⏰ Nosso time atende de segunda a sábado, das *8h30 às 17h30.*\n\n📝 Você pode abrir um ticket agora mesmo. Sua solicitação será registrada e respondida pela equipe assim que possível.",
-        buttonList: {
-          buttons: [
-            {
-              id: "autoatendimento_ticket",
-              label: "📝 Abrir um ticket agora"
-            }
-          ]
-        }
-      };
+      if (!silentMode) {
+        // Carrega configurações Z-API para enviar mensagem de fora do horário
+        const { instanceId, instanceToken, clientToken, baseUrl } = await loadZAPIConfig();
+        
+        const outOfHoursPayload = {
+          phone,
+          message: mensagemForaHorario,
+          buttonList: {
+            buttons: [
+              {
+                id: "autoatendimento_ticket",
+                label: "📝 Abrir um ticket agora"
+              }
+            ]
+          }
+        };
 
-      const zapiUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}/send-button-list`;
-      console.log(`📤 Enviando mensagem de fora do horário para Z-API: ${zapiUrl.replace(instanceToken, '****')}`);
+        const zapiUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}/send-button-list`;
+        console.log(`📤 Enviando mensagem de fora do horário para Z-API: ${zapiUrl.replace(instanceToken, '****')}`);
 
-      const res = await fetch(zapiUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Client-Token": clientToken,
-        },
-        body: JSON.stringify(outOfHoursPayload),
-      });
+        const res = await fetch(zapiUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Client-Token": clientToken,
+          },
+          body: JSON.stringify(outOfHoursPayload),
+        });
 
-      const data = await res.json();
-      console.log("📤 Mensagem de fora do horário enviada:", data);
+        const data = await res.json();
+        console.log("📤 Mensagem de fora do horário enviada:", data);
+      }
 
       return new Response(JSON.stringify({ 
         success: true, 
         fora_do_horario: true,
-        data 
+        mensagem_gerada: mensagemForaHorario
       }), {
         headers: { "Content-Type": "application/json", ...corsHeaders },
         status: 200,
@@ -82,36 +90,43 @@ serve(async (req: Request) => {
     }
 
     // Menu de atendimento personalizado
-    const payload = {
-      phone,
-      message: "🔵 *Atendimento Personalizado - Concierge*\n\n😊 Selecione uma das opções abaixo pra continuar:",
-      buttonList: {
-        buttons: [
-          { id: "falar_com_concierge", label: "🔵 Falar com Concierge" },
-          { id: "acompanhar_chamado", label: "📞 Acompanhar Chamado" },
-          { id: "voltar_menu_inicial", label: "↩️ Voltar ao Menu Inicial" },
-        ],
-      },
-    };
+    const mensagem = "🔵 *Atendimento Personalizado - Concierge*\n\n😊 Selecione uma das opções abaixo pra continuar:";
+    
+    if (!silentMode) {
+      const payload = {
+        phone,
+        message: mensagem,
+        buttonList: {
+          buttons: [
+            { id: "falar_com_concierge", label: "🔵 Falar com Concierge" },
+            { id: "acompanhar_chamado", label: "📞 Acompanhar Chamado" },
+            { id: "voltar_menu_inicial", label: "↩️ Voltar ao Menu Inicial" },
+          ],
+        },
+      };
 
-    const zapiUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}/send-button-list`;
-    console.log(`📤 Enviando atendimento personalizado para Z-API: ${zapiUrl.replace(instanceToken, '****')}`);
+      const zapiUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}/send-button-list`;
+      console.log(`📤 Enviando atendimento personalizado para Z-API: ${zapiUrl.replace(instanceToken, '****')}`);
 
-    const res = await fetch(zapiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Client-Token": clientToken,
-      },
-      body: JSON.stringify(payload),
-    });
+      const res = await fetch(zapiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Client-Token": clientToken,
+        },
+        body: JSON.stringify(payload),
+      });
 
-    const data = await res.json();
-    console.log("📤 Atendimento personalizado enviado:", data);
+      const data = await res.json();
+      console.log("📤 Atendimento personalizado enviado:", data);
+    }
 
-    return new Response(JSON.stringify(data), {
+    return new Response(JSON.stringify({ 
+      success: true,
+      mensagem_gerada: mensagem
+    }), {
       headers: { "Content-Type": "application/json", ...corsHeaders },
-      status: res.status,
+      status: 200,
     });
   } catch (err) {
     console.error("❌ Erro no personalizado_menu:", err);

@@ -34,41 +34,45 @@ serve(async (req) => {
     if (!isBusinessHours()) {
       console.log("⏰ Fora do horário de atendimento - redirecionando para autoatendimento");
       
-      // Carrega configurações Z-API para enviar mensagem de fora do horário
-      const { instanceId, instanceToken, clientToken, baseUrl } = await loadZAPIConfig();
+      const mensagemForaHorario = "❌ *Agora estamos fora do horário de atendimento.*\n\n⏰ Nosso time atende de segunda a sábado, das *8h30 às 17h30.*\n\n📝 Você pode abrir um ticket agora mesmo. Sua solicitação será registrada e respondida pela equipe assim que possível.";
       
-      const outOfHoursPayload = {
-        phone,
-        message: "❌ *Agora estamos fora do horário de atendimento.*\n\n⏰ Nosso time atende de segunda a sábado, das *8h30 às 17h30.*\n\n📝 Você pode abrir um ticket agora mesmo. Sua solicitação será registrada e respondida pela equipe assim que possível.",
-        buttonList: {
-          buttons: [
-            {
-              id: "autoatendimento_ticket",
-              label: "📝 Abrir um ticket agora"
-            }
-          ]
-        }
-      };
+      if (!silentMode) {
+        // Carrega configurações Z-API para enviar mensagem de fora do horário
+        const { instanceId, instanceToken, clientToken, baseUrl } = await loadZAPIConfig();
+        
+        const outOfHoursPayload = {
+          phone,
+          message: mensagemForaHorario,
+          buttonList: {
+            buttons: [
+              {
+                id: "autoatendimento_ticket",
+                label: "📝 Abrir um ticket agora"
+              }
+            ]
+          }
+        };
 
-      const zapiUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}/send-button-list`;
-      console.log(`📤 Enviando mensagem de fora do horário para Z-API: ${zapiUrl.replace(instanceToken, '****')}`);
+        const zapiUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}/send-button-list`;
+        console.log(`📤 Enviando mensagem de fora do horário para Z-API: ${zapiUrl.replace(instanceToken, '****')}`);
 
-      const res = await fetch(zapiUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Client-Token": clientToken,
-        },
-        body: JSON.stringify(outOfHoursPayload),
-      });
+        const res = await fetch(zapiUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Client-Token": clientToken,
+          },
+          body: JSON.stringify(outOfHoursPayload),
+        });
 
-      const data = await res.json();
-      console.log("📤 Mensagem de fora do horário enviada:", data);
+        const data = await res.json();
+        console.log("📤 Mensagem de fora do horário enviada:", data);
+      }
 
       return new Response(JSON.stringify({ 
         success: true, 
         fora_do_horario: true,
-        data 
+        mensagem_gerada: mensagemForaHorario
       }), {
         headers: { "Content-Type": "application/json", ...corsHeaders },
         status: 200,
@@ -191,23 +195,34 @@ serve(async (req) => {
       }
 
       // Enviar mensagem adequada baseada no status
+      let mensagem = "";
+      
       if (chamadoExistente.status === "em_fila") {
-        await enviarZapi("send-text", {
-          phone,
-          message: `⏳ *Você já possui um atendimento DFCom na fila*\n\n📊 Sua posição: *#${posicao}*\n\nPor favor, aguarde sua vez. Você receberá uma mensagem quando for atendido.`,
-        });
+        mensagem = `⏳ *Você já possui um atendimento DFCom na fila*\n\n📊 Sua posição: *#${posicao}*\n\nPor favor, aguarde sua vez. Você receberá uma mensagem quando for atendido.`;
+        
+        if (!silentMode) {
+          await enviarZapi("send-text", {
+            phone,
+            message: mensagem,
+          });
+        }
       } else if (chamadoExistente.status === "em_atendimento") {
-        await enviarZapi("send-text", {
-          phone,
-          message: `👥 *Você já está sendo atendido pela equipe DFCom*\n\nVocê já possui um atendimento técnico em andamento com nossa equipe.\n\nContinue a conversação aqui mesmo.`,
-        });
+        mensagem = `👥 *Você já está sendo atendido pela equipe DFCom*\n\nVocê já possui um atendimento técnico em andamento com nossa equipe.\n\nContinue a conversação aqui mesmo.`;
+        
+        if (!silentMode) {
+          await enviarZapi("send-text", {
+            phone,
+            message: mensagem,
+          });
+        }
       }
 
       return new Response(JSON.stringify({ 
         success: true, 
         atendimento_existente: true,
         chamado: chamadoExistente,
-        posicao 
+        posicao,
+        mensagem_gerada: mensagem
       }), {
         headers: { "Content-Type": "application/json", ...corsHeaders },
         status: 200,

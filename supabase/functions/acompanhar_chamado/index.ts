@@ -75,12 +75,19 @@ serve(async (req) => {
     if (unidadeError || !unidade) {
       console.error("❌ Unidade não encontrada:", unidadeError);
       
-      await enviarZapi("send-text", {
-        phone,
-        message: "❌ *Unidade não encontrada*\n\nNão foi possível localizar informações desta unidade no sistema.",
-      });
+      const mensagemErro = "❌ *Unidade não encontrada*\n\nNão foi possível localizar informações desta unidade no sistema.";
+      
+      if (!silentMode) {
+        await enviarZapi("send-text", {
+          phone,
+          message: mensagemErro,
+        });
+      }
 
-      return new Response(JSON.stringify({ error: "Unidade não encontrada" }), {
+      return new Response(JSON.stringify({ 
+        error: "Unidade não encontrada",
+        mensagem_gerada: mensagemErro
+      }), {
         headers: { "Content-Type": "application/json", ...corsHeaders },
         status: 404,
       });

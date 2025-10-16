@@ -56,24 +56,31 @@ serve(async (req) => {
     if (!chamado) {
       console.log("❌ Nenhum chamado ativo encontrado para:", phone);
       
-      // Carrega configurações Z-API para enviar mensagem mesmo sem chamado ativo
-      const { instanceId, instanceToken, clientToken, baseUrl } = await loadZAPIConfig();
-      const zapiUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}`;
+      const mensagemErro = "ℹ️ **Não há atendimento ativo para finalizar.**\n\nSe precisar de ajuda, digite *menu* para ver as opções disponíveis.";
+      
+      if (!silentMode) {
+        // Carrega configurações Z-API para enviar mensagem mesmo sem chamado ativo
+        const { instanceId, instanceToken, clientToken, baseUrl } = await loadZAPIConfig();
+        const zapiUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}`;
 
-      try {
-        await fetch(`${zapiUrl}/send-text`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Client-Token": clientToken },
-          body: JSON.stringify({
-            phone,
-            message: "ℹ️ **Não há atendimento ativo para finalizar.**\n\nSe precisar de ajuda, digite *menu* para ver as opções disponíveis.",
-          }),
-        });
-      } catch (err) {
-        console.error("❌ Erro ao enviar Z-API:", err);
+        try {
+          await fetch(`${zapiUrl}/send-text`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Client-Token": clientToken },
+            body: JSON.stringify({
+              phone,
+              message: mensagemErro,
+            }),
+          });
+        } catch (err) {
+          console.error("❌ Erro ao enviar Z-API:", err);
+        }
       }
 
-      return new Response(JSON.stringify({ error: "Nenhum chamado ativo encontrado" }), {
+      return new Response(JSON.stringify({ 
+        error: "Nenhum chamado ativo encontrado",
+        mensagem_gerada: mensagemErro
+      }), {
         headers: { "Content-Type": "application/json", ...corsHeaders },
         status: 404,
       });
