@@ -42,7 +42,7 @@ serve(async (req) => {
       .select("*")
       .eq("telefone", phone)
       .eq("tipo_atendimento", "dfcom")
-      .eq("status", "em_fila")
+      .in("status", ["em_fila", "em_atendimento"])
       .order("criado_em", { ascending: false })
       .limit(1)
       .maybeSingle();
