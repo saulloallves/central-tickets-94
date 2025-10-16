@@ -285,13 +285,14 @@ serve(async (req: Request) => {
       
       let allRemoved = true;
       const removeErrors = [];
+      let lastRemoveResult = { value: false };
 
       for (const phoneToRemove of phonesToRemove) {
-        const removeResult = await zapiClient.removeParticipantFromGroup(phone, phoneToRemove);
-        if (!removeResult.value) {
-          console.error(`❌ Falha ao remover ${phoneToRemove}:`, removeResult.error);
+        lastRemoveResult = await zapiClient.removeParticipantFromGroup(phone, phoneToRemove);
+        if (!lastRemoveResult.value) {
+          console.error(`❌ Falha ao remover ${phoneToRemove}:`, lastRemoveResult.error);
           allRemoved = false;
-          removeErrors.push({ phone: phoneToRemove, error: removeResult.error });
+          removeErrors.push({ phone: phoneToRemove, error: lastRemoveResult.error });
         } else {
           console.log(`✅ ${phoneToRemove} removido com sucesso`);
         }
@@ -318,13 +319,14 @@ serve(async (req: Request) => {
     await supabase.from('logs_de_sistema').insert({
       tipo_log: 'sistema',
       entidade_afetada: 'chamados',
-      entidade_id: chamado.id,
-      acao_realizada: 'Emergência finalizada - Concierge removido do grupo',
+      entidade_id: chamado?.id || 'unknown',
+      acao_realizada: 'Emergência finalizada - Participantes removidos do grupo',
       usuario_responsavel: null,
       dados_novos: {
         group_id: phone,
-        concierge_phone: unidade.concierge_phone,
-        zapi_result: removeResult,
+        concierge_phone: unidade?.concierge_phone || null,
+        participants_removed: phonesToRemove.length,
+        all_removed_success: phonesToRemove.length > 0 ? lastRemoveResult.value : true,
         confirmation_sent: sendResult.value
       },
       canal: 'zapi'
@@ -332,9 +334,10 @@ serve(async (req: Request) => {
 
     return new Response(JSON.stringify({ 
       success: true,
-      chamado_id: chamado.id,
+      chamado_id: chamado?.id,
       message: "Emergência finalizada com sucesso",
-      concierge_removed: removeResult.value,
+      participants_to_remove: phonesToRemove.length,
+      all_removed_success: phonesToRemove.length > 0 ? lastRemoveResult.value : true,
       confirmation_sent: sendResult.value
     }), {
       headers: { "Content-Type": "application/json", ...corsHeaders },
