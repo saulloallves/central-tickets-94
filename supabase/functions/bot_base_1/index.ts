@@ -357,7 +357,7 @@ serve(async (req: Request) => {
               `Faça login com seu CPF (o sistema vai identificar que o CPF já tem cadastro).\n\n` +
               `Clique em *Adicionar unidade* e cadastre sua unidade.\n\n` +
               `Depois é só concluir.\n\n` +
-              `Em seguida, volte aqui e tente abrir o ticket novamente.`;
+              `Em seguida, volte aqui e acione o robô novamente para continuar o atendimento.`;
 
             await botZapi.sendMessage(chatId, message);
 
@@ -410,7 +410,7 @@ serve(async (req: Request) => {
         `Faça login com seu CPF (o sistema vai identificar que o CPF já tem cadastro).\n\n` +
         `Clique em *Adicionar unidade* e cadastre sua unidade.\n\n` +
         `Depois é só concluir.\n\n` +
-        `Em seguida, volte aqui e tente abrir o ticket novamente.`;
+        `Em seguida, volte aqui e acione o robô novamente para continuar o atendimento.`;
 
       await botZapi.sendMessage(chatId, notRegisteredMessage);
       
@@ -447,7 +447,7 @@ serve(async (req: Request) => {
             `Faça login com seu CPF (o sistema vai identificar que o CPF já tem cadastro).\n\n` +
             `Clique em *Adicionar unidade* e cadastre sua unidade.\n\n` +
             `Depois é só concluir.\n\n` +
-            `Em seguida, volte aqui e tente abrir o ticket novamente.`;
+            `Em seguida, volte aqui e acione o robô novamente para continuar o atendimento.`;
 
           await botZapi.sendMessage(chatId, message);
 
