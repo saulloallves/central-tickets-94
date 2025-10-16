@@ -1463,6 +1463,7 @@ serve(async (req) => {
         // Para crisis_broadcast, o phone e message já vêm no payload
         const phone = payload.phone;
         const message = payload.message;
+        const criseId = payload.crise_id;
         
         if (!phone || !message) {
           throw new Error('Phone and message are required for crisis_broadcast');
@@ -1472,8 +1473,51 @@ serve(async (req) => {
         if (!normalizedPhoneCrisis) {
           throw new Error(`Número de telefone inválido para crisis_broadcast: ${phone}`);
         }
+        
+        // Enviar mensagem via WhatsApp
         resultadoEnvio = await sendZapiMessage(normalizedPhoneCrisis, message);
         destinoFinal = phone;
+        
+        // ✅ Salvar mensagem no histórico de CADA ticket vinculado à crise
+        if (resultadoEnvio?.success && criseId) {
+          try {
+            console.log(`📝 Salvando mensagem de broadcast nos tickets da crise ${criseId}`);
+            
+            // Buscar todos os tickets vinculados à crise
+            const { data: linkedTickets, error: linkError } = await supabase
+              .from('crise_ticket_links')
+              .select('ticket_id')
+              .eq('crise_id', criseId);
+            
+            if (linkError) {
+              console.error('❌ Erro ao buscar tickets vinculados:', linkError);
+            } else if (linkedTickets && linkedTickets.length > 0) {
+              // Preparar mensagens para inserção em lote
+              const ticketMessages = linkedTickets.map(link => ({
+                ticket_id: link.ticket_id,
+                usuario_id: null, // Mensagem automática do sistema
+                mensagem: message,
+                direcao: 'saida',
+                canal: 'whatsapp',
+                anexos: { crisis_broadcast: true, crise_id: criseId }
+              }));
+              
+              // Inserir todas as mensagens de uma vez
+              const { error: insertError } = await supabase
+                .from('ticket_mensagens')
+                .insert(ticketMessages);
+              
+              if (insertError) {
+                console.error('❌ Erro ao salvar mensagens nos tickets:', insertError);
+              } else {
+                console.log(`✅ Mensagem de broadcast salva em ${linkedTickets.length} ticket(s)`);
+              }
+            }
+          } catch (saveError) {
+            console.error('⚠️ Erro ao salvar mensagem nos tickets (não crítico):', saveError);
+            // Não falhar o envio se apenas o salvamento falhar
+          }
+        }
         break;
 
       default:
