@@ -278,14 +278,15 @@ serve(async (req: Request) => {
       phonesToRemove.push(...emergencyNumbers.map((num: any) => num.phone));
     }
 
+    // Declarar variáveis ANTES do if para garantir escopo correto
+    let allRemoved = true;
+    const removeErrors = [];
+    let lastRemoveResult = { value: false };
+
     if (phonesToRemove.length === 0) {
       console.warn("⚠️ Nenhum participante para remover");
     } else {
       console.log(`🔄 Tentando remover ${phonesToRemove.length} participantes do grupo ${phone}`);
-      
-      let allRemoved = true;
-      const removeErrors = [];
-      let lastRemoveResult = { value: false };
 
       for (const phoneToRemove of phonesToRemove) {
         lastRemoveResult = await zapiClient.removeParticipantFromGroup(phone, phoneToRemove);
