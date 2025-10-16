@@ -395,7 +395,7 @@ serve(async (req: Request) => {
             const message = `🚨 *Unidade não Cadastrada!*\n` +
               `Isso pode acontecer porque a unidade ainda não está vinculada a nenhum franqueado.\n\n` +
               `👉 *Pra resolver:*\n\n` +
-              `Acesse *cadastro.girabot.com*.\n\n` +
+              `Acesse *cadastro.girabot.com* ou *cadastro.girabot.com.br*.\n\n` +
               `Faça login com seu CPF (o sistema vai identificar que o CPF já tem cadastro).\n\n` +
               `Clique em *Adicionar unidade* e cadastre sua unidade.\n\n` +
               `Depois é só concluir.\n\n` +
@@ -448,7 +448,7 @@ serve(async (req: Request) => {
       const notRegisteredMessage = `🚨 *Unidade não Cadastrada!*\n` +
         `Isso pode acontecer porque a unidade ainda não está vinculada a nenhum franqueado.\n\n` +
         `👉 *Pra resolver:*\n\n` +
-        `Acesse *cadastro.girabot.com*.\n\n` +
+        `Acesse *cadastro.girabot.com* ou *cadastro.girabot.com.br*.\n\n` +
         `Faça login com seu CPF (o sistema vai identificar que o CPF já tem cadastro).\n\n` +
         `Clique em *Adicionar unidade* e cadastre sua unidade.\n\n` +
         `Depois é só concluir.\n\n` +
