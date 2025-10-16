@@ -113,7 +113,7 @@ export function CrisisBanner() {
       isMounted = false;
       clearInterval(pollingInterval);
     };
-  }, [user]);
+  }, [user, isAdmin, isDiretor]);
 
   // Tocar som de alerta quando nova crise aparece (apenas uma vez por crise)
   useEffect(() => {
@@ -171,7 +171,7 @@ export function CrisisBanner() {
 
   return (
     <>
-      <div className="fixed top-0 left-0 right-0 z-50 space-y-2 p-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 shadow-lg">
+      <div className="space-y-2 mb-4">
         {visibleCrises.map((crisis) => (
           <Alert key={crisis.id} className="border-destructive bg-destructive/10">
             <AlertTriangle className="h-4 w-4 text-destructive" />
