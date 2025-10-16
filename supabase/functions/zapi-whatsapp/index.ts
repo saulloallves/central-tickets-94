@@ -26,22 +26,7 @@ function shouldSkipMessage(payload: ZAPIMessage): boolean {
     return true;
   }
   
-  // FILTRO ESPECÍFICO: Processar mensagens de grupos específicos OU mensagens privadas
-  const ALLOWED_GROUPS = [
-    '120363258963635302-group',  // Grupo principal
-    '120363421372736067-group',  // Grupo adicional
-    '120363420372480204-group',  // Grupo teste robo
-  ];
-  
-  if (payload.isGroup) {
-    // Se é grupo, só processar se for um dos grupos permitidos
-    if (!ALLOWED_GROUPS.includes(payload.phone)) {
-      console.log(`Skipping message: not from allowed group (${payload.phone})`);
-      return true;
-    }
-  }
-  
-  // NOVOS FILTROS: Não processar mensagens que são templates de sistema
+  // FILTROS: Não processar mensagens que são templates de sistema
   const messageText = payload.text?.message?.toLowerCase() || '';
   
   // Detectar palavras de ativação do bot_base_1 e encaminhar
