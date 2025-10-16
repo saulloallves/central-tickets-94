@@ -350,13 +350,14 @@ serve(async (req: Request) => {
             console.log(`📱 Grupo encontrado em unidades_whatsapp - enviando orientação de cadastro`);
             
             // Enviar mensagem de orientação de cadastro
-            const message = `🚫 *Unidade não vinculada*\n\n` +
-              `Olá! Identificamos que esta unidade ainda não está vinculada ao sistema.\n\n` +
-              `📋 *Código da unidade:* ${whatsappCheck.codigoGrupo || "Não identificado"}\n` +
-              `🏢 *Nome:* ${whatsappCheck.nomeGrupo || "Não identificado"}\n\n` +
-              `Para utilizar o bot, é necessário completar o cadastro da unidade.\n\n` +
-              `👉 *Acesse:* cadastro.girabot.com.br\n\n` +
-              `Após o cadastro, você poderá usar todas as funcionalidades do bot! 🤖`;
+            const message = `🚨 *Unidade não Cadastrada!*\n` +
+              `Isso pode acontecer porque a unidade ainda não está vinculada a nenhum franqueado.\n\n` +
+              `👉 *Pra resolver:*\n\n` +
+              `Acesse *cadastro.girabot.com*.\n\n` +
+              `Faça login com seu CPF (o sistema vai identificar que o CPF já tem cadastro).\n\n` +
+              `Clique em *Adicionar unidade* e cadastre sua unidade.\n\n` +
+              `Depois é só concluir.\n\n` +
+              `Em seguida, volte aqui e tente abrir o ticket novamente.`;
 
             await botZapi.sendMessage(chatId, message);
 
@@ -402,12 +403,14 @@ serve(async (req: Request) => {
       console.log(`🚫 Grupo completamente não autorizado - não existe em nenhuma tabela`);
       
       // Enviar mensagem ao grupo informando que não está cadastrado
-      const notRegisteredMessage = `🚫 *Grupo não cadastrado*\n\n` +
-        `Olá! Este grupo ainda não está cadastrado no sistema Girabot.\n\n` +
-        `Para utilizar o bot, é necessário realizar o cadastro completo da sua unidade.\n\n` +
-        `👉 *Acesse:* cadastro.girabot.com.br\n\n` +
-        `Após o cadastro, você terá acesso a todas as funcionalidades do bot! 🤖\n\n` +
-        `_Se você já realizou o cadastro, entre em contato com o suporte._`;
+      const notRegisteredMessage = `🚨 *Unidade não Cadastrada!*\n` +
+        `Isso pode acontecer porque a unidade ainda não está vinculada a nenhum franqueado.\n\n` +
+        `👉 *Pra resolver:*\n\n` +
+        `Acesse *cadastro.girabot.com*.\n\n` +
+        `Faça login com seu CPF (o sistema vai identificar que o CPF já tem cadastro).\n\n` +
+        `Clique em *Adicionar unidade* e cadastre sua unidade.\n\n` +
+        `Depois é só concluir.\n\n` +
+        `Em seguida, volte aqui e tente abrir o ticket novamente.`;
 
       await botZapi.sendMessage(chatId, notRegisteredMessage);
       
@@ -437,13 +440,14 @@ serve(async (req: Request) => {
           console.log(`🚫 BOT_BASE_1: Unidade não cadastrada (${chatId})`);
 
           // Enviar mensagem no grupo informando sobre falta de cadastro
-          const message = `🚫 *Unidade não cadastrada*\n\n` +
-            `Olá! Identificamos que esta unidade ainda não possui cadastro completo no sistema.\n\n` +
-            `📋 *Código da unidade:* ${unitCheck.codigoGrupo || "Não identificado"}\n` +
-            `🏢 *Nome:* ${unitCheck.nomeGrupo || "Não identificado"}\n\n` +
-            `Para utilizar o bot, é necessário completar o cadastro da unidade.\n\n` +
-            `👉 *Acesse:* cadastro.girabot.com.br\n\n` +
-            `Após o cadastro, você poderá usar todas as funcionalidades do bot! 🤖`;
+          const message = `🚨 *Unidade não Cadastrada!*\n` +
+            `Isso pode acontecer porque a unidade ainda não está vinculada a nenhum franqueado.\n\n` +
+            `👉 *Pra resolver:*\n\n` +
+            `Acesse *cadastro.girabot.com*.\n\n` +
+            `Faça login com seu CPF (o sistema vai identificar que o CPF já tem cadastro).\n\n` +
+            `Clique em *Adicionar unidade* e cadastre sua unidade.\n\n` +
+            `Depois é só concluir.\n\n` +
+            `Em seguida, volte aqui e tente abrir o ticket novamente.`;
 
           await botZapi.sendMessage(chatId, message);
 
