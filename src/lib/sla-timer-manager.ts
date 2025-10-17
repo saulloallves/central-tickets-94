@@ -78,14 +78,20 @@ class SLATimerManager {
       const agora = Date.now();
       const tempoDecorridoMinutos = (agora - abertura) / 60000;
       const tempoPausadoMinutos = ticket.tempoPausadoTotal || 0;
-      const tempoRestanteMinutos = ticket.slaMinutosTotais - tempoDecorridoMinutos + tempoPausadoMinutos;
+      
+      // ✅ CORREÇÃO SLA: Subtrair tempo pausado do tempo decorrido
+      // Tempo efetivo = Decorrido - Pausado
+      // Tempo restante = Total - Efetivo
+      const tempoEfetivoMinutos = tempoDecorridoMinutos - tempoPausadoMinutos;
+      const tempoRestanteMinutos = ticket.slaMinutosTotais - tempoEfetivoMinutos;
       
       localSecondsRemaining = Math.max(0, Math.floor(tempoRestanteMinutos * 60));
       
       console.log(`⏱️ Iniciando timer real do ticket ${ticket.codigoTicket}:
         - Aberto há: ${tempoDecorridoMinutos.toFixed(1)} min
-        - SLA total: ${ticket.slaMinutosTotais} min
         - Tempo pausado: ${tempoPausadoMinutos} min
+        - Tempo efetivo: ${tempoEfetivoMinutos.toFixed(1)} min
+        - SLA total: ${ticket.slaMinutosTotais} min
         - Restante: ${tempoRestanteMinutos.toFixed(1)} min (${localSecondsRemaining}s)`);
     } else {
       // Fallback: usar valor do banco se não tiver data de abertura

@@ -258,6 +258,21 @@ async function handleWebhook(payload: ZAPIMessage) {
               "❌ Erro ao processar sua resposta. Tente novamente."
             );
           } else {
+            // ✅ CORREÇÃO SLA: Despausar SLA quando franqueado responde
+            console.log('⏸️ Despausando SLA do ticket após resposta do franqueado...');
+            const { error: unpauseError } = await supabase
+              .from('tickets')
+              .update({ 
+                sla_pausado_mensagem: false,
+                sla_ultima_atualizacao: new Date().toISOString() // ← CRÍTICO: Reset timestamp
+              })
+              .eq('id', groupState.ticket_id);
+            
+            if (unpauseError) {
+              console.error('❌ Erro ao despausar SLA:', unpauseError);
+            } else {
+              console.log('✅ SLA despausado com sucesso');
+            }
             console.log('✅ Resposta do ticket salva com sucesso');
             
             // Buscar dados do ticket para confirmação
