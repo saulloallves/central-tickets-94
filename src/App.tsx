@@ -47,6 +47,10 @@ const FranqueadoTickets = lazy(() => import("./pages/franqueado/Tickets"));
 const FranqueadoUnidades = lazy(() => import("./pages/franqueado/Unidades"));
 const FranqueadoProfile = lazy(() => import("./pages/franqueado/Profile"));
 
+// Mobile pages
+const MobileUnitTickets = lazy(() => import("./pages/mobile/UnitTickets"));
+const MobileTicketChat = lazy(() => import("./pages/mobile/TicketChat"));
+
 const queryClient = new QueryClient();
 
 // Sistema de notificações simplificado
@@ -209,6 +213,11 @@ const App = () => (
                   </FranqueadoLayout>
                 </ProtectedRoute>
               } />
+              
+              {/* Mobile Routes - Públicas sem autenticação */}
+              <Route path="/mobile/tickets" element={<MobileUnitTickets />} />
+              <Route path="/mobile/tickets/:ticketId" element={<MobileTicketChat />} />
+              
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
