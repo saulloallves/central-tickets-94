@@ -31,6 +31,7 @@ interface Unidade {
 export const useMobileUnitTickets = () => {
   const [searchParams] = useSearchParams();
   const codigoGrupo = searchParams.get('codigo_grupo');
+  const senhaWeb = searchParams.get('senha_web');
   
   const [unidade, setUnidade] = useState<Unidade | null>(null);
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -138,6 +139,7 @@ export const useMobileUnitTickets = () => {
     loading,
     error,
     refetch: fetchData,
-    codigoGrupo
+    codigoGrupo,
+    senhaWeb
   };
 };

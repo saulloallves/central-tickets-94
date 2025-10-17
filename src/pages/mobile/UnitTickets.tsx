@@ -13,7 +13,8 @@ export default function UnitTickets() {
     ticketsFechados, 
     loading, 
     error,
-    codigoGrupo 
+    codigoGrupo,
+    senhaWeb
   } = useMobileUnitTickets();
   
   const [activeTab, setActiveTab] = useState<'abertos' | 'fechados'>('abertos');
@@ -93,7 +94,7 @@ export default function UnitTickets() {
             <MobileTicketCard
               key={ticket.id}
               ticket={ticket}
-              onClick={() => navigate(`/mobile/tickets/${ticket.id}?codigo_grupo=${codigoGrupo}`)}
+              onClick={() => navigate(`/mobile/tickets/${ticket.id}?codigo_grupo=${codigoGrupo}&senha_web=${senhaWeb}`)}
             />
           ))
         )}
