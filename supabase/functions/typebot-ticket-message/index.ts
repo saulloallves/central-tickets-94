@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
       ticketId,
       texto,
       senha_web,
-      canal = 'web',
+      canal = 'typebot',
       autor = 'franqueado',
       usuarioId = null
     } = body;
@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
         p_ticket_id: ticketId,
         p_autor: 'franqueado',
         p_texto: mensagemTexto,
-        p_canal: canal || 'web',
+        p_canal: canal || 'typebot',
         p_usuario_id: usuarioId
       });
 
