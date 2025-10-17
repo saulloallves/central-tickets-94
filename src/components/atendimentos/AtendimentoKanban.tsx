@@ -155,7 +155,20 @@ export function AtendimentoKanban({ atendimentos, onSelectAtendimento, onRefresh
   );
 
   const getAtendimentosByStatus = (status: string) => {
-    return atendimentos.filter(a => a.status === status);
+    const filtered = atendimentos.filter(a => a.status === status);
+    
+    // Para status "finalizado", mostrar apenas os últimos 30
+    if (status === 'finalizado') {
+      return filtered
+        .sort((a, b) => {
+          const dateA = new Date(a.atualizado_em || a.criado_em).getTime();
+          const dateB = new Date(b.atualizado_em || b.criado_em).getTime();
+          return dateB - dateA; // mais recente primeiro
+        })
+        .slice(0, 30);
+    }
+    
+    return filtered;
   };
 
   const handleDragStart = (event: DragStartEvent) => {
