@@ -6,7 +6,6 @@ const corsHeaders = {
 }
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -14,16 +13,13 @@ Deno.serve(async (req) => {
   try {
     console.log('typebot-ticket-message: Recebendo requisição', req.method, req.url);
     
-    // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Parse request body
     const body = await req.json();
     console.log('typebot-ticket-message: Body recebido:', body);
 
-    // Validate required fields
     if (!body.ticketId || !body.texto || !body.senha_web) {
       console.error('typebot-ticket-message: Campos obrigatórios ausentes:', { 
         ticketId: body.ticketId, 
@@ -45,7 +41,6 @@ Deno.serve(async (req) => {
       usuarioId = null
     } = body;
 
-    // Validate senha_web against franqueados table
     const { data: franqueado, error: franqueadoError } = await supabase
       .from('franqueados')
       .select('id, name, email, phone')
@@ -62,21 +57,9 @@ Deno.serve(async (req) => {
 
     console.log('typebot-ticket-message: Franqueado autenticado:', franqueado.name);
 
-    // Verify ticket exists and get complete data for notification
     const { data: ticket, error: ticketError } = await supabase
       .from('tickets')
-      .select(`
-        id, 
-        codigo_ticket, 
-        equipe_responsavel_id,
-        unidade_id,
-        status,
-        prioridade,
-        titulo,
-        data_abertura,
-        updated_at,
-        unidades!inner(grupo)
-      `)
+      .select('id, codigo_ticket, equipe_responsavel_id, unidade_id, status, prioridade, titulo, data_abertura, updated_at, unidades!inner(grupo)')
       .eq('id', ticketId)
       .single();
 
@@ -90,14 +73,15 @@ Deno.serve(async (req) => {
 
     console.log('typebot-ticket-message: Ticket encontrado:', ticket.codigo_ticket);
 
-    // Insert message directly into ticket_mensagens table with franqueado name
+    const mensagemTexto = `[${franqueado.name}]: ${texto}`;
+    
     const { data: mensagemResult, error: mensagemError } = await supabase
       .from('ticket_mensagens')
       .insert({
         ticket_id: ticketId,
         usuario_id: usuarioId,
-        mensagem: `[${franqueado.name}]: ${texto}`, // Include franqueado name in message
-        direcao: 'entrada', // Messages from franqueado are incoming
+        mensagem: mensagemTexto,
+        direcao: 'entrada',
         canal: canal,
         anexos: []
       })
@@ -114,7 +98,6 @@ Deno.serve(async (req) => {
 
     console.log('typebot-ticket-message: Mensagem adicionada com sucesso');
 
-    // Criar notificação interna no sistema para emitir som e alerta
     try {
       console.log('🔔 Criando notificação interna no sistema...');
       console.log('🎯 Equipe responsável:', ticket.equipe_responsavel_id);
@@ -142,10 +125,8 @@ Deno.serve(async (req) => {
       }
     } catch (internalError) {
       console.error('❌ Falha ao criar notificação interna:', internalError);
-      // Não falhar a operação principal por causa da notificação
     }
 
-    // Também adicionar à fila de notificações para garantir que chegue
     try {
       console.log('🔔 Adicionando notificação à fila...');
       
@@ -173,13 +154,11 @@ Deno.serve(async (req) => {
       console.error('❌ Falha ao adicionar à fila:', queueError);
     }
 
-    const lastMessage = mensagemResult;
-
     const response = {
       ok: true,
       ticketId: ticketId,
       codigo_ticket: ticket.codigo_ticket,
-      added: lastMessage,
+      added: mensagemResult,
       notification_sent: true
     };
 
