@@ -88,7 +88,37 @@ serve(async (req) => {
 
     console.log("✅ Chamado encontrado:", chamado);
 
-    // 2. Finaliza o chamado
+    // 2. Se o chamado está em atendimento, remover atendente do grupo
+    if (chamado.status === 'em_atendimento' && chamado.atendente_id) {
+      console.log("🔄 Removendo atendente do grupo WhatsApp...");
+      
+      try {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL");
+        const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+        
+        const removeResponse = await fetch(`${supabaseUrl}/functions/v1/remove-from-whatsapp-group`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseServiceKey}`
+          },
+          body: JSON.stringify({ chamadoId: chamado.id })
+        });
+        
+        if (!removeResponse.ok) {
+          const errorData = await removeResponse.text();
+          console.error("⚠️ Erro ao remover atendente:", errorData);
+          // Não bloquear a finalização, apenas logar
+        } else {
+          console.log("✅ Atendente removido do grupo");
+        }
+      } catch (err) {
+        console.error("⚠️ Erro ao chamar remove-from-whatsapp-group:", err);
+        // Não bloquear a finalização
+      }
+    }
+
+    // 3. Finaliza o chamado
     const { error: updateError } = await supabase
       .from("chamados")
       .update({
