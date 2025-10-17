@@ -360,6 +360,8 @@ serve(async (req) => {
       // Variáveis específicas para resposta_ticket
       texto_resposta: resposta_real || 'Resposta disponível no sistema de atendimento',
       franqueado_nome: extra_data?.franqueado_nome || ticket.franqueado_nome || 'Franqueado',
+      // ✅ NOVO: Suporte para mensagem customizada
+      mensagem_customizada: extra_data?.mensagem_customizada || '',
       timestamp: new Date().toLocaleString('pt-BR', { 
         timeZone: 'America/Sao_Paulo',
         day: '2-digit',

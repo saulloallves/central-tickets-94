@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useTicketMessages } from '@/hooks/useTickets';
 import { useAISuggestion } from '@/hooks/useAISuggestion';
 import { useResponseProcessor } from '@/hooks/useResponseProcessor';
@@ -41,6 +42,9 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
   const [isSuggestionOpen, setIsSuggestionOpen] = useState(false);
   const [isFormatted, setIsFormatted] = useState(false);
   const [originalMessage, setOriginalMessage] = useState('');
+  const [customMessage, setCustomMessage] = useState('');
+  const [isCustomMessageDialogOpen, setIsCustomMessageDialogOpen] = useState(false);
+  const [isSendingCustomMessage, setIsSendingCustomMessage] = useState(false);
   
   const { messages, sendMessage, loading: messagesLoading, refetch: refetchMessages } = useTicketMessages(ticketId);
   const { suggestion, loading: suggestionLoading, generateSuggestion, markSuggestionUsed } = useAISuggestion(ticketId);
@@ -441,6 +445,65 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
       });
     } finally {
       setIsSendingToFranqueado(false);
+    }
+  };
+
+  const handleSendCustomMessage = async () => {
+    if (!customMessage.trim()) {
+      toast({
+        title: "Erro",
+        description: "Digite uma mensagem antes de enviar",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSendingCustomMessage(true);
+    
+    try {
+      // Enviar usando o novo template
+      const { data: zapiResult, error: zapiError } = await supabase.functions.invoke('send-ticket-notification', {
+        body: {
+          ticket_id: ticketId,
+          template_key: 'mensagem_customizada',
+          extra_data: {
+            mensagem_customizada: customMessage
+          }
+        }
+      });
+
+      if (zapiError) {
+        console.error('❌ Erro ao enviar mensagem customizada:', zapiError);
+        toast({
+          title: "Erro no envio",
+          description: "Erro ao enviar mensagem para o WhatsApp",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log('✅ Mensagem customizada enviada:', zapiResult);
+
+      // Salvar no histórico do ticket
+      await sendMessage(customMessage);
+      
+      setCustomMessage('');
+      setIsCustomMessageDialogOpen(false);
+      
+      toast({
+        title: "✅ Mensagem enviada!",
+        description: "Mensagem customizada enviada para o grupo WhatsApp.",
+      });
+
+    } catch (error) {
+      console.error('Error sending custom message:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao enviar mensagem customizada",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSendingCustomMessage(false);
     }
   };
 
@@ -1389,6 +1452,18 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                         </>
                       )}
                     </div>
+                    
+                    {/* Botão Mensagem Customizada */}
+                    <div className="mt-2 flex gap-2">
+                      <Button
+                        onClick={() => setIsCustomMessageDialogOpen(true)}
+                        variant="outline"
+                        className="flex-1"
+                      >
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        Mensagem Customizada
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -1582,6 +1657,62 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
           )}
         </div>
       </div>
+
+      {/* Dialog para Mensagem Customizada */}
+      <Dialog open={isCustomMessageDialogOpen} onOpenChange={setIsCustomMessageDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Enviar Mensagem Customizada</DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              Esta mensagem será enviada diretamente para o grupo WhatsApp da unidade
+            </p>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="custom-message">Mensagem</Label>
+              <Textarea
+                id="custom-message"
+                placeholder="Digite sua mensagem aqui..."
+                value={customMessage}
+                onChange={(e) => setCustomMessage(e.target.value)}
+                rows={6}
+                className="resize-none"
+              />
+            </div>
+            
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setCustomMessage('');
+                  setIsCustomMessageDialogOpen(false);
+                }}
+                disabled={isSendingCustomMessage}
+              >
+                Cancelar
+              </Button>
+              
+              <Button
+                onClick={handleSendCustomMessage}
+                disabled={!customMessage.trim() || isSendingCustomMessage}
+              >
+                {isSendingCustomMessage ? (
+                  <>
+                    <Send className="h-4 w-4 mr-2 animate-spin" />
+                    Enviando...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4 mr-2" />
+                    Enviar
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
