@@ -461,59 +461,36 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
     setIsSendingCustomMessage(true);
     
     try {
-      // 1. Enviar mensagem customizada diretamente via edge function (sem salvar no histórico ainda)
-      const { data: zapiResult, error: zapiError } = await supabase.functions.invoke('send-ticket-notification', {
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id;
+
+      // Usar a edge function dedicada send-custom-message
+      const { data: result, error } = await supabase.functions.invoke('send-custom-message', {
         body: {
           ticket_id: ticketId,
-          template_key: 'mensagem_customizada',
-          resposta_real: customMessage
+          custom_message: customMessage,
+          user_id: userId
         }
       });
 
-      if (zapiError) {
-        console.error('❌ Erro ao enviar mensagem customizada:', zapiError);
+      if (error || !result?.success) {
+        console.error('❌ Erro ao enviar mensagem customizada:', error);
         toast({
           title: "Erro no envio",
-          description: "Erro ao enviar mensagem para o WhatsApp",
+          description: result?.error || "Erro ao enviar mensagem",
           variant: "destructive",
         });
         return;
       }
 
-      console.log('✅ Mensagem customizada enviada:', zapiResult);
-
-      // 2. Salvar no histórico do ticket (SEM disparar notificação automática)
-      // Inserir diretamente na tabela para evitar disparo de notificação resposta_ticket
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData.user?.id;
-
-      const { error: insertError } = await supabase
-        .from('ticket_mensagens')
-        .insert([{
-          ticket_id: ticketId,
-          usuario_id: userId,
-          mensagem: customMessage,
-          direcao: 'saida',
-          canal: 'web',
-          // Marcar como mensagem customizada para não disparar notificação automática
-          metadata: { is_custom_message: true }
-        }]);
-
-      if (insertError) {
-        console.error('Erro ao salvar mensagem no histórico:', insertError);
-        toast({
-          title: "Aviso",
-          description: "Mensagem enviada mas não salva no histórico",
-          variant: "default",
-        });
-      }
+      console.log('✅ Mensagem customizada enviada e salva:', result);
       
       setCustomMessage('');
       setIsCustomMessageDialogOpen(false);
       
       toast({
-        title: "✅ Mensagem enviada!",
-        description: "Mensagem customizada enviada para o grupo WhatsApp.",
+        title: "Mensagem enviada!",
+        description: "Mensagem customizada enviada e salva com sucesso",
       });
 
     } catch (error) {
