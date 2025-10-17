@@ -461,14 +461,12 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
     setIsSendingCustomMessage(true);
     
     try {
-      // Enviar usando o novo template
+      // Enviar usando o template padronizado (mesma estrutura de resposta_ticket)
       const { data: zapiResult, error: zapiError } = await supabase.functions.invoke('send-ticket-notification', {
         body: {
           ticket_id: ticketId,
           template_key: 'mensagem_customizada',
-          extra_data: {
-            mensagem_customizada: customMessage
-          }
+          resposta_real: customMessage
         }
       });
 
