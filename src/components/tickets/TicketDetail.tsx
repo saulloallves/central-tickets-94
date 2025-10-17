@@ -461,7 +461,19 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
     setIsSendingCustomMessage(true);
     
     try {
-      // Enviar usando o template padronizado (mesma estrutura de resposta_ticket)
+      // 1. Primeiro: Salvar mensagem no histórico do ticket (SEM enviar via WhatsApp ainda)
+      const messageSaved = await sendMessage(customMessage);
+      
+      if (!messageSaved) {
+        toast({
+          title: "Erro",
+          description: "Não foi possível salvar a mensagem",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // 2. Depois: Enviar para WhatsApp usando o template customizado
       const { data: zapiResult, error: zapiError } = await supabase.functions.invoke('send-ticket-notification', {
         body: {
           ticket_id: ticketId,
@@ -474,16 +486,13 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
         console.error('❌ Erro ao enviar mensagem customizada:', zapiError);
         toast({
           title: "Erro no envio",
-          description: "Erro ao enviar mensagem para o WhatsApp",
+          description: "Mensagem salva mas erro ao enviar para WhatsApp",
           variant: "destructive",
         });
         return;
       }
 
       console.log('✅ Mensagem customizada enviada:', zapiResult);
-
-      // ✅ CORRIGIDO: Não salvar no histórico para evitar notificação duplicada
-      // A mensagem customizada já foi enviada diretamente via Z-API
       
       setCustomMessage('');
       setIsCustomMessageDialogOpen(false);
