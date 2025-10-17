@@ -76,7 +76,8 @@ Deno.serve(async (req) => {
     console.log('typebot-ticket-message: Ticket encontrado:', ticket.codigo_ticket);
 
     // Montar mensagem com ou sem nome do franqueado
-    const mensagemTexto = franqueadoNome ? `[${franqueadoNome}]: ${texto}` : texto;
+    // Se for canal 'typebot' (mobile), não adiciona o nome
+    const mensagemTexto = (franqueadoNome && canal !== 'typebot') ? `[${franqueadoNome}]: ${texto}` : texto;
     
     const { data: conversaAtualizada, error: mensagemError } = await supabase
       .rpc('append_to_ticket_conversa', {
