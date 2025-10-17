@@ -20,7 +20,7 @@ interface MobileChatBubbleProps {
 }
 
 export function MobileChatBubble({ message }: MobileChatBubbleProps) {
-  const isOutgoing = message.direcao === 'saida';
+  const isOutgoing = message.canal === 'typebot';
   const hasAttachments = message.anexos && Array.isArray(message.anexos) && message.anexos.length > 0;
 
   const formatTime = (dateString: string) => {

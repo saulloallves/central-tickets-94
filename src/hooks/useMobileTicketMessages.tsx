@@ -54,7 +54,7 @@ export const useMobileTicketMessages = (ticketId: string) => {
           ticketId: ticketId,
           texto: texto,
           senha_web: senha_web,
-          canal: 'mobile',
+          canal: 'web',
           autor: 'franqueado'
         }
       });
