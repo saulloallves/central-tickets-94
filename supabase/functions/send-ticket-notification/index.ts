@@ -362,6 +362,7 @@ serve(async (req) => {
       franqueado_nome: extra_data?.franqueado_nome || ticket.franqueado_nome || 'Franqueado',
       // ✅ NOVO: Suporte para mensagem customizada
       mensagem_customizada: extra_data?.mensagem_customizada || '',
+      resposta_real: resposta_real || '', // ✅ CORRIGIDO: Placeholder resposta_real agora disponível
       timestamp: new Date().toLocaleString('pt-BR', { 
         timeZone: 'America/Sao_Paulo',
         day: '2-digit',
