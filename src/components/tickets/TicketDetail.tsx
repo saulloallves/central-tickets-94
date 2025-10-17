@@ -1026,6 +1026,14 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                 EM CRISE
               </Badge>
             )}
+            
+            {ticket.status === 'em_atendimento' && (
+              <Button onClick={handleResolveTicket} variant="default" size="sm">
+                <Check className="h-4 w-4 mr-2" />
+                Concluir Ticket
+              </Button>
+            )}
+            
             <TicketActions ticket={ticket} equipes={equipes} />
           </div>
         </div>
@@ -1642,13 +1650,6 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                   </Button>
                 )}
                 
-                {ticket.status === 'em_atendimento' && (
-                  <Button onClick={handleResolveTicket} className="flex-1" variant="outline">
-                    <Check className="h-4 w-4 mr-2" />
-                    Concluir Ticket
-                  </Button>
-                )}
-
                 <TicketActions ticket={ticket} equipes={equipes} />
               </div>
             </div>
