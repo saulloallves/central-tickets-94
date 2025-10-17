@@ -75,18 +75,14 @@ Deno.serve(async (req) => {
 
     const mensagemTexto = `[${franqueado.name}]: ${texto}`;
     
-    const { data: mensagemResult, error: mensagemError } = await supabase
-      .from('ticket_mensagens')
-      .insert({
-        ticket_id: ticketId,
-        usuario_id: usuarioId,
-        mensagem: mensagemTexto,
-        direcao: 'entrada',
-        canal: canal,
-        anexos: []
-      })
-      .select()
-      .single();
+    const { data: conversaAtualizada, error: mensagemError } = await supabase
+      .rpc('append_to_ticket_conversa', {
+        p_ticket_id: ticketId,
+        p_autor: 'franqueado',
+        p_texto: mensagemTexto,
+        p_canal: canal,
+        p_usuario_id: usuarioId
+      });
 
     if (mensagemError) {
       console.error('typebot-ticket-message: Erro ao adicionar mensagem:', mensagemError);
@@ -95,6 +91,8 @@ Deno.serve(async (req) => {
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    const mensagemResult = conversaAtualizada?.[conversaAtualizada.length - 1];
 
     console.log('typebot-ticket-message: Mensagem adicionada com sucesso');
 
