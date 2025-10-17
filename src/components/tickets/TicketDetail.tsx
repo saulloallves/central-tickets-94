@@ -482,8 +482,8 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
 
       console.log('✅ Mensagem customizada enviada:', zapiResult);
 
-      // Salvar no histórico do ticket
-      await sendMessage(customMessage);
+      // ✅ CORRIGIDO: Não salvar no histórico para evitar notificação duplicada
+      // A mensagem customizada já foi enviada diretamente via Z-API
       
       setCustomMessage('');
       setIsCustomMessageDialogOpen(false);
