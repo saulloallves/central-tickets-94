@@ -43,20 +43,21 @@ export const useMobileTicketMessages = (ticketId: string) => {
     }
   }, [ticketId]);
 
-  const sendMessage = useCallback(async (texto: string) => {
-    if (!texto.trim() || !user) return false;
+  const sendMessage = useCallback(async (texto: string, senha_web: string) => {
+    if (!texto.trim()) return false;
 
     setSending(true);
     try {
-      const { error } = await supabase
-        .from('ticket_mensagens')
-        .insert({
-          ticket_id: ticketId,
-          mensagem: texto,
-          direcao: 'saida',
-          canal: 'web',
-          usuario_id: user.id
-        });
+      // Call Edge Function to validate senha_web and send message
+      const { data, error } = await supabase.functions.invoke('typebot-ticket-message', {
+        body: {
+          ticketId: ticketId,
+          texto: texto,
+          senha_web: senha_web,
+          canal: 'mobile',
+          autor: 'franqueado'
+        }
+      });
 
       if (error) throw error;
       
@@ -68,7 +69,7 @@ export const useMobileTicketMessages = (ticketId: string) => {
     } finally {
       setSending(false);
     }
-  }, [ticketId, user, fetchMessages]);
+  }, [ticketId, fetchMessages]);
 
   // Setup realtime
   useEffect(() => {

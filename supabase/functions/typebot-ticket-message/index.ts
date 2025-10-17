@@ -24,10 +24,14 @@ Deno.serve(async (req) => {
     console.log('typebot-ticket-message: Body recebido:', body);
 
     // Validate required fields
-    if (!body.ticketId || !body.texto) {
-      console.error('typebot-ticket-message: Campos obrigatórios ausentes:', { ticketId: body.ticketId, texto: body.texto });
+    if (!body.ticketId || !body.texto || !body.senha_web) {
+      console.error('typebot-ticket-message: Campos obrigatórios ausentes:', { 
+        ticketId: body.ticketId, 
+        texto: body.texto,
+        senha_web: !!body.senha_web 
+      });
       return new Response(
-        JSON.stringify({ error: 'ticketId e texto são obrigatórios' }),
+        JSON.stringify({ error: 'ticketId, texto e senha_web são obrigatórios' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -35,10 +39,28 @@ Deno.serve(async (req) => {
     const {
       ticketId,
       texto,
-      canal = 'typebot',
+      senha_web,
+      canal = 'mobile',
       autor = 'franqueado',
       usuarioId = null
     } = body;
+
+    // Validate senha_web against franqueados table
+    const { data: franqueado, error: franqueadoError } = await supabase
+      .from('franqueados')
+      .select('id, name, email, phone')
+      .eq('web_password', senha_web)
+      .maybeSingle();
+
+    if (franqueadoError || !franqueado) {
+      console.error('typebot-ticket-message: Senha inválida ou franqueado não encontrado');
+      return new Response(
+        JSON.stringify({ error: 'Senha inválida' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('typebot-ticket-message: Franqueado autenticado:', franqueado.name);
 
     // Verify ticket exists and get complete data for notification
     const { data: ticket, error: ticketError } = await supabase
@@ -68,14 +90,14 @@ Deno.serve(async (req) => {
 
     console.log('typebot-ticket-message: Ticket encontrado:', ticket.codigo_ticket);
 
-    // Insert message directly into ticket_mensagens table
+    // Insert message directly into ticket_mensagens table with franqueado name
     const { data: mensagemResult, error: mensagemError } = await supabase
       .from('ticket_mensagens')
       .insert({
         ticket_id: ticketId,
         usuario_id: usuarioId,
-        mensagem: texto,
-        direcao: 'entrada', // Messages from typebot are always incoming
+        mensagem: `[${franqueado.name}]: ${texto}`, // Include franqueado name in message
+        direcao: 'entrada', // Messages from franqueado are incoming
         canal: canal,
         anexos: []
       })

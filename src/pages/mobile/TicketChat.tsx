@@ -23,6 +23,7 @@ export default function TicketChat() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const codigoGrupo = searchParams.get('codigo_grupo');
+  const senhaWeb = searchParams.get('senha_web');
   const { toast } = useToast();
   
   const [ticket, setTicket] = useState<Ticket | null>(null);
@@ -64,7 +65,16 @@ export default function TicketChat() {
   const handleSend = async () => {
     if (!newMessage.trim()) return;
 
-    const success = await sendMessage(newMessage);
+    if (!senhaWeb) {
+      toast({
+        title: 'Erro de autenticação',
+        description: 'Senha web não encontrada',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    const success = await sendMessage(newMessage, senhaWeb);
     
     if (success) {
       setNewMessage('');
@@ -75,7 +85,7 @@ export default function TicketChat() {
     } else {
       toast({
         title: 'Erro ao enviar',
-        description: 'Não foi possível enviar a mensagem',
+        description: 'Senha inválida ou erro ao enviar mensagem',
         variant: 'destructive'
       });
     }
@@ -121,7 +131,7 @@ export default function TicketChat() {
       <header className="sticky top-0 z-10 bg-primary text-primary-foreground shadow-md">
         <div className="flex items-center gap-3 p-4">
           <button 
-            onClick={() => navigate(`/mobile/tickets?codigo_grupo=${codigoGrupo}`)}
+            onClick={() => navigate(`/mobile/tickets?codigo_grupo=${codigoGrupo}&senha_web=${senhaWeb}`)}
             className="p-2 -ml-2 hover:bg-primary-foreground/10 rounded-full transition-colors"
             style={{ minHeight: '44px', minWidth: '44px' }}
           >
