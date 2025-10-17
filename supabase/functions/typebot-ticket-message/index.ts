@@ -20,14 +20,13 @@ Deno.serve(async (req) => {
     const body = await req.json();
     console.log('typebot-ticket-message: Body recebido:', body);
 
-    if (!body.ticketId || !body.texto || !body.senha_web) {
+    if (!body.ticketId || !body.texto) {
       console.error('typebot-ticket-message: Campos obrigatórios ausentes:', { 
         ticketId: body.ticketId, 
-        texto: body.texto,
-        senha_web: !!body.senha_web 
+        texto: body.texto
       });
       return new Response(
-        JSON.stringify({ error: 'ticketId, texto e senha_web são obrigatórios' }),
+        JSON.stringify({ error: 'ticketId e texto são obrigatórios' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -41,21 +40,24 @@ Deno.serve(async (req) => {
       usuarioId = null
     } = body;
 
-    const { data: franqueado, error: franqueadoError } = await supabase
-      .from('franqueados')
-      .select('id, name, email, phone')
-      .eq('web_password', senha_web)
-      .maybeSingle();
+    // Buscar franqueado APENAS se senha_web foi fornecida
+    let franqueadoNome = null;
+    if (senha_web) {
+      const { data: franqueado, error: franqueadoError } = await supabase
+        .from('franqueados')
+        .select('name')
+        .eq('web_password', senha_web)
+        .maybeSingle();
 
-    if (franqueadoError || !franqueado) {
-      console.error('typebot-ticket-message: Senha inválida ou franqueado não encontrado');
-      return new Response(
-        JSON.stringify({ error: 'Senha inválida' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      if (franqueado) {
+        franqueadoNome = franqueado.name;
+        console.log('typebot-ticket-message: Franqueado autenticado:', franqueadoNome);
+      } else {
+        console.log('typebot-ticket-message: Senha inválida, processando sem nome de franqueado');
+      }
+    } else {
+      console.log('typebot-ticket-message: Processando sem autenticação de franqueado');
     }
-
-    console.log('typebot-ticket-message: Franqueado autenticado:', franqueado.name);
 
     const { data: ticket, error: ticketError } = await supabase
       .from('tickets')
@@ -73,7 +75,8 @@ Deno.serve(async (req) => {
 
     console.log('typebot-ticket-message: Ticket encontrado:', ticket.codigo_ticket);
 
-    const mensagemTexto = `[${franqueado.name}]: ${texto}`;
+    // Montar mensagem com ou sem nome do franqueado
+    const mensagemTexto = franqueadoNome ? `[${franqueadoNome}]: ${texto}` : texto;
     
     const { data: conversaAtualizada, error: mensagemError } = await supabase
       .rpc('append_to_ticket_conversa', {
