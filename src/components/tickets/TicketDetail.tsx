@@ -974,6 +974,38 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                   {ticket.descricao_problema}
                 </p>
               </div>
+
+              {(() => {
+                const firstIncomingMessage = messages.find(msg => msg.direcao === 'entrada');
+                const hasAttachments = firstIncomingMessage?.anexos && 
+                                     Array.isArray(firstIncomingMessage.anexos) && 
+                                     firstIncomingMessage.anexos.length > 0;
+
+                return hasAttachments && (
+                  <div className="mt-3 space-y-2">
+                    {firstIncomingMessage.anexos.map((attachment: any, idx: number) => (
+                      <div key={idx}>
+                        {(attachment.tipo === 'imagem' || attachment.type?.startsWith('image/')) && (
+                          <ImageModal 
+                            src={attachment.url} 
+                            alt={attachment.nome || 'Imagem anexada'}
+                          >
+                            <img 
+                              src={attachment.url} 
+                              alt={attachment.nome || 'Imagem anexada'}
+                              className="max-w-full max-h-64 rounded-md object-contain cursor-pointer border border-border/50 hover:opacity-80 transition-opacity"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                              }}
+                            />
+                          </ImageModal>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Botão de ação - integrado */}
