@@ -254,10 +254,7 @@ serve(async (req) => {
         mensagem: custom_message, // Salvar apenas a mensagem customizada, sem o template
         direcao: 'saida',
         canal: 'web',
-        metadata: { 
-          is_custom_message: true,
-          sent_to: destination 
-        }
+        anexos: []
       });
 
     if (insertError) {
