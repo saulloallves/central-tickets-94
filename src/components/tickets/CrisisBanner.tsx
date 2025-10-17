@@ -9,8 +9,7 @@ import { useRole } from '@/hooks/useRole';
 import { CrisisModal } from './CrisisModal';
 import { NotificationSounds } from '@/lib/notification-sounds';
 
-// Intervalo de polling para atualização de crises (em milissegundos)
-const CRISIS_POLLING_INTERVAL = 60000; // 1 minuto
+// Realtime usado para atualizações automáticas - sem polling
 
 interface Crisis {
   id: string;
@@ -36,6 +35,10 @@ export function CrisisBanner() {
     let retryCount = 0;
     const maxRetries = 3;
 
+    // Determinar se usuário é admin/diretor uma única vez
+    const userIsAdmin = isAdmin();
+    const userIsDiretor = isDiretor();
+
     // Buscar crises ativas das equipes do usuário + crises globais
     const fetchActiveCrises = async () => {
       try {
@@ -45,7 +48,7 @@ export function CrisisBanner() {
           .eq('is_active', true);
 
         // Admins e diretoria veem todas as crises ativas
-        if (isAdmin() || isDiretor()) {
+        if (userIsAdmin || userIsDiretor) {
           // Nenhum filtro adicional - todas as crises ativas
         } else {
           // Usuários normais só veem crises das suas equipes ou globais
@@ -102,18 +105,31 @@ export function CrisisBanner() {
     // Busca inicial
     fetchActiveCrises();
 
-    // Polling periódico para atualizar crises
-    const pollingInterval = setInterval(() => {
-      if (isMounted) {
-        fetchActiveCrises();
-      }
-    }, CRISIS_POLLING_INTERVAL);
+    // Subscription para mudanças em tempo real
+    const crisisSubscription = supabase
+      .channel('crisis-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'crises'
+        },
+        (payload) => {
+          console.log('🚨 Mudança em crise detectada:', payload);
+          // Re-fetch quando houver mudança
+          if (isMounted) {
+            fetchActiveCrises();
+          }
+        }
+      )
+      .subscribe();
 
     return () => {
       isMounted = false;
-      clearInterval(pollingInterval);
+      supabase.removeChannel(crisisSubscription);
     };
-  }, [user, isAdmin, isDiretor]);
+  }, [user]);
 
   // Tocar som de alerta quando nova crise aparece (apenas uma vez por crise)
   useEffect(() => {
