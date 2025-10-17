@@ -1019,7 +1019,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
             </div>
           </div>
           
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-3 flex-shrink-0 mr-10">
             {ticket.prioridade === 'crise' && (
               <Badge variant="destructive" className="whitespace-nowrap animate-pulse">
                 <AlertTriangle className="h-3 w-3 mr-1" />
