@@ -168,12 +168,14 @@ Deno.serve(async (req) => {
           console.log(`  - data_limite_sla: ${newSlaLimit.toISOString()}`);
 
           // ✅ CRITICAL: Despausar APENAS o horário, mantém sla_pausado_mensagem se estiver TRUE
+          // ✅ CORREÇÃO SLA: Atualizar sla_ultima_atualizacao para NOW() para que decrementar_sla_minutos não conte o tempo pausado
           const { error: updateError } = await supabase
             .from('tickets')
             .update({
               sla_pausado_horario: false,  // ← Despausa APENAS horário
               // sla_pausado será calculado automaticamente: sla_pausado_mensagem OR sla_pausado_horario
               sla_pausado_em: ticket.sla_pausado_mensagem ? ticket.sla_pausado_em : null,
+              sla_ultima_atualizacao: now.toISOString(), // ← CORREÇÃO: Reset timestamp para não contar tempo pausado
               data_limite_sla: newSlaLimit.toISOString(),
               sla_half_time: halfSlaTime.toISOString(),
               tempo_pausado_total: `${totalPausedMinutes} minutes`,
