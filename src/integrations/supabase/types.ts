@@ -4245,6 +4245,14 @@ export type Database = {
         Args: { doc_id: string }
         Returns: undefined
       }
+      reiniciar_e_pausar_slas_abertos: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          detalhes: Json
+          tickets_pausados: number
+          tickets_processados: number
+        }[]
+      }
       reject_internal_access: {
         Args: { p_reason?: string; p_request_id: string }
         Returns: undefined
