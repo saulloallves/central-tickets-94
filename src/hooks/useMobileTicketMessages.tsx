@@ -62,7 +62,7 @@ export const useMobileTicketMessages = (ticketId: string) => {
 
       if (error) throw error;
       
-      await fetchMessages();
+      // Realtime listener will handle adding the new message automatically
       return true;
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
