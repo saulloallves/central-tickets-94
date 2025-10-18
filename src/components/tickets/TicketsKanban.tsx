@@ -820,7 +820,9 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
     
     // For completed tickets, filter out old ones unless showing archived
     if (status === 'concluido' && !showArchivedTickets) {
-      filteredTickets = filteredTickets.filter(ticket => !isFromPreviousBusinessDay(ticket.created_at));
+      filteredTickets = filteredTickets.filter(ticket => 
+        ticket.resolvido_em && !isFromPreviousBusinessDay(ticket.resolvido_em)
+      );
     }
     
     // Sort by urgency (escalation time, then SLA time, then creation date)
