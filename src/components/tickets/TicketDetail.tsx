@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, Clock, User, Building, Tag, AlertTriangle, MessageSquare, Send, Paperclip, Zap, Sparkles, Copy, Bot, Phone, Users, FileText, Settings, Play, Check, ExternalLink, Image, Video, File, Download, ChevronDown, RotateCcw } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -45,6 +45,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
   const [customMessage, setCustomMessage] = useState('');
   const [isCustomMessageDialogOpen, setIsCustomMessageDialogOpen] = useState(false);
   const [isSendingCustomMessage, setIsSendingCustomMessage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const { messages, sendMessage, loading: messagesLoading, refetch: refetchMessages } = useTicketMessages(ticketId);
   const { suggestion, loading: suggestionLoading, generateSuggestion, markSuggestionUsed } = useAISuggestion(ticketId);
@@ -1384,6 +1385,16 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
 
                   {/* Send Message Form */}
                   <div className="mt-4 pt-4 border-t">
+                    {/* Hidden file input */}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      accept="image/*,video/*"
+                      className="hidden"
+                      onChange={handleFileSelect}
+                    />
+                    
                     {/* Attachment previews */}
                     {attachments.length > 0 && (
                       <div className="mb-3 p-3 bg-muted/20 rounded-lg border">
@@ -1430,6 +1441,17 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                     )}
                     
                     <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={messagesLoading || isUploadingAttachments}
+                        title="Anexar arquivo"
+                        className="h-10 w-10 shrink-0"
+                      >
+                        <Paperclip className="h-4 w-4" />
+                      </Button>
+                      
                       <Textarea
                         placeholder="Digite sua mensagem..."
                         value={newMessage}
