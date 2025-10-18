@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
       .from('tickets')
       .update(updatePayload)
       .eq('id', ticketId)
-      .select('id, status, position, updated_at')
+      .select('id, status, position, updated_at, resolvido_em')
       .single();
 
     if (updateError) {
