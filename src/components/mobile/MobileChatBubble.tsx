@@ -28,6 +28,31 @@ export function MobileChatBubble({ message }: MobileChatBubbleProps) {
     return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   };
 
+  const renderMessageWithLinks = (text: string, isOutgoing: boolean) => {
+    const urlRegex = /(https?:\/\/[^\s]+)|(www\.[^\s]+)/g;
+    const parts = text.split(urlRegex).filter(Boolean);
+    
+    return parts.map((part, index) => {
+      if (part && part.match(urlRegex)) {
+        const href = part.startsWith('www.') ? `https://${part}` : part;
+        return (
+          <a
+            key={index}
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`underline break-all hover:opacity-80 transition-opacity ${
+              isOutgoing ? 'text-primary-foreground' : 'text-blue-600'
+            }`}
+          >
+            {part}
+          </a>
+        );
+      }
+      return <span key={index}>{part}</span>;
+    });
+  };
+
   return (
     <div className={`flex ${isOutgoing ? 'justify-end' : 'justify-start'}`}>
       <div
@@ -39,9 +64,9 @@ export function MobileChatBubble({ message }: MobileChatBubbleProps) {
         style={{ wordBreak: 'break-word' }}
       >
         {/* Texto da mensagem */}
-        <p className="text-sm whitespace-pre-wrap leading-relaxed">
-          {message.mensagem}
-        </p>
+        <div className="text-sm whitespace-pre-wrap leading-relaxed">
+          {renderMessageWithLinks(message.mensagem, isOutgoing)}
+        </div>
 
         {/* Anexos */}
         {hasAttachments && (
