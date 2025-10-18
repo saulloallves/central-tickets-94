@@ -204,7 +204,7 @@ export default function TicketChat() {
     <div className="h-screen flex flex-col bg-background">
       {/* Header Fixo */}
       <header className="sticky top-0 z-10 bg-primary text-primary-foreground shadow-md">
-        <div className="flex items-center gap-3 p-4">
+        <div className="flex items-center gap-2 p-2">
           <button 
             onClick={() => navigate(`/mobile/tickets?codigo_grupo=${codigoGrupo}&senha_web=${senhaWeb}`)}
             className="p-2 -ml-2 hover:bg-primary-foreground/10 rounded-full transition-colors"
@@ -213,21 +213,21 @@ export default function TicketChat() {
             <ArrowLeft className="h-5 w-5" />
           </button>
           <div className="flex-1">
-            <p className="font-bold">{ticket.codigo_ticket}</p>
-            <p className="text-sm opacity-90 line-clamp-1">{ticket.titulo}</p>
+            <p className="font-bold text-sm">{ticket.codigo_ticket}</p>
+            <p className="text-xs opacity-90 line-clamp-1">{ticket.titulo}</p>
           </div>
         </div>
         
         {/* Status e Prioridade */}
-        <div className="flex gap-2 px-4 pb-3">
-          <Badge variant="outline" className={`text-xs bg-white ${getStatusColor(ticket.status)}`}>
+        <div className="flex gap-2 px-2 pb-2">
+          <Badge variant="outline" className={`text-[10px] bg-white ${getStatusColor(ticket.status)}`}>
             {ticket.status}
           </Badge>
-          <Badge variant="outline" className="text-xs bg-white border-border">
+          <Badge variant="outline" className="text-[10px] bg-white border-border">
             {ticket.prioridade}
           </Badge>
           {ticket.status_sla === 'vencido' && (
-            <Badge variant="destructive" className="text-xs bg-white">
+            <Badge variant="destructive" className="text-[10px] bg-white">
               <Clock className="h-3 w-3 mr-1" />
               SLA vencido
             </Badge>
@@ -236,7 +236,7 @@ export default function TicketChat() {
       </header>
 
       {/* Mensagens */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-muted/30">
+      <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-muted/30">
         {messages.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground">Nenhuma mensagem ainda</p>
@@ -250,7 +250,7 @@ export default function TicketChat() {
       </div>
 
       {/* Input Fixo */}
-      <div className="sticky bottom-0 bg-background border-t p-4 safe-area-bottom">
+      <div className="sticky bottom-0 bg-background border-t p-2 safe-area-bottom">
         <input
           ref={fileInputRef}
           type="file"
@@ -261,7 +261,7 @@ export default function TicketChat() {
         />
         
         {attachments.length > 0 && (
-          <div className="mb-2 flex gap-2 flex-wrap">
+          <div className="mb-1 flex gap-1 flex-wrap">
             {attachments.map((file, idx) => (
               <Badge key={idx} variant="secondary" className="gap-1">
                 {file.type.startsWith('image/') ? '🖼️' : '🎥'} {file.name.substring(0, 15)}...
@@ -274,13 +274,13 @@ export default function TicketChat() {
           </div>
         )}
         
-        <div className="flex gap-2">
+        <div className="flex gap-1.5">
           <Button
             variant="outline"
             size="icon"
             onClick={() => fileInputRef.current?.click()}
             disabled={sending || isUploading}
-            style={{ minHeight: '44px', minWidth: '44px' }}
+            style={{ minHeight: '40px', minWidth: '40px' }}
           >
             <Paperclip className="h-4 w-4" />
           </Button>
@@ -296,14 +296,14 @@ export default function TicketChat() {
               }
             }}
             disabled={sending || isUploading}
-            className="flex-1 text-base"
+            className="flex-1 text-base py-2"
             style={{ fontSize: '16px' }}
           />
           <Button 
             onClick={handleSend} 
             disabled={sending || isUploading || (!newMessage.trim() && attachments.length === 0)}
             size="icon"
-            style={{ minHeight: '44px', minWidth: '44px' }}
+            style={{ minHeight: '40px', minWidth: '40px' }}
           >
             <Send className="h-4 w-4" />
           </Button>
