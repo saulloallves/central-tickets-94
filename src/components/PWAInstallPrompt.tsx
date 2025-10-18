@@ -1,11 +1,16 @@
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { X, Download } from 'lucide-react';
 
 export function PWAInstallPrompt() {
+  const location = useLocation();
   const [installPrompt, setInstallPrompt] = useState<any>(null);
   const [showPrompt, setShowPrompt] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
+
+  // Não mostrar em rotas mobile
+  const isMobileRoute = location.pathname.startsWith('/mobile');
 
   useEffect(() => {
     // Detectar iOS
@@ -56,7 +61,7 @@ export function PWAInstallPrompt() {
     setShowPrompt(false);
   };
 
-  if (!showPrompt) return null;
+  if (!showPrompt || isMobileRoute) return null;
 
   return (
     <div className="fixed bottom-20 left-4 right-4 md:left-auto md:right-4 md:max-w-sm z-50 animate-in slide-in-from-bottom-5">

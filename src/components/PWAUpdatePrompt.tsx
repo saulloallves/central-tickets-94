@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 
 export const PWAUpdatePrompt = () => {
+  const location = useLocation();
+  const isMobileRoute = location.pathname.startsWith('/mobile');
+  
   const {
     offlineReady: [offlineReady, setOfflineReady],
     needRefresh: [needRefresh, setNeedRefresh],
@@ -37,8 +41,12 @@ export const PWAUpdatePrompt = () => {
     setNeedRefresh(false);
   };
 
-  // Don't show if no update is needed
+  // Don't show if no update is needed or on mobile routes
   if (!needRefresh && !offlineReady) {
+    return null;
+  }
+
+  if (isMobileRoute) {
     return null;
   }
 
