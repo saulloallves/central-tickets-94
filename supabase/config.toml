@@ -58,6 +58,9 @@ verify_jwt = false
 [functions.colaborador-signup]
 verify_jwt = false
 
+[functions.convert-existing-users]
+verify_jwt = true
+
 [functions.create-internal-notification]
 verify_jwt = false
 
