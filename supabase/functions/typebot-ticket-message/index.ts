@@ -37,7 +37,8 @@ Deno.serve(async (req) => {
       senha_web,
       canal = 'typebot',
       autor = 'franqueado',
-      usuarioId = null
+      usuarioId = null,
+      anexos = []
     } = body;
 
     // Buscar franqueado APENAS se senha_web foi fornecida
@@ -79,6 +80,27 @@ Deno.serve(async (req) => {
     // Se for canal 'typebot' (mobile), não adiciona o nome
     const mensagemTexto = (franqueadoNome && canal !== 'typebot') ? `[${franqueadoNome}]: ${texto}` : texto;
     
+    // Inserir mensagem diretamente na tabela ticket_mensagens para incluir anexos
+    const { error: insertError } = await supabase
+      .from('ticket_mensagens')
+      .insert({
+        ticket_id: ticketId,
+        mensagem: mensagemTexto,
+        direcao: 'entrada',
+        canal: canal || 'typebot',
+        usuario_id: usuarioId,
+        anexos: anexos
+      });
+
+    if (insertError) {
+      console.error('typebot-ticket-message: Erro ao inserir mensagem:', insertError);
+      return new Response(
+        JSON.stringify({ error: 'Erro ao adicionar mensagem ao ticket' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Também atualizar a conversa JSON usando a função RPC
     const { data: conversaAtualizada, error: mensagemError } = await supabase
       .rpc('append_to_ticket_conversa', {
         p_ticket_id: ticketId,

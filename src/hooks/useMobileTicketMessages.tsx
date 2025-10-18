@@ -43,8 +43,8 @@ export const useMobileTicketMessages = (ticketId: string) => {
     }
   }, [ticketId]);
 
-  const sendMessage = useCallback(async (texto: string, senha_web: string) => {
-    if (!texto.trim()) return false;
+  const sendMessage = useCallback(async (texto: string, senha_web: string, anexos?: any[]) => {
+    if (!texto.trim() && (!anexos || anexos.length === 0)) return false;
 
     setSending(true);
     try {
@@ -55,7 +55,8 @@ export const useMobileTicketMessages = (ticketId: string) => {
           texto: texto,
           senha_web: senha_web,
           canal: 'typebot',
-          autor: 'franqueado'
+          autor: 'franqueado',
+          anexos: anexos || []
         }
       });
 

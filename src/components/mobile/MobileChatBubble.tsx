@@ -48,6 +48,7 @@ export function MobileChatBubble({ message }: MobileChatBubbleProps) {
           <div className="mt-2 space-y-2">
             {message.anexos!.map((attachment, idx) => {
               const isImage = attachment.tipo === 'imagem' || attachment.type?.startsWith('image/');
+              const isVideo = attachment.tipo === 'video' || attachment.type?.startsWith('video/');
               const fileName = attachment.nome || attachment.name || 'Anexo';
               
               if (isImage) {
@@ -64,6 +65,20 @@ export function MobileChatBubble({ message }: MobileChatBubbleProps) {
                       }}
                     />
                   </ImageModal>
+                );
+              }
+
+              if (isVideo) {
+                return (
+                  <video 
+                    key={idx}
+                    controls 
+                    className="max-w-full rounded-lg border-2 border-background/50"
+                    style={{ maxHeight: '200px' }}
+                  >
+                    <source src={attachment.url} type={attachment.type || 'video/mp4'} />
+                    Seu navegador não suporta reprodução de vídeo.
+                  </video>
                 );
               }
 

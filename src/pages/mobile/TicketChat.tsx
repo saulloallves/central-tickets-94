@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Send, AlertTriangle, Loader2, Clock } from 'lucide-react';
+import { ArrowLeft, Send, AlertTriangle, Loader2, Clock, Paperclip, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useMobileTicketMessages } from '@/hooks/useMobileTicketMessages';
 import { MobileChatBubble } from '@/components/mobile/MobileChatBubble';
@@ -29,7 +29,10 @@ export default function TicketChat() {
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [loading, setLoading] = useState(true);
   const [newMessage, setNewMessage] = useState('');
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const { messages, loading: messagesLoading, sending, sendMessage } = useMobileTicketMessages(ticketId!);
 
@@ -62,8 +65,73 @@ export default function TicketChat() {
     scrollToBottom();
   }, [messages]);
 
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    const maxSize = 16 * 1024 * 1024;
+    
+    const validFiles = files.filter(file => {
+      if (file.size > maxSize) {
+        toast({
+          title: "Arquivo muito grande",
+          description: `${file.name} excede 16MB`,
+          variant: "destructive"
+        });
+        return false;
+      }
+      return true;
+    });
+    
+    setAttachments(prev => [...prev, ...validFiles]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadAttachments = async (): Promise<any[]> => {
+    if (attachments.length === 0) return [];
+    
+    const uploadedFiles = [];
+    for (const file of attachments) {
+      try {
+        const fileName = file.name
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^a-zA-Z0-9.-]/g, '_');
+        
+        const filePath = `${ticketId}/${Date.now()}_${fileName}`;
+        
+        const { error } = await supabase.storage
+          .from('ticket-attachments')
+          .upload(filePath, file);
+        
+        if (error) throw error;
+        
+        const { data: { publicUrl } } = supabase.storage
+          .from('ticket-attachments')
+          .getPublicUrl(filePath);
+        
+        uploadedFiles.push({
+          url: publicUrl,
+          nome: file.name,
+          tipo: file.type.startsWith('image/') ? 'imagem' : file.type.startsWith('video/') ? 'video' : 'arquivo',
+          type: file.type
+        });
+      } catch (error) {
+        console.error('Erro ao fazer upload:', error);
+        toast({
+          title: "Erro no upload",
+          description: `Falha ao enviar ${file.name}`,
+          variant: "destructive"
+        });
+      }
+    }
+    return uploadedFiles;
+  };
+
   const handleSend = async () => {
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() && attachments.length === 0) return;
 
     if (!senhaWeb) {
       toast({
@@ -74,20 +142,27 @@ export default function TicketChat() {
       return;
     }
 
-    const success = await sendMessage(newMessage, senhaWeb);
-    
-    if (success) {
-      setNewMessage('');
-      toast({
-        title: 'Mensagem enviada',
-        description: 'Sua mensagem foi enviada com sucesso'
-      });
-    } else {
-      toast({
-        title: 'Erro ao enviar',
-        description: 'Senha inválida ou erro ao enviar mensagem',
-        variant: 'destructive'
-      });
+    setIsUploading(true);
+    try {
+      const uploadedFiles = await uploadAttachments();
+      const success = await sendMessage(newMessage, senhaWeb, uploadedFiles);
+      
+      if (success) {
+        setNewMessage('');
+        setAttachments([]);
+        toast({
+          title: 'Mensagem enviada',
+          description: 'Sua mensagem foi enviada com sucesso'
+        });
+      } else {
+        toast({
+          title: 'Erro ao enviar',
+          description: 'Senha inválida ou erro ao enviar mensagem',
+          variant: 'destructive'
+        });
+      }
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -176,7 +251,39 @@ export default function TicketChat() {
 
       {/* Input Fixo */}
       <div className="sticky bottom-0 bg-background border-t p-4 safe-area-bottom">
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept="image/*,video/*"
+          className="hidden"
+          onChange={handleFileSelect}
+        />
+        
+        {attachments.length > 0 && (
+          <div className="mb-2 flex gap-2 flex-wrap">
+            {attachments.map((file, idx) => (
+              <Badge key={idx} variant="secondary" className="gap-1">
+                {file.type.startsWith('image/') ? '🖼️' : '🎥'} {file.name.substring(0, 15)}...
+                <X 
+                  className="h-3 w-3 cursor-pointer" 
+                  onClick={() => removeAttachment(idx)}
+                />
+              </Badge>
+            ))}
+          </div>
+        )}
+        
         <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={sending || isUploading}
+            style={{ minHeight: '44px', minWidth: '44px' }}
+          >
+            <Paperclip className="h-4 w-4" />
+          </Button>
           <Input
             type="text"
             placeholder="Digite sua mensagem..."
@@ -188,13 +295,13 @@ export default function TicketChat() {
                 handleSend();
               }
             }}
-            disabled={sending}
+            disabled={sending || isUploading}
             className="flex-1 text-base"
             style={{ fontSize: '16px' }}
           />
           <Button 
             onClick={handleSend} 
-            disabled={sending || !newMessage.trim()}
+            disabled={sending || isUploading || (!newMessage.trim() && attachments.length === 0)}
             size="icon"
             style={{ minHeight: '44px', minWidth: '44px' }}
           >

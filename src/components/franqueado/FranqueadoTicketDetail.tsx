@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { X, Send, Clock, MapPin, User, Phone, MessageSquare, AlertTriangle } from 'lucide-react';
+import { X, Send, Clock, MapPin, User, Phone, MessageSquare, AlertTriangle, Paperclip } from 'lucide-react';
 import { ImageModal } from '@/components/ui/image-modal';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -59,7 +59,10 @@ export function FranqueadoTicketDetail({ ticketId, onClose }: FranqueadoTicketDe
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -176,12 +179,86 @@ export function FranqueadoTicketDetail({ ticketId, onClose }: FranqueadoTicketDe
     };
   }, [ticketId]);
 
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    
+    const maxSize = 16 * 1024 * 1024;
+    const validFiles = files.filter(file => {
+      if (file.size > maxSize) {
+        toast({
+          title: "Arquivo muito grande",
+          description: `${file.name} excede 16MB`,
+          variant: "destructive"
+        });
+        return false;
+      }
+      return true;
+    });
+    
+    setAttachments(prev => [...prev, ...validFiles]);
+    
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadAttachments = async (): Promise<any[]> => {
+    if (attachments.length === 0) return [];
+    
+    const uploadedFiles = [];
+    
+    for (const file of attachments) {
+      try {
+        const fileName = file.name
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^a-zA-Z0-9.-]/g, '_');
+        
+        const filePath = `${ticketId}/${Date.now()}_${fileName}`;
+        
+        const { data, error } = await supabase.storage
+          .from('ticket-attachments')
+          .upload(filePath, file);
+        
+        if (error) throw error;
+        
+        const { data: { publicUrl } } = supabase.storage
+          .from('ticket-attachments')
+          .getPublicUrl(filePath);
+        
+        uploadedFiles.push({
+          url: publicUrl,
+          nome: file.name,
+          tipo: file.type.startsWith('image/') ? 'imagem' : file.type.startsWith('video/') ? 'video' : 'arquivo',
+          type: file.type
+        });
+      } catch (error) {
+        console.error('Erro ao fazer upload:', error);
+        toast({
+          title: "Erro no upload",
+          description: `Falha ao enviar ${file.name}`,
+          variant: "destructive"
+        });
+      }
+    }
+    
+    return uploadedFiles;
+  };
+
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || !user) return;
+    if (!newMessage.trim() && attachments.length === 0) return;
+    if (!user) return;
 
     setSending(true);
+    setIsUploading(true);
     
     try {
+      const uploadedFiles = await uploadAttachments();
+      
       const { error } = await supabase
         .from('ticket_mensagens')
         .insert({
@@ -189,7 +266,8 @@ export function FranqueadoTicketDetail({ ticketId, onClose }: FranqueadoTicketDe
           mensagem: newMessage,
           direcao: 'saida',
           canal: 'web',
-          usuario_id: user.id
+          usuario_id: user.id,
+          anexos: uploadedFiles
         });
 
       if (error) {
@@ -203,8 +281,8 @@ export function FranqueadoTicketDetail({ ticketId, onClose }: FranqueadoTicketDe
       }
 
       setNewMessage('');
+      setAttachments([]);
       
-      // Atualizar mensagens
       const { data: messagesData } = await supabase
         .from('ticket_mensagens')
         .select('*')
@@ -226,6 +304,7 @@ export function FranqueadoTicketDetail({ ticketId, onClose }: FranqueadoTicketDe
       });
     } finally {
       setSending(false);
+      setIsUploading(false);
     }
   };
 
@@ -362,10 +441,14 @@ export function FranqueadoTicketDetail({ ticketId, onClose }: FranqueadoTicketDe
                 {/* Render anexos */}
                 {message.anexos && Array.isArray(message.anexos) && message.anexos.length > 0 && (
                   <div className="mt-2 space-y-2">
-                    {message.anexos.map((attachment: any, idx: number) => (
-                      <div key={idx} className="flex items-center gap-2 p-2 bg-background/50 rounded border">
-                        {(attachment.tipo === 'imagem' || attachment.type?.startsWith('image/')) ? (
+                    {message.anexos.map((attachment: any, idx: number) => {
+                      const isImage = attachment.tipo === 'imagem' || attachment.type?.startsWith('image/');
+                      const isVideo = attachment.tipo === 'video' || attachment.type?.startsWith('video/');
+                      
+                      if (isImage) {
+                        return (
                           <ImageModal 
+                            key={idx}
                             src={attachment.url} 
                             alt={attachment.nome || attachment.name || 'Imagem'}
                           >
@@ -379,20 +462,35 @@ export function FranqueadoTicketDetail({ ticketId, onClose }: FranqueadoTicketDe
                               }}
                             />
                           </ImageModal>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <a 
-                              href={attachment.url} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-xs text-primary hover:underline"
-                            >
-                              📎 {attachment.nome || attachment.name || 'Anexo'}
-                            </a>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                        );
+                      }
+                      
+                      if (isVideo) {
+                        return (
+                          <video 
+                            key={idx}
+                            controls 
+                            className="max-w-48 max-h-48 rounded border"
+                          >
+                            <source src={attachment.url} type={attachment.type || 'video/mp4'} />
+                            Seu navegador não suporta reprodução de vídeo.
+                          </video>
+                        );
+                      }
+                      
+                      return (
+                        <div key={idx} className="flex items-center gap-2 p-2 bg-background/50 rounded border">
+                          <a 
+                            href={attachment.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-xs text-primary hover:underline"
+                          >
+                            📎 {attachment.nome || attachment.name || 'Anexo'}
+                          </a>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
                 
@@ -408,20 +506,61 @@ export function FranqueadoTicketDetail({ ticketId, onClose }: FranqueadoTicketDe
 
       {/* Message Input */}
       <div className="p-4 border-t">
-        <Textarea
-          placeholder="Digite sua resposta... (Enter para enviar)"
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              handleSendMessage();
-            }
-          }}
-          rows={3}
-          className="resize-none"
-          disabled={sending}
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept="image/*,video/*"
+          className="hidden"
+          onChange={handleFileSelect}
         />
+        
+        {attachments.length > 0 && (
+          <div className="mb-2 flex gap-2 flex-wrap">
+            {attachments.map((file, idx) => (
+              <Badge key={idx} variant="secondary" className="gap-1">
+                {file.type.startsWith('image/') ? '🖼️' : '🎥'} {file.name.substring(0, 20)}...
+                <X 
+                  className="h-3 w-3 cursor-pointer" 
+                  onClick={() => removeAttachment(idx)}
+                />
+              </Badge>
+            ))}
+          </div>
+        )}
+        
+        <div className="flex gap-2 mb-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={sending || isUploading}
+          >
+            <Paperclip className="h-4 w-4" />
+          </Button>
+          <Textarea
+            placeholder="Digite sua resposta... (Enter para enviar)"
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage();
+              }
+            }}
+            rows={3}
+            className="resize-none flex-1"
+            disabled={sending || isUploading}
+          />
+        </div>
+        <Button 
+          onClick={handleSendMessage} 
+          disabled={sending || isUploading || (!newMessage.trim() && attachments.length === 0)}
+          className="w-full"
+        >
+          <Send className="h-4 w-4 mr-2" />
+          Enviar
+        </Button>
       </div>
     </div>
   );
