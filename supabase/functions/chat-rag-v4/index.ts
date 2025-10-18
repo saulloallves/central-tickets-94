@@ -1,9 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0';
-import { ConversationManager } from '../zapi-whatsapp/conversation-manager.ts';
-import { encontrarDocumentosRelacionados, rerankComLLM, gerarRespostaComContexto } from '../zapi-whatsapp/rag-engine.ts';
-import { ZAPIClient } from '../zapi-whatsapp/zapi-client.ts';
-import { ZAPIMessage, ConversationMessageData } from '../zapi-whatsapp/types.ts';
+import { ConversationManager } from './conversation-manager.ts';
+import { encontrarDocumentosRelacionados, rerankComLLM, gerarRespostaComContexto } from './rag-engine.ts';
+import { ZAPIClient } from './zapi-client.ts';
+import { ZAPIMessage, ConversationMessageData } from './types.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
