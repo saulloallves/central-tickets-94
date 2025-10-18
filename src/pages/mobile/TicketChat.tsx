@@ -145,14 +145,14 @@ export default function TicketChat() {
         
         {/* Status e Prioridade */}
         <div className="flex gap-2 px-4 pb-3">
-          <Badge variant="outline" className={`text-xs ${getStatusColor(ticket.status)}`}>
+          <Badge variant="outline" className={`text-xs bg-white ${getStatusColor(ticket.status)}`}>
             {ticket.status}
           </Badge>
-          <Badge variant="outline" className="text-xs">
+          <Badge variant="outline" className="text-xs bg-white border-border">
             {ticket.prioridade}
           </Badge>
           {ticket.status_sla === 'vencido' && (
-            <Badge variant="destructive" className="text-xs">
+            <Badge variant="destructive" className="text-xs bg-white">
               <Clock className="h-3 w-3 mr-1" />
               SLA vencido
             </Badge>
