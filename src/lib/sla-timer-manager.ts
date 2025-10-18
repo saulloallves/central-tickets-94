@@ -72,31 +72,15 @@ class SLATimerManager {
       return;
     }
     
-    // ✅ Ticket NOVO: calcular tempo REAL baseado em data de abertura
-    if (ticket.dataAbertura && ticket.slaMinutosTotais) {
-      const abertura = new Date(ticket.dataAbertura).getTime();
-      const agora = Date.now();
-      const tempoDecorridoMinutos = (agora - abertura) / 60000;
-      const tempoPausadoMinutos = ticket.tempoPausadoTotal || 0;
-      
-      // ✅ CORREÇÃO SLA: Subtrair tempo pausado do tempo decorrido
-      // Tempo efetivo = Decorrido - Pausado
-      // Tempo restante = Total - Efetivo
-      const tempoEfetivoMinutos = tempoDecorridoMinutos - tempoPausadoMinutos;
-      const tempoRestanteMinutos = ticket.slaMinutosTotais - tempoEfetivoMinutos;
-      
-      localSecondsRemaining = Math.max(0, Math.floor(tempoRestanteMinutos * 60));
-      
-      console.log(`⏱️ Iniciando timer real do ticket ${ticket.codigoTicket}:
-        - Aberto há: ${tempoDecorridoMinutos.toFixed(1)} min
-        - Tempo pausado: ${tempoPausadoMinutos} min
-        - Tempo efetivo: ${tempoEfetivoMinutos.toFixed(1)} min
-        - SLA total: ${ticket.slaMinutosTotais} min
-        - Restante: ${tempoRestanteMinutos.toFixed(1)} min (${localSecondsRemaining}s)`);
-    } else {
-      // Fallback: usar valor do banco se não tiver data de abertura
-      localSecondsRemaining = (ticket.slaMinutosRestantes || 0) * 60;
-    }
+    // ✅ CORREÇÃO FASE 4: Frontend usa APENAS valor do banco (fonte única de verdade)
+    // O backend já calcula corretamente com pausas, não recalcular aqui
+    localSecondsRemaining = (ticket.slaMinutosRestantes || 0) * 60;
+    
+    console.log(`⏱️ Iniciando timer do ticket ${ticket.codigoTicket}:
+      - SLA restante do banco: ${ticket.slaMinutosRestantes} min (${localSecondsRemaining}s)
+      - Pausado: ${ticket.slaPausado}
+      - Pausado mensagem: ${ticket.slaPausadoMensagem}
+      - Pausado horário: ${ticket.slaPausadoHorario || false}`);
     
     const ticketWithLocalTimer: SLATicket = {
       ...ticket,
