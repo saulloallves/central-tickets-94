@@ -105,25 +105,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Também atualizar a conversa JSON usando a função RPC
-    const { data: conversaAtualizada, error: mensagemError } = await supabase
-      .rpc('append_to_ticket_conversa', {
-        p_ticket_id: ticketId,
-        p_autor: 'franqueado',
-        p_texto: mensagemTexto,
-        p_canal: canal || 'typebot',
-        p_usuario_id: usuarioId
-      });
-
-    if (mensagemError) {
-      console.error('typebot-ticket-message: Erro ao adicionar mensagem:', mensagemError);
-      return new Response(
-        JSON.stringify({ error: 'Erro ao adicionar mensagem ao ticket' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const mensagemResult = conversaAtualizada?.[conversaAtualizada.length - 1];
+    console.log('typebot-ticket-message: Mensagem inserida na tabela ticket_mensagens');
 
     console.log('typebot-ticket-message: Mensagem adicionada com sucesso');
 
