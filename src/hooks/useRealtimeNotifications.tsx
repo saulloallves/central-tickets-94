@@ -3,12 +3,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 
-export const useRealtimeNotifications = () => {
+export const useRealtimeNotifications = (enabled: boolean = true) => {
   const { toast } = useToast();
   const { user } = useAuth();
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !enabled) return;
 
     console.log('🔔 📡 CONFIGURANDO NOTIFICAÇÕES EM TEMPO REAL - NOTIFICATIONS QUEUE...');
 
