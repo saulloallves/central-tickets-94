@@ -64,6 +64,12 @@ Deno.serve(async (req) => {
       updated_at: new Date().toISOString(),
     };
 
+    // Se mudando para concluído, garantir resolvido_em
+    if (updates.status === 'concluido' && !updates.resolvido_em) {
+      updatePayload.resolvido_em = new Date().toISOString();
+      console.log('✅ Auto-preenchendo resolvido_em:', updatePayload.resolvido_em);
+    }
+
     // Update ticket (without select to avoid ON CONFLICT error)
     const { error: updateError } = await supabase
       .from('tickets')

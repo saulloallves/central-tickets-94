@@ -74,6 +74,12 @@ Deno.serve(async (req) => {
     if (toStatus !== currentTicket.status) {
       updatePayload.status = toStatus;
       console.log('🔄 Status changing from', currentTicket.status, 'to', toStatus);
+      
+      // Se mudando para concluído, marcar data de resolução
+      if (toStatus === 'concluido') {
+        updatePayload.resolvido_em = new Date().toISOString();
+        console.log('✅ Marcando ticket como resolvido em:', updatePayload.resolvido_em);
+      }
     } else {
       console.log('↕️ Only reordering within same column');
     }
