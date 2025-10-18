@@ -818,15 +818,9 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
   const getTicketsByStatus = useCallback((status: keyof typeof COLUMN_STATUS) => {
     let filteredTickets = displayTickets.filter(ticket => ticket.status === status);
     
-    // For completed tickets, filter out old ones unless showing archived
+    // For completed tickets, limit to 20 most recent unless showing archived
     if (status === 'concluido' && !showArchivedTickets) {
-      // Filter by resolution date, not creation date
-      filteredTickets = filteredTickets.filter(ticket => {
-        const resolvedDate = ticket.resolvido_em || ticket.updated_at;
-        return resolvedDate && !isFromPreviousBusinessDay(resolvedDate);
-      });
-      
-      // Limit to 20 most recent completed tickets
+      // Sort by resolution date and limit to 20 most recent
       filteredTickets = filteredTickets
         .sort((a, b) => {
           const dateA = new Date(a.resolvido_em || a.updated_at).getTime();
