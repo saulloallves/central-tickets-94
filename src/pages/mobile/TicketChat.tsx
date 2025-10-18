@@ -93,10 +93,10 @@ export default function TicketChat() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'aberto': return 'bg-blue-500/10 text-blue-700 border-blue-200';
-      case 'em_atendimento': return 'bg-yellow-500/10 text-yellow-700 border-yellow-200';
-      case 'concluido': return 'bg-green-500/10 text-green-700 border-green-200';
-      default: return 'bg-gray-500/10 text-gray-700 border-gray-200';
+      case 'aberto': return 'text-blue-700 border-blue-200';
+      case 'em_atendimento': return 'text-yellow-700 border-yellow-200';
+      case 'concluido': return 'text-green-700 border-green-200';
+      default: return 'text-gray-700 border-gray-200';
     }
   };
 
