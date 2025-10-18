@@ -60,7 +60,15 @@ export const useMobileTicketMessages = (ticketId: string) => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao chamar edge function:', error);
+        return false;
+      }
+
+      if (!data?.ok) {
+        console.error('Edge function retornou erro:', data);
+        return false;
+      }
       
       // Realtime listener will handle adding the new message automatically
       return true;

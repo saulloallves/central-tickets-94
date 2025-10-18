@@ -169,7 +169,7 @@ Deno.serve(async (req) => {
       ok: true,
       ticketId: ticketId,
       codigo_ticket: ticket.codigo_ticket,
-      added: mensagemResult,
+      message: 'Mensagem adicionada com sucesso',
       notification_sent: true
     };
 

@@ -157,10 +157,17 @@ export default function TicketChat() {
       } else {
         toast({
           title: 'Erro ao enviar',
-          description: 'Senha inválida ou erro ao enviar mensagem',
+          description: 'Verifique sua senha e tente novamente',
           variant: 'destructive'
         });
       }
+    } catch (err) {
+      console.error('Erro no handleSend:', err);
+      toast({
+        title: 'Erro ao enviar',
+        description: 'Ocorreu um erro inesperado',
+        variant: 'destructive'
+      });
     } finally {
       setIsUploading(false);
     }
