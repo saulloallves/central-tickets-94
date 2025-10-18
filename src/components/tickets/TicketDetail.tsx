@@ -219,49 +219,6 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
     return uploadedFiles;
   };
 
-  const sendAttachments = async (attachmentData: any[]) => {
-    try {
-      console.log('🚀 Calling zapi-send-media with:', { ticketId, attachments: attachmentData });
-      
-      const { data, error } = await supabase.functions.invoke('zapi-send-media', {
-        body: {
-          ticketId: ticketId,
-          attachments: attachmentData
-        }
-      });
-
-      if (error) {
-        console.error('❌ Error from zapi-send-media:', error);
-        throw error;
-      }
-
-      console.log('✅ zapi-send-media response:', data);
-      
-      if (data.failed > 0) {
-        toast({
-          title: "Alguns anexos falharam",
-          description: `${data.sent} enviados, ${data.failed} falharam`,
-          variant: "destructive"
-        });
-      } else {
-        toast({
-          title: "Anexos enviados",
-          description: `${data.sent} arquivo(s) enviado(s) via WhatsApp`,
-        });
-      }
-      
-      return data;
-    } catch (error) {
-      console.error('❌ Error sending attachments:', error);
-      toast({
-        title: "Erro ao enviar anexos",
-        description: "Falha ao enviar anexos via WhatsApp",
-        variant: "destructive"
-      });
-      throw error;
-    }
-  };
-
   const handleFormatMessage = async () => {
     if (!newMessage.trim()) {
       toast({
@@ -333,26 +290,21 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
       const success = await sendMessage(finalMessage, uploadedAttachments);
       
       if (success) {
-        if (uploadedAttachments.length > 0) {
-          console.log('📱 Sending attachments via Z-API:', uploadedAttachments);
-          await sendAttachments(uploadedAttachments);
-        }
-
         setNewMessage('');
         setAttachments([]);
         setIsFormatted(false);
         setOriginalMessage('');
         
+        toast({
+          title: "Mensagem enviada",
+          description: uploadedAttachments.length > 0 
+            ? `Mensagem enviada com ${uploadedAttachments.length} anexo(s)`
+            : "Mensagem enviada com sucesso"
+        });
+        
         setTimeout(() => {
           refetchMessages();
         }, 500);
-        
-        toast({
-          title: "Sucesso",
-          description: uploadedAttachments.length > 0 
-            ? `Mensagem e ${uploadedAttachments.length} anexo(s) enviados`
-            : "Mensagem enviada",
-        });
       }
     } catch (error) {
       console.error('Error sending message:', error);
