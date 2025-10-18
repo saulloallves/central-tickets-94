@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
     console.log('📐 Calculated new position:', newPosition);
 
     // Prepare update payload
-    const updatePayload: Record<string, any> = {
+    const updatePayload: any = {
       position: newPosition,
       updated_at: new Date().toISOString(),
     };
