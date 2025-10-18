@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
     console.log('📐 Calculated new position:', newPosition);
 
     // Prepare update payload
-    const updatePayload: any = {
+    const updatePayload: Record<string, any> = {
       position: newPosition,
       updated_at: new Date().toISOString(),
     };
@@ -74,12 +74,6 @@ Deno.serve(async (req) => {
     if (toStatus !== currentTicket.status) {
       updatePayload.status = toStatus;
       console.log('🔄 Status changing from', currentTicket.status, 'to', toStatus);
-      
-      // Se mudando para concluído, marcar data de resolução
-      if (toStatus === 'concluido') {
-        updatePayload.resolvido_em = new Date().toISOString();
-        console.log('✅ Marcando ticket como resolvido em:', updatePayload.resolvido_em);
-      }
     } else {
       console.log('↕️ Only reordering within same column');
     }
@@ -89,7 +83,7 @@ Deno.serve(async (req) => {
       .from('tickets')
       .update(updatePayload)
       .eq('id', ticketId)
-      .select('id, status, position, updated_at, resolvido_em')
+      .select('id, status, position, updated_at')
       .single();
 
     if (updateError) {

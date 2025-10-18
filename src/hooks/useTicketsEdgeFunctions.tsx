@@ -588,12 +588,6 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
     try {
       console.log('📤 Updating ticket via edge function:', ticketId, updates);
       
-      // Se mudando para concluído, garantir resolvido_em
-      if (updates.status === 'concluido' && !updates.resolvido_em) {
-        updates.resolvido_em = new Date().toISOString();
-        console.log('🎯 Frontend garantindo resolvido_em:', updates.resolvido_em);
-      }
-      
       const { data, error } = await supabase.functions.invoke('update-ticket', {
         body: { ticketId, updates },
       });
