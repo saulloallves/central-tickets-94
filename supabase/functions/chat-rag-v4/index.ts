@@ -177,7 +177,7 @@ async function handleWebMode(payload: any, supabase: any) {
   const startTime = Date.now();
   console.log('🌐 [Web Mode] Processing HTTP request');
 
-  const { message, user_identifier, include_history = true } = payload;
+  const { message, phone, user_identifier, include_history = true } = payload;
 
   if (!message || typeof message !== 'string') {
     return new Response(
@@ -188,8 +188,22 @@ async function handleWebMode(payload: any, supabase: any) {
 
   const conversationManager = new ConversationManager(supabase);
 
-  // Use custom identifier or generate UUID
-  const contactPhone = user_identifier || crypto.randomUUID();
+  // Normalize phone if provided
+  let contactPhone = phone;
+  if (contactPhone) {
+    // Remove non-numeric characters
+    contactPhone = contactPhone.replace(/\D/g, '');
+    
+    // Add country code if needed (Brazil = 55)
+    if (!contactPhone.startsWith('55') && contactPhone.length >= 10) {
+      contactPhone = '55' + contactPhone;
+    }
+    
+    console.log(`📞 Using phone as identifier: ${contactPhone}`);
+  } else {
+    contactPhone = user_identifier || crypto.randomUUID();
+    console.log(`🆔 Using identifier: ${contactPhone}`);
+  }
   
   // Create user message data
   const userMessageData: ConversationMessageData = {
@@ -231,6 +245,7 @@ async function handleWebMode(payload: any, supabase: any) {
         success: false,
         conversation_id: conversation.id,
         user_identifier: contactPhone,
+        phone: phone || null,
         error: 'Não encontrei informações relevantes na base de conhecimento'
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -283,6 +298,7 @@ async function handleWebMode(payload: any, supabase: any) {
       mode: 'web',
       conversation_id: conversation.id,
       user_identifier: contactPhone,
+      phone: phone || null,
       response: resposta,
       docs_used: docsSelecionados.map(d => ({
         id: d.id,
