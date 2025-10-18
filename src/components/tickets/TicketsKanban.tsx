@@ -820,7 +820,11 @@ export const TicketsKanban = ({ tickets, loading, onTicketSelect, selectedTicket
     
     // For completed tickets, filter out old ones unless showing archived
     if (status === 'concluido' && !showArchivedTickets) {
-      filteredTickets = filteredTickets.filter(ticket => !isFromPreviousBusinessDay(ticket.created_at));
+      // Filter by resolution date, not creation date
+      filteredTickets = filteredTickets.filter(ticket => {
+        const resolvedDate = ticket.resolvido_em || ticket.updated_at;
+        return resolvedDate && !isFromPreviousBusinessDay(resolvedDate);
+      });
       
       // Limit to 20 most recent completed tickets
       filteredTickets = filteredTickets
