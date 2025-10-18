@@ -109,7 +109,7 @@ export const useMobileTicketMessages = (ticketId: string) => {
         supabase.removeChannel(channelRef.current);
       }
     };
-  }, [ticketId, fetchMessages]);
+  }, [ticketId]);
 
   return {
     messages,

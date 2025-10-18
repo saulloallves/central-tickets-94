@@ -20,17 +20,6 @@ Deno.serve(async (req) => {
     const body = await req.json();
     console.log('typebot-ticket-message: Body recebido:', body);
 
-    if (!body.ticketId || !body.texto) {
-      console.error('typebot-ticket-message: Campos obrigatórios ausentes:', { 
-        ticketId: body.ticketId, 
-        texto: body.texto
-      });
-      return new Response(
-        JSON.stringify({ error: 'ticketId e texto são obrigatórios' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     const {
       ticketId,
       texto,
@@ -40,6 +29,22 @@ Deno.serve(async (req) => {
       usuarioId = null,
       anexos = []
     } = body;
+
+    if (!ticketId) {
+      console.error('typebot-ticket-message: ticketId ausente');
+      return new Response(
+        JSON.stringify({ error: 'ticketId é obrigatório' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!texto && (!anexos || anexos.length === 0)) {
+      console.error('typebot-ticket-message: Nenhum conteúdo fornecido');
+      return new Response(
+        JSON.stringify({ error: 'Forneça texto ou anexos' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Buscar franqueado APENAS se senha_web foi fornecida
     let franqueadoNome = null;
@@ -85,7 +90,7 @@ Deno.serve(async (req) => {
       .from('ticket_mensagens')
       .insert({
         ticket_id: ticketId,
-        mensagem: mensagemTexto,
+        mensagem: mensagemTexto || '[Anexo enviado]',
         direcao: 'entrada',
         canal: canal || 'typebot',
         usuario_id: usuarioId,
