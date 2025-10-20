@@ -7,7 +7,6 @@ interface SLATimerDetailProps {
   codigoTicket: string;
   dataAbertura: string; // ✅ Data de abertura para cálculo real
   slaMinutosRestantes: number | null;
-  slaSegundosRestantes?: number | null; // ✅ NOVO - Precisão em segundos do banco
   slaMinutosTotais: number | null;
   tempoPausadoTotal?: number; // ✅ Tempo pausado em minutos
   status: string;
@@ -22,7 +21,6 @@ export const SLATimerDetail = ({
   codigoTicket,
   dataAbertura, // ✅ Receber data de abertura
   slaMinutosRestantes,
-  slaSegundosRestantes, // ✅ NOVO - Precisão em segundos
   slaMinutosTotais,
   tempoPausadoTotal = 0, // ✅ Receber tempo pausado
   status, 
@@ -48,7 +46,6 @@ export const SLATimerDetail = ({
       codigoTicket,
       dataAbertura, // ✅ Passar data de abertura
       slaMinutosRestantes,
-      slaSegundosRestantes, // ✅ NOVO - Passar segundos para precisão
       slaMinutosTotais,
       tempoPausadoTotal, // ✅ Passar tempo pausado
       status,
@@ -72,7 +69,7 @@ export const SLATimerDetail = ({
     return () => {
       slaTimerManager.unregister(ticketId, setTimeRemaining);
     };
-  }, [ticketId, codigoTicket, dataAbertura, slaMinutosRestantes, slaSegundosRestantes, slaMinutosTotais, tempoPausadoTotal, status, slaPausado, slaPausadoMensagem, slaPausadoHorario, onSLAExpired, toast]);
+  }, [ticketId, codigoTicket, dataAbertura, slaMinutosRestantes, slaMinutosTotais, tempoPausadoTotal, status, slaPausado, slaPausadoMensagem, slaPausadoHorario, onSLAExpired, toast]);
 
   if (slaMinutosRestantes == null || status === 'concluido') {
     return null;

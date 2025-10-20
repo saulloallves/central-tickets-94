@@ -76,9 +76,9 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
 
   const fetchTicketDetails = async () => {
     try {
-      // Fetch ticket from view with real-time SLA calculation (without joins)
+      // Fetch ticket first using maybeSingle to avoid RLS issues
       const { data: ticketData, error: ticketError } = await supabase
-        .from('tickets_with_realtime_sla')
+        .from('tickets')
         .select('*')
         .eq('id', ticketId)
         .maybeSingle();
@@ -105,26 +105,14 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
         return;
       }
 
-      // Fetch related data separately
-      const [unidadeRes, colaboradorRes, equipeRes, franqueadoRes, profileRes, atendimentoIniciadoRes] = await Promise.all([
-        ticketData.unidade_id 
-          ? supabase.from('unidades').select('grupo, id').eq('id', ticketData.unidade_id).maybeSingle() 
-          : Promise.resolve({ data: null }),
-        ticketData.colaborador_id 
-          ? supabase.from('colaboradores').select('nome_completo').eq('id', ticketData.colaborador_id).maybeSingle() 
-          : Promise.resolve({ data: null }),
-        ticketData.equipe_responsavel_id 
-          ? supabase.from('equipes').select('nome, id').eq('id', ticketData.equipe_responsavel_id).maybeSingle() 
-          : Promise.resolve({ data: null }),
-        ticketData.franqueado_id 
-          ? supabase.from('franqueados').select('name').eq('id', String(ticketData.franqueado_id)).maybeSingle() 
-          : Promise.resolve({ data: null }),
-        ticketData.criado_por 
-          ? supabase.from('profiles').select('nome_completo').eq('id', ticketData.criado_por).maybeSingle() 
-          : Promise.resolve({ data: null }),
-        ticketData.atendimento_iniciado_por 
-          ? supabase.from('profiles').select('nome_completo').eq('id', ticketData.atendimento_iniciado_por).maybeSingle() 
-          : Promise.resolve({ data: null })
+      // Fetch related data separately to avoid RLS issues
+      const [unidadeRes, colaboradorRes, franqueadoRes, profileRes, equipeRes, atendimentoIniciadoRes] = await Promise.all([
+        supabase.from('unidades').select('grupo, id').eq('id', ticketData.unidade_id).maybeSingle(),
+        ticketData.colaborador_id ? supabase.from('colaboradores').select('nome_completo').eq('id', ticketData.colaborador_id).maybeSingle() : Promise.resolve({ data: null }),
+        ticketData.franqueado_id ? supabase.from('franqueados').select('name').eq('id', String(ticketData.franqueado_id)).maybeSingle() : Promise.resolve({ data: null }),
+        ticketData.criado_por ? supabase.from('profiles').select('nome_completo').eq('id', ticketData.criado_por).maybeSingle() : Promise.resolve({ data: null }),
+        ticketData.equipe_responsavel_id ? supabase.from('equipes').select('nome').eq('id', ticketData.equipe_responsavel_id).maybeSingle() : Promise.resolve({ data: null }),
+        ticketData.atendimento_iniciado_por ? supabase.from('profiles').select('nome_completo').eq('id', ticketData.atendimento_iniciado_por).maybeSingle() : Promise.resolve({ data: null })
       ]);
 
       console.log('Ticket data:', {
@@ -132,7 +120,6 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
         colaborador_id: ticketData.colaborador_id,
         franqueado_id: ticketData.franqueado_id,
         criado_por: ticketData.criado_por,
-        sla_segundos_restantes: ticketData.sla_segundos_restantes,
         colaborador: colaboradorRes.data,
         franqueado: franqueadoRes.data,
         profile: profileRes.data
@@ -143,9 +130,9 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
         ...ticketData,
         unidades: unidadeRes.data,
         colaboradores: colaboradorRes.data,
-        equipes: equipeRes.data,
         franqueados: franqueadoRes.data,
         profiles: profileRes.data,
+        equipes: equipeRes.data,
         atendimento_iniciado_profile: atendimentoIniciadoRes.data
       };
 
@@ -926,7 +913,6 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
               codigoTicket={ticket.codigo_ticket}
               dataAbertura={ticket.data_abertura}
               slaMinutosRestantes={ticket.sla_minutos_restantes}
-              slaSegundosRestantes={ticket.sla_segundos_restantes}
               slaMinutosTotais={ticket.sla_minutos_totais}
               tempoPausadoTotal={ticket.tempo_pausado_total ? Math.floor((new Date(ticket.tempo_pausado_total).getTime() - new Date(0).getTime()) / 60000) : 0}
               status={ticket.status}
