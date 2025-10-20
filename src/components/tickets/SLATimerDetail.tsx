@@ -94,27 +94,7 @@ export const SLATimerDetail = ({
     return `${minutos} minutos restantes`;
   };
 
-  if (timeRemaining.isPaused) {
-    const readableTime = formatReadableTime();
-    
-    // Prioridade: Fora do horário > Aguardando resposta
-    let pauseReason = '';
-    
-    if (slaPausadoHorario) {
-      pauseReason = 'Fora do horário';
-    } else if (slaPausadoMensagem) {
-      pauseReason = 'Aguardando resposta';
-    } else {
-      pauseReason = 'Pausado';
-    }
-    
-    return (
-      <div className="text-amber-600 text-sm font-medium">
-        {readableTime} (Pausado - {pauseReason})
-      </div>
-    );
-  }
-
+  // ✅ PRIORIDADE 1: Verificar se SLA venceu ANTES de pausado
   if (timeRemaining.isOverdue) {
     const minutosVencidos = Math.abs(slaMinutosRestantes || 0);
     const horasVencidas = Math.floor(minutosVencidos / 60);
@@ -133,6 +113,27 @@ export const SLATimerDetail = ({
     return (
       <div className="text-destructive text-sm font-medium">
         {overdueText}
+      </div>
+    );
+  }
+
+  // ✅ PRIORIDADE 2: Se não venceu, verificar se está pausado
+  if (timeRemaining.isPaused) {
+    const readableTime = formatReadableTime();
+    
+    let pauseReason = '';
+    
+    if (slaPausadoHorario) {
+      pauseReason = 'Fora do horário';
+    } else if (slaPausadoMensagem) {
+      pauseReason = 'Aguardando resposta';
+    } else {
+      pauseReason = 'Pausado';
+    }
+    
+    return (
+      <div className="text-amber-600 text-sm font-medium">
+        {readableTime} (Pausado - {pauseReason})
       </div>
     );
   }

@@ -174,17 +174,35 @@ class SLATimerManager {
       return { hours: 0, minutes: 0, seconds: 0, isOverdue: false, isPaused: false, totalSeconds: 0 };
     }
 
-    // ✅ Se pausado, retornar estado pausado (contador congelado)
+    // ✅ PRIORIDADE 1: Verificar se SLA está VENCIDO (fonte de verdade: banco)
+    // Se sla_minutos_restantes <= 0 OU localSecondsRemaining <= 0 → VENCIDO
+    const isSLAOverdue = ticket.slaMinutosRestantes <= 0 || ticket.localSecondsRemaining <= 0;
+    
+    if (isSLAOverdue) {
+      // ✅ SLA VENCIDO - Mostrar como vencido INDEPENDENTEMENTE de estar pausado
+      return { 
+        hours: 0, 
+        minutes: 0, 
+        seconds: 0, 
+        isOverdue: true, 
+        isPaused: false,  // ❌ NÃO mostrar como pausado se venceu
+        totalSeconds: 0 
+      };
+    }
+
+    // ✅ PRIORIDADE 2: Se NÃO venceu, verificar se está pausado
     if (ticket.slaPausado || ticket.slaPausadoMensagem || ticket.slaPausadoHorario) {
-      return { hours: 0, minutes: 0, seconds: 0, isOverdue: false, isPaused: true, totalSeconds: 0 };
+      return { 
+        hours: 0, 
+        minutes: 0, 
+        seconds: 0, 
+        isOverdue: false, 
+        isPaused: true, 
+        totalSeconds: 0 
+      };
     }
 
-    // ✅ SLA vencido se contador local chegou a zero
-    if (ticket.localSecondsRemaining <= 0) {
-      return { hours: 0, minutes: 0, seconds: 0, isOverdue: true, isPaused: false, totalSeconds: 0 };
-    }
-
-    // ✅ Usar contador local (em segundos) para exibição em tempo real
+    // ✅ PRIORIDADE 3: SLA ativo (contando normalmente)
     const totalSeconds = ticket.localSecondsRemaining;
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);

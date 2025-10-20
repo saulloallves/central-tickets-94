@@ -96,24 +96,7 @@ export const SLATimer = ({
     return `${minutos} minutos restantes`;
   };
 
-  if (timeRemaining.isPaused) {
-    // Prioridade: Fora do horário > Aguardando resposta
-    let pauseLabel = 'Pausado';
-    
-    if (slaPausadoHorario) {
-      pauseLabel = 'Pausado - Fora do horário';
-    } else if (slaPausadoMensagem) {
-      pauseLabel = 'Pausado - Aguardando resposta';
-    }
-    
-    return (
-      <div className="flex items-center gap-1 text-amber-600 text-sm font-medium">
-        <span className="w-2 h-2 bg-amber-600 rounded-full"></span>
-        <span>{pauseLabel}</span>
-      </div>
-    );
-  }
-
+  // ✅ PRIORIDADE 1: Verificar se SLA venceu ANTES de pausado
   if (timeRemaining.isOverdue) {
     const minutosVencidos = Math.abs(slaMinutosRestantes || 0);
     const horasVencidas = Math.floor(minutosVencidos / 60);
@@ -133,6 +116,24 @@ export const SLATimer = ({
       <div className="flex items-center gap-1 text-destructive text-sm font-medium">
         <span className="w-2 h-2 bg-destructive rounded-full animate-pulse"></span>
         <span>{overdueText}</span>
+      </div>
+    );
+  }
+
+  // ✅ PRIORIDADE 2: Se não venceu, verificar se está pausado
+  if (timeRemaining.isPaused) {
+    let pauseLabel = 'Pausado';
+    
+    if (slaPausadoHorario) {
+      pauseLabel = 'Pausado - Fora do horário';
+    } else if (slaPausadoMensagem) {
+      pauseLabel = 'Pausado - Aguardando resposta';
+    }
+    
+    return (
+      <div className="flex items-center gap-1 text-amber-600 text-sm font-medium">
+        <span className="w-2 h-2 bg-amber-600 rounded-full"></span>
+        <span>{pauseLabel}</span>
       </div>
     );
   }
