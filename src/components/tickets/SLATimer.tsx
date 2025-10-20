@@ -145,12 +145,9 @@ export const SLATimer = ({
   };
 
   return (
-    <div className={`flex items-center gap-1 text-sm font-mono ${getSLAColor()}`}>
+    <div className={`flex items-center gap-1 text-sm font-medium ${getSLAColor()}`}>
       <span className="w-2 h-2 bg-current rounded-full"></span>
-      <span>
-        {timeRemaining.hours > 0 && `${formatTime(timeRemaining.hours)}:`}
-        {formatTime(timeRemaining.minutes)}:{formatTime(timeRemaining.seconds)}
-      </span>
+      <span>{formatReadableTime()}</span>
     </div>
   );
 };

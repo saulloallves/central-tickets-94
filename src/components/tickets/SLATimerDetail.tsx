@@ -144,9 +144,8 @@ export const SLATimerDetail = ({
   };
 
   return (
-    <div className={`text-sm font-mono ${getSLAColor()}`}>
-      {timeRemaining.hours > 0 && `${formatTime(timeRemaining.hours)}:`}
-      {formatTime(timeRemaining.minutes)}:{formatTime(timeRemaining.seconds)} restantes
+    <div className={`text-sm font-medium ${getSLAColor()}`}>
+      {formatReadableTime()}
     </div>
   );
 };
