@@ -44,36 +44,27 @@ class SLATimerManager {
     
     let localSecondsRemaining: number;
     
-    // ✅ Se o ticket JÁ EXISTE, SEMPRE preservar o contador local (continuar contando)
+    // ✅ Se o ticket JÁ EXISTE, SEMPRE SINCRONIZAR com banco (valores em tempo real)
     if (existingTicket) {
-      localSecondsRemaining = existingTicket.localSecondsRemaining;
+      // ✅ SEMPRE usar valor calculado do banco (view tickets_with_realtime_sla)
+      localSecondsRemaining = (ticket.slaMinutosRestantes || 0) * 60;
+      existingTicket.localSecondsRemaining = localSecondsRemaining;
+      existingTicket.lastSyncedMinutes = ticket.slaMinutosRestantes;
+      existingTicket.slaMinutosTotais = ticket.slaMinutosTotais;
+      existingTicket.tempoPausadoTotal = ticket.tempoPausadoTotal;
       
       // ✅ Incrementar contador de referências e adicionar callback
       existingTicket.refCount++;
       existingTicket.callbacks.add(ticket.callback);
       
-      console.log(`⏱️ Registrando instância adicional do ticket ${ticket.codigoTicket} (refCount: ${existingTicket.refCount})`);
-      
-      // Apenas resincronizar com o banco se houver mudança significativa (>1 min)
-      if (ticket.slaMinutosRestantes !== existingTicket.lastSyncedMinutes) {
-        const bancoSegundos = (ticket.slaMinutosRestantes || 0) * 60;
-        const diferencaSegundos = Math.abs(bancoSegundos - localSecondsRemaining);
-        
-        if (diferencaSegundos > 60) {
-          console.log(`⏱️ Resincronizando timer ${ticket.codigoTicket}: banco=${bancoSegundos}s, local=${localSecondsRemaining}s`);
-          localSecondsRemaining = bancoSegundos;
-          existingTicket.localSecondsRemaining = localSecondsRemaining;
-          existingTicket.lastSyncedMinutes = ticket.slaMinutosRestantes;
-        }
-      }
+      console.log(`⏱️ Registrando instância adicional do ticket ${ticket.codigoTicket} (refCount: ${existingTicket.refCount}) - SLA: ${ticket.slaMinutosRestantes} min`);
       
       // Calcular e enviar imediatamente para o novo callback
       this.updateTicket(ticket.ticketId);
       return;
     }
     
-    // ✅ CORREÇÃO FASE 4: Frontend usa APENAS valor do banco (fonte única de verdade)
-    // O backend já calcula corretamente com pausas, não recalcular aqui
+    // ✅ Novo ticket: usar valor calculado em tempo real do banco
     localSecondsRemaining = (ticket.slaMinutosRestantes || 0) * 60;
     
     console.log(`⏱️ Iniciando timer do ticket ${ticket.codigoTicket}:
