@@ -11,6 +11,10 @@ interface Ticket {
   status_sla: string;
   data_abertura: string;
   categoria?: string;
+  equipes?: {
+    id: string;
+    nome: string;
+  };
 }
 
 interface MobileTicketCardProps {
@@ -104,6 +108,18 @@ export function MobileTicketCard({ ticket, onClick }: MobileTicketCardProps) {
         <div className="mt-2">
           <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
             {ticket.categoria}
+          </span>
+        </div>
+      )}
+
+      {/* Equipe Responsável */}
+      {ticket.equipes && (
+        <div className="mt-2 flex items-center gap-2">
+          <span className="text-xs font-medium text-foreground">
+            Equipe:
+          </span>
+          <span className="text-xs text-primary bg-primary/10 px-2 py-1 rounded">
+            {ticket.equipes.nome}
           </span>
         </div>
       )}
