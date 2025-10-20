@@ -14,7 +14,7 @@ export interface SystemLog {
   resposta_gerada?: string;
   dados_anteriores?: any;
   dados_novos?: any;
-  canal?: 'web' | 'whatsapp' | 'typebot' | 'painel_interno';
+  canal?: 'web' | 'whatsapp' | 'typebot' | 'painel_interno' | 'sistema';
   origem_ip?: string;
   navegador_agente?: string;
   timestamp: string;
