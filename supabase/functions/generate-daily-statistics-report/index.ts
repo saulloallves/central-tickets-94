@@ -39,9 +39,9 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Get date range from query params (default to today)
-    const url = new URL(req.url);
-    const startDate = url.searchParams.get('start_date') || new Date().toISOString().split('T')[0];
-    const endDate = url.searchParams.get('end_date') || new Date().toISOString().split('T')[0];
+  const body = await req.json();
+  const startDate = body.start_date || new Date().toISOString().split('T')[0];
+  const endDate = body.end_date || new Date().toISOString().split('T')[0];
 
     console.log(`📊 Gerando relatório estatístico: ${startDate} até ${endDate}`);
 
