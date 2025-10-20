@@ -25,6 +25,7 @@ import { useOptimisticTicketActions } from '@/hooks/useOptimisticTicketActions';
 import { useCrisisManagement } from '@/hooks/useCrisisManagement';
 import { ImageModal } from '@/components/ui/image-modal';
 import { SLATimerDetail } from './SLATimerDetail';
+import { SLADebugPanel } from './SLADebugPanel';
 
 import { TicketActions } from './TicketActions';
 import { supabase } from '@/integrations/supabase/client';
@@ -918,6 +919,23 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
               slaPausadoMensagem={ticket.sla_pausado_mensagem || false}
               slaPausadoHorario={ticket.sla_pausado_horario || false}
             />
+            
+            {/* 🧪 FASE 3: Painel de Debug/Testes */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="mt-3">
+                <SLADebugPanel
+                  ticketId={ticket.id}
+                  codigoTicket={ticket.codigo_ticket}
+                  slaMinutosRestantes={ticket.sla_minutos_restantes}
+                  slaMinutosTotais={ticket.sla_minutos_totais}
+                  tempoPausadoTotal={ticket.tempo_pausado_total}
+                  slaPausado={ticket.sla_pausado || false}
+                  slaPausadoMensagem={ticket.sla_pausado_mensagem || false}
+                  slaPausadoHorario={ticket.sla_pausado_horario || false}
+                  dataAbertura={ticket.data_abertura}
+                />
+              </div>
+            )}
           </div>
         </div>
 

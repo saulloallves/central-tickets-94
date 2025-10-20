@@ -1,7 +1,21 @@
 /**
- * Global SLA Timer Manager
- * Uses a single timer for all SLA calculations to improve performance
+ * ============================================================================
+ * GLOBAL SLA TIMER MANAGER (FASE 3 - Versão Final)
+ * ============================================================================
+ * 
+ * Sistema centralizado de gerenciamento de timers SLA com sincronização
+ * automática com o backend.
+ * 
+ * ARQUITETURA:
+ * - Backend: Calcula SLA usando trigger automático de acúmulo de pausas
+ * - Frontend: Exibe e decrementa localmente, ressincroniza a cada 10s
+ * 
+ * DOCUMENTAÇÃO COMPLETA: Ver src/lib/sla-flags-documentation.ts
+ * 
+ * ============================================================================
  */
+
+import { isAnyPauseActive } from './sla-flags-documentation';
 
 type SLAUpdateCallback = (timeRemaining: {
   hours: number;
@@ -148,9 +162,16 @@ class SLATimerManager {
           }
         }
         
-        // ✅ Decrementar APENAS se não estiver pausado (backend já cuida do acúmulo)
-        const isAnyPauseActive = ticket.slaPausado || ticket.slaPausadoMensagem || ticket.slaPausadoHorario;
-        if (!isAnyPauseActive && ticket.status !== 'concluido' && ticket.localSecondsRemaining > 0) {
+        // ✅ FASE 3: Usar função auxiliar para verificar pausas
+        const flags = {
+          sla_pausado: ticket.slaPausado,
+          sla_pausado_mensagem: ticket.slaPausadoMensagem,
+          sla_pausado_horario: ticket.slaPausadoHorario
+        };
+        
+        const isPausedNow = isAnyPauseActive(flags);
+        
+        if (!isPausedNow && ticket.status !== 'concluido' && ticket.localSecondsRemaining > 0) {
           ticket.localSecondsRemaining = Math.max(0, ticket.localSecondsRemaining - 1);
         }
         
@@ -185,10 +206,7 @@ class SLATimerManager {
       return { hours: 0, minutes: 0, seconds: 0, isOverdue: false, isPaused: false, totalSeconds: 0 };
     }
 
-    // ✅ FASE 1: LÓGICA SIMPLIFICADA
-    // Backend já calcula SLA corretamente usando trigger de acúmulo de pausas
-    // Frontend apenas exibe o valor do backend e decrementa localmente
-    
+    // ✅ FASE 3: Lógica simplificada usando função auxiliar
     const isSLAOverdue = ticket.localSecondsRemaining <= 0;
     
     if (isSLAOverdue) {
@@ -202,9 +220,16 @@ class SLATimerManager {
       };
     }
 
-    // Verificar se está pausado
-    const isAnyPauseActive = ticket.slaPausado || ticket.slaPausadoMensagem || ticket.slaPausadoHorario;
-    if (isAnyPauseActive) {
+    // Verificar se está pausado usando função auxiliar
+    const flags = {
+      sla_pausado: ticket.slaPausado,
+      sla_pausado_mensagem: ticket.slaPausadoMensagem,
+      sla_pausado_horario: ticket.slaPausadoHorario
+    };
+    
+    const isPausedNow = isAnyPauseActive(flags);
+    
+    if (isPausedNow) {
       // Mostrar tempo restante mesmo pausado (mas não decrementa)
       const totalSeconds = ticket.localSecondsRemaining;
       const hours = Math.floor(totalSeconds / 3600);
