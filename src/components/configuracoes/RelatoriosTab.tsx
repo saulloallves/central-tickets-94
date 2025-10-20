@@ -231,7 +231,9 @@ export function RelatoriosTab() {
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Formato: Código do país + DDD + número (ex: 5511977256029)
+              Formato aceito:
+              <br />• <strong>Telefone:</strong> Código do país + DDD + número (ex: 5511977256029)
+              <br />• <strong>Grupo:</strong> ID do grupo com sufixo (ex: 120363632329453826@g.us-group)
             </p>
           </div>
         </CardContent>
@@ -268,7 +270,7 @@ export function RelatoriosTab() {
               )}
             </Button>
             <div className="text-sm text-muted-foreground">
-              <p>📱 Destino: {reportPhone || 'Não configurado'}</p>
+              <p>📱 Destino: {reportPhone?.includes('-group') ? '👥 Grupo WhatsApp' : '📞 Telefone'} ({reportPhone || 'Não configurado'})</p>
               <p>⏰ Próximo envio automático: Hoje às 20:00</p>
             </div>
           </div>
