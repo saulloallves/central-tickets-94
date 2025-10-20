@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RealtimeDashboard } from "@/components/governanca/RealtimeDashboard";
 import { AccessPermissionsControl } from "@/components/governanca/AccessPermissionsControl";
-import { DailyStatisticsReport } from "@/components/governanca/DailyStatisticsReport";
+import { StatisticsDashboard } from "@/components/governanca/StatisticsDashboard";
 
 export default function Governanca() {
   const { isAdmin } = useRole();
@@ -128,7 +128,7 @@ export default function Governanca() {
           </TabsContent>
 
           <TabsContent value="estatisticas" className="space-y-6">
-            <DailyStatisticsReport />
+            <StatisticsDashboard />
           </TabsContent>
 
           <TabsContent value="acessos" className="space-y-6">
