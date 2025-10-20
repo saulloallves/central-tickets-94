@@ -6,12 +6,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { X, Send, Clock, MapPin, User, Phone, MessageSquare, AlertTriangle, Paperclip } from 'lucide-react';
+import { X, Send, Clock, MapPin, User, Phone, MessageSquare, AlertTriangle, Paperclip, RefreshCw, Check } from 'lucide-react';
 import { ImageModal } from '@/components/ui/image-modal';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useFranqueadoUnits } from '@/hooks/useFranqueadoUnits';
+import { useReopenTicket } from '@/hooks/useReopenTicket';
 
 interface TicketMessage {
   id: string;
@@ -61,8 +62,10 @@ export function FranqueadoTicketDetail({ ticketId, onClose }: FranqueadoTicketDe
   const [sending, setSending] = useState(false);
   const [attachments, setAttachments] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [isReopening, setIsReopening] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { reopenTicket } = useReopenTicket();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -113,6 +116,18 @@ export function FranqueadoTicketDetail({ ticketId, onClose }: FranqueadoTicketDe
 
     fetchTicketData();
   }, [ticketId]);
+
+  const handleReopenTicket = async () => {
+    setIsReopening(true);
+    try {
+      const result = await reopenTicket(ticketId);
+      if (result.success) {
+        // Ticket será atualizado automaticamente via realtime
+      }
+    } finally {
+      setIsReopening(false);
+    }
+  };
 
   useEffect(() => {
     scrollToBottom();
@@ -505,63 +520,95 @@ export function FranqueadoTicketDetail({ ticketId, onClose }: FranqueadoTicketDe
       </ScrollArea>
 
       {/* Message Input */}
-      <div className="p-4 border-t">
-        <input
-          ref={fileInputRef}
-          type="file"
-          multiple
-          accept="image/*,video/*"
-          className="hidden"
-          onChange={handleFileSelect}
-        />
-        
-        {attachments.length > 0 && (
-          <div className="mb-2 flex gap-2 flex-wrap">
-            {attachments.map((file, idx) => (
-              <Badge key={idx} variant="secondary" className="gap-1">
-                {file.type.startsWith('image/') ? '🖼️' : '🎥'} {file.name.substring(0, 20)}...
-                <X 
-                  className="h-3 w-3 cursor-pointer" 
-                  onClick={() => removeAttachment(idx)}
-                />
-              </Badge>
-            ))}
+      {ticket.status === 'concluido' ? (
+        <div className="p-4 border-t">
+          <div className="bg-muted/50 border border-border rounded-lg p-4 text-center space-y-3">
+            <div className="flex items-center justify-center gap-2 text-green-600">
+              <Check className="h-5 w-5" />
+              <p className="font-medium">Ticket Concluído</p>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Este ticket foi finalizado. Para continuar a conversa, reabra o ticket.
+            </p>
+            <Button
+              onClick={handleReopenTicket}
+              disabled={isReopening}
+              variant="outline"
+              className="w-full"
+            >
+              {isReopening ? (
+                <>
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
+                  Reabrindo...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Reabrir Ticket
+                </>
+              )}
+            </Button>
           </div>
-        )}
-        
-        <div className="flex gap-2 mb-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={sending || isUploading}
-          >
-            <Paperclip className="h-4 w-4" />
-          </Button>
-          <Textarea
-            placeholder="Digite sua resposta... (Enter para enviar)"
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSendMessage();
-              }
-            }}
-            rows={3}
-            className="resize-none flex-1"
-            disabled={sending || isUploading}
-          />
         </div>
-        <Button 
-          onClick={handleSendMessage} 
-          disabled={sending || isUploading || (!newMessage.trim() && attachments.length === 0)}
-          className="w-full"
-        >
-          <Send className="h-4 w-4 mr-2" />
-          Enviar
-        </Button>
-      </div>
+      ) : (
+        <div className="p-4 border-t">
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept="image/*,video/*"
+            className="hidden"
+            onChange={handleFileSelect}
+          />
+          
+          {attachments.length > 0 && (
+            <div className="mb-2 flex gap-2 flex-wrap">
+              {attachments.map((file, idx) => (
+                <Badge key={idx} variant="secondary" className="gap-1">
+                  {file.type.startsWith('image/') ? '🖼️' : '🎥'} {file.name.substring(0, 20)}...
+                  <X 
+                    className="h-3 w-3 cursor-pointer" 
+                    onClick={() => removeAttachment(idx)}
+                  />
+                </Badge>
+              ))}
+            </div>
+          )}
+          
+          <div className="flex gap-2 mb-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={sending || isUploading}
+            >
+              <Paperclip className="h-4 w-4" />
+            </Button>
+            <Textarea
+              placeholder="Digite sua resposta... (Enter para enviar)"
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }}
+              rows={3}
+              className="resize-none flex-1"
+              disabled={sending || isUploading}
+            />
+          </div>
+          <Button 
+            onClick={handleSendMessage} 
+            disabled={sending || isUploading || (!newMessage.trim() && attachments.length === 0)}
+            className="w-full"
+          >
+            <Send className="h-4 w-4 mr-2" />
+            Enviar
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

@@ -46,6 +46,18 @@ export const useMobileTicketMessages = (ticketId: string) => {
   const sendMessage = useCallback(async (texto: string, senha_web: string, anexos?: any[]) => {
     if (!texto.trim() && (!anexos || anexos.length === 0)) return false;
 
+    // Verificar se ticket está concluído
+    const { data: ticketData } = await supabase
+      .from('tickets')
+      .select('status')
+      .eq('id', ticketId)
+      .single();
+
+    if (ticketData?.status === 'concluido') {
+      console.error('Tentativa de enviar mensagem em ticket concluído');
+      return false;
+    }
+
     setSending(true);
     try {
       // Call Edge Function to validate senha_web and send message

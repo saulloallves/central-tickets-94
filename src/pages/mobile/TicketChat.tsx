@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Send, AlertTriangle, Loader2, Clock, Paperclip, X } from 'lucide-react';
+import { ArrowLeft, Send, AlertTriangle, Loader2, Clock, Paperclip, X, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useMobileTicketMessages } from '@/hooks/useMobileTicketMessages';
+import { useReopenTicket } from '@/hooks/useReopenTicket';
 import { MobileChatBubble } from '@/components/mobile/MobileChatBubble';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,10 +32,12 @@ export default function TicketChat() {
   const [newMessage, setNewMessage] = useState('');
   const [attachments, setAttachments] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [isReopening, setIsReopening] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const { messages, loading: messagesLoading, sending, sendMessage } = useMobileTicketMessages(ticketId!);
+  const { reopenTicket } = useReopenTicket();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -60,6 +63,25 @@ export default function TicketChat() {
 
     fetchTicket();
   }, [ticketId]);
+
+  const handleReopenTicket = async () => {
+    setIsReopening(true);
+    try {
+      const result = await reopenTicket(ticketId!);
+      if (result.success) {
+        // Recarregar dados do ticket
+        const { data } = await supabase
+          .from('tickets')
+          .select('id, codigo_ticket, titulo, status, prioridade, status_sla')
+          .eq('id', ticketId)
+          .maybeSingle();
+        
+        if (data) setTicket(data);
+      }
+    } finally {
+      setIsReopening(false);
+    }
+  };
 
   useEffect(() => {
     scrollToBottom();
@@ -258,63 +280,93 @@ export default function TicketChat() {
 
       {/* Input Fixo */}
       <div className="sticky bottom-0 bg-background border-t p-2 safe-area-bottom">
-        <input
-          ref={fileInputRef}
-          type="file"
-          multiple
-          accept="image/*,video/*"
-          className="hidden"
-          onChange={handleFileSelect}
-        />
-        
-        {attachments.length > 0 && (
-          <div className="mb-1 flex gap-1 flex-wrap">
-            {attachments.map((file, idx) => (
-              <Badge key={idx} variant="secondary" className="gap-1">
-                {file.type.startsWith('image/') ? '🖼️' : '🎥'} {file.name.substring(0, 15)}...
-                <X 
-                  className="h-3 w-3 cursor-pointer" 
-                  onClick={() => removeAttachment(idx)}
-                />
-              </Badge>
-            ))}
+        {ticket.status === 'concluido' ? (
+          <div className="space-y-2">
+            <div className="bg-muted/50 border border-border rounded-lg p-3 text-center">
+              <p className="text-sm text-muted-foreground mb-2">
+                ✅ Este ticket está concluído
+              </p>
+              <Button
+                onClick={handleReopenTicket}
+                disabled={isReopening}
+                variant="outline"
+                className="w-full"
+              >
+                {isReopening ? (
+                  <>
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
+                    Reabrindo...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Reabrir Ticket
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
+        ) : (
+          <>
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept="image/*,video/*"
+              className="hidden"
+              onChange={handleFileSelect}
+            />
+            
+            {attachments.length > 0 && (
+              <div className="mb-1 flex gap-1 flex-wrap">
+                {attachments.map((file, idx) => (
+                  <Badge key={idx} variant="secondary" className="gap-1">
+                    {file.type.startsWith('image/') ? '🖼️' : '🎥'} {file.name.substring(0, 15)}...
+                    <X 
+                      className="h-3 w-3 cursor-pointer" 
+                      onClick={() => removeAttachment(idx)}
+                    />
+                  </Badge>
+                ))}
+              </div>
+            )}
+            
+            <div className="flex gap-1.5">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={sending || isUploading}
+                style={{ minHeight: '40px', minWidth: '40px' }}
+              >
+                <Paperclip className="h-4 w-4" />
+              </Button>
+              <Input
+                type="text"
+                placeholder="Digite sua mensagem..."
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
+                disabled={sending || isUploading}
+                className="flex-1 text-base py-2"
+                style={{ fontSize: '16px' }}
+              />
+              <Button 
+                onClick={handleSend} 
+                disabled={sending || isUploading || (!newMessage.trim() && attachments.length === 0)}
+                size="icon"
+                style={{ minHeight: '40px', minWidth: '40px' }}
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+          </>
         )}
-        
-        <div className="flex gap-1.5">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={sending || isUploading}
-            style={{ minHeight: '40px', minWidth: '40px' }}
-          >
-            <Paperclip className="h-4 w-4" />
-          </Button>
-          <Input
-            type="text"
-            placeholder="Digite sua mensagem..."
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSend();
-              }
-            }}
-            disabled={sending || isUploading}
-            className="flex-1 text-base py-2"
-            style={{ fontSize: '16px' }}
-          />
-          <Button 
-            onClick={handleSend} 
-            disabled={sending || isUploading || (!newMessage.trim() && attachments.length === 0)}
-            size="icon"
-            style={{ minHeight: '40px', minWidth: '40px' }}
-          >
-            <Send className="h-4 w-4" />
-          </Button>
-        </div>
       </div>
     </div>
   );
