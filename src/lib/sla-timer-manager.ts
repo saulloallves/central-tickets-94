@@ -17,6 +17,7 @@ interface SLATicketInput {
   codigoTicket: string;
   dataAbertura: string; // ✅ ADICIONAR para cálculo real
   slaMinutosRestantes: number | null;
+  slaSegundosRestantes?: number | null; // ✅ NOVO - Precisão em segundos do banco
   slaMinutosTotais: number | null;
   tempoPausadoTotal?: number; // ✅ ADICIONAR (em minutos)
   status: string;
@@ -44,31 +45,45 @@ class SLATimerManager {
     
     let localSecondsRemaining: number;
     
-    // ✅ Se o ticket JÁ EXISTE, SEMPRE SINCRONIZAR com banco (valores em tempo real)
+    // ✅ Se o ticket JÁ EXISTE, PRESERVAR contador local (NUNCA resetar!)
     if (existingTicket) {
-      // ✅ SEMPRE usar valor calculado do banco (view tickets_with_realtime_sla)
-      localSecondsRemaining = (ticket.slaMinutosRestantes || 0) * 60;
-      existingTicket.localSecondsRemaining = localSecondsRemaining;
-      existingTicket.lastSyncedMinutes = ticket.slaMinutosRestantes;
+      // ✅ PRESERVAR o contador local que está rodando
+      localSecondsRemaining = existingTicket.localSecondsRemaining;
+      
+      // ✅ Atualizar APENAS metadados (pausas, status) SEM tocar no contador
       existingTicket.slaMinutosTotais = ticket.slaMinutosTotais;
       existingTicket.tempoPausadoTotal = ticket.tempoPausadoTotal;
+      existingTicket.slaPausado = ticket.slaPausado;
+      existingTicket.slaPausadoMensagem = ticket.slaPausadoMensagem;
+      existingTicket.slaPausadoHorario = ticket.slaPausadoHorario;
+      existingTicket.status = ticket.status;
+      
+      // ⚠️ Só resincronizar se diferença > 2 segundos (evitar resets desnecessários)
+      const bancoSegundos = ticket.slaSegundosRestantes ?? (ticket.slaMinutosRestantes || 0) * 60;
+      const diferencaSegundos = Math.abs(bancoSegundos - existingTicket.localSecondsRemaining);
+      
+      if (diferencaSegundos > 2) {
+        console.log(`🔄 Resincronizando timer ${ticket.codigoTicket}: banco=${bancoSegundos}s, local=${existingTicket.localSecondsRemaining}s`);
+        existingTicket.localSecondsRemaining = bancoSegundos;
+        existingTicket.lastSyncedMinutes = ticket.slaMinutosRestantes;
+      }
       
       // ✅ Incrementar contador de referências e adicionar callback
       existingTicket.refCount++;
       existingTicket.callbacks.add(ticket.callback);
       
-      console.log(`⏱️ Registrando instância adicional do ticket ${ticket.codigoTicket} (refCount: ${existingTicket.refCount}) - SLA: ${ticket.slaMinutosRestantes} min`);
+      console.log(`⏱️ Registrando instância adicional do ticket ${ticket.codigoTicket} (refCount: ${existingTicket.refCount}) - Local: ${existingTicket.localSecondsRemaining}s`);
       
       // Calcular e enviar imediatamente para o novo callback
       this.updateTicket(ticket.ticketId);
       return;
     }
     
-    // ✅ Novo ticket: usar valor calculado em tempo real do banco
-    localSecondsRemaining = (ticket.slaMinutosRestantes || 0) * 60;
+    // ✅ Novo ticket: usar precisão de segundos do banco (se disponível)
+    localSecondsRemaining = ticket.slaSegundosRestantes ?? (ticket.slaMinutosRestantes || 0) * 60;
     
     console.log(`⏱️ Iniciando timer do ticket ${ticket.codigoTicket}:
-      - SLA restante do banco: ${ticket.slaMinutosRestantes} min (${localSecondsRemaining}s)
+      - SLA restante do banco: ${localSecondsRemaining}s (${Math.floor(localSecondsRemaining / 60)}min)
       - Pausado: ${ticket.slaPausado}
       - Pausado mensagem: ${ticket.slaPausadoMensagem}
       - Pausado horário: ${ticket.slaPausadoHorario || false}`);
@@ -123,11 +138,8 @@ class SLATimerManager {
   private startTimer() {
     this.intervalId = setInterval(() => {
       this.tickets.forEach((ticket, ticketId) => {
-        // ✅ Resincronizar se o banco atualizou (via realtime)
-        if (ticket.lastSyncedMinutes !== ticket.slaMinutosRestantes) {
-          ticket.localSecondsRemaining = (ticket.slaMinutosRestantes || 0) * 60;
-          ticket.lastSyncedMinutes = ticket.slaMinutosRestantes;
-        }
+        // ✅ NÃO resincronizar automaticamente - preservar contador local
+        // A resincronização só acontece no register() se diferença > 2s
         
         // ✅ Decrementar contador local se não estiver pausado
         if (!ticket.slaPausado && !ticket.slaPausadoMensagem && !ticket.slaPausadoHorario && ticket.status !== 'concluido') {

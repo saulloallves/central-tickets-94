@@ -3902,6 +3902,7 @@ export type Database = {
           sla_pausado_em: string | null
           sla_pausado_horario: boolean | null
           sla_pausado_mensagem: boolean | null
+          sla_segundos_restantes: number | null
           sla_ultima_atualizacao: string | null
           sla_vencido_em: string | null
           status: Database["public"]["Enums"]["ticket_status"] | null
@@ -4060,6 +4061,7 @@ export type Database = {
           is_overdue: boolean
           sla_minutos_decorridos: number
           sla_minutos_restantes: number
+          sla_segundos_restantes: number
           status_sla: Database["public"]["Enums"]["ticket_sla_status"]
         }[]
       }

@@ -24,11 +24,12 @@ export const useSimpleTickets = (filters: TicketFilters) => {
     if (!user) return;
 
     try {
-      // ✅ Usar view com cálculo de SLA em tempo real
+      // ✅ Usar view com cálculo de SLA em tempo real (com precisão de segundos)
       let query = supabase
         .from('tickets_with_realtime_sla')
         .select(`
           *,
+          sla_segundos_restantes,
           unidades (id, grupo, cidade, uf),
           colaboradores (nome_completo),
           equipes (id, nome)
