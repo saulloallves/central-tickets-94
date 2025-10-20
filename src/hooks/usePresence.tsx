@@ -43,9 +43,14 @@ export const usePresence = (channelName: string = 'presence:governanca') => {
     channel
       .on('presence', { event: 'sync' }, () => {
         const state = channel.presenceState();
+        console.log('🔄 [PRESENCE] Raw presence state:', state);
+        console.log('🔄 [PRESENCE] Total keys in state:', Object.keys(state).length);
+        
         const transformedState: PresenceState = {};
         
         Object.entries(state).forEach(([userId, presences]) => {
+          console.log(`👤 [PRESENCE] Processing user ${userId}:`, presences);
+          
           if (Array.isArray(presences) && presences.length > 0) {
             const presence = presences[0] as any;
             transformedState[userId] = [{
@@ -57,18 +62,26 @@ export const usePresence = (channelName: string = 'presence:governanca') => {
           }
         });
         
+        console.log('✅ [PRESENCE] Transformed state:', transformedState);
+        console.log('✅ [PRESENCE] Total users online:', Object.keys(transformedState).length);
         setPresenceState(transformedState);
       })
       .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-        console.log('User joined:', key, newPresences);
+        console.log('👋 [PRESENCE] User joined:', key, newPresences);
       })
       .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-        console.log('User left:', key, leftPresences);
+        console.log('👋 [PRESENCE] User left:', key, leftPresences);
       })
       .subscribe(async (status) => {
-        if (status !== 'SUBSCRIBED') return;
+        console.log('📡 [PRESENCE] Channel status:', status);
+        
+        if (status !== 'SUBSCRIBED') {
+          console.warn('⚠️ [PRESENCE] Channel not subscribed, status:', status);
+          return;
+        }
 
         const presenceTrackStatus = await channel.track(userPresence);
+        console.log('✅ [PRESENCE] Track status:', presenceTrackStatus, 'for user:', userPresence);
         setIsTracking(presenceTrackStatus === 'ok');
       });
 
@@ -85,9 +98,10 @@ export const usePresence = (channelName: string = 'presence:governanca') => {
     updatePresence();
 
     return () => {
+      console.log('🧹 [PRESENCE] Cleaning up channel:', channelName);
       supabase.removeChannel(channel);
     };
-  }, [user, profile, location.pathname, channelName]);
+  }, [user, profile?.nome_completo, location.pathname, channelName]);
 
   // Get online users list
   const onlineUsers = Object.values(presenceState)
@@ -95,6 +109,13 @@ export const usePresence = (channelName: string = 'presence:governanca') => {
     .filter((user, index, self) => 
       index === self.findIndex(u => u.userId === user.userId)
     );
+
+  console.log('📊 [PRESENCE] Final calculation:', {
+    presenceStateKeys: Object.keys(presenceState).length,
+    onlineUsersBeforeFilter: Object.values(presenceState).flat().length,
+    onlineUsersAfterFilter: onlineUsers.length,
+    usersList: onlineUsers.map(u => ({ id: u.userId, name: u.name, route: u.route }))
+  });
 
   return {
     onlineUsers,

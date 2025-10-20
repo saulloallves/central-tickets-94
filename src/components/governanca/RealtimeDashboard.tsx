@@ -51,6 +51,13 @@ export function RealtimeDashboard({ periodDays = 30 }: RealtimeDashboardProps) {
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  useEffect(() => {
+    console.log('📊 [DASHBOARD] Presence data update:', {
+      totalOnline,
+      onlineUsers: onlineUsers.map(u => ({ id: u.userId, name: u.name, route: u.route }))
+    });
+  }, [totalOnline, onlineUsers]);
+
   // Function to open ticket modal
   const openTicketModal = (ticket: any) => {
     setSelectedTicket(ticket);
