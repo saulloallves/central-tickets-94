@@ -55,6 +55,9 @@ verify_jwt = false
 [functions.suporte_dfcom]
 verify_jwt = false
 
+[functions.falar_com_dfcom]
+verify_jwt = false
+
 [functions.colaborador-signup]
 verify_jwt = false
 
