@@ -3913,7 +3913,7 @@ export type Database = {
       }
       decrementar_sla_minutos: {
         Args: Record<PropertyKey, never>
-        Returns: undefined
+        Returns: Json
       }
       fix_missing_colaborador_roles: {
         Args: Record<PropertyKey, never>
