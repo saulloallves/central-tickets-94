@@ -3154,6 +3154,7 @@ export type Database = {
           subcategoria: string | null
           tempo_pausado_total: unknown | null
           titulo: string | null
+          ultima_pausa_timestamp: string | null
           unidade_id: string | null
           updated_at: string
         }
@@ -3199,6 +3200,7 @@ export type Database = {
           subcategoria?: string | null
           tempo_pausado_total?: unknown | null
           titulo?: string | null
+          ultima_pausa_timestamp?: string | null
           unidade_id?: string | null
           updated_at?: string
         }
@@ -3244,6 +3246,7 @@ export type Database = {
           subcategoria?: string | null
           tempo_pausado_total?: unknown | null
           titulo?: string | null
+          ultima_pausa_timestamp?: string | null
           unidade_id?: string | null
           updated_at?: string
         }
@@ -3902,16 +3905,16 @@ export type Database = {
           sla_pausado_em: string | null
           sla_pausado_horario: boolean | null
           sla_pausado_mensagem: boolean | null
+          sla_segundos_restantes: number | null
           sla_ultima_atualizacao: string | null
           sla_vencido_em: string | null
           status: Database["public"]["Enums"]["ticket_status"] | null
           status_sla: Database["public"]["Enums"]["ticket_sla_status"] | null
-          status_sla_calculado:
-            | Database["public"]["Enums"]["ticket_sla_status"]
-            | null
+          status_sla_calculado: string | null
           subcategoria: string | null
           tempo_pausado_total: unknown | null
           titulo: string | null
+          ultima_pausa_timestamp: string | null
           unidade_id: string | null
           updated_at: string | null
         }
@@ -4060,7 +4063,8 @@ export type Database = {
           is_overdue: boolean
           sla_minutos_decorridos: number
           sla_minutos_restantes: number
-          status_sla: Database["public"]["Enums"]["ticket_sla_status"]
+          sla_segundos_restantes: number
+          status_sla: string
         }[]
       }
       calcular_tempo_pausado: {

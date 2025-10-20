@@ -15,14 +15,12 @@ type SLAUpdateCallback = (timeRemaining: {
 interface SLATicketInput {
   ticketId: string;
   codigoTicket: string;
-  dataAbertura: string; // ✅ ADICIONAR para cálculo real
-  slaMinutosRestantes: number | null;
+  slaMinutosRestantes: number | null; // ✅ Fonte única de verdade: backend calcula tudo
   slaMinutosTotais: number | null;
-  tempoPausadoTotal?: number; // ✅ ADICIONAR (em minutos)
   status: string;
   slaPausado: boolean;
   slaPausadoMensagem: boolean;
-  slaPausadoHorario?: boolean; // ✅ NOVO - Pausado por horário comercial
+  slaPausadoHorario?: boolean;
   callback: SLAUpdateCallback;
   onExpired?: (ticketId: string) => void;
 }
@@ -72,12 +70,13 @@ class SLATimerManager {
       return;
     }
     
-    // ✅ CORREÇÃO FASE 4: Frontend usa APENAS valor do banco (fonte única de verdade)
-    // O backend já calcula corretamente com pausas, não recalcular aqui
+    // ✅ FASE 1: Frontend usa APENAS valor calculado pelo backend
+    // Backend já usa trigger automático para acumular tempo_pausado_total
+    // View tickets_with_realtime_sla retorna sla_minutos_restantes já correto
     localSecondsRemaining = (ticket.slaMinutosRestantes || 0) * 60;
     
-    console.log(`⏱️ Iniciando timer do ticket ${ticket.codigoTicket}:
-      - SLA restante do banco: ${ticket.slaMinutosRestantes} min (${localSecondsRemaining}s)
+    console.log(`⏱️ [FASE 1] Iniciando timer do ticket ${ticket.codigoTicket}:
+      - SLA restante (backend): ${ticket.slaMinutosRestantes} min (${localSecondsRemaining}s)
       - Pausado: ${ticket.slaPausado}
       - Pausado mensagem: ${ticket.slaPausadoMensagem}
       - Pausado horário: ${ticket.slaPausadoHorario || false}`);
@@ -130,16 +129,28 @@ class SLATimerManager {
   }
 
   private startTimer() {
+    let tickCounter = 0; // Contador para resincronização periódica
+    
     this.intervalId = setInterval(() => {
+      tickCounter++;
+      
       this.tickets.forEach((ticket, ticketId) => {
-        // ✅ Resincronizar se o banco atualizou (via realtime)
-        if (ticket.lastSyncedMinutes !== ticket.slaMinutosRestantes) {
+        // ✅ FASE 1: Resincronizar com banco a cada 10 segundos (fonte de verdade)
+        const shouldResync = tickCounter % 10 === 0 || ticket.lastSyncedMinutes !== ticket.slaMinutosRestantes;
+        
+        if (shouldResync) {
+          const oldValue = ticket.localSecondsRemaining;
           ticket.localSecondsRemaining = (ticket.slaMinutosRestantes || 0) * 60;
           ticket.lastSyncedMinutes = ticket.slaMinutosRestantes;
+          
+          if (Math.abs(oldValue - ticket.localSecondsRemaining) > 5) {
+            console.log(`⏱️ [FASE 1] Ressincronizado ${ticket.codigoTicket}: ${Math.floor(oldValue/60)}min → ${ticket.slaMinutosRestantes}min`);
+          }
         }
         
-        // ✅ Decrementar contador local se não estiver pausado
-        if (!ticket.slaPausado && !ticket.slaPausadoMensagem && !ticket.slaPausadoHorario && ticket.status !== 'concluido') {
+        // ✅ Decrementar APENAS se não estiver pausado (backend já cuida do acúmulo)
+        const isAnyPauseActive = ticket.slaPausado || ticket.slaPausadoMensagem || ticket.slaPausadoHorario;
+        if (!isAnyPauseActive && ticket.status !== 'concluido' && ticket.localSecondsRemaining > 0) {
           ticket.localSecondsRemaining = Math.max(0, ticket.localSecondsRemaining - 1);
         }
         
@@ -174,35 +185,36 @@ class SLATimerManager {
       return { hours: 0, minutes: 0, seconds: 0, isOverdue: false, isPaused: false, totalSeconds: 0 };
     }
 
-    // ✅ PRIORIDADE 1: Verificar se SLA está VENCIDO (fonte de verdade: banco)
-    // Se sla_minutos_restantes <= 0 OU localSecondsRemaining <= 0 → VENCIDO
-    const isSLAOverdue = ticket.slaMinutosRestantes <= 0 || ticket.localSecondsRemaining <= 0;
+    // ✅ FASE 1: LÓGICA SIMPLIFICADA
+    // Backend já calcula SLA corretamente usando trigger de acúmulo de pausas
+    // Frontend apenas exibe o valor do backend e decrementa localmente
+    
+    const isSLAOverdue = ticket.localSecondsRemaining <= 0;
     
     if (isSLAOverdue) {
-      // ✅ SLA VENCIDO - Mostrar como vencido INDEPENDENTEMENTE de estar pausado
       return { 
         hours: 0, 
         minutes: 0, 
         seconds: 0, 
         isOverdue: true, 
-        isPaused: false,  // ❌ NÃO mostrar como pausado se venceu
+        isPaused: false,
         totalSeconds: 0 
       };
     }
 
-    // ✅ PRIORIDADE 2: Se NÃO venceu, verificar se está pausado
-    if (ticket.slaPausado || ticket.slaPausadoMensagem || ticket.slaPausadoHorario) {
-      return { 
-        hours: 0, 
-        minutes: 0, 
-        seconds: 0, 
-        isOverdue: false, 
-        isPaused: true, 
-        totalSeconds: 0 
-      };
+    // Verificar se está pausado
+    const isAnyPauseActive = ticket.slaPausado || ticket.slaPausadoMensagem || ticket.slaPausadoHorario;
+    if (isAnyPauseActive) {
+      // Mostrar tempo restante mesmo pausado (mas não decrementa)
+      const totalSeconds = ticket.localSecondsRemaining;
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      
+      return { hours, minutes, seconds, isOverdue: false, isPaused: true, totalSeconds };
     }
 
-    // ✅ PRIORIDADE 3: SLA ativo (contando normalmente)
+    // SLA ativo (contando normalmente)
     const totalSeconds = ticket.localSecondsRemaining;
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
