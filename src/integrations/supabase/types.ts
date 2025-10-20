@@ -4262,6 +4262,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      reabrir_ticket: {
+        Args: { p_sla_minutos?: number; p_ticket_id: string }
+        Returns: Json
+      }
       refresh_user_permissions: {
         Args: { p_user_id: string }
         Returns: Json

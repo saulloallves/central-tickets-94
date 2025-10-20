@@ -8,47 +8,22 @@ export const useReopenTicket = () => {
 
   const reopenTicket = async (ticketId: string) => {
     try {
-      // 1. Buscar ticket atual
-      const { data: ticket, error: fetchError } = await supabase
-        .from('tickets')
-        .select('*')
-        .eq('id', ticketId)
-        .single();
-
-      if (fetchError) throw fetchError;
-
-      // 2. Calcular nova data limite SLA (4h padrão)
-      const now = new Date();
       const slaMinutos = 240; // 4h padrão
-      const dataLimiteSLA = new Date(now.getTime() + slaMinutos * 60000);
 
-      // 3. Atualizar ticket
-      const { error: updateError } = await supabase
-        .from('tickets')
-        .update({
-          status: 'aberto',
-          status_sla: 'dentro_prazo',
-          data_limite_sla: dataLimiteSLA.toISOString(),
-          sla_minutos_restantes: slaMinutos,
-          sla_pausado_mensagem: false,
-          sla_pausado_horario: false,
-          reaberto_count: (ticket.reaberto_count || 0) + 1,
-          resolvido_em: null,
-          updated_at: now.toISOString()
-        })
-        .eq('id', ticketId);
+      // Chamar função SQL com SECURITY DEFINER
+      const { data, error: rpcError } = await supabase
+        .rpc('reabrir_ticket', {
+          p_ticket_id: ticketId,
+          p_sla_minutos: slaMinutos
+        });
 
-      if (updateError) throw updateError;
-
-      // 4. Inserir mensagem de sistema
-      await supabase
-        .from('ticket_mensagens')
-        .insert([{
-          ticket_id: ticketId,
-          mensagem: `🔄 Ticket reaberto pelo sistema.\nNovo SLA: ${slaMinutos} minutos (${(slaMinutos/60).toFixed(1)}h)\nPrazo: ${format(dataLimiteSLA, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`,
-          direcao: 'saida',
-          canal: 'web'
-        }]);
+      if (rpcError) throw rpcError;
+      
+      const result = data as { success: boolean; error?: string };
+      
+      if (!result?.success) {
+        throw new Error(result?.error || 'Erro ao reabrir ticket');
+      }
 
       toast({
         title: "✅ Ticket Reaberto",
