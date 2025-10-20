@@ -205,6 +205,13 @@ export type Database = {
             referencedRelation: "tickets"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "ai_feedback_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets_with_realtime_sla"
+            referencedColumns: ["id"]
+          },
         ]
       }
       atendente_unidades: {
@@ -619,6 +626,13 @@ export type Database = {
             referencedRelation: "tickets"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "crise_ticket_links_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets_with_realtime_sla"
+            referencedColumns: ["id"]
+          },
         ]
       }
       crise_updates: {
@@ -767,6 +781,13 @@ export type Database = {
             columns: ["ticket_id"]
             isOneToOne: false
             referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crises_ativas_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets_with_realtime_sla"
             referencedColumns: ["id"]
           },
         ]
@@ -1135,10 +1156,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "escalation_logs_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets_with_realtime_sla"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_escalation_logs_ticket"
             columns: ["ticket_id"]
             isOneToOne: false
             referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_escalation_logs_ticket"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets_with_realtime_sla"
             referencedColumns: ["id"]
           },
           {
@@ -1702,6 +1737,13 @@ export type Database = {
             referencedRelation: "tickets"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "internal_notifications_related_ticket_id_fkey"
+            columns: ["related_ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets_with_realtime_sla"
+            referencedColumns: ["id"]
+          },
         ]
       }
       knowledge_article_usage: {
@@ -1763,6 +1805,13 @@ export type Database = {
             columns: ["ticket_id"]
             isOneToOne: false
             referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "knowledge_article_usage_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets_with_realtime_sla"
             referencedColumns: ["id"]
           },
         ]
@@ -1987,6 +2036,13 @@ export type Database = {
             columns: ["ticket_id"]
             isOneToOne: false
             referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "knowledge_suggestions_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets_with_realtime_sla"
             referencedColumns: ["id"]
           },
         ]
@@ -2298,10 +2354,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_notifications_queue_ticket"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets_with_realtime_sla"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "notifications_queue_ticket_id_fkey"
             columns: ["ticket_id"]
             isOneToOne: false
             referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_queue_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets_with_realtime_sla"
             referencedColumns: ["id"]
           },
         ]
@@ -2340,6 +2410,13 @@ export type Database = {
             columns: ["ticket_id"]
             isOneToOne: false
             referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pausas_sla_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets_with_realtime_sla"
             referencedColumns: ["id"]
           },
         ]
@@ -2954,6 +3031,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_ticket_mensagens_ticket"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets_with_realtime_sla"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_ticket_mensagens_usuario"
             columns: ["usuario_id"]
             isOneToOne: false
@@ -2965,6 +3049,13 @@ export type Database = {
             columns: ["ticket_id"]
             isOneToOne: false
             referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_mensagens_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets_with_realtime_sla"
             referencedColumns: ["id"]
           },
         ]
@@ -3772,6 +3863,110 @@ export type Database = {
           },
         ]
       }
+      tickets_with_realtime_sla: {
+        Row: {
+          arquivos: Json | null
+          atendimento_iniciado_em: string | null
+          atendimento_iniciado_por: string | null
+          canal_origem: Database["public"]["Enums"]["canal_origem"] | null
+          canal_resposta: Database["public"]["Enums"]["canal_resposta"] | null
+          categoria: Database["public"]["Enums"]["ticket_categoria"] | null
+          codigo_grupo: string | null
+          codigo_ticket: string | null
+          colaborador_id: string | null
+          conversa: Json | null
+          created_at: string | null
+          criado_por: string | null
+          data_abertura: string | null
+          data_limite_sla: string | null
+          descricao_problema: string | null
+          equipe_responsavel_id: string | null
+          escalonado_para: string | null
+          escalonamento_nivel: number | null
+          franqueado_id: string | null
+          id: string | null
+          is_overdue: boolean | null
+          log_ia: Json | null
+          pode_despausar_as_0830: boolean | null
+          position: number | null
+          prioridade: Database["public"]["Enums"]["ticket_prioridade"] | null
+          reaberto_count: number | null
+          resolvido_em: string | null
+          resposta_resolucao: string | null
+          sla_half_time: string | null
+          sla_minutos_decorridos: number | null
+          sla_minutos_restantes: number | null
+          sla_minutos_restantes_calculado: number | null
+          sla_minutos_totais: number | null
+          sla_pausado: boolean | null
+          sla_pausado_em: string | null
+          sla_pausado_horario: boolean | null
+          sla_pausado_mensagem: boolean | null
+          sla_ultima_atualizacao: string | null
+          sla_vencido_em: string | null
+          status: Database["public"]["Enums"]["ticket_status"] | null
+          status_sla: Database["public"]["Enums"]["ticket_sla_status"] | null
+          status_sla_calculado:
+            | Database["public"]["Enums"]["ticket_sla_status"]
+            | null
+          subcategoria: string | null
+          tempo_pausado_total: unknown | null
+          titulo: string | null
+          unidade_id: string | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_tickets_atendimento_iniciado_por_profiles"
+            columns: ["atendimento_iniciado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_tickets_colaborador"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_tickets_criado_por"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_tickets_escalonado_para"
+            columns: ["escalonado_para"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_equipe_responsavel_id_fkey"
+            columns: ["equipe_responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "equipes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_franqueado_id_fkey"
+            columns: ["franqueado_id"]
+            isOneToOne: false
+            referencedRelation: "franqueados"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_kb_articles_usage: {
         Row: {
           aprovado: boolean | null
@@ -3858,6 +4053,15 @@ export type Database = {
       calcular_minutos_restantes_inicial: {
         Args: { p_ticket_id: string }
         Returns: number
+      }
+      calcular_sla_tempo_real: {
+        Args: { p_ticket_id: string }
+        Returns: {
+          is_overdue: boolean
+          sla_minutos_decorridos: number
+          sla_minutos_restantes: number
+          status_sla: Database["public"]["Enums"]["ticket_sla_status"]
+        }[]
       }
       calcular_tempo_pausado: {
         Args: { p_ticket_id: string }
