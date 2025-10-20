@@ -20,7 +20,7 @@ export const useSimpleTicketsRealtime = ({
   useEffect(() => {
     if (!user) return;
 
-    console.log('🔄 Setting up simple realtime for tickets');
+    console.log('🔄 [FASE 2] Setting up realtime com foco em flags SLA');
 
     // Clean up existing subscription
     if (subscriptionRef.current) {
@@ -28,7 +28,7 @@ export const useSimpleTicketsRealtime = ({
     }
 
     const channel = supabase
-      .channel('simple-tickets-realtime')
+      .channel('tickets-realtime-fase2')
       .on(
         'postgres_changes',
         {
@@ -36,16 +36,52 @@ export const useSimpleTicketsRealtime = ({
           schema: 'public',
           table: 'tickets'
         },
-        (payload) => {
-          console.log('📡 Simple realtime event:', payload.eventType, payload);
+        async (payload) => {
+          console.log('📡 [FASE 2] Realtime event:', payload.eventType, payload);
           
           switch (payload.eventType) {
             case 'INSERT':
-              onTicketInsert(payload.new as Ticket);
+              // Buscar da view para ter SLA calculado
+              const { data: newTicket } = await supabase
+                .from('tickets_with_realtime_sla')
+                .select('*')
+                .eq('id', payload.new.id)
+                .single();
+              
+              if (newTicket) {
+                console.log('✅ [FASE 2] INSERT com SLA calculado:', newTicket.sla_minutos_restantes_calculado);
+                onTicketInsert(newTicket as any);
+              }
               break;
+              
             case 'UPDATE':
-              onTicketUpdate(payload.new as Ticket);
+              // ✅ CRÍTICO: Buscar da view para ter SLA atualizado
+              const { data: updatedTicket } = await supabase
+                .from('tickets_with_realtime_sla')
+                .select('*')
+                .eq('id', payload.new.id)
+                .single();
+              
+              if (updatedTicket) {
+                // Log mudanças em flags de pausa
+                const old = payload.old as any;
+                const nw = updatedTicket as any;
+                
+                if (old.sla_pausado !== nw.sla_pausado) {
+                  console.log(`⏸️ [FASE 2] SLA Pausado mudou: ${old.sla_pausado} → ${nw.sla_pausado}`);
+                }
+                if (old.sla_pausado_mensagem !== nw.sla_pausado_mensagem) {
+                  console.log(`💬 [FASE 2] SLA Pausado Mensagem mudou: ${old.sla_pausado_mensagem} → ${nw.sla_pausado_mensagem}`);
+                }
+                if (old.sla_pausado_horario !== nw.sla_pausado_horario) {
+                  console.log(`🕐 [FASE 2] SLA Pausado Horário mudou: ${old.sla_pausado_horario} → ${nw.sla_pausado_horario}`);
+                }
+                
+                console.log(`✅ [FASE 2] UPDATE com SLA recalculado: ${nw.sla_minutos_restantes_calculado} min`);
+                onTicketUpdate(updatedTicket as any);
+              }
               break;
+              
             case 'DELETE':
               onTicketDelete((payload.old as Ticket).id);
               break;
@@ -60,28 +96,32 @@ export const useSimpleTicketsRealtime = ({
           table: 'ticket_mensagens'
         },
         async (payload) => {
-          console.log('📨 Nova mensagem - atualizando ticket:', payload.new.ticket_id);
+          console.log('📨 [FASE 2] Nova mensagem - ticket será pausado:', payload.new.ticket_id);
           
-          // Buscar ticket atualizado com sla_pausado_mensagem atualizado
+          // ✅ Aguardar 500ms para trigger de pausa executar
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // Buscar ticket atualizado da view
           const { data: ticket } = await supabase
-            .from('tickets')
+            .from('tickets_with_realtime_sla')
             .select('*')
             .eq('id', payload.new.ticket_id)
             .single();
           
           if (ticket) {
+            console.log(`✅ [FASE 2] Ticket atualizado após mensagem. Pausado: ${ticket.sla_pausado_mensagem}`);
             onTicketUpdate(ticket as any);
           }
         }
       )
       .subscribe((status) => {
-        console.log('📡 Simple realtime status:', status);
+        console.log('📡 [FASE 2] Realtime status:', status);
       });
 
     subscriptionRef.current = channel;
 
     return () => {
-      console.log('🧹 Cleaning up simple realtime');
+      console.log('🧹 [FASE 2] Cleaning up realtime');
       if (subscriptionRef.current) {
         supabase.removeChannel(subscriptionRef.current);
       }

@@ -19,13 +19,16 @@ export const useSimpleTickets = (filters: TicketFilters) => {
   const [loading, setLoading] = useState(true);
   const realtimeRef = useRef<any>(null);
 
-  // Fetch tickets from database
+  // ✅ FASE 2: Fetch tickets from view tickets_with_realtime_sla
   const fetchTickets = useCallback(async () => {
     if (!user) return;
 
     try {
+      console.log('🔄 [FASE 2] Buscando tickets da view tickets_with_realtime_sla');
+      
+      // ✅ Usar view que já calcula SLA em tempo real
       let query = supabase
-        .from('tickets')
+        .from('tickets_with_realtime_sla')
         .select(`
           *,
           unidades (id, grupo, cidade, uf),
@@ -48,7 +51,7 @@ export const useSimpleTickets = (filters: TicketFilters) => {
         query = query.eq('unidade_id', filters.unidade_id);
       }
       if (filters.status_sla !== 'all') {
-        query = query.eq('status_sla', filters.status_sla as any);
+        query = query.eq('status_sla_calculado', filters.status_sla as any);
       }
       if (filters.equipe_id !== 'all') {
         query = query.eq('equipe_responsavel_id', filters.equipe_id);
@@ -60,14 +63,14 @@ export const useSimpleTickets = (filters: TicketFilters) => {
       const { data, error } = await query;
 
       if (error) {
-        console.error('Error fetching tickets:', error);
+        console.error('❌ [FASE 2] Error fetching tickets:', error);
         return;
       }
 
-      console.log('Tickets fetched:', (data || []).length);
+      console.log(`✅ [FASE 2] Tickets fetched from view: ${(data || []).length}`);
       setTickets((data || []) as unknown as Ticket[]);
     } catch (error) {
-      console.error('Error in fetchTickets:', error);
+      console.error('❌ [FASE 2] Error in fetchTickets:', error);
     } finally {
       setLoading(false);
     }
