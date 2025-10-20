@@ -10,11 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RealtimeDashboard } from "@/components/governanca/RealtimeDashboard";
-import { AuditPanel } from "@/components/governanca/AuditPanel";
-import { BottleneckDetection } from "@/components/governanca/BottleneckDetection";
-import { UsageReports } from "@/components/governanca/UsageReports";
 import { AccessPermissionsControl } from "@/components/governanca/AccessPermissionsControl";
-import { MetricsSection } from "@/components/governanca/MetricsSection";
 import { DailyStatisticsReport } from "@/components/governanca/DailyStatisticsReport";
 
 export default function Governanca() {
@@ -117,46 +113,18 @@ export default function Governanca() {
         <Tabs defaultValue="tempo-real" className="space-y-6">
           <TabsList className="liquid-glass-card p-2">
             <TabsTrigger value="tempo-real" className="flex items-center space-x-2">
-              <span>Tempo Real</span>
-            </TabsTrigger>
-            <TabsTrigger value="metricas" className="flex items-center space-x-2">
-              <span>Métricas</span>
-            </TabsTrigger>
-            <TabsTrigger value="auditoria" className="flex items-center space-x-2">
-              <span>Auditoria</span>
-            </TabsTrigger>
-            <TabsTrigger value="gargalos" className="flex items-center space-x-2">
-              <span>Gargalos</span>
-            </TabsTrigger>
-            <TabsTrigger value="uso-sistema" className="flex items-center space-x-2">
-              <span>Uso do Sistema</span>
+              <span>⚡ Tempo Real</span>
             </TabsTrigger>
             <TabsTrigger value="estatisticas" className="flex items-center space-x-2">
-              <span>Estatísticas</span>
+              <span>📊 Estatísticas</span>
             </TabsTrigger>
             <TabsTrigger value="acessos" className="flex items-center space-x-2">
-              <span>Acessos & Permissões</span>
+              <span>🔐 Acessos & Permissões</span>
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="tempo-real" className="space-y-6">
             <RealtimeDashboard periodDays={parseInt(periodFilter)} />
-          </TabsContent>
-
-          <TabsContent value="metricas" className="space-y-6">
-            <MetricsSection periodDays={parseInt(periodFilter)} />
-          </TabsContent>
-
-          <TabsContent value="auditoria" className="space-y-6">
-            <AuditPanel />
-          </TabsContent>
-
-          <TabsContent value="gargalos" className="space-y-6">
-            <BottleneckDetection />
-          </TabsContent>
-
-          <TabsContent value="uso-sistema" className="space-y-6">
-            <UsageReports />
           </TabsContent>
 
           <TabsContent value="estatisticas" className="space-y-6">
