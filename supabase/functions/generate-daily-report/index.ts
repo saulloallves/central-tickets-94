@@ -14,9 +14,16 @@ interface ZApiConfig {
 }
 
 // Função para enviar mensagem via Z-API
-async function sendWhatsAppReport(message: string, config: ZApiConfig): Promise<boolean> {
+async function sendWhatsAppReport(message: string, config: ZApiConfig, supabase: any): Promise<boolean> {
   try {
-    const phone = '5511977256029'; // Número de destino fixo
+    // Buscar número de destino do banco
+    const { data: settings } = await supabase
+      .from('system_settings')
+      .select('setting_value')
+      .eq('setting_key', 'daily_report_phone')
+      .maybeSingle();
+    
+    const phone = settings?.setting_value || '5511977256029'; // Fallback padrão
     
     console.log(`📤 Enviando relatório para ${phone}...`);
     
@@ -203,7 +210,7 @@ Deno.serve(async (req) => {
 
     // 10. Formatar e enviar mensagem WhatsApp
     const messageText = formatReportMessage(reportData);
-    const whatsappSuccess = await sendWhatsAppReport(messageText, zapiConfig);
+    const whatsappSuccess = await sendWhatsAppReport(messageText, zapiConfig, supabase);
 
     // 11. Salvar relatório no banco
     const { data: relatorio, error: saveError } = await supabase

@@ -24,6 +24,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from "@/hooks/use-toast";
+import { useDailyReportSettings } from "@/hooks/useDailyReportSettings";
+import { Input } from "@/components/ui/input";
+import { Phone } from "lucide-react";
 
 interface ArticleStats {
   article_id: string;
@@ -51,6 +54,8 @@ export function RelatoriosTab() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [sendingReport, setSendingReport] = useState(false);
+  const { reportPhone, isLoading: isLoadingPhone, updatePhone, isUpdating, isValidPhone } = useDailyReportSettings();
+  const [phoneInput, setPhoneInput] = useState('');
   const [metrics, setMetrics] = useState<KnowledgeMetrics>({
     total_articles: 0,
     approved_articles: 0,
@@ -152,6 +157,18 @@ export function RelatoriosTab() {
     fetchMetrics();
   }, [filterPeriod]);
 
+  useEffect(() => {
+    if (reportPhone && !phoneInput) {
+      setPhoneInput(reportPhone);
+    }
+  }, [reportPhone]);
+
+  const handleUpdateReportPhone = () => {
+    if (isValidPhone(phoneInput)) {
+      updatePhone(phoneInput);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -176,6 +193,49 @@ export function RelatoriosTab() {
           </div>
         </div>
       </div>
+
+      {/* Configuração do Número de Destino */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Phone className="h-5 w-5" />
+            Configuração de Destino do Relatório
+          </CardTitle>
+          <CardDescription>
+            Configure o número de WhatsApp que receberá os relatórios diários
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <Input
+                type="tel"
+                placeholder="5511977256029"
+                value={phoneInput}
+                onChange={(e) => setPhoneInput(e.target.value)}
+                className="max-w-xs"
+                disabled={isLoadingPhone}
+              />
+              <Button 
+                onClick={handleUpdateReportPhone}
+                disabled={isUpdating || !isValidPhone(phoneInput) || phoneInput === reportPhone}
+              >
+                {isUpdating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Salvando...
+                  </>
+                ) : (
+                  'Salvar Número'
+                )}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Formato: Código do país + DDD + número (ex: 5511977256029)
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Relatório Diário WhatsApp */}
       <Card className="border-blue-200 bg-blue-50">
@@ -208,7 +268,7 @@ export function RelatoriosTab() {
               )}
             </Button>
             <div className="text-sm text-muted-foreground">
-              <p>📱 Destino: 5511977256029</p>
+              <p>📱 Destino: {reportPhone || 'Não configurado'}</p>
               <p>⏰ Próximo envio automático: Hoje às 20:00</p>
             </div>
           </div>
