@@ -22,11 +22,13 @@ import {
   Eye,
   Users,
   FileText,
-  MessageCircle
+  MessageCircle,
+  X
 } from "lucide-react";
 import { TicketDetail } from "./TicketDetail";
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useCrisisManagement } from '@/hooks/useCrisisManagement';
 
 interface Crisis {
   id: string;
@@ -65,6 +67,7 @@ interface CrisisModalProps {
 
 export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
   const { toast } = useToast();
+  const { unlinkTicketFromCrisis } = useCrisisManagement();
   const [tickets, setTickets] = useState<CrisisTicket[]>([]);
   const [messages, setMessages] = useState<CrisisMessage[]>([]);
   const [loading, setLoading] = useState(false);
@@ -73,6 +76,7 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
   const [broadcastMessage, setBroadcastMessage] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
   const [activeTab, setActiveTab] = useState('tickets');
+  const [unlinkingTicketId, setUnlinkingTicketId] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen && crisis.id) {
@@ -262,6 +266,22 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
   const handleTicketClick = (ticketId: string) => {
     setSelectedTicketId(ticketId);
     setTicketModalOpen(true);
+  };
+
+  const handleUnlinkTicket = async (ticketId: string) => {
+    setUnlinkingTicketId(ticketId);
+    try {
+      const result = await unlinkTicketFromCrisis(ticketId, crisis.id);
+      if (result.success) {
+        // Remover ticket da lista local
+        setTickets(prev => prev.filter(t => t.id !== ticketId));
+        
+        // Recarregar lista de tickets
+        await fetchCrisisTickets();
+      }
+    } finally {
+      setUnlinkingTicketId(null);
+    }
   };
 
   const handleCloseTicketDetail = () => {
@@ -477,17 +497,37 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
                                   </div>
                                 </div>
                               </div>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleTicketClick(ticket.id);
-                                }}
-                                className="flex-shrink-0"
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleTicketClick(ticket.id);
+                                  }}
+                                  className="flex-shrink-0"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleUnlinkTicket(ticket.id);
+                                  }}
+                                  disabled={unlinkingTicketId === ticket.id}
+                                  className="flex-shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  title="Desvincular da crise"
+                                >
+                                  {unlinkingTicketId === ticket.id ? (
+                                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-destructive border-t-transparent" />
+                                  ) : (
+                                    <X className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </div>
                             </div>
                           </CardContent>
                         </Card>

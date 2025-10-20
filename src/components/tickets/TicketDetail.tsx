@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, Clock, User, Building, Tag, AlertTriangle, MessageSquare, Send, Paperclip, Zap, Sparkles, Copy, Bot, Phone, Users, FileText, Settings, Play, Check, ExternalLink, Image, Video, File, Download, ChevronDown, RotateCcw } from 'lucide-react';
+import { X, Clock, User, Building, Tag, AlertTriangle, MessageSquare, Send, Paperclip, Zap, Sparkles, Copy, Bot, Phone, Users, FileText, Settings, Play, Check, ExternalLink, Image, Video, File, Download, ChevronDown, RotateCcw, Link, Unlink } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,12 +10,19 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
 import { useTicketMessages } from '@/hooks/useTickets';
 import { useAISuggestion } from '@/hooks/useAISuggestion';
 import { useResponseProcessor } from '@/hooks/useResponseProcessor';
 import { useAuth } from '@/hooks/useAuth';
 import { useRole } from '@/hooks/useRole';
 import { useOptimisticTicketActions } from '@/hooks/useOptimisticTicketActions';
+import { useCrisisManagement } from '@/hooks/useCrisisManagement';
 import { ImageModal } from '@/components/ui/image-modal';
 import { SLATimerDetail } from './SLATimerDetail';
 
@@ -23,6 +30,8 @@ import { TicketActions } from './TicketActions';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNowInSaoPaulo, formatDateTimeBR } from '@/lib/date-utils';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface TicketDetailProps {
   ticketId: string;
@@ -45,6 +54,9 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
   const [customMessage, setCustomMessage] = useState('');
   const [isCustomMessageDialogOpen, setIsCustomMessageDialogOpen] = useState(false);
   const [isSendingCustomMessage, setIsSendingCustomMessage] = useState(false);
+  const [linkedCrisis, setLinkedCrisis] = useState<any>(null);
+  const [activeCrises, setActiveCrises] = useState<any[]>([]);
+  const [isLoadingCrisis, setIsLoadingCrisis] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const { messages, sendMessage, loading: messagesLoading, refetch: refetchMessages } = useTicketMessages(ticketId);
@@ -53,6 +65,12 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
   const { user } = useAuth();
   const { loading: isLoadingRole } = useRole();
   const { optimisticStartAttendance, isTicketPending } = useOptimisticTicketActions();
+  const { 
+    linkTicketToCrisis, 
+    unlinkTicketFromCrisis, 
+    getActiveCrises, 
+    getCrisisForTicket 
+  } = useCrisisManagement();
   
   const { toast } = useToast();
 
@@ -134,6 +152,27 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
   useEffect(() => {
     fetchTicketDetails();
     fetchEquipes();
+  }, [ticketId]);
+
+  useEffect(() => {
+    const fetchCrisisInfo = async () => {
+      setIsLoadingCrisis(true);
+      try {
+        // Buscar crise vinculada
+        const { data: crisis } = await getCrisisForTicket(ticketId);
+        setLinkedCrisis(crisis);
+
+        // Buscar crises ativas para vincular
+        const { data: crises } = await getActiveCrises();
+        setActiveCrises(crises || []);
+      } finally {
+        setIsLoadingCrisis(false);
+      }
+    };
+
+    if (ticketId) {
+      fetchCrisisInfo();
+    }
   }, [ticketId]);
 
   const fetchEquipes = async () => {
@@ -455,6 +494,33 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
       });
     } finally {
       setIsSendingCustomMessage(false);
+    }
+  };
+
+  const handleLinkToCrisis = async (crisisId: string) => {
+    const result = await linkTicketToCrisis(ticketId, crisisId);
+    if (result.success) {
+      // Atualizar estado local
+      const crisis = activeCrises.find(c => c.id === crisisId);
+      setLinkedCrisis(crisis);
+      
+      // Atualizar ticket local
+      setTicket((prev: any) => ({
+        ...prev,
+        prioridade: 'crise'
+      }));
+    }
+  };
+
+  const handleUnlinkFromCrisis = async () => {
+    if (!linkedCrisis) return;
+    
+    const result = await unlinkTicketFromCrisis(ticketId, linkedCrisis.id);
+    if (result.success) {
+      setLinkedCrisis(null);
+      
+      // Manter prioridade crise por enquanto
+      // Pode ser alterado conforme regra de negócio
     }
   };
 
@@ -1644,6 +1710,98 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                       </div>
                     )}
                   </div>
+                </CardContent>
+              </Card>
+
+              {/* Gerenciamento de Crise */}
+              <Card className="bg-card/50 backdrop-blur border-border/50">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 text-destructive" />
+                      <Label className="text-sm font-semibold">Gerenciamento de Crise</Label>
+                    </div>
+                  </div>
+
+                  {isLoadingCrisis ? (
+                    <div className="flex items-center justify-center py-4">
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    </div>
+                  ) : linkedCrisis ? (
+                    <div className="space-y-3">
+                      <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <Link className="h-4 w-4 text-destructive flex-shrink-0" />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs text-muted-foreground">Vinculado à crise:</p>
+                              <p className="font-medium text-sm truncate">{linkedCrisis.titulo}</p>
+                              <Badge variant="outline" className="mt-1 text-xs">
+                                {linkedCrisis.status}
+                              </Badge>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleUnlinkFromCrisis}
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10 flex-shrink-0"
+                            title="Desvincular da crise"
+                          >
+                            <Unlink className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <p className="text-xs text-muted-foreground">
+                        Este ticket não está vinculado a nenhuma crise
+                      </p>
+                      
+                      {activeCrises.length > 0 && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="w-full"
+                            >
+                              <Link className="h-4 w-4 mr-2" />
+                              Vincular a Crise Existente
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start" className="w-full max-w-xs max-h-60 overflow-y-auto">
+                            {activeCrises.map((crisis) => (
+                              <DropdownMenuItem
+                                key={crisis.id}
+                                onClick={() => handleLinkToCrisis(crisis.id)}
+                                className="cursor-pointer"
+                              >
+                                <div className="flex flex-col min-w-0 flex-1">
+                                  <p className="font-medium text-sm truncate">{crisis.titulo}</p>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <Badge variant="outline" className="text-xs">
+                                      {crisis.tickets_count || 0} tickets
+                                    </Badge>
+                                    <span className="text-xs text-muted-foreground">
+                                      {format(new Date(crisis.created_at), 'dd/MM HH:mm', { locale: ptBR })}
+                                    </span>
+                                  </div>
+                                </div>
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                      
+                      {activeCrises.length === 0 && (
+                        <p className="text-xs text-muted-foreground text-center py-2">
+                          Nenhuma crise ativa disponível no momento
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
