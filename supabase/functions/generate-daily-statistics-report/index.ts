@@ -290,15 +290,21 @@ serve(async (req) => {
 
     const attendant_performance = await Promise.all(
       (atendentes || []).map(async (atendente) => {
-        const { data: atdTickets } = await supabase
+        const { data: atdTickets, error: atdError } = await supabase
           .from('tickets')
           .select('*')
-          .eq('atendente_responsavel_id', atendente.id)
+          .eq('responsavel_id', atendente.id)
           .gte('data_abertura', startDateTime)
           .lte('data_abertura', endDateTime);
 
+        if (atdError) {
+          console.error(`❌ Erro ao buscar tickets de ${atendente.nome}:`, atdError);
+        }
+
         const total = atdTickets?.length || 0;
         const concluidos = atdTickets?.filter(t => t.status === 'concluido').length || 0;
+
+        console.log(`📊 Atendente ${atendente.nome}: ${total} tickets (${concluidos} concluídos)`);
 
         return {
           atendente: atendente.nome,
@@ -310,39 +316,8 @@ serve(async (req) => {
         };
       })
     );
-
-    // 14. ESCALAÇÕES (corrigido - apenas escalações únicas por ticket)
-    const { data: escalacoes } = await supabase
-      .from('escalation_logs')
-      .select('ticket_id, to_level, event_type, created_at')
-      .gte('created_at', startDateTime)
-      .lte('created_at', endDateTime)
-      .eq('event_type', 'escalated');  // Apenas eventos de escalação
-
-    // Agrupar por ticket para evitar contagem duplicada
-    const ticketsEscalados = new Set(escalacoes?.map(e => e.ticket_id) || []);
     
-    // Contar escalações por nível (apenas a mais alta por ticket)
-    const escalacoesPorTicket = new Map();
-    escalacoes?.forEach(e => {
-      const ticketId = e.ticket_id;
-      const nivelAtual = escalacoesPorTicket.get(ticketId) || 0;
-      if ((e.to_level || 0) > nivelAtual) {
-        escalacoesPorTicket.set(ticketId, e.to_level || 0);
-      }
-    });
-
-    const por_nivel: any = {};
-    escalacoesPorTicket.forEach(nivel => {
-      const key = `nivel_${nivel}`;
-      por_nivel[key] = (por_nivel[key] || 0) + 1;
-    });
-
-    const escalations = {
-      total: ticketsEscalados.size,  // Total de tickets escalados (únicos)
-      por_nivel,
-      total_eventos: escalacoes?.length || 0,  // Total de eventos de escalação
-    };
+    console.log(`🔍 Performance de ${attendant_performance.length} atendentes calculada`);
 
     const report: StatisticsReport = {
       data: {
@@ -356,7 +331,6 @@ serve(async (req) => {
         delayed_tickets,
         crisis_tickets,
         attendant_performance,
-        escalations,
       },
       generated_at: new Date().toISOString(),
       period: {

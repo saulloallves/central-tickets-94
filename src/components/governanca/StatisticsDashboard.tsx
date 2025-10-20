@@ -16,7 +16,6 @@ import { HourlyAnalysisChart } from "./stats/HourlyAnalysisChart";
 import { DelayedTicketsTable } from "./stats/DelayedTicketsTable";
 import { CrisisTicketsCard } from "./stats/CrisisTicketsCard";
 import { AttendantPerformanceTable } from "./stats/AttendantPerformanceTable";
-import { EscalationsCard } from "./stats/EscalationsCard";
 import { TicketDetailModal } from "./TicketDetailModal";
 
 interface StatisticsReport {
@@ -286,13 +285,10 @@ export const StatisticsDashboard = () => {
             onTicketClick={handleTicketClick}
           />
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <CrisisTicketsCard 
-              data={reportData.data.crisis_tickets}
-              onTicketClick={handleTicketClick}
-            />
-            <EscalationsCard data={reportData.data.escalations} />
-          </div>
+          <CrisisTicketsCard 
+            data={reportData.data.crisis_tickets}
+            onTicketClick={handleTicketClick}
+          />
 
           <AttendantPerformanceTable data={reportData.data.attendant_performance} />
         </div>

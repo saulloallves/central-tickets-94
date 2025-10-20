@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, ExternalLink } from "lucide-react";
+import { AlertTriangle, ExternalLink } from "lucide-react";
 
 interface DelayedTicket {
   codigo: string;
@@ -44,8 +44,8 @@ export const DelayedTicketsTable = ({ data, onTicketClick }: DelayedTicketsTable
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <AlertCircle className="h-5 w-5 text-destructive" />
-          Tickets Atrasados ({data.length})
+          <AlertTriangle className="h-5 w-5 text-red-500" />
+          Tickets Vencidos ({data.length})
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -96,7 +96,7 @@ export const DelayedTicketsTable = ({ data, onTicketClick }: DelayedTicketsTable
           </Table>
         ) : (
           <div className="text-center text-muted-foreground py-8">
-            Nenhum ticket atrasado no período
+            Nenhum ticket vencido no período
           </div>
         )}
       </CardContent>
