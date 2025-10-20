@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { RefreshCw, Play, Pause, Clock, MessageSquare } from 'lucide-react';
+import { RefreshCw, Play, Pause, Clock, MessageSquare, ChevronDown } from 'lucide-react';
 import { isAnyPauseActive, getPauseReason, getPauseIcon } from '@/lib/sla-flags-documentation';
 
 interface SLADebugPanelProps {
@@ -32,6 +33,7 @@ export const SLADebugPanel = ({
 }: SLADebugPanelProps) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
   const flags = { sla_pausado: slaPausado, sla_pausado_mensagem: slaPausadoMensagem, sla_pausado_horario: slaPausadoHorario };
   const isPaused = isAnyPauseActive(flags);
@@ -116,29 +118,33 @@ export const SLADebugPanel = ({
   };
 
   return (
-    <Card className="border-dashed">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-sm font-medium">
-              {pauseIcon} Debug SLA - {codigoTicket}
-            </CardTitle>
-            <CardDescription className="text-xs">
-              Painel de debug e testes (Fase 3)
-            </CardDescription>
-          </div>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={forceResync}
-            disabled={loading}
-          >
-            <RefreshCw className="w-3 h-3 mr-1" />
-            Ressincronizar
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
+    <Card className="border-dashed bg-card/50 backdrop-blur border-amber-500/30">
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <CardHeader className="pb-3">
+          <CollapsibleTrigger asChild>
+            <div className="flex items-center justify-between cursor-pointer group">
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    🧪 Debug SLA - {codigoTicket}
+                  </CardTitle>
+                  <Badge variant="outline" className="text-xs">
+                    Fase 3
+                  </Badge>
+                </div>
+                <CardDescription className="text-xs mt-1">
+                  Painel de debug e testes (visível apenas para admins)
+                </CardDescription>
+              </div>
+              <ChevronDown 
+                className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+              />
+            </div>
+          </CollapsibleTrigger>
+        </CardHeader>
+        
+        <CollapsibleContent>
+          <CardContent className="space-y-3 pt-0">
         {/* Status atual */}
         <div className="grid grid-cols-2 gap-2 text-xs">
           <div>
@@ -231,12 +237,28 @@ export const SLADebugPanel = ({
           </Button>
         </div>
 
-        {/* Legenda */}
-        <div className="text-xs text-muted-foreground border-t pt-2">
-          <strong>Fase 3:</strong> Sistema usa trigger automático para acumular tempo pausado.
-          Backend calcula SLA, frontend apenas exibe.
-        </div>
-      </CardContent>
+            {/* Ações de ressincronização */}
+            <div className="flex gap-2 border-t pt-3">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={forceResync}
+                disabled={loading}
+                className="flex-1"
+              >
+                <RefreshCw className={`w-3 h-3 mr-1 ${loading ? 'animate-spin' : ''}`} />
+                Ressincronizar
+              </Button>
+            </div>
+
+            {/* Legenda */}
+            <div className="text-xs text-muted-foreground border-t pt-2">
+              <strong>Fase 3:</strong> Sistema usa trigger automático para acumular tempo pausado.
+              Backend calcula SLA, frontend apenas exibe.
+            </div>
+          </CardContent>
+        </CollapsibleContent>
+      </Collapsible>
     </Card>
   );
 };

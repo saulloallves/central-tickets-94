@@ -64,7 +64,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
   const { suggestion, loading: suggestionLoading, generateSuggestion, markSuggestionUsed } = useAISuggestion(ticketId);
   const { processResponse, isProcessing: responseProcessing } = useResponseProcessor();
   const { user } = useAuth();
-  const { loading: isLoadingRole } = useRole();
+  const { isAdmin, loading: isLoadingRole } = useRole();
   const { optimisticStartAttendance, isTicketPending } = useOptimisticTicketActions();
   const { 
     linkTicketToCrisis, 
@@ -920,22 +920,6 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
               slaPausadoHorario={ticket.sla_pausado_horario || false}
             />
             
-            {/* 🧪 FASE 3: Painel de Debug/Testes */}
-            {process.env.NODE_ENV === 'development' && (
-              <div className="mt-3">
-                <SLADebugPanel
-                  ticketId={ticket.id}
-                  codigoTicket={ticket.codigo_ticket}
-                  slaMinutosRestantes={ticket.sla_minutos_restantes}
-                  slaMinutosTotais={ticket.sla_minutos_totais}
-                  tempoPausadoTotal={ticket.tempo_pausado_total}
-                  slaPausado={ticket.sla_pausado || false}
-                  slaPausadoMensagem={ticket.sla_pausado_mensagem || false}
-                  slaPausadoHorario={ticket.sla_pausado_horario || false}
-                  dataAbertura={ticket.data_abertura}
-                />
-              </div>
-            )}
           </div>
         </div>
 
@@ -1818,6 +1802,21 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                   )}
                 </CardContent>
               </Card>
+
+              {/* 🧪 SLA Debug Panel - Apenas para Admins */}
+              {isAdmin() && (
+                <SLADebugPanel
+                  ticketId={ticket.id}
+                  codigoTicket={ticket.codigo_ticket}
+                  slaMinutosRestantes={ticket.sla_minutos_restantes}
+                  slaMinutosTotais={ticket.sla_minutos_totais}
+                  tempoPausadoTotal={ticket.tempo_pausado_total}
+                  slaPausado={ticket.sla_pausado || false}
+                  slaPausadoMensagem={ticket.sla_pausado_mensagem || false}
+                  slaPausadoHorario={ticket.sla_pausado_horario || false}
+                  dataAbertura={ticket.data_abertura}
+                />
+              )}
 
               {/* Action Buttons */}
               <div className="flex gap-3">
