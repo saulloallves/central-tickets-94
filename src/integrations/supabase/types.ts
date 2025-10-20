@@ -4561,7 +4561,7 @@ export type Database = {
         | "encerrado"
         | "reaberto"
       knowledge_media_type: "texto" | "video" | "pdf" | "link"
-      log_canal: "web" | "whatsapp" | "typebot" | "painel_interno"
+      log_canal: "web" | "whatsapp" | "typebot" | "painel_interno" | "sistema"
       log_tipo:
         | "acao_humana"
         | "acao_ia"
@@ -4770,7 +4770,7 @@ export const Constants = {
         "reaberto",
       ],
       knowledge_media_type: ["texto", "video", "pdf", "link"],
-      log_canal: ["web", "whatsapp", "typebot", "painel_interno"],
+      log_canal: ["web", "whatsapp", "typebot", "painel_interno", "sistema"],
       log_tipo: [
         "acao_humana",
         "acao_ia",
