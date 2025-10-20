@@ -74,8 +74,14 @@ export const useMobileUnitTickets = () => {
         .eq('unidade_id', unidadeData.id)
         .order('data_abertura', { ascending: false });
 
-      if (ticketsError) throw ticketsError;
+      if (ticketsError) {
+        console.error('❌ Erro ao buscar tickets:', ticketsError);
+        console.error('Código do erro:', ticketsError.code);
+        console.error('Detalhes:', ticketsError.details);
+        throw ticketsError;
+      }
 
+      console.log(`✅ Tickets encontrados: ${ticketsData?.length || 0}`);
       setTickets((ticketsData || []) as Ticket[]);
       setError(null);
     } catch (err) {
