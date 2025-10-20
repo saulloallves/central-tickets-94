@@ -65,9 +65,18 @@ export default function TicketChat() {
   }, [ticketId]);
 
   const handleReopenTicket = async () => {
+    if (!senhaWeb) {
+      toast({
+        title: 'Erro',
+        description: 'Senha web não encontrada',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setIsReopening(true);
     try {
-      const result = await reopenTicket(ticketId!);
+      const result = await reopenTicket(ticketId!, senhaWeb);
       if (result.success) {
         // Recarregar dados do ticket
         const { data } = await supabase
