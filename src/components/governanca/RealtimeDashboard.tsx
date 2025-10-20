@@ -24,7 +24,6 @@ import {
 import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
 import { useTicketsRealtime } from "@/hooks/useTicketsRealtime";
 import { useTickets } from "@/hooks/useTickets";
-import { usePresence } from "@/hooks/usePresence";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatDistanceToNow, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -46,17 +45,9 @@ export function RealtimeDashboard({ periodDays = 30 }: RealtimeDashboardProps) {
     status_sla: '',
     equipe_id: ''
   });
-  const { onlineUsers, totalOnline } = usePresence();
   const [lastUpdate, setLastUpdate] = useState(new Date());
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  useEffect(() => {
-    console.log('📊 [DASHBOARD] Presence data update:', {
-      totalOnline,
-      onlineUsers: onlineUsers.map(u => ({ id: u.userId, name: u.name, route: u.route }))
-    });
-  }, [totalOnline, onlineUsers]);
 
   // Function to open ticket modal
   const openTicketModal = (ticket: any) => {
@@ -191,7 +182,7 @@ export function RealtimeDashboard({ periodDays = 30 }: RealtimeDashboardProps) {
       </div>
 
       {/* KPIs Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card className="liquid-glass-card">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -237,22 +228,6 @@ export function RealtimeDashboard({ periodDays = 30 }: RealtimeDashboardProps) {
             <div className="mt-2 flex items-center text-xs text-muted-foreground">
               <Zap className="h-3 w-3 mr-1" />
               Resolução média
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="liquid-glass-card">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Usuários Online</p>
-                <p className="text-2xl font-bold text-foreground">{totalOnline}</p>
-              </div>
-              <Users className="h-8 w-8 text-warning" />
-            </div>
-            <div className="mt-2 flex items-center text-xs text-success">
-              <div className="w-2 h-2 bg-success rounded-full mr-1"></div>
-              Conectados agora
             </div>
           </CardContent>
         </Card>
@@ -473,44 +448,6 @@ export function RealtimeDashboard({ periodDays = 30 }: RealtimeDashboardProps) {
                   <Badge variant="secondary">
                     {team.count} tickets
                   </Badge>
-                </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Online Users */}
-        <Card className="liquid-glass-card">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Users className="h-5 w-5" />
-              <span>Usuários Online</span>
-            </CardTitle>
-            <CardDescription>Atividade em tempo real</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {onlineUsers.length === 0 ? (
-              <p className="text-muted-foreground text-center py-4">Nenhum usuário online</p>
-            ) : (
-              onlineUsers.map((user) => (
-                <div key={user.userId} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-2 h-2 bg-success rounded-full"></div>
-                    <div>
-                      <p className="text-sm font-medium">{user.name}</p>
-                      <p className="text-xs text-muted-foreground">{user.route}</p>
-                    </div>
-                  </div>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <Eye className="h-4 w-4 text-muted-foreground" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        Ativo desde {formatDistanceToNow(new Date(user.timestamp), { addSuffix: true, locale: ptBR })}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
                 </div>
               ))
             )}
