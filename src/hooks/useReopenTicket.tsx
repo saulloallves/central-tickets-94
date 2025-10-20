@@ -30,8 +30,8 @@ export const useReopenTicket = () => {
           status_sla: 'dentro_prazo',
           data_limite_sla: dataLimiteSLA.toISOString(),
           sla_minutos_restantes: slaMinutos,
-          sla_pausado: false,
           sla_pausado_mensagem: false,
+          sla_pausado_horario: false,
           reaberto_count: (ticket.reaberto_count || 0) + 1,
           resolvido_em: null,
           updated_at: now.toISOString()
