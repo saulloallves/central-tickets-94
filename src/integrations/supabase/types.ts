@@ -2485,6 +2485,30 @@ export type Database = {
         }
         Relationships: []
       }
+      system_config: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          key: string
+          updated_at: string | null
+          value: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          key: string
+          updated_at?: string | null
+          value: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          key?: string
+          updated_at?: string | null
+          value?: string
+        }
+        Relationships: []
+      }
       system_settings: {
         Row: {
           created_at: string
@@ -3954,6 +3978,10 @@ export type Database = {
           p_user_id?: string
         }
         Returns: Json
+      }
+      get_service_role_key: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       get_sla_minutes_for_priority: {
         Args: { p_prioridade: Database["public"]["Enums"]["ticket_prioridade"] }
