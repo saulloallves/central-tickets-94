@@ -24,14 +24,20 @@ interface DelayedTicketsTableProps {
 
 export const DelayedTicketsTable = ({ data, onTicketClick }: DelayedTicketsTableProps) => {
   const getPriorityBadge = (priority: string) => {
-    const variants: any = {
-      crise: 'destructive',
-      imediato: 'destructive',
-      alto: 'destructive',
-      medio: 'default',
-      baixo: 'secondary',
-    };
-    return variants[priority] || 'default';
+    const lowerPriority = priority.toLowerCase();
+    if (lowerPriority === 'crise') return 'destructive';
+    if (lowerPriority === 'imediato' || lowerPriority === 'alto') return 'destructive';
+    if (lowerPriority === 'medio' || lowerPriority === 'média') return 'default';
+    return 'secondary';
+  };
+
+  const getPriorityColor = (priority: string) => {
+    const lowerPriority = priority.toLowerCase();
+    if (lowerPriority === 'crise') return 'bg-red-100 text-red-800 border-red-300 dark:bg-red-900/30 dark:text-red-400';
+    if (lowerPriority === 'imediato') return 'bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-900/30 dark:text-orange-400';
+    if (lowerPriority === 'alto') return 'bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900/30 dark:text-yellow-400';
+    if (lowerPriority === 'medio' || lowerPriority === 'média') return 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/30 dark:text-blue-400';
+    return 'bg-slate-100 text-slate-800 border-slate-300 dark:bg-slate-900/30 dark:text-slate-400';
   };
 
   return (
@@ -62,12 +68,14 @@ export const DelayedTicketsTable = ({ data, onTicketClick }: DelayedTicketsTable
                   <TableCell className="font-mono text-sm">{ticket.codigo}</TableCell>
                   <TableCell className="max-w-xs truncate">{ticket.titulo}</TableCell>
                   <TableCell>
-                    <Badge variant={getPriorityBadge(ticket.prioridade)}>
-                      {ticket.prioridade}
+                    <Badge className={getPriorityColor(ticket.prioridade)}>
+                      {ticket.prioridade.toUpperCase()}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-center">
-                    <Badge variant="destructive">{ticket.horas_atrasadas}h</Badge>
+                    <Badge className="bg-red-100 text-red-800 border-red-300 dark:bg-red-900/30 dark:text-red-400">
+                      {ticket.horas_atrasadas}h
+                    </Badge>
                   </TableCell>
                   <TableCell>{ticket.equipe}</TableCell>
                   <TableCell>

@@ -11,9 +11,9 @@ interface SLAData {
 
 export const SLAPerformanceChart = ({ data }: { data: SLAData }) => {
   const chartData = [
-    { name: 'Dentro do Prazo', value: data.tickets_dentro_prazo, color: 'hsl(var(--chart-1))' },
-    { name: 'Vencidos', value: data.tickets_vencidos, color: 'hsl(var(--chart-2))' },
-    { name: 'Próximos de Vencer', value: data.tickets_proximos_vencer, color: 'hsl(var(--chart-3))' },
+    { name: 'Dentro do Prazo', value: data.tickets_dentro_prazo, color: '#22c55e' },
+    { name: 'Vencidos', value: data.tickets_vencidos, color: '#ef4444' },
+    { name: 'Próximos de Vencer', value: data.tickets_proximos_vencer, color: '#f59e0b' },
   ];
 
   return (

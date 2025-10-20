@@ -14,14 +14,17 @@ interface AttendantData {
 
 export const AttendantPerformanceTable = ({ data }: { data: AttendantData[] }) => {
   const getStatusBadge = (status: string) => {
-    const variants: any = {
-      ativo: 'default',
-      pausa: 'secondary',
-      almoco: 'secondary',
-      indisponivel: 'secondary',
-      inativo: 'secondary',
-    };
-    return variants[status] || 'secondary';
+    const lowerStatus = status.toLowerCase();
+    if (lowerStatus === 'ativo') return 'bg-green-100 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-400';
+    if (lowerStatus === 'pausa' || lowerStatus === 'almoco') return 'bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900/30 dark:text-yellow-400';
+    return 'bg-slate-100 text-slate-800 border-slate-300 dark:bg-slate-900/30 dark:text-slate-400';
+  };
+
+  const getResolutionColor = (rate: string) => {
+    const rateNum = parseFloat(rate.replace('%', ''));
+    if (rateNum >= 80) return 'text-green-600 font-bold';
+    if (rateNum >= 60) return 'text-yellow-600 font-bold';
+    return 'text-red-600 font-bold';
   };
 
   return (
@@ -50,16 +53,18 @@ export const AttendantPerformanceTable = ({ data }: { data: AttendantData[] }) =
                 <TableRow key={index}>
                   <TableCell className="font-medium">{attendant.atendente}</TableCell>
                   <TableCell>
-                    <Badge variant={getStatusBadge(attendant.status_atendente)}>
-                      {attendant.status_atendente}
+                    <Badge className={getStatusBadge(attendant.status_atendente)}>
+                      {attendant.status_atendente.toUpperCase()}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-center">{attendant.tickets_atendidos}</TableCell>
                   <TableCell className="text-center">
-                    <Badge variant="default">{attendant.concluidos}</Badge>
+                    <Badge className="bg-green-100 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-400">
+                      {attendant.concluidos}
+                    </Badge>
                   </TableCell>
                   <TableCell className="text-center">{attendant.em_andamento}</TableCell>
-                  <TableCell className="text-center font-semibold">
+                  <TableCell className={`text-center ${getResolutionColor(attendant.taxa_resolucao)}`}>
                     {attendant.taxa_resolucao}
                   </TableCell>
                 </TableRow>

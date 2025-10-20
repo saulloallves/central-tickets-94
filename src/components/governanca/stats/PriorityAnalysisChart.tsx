@@ -34,8 +34,8 @@ export const PriorityAnalysisChart = ({ data }: { data: PriorityData[] }) => {
               <YAxis />
               <Tooltip />
               <Legend />
-              <Bar dataKey="Concluídos" fill="hsl(var(--chart-1))" />
-              <Bar dataKey="Em Aberto" fill="hsl(var(--chart-2))" />
+              <Bar dataKey="Concluídos" fill="#22c55e" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="Em Aberto" fill="#f87171" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

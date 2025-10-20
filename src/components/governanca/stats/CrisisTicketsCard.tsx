@@ -46,7 +46,9 @@ export const CrisisTicketsCard = ({ data, onTicketClick }: CrisisTicketsCardProp
                         {ticket.codigo}
                         <ExternalLink className="ml-1 h-3 w-3" />
                       </Button>
-                      <Badge variant="destructive">CRISE</Badge>
+                      <Badge className="bg-red-100 text-red-800 border-red-300 dark:bg-red-900/30 dark:text-red-400">
+                        CRISE
+                      </Badge>
                     </div>
                     <p className="text-sm mb-2 line-clamp-2">{ticket.descricao}</p>
                     <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">

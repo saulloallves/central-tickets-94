@@ -8,12 +8,23 @@ interface ChannelData {
   percentual: string;
 }
 
-const COLORS = [
-  'hsl(var(--chart-1))',
-  'hsl(var(--chart-2))',
-  'hsl(var(--chart-3))',
-  'hsl(var(--chart-4))',
-  'hsl(var(--chart-5))',
+const CHANNEL_COLORS: Record<string, string> = {
+  'WHATSAPP': '#25D366',
+  'WEB': '#3b82f6',
+  'EMAIL': '#8b5cf6',
+  'TELEFONE': '#f97316',
+  'CHAT': '#06b6d4',
+  'BOT': '#14b8a6',
+  'TYPEBOT': '#14b8a6',
+  'PORTAL': '#3b82f6',
+};
+
+const FALLBACK_COLORS = [
+  '#3b82f6',
+  '#8b5cf6',
+  '#06b6d4',
+  '#f97316',
+  '#eab308',
 ];
 
 export const ChannelAnalysisChart = ({ data }: { data: ChannelData[] }) => {
@@ -39,10 +50,11 @@ export const ChannelAnalysisChart = ({ data }: { data: ChannelData[] }) => {
               <XAxis type="number" />
               <YAxis dataKey="name" type="category" width={100} />
               <Tooltip />
-              <Bar dataKey="Tickets" fill="#8884d8">
-                {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
+              <Bar dataKey="Tickets" radius={[4, 4, 0, 0]}>
+                {chartData.map((entry, index) => {
+                  const color = CHANNEL_COLORS[entry.name] || FALLBACK_COLORS[index % FALLBACK_COLORS.length];
+                  return <Cell key={`cell-${index}`} fill={color} />;
+                })}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
