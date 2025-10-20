@@ -113,13 +113,13 @@ export default function Governanca() {
         <Tabs defaultValue="tempo-real" className="space-y-6">
           <TabsList className="liquid-glass-card p-2">
             <TabsTrigger value="tempo-real" className="flex items-center space-x-2">
-              <span>⚡ Tempo Real</span>
+              <span>Tempo Real</span>
             </TabsTrigger>
             <TabsTrigger value="estatisticas" className="flex items-center space-x-2">
-              <span>📊 Estatísticas</span>
+              <span>Estatísticas</span>
             </TabsTrigger>
             <TabsTrigger value="acessos" className="flex items-center space-x-2">
-              <span>🔐 Acessos & Permissões</span>
+              <span>Acessos & Permissões</span>
             </TabsTrigger>
           </TabsList>
 
