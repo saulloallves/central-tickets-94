@@ -289,7 +289,10 @@ export const useTicketsEdgeFunctions = (filters: TicketFilters) => {
     const stats: TicketStats = {
       total: todaysTickets.length,
       novos: todaysTickets.length,
-      sla_vencido: todaysTickets.filter(t => t.status_sla === 'vencido').length,
+      sla_vencido: ticketsList.filter(t => 
+        t.status_sla === 'vencido' && 
+        t.status !== 'concluido'
+      ).length,
       em_atendimento: todaysTickets.filter(t => t.status === 'em_atendimento').length,
       tempo_medio: 0
     };

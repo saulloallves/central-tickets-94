@@ -211,14 +211,14 @@ const Tickets = () => {
           <Card className="p-2 md:p-0">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 md:pb-2 p-2 md:p-6">
               <CardTitle className="text-xs md:text-sm font-medium flex items-center gap-1">
-                SLA Vencido (Hoje)
+                SLA Vencido
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Info className="h-3 w-3 text-muted-foreground cursor-help" />
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>Tickets abertos hoje com SLA vencido</p>
+                      <p>Total de tickets com SLA vencido (exceto concluídos)</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
