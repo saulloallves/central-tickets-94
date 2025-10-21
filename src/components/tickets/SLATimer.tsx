@@ -35,6 +35,15 @@ export const SLATimer = ({
 
   // Use global SLA timer manager for better performance
   useEffect(() => {
+    console.log(`🐛 [SLATimer] Registrando ${codigoTicket}:`, {
+      ticketId,
+      slaMinutosRestantes,
+      slaMinutosTotais,
+      slaPausado,
+      slaPausadoMensagem,
+      slaPausadoHorario
+    });
+    
     slaTimerManager.register({
       ticketId,
       codigoTicket,
@@ -61,11 +70,10 @@ export const SLATimer = ({
 
   // Formata o tempo em formato legível (ex: "8h restantes", "30 minutos restantes")
   const formatReadableTime = () => {
-    if (slaMinutosRestantes == null) return '';
-    
-    const minutos = Math.abs(slaMinutosRestantes);
-    const horas = Math.floor(minutos / 60);
-    const minutosRestantes = minutos % 60;
+    // ✅ Usa o valor calculado pelo timer manager
+    const totalMinutos = Math.floor(Math.abs(timeRemaining.totalSeconds) / 60);
+    const horas = Math.floor(totalMinutos / 60);
+    const minutosRestantes = totalMinutos % 60;
     
     if (horas > 0) {
       if (minutosRestantes > 0) {
@@ -74,7 +82,7 @@ export const SLATimer = ({
       return `${horas}h restantes`;
     }
     
-    return `${minutos} minutos restantes`;
+    return `${totalMinutos} minutos restantes`;
   };
 
   // ✅ PRIORIDADE 1: Verificar se SLA venceu ANTES de pausado
