@@ -1,5 +1,4 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0';
 // import { wrapAIFunction } from '../_shared/ai-alert-utils.ts';
 import { encontrarDocumentosRelacionados, rerankComLLM, gerarRespostaComContexto } from './rag-engine.ts';
@@ -119,7 +118,7 @@ async function obterSugestaoDeRespostaParaTicket(ticket: any): Promise<TicketRes
   }
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   console.log('📥 Recebendo requisição...');
 
   // Handle CORS preflight requests
