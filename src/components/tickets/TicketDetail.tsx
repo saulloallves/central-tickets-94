@@ -1336,7 +1336,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                                   {formatDistanceToNowInSaoPaulo(message.created_at)}
                                 </span>
                               </div>
-                               <p className="text-sm text-muted-foreground break-words">
+                               <p className="text-sm text-muted-foreground whitespace-pre-line break-words">
                                  {message.mensagem}
                                </p>
                                

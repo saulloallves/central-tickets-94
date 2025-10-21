@@ -87,7 +87,7 @@ export function MobileChatBubble({ message }: MobileChatBubbleProps) {
         style={{ wordBreak: 'break-word' }}
       >
         {/* Texto da mensagem */}
-        <div className="text-sm whitespace-pre-wrap leading-relaxed">
+        <div className="text-sm whitespace-pre-line leading-relaxed break-words">
           {renderMessageWithLinks(message.mensagem, isOutgoing)}
         </div>
 

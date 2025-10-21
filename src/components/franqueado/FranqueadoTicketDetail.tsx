@@ -451,7 +451,7 @@ export function FranqueadoTicketDetail({ ticketId, onClose }: FranqueadoTicketDe
                     : 'bg-muted'
                 }`}
               >
-                <p className="text-sm whitespace-pre-wrap">{message.mensagem}</p>
+                <p className="text-sm whitespace-pre-line break-words">{message.mensagem}</p>
                 
                 {/* Render anexos */}
                 {message.anexos && Array.isArray(message.anexos) && message.anexos.length > 0 && (

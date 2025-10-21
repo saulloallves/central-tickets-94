@@ -209,7 +209,7 @@ export const TicketDetailModal = ({ ticketCode, open, onOpenChange }: TicketDeta
                               {format(new Date(msg.created_at), "dd/MM HH:mm", { locale: ptBR })}
                             </span>
                           </div>
-                          <p className="text-sm whitespace-pre-wrap">{msg.mensagem}</p>
+                          <p className="text-sm whitespace-pre-line break-words">{msg.mensagem}</p>
                         </div>
                       ))}
                   </div>
