@@ -209,7 +209,7 @@ export type Database = {
             foreignKeyName: "ai_feedback_ticket_id_fkey"
             columns: ["ticket_id"]
             isOneToOne: false
-            referencedRelation: "tickets_with_realtime_sla"
+            referencedRelation: "tickets_with_sla_info"
             referencedColumns: ["id"]
           },
         ]
@@ -630,7 +630,7 @@ export type Database = {
             foreignKeyName: "crise_ticket_links_ticket_id_fkey"
             columns: ["ticket_id"]
             isOneToOne: false
-            referencedRelation: "tickets_with_realtime_sla"
+            referencedRelation: "tickets_with_sla_info"
             referencedColumns: ["id"]
           },
         ]
@@ -787,7 +787,7 @@ export type Database = {
             foreignKeyName: "crises_ativas_ticket_id_fkey"
             columns: ["ticket_id"]
             isOneToOne: false
-            referencedRelation: "tickets_with_realtime_sla"
+            referencedRelation: "tickets_with_sla_info"
             referencedColumns: ["id"]
           },
         ]
@@ -1159,7 +1159,7 @@ export type Database = {
             foreignKeyName: "escalation_logs_ticket_id_fkey"
             columns: ["ticket_id"]
             isOneToOne: false
-            referencedRelation: "tickets_with_realtime_sla"
+            referencedRelation: "tickets_with_sla_info"
             referencedColumns: ["id"]
           },
           {
@@ -1173,7 +1173,7 @@ export type Database = {
             foreignKeyName: "fk_escalation_logs_ticket"
             columns: ["ticket_id"]
             isOneToOne: false
-            referencedRelation: "tickets_with_realtime_sla"
+            referencedRelation: "tickets_with_sla_info"
             referencedColumns: ["id"]
           },
           {
@@ -1741,7 +1741,7 @@ export type Database = {
             foreignKeyName: "internal_notifications_related_ticket_id_fkey"
             columns: ["related_ticket_id"]
             isOneToOne: false
-            referencedRelation: "tickets_with_realtime_sla"
+            referencedRelation: "tickets_with_sla_info"
             referencedColumns: ["id"]
           },
         ]
@@ -1811,7 +1811,7 @@ export type Database = {
             foreignKeyName: "knowledge_article_usage_ticket_id_fkey"
             columns: ["ticket_id"]
             isOneToOne: false
-            referencedRelation: "tickets_with_realtime_sla"
+            referencedRelation: "tickets_with_sla_info"
             referencedColumns: ["id"]
           },
         ]
@@ -2042,7 +2042,7 @@ export type Database = {
             foreignKeyName: "knowledge_suggestions_ticket_id_fkey"
             columns: ["ticket_id"]
             isOneToOne: false
-            referencedRelation: "tickets_with_realtime_sla"
+            referencedRelation: "tickets_with_sla_info"
             referencedColumns: ["id"]
           },
         ]
@@ -2357,7 +2357,7 @@ export type Database = {
             foreignKeyName: "fk_notifications_queue_ticket"
             columns: ["ticket_id"]
             isOneToOne: false
-            referencedRelation: "tickets_with_realtime_sla"
+            referencedRelation: "tickets_with_sla_info"
             referencedColumns: ["id"]
           },
           {
@@ -2371,7 +2371,7 @@ export type Database = {
             foreignKeyName: "notifications_queue_ticket_id_fkey"
             columns: ["ticket_id"]
             isOneToOne: false
-            referencedRelation: "tickets_with_realtime_sla"
+            referencedRelation: "tickets_with_sla_info"
             referencedColumns: ["id"]
           },
         ]
@@ -2416,7 +2416,7 @@ export type Database = {
             foreignKeyName: "pausas_sla_ticket_id_fkey"
             columns: ["ticket_id"]
             isOneToOne: false
-            referencedRelation: "tickets_with_realtime_sla"
+            referencedRelation: "tickets_with_sla_info"
             referencedColumns: ["id"]
           },
         ]
@@ -3034,7 +3034,7 @@ export type Database = {
             foreignKeyName: "fk_ticket_mensagens_ticket"
             columns: ["ticket_id"]
             isOneToOne: false
-            referencedRelation: "tickets_with_realtime_sla"
+            referencedRelation: "tickets_with_sla_info"
             referencedColumns: ["id"]
           },
           {
@@ -3055,7 +3055,7 @@ export type Database = {
             foreignKeyName: "ticket_mensagens_ticket_id_fkey"
             columns: ["ticket_id"]
             isOneToOne: false
-            referencedRelation: "tickets_with_realtime_sla"
+            referencedRelation: "tickets_with_sla_info"
             referencedColumns: ["id"]
           },
         ]
@@ -3140,6 +3140,8 @@ export type Database = {
           reaberto_count: number
           resolvido_em: string | null
           resposta_resolucao: string | null
+          sla_escalado_em: string | null
+          sla_escalado_nivel: number | null
           sla_half_time: string | null
           sla_minutos_restantes: number | null
           sla_minutos_totais: number | null
@@ -3186,6 +3188,8 @@ export type Database = {
           reaberto_count?: number
           resolvido_em?: string | null
           resposta_resolucao?: string | null
+          sla_escalado_em?: string | null
+          sla_escalado_nivel?: number | null
           sla_half_time?: string | null
           sla_minutos_restantes?: number | null
           sla_minutos_totais?: number | null
@@ -3232,6 +3236,8 @@ export type Database = {
           reaberto_count?: number
           resolvido_em?: string | null
           resposta_resolucao?: string | null
+          sla_escalado_em?: string | null
+          sla_escalado_nivel?: number | null
           sla_half_time?: string | null
           sla_minutos_restantes?: number | null
           sla_minutos_totais?: number | null
@@ -3866,7 +3872,7 @@ export type Database = {
           },
         ]
       }
-      tickets_with_realtime_sla: {
+      tickets_with_sla_info: {
         Row: {
           arquivos: Json | null
           atendimento_iniciado_em: string | null
@@ -3888,7 +3894,7 @@ export type Database = {
           escalonamento_nivel: number | null
           franqueado_id: string | null
           id: string | null
-          is_overdue: boolean | null
+          is_overdue_calculated: boolean | null
           log_ia: Json | null
           pode_despausar_as_0830: boolean | null
           position: number | null
@@ -3896,8 +3902,9 @@ export type Database = {
           reaberto_count: number | null
           resolvido_em: string | null
           resposta_resolucao: string | null
+          sla_escalado_em: string | null
+          sla_escalado_nivel: number | null
           sla_half_time: string | null
-          sla_minutos_decorridos: number | null
           sla_minutos_restantes: number | null
           sla_minutos_restantes_calculado: number | null
           sla_minutos_totais: number | null
@@ -3905,7 +3912,6 @@ export type Database = {
           sla_pausado_em: string | null
           sla_pausado_horario: boolean | null
           sla_pausado_mensagem: boolean | null
-          sla_segundos_restantes: number | null
           sla_ultima_atualizacao: string | null
           sla_vencido_em: string | null
           status: Database["public"]["Enums"]["ticket_status"] | null
@@ -3917,6 +3923,108 @@ export type Database = {
           ultima_pausa_timestamp: string | null
           unidade_id: string | null
           updated_at: string | null
+        }
+        Insert: {
+          arquivos?: Json | null
+          atendimento_iniciado_em?: string | null
+          atendimento_iniciado_por?: string | null
+          canal_origem?: Database["public"]["Enums"]["canal_origem"] | null
+          canal_resposta?: Database["public"]["Enums"]["canal_resposta"] | null
+          categoria?: Database["public"]["Enums"]["ticket_categoria"] | null
+          codigo_grupo?: string | null
+          codigo_ticket?: string | null
+          colaborador_id?: string | null
+          conversa?: Json | null
+          created_at?: string | null
+          criado_por?: string | null
+          data_abertura?: string | null
+          data_limite_sla?: string | null
+          descricao_problema?: string | null
+          equipe_responsavel_id?: string | null
+          escalonado_para?: string | null
+          escalonamento_nivel?: number | null
+          franqueado_id?: string | null
+          id?: string | null
+          is_overdue_calculated?: never
+          log_ia?: Json | null
+          pode_despausar_as_0830?: boolean | null
+          position?: number | null
+          prioridade?: Database["public"]["Enums"]["ticket_prioridade"] | null
+          reaberto_count?: number | null
+          resolvido_em?: string | null
+          resposta_resolucao?: string | null
+          sla_escalado_em?: string | null
+          sla_escalado_nivel?: number | null
+          sla_half_time?: string | null
+          sla_minutos_restantes?: number | null
+          sla_minutos_restantes_calculado?: never
+          sla_minutos_totais?: number | null
+          sla_pausado?: boolean | null
+          sla_pausado_em?: string | null
+          sla_pausado_horario?: boolean | null
+          sla_pausado_mensagem?: boolean | null
+          sla_ultima_atualizacao?: string | null
+          sla_vencido_em?: string | null
+          status?: Database["public"]["Enums"]["ticket_status"] | null
+          status_sla?: Database["public"]["Enums"]["ticket_sla_status"] | null
+          status_sla_calculado?: never
+          subcategoria?: string | null
+          tempo_pausado_total?: unknown | null
+          titulo?: string | null
+          ultima_pausa_timestamp?: string | null
+          unidade_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          arquivos?: Json | null
+          atendimento_iniciado_em?: string | null
+          atendimento_iniciado_por?: string | null
+          canal_origem?: Database["public"]["Enums"]["canal_origem"] | null
+          canal_resposta?: Database["public"]["Enums"]["canal_resposta"] | null
+          categoria?: Database["public"]["Enums"]["ticket_categoria"] | null
+          codigo_grupo?: string | null
+          codigo_ticket?: string | null
+          colaborador_id?: string | null
+          conversa?: Json | null
+          created_at?: string | null
+          criado_por?: string | null
+          data_abertura?: string | null
+          data_limite_sla?: string | null
+          descricao_problema?: string | null
+          equipe_responsavel_id?: string | null
+          escalonado_para?: string | null
+          escalonamento_nivel?: number | null
+          franqueado_id?: string | null
+          id?: string | null
+          is_overdue_calculated?: never
+          log_ia?: Json | null
+          pode_despausar_as_0830?: boolean | null
+          position?: number | null
+          prioridade?: Database["public"]["Enums"]["ticket_prioridade"] | null
+          reaberto_count?: number | null
+          resolvido_em?: string | null
+          resposta_resolucao?: string | null
+          sla_escalado_em?: string | null
+          sla_escalado_nivel?: number | null
+          sla_half_time?: string | null
+          sla_minutos_restantes?: number | null
+          sla_minutos_restantes_calculado?: never
+          sla_minutos_totais?: number | null
+          sla_pausado?: boolean | null
+          sla_pausado_em?: string | null
+          sla_pausado_horario?: boolean | null
+          sla_pausado_mensagem?: boolean | null
+          sla_ultima_atualizacao?: string | null
+          sla_vencido_em?: string | null
+          status?: Database["public"]["Enums"]["ticket_status"] | null
+          status_sla?: Database["public"]["Enums"]["ticket_sla_status"] | null
+          status_sla_calculado?: never
+          subcategoria?: string | null
+          tempo_pausado_total?: unknown | null
+          titulo?: string | null
+          ultima_pausa_timestamp?: string | null
+          unidade_id?: string | null
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -4014,6 +4122,10 @@ export type Database = {
         Args: { p_by?: string; p_crise_id: string; p_ticket_ids: string[] }
         Returns: undefined
       }
+      adicionar_minutos_uteis: {
+        Args: { p_data_inicio: string; p_minutos: number }
+        Returns: string
+      }
       append_to_ticket_conversa: {
         Args: {
           p_autor: string
@@ -4053,19 +4165,13 @@ export type Database = {
         }
         Returns: undefined
       }
+      calcular_data_limite_sla: {
+        Args: { p_data_abertura: string; p_prioridade: string }
+        Returns: string
+      }
       calcular_minutos_restantes_inicial: {
         Args: { p_ticket_id: string }
         Returns: number
-      }
-      calcular_sla_tempo_real: {
-        Args: { p_ticket_id: string }
-        Returns: {
-          is_overdue: boolean
-          sla_minutos_decorridos: number
-          sla_minutos_restantes: number
-          sla_segundos_restantes: number
-          status_sla_calculado: string
-        }[]
       }
       calcular_tempo_pausado: {
         Args: { p_ticket_id: string }
@@ -4143,10 +4249,6 @@ export type Database = {
         }
         Returns: string
       }
-      decrementar_sla_minutos: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
       fix_missing_colaborador_roles: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -4174,8 +4276,16 @@ export type Database = {
         }
         Returns: number
       }
+      get_business_hour_end: {
+        Args: { p_date: string }
+        Returns: string
+      }
       get_next_business_hour_start: {
         Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      get_next_business_hour_start_v2: {
+        Args: { p_date: string }
         Returns: string
       }
       get_realtime_kpis: {
@@ -4332,6 +4442,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      is_business_hours_check: {
+        Args: { p_date: string }
+        Returns: boolean
+      }
       ivfflat_bit_support: {
         Args: { "": unknown }
         Returns: unknown
@@ -4463,10 +4577,6 @@ export type Database = {
         }[]
       }
       process_overdue_slas: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      process_sla_half_warnings: {
         Args: Record<PropertyKey, never>
         Returns: number
       }
