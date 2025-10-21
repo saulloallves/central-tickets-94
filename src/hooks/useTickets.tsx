@@ -122,7 +122,7 @@ export const useTickets = (filters: TicketFilters) => {
       
       // Enhanced query with equipe join - usando view para SLA em tempo real
       let query = supabase
-        .from('tickets_with_realtime_sla')
+        .from('tickets_with_sla_info')
         .select(`
           *,
           equipes!equipe_responsavel_id(nome),
@@ -171,7 +171,7 @@ export const useTickets = (filters: TicketFilters) => {
         
         // Fallback query without relations to avoid RLS recursion - usando view
         const fallbackQuery = supabase
-          .from('tickets_with_realtime_sla')
+          .from('tickets_with_sla_info')
           .select('*')
           .order('status', { ascending: true })
           .order('position', { ascending: true });

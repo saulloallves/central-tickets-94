@@ -25,7 +25,6 @@ import { useOptimisticTicketActions } from '@/hooks/useOptimisticTicketActions';
 import { useCrisisManagement } from '@/hooks/useCrisisManagement';
 import { ImageModal } from '@/components/ui/image-modal';
 import { SLATimerDetail } from './SLATimerDetail';
-import { SLADebugPanel } from './SLADebugPanel';
 
 import { TicketActions } from './TicketActions';
 import { supabase } from '@/integrations/supabase/client';
@@ -79,7 +78,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
     try {
       // Fetch ticket first using maybeSingle to avoid RLS issues
       const { data: ticketData, error: ticketError } = await supabase
-        .from('tickets_with_realtime_sla')
+        .from('tickets_with_sla_info')
         .select('*')
         .eq('id', ticketId)
         .maybeSingle();
@@ -911,16 +910,8 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
             {/* SLA Timer */}
             <SLATimerDetail
               ticketId={ticket.id}
-              codigoTicket={ticket.codigo_ticket}
-              slaMinutosRestantes={
-                ticket.sla_minutos_restantes_calculado != null 
-                  ? ticket.sla_minutos_restantes_calculado 
-                  : ticket.sla_minutos_restantes
-              }
-              slaMinutosTotais={ticket.sla_minutos_totais}
+              dataLimiteSla={ticket.data_limite_sla}
               status={ticket.status}
-              slaPausado={ticket.sla_pausado || false}
-              slaPausadoMensagem={ticket.sla_pausado_mensagem || false}
               slaPausadoHorario={ticket.sla_pausado_horario || false}
             />
             
@@ -1097,16 +1088,8 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
         <div className="pt-2">
           <SLATimerDetail
             ticketId={ticket.id}
-            codigoTicket={ticket.codigo_ticket}
-            slaMinutosRestantes={
-              ticket.sla_minutos_restantes_calculado != null 
-                ? ticket.sla_minutos_restantes_calculado 
-                : ticket.sla_minutos_restantes
-            }
-            slaMinutosTotais={ticket.sla_minutos_totais}
+            dataLimiteSla={ticket.data_limite_sla}
             status={ticket.status}
-            slaPausado={ticket.sla_pausado || false}
-            slaPausadoMensagem={ticket.sla_pausado_mensagem || false}
             slaPausadoHorario={ticket.sla_pausado_horario || false}
           />
         </div>
@@ -1811,20 +1794,6 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                 </CardContent>
               </Card>
 
-              {/* 🧪 SLA Debug Panel - Apenas para Admins */}
-              {isAdmin() && (
-                <SLADebugPanel
-                  ticketId={ticket.id}
-                  codigoTicket={ticket.codigo_ticket}
-                  slaMinutosRestantes={ticket.sla_minutos_restantes_calculado}
-                  slaMinutosTotais={ticket.sla_minutos_totais}
-                  tempoPausadoTotal={ticket.tempo_pausado_total}
-                  slaPausado={ticket.sla_pausado || false}
-                  slaPausadoMensagem={ticket.sla_pausado_mensagem || false}
-                  slaPausadoHorario={ticket.sla_pausado_horario || false}
-                  dataAbertura={ticket.data_abertura}
-                />
-              )}
 
               {/* Action Buttons */}
               <div className="flex gap-3">

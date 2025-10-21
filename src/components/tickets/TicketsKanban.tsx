@@ -316,16 +316,8 @@ const KanbanTicketCard = memo(({ ticket, isSelected, onSelect, equipes }: Kanban
           /* SLA Timer em tempo real */
           <SLATimer
             ticketId={ticket.id}
-            codigoTicket={ticket.codigo_ticket}
-            slaMinutosRestantes={
-              ticket.sla_minutos_restantes_calculado != null 
-                ? ticket.sla_minutos_restantes_calculado 
-                : ticket.sla_minutos_restantes
-            }
-            slaMinutosTotais={ticket.sla_minutos_totais}
+            dataLimiteSla={ticket.data_limite_sla}
             status={ticket.status}
-            slaPausado={ticket.sla_pausado || false}
-            slaPausadoMensagem={ticket.sla_pausado_mensagem || false}
             slaPausadoHorario={ticket.sla_pausado_horario || false}
           />
         )}

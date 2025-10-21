@@ -43,7 +43,7 @@ export const useSimpleTicketsRealtime = ({
             case 'INSERT':
               // Buscar da view para ter SLA calculado
               const { data: newTicket } = await supabase
-                .from('tickets_with_realtime_sla')
+                .from('tickets_with_sla_info')
                 .select('*')
                 .eq('id', payload.new.id)
                 .single();
@@ -57,7 +57,7 @@ export const useSimpleTicketsRealtime = ({
             case 'UPDATE':
               // ✅ CRÍTICO: Buscar da view para ter SLA atualizado
               const { data: updatedTicket } = await supabase
-                .from('tickets_with_realtime_sla')
+                .from('tickets_with_sla_info')
                 .select('*')
                 .eq('id', payload.new.id)
                 .single();
@@ -103,13 +103,13 @@ export const useSimpleTicketsRealtime = ({
           
           // Buscar ticket atualizado da view
           const { data: ticket } = await supabase
-            .from('tickets_with_realtime_sla')
+            .from('tickets_with_sla_info')
             .select('*')
             .eq('id', payload.new.ticket_id)
             .single();
           
           if (ticket) {
-            console.log(`✅ [FASE 2] Ticket atualizado após mensagem. Pausado: ${ticket.sla_pausado_mensagem}`);
+            console.log(`✅ [FASE 2] Ticket atualizado após mensagem. Pausado horário: ${ticket.sla_pausado_horario}`);
             onTicketUpdate(ticket as any);
           }
         }
