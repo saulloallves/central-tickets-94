@@ -68,7 +68,7 @@ class SLATimerManager {
       
       // Apenas resincronizar com o banco se houver mudança significativa (>1 min)
       if (ticket.slaMinutosRestantes !== existingTicket.lastSyncedMinutes) {
-        const bancoSegundos = (ticket.slaMinutosRestantes || 0) * 60;
+        const bancoSegundos = (ticket.slaMinutosRestantes ?? 0) * 60;
         const diferencaSegundos = Math.abs(bancoSegundos - localSecondsRemaining);
         
         if (diferencaSegundos > 60) {
@@ -87,7 +87,7 @@ class SLATimerManager {
     // ✅ FASE 1: Frontend usa APENAS valor calculado pelo backend
     // Backend já usa trigger automático para acumular tempo_pausado_total
     // View tickets_with_realtime_sla retorna sla_minutos_restantes já correto
-    localSecondsRemaining = (ticket.slaMinutosRestantes || 0) * 60;
+    localSecondsRemaining = (ticket.slaMinutosRestantes ?? 0) * 60;
     
     console.log(`⏱️ [FASE 1] Iniciando timer do ticket ${ticket.codigoTicket}:
       - SLA restante (backend): ${ticket.slaMinutosRestantes} min (${localSecondsRemaining}s)
@@ -154,7 +154,7 @@ class SLATimerManager {
         
         if (shouldResync) {
           const oldValue = ticket.localSecondsRemaining;
-          ticket.localSecondsRemaining = (ticket.slaMinutosRestantes || 0) * 60;
+          ticket.localSecondsRemaining = (ticket.slaMinutosRestantes ?? 0) * 60;
           ticket.lastSyncedMinutes = ticket.slaMinutosRestantes;
           
           if (Math.abs(oldValue - ticket.localSecondsRemaining) > 5) {
