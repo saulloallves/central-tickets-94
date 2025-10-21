@@ -180,7 +180,32 @@ async function checkGroupInDatabase(groupId: string): Promise<boolean> {
       );
       return true;
     } else {
-      console.log(`🚫 Grupo NÃO encontrado para id_grupo_branco: "${groupId}"`);
+      console.log(`🚫 Grupo NÃO encontrado em atendente_unidades: "${groupId}" - tentando fallback`);
+      
+      // 🔄 FALLBACK: Buscar em unidades_whatsapp
+      const { data: whatsappData } = await supabaseAdmin
+        .from("unidades_whatsapp")
+        .select("codigo_grupo, grupo, id_grupo_branco")
+        .eq("id_grupo_branco", groupId)
+        .maybeSingle();
+      
+      if (whatsappData) {
+        console.log(`📱 Grupo encontrado em unidades_whatsapp: ${whatsappData.grupo} - AUTORIZADO`);
+        
+        // Verificar se existe em unidades também
+        const { data: unidadeData } = await supabaseAdmin
+          .from("unidades")
+          .select("codigo_grupo")
+          .eq("codigo_grupo", whatsappData.codigo_grupo)
+          .maybeSingle();
+        
+        if (unidadeData) {
+          console.log(`✅ Unidade ${whatsappData.codigo_grupo} confirmada em unidades - ACESSO PERMITIDO`);
+          return true; // ✅ Autorizado via fallback
+        }
+      }
+      
+      console.log(`🚫 Grupo não encontrado em nenhuma tabela`);
       return false;
     }
   } catch (error) {
