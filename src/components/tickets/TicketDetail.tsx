@@ -79,7 +79,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
     try {
       // Fetch ticket first using maybeSingle to avoid RLS issues
       const { data: ticketData, error: ticketError } = await supabase
-        .from('tickets')
+        .from('tickets_with_realtime_sla')
         .select('*')
         .eq('id', ticketId)
         .maybeSingle();
@@ -912,7 +912,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
             <SLATimerDetail
               ticketId={ticket.id}
               codigoTicket={ticket.codigo_ticket}
-              slaMinutosRestantes={ticket.sla_minutos_restantes}
+              slaMinutosRestantes={ticket.sla_minutos_restantes_calculado ?? ticket.sla_minutos_restantes}
               slaMinutosTotais={ticket.sla_minutos_totais}
               status={ticket.status}
               slaPausado={ticket.sla_pausado || false}
@@ -1094,7 +1094,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
           <SLATimerDetail
             ticketId={ticket.id}
             codigoTicket={ticket.codigo_ticket}
-            slaMinutosRestantes={ticket.sla_minutos_restantes}
+            slaMinutosRestantes={ticket.sla_minutos_restantes_calculado ?? ticket.sla_minutos_restantes}
             slaMinutosTotais={ticket.sla_minutos_totais}
             status={ticket.status}
             slaPausado={ticket.sla_pausado || false}
