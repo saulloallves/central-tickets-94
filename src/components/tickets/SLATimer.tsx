@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useToast } from '@/hooks/use-toast';
 import { slaTimerManager } from '@/lib/sla-timer-manager';
 
 interface SLATimerProps {
@@ -33,8 +32,6 @@ export const SLATimer = ({
     isPaused: boolean;
     totalSeconds: number;
   }>({ hours: 0, minutes: 0, seconds: 0, isOverdue: false, isPaused: false, totalSeconds: 0 });
-  
-  const { toast } = useToast();
 
   // Use global SLA timer manager for better performance
   useEffect(() => {
@@ -48,23 +45,13 @@ export const SLATimer = ({
       slaPausadoMensagem,
       slaPausadoHorario,
       callback: setTimeRemaining,
-      onExpired: (id) => {
-        toast({
-          title: '🚨 SLA Vencido!',
-          description: `Ticket ${codigoTicket} teve o SLA vencido e será escalado automaticamente`,
-          variant: 'destructive',
-        });
-        
-        if (onSLAExpired) {
-          onSLAExpired(id);
-        }
-      }
+      onExpired: onSLAExpired
     });
 
     return () => {
       slaTimerManager.unregister(ticketId, setTimeRemaining);
     };
-  }, [ticketId, codigoTicket, slaMinutosRestantes, slaMinutosTotais, status, slaPausado, slaPausadoMensagem, slaPausadoHorario, onSLAExpired, toast]);
+  }, [ticketId, codigoTicket, slaMinutosRestantes, slaMinutosTotais, status, slaPausado, slaPausadoMensagem, slaPausadoHorario, onSLAExpired]);
 
   if (slaMinutosRestantes == null || status === 'concluido') {
     return null;
