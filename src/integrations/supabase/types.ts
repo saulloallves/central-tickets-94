@@ -4064,7 +4064,7 @@ export type Database = {
           sla_minutos_decorridos: number
           sla_minutos_restantes: number
           sla_segundos_restantes: number
-          status_sla: string
+          status_sla_calculado: string
         }[]
       }
       calcular_tempo_pausado: {
