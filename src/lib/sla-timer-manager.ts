@@ -66,9 +66,16 @@ class SLATimerManager {
       
       console.log(`⏱️ Registrando instância adicional do ticket ${ticket.codigoTicket} (refCount: ${existingTicket.refCount})`);
       
-      // Apenas resincronizar com o banco se houver mudança significativa (>1 min)
-      if (ticket.slaMinutosRestantes !== existingTicket.lastSyncedMinutes) {
-        const bancoSegundos = (ticket.slaMinutosRestantes ?? 0) * 60;
+      // ✅ Sempre atualizar propriedades do ticket (mas preservar contador)
+      existingTicket.slaPausado = ticket.slaPausado;
+      existingTicket.slaPausadoMensagem = ticket.slaPausadoMensagem;
+      existingTicket.slaPausadoHorario = ticket.slaPausadoHorario;
+      existingTicket.status = ticket.status;
+      
+      // Apenas resincronizar contador se SLA mudou E não é null
+      if (ticket.slaMinutosRestantes != null && 
+          ticket.slaMinutosRestantes !== existingTicket.lastSyncedMinutes) {
+        const bancoSegundos = ticket.slaMinutosRestantes * 60;
         const diferencaSegundos = Math.abs(bancoSegundos - localSecondsRemaining);
         
         if (diferencaSegundos > 60) {
@@ -87,7 +94,7 @@ class SLATimerManager {
     // ✅ FASE 1: Frontend usa APENAS valor calculado pelo backend
     // Backend já usa trigger automático para acumular tempo_pausado_total
     // View tickets_with_realtime_sla retorna sla_minutos_restantes já correto
-    localSecondsRemaining = (ticket.slaMinutosRestantes ?? 0) * 60;
+    localSecondsRemaining = ticket.slaMinutosRestantes != null ? ticket.slaMinutosRestantes * 60 : 0;
     
     console.log(`⏱️ [FASE 1] Iniciando timer do ticket ${ticket.codigoTicket}:
       - SLA restante (backend): ${ticket.slaMinutosRestantes} min (${localSecondsRemaining}s)
@@ -152,9 +159,9 @@ class SLATimerManager {
         // ✅ FASE 1: Resincronizar com banco a cada 10 segundos (fonte de verdade)
         const shouldResync = tickCounter % 10 === 0 || ticket.lastSyncedMinutes !== ticket.slaMinutosRestantes;
         
-        if (shouldResync) {
+        if (shouldResync && ticket.slaMinutosRestantes != null) {
           const oldValue = ticket.localSecondsRemaining;
-          ticket.localSecondsRemaining = (ticket.slaMinutosRestantes ?? 0) * 60;
+          ticket.localSecondsRemaining = ticket.slaMinutosRestantes * 60;
           ticket.lastSyncedMinutes = ticket.slaMinutosRestantes;
           
           if (Math.abs(oldValue - ticket.localSecondsRemaining) > 5) {
