@@ -1,5 +1,4 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -176,11 +175,6 @@ async function corrigirRespostaComRAGv4(mensagem: string, documentos: any[]) {
 
   try {
     // Buscar configurações de IA para obter o prompt customizável
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-
     const { data: aiSettings, error: settingsError } = await supabase
       .from('faq_ai_settings')
       .select('prompt_format_response, usar_base_conhecimento_formatacao')
