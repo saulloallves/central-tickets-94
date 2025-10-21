@@ -72,13 +72,16 @@ class SLATimerManager {
       existingTicket.slaPausadoHorario = ticket.slaPausadoHorario;
       existingTicket.status = ticket.status;
       
-      // Apenas resincronizar contador se SLA mudou E não é null
+      // ✅ CRÍTICO: Apenas resincronizar se o valor mudou SIGNIFICATIVAMENTE
       if (ticket.slaMinutosRestantes != null && 
           ticket.slaMinutosRestantes !== existingTicket.lastSyncedMinutes) {
-        const bancoSegundos = ticket.slaMinutosRestantes * 60;
+        const bancoSegundos = ticket.slaMinutosRestantes * 60; // ✅ Preservar negativo
         const diferencaSegundos = Math.abs(bancoSegundos - localSecondsRemaining);
         
-        if (diferencaSegundos > 60) {
+        // ✅ Só resincronizar se diferença > 60 segundos OU se o valor mudou de sinal
+        if (diferencaSegundos > 60 || 
+            (bancoSegundos < 0 && localSecondsRemaining >= 0) ||
+            (bancoSegundos >= 0 && localSecondsRemaining < 0)) {
           console.log(`🔄 Resincronizando timer ${ticket.codigoTicket}:`, {
             bancoSegundos,
             localSecondsRemaining,
@@ -241,13 +244,17 @@ class SLATimerManager {
     });
     
     if (isSLAOverdue) {
-      const totalSeconds = ticket.localSecondsRemaining; // Valor negativo
-      const absSeconds = Math.abs(totalSeconds);
+      // ✅ Se localSecondsRemaining for exatamente 0, usar propMinutosRestantes
+      const effectiveSeconds = ticket.localSecondsRemaining === 0 && ticket.slaMinutosRestantes != null
+        ? ticket.slaMinutosRestantes * 60
+        : ticket.localSecondsRemaining;
+      
+      const absSeconds = Math.abs(effectiveSeconds);
       const hours = Math.floor(absSeconds / 3600);
       const minutes = Math.floor((absSeconds % 3600) / 60);
       const seconds = absSeconds % 60;
       
-      console.log(`🐛 [OVERDUE] ${ticket.codigoTicket}: ${hours}h ${minutes}min (${totalSeconds}s total)`);
+      console.log(`🐛 [OVERDUE] ${ticket.codigoTicket}: ${hours}h ${minutes}min (${effectiveSeconds}s total)`);
       
       return { 
         hours, 
@@ -255,7 +262,7 @@ class SLATimerManager {
         seconds, 
         isOverdue: true, 
         isPaused: false,
-        totalSeconds // Negativo para indicar quanto tempo está vencido
+        totalSeconds: effectiveSeconds // ✅ Garantir que seja negativo
       };
     }
 
