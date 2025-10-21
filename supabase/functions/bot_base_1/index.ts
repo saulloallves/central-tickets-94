@@ -207,8 +207,49 @@ async function checkUnitRegistration(groupId: string): Promise<{
       .maybeSingle();
 
     if (!atendenteData) {
-      console.log(`🚫 Grupo não encontrado em atendente_unidades`);
-      return { isRegistered: false };
+      console.log(`🚫 Grupo não encontrado em atendente_unidades - tentando fallback`);
+      
+      // 🔄 FALLBACK: Buscar diretamente em unidades_whatsapp
+      const { data: whatsappData } = await supabaseAdmin
+        .from("unidades_whatsapp")
+        .select("codigo_grupo, grupo, id_grupo_branco")
+        .eq("id_grupo_branco", groupId)
+        .maybeSingle();
+      
+      if (!whatsappData) {
+        console.log(`🚫 Grupo não encontrado em unidades_whatsapp também`);
+        return { isRegistered: false };
+      }
+      
+      console.log(`📱 Grupo encontrado em unidades_whatsapp: ${whatsappData.grupo}`);
+      
+      // Verificar se existe em unidades
+      const { data: unidadeData } = await supabaseAdmin
+        .from("unidades")
+        .select("codigo_grupo, grupo, id_grupo_branco")
+        .eq("codigo_grupo", whatsappData.codigo_grupo)
+        .maybeSingle();
+      
+      if (!unidadeData) {
+        console.log(`🚫 Unidade ${whatsappData.codigo_grupo} não encontrada na tabela unidades`);
+        return { isRegistered: false };
+      }
+      
+      // ✅ Encontrou! Atualizar id_grupo_branco em unidades se estiver faltando
+      if (!unidadeData.id_grupo_branco) {
+        console.log(`🔄 Atualizando id_grupo_branco em unidades para ${whatsappData.codigo_grupo}`);
+        await supabaseAdmin
+          .from("unidades")
+          .update({ id_grupo_branco: whatsappData.id_grupo_branco })
+          .eq("codigo_grupo", whatsappData.codigo_grupo);
+      }
+      
+      // Retornar como registrado
+      return {
+        isRegistered: true,
+        codigoGrupo: unidadeData.codigo_grupo,
+        nomeGrupo: unidadeData.grupo,
+      };
     }
 
     console.log(
