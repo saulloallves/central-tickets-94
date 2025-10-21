@@ -4464,7 +4464,7 @@ export type Database = {
       }
       process_overdue_slas: {
         Args: Record<PropertyKey, never>
-        Returns: undefined
+        Returns: number
       }
       process_sla_half_warnings: {
         Args: Record<PropertyKey, never>
