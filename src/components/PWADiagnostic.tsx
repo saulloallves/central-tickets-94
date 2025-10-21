@@ -31,6 +31,8 @@ export const PWADiagnostic = () => {
 
   const clearCacheAndReload = async () => {
     try {
+      console.log('🧹 Limpeza manual de cache iniciada...');
+      
       // Limpar todos os caches
       if ('caches' in window) {
         const cacheNames = await caches.keys();
@@ -43,21 +45,11 @@ export const PWADiagnostic = () => {
         await Promise.all(registrations.map(reg => reg.unregister()));
       }
 
-      toast({
-        title: "Cache Limpo ✅",
-        description: "A página será recarregada em 2 segundos...",
-      });
-
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
+      console.log('✅ Cache limpo, recarregando...');
+      window.location.reload();
     } catch (error) {
-      console.error('Erro ao limpar cache:', error);
-      toast({
-        title: "Erro ao Limpar Cache",
-        description: "Tente recarregar a página manualmente (Ctrl+Shift+R)",
-        variant: "destructive",
-      });
+      console.error('❌ Erro ao limpar cache:', error);
+      window.location.reload();
     }
   };
 
