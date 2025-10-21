@@ -42,6 +42,12 @@ export interface Ticket {
   atendimento_iniciado_em?: string;
   created_at: string;
   updated_at: string;
+  // Campos calculados da view tickets_with_realtime_sla
+  sla_minutos_restantes_calculado?: number;
+  sla_segundos_restantes?: number;
+  sla_minutos_decorridos?: number;
+  status_sla_calculado?: string;
+  is_overdue?: boolean;
   // Relations
   unidades?: { id: string; grupo: string; cidade?: string; uf?: string };
   colaboradores?: { nome_completo: string };
@@ -114,9 +120,9 @@ export const useTickets = (filters: TicketFilters) => {
       console.log('🔄 fetchTickets: iniciando busca de tickets...');
       setLoading(true);
       
-      // Enhanced query with equipe join
+      // Enhanced query with equipe join - usando view para SLA em tempo real
       let query = supabase
-        .from('tickets')
+        .from('tickets_with_realtime_sla')
         .select(`
           *,
           equipes!equipe_responsavel_id(nome),
@@ -163,9 +169,9 @@ export const useTickets = (filters: TicketFilters) => {
       if (error && error.code === '42P17') {
         console.warn('RLS recursion detected, falling back to simple query:', error.message);
         
-        // Fallback query without relations to avoid RLS recursion
+        // Fallback query without relations to avoid RLS recursion - usando view
         const fallbackQuery = supabase
-          .from('tickets')
+          .from('tickets_with_realtime_sla')
           .select('*')
           .order('status', { ascending: true })
           .order('position', { ascending: true });
