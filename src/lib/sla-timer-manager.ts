@@ -202,7 +202,7 @@ class SLATimerManager {
   }
 
   private calculateTimeRemaining(ticket: SLATicket) {
-    if (!ticket.slaMinutosRestantes || ticket.status === 'concluido') {
+    if (ticket.slaMinutosRestantes == null || ticket.status === 'concluido') {
       return { hours: 0, minutes: 0, seconds: 0, isOverdue: false, isPaused: false, totalSeconds: 0 };
     }
 
