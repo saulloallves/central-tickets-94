@@ -71,7 +71,23 @@ serve(async (req) => {
       .order('created_at', { ascending: true })  // ✅ ORDER adicionado para evitar PGRST109
       .limit(20);
 
-    console.log(`📊 Encontradas ${pendingNotifications?.length || 0} notificações para processar`);
+    console.log(`\n📊 ===== NOTIFICAÇÕES SELECIONADAS =====`);
+    console.log(`📊 Total encontrado: ${pendingNotifications?.length || 0}`);
+    
+    if (pendingNotifications && pendingNotifications.length > 0) {
+      console.log(`📋 IDs das notificações:`, pendingNotifications.map(n => n.id));
+      console.log(`🎫 Tickets associados:`, pendingNotifications.map(n => n.ticket_id));
+      
+      // ✅ Verificar duplicatas
+      const ticketIds = pendingNotifications.map(n => n.ticket_id);
+      const uniqueTickets = new Set(ticketIds);
+      if (ticketIds.length !== uniqueTickets.size) {
+        console.warn(`⚠️ ATENÇÃO: Detectadas notificações duplicadas para o mesmo ticket!`);
+        console.warn(`⚠️ Total: ${ticketIds.length}, Únicos: ${uniqueTickets.size}`);
+        const duplicates = ticketIds.filter((id, index) => ticketIds.indexOf(id) !== index);
+        console.warn(`⚠️ Tickets duplicados:`, duplicates);
+      }
+    }
 
     if (notificationError) {
       console.error('❌ Erro ao buscar notificações pendentes:', notificationError);
@@ -106,9 +122,16 @@ serve(async (req) => {
     // Processar cada notificação pendente
     for (const notification of pendingNotifications || []) {
       try {
-        console.log(`📤 Processando notificação ${notification.type} para ticket ${notification.ticket_id}`);
+        console.log(`\n📤 ===== PROCESSANDO NOTIFICAÇÃO ${notification.id} =====`);
+        console.log(`📤 Tipo: ${notification.type}`);
+        console.log(`🎫 Ticket: ${notification.ticket_id}`);
+        console.log(`📅 Criada em: ${notification.created_at}`);
+        console.log(`🔢 Tentativas: ${notification.attempts || 0}`);
 
         // Chamar a função process-notifications passando o notification como payload
+        console.log(`🚀 Invocando process-notifications...`);
+        const invokeStart = Date.now();
+        
         const { error: processError } = await supabaseClient.functions.invoke('process-notifications', {
           body: {
             type: notification.type,
@@ -119,6 +142,9 @@ serve(async (req) => {
             }
           }
         });
+        
+        const invokeDuration = Date.now() - invokeStart;
+        console.log(`⏱️ Invocação completada em ${invokeDuration}ms`);
 
         if (processError) {
           console.error(`❌ Erro ao processar notificação ${notification.id}:`, processError);

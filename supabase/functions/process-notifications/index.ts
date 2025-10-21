@@ -578,6 +578,33 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
+    // ✅ GUARD: Verificar se notificação já foi processada (evita mensagens duplicadas)
+    if (notificationId) {
+      const { data: existingNotification, error: checkError } = await supabase
+        .from('notifications_queue')
+        .select('sent_to_whatsapp, status, attempts')
+        .eq('id', notificationId)
+        .single();
+      
+      if (!checkError && existingNotification) {
+        if (existingNotification.sent_to_whatsapp === true) {
+          console.warn(`⚠️ GUARD: Notificação ${notificationId} JÁ FOI ENVIADA ao WhatsApp. Abortando reprocessamento.`);
+          console.warn(`⚠️ Status atual: ${existingNotification.status}, Tentativas: ${existingNotification.attempts}`);
+          
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              message: 'Notificação já foi enviada ao WhatsApp',
+              notification_id: notificationId,
+              already_sent: true
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+          );
+        }
+        console.log(`✅ GUARD: Notificação ${notificationId} ainda não foi enviada (sent_to_whatsapp: ${existingNotification.sent_to_whatsapp})`);
+      }
+    }
+
     // Handle test connection separately (no ticket needed)
     if (type === 'test_connection') {
       console.log('Testing Z-API connection');
@@ -1333,20 +1360,25 @@ serve(async (req) => {
         let tempoVencidoSLA: string;
         
         if (ticket.sla_minutos_restantes > 0) {
-          // Ainda não venceu
+          // Ainda não venceu (não deveria estar em sla_breach mas prevenir)
           const horas = Math.floor(ticket.sla_minutos_restantes / 60);
           const minutos = ticket.sla_minutos_restantes % 60;
           tempoVencidoSLA = `${horas}h ${minutos}min restantes`;
         } else if (ticket.sla_vencido_em) {
-          // Calcular há quanto tempo venceu
+          // ✅ IDEAL: Calcular há quanto tempo venceu usando timestamp preciso
           const tempoVencidoMs = Date.now() - new Date(ticket.sla_vencido_em).getTime();
           const minutosVencido = Math.floor(tempoVencidoMs / 60000);
           const horas = Math.floor(minutosVencido / 60);
           const minutos = minutosVencido % 60;
           tempoVencidoSLA = `Vencido há ${horas}h ${minutos}min`;
+          console.log(`✅ Tempo vencido calculado via sla_vencido_em: ${tempoVencidoSLA}`);
         } else {
-          // Fallback (não deveria acontecer)
-          tempoVencidoSLA = 'SLA vencido';
+          // ⚠️ FALLBACK: sla_vencido_em está NULL, usar sla_minutos_restantes negativo
+          const minutosAtrasado = Math.abs(ticket.sla_minutos_restantes);
+          const horas = Math.floor(minutosAtrasado / 60);
+          const minutos = minutosAtrasado % 60;
+          tempoVencidoSLA = `Vencido há ~${horas}h ${minutos}min`;
+          console.warn(`⚠️ sla_vencido_em é NULL para ticket ${ticket.codigo_ticket}, usando fallback com sla_minutos_restantes: ${tempoVencidoSLA}`);
         }
 
         const mensagemSLABreach = processTemplate(templateSLABreach, {
