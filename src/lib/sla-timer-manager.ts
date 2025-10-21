@@ -99,7 +99,14 @@ class SLATimerManager {
     // ✅ FASE 1: Frontend usa APENAS valor calculado pelo backend
     // Backend já usa trigger automático para acumular tempo_pausado_total
     // View tickets_with_realtime_sla retorna sla_minutos_restantes já correto
-    localSecondsRemaining = ticket.slaMinutosRestantes != null ? ticket.slaMinutosRestantes * 60 : 0;
+    // ✅ CRÍTICO: Preservar valores negativos (SLA vencido)
+    if (ticket.slaMinutosRestantes != null) {
+      localSecondsRemaining = ticket.slaMinutosRestantes * 60; // Pode ser negativo!
+      console.log(`⏱️ [INIT] Inicializando ${ticket.codigoTicket}: ${ticket.slaMinutosRestantes}min = ${localSecondsRemaining}s`);
+    } else {
+      localSecondsRemaining = 0;
+      console.log(`⏱️ [INIT] ${ticket.codigoTicket}: slaMinutosRestantes é null, iniciando com 0`);
+    }
     
     console.log(`⏱️ [FASE 1] Iniciando timer do ticket ${ticket.codigoTicket}:
       - SLA restante (backend): ${ticket.slaMinutosRestantes} min (${localSecondsRemaining}s)
@@ -227,12 +234,20 @@ class SLATimerManager {
     // ✅ FASE 3: Lógica simplificada usando função auxiliar
     const isSLAOverdue = ticket.localSecondsRemaining <= 0;
     
+    console.log(`🐛 [calculateTimeRemaining] ${ticket.codigoTicket}:`, {
+      localSecondsRemaining: ticket.localSecondsRemaining,
+      isSLAOverdue,
+      propMinutosRestantes: ticket.slaMinutosRestantes
+    });
+    
     if (isSLAOverdue) {
       const totalSeconds = ticket.localSecondsRemaining; // Valor negativo
       const absSeconds = Math.abs(totalSeconds);
       const hours = Math.floor(absSeconds / 3600);
       const minutes = Math.floor((absSeconds % 3600) / 60);
       const seconds = absSeconds % 60;
+      
+      console.log(`🐛 [OVERDUE] ${ticket.codigoTicket}: ${hours}h ${minutes}min (${totalSeconds}s total)`);
       
       return { 
         hours, 
