@@ -5,6 +5,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0';
 import { openAI } from './openai-client.ts';
+import { getAdvancedSettings, buildAdvancedPrompt } from '../_shared/advanced-classifier.ts';
 // import { wrapAIFunction } from '../_shared/ai-alert-utils.ts';
 
 const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
@@ -151,9 +152,20 @@ export async function classifyTicket(message: string, equipes: any[]): Promise<C
       }
     }
 
-    const equipesDisponiveis = equipes?.map(e => `- ID: ${e.id} | Nome: ${e.nome}\n  Especialidade: ${e.introducao || 'Sem especialidades definidas'}`).join('\n\n') || 'Nenhuma equipe disponível';
+    // Load advanced classifier settings
+    const advancedSettings = await getAdvancedSettings(supabase);
 
-    const analysisPrompt = `
+    // Build prompt using advanced settings or fallback to default
+    let analysisPrompt: string;
+    
+    if (advancedSettings) {
+      console.log('✅ Using advanced classifier prompt with ITIL matrix');
+      analysisPrompt = buildAdvancedPrompt(message, advancedSettings, equipes);
+    } else {
+      console.log('⚠️ No advanced settings - using default prompt');
+      const equipesDisponiveis = equipes?.map(e => `- ID: ${e.id} | Nome: ${e.nome}\n  Especialidade: ${e.introducao || 'Sem especialidades definidas'}`).join('\n\n') || 'Nenhuma equipe disponível';
+
+      analysisPrompt = `
 Você é um especialista em classificação de tickets de suporte técnico da Cresci & Perdi.
 
 Analise este ticket e forneça:
@@ -206,6 +218,7 @@ REGRAS CRÍTICAS:
 - Retorne SEMPRE o UUID completo da equipe, nunca o nome
 - Use ${CONCIERGE_OPERACAO_ID} quando tiver dúvida
 `;
+    }
 
     const requestBody = {
       model: modelToUse,

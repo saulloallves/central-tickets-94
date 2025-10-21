@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { getAdvancedSettings, detectEmergencyKeywords } from '../_shared/advanced-classifier.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -117,9 +118,25 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Load advanced classifier settings
+    const advancedSettings = await getAdvancedSettings(supabase);
+
     // Validate and normalize priority
     const validPriorities = ['baixo', 'medio', 'alto', 'imediato', 'crise'];
     let finalPriority = ticketData.prioridade || 'baixo';
+    
+    // Detect emergency keywords and escalate priority if needed
+    if (advancedSettings?.emergency_keywords && ticketData.descricao_problema) {
+      const isEmergency = detectEmergencyKeywords(
+        ticketData.descricao_problema,
+        advancedSettings.emergency_keywords
+      );
+      
+      if (isEmergency && finalPriority === 'baixo') {
+        console.log('🚨 Emergency keywords detected - escalating priority to imediato');
+        finalPriority = 'imediato';
+      }
+    }
     
     if (!validPriorities.includes(finalPriority)) {
       console.warn(`Invalid priority "${finalPriority}", using default`);

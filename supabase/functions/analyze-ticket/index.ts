@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { getAdvancedSettings, buildAdvancedPrompt } from '../_shared/advanced-classifier.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -136,13 +137,26 @@ serve(async (req) => {
 
     console.log('Equipes ativas encontradas:', JSON.stringify(equipesAtivas, null, 2));
 
-    const equipesDisponiveis = equipesAtivas?.map(e => `- ${e.nome}: ${e.introducao || 'Sem especialidades definidas'}`).join('\n') || 'Nenhuma equipe disponível';
+    // Load advanced classifier settings
+    const advancedSettings = await getAdvancedSettings(supabase);
 
-    // Prompt para análise completa incluindo título
-    const analysisPrompt = `
-Você é um especialista em classificação de tickets de suporte técnico da Cresci & Perdi.
+    // Use advanced model settings if available
+    if (advancedSettings?.ai_model_settings?.classification_model) {
+      model = advancedSettings.ai_model_settings.classification_model;
+      console.log('🔧 Using custom classification model:', model);
+    }
 
-Analise este ticket e forneça:
+    // Build prompt using advanced settings or fallback to default
+    let analysisPrompt: string;
+    
+    if (advancedSettings) {
+      console.log('✅ Using advanced classifier prompt with ITIL matrix');
+      analysisPrompt = buildAdvancedPrompt(descricao, advancedSettings, equipesAtivas || []);
+    } else {
+      console.log('⚠️ No advanced settings - using default prompt');
+      const equipesDisponiveis = equipesAtivas?.map(e => `- ${e.nome}: ${e.introducao || 'Sem especialidades definidas'}`).join('\n') || 'Nenhuma equipe disponível';
+      
+      analysisPrompt = `
 Você é um especialista em classificação de tickets de suporte técnico da Cresci & Perdi.
 
 Analise este ticket e forneça:
@@ -185,7 +199,8 @@ Responda APENAS em formato JSON válido:
 }
 
 CRÍTICO: Use APENAS estas 5 prioridades: baixo, medio, alto, imediato, crise
-`
+`;
+    }
 
     console.log('Calling AI API for ticket analysis with provider:', settings.api_provider, 'model:', model)
     
