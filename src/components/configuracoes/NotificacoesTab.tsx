@@ -13,8 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ConfiguracaoOrigemTab } from "./ConfiguracaoOrigemTab";
 import { SLANotificationTest } from "./SLANotificationTest";
-import { NotificationQueueManager } from './NotificationQueueManager';
-import { ProcessPendingButton } from '@/components/notifications/ProcessPendingButton';
+import { NotificationLogsViewer } from './NotificationLogsViewer';
 
 interface ZApiConfig {
   id?: string;
@@ -247,26 +246,8 @@ export function NotificacoesTab() {
       {/* Seção 0: Teste de Notificação SLA */}
       <SLANotificationTest />
 
-      {/* Seção 0.5: Fila de Notificações */}
-      <NotificationQueueManager />
-
-      {/* Seção 0.6: Processar Notificações Pendentes */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base font-medium">Processar Notificações Pendentes</CardTitle>
-          <CardDescription className="text-sm">
-            Force o processamento de notificações que estão na fila
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-4">
-            <ProcessPendingButton />
-            <span className="text-sm text-muted-foreground">
-              Use este botão para processar manualmente notificações pendentes no WhatsApp
-            </span>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Seção 0.5: Log de Notificações Enviadas */}
+      <NotificationLogsViewer />
 
       {/* Seção 1: Origem dos Números */}
       <Card>
