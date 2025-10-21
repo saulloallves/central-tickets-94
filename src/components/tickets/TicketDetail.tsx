@@ -74,109 +74,133 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
   
   const { toast } = useToast();
 
-  const fetchTicketDetails = async (retries = 3, delayMs = 300) => {
-    let lastError = null;
-    
-    for (let attempt = 1; attempt <= retries; attempt++) {
+  const fetchTicketDetails = async () => {
+    setLoading(true);
+    let ticketData = null;
+
+    // ESTRATÉGIA 1: Tentar buscar da view tickets_with_sla_info (preferencial)
+    try {
+      console.log('🔍 [1/3] Tentando buscar de tickets_with_sla_info...');
+      const { data, error } = await supabase
+        .from('tickets_with_sla_info')
+        .select('*')
+        .eq('id', ticketId)
+        .maybeSingle();
+
+      if (error) {
+        console.error('❌ RLS Error na view - Detalhes:', {
+          ticketId,
+          userId: user?.id,
+          error: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint
+        });
+      } else if (data) {
+        console.log('✅ [1/3] Ticket encontrado na view');
+        ticketData = data;
+      } else {
+        console.warn('⚠️ [1/3] View retornou null - possível filtro RLS');
+      }
+    } catch (err: any) {
+      console.error('❌ [1/3] Erro inesperado na view:', err);
+    }
+
+    // ESTRATÉGIA 2: Fallback - Tentar buscar direto da tabela tickets
+    if (!ticketData) {
       try {
-        // Fetch ticket first using maybeSingle to avoid RLS issues
-        const { data: ticketData, error: ticketError } = await supabase
-          .from('tickets_with_sla_info')
-          .select('*')
+        console.log('🔍 [2/3] Fallback: tentando tabela tickets...');
+        const { data, error } = await supabase
+          .from('tickets')
+          .select(`
+            *,
+            unidades (grupo, id),
+            colaboradores (nome_completo),
+            franqueados (name),
+            profiles (nome_completo),
+            equipes (nome)
+          `)
           .eq('id', ticketId)
           .maybeSingle();
 
-        if (ticketError) {
-          lastError = ticketError;
-          console.warn(`Tentativa ${attempt}/${retries} falhou:`, ticketError);
-          
-          // Se não for o último retry, aguardar e tentar novamente
-          if (attempt < retries) {
-            await new Promise(resolve => setTimeout(resolve, delayMs));
-            delayMs *= 2; // Backoff exponencial: 300ms, 600ms, 1200ms
-            continue;
-          }
-          
-          // Último retry falhou
-          console.error('Error fetching ticket após retries:', ticketError);
-          toast({
-            title: "Erro ao carregar ticket",
-            description: "Não foi possível carregar os detalhes do ticket. Tente novamente.",
-            variant: "destructive",
+        if (error) {
+          console.error('❌ RLS Error na tabela - Detalhes:', {
+            ticketId,
+            userId: user?.id,
+            error: error.message,
+            code: error.code,
+            details: error.details,
+            hint: error.hint
           });
-          setLoading(false);
-          return;
+        } else if (data) {
+          console.log('✅ [2/3] Ticket encontrado na tabela tickets');
+          
+          // Usar dados da tabela sem calcular SLA (será null)
+          ticketData = {
+            ...data,
+            sla_status: null
+          };
+        } else {
+          console.warn('⚠️ [2/3] Tabela retornou null');
         }
+      } catch (err: any) {
+        console.error('❌ [2/3] Erro inesperado na tabela:', err);
+      }
+    }
 
-        if (!ticketData) {
-          console.error('Ticket not found or no permission:', ticketId);
-          toast({
-            title: "Ticket não encontrado",
-            description: "O ticket não existe ou você não tem permissão para visualizá-lo.",
-            variant: "destructive",
-          });
-          setLoading(false);
-          return;
-        }
-        
-        // Sucesso! Sair do loop de retry
-        lastError = null;
+    // ESTRATÉGIA 3: Último recurso - Edge function com service role (futuro)
+    if (!ticketData) {
+      console.error('❌ [3/3] Todas as estratégias falharam');
+      console.warn('⚠️ Possíveis causas:');
+      console.warn('  - RLS policies não permitem acesso');
+      console.warn('  - Ticket não existe');
+      console.warn('  - Permissões do usuário insuficientes');
+      console.warn('  - Auth context não carregado');
+      
+      toast({
+        title: "Erro ao carregar ticket",
+        description: "Você pode não ter permissão para visualizar este ticket.",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
 
-        // Fetch related data separately to avoid RLS issues
-        const [unidadeRes, colaboradorRes, franqueadoRes, profileRes, equipeRes, atendimentoIniciadoRes] = await Promise.all([
+    // Sucesso! Buscar dados relacionados
+    try {
+      const [unidadeRes, colaboradorRes, franqueadoRes, profileRes, equipeRes, atendimentoIniciadoRes] = await Promise.all([
         supabase.from('unidades').select('grupo, id').eq('id', ticketData.unidade_id).maybeSingle(),
         ticketData.colaborador_id ? supabase.from('colaboradores').select('nome_completo').eq('id', ticketData.colaborador_id).maybeSingle() : Promise.resolve({ data: null }),
         ticketData.franqueado_id ? supabase.from('franqueados').select('name').eq('id', String(ticketData.franqueado_id)).maybeSingle() : Promise.resolve({ data: null }),
         ticketData.criado_por ? supabase.from('profiles').select('nome_completo').eq('id', ticketData.criado_por).maybeSingle() : Promise.resolve({ data: null }),
         ticketData.equipe_responsavel_id ? supabase.from('equipes').select('nome').eq('id', ticketData.equipe_responsavel_id).maybeSingle() : Promise.resolve({ data: null }),
-          ticketData.atendimento_iniciado_por ? supabase.from('profiles').select('nome_completo').eq('id', ticketData.atendimento_iniciado_por).maybeSingle() : Promise.resolve({ data: null })
-        ]);
+        ticketData.atendimento_iniciado_por ? supabase.from('profiles').select('nome_completo').eq('id', ticketData.atendimento_iniciado_por).maybeSingle() : Promise.resolve({ data: null })
+      ]);
 
-        console.log('Ticket data:', {
-          ticketId: ticketData.id,
-          colaborador_id: ticketData.colaborador_id,
-          franqueado_id: ticketData.franqueado_id,
-          criado_por: ticketData.criado_por,
-          colaborador: colaboradorRes.data,
-          franqueado: franqueadoRes.data,
-          profile: profileRes.data
-        });
+      const combinedData = {
+        ...ticketData,
+        unidades: unidadeRes.data,
+        colaboradores: colaboradorRes.data,
+        franqueados: franqueadoRes.data,
+        profiles: profileRes.data,
+        equipes: equipeRes.data,
+        atendimento_iniciado_profile: atendimentoIniciadoRes.data
+      };
 
-        // Combine the data
-        const combinedData = {
-          ...ticketData,
-          unidades: unidadeRes.data,
-          colaboradores: colaboradorRes.data,
-          franqueados: franqueadoRes.data,
-          profiles: profileRes.data,
-          equipes: equipeRes.data,
-          atendimento_iniciado_profile: atendimentoIniciadoRes.data
-        };
+      console.log('✅ Ticket carregado com sucesso:', {
+        ticketId: combinedData.id,
+        strategy: ticketData.sla_status ? 'fallback-table' : 'view',
+        status: combinedData.status
+      });
 
-        setTicket(combinedData);
-        
-        // Sucesso completo - sair do loop
-        break;
-        
-      } catch (error) {
-        lastError = error;
-        console.warn(`Tentativa ${attempt}/${retries} falhou com erro:`, error);
-        
-        // Se não for o último retry, aguardar e tentar novamente
-        if (attempt < retries) {
-          await new Promise(resolve => setTimeout(resolve, delayMs));
-          delayMs *= 2;
-          continue;
-        }
-        
-        // Último retry falhou
-        console.error('Error fetching ticket details após retries:', error);
-        toast({
-          title: "Erro",
-          description: "Erro interno ao carregar ticket após múltiplas tentativas",
-          variant: "destructive",
-        });
-      }
+      setTicket(combinedData);
+    } catch (error) {
+      console.error('❌ Erro ao buscar dados relacionados:', error);
+      toast({
+        title: "Erro parcial",
+        description: "Ticket carregado mas alguns dados relacionados falharam",
+        variant: "destructive",
+      });
     }
     
     setLoading(false);
