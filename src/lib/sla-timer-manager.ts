@@ -79,7 +79,12 @@ class SLATimerManager {
         const diferencaSegundos = Math.abs(bancoSegundos - localSecondsRemaining);
         
         if (diferencaSegundos > 60) {
-          console.log(`⏱️ Resincronizando timer ${ticket.codigoTicket}: banco=${bancoSegundos}s, local=${localSecondsRemaining}s`);
+          console.log(`🔄 Resincronizando timer ${ticket.codigoTicket}:`, {
+            bancoSegundos,
+            localSecondsRemaining,
+            propMinutos: ticket.slaMinutosRestantes,
+            lastSynced: existingTicket.lastSyncedMinutes
+          });
           localSecondsRemaining = bancoSegundos;
           existingTicket.localSecondsRemaining = localSecondsRemaining;
           existingTicket.lastSyncedMinutes = ticket.slaMinutosRestantes;
@@ -195,7 +200,7 @@ class SLATimerManager {
     
     // Check if SLA just expired (transition)
     const wasOverdue = this.lastExpiredCheck.get(ticketId) || false;
-    if (!wasOverdue && timeRemaining.isOverdue && timeRemaining.totalSeconds === 0) {
+    if (!wasOverdue && timeRemaining.isOverdue) {
       console.log(`🚨 SLA VENCIDO: Ticket ${ticket.codigoTicket} (${ticketId})`);
       if (ticket.onExpired) {
         ticket.onExpired(ticketId);
@@ -209,7 +214,13 @@ class SLATimerManager {
   }
 
   private calculateTimeRemaining(ticket: SLATicket) {
-    if (ticket.slaMinutosRestantes == null || ticket.status === 'concluido') {
+    // ✅ Verificar se o ticket foi concluído
+    if (ticket.status === 'concluido') {
+      return { hours: 0, minutes: 0, seconds: 0, isOverdue: false, isPaused: false, totalSeconds: 0 };
+    }
+    
+    // ✅ Se localSecondsRemaining não foi inicializado, retornar valores zerados
+    if (ticket.localSecondsRemaining === undefined) {
       return { hours: 0, minutes: 0, seconds: 0, isOverdue: false, isPaused: false, totalSeconds: 0 };
     }
 
