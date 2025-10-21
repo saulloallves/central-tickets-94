@@ -76,6 +76,15 @@ export const SLATimerDetail = ({
 
   // ✅ PRIORIDADE 1: Verificar se SLA venceu ANTES de pausado
   if (timeRemaining.isOverdue) {
+    // ✅ Se totalSeconds é 0, não temos dados suficientes para calcular
+    if (timeRemaining.totalSeconds === 0) {
+      return (
+        <div className="text-destructive text-sm font-medium">
+          Vencido
+        </div>
+      );
+    }
+    
     // ✅ Calcular a partir de totalSeconds (que é negativo)
     const totalMinutos = Math.floor(Math.abs(timeRemaining.totalSeconds) / 60);
     const horas = Math.floor(totalMinutos / 60);
