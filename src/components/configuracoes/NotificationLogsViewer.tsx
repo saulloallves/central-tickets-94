@@ -180,7 +180,6 @@ export function NotificationLogsViewer() {
                   <TableHead>Tipo</TableHead>
                   <TableHead>Ticket</TableHead>
                   <TableHead>Título</TableHead>
-                  <TableHead>WhatsApp</TableHead>
                   <TableHead>Data Processamento</TableHead>
                 </TableRow>
               </TableHeader>
@@ -199,20 +198,13 @@ export function NotificationLogsViewer() {
                       {notif.payload?.titulo || '-'}
                     </TableCell>
                     <TableCell>
-                      {notif.sent_to_whatsapp ? (
-                        <span className="text-success">✅ Enviado</span>
-                      ) : (
-                        <span className="text-muted-foreground">⊗ Não enviado</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
                       {format(new Date(notif.processed_at), "dd/MM/yy 'às' HH:mm", { locale: ptBR })}
                     </TableCell>
                   </TableRow>
                 ))}
                 {processedNotifications?.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center text-muted-foreground">
+                    <TableCell colSpan={4} className="text-center text-muted-foreground">
                       Nenhuma notificação processada no período selecionado
                     </TableCell>
                   </TableRow>
