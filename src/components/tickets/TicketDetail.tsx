@@ -993,7 +993,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
             <div className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border border-border/50 rounded-lg p-3">
               <h4 className="font-medium text-sm mb-2">Descrição do Problema</h4>
               <div className="p-3 bg-muted/30 rounded-md border border-primary/20">
-                <p className="text-xs leading-relaxed text-foreground">
+                <p className="text-xs leading-relaxed text-foreground whitespace-pre-line break-words">
                   {ticket.descricao_problema}
                 </p>
               </div>
@@ -1647,7 +1647,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                  <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line break-words">
                     {ticket.descricao_problema || 'Nenhuma descrição fornecida'}
                   </p>
                 </CardContent>

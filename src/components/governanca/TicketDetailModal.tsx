@@ -176,7 +176,7 @@ export const TicketDetailModal = ({ ticketCode, open, onOpenChange }: TicketDeta
                   <AlertCircle className="h-4 w-4" />
                   Descrição do Problema
                 </h3>
-                <p className="text-sm whitespace-pre-wrap">
+                <p className="text-sm whitespace-pre-line break-words">
                   {ticket.descricao_problema || 'Sem descrição detalhada'}
                 </p>
               </div>
