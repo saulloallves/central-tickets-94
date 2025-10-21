@@ -210,13 +210,19 @@ class SLATimerManager {
     const isSLAOverdue = ticket.localSecondsRemaining <= 0;
     
     if (isSLAOverdue) {
+      const totalSeconds = ticket.localSecondsRemaining; // Valor negativo
+      const absSeconds = Math.abs(totalSeconds);
+      const hours = Math.floor(absSeconds / 3600);
+      const minutes = Math.floor((absSeconds % 3600) / 60);
+      const seconds = absSeconds % 60;
+      
       return { 
-        hours: 0, 
-        minutes: 0, 
-        seconds: 0, 
+        hours, 
+        minutes, 
+        seconds, 
         isOverdue: true, 
         isPaused: false,
-        totalSeconds: 0 
+        totalSeconds // Negativo para indicar quanto tempo está vencido
       };
     }
 

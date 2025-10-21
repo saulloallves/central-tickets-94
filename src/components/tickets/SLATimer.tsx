@@ -92,18 +92,16 @@ export const SLATimer = ({
 
   // ✅ PRIORIDADE 1: Verificar se SLA venceu ANTES de pausado
   if (timeRemaining.isOverdue) {
-    const minutosVencidos = Math.abs(slaMinutosRestantes || 0);
-    const horasVencidas = Math.floor(minutosVencidos / 60);
-    const minutosRestantes = minutosVencidos % 60;
+    const { hours, minutes } = timeRemaining;
     
-    let overdueText = 'SLA Vencido há ';
-    if (horasVencidas > 0) {
-      overdueText += `${horasVencidas}h`;
-      if (minutosRestantes > 0) {
-        overdueText += ` ${minutosRestantes}min`;
+    let overdueText = 'Vencido há ';
+    if (hours > 0) {
+      overdueText += `${hours}h`;
+      if (minutes > 0) {
+        overdueText += ` ${minutes}min`;
       }
     } else {
-      overdueText += `${minutosVencidos} minutos`;
+      overdueText += `${minutes} minutos`;
     }
     
     return (
