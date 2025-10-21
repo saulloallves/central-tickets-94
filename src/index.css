@@ -496,3 +496,14 @@ All colors MUST be HSL.
     padding-right: env(safe-area-inset-right);
   }
 }
+
+/* Shake animation for new ticket notification */
+@keyframes page-shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-3px); }
+  20%, 40%, 60%, 80% { transform: translateX(3px); }
+}
+
+.shake-page {
+  animation: page-shake 0.4s ease-in-out;
+}
