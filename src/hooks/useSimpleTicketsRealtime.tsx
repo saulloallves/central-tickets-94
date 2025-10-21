@@ -50,6 +50,16 @@ export const useSimpleTicketsRealtime = ({
               
               if (newTicket) {
                 console.log('✅ [FASE 2] INSERT com SLA calculado:', newTicket.sla_minutos_restantes_calculado);
+                
+                // 🔔 Fazer a página tremer ao receber novo ticket
+                const root = document.getElementById('root');
+                if (root) {
+                  root.classList.add('shake-page');
+                  setTimeout(() => {
+                    root.classList.remove('shake-page');
+                  }, 500);
+                }
+                
                 onTicketInsert(newTicket as any);
               }
               break;
