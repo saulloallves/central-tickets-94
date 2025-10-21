@@ -1,12 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTicketNotifications } from '@/hooks/useTicketNotifications';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
-import { Plus, Filter, Calendar, Users, Clock, AlertTriangle, Brain, X, Loader2, Search } from 'lucide-react';
+import { Plus, Filter, Calendar, Users, Clock, AlertTriangle, Brain, X, Loader2, Search, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useRole } from '@/hooks/useRole';
 import { useAuth } from '@/hooks/useAuth';
@@ -209,7 +210,19 @@ const Tickets = () => {
           
           <Card className="p-2 md:p-0">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 md:pb-2 p-2 md:p-6">
-              <CardTitle className="text-xs md:text-sm font-medium">SLA Vencido</CardTitle>
+              <CardTitle className="text-xs md:text-sm font-medium flex items-center gap-1">
+                SLA Vencido (Hoje)
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Tickets abertos hoje com SLA vencido</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </CardTitle>
               <AlertTriangle className="h-3 w-3 md:h-4 md:w-4 text-destructive" />
             </CardHeader>
             <CardContent className="p-2 md:p-6 pt-0">
