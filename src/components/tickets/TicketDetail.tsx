@@ -1808,7 +1808,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                 <SLADebugPanel
                   ticketId={ticket.id}
                   codigoTicket={ticket.codigo_ticket}
-                  slaMinutosRestantes={ticket.sla_minutos_restantes}
+                  slaMinutosRestantes={ticket.sla_minutos_restantes_calculado}
                   slaMinutosTotais={ticket.sla_minutos_totais}
                   tempoPausadoTotal={ticket.tempo_pausado_total}
                   slaPausado={ticket.sla_pausado || false}
