@@ -14,32 +14,14 @@
 
 export interface SLAPauseFlags {
   /**
-   * ⏸️ SLA_PAUSADO (Pausa Manual)
+   * ⏸️ SLA_PAUSADO (Pausa Manual - DEPRECATED)
    * 
-   * Quando ativa: Atendente pausou manualmente o ticket
-   * Motivo comum: Aguardando cliente fornecer informações adicionais
+   * ATENÇÃO: Esta flag foi removida do sistema.
+   * Mantida apenas para compatibilidade com código legado.
    * 
-   * Como pausar: Atendente clica em "Pausar SLA"
-   * Como despausar: Atendente clica em "Retomar SLA" ou cliente responde
-   * 
-   * Impacto: SLA não decrementa enquanto pausado
+   * Não é mais usada para pausar SLA.
    */
   sla_pausado: boolean;
-
-  /**
-   * 💬 SLA_PAUSADO_MENSAGEM (Pausa Automática por Mensagem)
-   * 
-   * Quando ativa: Cliente/franqueado enviou mensagem, agora aguardamos resposta dele
-   * Motivo: Evitar penalizar atendente enquanto aguarda retorno do cliente
-   * 
-   * Como pausar: Automaticamente quando cliente/franqueado envia mensagem
-   * Como despausar: Automaticamente quando atendente responde
-   * 
-   * Impacto: SLA não decrementa enquanto aguardamos cliente
-   * 
-   * Trigger responsável: Está no banco de dados
-   */
-  sla_pausado_mensagem: boolean;
 
   /**
    * 🕐 SLA_PAUSADO_HORARIO (Pausa por Horário Comercial)
@@ -108,7 +90,7 @@ export interface SLAPauseFlags {
  * Verifica se QUALQUER flag de pausa está ativa
  */
 export const isAnyPauseActive = (flags: SLAPauseFlags): boolean => {
-  return flags.sla_pausado || flags.sla_pausado_mensagem || (flags.sla_pausado_horario || false);
+  return flags.sla_pausado_horario || false;
 };
 
 /**
@@ -118,12 +100,6 @@ export const getPauseReason = (flags: SLAPauseFlags): string | null => {
   if (flags.sla_pausado_horario) {
     return 'Fora do horário comercial';
   }
-  if (flags.sla_pausado_mensagem) {
-    return 'Aguardando resposta do cliente';
-  }
-  if (flags.sla_pausado) {
-    return 'Pausado manualmente';
-  }
   return null;
 };
 
@@ -132,8 +108,6 @@ export const getPauseReason = (flags: SLAPauseFlags): string | null => {
  */
 export const getPauseIcon = (flags: SLAPauseFlags): string => {
   if (flags.sla_pausado_horario) return '🕐';
-  if (flags.sla_pausado_mensagem) return '💬';
-  if (flags.sla_pausado) return '⏸️';
   return '▶️'; // Ativo
 };
 

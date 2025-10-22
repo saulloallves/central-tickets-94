@@ -24,7 +24,6 @@ interface SLADebugCardProps {
     data_limite_sla?: string;
     tempo_pausado_total?: string;
     sla_pausado_horario?: boolean;
-    sla_pausado_mensagem?: boolean;
     sla_vencido?: boolean;
   };
 }
@@ -193,15 +192,9 @@ export const SLADebugCard = ({ ticket }: SLADebugCardProps) => {
                   </div>
                 )}
                 <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Pausado Horário:</span>
+                  <span className="text-muted-foreground">Pausado (Fora do Expediente):</span>
                   <Badge variant={ticket.sla_pausado_horario ? "outline" : "secondary"}>
                     {ticket.sla_pausado_horario ? '✅ Sim' : '❌ Não'}
-                  </Badge>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Pausado Mensagem:</span>
-                  <Badge variant={ticket.sla_pausado_mensagem ? "outline" : "secondary"}>
-                    {ticket.sla_pausado_mensagem ? '✅ Sim' : '❌ Não'}
                   </Badge>
                 </div>
               </div>

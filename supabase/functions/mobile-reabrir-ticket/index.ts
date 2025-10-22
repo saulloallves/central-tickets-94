@@ -96,7 +96,6 @@ Deno.serve(async (req) => {
         status_sla: 'dentro_prazo',
         data_limite_sla: dataLimiteSLA.toISOString(),
         sla_minutos_restantes: sla_minutos,
-        sla_pausado_mensagem: false,
         sla_pausado_horario: false,
         reaberto_count: (ticket.reaberto_count || 0) + 1,
         resolvido_em: null,

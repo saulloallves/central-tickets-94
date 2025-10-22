@@ -258,20 +258,17 @@ async function handleWebhook(payload: ZAPIMessage) {
               "❌ Erro ao processar sua resposta. Tente novamente."
             );
           } else {
-            // ✅ CORREÇÃO SLA: Despausar SLA quando franqueado responde
-            console.log('⏸️ Despausando SLA do ticket após resposta do franqueado...');
-            const { error: unpauseError } = await supabase
+            // ✅ SLA continua correndo normalmente (não há mais pausa por mensagem)
+            // Apenas atualizar timestamp para contagem correta
+            const { error: updateError } = await supabase
               .from('tickets')
               .update({ 
-                sla_pausado_mensagem: false,
-                sla_ultima_atualizacao: new Date().toISOString() // ← CRÍTICO: Reset timestamp
+                sla_ultima_atualizacao: new Date().toISOString()
               })
               .eq('id', groupState.ticket_id);
             
-            if (unpauseError) {
-              console.error('❌ Erro ao despausar SLA:', unpauseError);
-            } else {
-              console.log('✅ SLA despausado com sucesso');
+            if (updateError) {
+              console.error('❌ Erro ao atualizar timestamp do SLA:', updateError);
             }
             console.log('✅ Resposta do ticket salva com sucesso');
             

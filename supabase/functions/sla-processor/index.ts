@@ -31,10 +31,10 @@ serve(async (req) => {
       console.log(`✅ SLAs decrementados: ${decrementResult?.tickets_atualizados || 0} tickets atualizados, ${decrementResult?.tickets_vencidos || 0} vencidos`);
     }
 
-    // ✅ FASE 6: Log detalhado de tickets vencidos para debug
+    // ✅ Log detalhado de tickets vencidos para debug
     const { data: vencidosDebug, error: debugError } = await supabaseClient
       .from('tickets')
-      .select('codigo_ticket, sla_minutos_restantes, sla_pausado, sla_pausado_mensagem, sla_pausado_horario, status_sla, tempo_pausado_total')
+      .select('codigo_ticket, sla_minutos_restantes, sla_pausado, sla_pausado_horario, status_sla, tempo_pausado_total')
       .eq('status_sla', 'vencido')
       .neq('status', 'concluido')
       .limit(10);
@@ -42,7 +42,7 @@ serve(async (req) => {
     if (vencidosDebug && vencidosDebug.length > 0) {
       console.log('📊 Debug - Tickets vencidos ativos:');
       vencidosDebug.forEach(t => {
-        console.log(`  • ${t.codigo_ticket}: ${t.sla_minutos_restantes}min | Pausado: ${t.sla_pausado} | Msg: ${t.sla_pausado_mensagem} | Horário: ${t.sla_pausado_horario} | Tempo pausado: ${t.tempo_pausado_total}`);
+        console.log(`  • ${t.codigo_ticket}: ${t.sla_minutos_restantes}min | Pausado: ${t.sla_pausado} | Horário: ${t.sla_pausado_horario} | Tempo pausado: ${t.tempo_pausado_total}`);
       });
     }
 

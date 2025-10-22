@@ -39,12 +39,11 @@ Deno.serve(async (req) => {
       // ========================================
       
       // Buscar tickets ATIVOS que ainda não estão pausados por horário
-      // Não incluir "aguardando_resposta" pois esses já estão pausados por MENSAGEM
       const { data: ticketsToPause, error: fetchError } = await supabase
         .from('tickets')
-        .select('id, codigo_ticket, data_limite_sla, data_abertura, sla_pausado_mensagem')
+        .select('id, codigo_ticket, data_limite_sla, data_abertura')
         .in('status', ['aberto', 'em_atendimento', 'escalonado'])
-        .eq('sla_pausado_horario', false) // ← Filtro específico!
+        .eq('sla_pausado_horario', false)
         .not('data_limite_sla', 'is', null);
 
       if (fetchError) {
@@ -113,11 +112,11 @@ Deno.serve(async (req) => {
       // DESPAUSAR SLA (às 8h30)
       // ========================================
       
-      // Buscar tickets pausados POR HORÁRIO (não incluir os pausados por mensagem!)
+      // Buscar tickets pausados POR HORÁRIO
       const { data: ticketsToResume, error: fetchError } = await supabase
         .from('tickets')
-        .select('id, codigo_ticket, data_limite_sla, sla_pausado_em, tempo_pausado_total, data_abertura, status, sla_pausado_mensagem')
-        .eq('sla_pausado_horario', true)  // ← Filtro específico para pausa de horário!
+        .select('id, codigo_ticket, data_limite_sla, sla_pausado_em, tempo_pausado_total, data_abertura, status')
+        .eq('sla_pausado_horario', true)
         .not('sla_pausado_em', 'is', null);
 
       if (fetchError) {
@@ -167,15 +166,13 @@ Deno.serve(async (req) => {
           console.log(`  - sla_half_time calculado: ${halfSlaTime.toISOString()}`);
           console.log(`  - data_limite_sla: ${newSlaLimit.toISOString()}`);
 
-          // ✅ CRITICAL: Despausar APENAS o horário, mantém sla_pausado_mensagem se estiver TRUE
-          // ✅ CORREÇÃO SLA: Atualizar sla_ultima_atualizacao para NOW() para que decrementar_sla_minutos não conte o tempo pausado
+          // ✅ Despausar horário e resetar timestamp
           const { error: updateError } = await supabase
             .from('tickets')
             .update({
-              sla_pausado_horario: false,  // ← Despausa APENAS horário
-              // sla_pausado será calculado automaticamente: sla_pausado_mensagem OR sla_pausado_horario
-              sla_pausado_em: ticket.sla_pausado_mensagem ? ticket.sla_pausado_em : null,
-              sla_ultima_atualizacao: now.toISOString(), // ← CORREÇÃO: Reset timestamp para não contar tempo pausado
+              sla_pausado_horario: false,
+              sla_pausado_em: null,
+              sla_ultima_atualizacao: now.toISOString(),
               data_limite_sla: newSlaLimit.toISOString(),
               sla_half_time: halfSlaTime.toISOString(),
               tempo_pausado_total: `${totalPausedMinutes} minutes`,
@@ -203,8 +200,7 @@ Deno.serve(async (req) => {
             p_canal: 'painel_interno',
           });
 
-          const stillPaused = ticket.sla_pausado_mensagem ? ' (ainda pausado aguardando resposta)' : '';
-          console.log(`▶️ Ticket ${ticket.codigo_ticket} - SLA despausado de horário${stillPaused} (+${minutesPaused} min)`);
+          console.log(`▶️ Ticket ${ticket.codigo_ticket} - SLA despausado de horário (+${minutesPaused} min)`);
         }
       }
 
