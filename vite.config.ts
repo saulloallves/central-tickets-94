@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => ({
     mode === 'development' && componentTagger(),
     VitePWA({
       registerType: 'prompt',
-      includeAssets: ['favicon.ico', 'robots.txt', 'icons/*.png', 'manifest.json'],
+      includeAssets: ['favicon.png', 'robots.txt', 'icons/*.png', 'manifest.json'],
       manifest: false, // Usar manifest.json do public
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
@@ -65,7 +65,7 @@ export default defineConfig(({ mode }) => ({
             }
           },
           {
-            urlPattern: /\/favicon\.(png|ico)$/,
+            urlPattern: /\/favicon\.(png)$/,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'favicon-v2',

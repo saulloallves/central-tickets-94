@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+Dockerfile
+docker-compose*.yml
+nginx
+.env
+.env.*
+.dockerignore
