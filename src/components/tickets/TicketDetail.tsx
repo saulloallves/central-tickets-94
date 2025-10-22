@@ -984,6 +984,13 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
   };
 
   if (ticket.status === 'aberto') {
+    console.log('📋 Dados do ticket aberto:', {
+      telefone: ticket.telefone,
+      email: ticket.email,
+      categoria: ticket.categoria,
+      prioridade: ticket.prioridade,
+      criado_em: ticket.criado_em
+    });
     return (
       <div className="w-full h-full flex flex-col overflow-hidden">
         {/* Header compacto */}
