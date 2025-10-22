@@ -6,6 +6,8 @@ interface SLATimerDetailProps {
   status: string;
   slaPausadoHorario?: boolean;
   onSLAExpired?: (ticketId: string) => void;
+  slaMinutosTotais?: number;
+  dataAbertura?: string;
 }
 
 export const SLATimerDetail = ({ 
@@ -13,7 +15,9 @@ export const SLATimerDetail = ({
   dataLimiteSla,
   status, 
   slaPausadoHorario = false,
-  onSLAExpired 
+  onSLAExpired,
+  slaMinutosTotais,
+  dataAbertura
 }: SLATimerDetailProps) => {
   const [timeRemaining, setTimeRemaining] = useState<{
     hours: number;
@@ -41,7 +45,28 @@ export const SLATimerDetail = ({
       }
 
       const now = new Date();
-      const deadline = new Date(dataLimiteSla);
+      let deadline = new Date(dataLimiteSla);
+      
+      // 🔍 VALIDAÇÃO: Verificar se data_limite_sla está consistente com sla_minutos_totais
+      if (slaMinutosTotais && dataAbertura) {
+        const abertura = new Date(dataAbertura);
+        const limiteEsperado = new Date(abertura.getTime() + (slaMinutosTotais * 60000));
+        const diffMinutos = Math.abs((deadline.getTime() - limiteEsperado.getTime()) / 60000);
+        
+        // Se diferença > 2 minutos, há inconsistência - usar sla_minutos_totais como fonte da verdade
+        if (diffMinutos > 2) {
+          console.warn(`⚠️ SLA inconsistente no ticket ${ticketId}:`, {
+            limiteAtual: deadline.toISOString(),
+            limiteEsperado: limiteEsperado.toISOString(),
+            diferenca: `${diffMinutos.toFixed(1)} min`,
+            sla_minutos_totais: slaMinutosTotais
+          });
+          
+          // Usar o limite esperado baseado em sla_minutos_totais
+          deadline = limiteEsperado;
+        }
+      }
+      
       const diffMs = deadline.getTime() - now.getTime();
 
       if (diffMs < 0) {
@@ -72,7 +97,7 @@ export const SLATimerDetail = ({
     const interval = setInterval(calculateTime, 1000);
 
     return () => clearInterval(interval);
-  }, [ticketId, dataLimiteSla, status, slaPausadoHorario, onSLAExpired]);
+  }, [ticketId, dataLimiteSla, status, slaPausadoHorario, onSLAExpired, slaMinutosTotais, dataAbertura]);
 
   if (!dataLimiteSla || status === 'concluido') {
     return null;

@@ -57,7 +57,7 @@ interface ClassifierMetrics {
 
 const defaultSettings: AdvancedSettings = {
   priority_matrix: {
-    "imediato": { "impact": "alto", "urgency": "alta", "sla_minutes": 15 },
+    "imediato": { "impact": "alto", "urgency": "alta", "sla_minutes": 30 },
     "alto": { "impact": "alto", "urgency": "media", "sla_minutes": 60 },
     "medio": { "impact": "medio", "urgency": "media", "sla_minutes": 600 }, // 10 horas
     "baixo": { "impact": "baixo", "urgency": "baixa", "sla_minutes": 1440 }, // 24 horas
