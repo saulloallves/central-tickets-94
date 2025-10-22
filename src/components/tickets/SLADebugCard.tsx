@@ -11,6 +11,7 @@ import {
   formatMinutes,
   detectSLAIssues,
   explainBusinessHoursSLA,
+  explainRemainingTime,
 } from '@/lib/sla-debug-utils';
 import { getPriorityLabel, type TicketPriority } from '@/lib/priority-utils';
 import { formatDateTimeBR } from '@/lib/date-utils';
@@ -53,6 +54,11 @@ export const SLADebugCard = ({ ticket }: SLADebugCardProps) => {
         const minutes = parseInt(parts[1] || '0', 10);
         return hours * 60 + minutes;
       })()
+    : 0;
+
+  // Calcular tempo decorrido em minutos de expediente
+  const tempoDecorridoCalc = ticket.sla_minutos_totais && ticket.sla_minutos_restantes !== undefined
+    ? ticket.sla_minutos_totais - ticket.sla_minutos_restantes - tempoPausadoMinutos
     : 0;
 
   const getSeverityBadge = () => {
@@ -164,6 +170,71 @@ export const SLADebugCard = ({ ticket }: SLADebugCardProps) => {
                     <div className="flex justify-between items-center">
                       <span className="text-muted-foreground">Tempo em Expediente:</span>
                       <span className="font-medium text-success">{formatMinutes(ticket.sla_minutos_totais)}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Cálculo dos Minutos Restantes */}
+            {ticket.sla_minutos_restantes !== undefined && 
+             ticket.sla_minutos_totais && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  🧮 Cálculo dos Minutos Restantes
+                </div>
+                <div className="text-xs leading-relaxed bg-blue-500/10 p-3 rounded border border-blue-500/30 space-y-2">
+                  <div className="font-mono text-xs space-y-1">
+                    <div className="flex justify-between">
+                      <span>SLA Total:</span>
+                      <span className="font-bold">{formatMinutes(ticket.sla_minutos_totais)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Tempo Decorrido (expediente):</span>
+                      <span className="font-bold">{formatMinutes(tempoDecorridoCalc)}</span>
+                    </div>
+                    {tempoPausadoMinutos > 0 && (
+                      <div className="flex justify-between text-warning">
+                        <span>(-) Tempo Pausado:</span>
+                        <span className="font-bold">-{formatMinutes(tempoPausadoMinutos)}</span>
+                      </div>
+                    )}
+                    <div className="border-t border-border/50 mt-2 pt-2 flex justify-between text-sm">
+                      <span className="font-bold">Restante:</span>
+                      <span className={`font-bold ${ticket.sla_minutos_restantes <= 0 ? 'text-destructive' : 'text-success'}`}>
+                        {formatMinutes(Math.max(0, ticket.sla_minutos_restantes))}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {/* Explicação em texto */}
+                  <div className="text-xs text-muted-foreground pt-2 border-t border-border/30">
+                    {explainRemainingTime(
+                      ticket.sla_minutos_totais,
+                      ticket.sla_minutos_restantes,
+                      tempoPausadoMinutos,
+                      ticket.sla_pausado_horario || false
+                    ).calculo}
+                  </div>
+                  
+                  {/* Observações especiais */}
+                  {ticket.sla_pausado_horario && (
+                    <div className="text-xs bg-warning/10 p-2 rounded flex items-start gap-2">
+                      <Pause className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                      <span>
+                        O SLA está <strong>pausado agora</strong> (fora do expediente), 
+                        então os minutos restantes não estão diminuindo no momento.
+                      </span>
+                    </div>
+                  )}
+                  
+                  {ticket.sla_minutos_restantes <= 0 && !ticket.sla_vencido && (
+                    <div className="text-xs bg-destructive/10 p-2 rounded flex items-start gap-2">
+                      <AlertTriangle className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                      <span>
+                        O SLA já deveria ter vencido (0 min restantes), mas pode estar 
+                        pausado ou aguardando processamento do sistema.
+                      </span>
                     </div>
                   )}
                 </div>

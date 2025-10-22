@@ -123,6 +123,54 @@ export function detectSLAIssues(ticket: {
 }
 
 /**
+ * Calcula o tempo decorrido em horário comercial
+ */
+export function calculateElapsedBusinessMinutes(
+  slaTotal: number,
+  slaRestante: number,
+  tempoPausado: number
+): number {
+  return slaTotal - slaRestante - tempoPausado;
+}
+
+/**
+ * Explica como os minutos restantes foram calculados
+ */
+export function explainRemainingTime(
+  slaTotal: number,
+  slaRestante: number,
+  tempoPausado: number,
+  isPausado: boolean
+): {
+  tempoDecorrido: number;
+  tempoAtivo: number;
+  calculo: string;
+  observacao?: string;
+} {
+  const tempoDecorrido = calculateElapsedBusinessMinutes(slaTotal, slaRestante, tempoPausado);
+  const tempoAtivo = tempoDecorrido;
+  
+  let calculo = '';
+  if (tempoPausado > 0) {
+    calculo = `De ${formatMinutes(slaTotal)} de SLA total, já passaram ${formatMinutes(tempoDecorrido)} em horário comercial. Porém, ${formatMinutes(tempoPausado)} foram pausados (fora do expediente), restando ${formatMinutes(Math.max(0, slaRestante))}.`;
+  } else {
+    calculo = `De ${formatMinutes(slaTotal)} de SLA total, já passaram ${formatMinutes(tempoDecorrido)} em horário comercial, restando ${formatMinutes(Math.max(0, slaRestante))}.`;
+  }
+  
+  let observacao: string | undefined;
+  if (isPausado) {
+    observacao = 'O SLA está pausado agora (fora do expediente), então os minutos restantes não estão diminuindo no momento.';
+  }
+  
+  return {
+    tempoDecorrido,
+    tempoAtivo,
+    calculo,
+    observacao
+  };
+}
+
+/**
  * Explica por que o SLA em tempo corrido pode ser diferente do SLA em minutos
  */
 export function explainBusinessHoursSLA(
