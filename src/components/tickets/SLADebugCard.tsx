@@ -15,6 +15,7 @@ import {
 } from '@/lib/sla-debug-utils';
 import { getPriorityLabel, type TicketPriority } from '@/lib/priority-utils';
 import { formatDateTimeBR } from '@/lib/date-utils';
+import { useAIClassifierSettings } from '@/hooks/useAIClassifierSettings';
 
 interface SLADebugCardProps {
   ticket: {
@@ -31,12 +32,16 @@ interface SLADebugCardProps {
 
 export const SLADebugCard = ({ ticket }: SLADebugCardProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  
+  // Busca a matriz ITIL do banco
+  const { data: settings } = useAIClassifierSettings();
+  const priorityMatrix = settings?.priority_matrix as Record<string, any> | null | undefined;
 
-  const expectedSLA = getExpectedSLAMinutes(ticket.prioridade);
+  const expectedSLA = getExpectedSLAMinutes(ticket.prioridade, priorityMatrix);
   const discrepancy = ticket.sla_minutos_totais
-    ? calculateSLADiscrepancy(ticket.prioridade, ticket.sla_minutos_totais)
+    ? calculateSLADiscrepancy(ticket.prioridade, ticket.sla_minutos_totais, priorityMatrix)
     : null;
-  const issues = detectSLAIssues(ticket);
+  const issues = detectSLAIssues(ticket, priorityMatrix);
 
   const elapsedTime = ticket.data_abertura && ticket.data_limite_sla
     ? calculateElapsedTime(ticket.data_abertura, ticket.data_limite_sla)

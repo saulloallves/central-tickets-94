@@ -59,7 +59,16 @@ export function getPriorityBackgroundColor(priority: TicketPriority): string {
   }
 }
 
-export function getSLATimeInMinutes(priority: TicketPriority): number {
+export function getSLATimeInMinutes(
+  priority: TicketPriority,
+  priorityMatrix?: Record<string, any> | null
+): number {
+  // Tenta buscar da matriz ITIL do banco
+  if (priorityMatrix && priorityMatrix[priority]?.sla_minutes) {
+    return priorityMatrix[priority].sla_minutes;
+  }
+  
+  // Fallback para valores padrão se a matriz não estiver disponível
   switch (priority) {
     case 'crise': return 5;
     case 'imediato': return 15;

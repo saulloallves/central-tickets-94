@@ -4,19 +4,26 @@ import type { TicketPriority } from './priority-utils';
 /**
  * Retorna o SLA esperado em minutos baseado na prioridade
  */
-export function getExpectedSLAMinutes(priority: string): number {
-  return getSLATimeInMinutes(priority as TicketPriority);
+export function getExpectedSLAMinutes(
+  priority: string,
+  priorityMatrix?: Record<string, any> | null
+): number {
+  return getSLATimeInMinutes(priority as TicketPriority, priorityMatrix);
 }
 
 /**
  * Calcula a discrepância entre o SLA esperado e o configurado
  */
-export function calculateSLADiscrepancy(priority: string, configuredMinutes: number): {
+export function calculateSLADiscrepancy(
+  priority: string,
+  configuredMinutes: number,
+  priorityMatrix?: Record<string, any> | null
+): {
   difference: number;
   hasDiscrepancy: boolean;
   isLower: boolean;
 } {
-  const expected = getExpectedSLAMinutes(priority);
+  const expected = getExpectedSLAMinutes(priority, priorityMatrix);
   const difference = configuredMinutes - expected;
   
   return {
@@ -80,12 +87,15 @@ export function formatMinutes(minutes: number): string {
 /**
  * Detecta problemas no SLA do ticket
  */
-export function detectSLAIssues(ticket: {
-  prioridade: string;
-  sla_minutos_totais?: number;
-  sla_minutos_restantes?: number;
-  sla_vencido?: boolean;
-}): {
+export function detectSLAIssues(
+  ticket: {
+    prioridade: string;
+    sla_minutos_totais?: number;
+    sla_minutos_restantes?: number;
+    sla_vencido?: boolean;
+  },
+  priorityMatrix?: Record<string, any> | null
+): {
   hasIssue: boolean;
   issues: string[];
   severity: 'none' | 'warning' | 'error';
@@ -94,7 +104,7 @@ export function detectSLAIssues(ticket: {
   
   // Verifica se o SLA configurado difere do esperado
   if (ticket.sla_minutos_totais) {
-    const discrepancy = calculateSLADiscrepancy(ticket.prioridade, ticket.sla_minutos_totais);
+    const discrepancy = calculateSLADiscrepancy(ticket.prioridade, ticket.sla_minutos_totais, priorityMatrix);
     if (discrepancy.hasDiscrepancy) {
       const diff = Math.abs(discrepancy.difference);
       issues.push(
