@@ -22,6 +22,7 @@ interface SLADebugCardProps {
     prioridade: string;
     sla_minutos_totais?: number;
     sla_minutos_restantes?: number;
+    sla_minutos_uteis_decorridos?: number;
     data_abertura?: string;
     data_limite_sla?: string;
     tempo_pausado_total?: string;
@@ -70,16 +71,13 @@ export const SLADebugCard = ({ ticket }: SLADebugCardProps) => {
       })()
     : 0;
 
-  // ✅ CORRIGIDO: Calcular tempo decorrido usando datas REAIS, não sla_minutos_restantes
-  // (que pode estar incorreto devido a decrementação fora do horário comercial)
+  // ✅ Tempo decorrido REAL (tempo corrido desde abertura)
   const tempoDecorridoRealMinutos = ticket.data_abertura
     ? Math.max(0, Math.floor((new Date().getTime() - new Date(ticket.data_abertura).getTime()) / (1000 * 60)))
     : 0;
     
-  // Tempo decorrido em expediente (estimado pelo sistema)
-  const tempoDecorridoCalc = ticket.sla_minutos_totais && ticket.sla_minutos_restantes !== undefined
-    ? ticket.sla_minutos_totais - ticket.sla_minutos_restantes - tempoPausadoMinutos
-    : 0;
+  // ✅ Tempo decorrido em EXPEDIENTE (calculado via SQL considerando horário comercial)
+  const tempoUtilDecorrido = ticket.sla_minutos_uteis_decorridos || 0;
 
   const getSeverityBadge = () => {
     switch (issues.severity) {
@@ -221,11 +219,11 @@ export const SLADebugCard = ({ ticket }: SLADebugCardProps) => {
                     </div>
                     <div className="flex justify-between">
                       <span>Tempo Útil (expediente):</span>
-                      <span className="font-bold text-success">{formatMinutes(tempoDecorridoCalc)}</span>
+                      <span className="font-bold text-success">{formatMinutes(tempoUtilDecorrido)}</span>
                     </div>
-                    {tempoDecorridoRealMinutos > tempoDecorridoCalc && (
+                    {tempoDecorridoRealMinutos > tempoUtilDecorrido && (
                       <div className="text-xs text-warning bg-warning/10 p-1.5 rounded mt-1">
-                        ⚠️ Diferença de {formatMinutes(tempoDecorridoRealMinutos - tempoDecorridoCalc)} foi fora do expediente
+                        ⚠️ Diferença de {formatMinutes(tempoDecorridoRealMinutos - tempoUtilDecorrido)} foi fora do expediente
                       </div>
                     )}
                     {tempoPausadoMinutos > 0 && (
@@ -248,7 +246,8 @@ export const SLADebugCard = ({ ticket }: SLADebugCardProps) => {
                       ticket.sla_minutos_totais,
                       ticket.sla_minutos_restantes,
                       tempoPausadoMinutos,
-                      ticket.sla_pausado_horario || false
+                      ticket.sla_pausado_horario || false,
+                      tempoUtilDecorrido
                     ).calculo}
                   </div>
                   

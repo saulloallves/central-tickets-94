@@ -150,14 +150,18 @@ export function explainRemainingTime(
   slaTotal: number,
   slaRestante: number,
   tempoPausado: number,
-  isPausado: boolean
+  isPausado: boolean,
+  tempoUtilDecorrido?: number
 ): {
   tempoDecorrido: number;
   tempoAtivo: number;
   calculo: string;
   observacao?: string;
 } {
-  const tempoDecorrido = calculateElapsedBusinessMinutes(slaTotal, slaRestante, tempoPausado);
+  // ✅ Usar tempo útil do banco se disponível, senão calcular manualmente
+  const tempoDecorrido = tempoUtilDecorrido !== undefined 
+    ? tempoUtilDecorrido 
+    : calculateElapsedBusinessMinutes(slaTotal, slaRestante, tempoPausado);
   const tempoAtivo = tempoDecorrido;
   
   let calculo = '';

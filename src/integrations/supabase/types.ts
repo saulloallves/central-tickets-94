@@ -4106,6 +4106,7 @@ export type Database = {
           sla_minutos_restantes: number | null
           sla_minutos_restantes_calculado: number | null
           sla_minutos_totais: number | null
+          sla_minutos_uteis_decorridos: number | null
           sla_pausado: boolean | null
           sla_pausado_em: string | null
           sla_pausado_horario: boolean | null
@@ -4157,6 +4158,7 @@ export type Database = {
           sla_minutos_restantes?: number | null
           sla_minutos_restantes_calculado?: never
           sla_minutos_totais?: number | null
+          sla_minutos_uteis_decorridos?: never
           sla_pausado?: boolean | null
           sla_pausado_em?: string | null
           sla_pausado_horario?: boolean | null
@@ -4208,6 +4210,7 @@ export type Database = {
           sla_minutos_restantes?: number | null
           sla_minutos_restantes_calculado?: never
           sla_minutos_totais?: number | null
+          sla_minutos_uteis_decorridos?: never
           sla_pausado?: boolean | null
           sla_pausado_em?: string | null
           sla_pausado_horario?: boolean | null
