@@ -916,7 +916,7 @@ export type Database = {
           tags: string[] | null
           tipo: Database["public"]["Enums"]["article_type"]
           titulo: string
-          tsv: unknown | null
+          tsv: unknown
           valido_ate: string | null
           versao: number
         }
@@ -938,7 +938,7 @@ export type Database = {
           tags?: string[] | null
           tipo?: Database["public"]["Enums"]["article_type"]
           titulo: string
-          tsv?: unknown | null
+          tsv?: unknown
           valido_ate?: string | null
           versao?: number
         }
@@ -960,7 +960,7 @@ export type Database = {
           tags?: string[] | null
           tipo?: Database["public"]["Enums"]["article_type"]
           titulo?: string
-          tsv?: unknown | null
+          tsv?: unknown
           valido_ate?: string | null
           versao?: number
         }
@@ -3154,7 +3154,7 @@ export type Database = {
           status: Database["public"]["Enums"]["ticket_status"]
           status_sla: Database["public"]["Enums"]["ticket_sla_status"]
           subcategoria: string | null
-          tempo_pausado_total: unknown | null
+          tempo_pausado_total: unknown
           titulo: string | null
           ultima_pausa_timestamp: string | null
           unidade_id: string | null
@@ -3202,7 +3202,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["ticket_status"]
           status_sla?: Database["public"]["Enums"]["ticket_sla_status"]
           subcategoria?: string | null
-          tempo_pausado_total?: unknown | null
+          tempo_pausado_total?: unknown
           titulo?: string | null
           ultima_pausa_timestamp?: string | null
           unidade_id?: string | null
@@ -3250,7 +3250,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["ticket_status"]
           status_sla?: Database["public"]["Enums"]["ticket_sla_status"]
           subcategoria?: string | null
-          tempo_pausado_total?: unknown | null
+          tempo_pausado_total?: unknown
           titulo?: string | null
           ultima_pausa_timestamp?: string | null
           unidade_id?: string | null
@@ -3313,7 +3313,7 @@ export type Database = {
           action: string
           created_at: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           new_data: Json | null
           old_data: Json | null
           ticket_id: string
@@ -3324,7 +3324,7 @@ export type Database = {
           action: string
           created_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           new_data?: Json | null
           old_data?: Json | null
           ticket_id: string
@@ -3335,7 +3335,7 @@ export type Database = {
           action?: string
           created_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           new_data?: Json | null
           old_data?: Json | null
           ticket_id?: string
@@ -3626,7 +3626,7 @@ export type Database = {
         Row: {
           accessed_at: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           resource_id: string | null
           resource_type: string
           user_agent: string | null
@@ -3635,7 +3635,7 @@ export type Database = {
         Insert: {
           accessed_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           resource_id?: string | null
           resource_type: string
           user_agent?: string | null
@@ -3644,7 +3644,7 @@ export type Database = {
         Update: {
           accessed_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           resource_id?: string | null
           resource_type?: string
           user_agent?: string | null
@@ -3918,7 +3918,7 @@ export type Database = {
           status_sla: Database["public"]["Enums"]["ticket_sla_status"] | null
           status_sla_calculado: string | null
           subcategoria: string | null
-          tempo_pausado_total: unknown | null
+          tempo_pausado_total: unknown
           titulo: string | null
           ultima_pausa_timestamp: string | null
           unidade_id: string | null
@@ -3969,7 +3969,7 @@ export type Database = {
           status_sla?: Database["public"]["Enums"]["ticket_sla_status"] | null
           status_sla_calculado?: never
           subcategoria?: string | null
-          tempo_pausado_total?: unknown | null
+          tempo_pausado_total?: unknown
           titulo?: string | null
           ultima_pausa_timestamp?: string | null
           unidade_id?: string | null
@@ -4020,7 +4020,7 @@ export type Database = {
           status_sla?: Database["public"]["Enums"]["ticket_sla_status"] | null
           status_sla_calculado?: never
           subcategoria?: string | null
-          tempo_pausado_total?: unknown | null
+          tempo_pausado_total?: unknown
           titulo?: string | null
           ultima_pausa_timestamp?: string | null
           unidade_id?: string | null
@@ -4114,10 +4114,7 @@ export type Database = {
       }
     }
     Functions: {
-      add_24h_skip_weekend: {
-        Args: { ts: string }
-        Returns: string
-      }
+      add_24h_skip_weekend: { Args: { ts: string }; Returns: string }
       add_tickets_to_crise: {
         Args: { p_by?: string; p_crise_id: string; p_ticket_ids: string[] }
         Returns: undefined
@@ -4140,10 +4137,7 @@ export type Database = {
         Args: { p_request_id: string }
         Returns: undefined
       }
-      assign_basic_user_roles: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      assign_basic_user_roles: { Args: never; Returns: undefined }
       auto_link_similar_tickets_to_crisis: {
         Args: {
           p_crise_id: string
@@ -4151,10 +4145,6 @@ export type Database = {
           p_time_window_minutes?: number
         }
         Returns: number
-      }
-      binary_quantize: {
-        Args: { "": string } | { "": unknown }
-        Returns: unknown
       }
       broadcast_crise_message: {
         Args: {
@@ -4181,10 +4171,9 @@ export type Database = {
         Args: { p_after_id?: string; p_before_id?: string; p_status: string }
         Returns: number
       }
-      can_create_ticket: {
-        Args: Record<PropertyKey, never> | { ticket_unidade_id: string }
-        Returns: boolean
-      }
+      can_create_ticket:
+        | { Args: never; Returns: boolean }
+        | { Args: { ticket_unidade_id: string }; Returns: boolean }
       can_update_ticket: {
         Args: { p_equipe_id: string; p_unidade_id: string }
         Returns: boolean
@@ -4197,24 +4186,12 @@ export type Database = {
         Args: { email_check: string }
         Returns: boolean
       }
-      cleanup_all_users_except_current: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      cleanup_old_notifications: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_orphaned_crises: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_unconfirmed_access_requests: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
+      cleanup_all_users_except_current: { Args: never; Returns: Json }
+      cleanup_old_notifications: { Args: never; Returns: undefined }
+      cleanup_orphaned_crises: { Args: never; Returns: undefined }
+      cleanup_unconfirmed_access_requests: { Args: never; Returns: number }
       corrigir_tickets_sla_vencido: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           detalhes: Json
           tickets_corrigidos: number
@@ -4249,20 +4226,11 @@ export type Database = {
         }
         Returns: string
       }
-      fix_missing_colaborador_roles: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      fix_missing_franqueado_roles: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      force_delete_user: {
-        Args: { uid: string }
-        Returns: undefined
-      }
+      fix_missing_colaborador_roles: { Args: never; Returns: undefined }
+      fix_missing_franqueado_roles: { Args: never; Returns: undefined }
+      force_delete_user: { Args: { uid: string }; Returns: undefined }
       get_all_users_except_current: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           user_email: string
           user_id: string
@@ -4276,14 +4244,8 @@ export type Database = {
         }
         Returns: number
       }
-      get_business_hour_end: {
-        Args: { p_date: string }
-        Returns: string
-      }
-      get_next_business_hour_start: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      get_business_hour_end: { Args: { p_date: string }; Returns: string }
+      get_next_business_hour_start: { Args: never; Returns: string }
       get_next_business_hour_start_v2: {
         Args: { p_date: string }
         Returns: string
@@ -4297,10 +4259,7 @@ export type Database = {
         }
         Returns: Json
       }
-      get_service_role_key: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      get_service_role_key: { Args: never; Returns: string }
       get_sla_minutes_for_priority: {
         Args: { p_prioridade: Database["public"]["Enums"]["ticket_prioridade"] }
         Returns: number
@@ -4321,10 +4280,7 @@ export type Database = {
           total_tickets: number
         }[]
       }
-      get_ticket_conversa: {
-        Args: { p_ticket_id: string }
-        Returns: Json
-      }
+      get_ticket_conversa: { Args: { p_ticket_id: string }; Returns: Json }
       get_ticket_trends: {
         Args: { p_dias?: number; p_unidade_filter?: string; p_user_id?: string }
         Returns: {
@@ -4334,26 +4290,39 @@ export type Database = {
           tickets_sla_ok: number
         }[]
       }
-      get_unit_metrics: {
-        Args:
-          | {
+      get_unit_metrics:
+        | {
+            Args: { p_periodo_dias?: number; p_user_id?: string }
+            Returns: {
+              percentual_sla: number
+              tempo_medio_resolucao: number
+              tickets_abertos: number
+              tickets_crise: number
+              tickets_resolvidos: number
+              tickets_sucesso: number
+              total_tickets: number
+              unidade_id: string
+              unidade_nome: string
+            }[]
+          }
+        | {
+            Args: {
               p_equipe_filter?: string
               p_periodo_dias?: number
               p_user_id?: string
             }
-          | { p_periodo_dias?: number; p_user_id?: string }
-        Returns: {
-          percentual_sla: number
-          tempo_medio_resolucao: number
-          tickets_abertos: number
-          tickets_crise: number
-          tickets_resolvidos: number
-          tickets_sucesso: number
-          total_tickets: number
-          unidade_id: string
-          unidade_nome: string
-        }[]
-      }
+            Returns: {
+              ia_bem_sucedida: number
+              percentual_sla: number
+              tempo_medio_resolucao: number
+              tickets_abertos: number
+              tickets_crise: number
+              tickets_resolvidos: number
+              total_tickets_mes: number
+              unidade_id: string
+              unidade_nome: string
+            }[]
+          }
       get_user_permissions: {
         Args: { _user_id: string }
         Returns: {
@@ -4366,42 +4335,6 @@ export type Database = {
       }
       group_similar_tickets_to_crisis: {
         Args: { p_crisis_id: string }
-        Returns: number
-      }
-      gtrgm_compress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gtrgm_decompress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gtrgm_in: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gtrgm_options: {
-        Args: { "": unknown }
-        Returns: undefined
-      }
-      gtrgm_out: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      halfvec_avg: {
-        Args: { "": number[] }
-        Returns: unknown
-      }
-      halfvec_out: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      halfvec_send: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      halfvec_typmod_in: {
-        Args: { "": unknown[] }
         Returns: number
       }
       has_permission: {
@@ -4418,54 +4351,12 @@ export type Database = {
         }
         Returns: boolean
       }
-      hnsw_bit_support: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      hnsw_halfvec_support: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      hnsw_sparsevec_support: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      hnswhandler: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
       is_active_member_of_equipe: {
         Args: { p_equipe_id: string; p_user_id: string }
         Returns: boolean
       }
-      is_business_hours: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_business_hours_check: {
-        Args: { p_date: string }
-        Returns: boolean
-      }
-      ivfflat_bit_support: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      ivfflat_halfvec_support: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      ivfflathandler: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      l2_norm: {
-        Args: { "": unknown } | { "": unknown }
-        Returns: number
-      }
-      l2_normalize: {
-        Args: { "": string } | { "": unknown } | { "": unknown }
-        Returns: unknown
-      }
+      is_business_hours: { Args: never; Returns: boolean }
+      is_business_hours_check: { Args: { p_date: string }; Returns: boolean }
       log_sla_action: {
         Args: { p_action: string; p_details?: Json; p_ticket_id: string }
         Returns: string
@@ -4497,10 +4388,7 @@ export type Database = {
         }
         Returns: undefined
       }
-      mark_expired_documents: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      mark_expired_documents: { Args: never; Returns: undefined }
       match_documentos: {
         Args: {
           match_count?: number
@@ -4552,23 +4440,17 @@ export type Database = {
           titulo: string
         }[]
       }
-      monitor_unconfirmed_users: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      next_ticket_code: {
-        Args: { p_unidade_id: string }
-        Returns: string
-      }
+      monitor_unconfirmed_users: { Args: never; Returns: Json }
+      next_ticket_code: { Args: { p_unidade_id: string }; Returns: string }
       pausar_todos_tickets_abertos: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           detalhes: Json
           tickets_pausados: number
         }[]
       }
       pause_sla_tickets: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           despausados: number
           detalhes: Json
@@ -4576,24 +4458,18 @@ export type Database = {
           pausados: number
         }[]
       }
-      process_overdue_slas: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
+      process_overdue_slas: { Args: never; Returns: number }
       reabrir_ticket: {
         Args: { p_sla_minutos?: number; p_ticket_id: string }
         Returns: Json
       }
-      refresh_user_permissions: {
-        Args: { p_user_id: string }
-        Returns: Json
-      }
+      refresh_user_permissions: { Args: { p_user_id: string }; Returns: Json }
       regenerate_single_document_embedding: {
         Args: { doc_id: string }
         Returns: undefined
       }
       reiniciar_e_pausar_slas_abertos: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           detalhes: Json
           tickets_pausados: number
@@ -4609,7 +4485,7 @@ export type Database = {
         Returns: undefined
       }
       reprocess_pending_ticket_forwarded_notifications: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           details: Json
           failed_count: number
@@ -4617,7 +4493,7 @@ export type Database = {
         }[]
       }
       reprocess_stuck_sla_notifications: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           new_status: string
           notification_id: string
@@ -4635,30 +4511,8 @@ export type Database = {
         }
         Returns: undefined
       }
-      set_limit: {
-        Args: { "": number }
-        Returns: number
-      }
-      show_limit: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      show_trgm: {
-        Args: { "": string }
-        Returns: string[]
-      }
-      sparsevec_out: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      sparsevec_send: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      sparsevec_typmod_in: {
-        Args: { "": unknown[] }
-        Returns: number
-      }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
       unlink_ticket_from_crisis: {
         Args: { p_by?: string; p_crise_id: string; p_ticket_id: string }
         Returns: undefined
@@ -4716,9 +4570,32 @@ export type Database = {
         }
         Returns: undefined
       }
-      upsert_unidade_from_matriz: {
-        Args:
-          | {
+      upsert_unidade_from_matriz:
+        | {
+            Args: {
+              p_bairro: string
+              p_cep: string
+              p_cidade: string
+              p_cnpj: string
+              p_codigo_grupo: string
+              p_complemento: string
+              p_created_at: string
+              p_email: string
+              p_endereco: string
+              p_estado: string
+              p_etapa_loja: string
+              p_fase_loja: string
+              p_grupo: string
+              p_id: string
+              p_numero: string
+              p_telefone: string
+              p_uf: string
+              p_updated_at: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
               p_bairro: string
               p_bearer: string
               p_cep: string
@@ -4752,60 +4629,10 @@ export type Database = {
               p_updated_at: string
               p_user_instagram: string
             }
-          | {
-              p_bairro: string
-              p_cep: string
-              p_cidade: string
-              p_cnpj: string
-              p_codigo_grupo: string
-              p_complemento: string
-              p_created_at: string
-              p_email: string
-              p_endereco: string
-              p_estado: string
-              p_etapa_loja: string
-              p_fase_loja: string
-              p_grupo: string
-              p_id: string
-              p_numero: string
-              p_telefone: string
-              p_uf: string
-              p_updated_at: string
-            }
-        Returns: undefined
-      }
-      user_can_view_unidade: {
-        Args: { u_id: string }
-        Returns: boolean
-      }
-      vector_avg: {
-        Args: { "": number[] }
-        Returns: string
-      }
-      vector_dims: {
-        Args: { "": string } | { "": unknown }
-        Returns: number
-      }
-      vector_norm: {
-        Args: { "": string }
-        Returns: number
-      }
-      vector_out: {
-        Args: { "": string }
-        Returns: unknown
-      }
-      vector_send: {
-        Args: { "": string }
-        Returns: string
-      }
-      vector_typmod_in: {
-        Args: { "": unknown[] }
-        Returns: number
-      }
-      vincular_tickets_existentes_a_crise: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+            Returns: undefined
+          }
+      user_can_view_unidade: { Args: { u_id: string }; Returns: boolean }
+      vincular_tickets_existentes_a_crise: { Args: never; Returns: undefined }
       vincular_tickets_similares_a_crise: {
         Args: {
           p_created_since?: string
@@ -4815,10 +4642,7 @@ export type Database = {
         }
         Returns: number
       }
-      vincular_tickets_similares_manual: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      vincular_tickets_similares_manual: { Args: never; Returns: string }
     }
     Enums: {
       ai_interaction_kind: "suggestion" | "chat"
