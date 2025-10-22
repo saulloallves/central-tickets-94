@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, Clock, User, Building, Tag, AlertTriangle, MessageSquare, Send, Paperclip, Zap, Sparkles, Copy, Bot, Phone, Users, FileText, Settings, Play, Check, ExternalLink, Image, Video, File, Download, ChevronDown, RotateCcw, Link, Unlink } from 'lucide-react';
+import { X, Clock, User, Building, Tag, AlertTriangle, MessageSquare, Send, Paperclip, Zap, Sparkles, Copy, Bot, Phone, Users, FileText, Settings, Play, Check, ExternalLink, Image, Video, File, Download, ChevronDown, RotateCcw, Link, Unlink, Mail } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -695,16 +695,6 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
     }
   };
 
-  const getPriorityVariant = (prioridade: string) => {
-    switch (prioridade) {
-      case 'crise': return 'destructive';
-      case 'imediato': return 'destructive';
-      case 'alto': return 'outline';
-      case 'medio': return 'secondary';
-      case 'baixo': return 'secondary';
-      default: return 'secondary';
-    }
-  };
 
 
   const getTicketDisplayTitle = (ticket: any) => {
@@ -947,6 +937,52 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
   };
 
   // Se o ticket está aberto, mostra versão simplificada
+  // Helper functions for priority display
+  const getPriorityVariant = (prioridade: string): "default" | "destructive" | "secondary" | "outline" | "success" | "warning" | "info" | "critical" => {
+    switch (prioridade?.toLowerCase()) {
+      case 'crise':
+      case 'critico':
+        return 'critical';
+      case 'imediato':
+      case 'alto':
+        return 'warning';
+      case 'medio':
+        return 'secondary';
+      case 'baixo':
+        return 'outline';
+      default:
+        return 'outline';
+    }
+  };
+
+  const getPriorityIcon = (prioridade: string) => {
+    switch (prioridade?.toLowerCase()) {
+      case 'crise':
+      case 'critico':
+        return '🔴';
+      case 'imediato':
+      case 'alto':
+        return '🟠';
+      case 'medio':
+        return '🟡';
+      case 'baixo':
+        return '🟢';
+      default:
+        return '⚪';
+    }
+  };
+
+  const formatPhoneNumber = (phone: string) => {
+    const cleaned = phone.replace(/\D/g, '');
+    if (cleaned.length === 11) {
+      return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7)}`;
+    }
+    if (cleaned.length === 10) {
+      return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 6)}-${cleaned.slice(6)}`;
+    }
+    return phone;
+  };
+
   if (ticket.status === 'aberto') {
     return (
       <div className="w-full h-full flex flex-col overflow-hidden">
@@ -956,7 +992,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
             <h2 className="text-lg font-bold text-foreground line-clamp-2">
               {getTicketDisplayTitle(ticket)}
             </h2>
-            <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
               <Badge variant="outline" className="font-mono text-xs bg-muted/50">
                 {ticket.codigo_ticket}
               </Badge>
@@ -964,6 +1000,17 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                 <div className="w-2 h-2 rounded-full bg-blue-500" />
                 <span className="text-xs text-muted-foreground font-medium">Aguardando Atendimento</span>
               </div>
+              {ticket.prioridade && (
+                <Badge variant={getPriorityVariant(ticket.prioridade)} className="text-xs">
+                  {getPriorityIcon(ticket.prioridade)} {ticket.prioridade}
+                </Badge>
+              )}
+              {ticket.categoria && (
+                <Badge variant="outline" className="text-xs">
+                  <Tag className="h-3 w-3 mr-1" />
+                  {ticket.categoria}
+                </Badge>
+              )}
             </div>
             {/* SLA Timer */}
             <SLATimerDetail
@@ -972,7 +1019,12 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
               status={ticket.status}
               slaPausadoHorario={ticket.sla_pausado_horario || false}
             />
-            
+            {ticket.criado_em && (
+              <div className="text-xs text-muted-foreground flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                Aberto em {formatDateTimeBR(ticket.criado_em)}
+              </div>
+            )}
           </div>
         </div>
 
@@ -1010,6 +1062,32 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                   </div>
                 </div>
               </div>
+
+              {/* Contato */}
+              {(ticket.telefone || ticket.email) && (
+                <div className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border border-border/50 rounded-lg p-3 col-span-2">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="p-1.5 bg-amber-500/10 border border-amber-500/20 rounded-md">
+                      <Phone className="h-3 w-3 text-amber-600" />
+                    </div>
+                    <p className="font-medium text-sm">Contato</p>
+                  </div>
+                  <div className="space-y-1 pl-8">
+                    {ticket.telefone && (
+                      <p className="text-sm flex items-center gap-1">
+                        <Phone className="h-3 w-3 text-muted-foreground" />
+                        {formatPhoneNumber(ticket.telefone)}
+                      </p>
+                    )}
+                    {ticket.email && (
+                      <p className="text-sm flex items-center gap-1">
+                        <Mail className="h-3 w-3 text-muted-foreground" />
+                        {ticket.email}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Equipe Responsável - compacto */}
