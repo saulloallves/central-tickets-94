@@ -25,6 +25,7 @@ import { useOptimisticTicketActions } from '@/hooks/useOptimisticTicketActions';
 import { useCrisisManagement } from '@/hooks/useCrisisManagement';
 import { ImageModal } from '@/components/ui/image-modal';
 import { SLATimerDetail } from './SLATimerDetail';
+import { SLADebugCard } from './SLADebugCard';
 
 import { TicketActions } from './TicketActions';
 import { supabase } from '@/integrations/supabase/client';
@@ -1677,6 +1678,9 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* SLA Debug Card */}
+              <SLADebugCard ticket={ticket} />
 
               {/* Description Card */}
               <Card className="bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 border-border/50">
