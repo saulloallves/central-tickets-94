@@ -4361,6 +4361,14 @@ export type Database = {
         Args: { p_ticket_id: string }
         Returns: number
       }
+      calcular_minutos_uteis_entre_datas: {
+        Args: { p_data_fim: string; p_data_inicio: string }
+        Returns: number
+      }
+      calcular_minutos_uteis_restantes: {
+        Args: { p_data_limite: string }
+        Returns: number
+      }
       calcular_sla_tempo_real: {
         Args: { p_ticket_id: string }
         Returns: {
