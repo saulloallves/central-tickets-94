@@ -47,6 +47,15 @@ export const SLADebugCard = ({ ticket }: SLADebugCardProps) => {
     ? calculateElapsedTime(ticket.data_abertura, ticket.data_limite_sla)
     : null;
 
+  // Verificar se está em horário comercial AGORA
+  const now = new Date();
+  const currentTime = now.toTimeString().slice(0, 5); // "HH:MM"
+  const currentDay = now.getDay(); // 0 = domingo
+  const isBusinessHoursNow = 
+    currentDay !== 0 && // Não é domingo
+    currentTime >= '08:30' && 
+    currentTime <= '17:30';
+
   const businessHoursExplanation = ticket.data_abertura && ticket.data_limite_sla && ticket.sla_minutos_totais
     ? explainBusinessHoursSLA(ticket.data_abertura, ticket.data_limite_sla, ticket.sla_minutos_totais)
     : null;
@@ -61,7 +70,13 @@ export const SLADebugCard = ({ ticket }: SLADebugCardProps) => {
       })()
     : 0;
 
-  // Calcular tempo decorrido em minutos de expediente
+  // ✅ CORRIGIDO: Calcular tempo decorrido usando datas REAIS, não sla_minutos_restantes
+  // (que pode estar incorreto devido a decrementação fora do horário comercial)
+  const tempoDecorridoRealMinutos = ticket.data_abertura
+    ? Math.max(0, Math.floor((new Date().getTime() - new Date(ticket.data_abertura).getTime()) / (1000 * 60)))
+    : 0;
+    
+  // Tempo decorrido em expediente (estimado pelo sistema)
   const tempoDecorridoCalc = ticket.sla_minutos_totais && ticket.sla_minutos_restantes !== undefined
     ? ticket.sla_minutos_totais - ticket.sla_minutos_restantes - tempoPausadoMinutos
     : 0;
@@ -118,6 +133,12 @@ export const SLADebugCard = ({ ticket }: SLADebugCardProps) => {
                 Configuração
               </div>
               <div className="pl-5 space-y-1.5">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Em horário comercial agora?</span>
+                  <Badge variant={isBusinessHoursNow ? "default" : "secondary"}>
+                    {isBusinessHoursNow ? '✅ Sim (8:30-17:30)' : '❌ Não (SLA pausado)'}
+                  </Badge>
+                </div>
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Prioridade:</span>
                   <Badge variant="outline">{getPriorityLabel(ticket.prioridade as TicketPriority)}</Badge>
@@ -195,9 +216,18 @@ export const SLADebugCard = ({ ticket }: SLADebugCardProps) => {
                       <span className="font-bold">{formatMinutes(ticket.sla_minutos_totais)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Tempo Decorrido (expediente):</span>
-                      <span className="font-bold">{formatMinutes(tempoDecorridoCalc)}</span>
+                      <span>Tempo Real Decorrido:</span>
+                      <span className="font-bold text-primary">{formatMinutes(tempoDecorridoRealMinutos)}</span>
                     </div>
+                    <div className="flex justify-between">
+                      <span>Tempo Útil (expediente):</span>
+                      <span className="font-bold text-success">{formatMinutes(tempoDecorridoCalc)}</span>
+                    </div>
+                    {tempoDecorridoRealMinutos > tempoDecorridoCalc && (
+                      <div className="text-xs text-warning bg-warning/10 p-1.5 rounded mt-1">
+                        ⚠️ Diferença de {formatMinutes(tempoDecorridoRealMinutos - tempoDecorridoCalc)} foi fora do expediente
+                      </div>
+                    )}
                     {tempoPausadoMinutos > 0 && (
                       <div className="flex justify-between text-warning">
                         <span>(-) Tempo Pausado:</span>
