@@ -8,7 +8,7 @@ const corsHeaders = {
 interface DirectTicketRequest {
   titulo: string;
   descricao_problema: string;
-  unidade_id: string;
+  codigo_grupo: string;
   equipe_id?: string;
   prioridade?: 'baixo' | 'medio' | 'alto' | 'imediato' | 'crise';
   categoria?: string;
@@ -31,16 +31,16 @@ Deno.serve(async (req) => {
     
     console.log('[create-ticket-direct] Received request:', {
       titulo: body.titulo,
-      unidade_id: body.unidade_id,
+      codigo_grupo: body.codigo_grupo,
       prioridade: body.prioridade,
     });
 
     // Validate required fields
-    if (!body.titulo || !body.descricao_problema || !body.unidade_id) {
+    if (!body.titulo || !body.descricao_problema || !body.codigo_grupo) {
       return new Response(
         JSON.stringify({
           success: false,
-          error: 'Campos obrigatórios: titulo, descricao_problema, unidade_id',
+          error: 'Campos obrigatórios: titulo, descricao_problema, codigo_grupo',
         }),
         {
           status: 400,
@@ -48,6 +48,33 @@ Deno.serve(async (req) => {
         }
       );
     }
+
+    // Buscar unidade pelo codigo_grupo
+    const { data: unidade, error: unidadeError } = await supabase
+      .from('unidades')
+      .select('id, grupo, codigo_grupo')
+      .eq('codigo_grupo', body.codigo_grupo)
+      .single();
+
+    if (unidadeError || !unidade) {
+      console.error('[create-ticket-direct] Unidade não encontrada:', body.codigo_grupo);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: `Unidade com codigo_grupo "${body.codigo_grupo}" não encontrada`,
+        }),
+        {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    console.log('[create-ticket-direct] Unidade encontrada:', {
+      id: unidade.id,
+      grupo: unidade.grupo,
+      codigo_grupo: unidade.codigo_grupo,
+    });
 
     // Validate priority if provided
     const validPriorities = ['baixo', 'medio', 'alto', 'imediato', 'crise'];
@@ -63,7 +90,7 @@ Deno.serve(async (req) => {
     const ticketData: any = {
       titulo: body.titulo,
       descricao_problema: body.descricao_problema,
-      unidade_id: body.unidade_id,
+      unidade_id: unidade.id,
       prioridade: prioridade,
       status: 'aberto',
       data_abertura: new Date().toISOString(),

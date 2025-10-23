@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 interface DirectTicketData {
   titulo: string;
   descricao_problema: string;
-  unidade_id: string;
+  codigo_grupo: string;
   equipe_id?: string;
   prioridade?: 'baixo' | 'medio' | 'alto' | 'imediato' | 'crise';
   categoria?: string;
