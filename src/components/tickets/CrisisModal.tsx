@@ -421,8 +421,8 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
         return 'destructive';
       case 'imediato':
         return 'destructive';
-      case 'urgente':
-        return 'destructive';
+      case 'alto':
+        return 'secondary';
       case 'alta':
         return 'secondary';
       default:

@@ -472,11 +472,7 @@ export const useTickets = (filters: TicketFilters) => {
         finalPriority = 'medio';
       }
       
-      // Extra safety check - convert invalid priority
-      if (typeof finalPriority === 'string' && finalPriority.includes('urgente')) {
-        console.error('🚨 URGENTE-LIKE VALUE DETECTED - FORCING TO IMEDIATO');
-        finalPriority = 'imediato';
-      }
+      // Priority is already validated above, no extra checks needed
 
       const ticketInsertData = {
         unidade_id: ticketData.unidade_id!,

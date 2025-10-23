@@ -82,7 +82,7 @@ Responda APENAS em JSON válido:
 CRÍTICO: Use APENAS estas prioridades: {{PRIORIDADES}}`,
   validacao_prioridade: true,
   mapeamento_prioridades: {
-    'urgente': 'imediato',
+    'imediato': 'imediato',
      'alta': 'alto',
      'hoje_18h': 'medio',
      'padrao_24h': 'baixo'

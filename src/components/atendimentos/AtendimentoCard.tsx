@@ -42,7 +42,7 @@ const STATUS_CONFIG = {
 const PRIORIDADE_CONFIG = {
   normal: { variant: 'secondary' as const, label: 'Normal' },
   alta: { variant: 'destructive' as const, label: 'Alta' },
-  urgente: { variant: 'destructive' as const, label: 'Urgente' },
+  imediato: { variant: 'destructive' as const, label: 'Imediato' },
 };
 
 export function AtendimentoCard({ atendimento, onClick, compact = false, onRefresh }: AtendimentoCardProps) {
