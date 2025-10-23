@@ -37,11 +37,35 @@ export async function createTicket(ticketData: TicketData) {
 
   const supabase = getSupabaseClient();
   
+  // Validar e normalizar prioridade ANTES de inserir
+  const validPriorities = ['baixo', 'medio', 'alto', 'imediato', 'crise'];
+  let normalizedPriority = ticketData.prioridade || 'baixo';
+  
+  if (!validPriorities.includes(normalizedPriority)) {
+    console.warn(`⚠️ INVALID PRIORITY "${normalizedPriority}" - mapping to valid value`);
+    
+    // Mapear prioridades legadas para novas
+    const priorityMap: Record<string, string> = {
+      'urgente': 'imediato',
+      'alta': 'alto',
+      'media': 'medio',
+      'baixa': 'baixo',
+      'posso_esperar': 'baixo',
+      'padrao_24h': 'baixo',
+      'ainda_hoje': 'medio',
+      'hoje_18h': 'medio',
+      'ate_1_hora': 'alto'
+    };
+    
+    normalizedPriority = priorityMap[normalizedPriority] || 'baixo';
+    console.log(`✅ Mapped to: "${normalizedPriority}"`);
+  }
+  
   // Preparar dados do ticket (categoria opcional)
   const ticketInsertData: any = {
     titulo: ticketData.titulo,
     descricao_problema: ticketData.descricao_problema,
-    prioridade: ticketData.prioridade,
+    prioridade: normalizedPriority,
     unidade_id: ticketData.unidade_id,
     equipe_responsavel_id: ticketData.equipe_responsavel_id,
     franqueado_id: ticketData.franqueado_id,
