@@ -289,6 +289,7 @@ REGRAS CRÍTICAS:
               case 'hoje_18h':
                 aiResult.prioridade = 'medio';
                 break;
+              case 'urgente':
               case 'ate_1_hora':
               case 'alta':
                 aiResult.prioridade = 'alto';
@@ -296,7 +297,11 @@ REGRAS CRÍTICAS:
               case 'imediato':
                 aiResult.prioridade = 'imediato';
                 break;
+              default:
+                console.warn(`⚠️ Unknown priority "${aiResult.prioridade}", defaulting to "baixo"`);
+                aiResult.prioridade = 'baixo';
             }
+            console.log(`✅ Normalized AI priority to: "${aiResult.prioridade}"`);
           }
 
           // Garantir que o título tenha no máximo 3 palavras
