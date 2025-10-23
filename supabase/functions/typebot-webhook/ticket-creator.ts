@@ -41,6 +41,12 @@ export async function createTicket(ticketData: TicketData) {
   const validPriorities = ['baixo', 'medio', 'alto', 'imediato', 'crise'];
   let normalizedPriority = ticketData.prioridade || 'baixo';
   
+  console.log('🔍 [PRIORITY DEBUG] Prioridade recebida:', {
+    original: ticketData.prioridade,
+    tipo: typeof ticketData.prioridade,
+    isValid: validPriorities.includes(normalizedPriority)
+  });
+  
   if (!validPriorities.includes(normalizedPriority)) {
     console.warn(`⚠️ INVALID PRIORITY "${normalizedPriority}" - mapping to valid value`);
     
@@ -61,17 +67,36 @@ export async function createTicket(ticketData: TicketData) {
     console.log(`✅ Mapped to: "${normalizedPriority}"`);
   }
   
+  // GARANTIR conversão final (double-check crítico)
+  const finalPriority = normalizedPriority === 'alta' ? 'alto' : 
+                       normalizedPriority === 'urgente' ? 'imediato' :
+                       normalizedPriority === 'media' ? 'medio' :
+                       normalizedPriority === 'baixa' ? 'baixo' :
+                       normalizedPriority;
+  
+  console.log('🔒 [PRIORITY FINAL]:', {
+    normalized: normalizedPriority,
+    final: finalPriority,
+    willInsert: finalPriority
+  });
+  
   // Preparar dados do ticket (categoria opcional)
   const ticketInsertData: any = {
     titulo: ticketData.titulo,
     descricao_problema: ticketData.descricao_problema,
-    prioridade: normalizedPriority,
+    prioridade: finalPriority, // ← Usar prioridade final garantida
     unidade_id: ticketData.unidade_id,
     equipe_responsavel_id: ticketData.equipe_responsavel_id,
     franqueado_id: ticketData.franqueado_id,
     canal_origem: ticketData.canal_origem || 'typebot',
     status: 'aberto'
   };
+  
+  console.log('📦 [INSERT DEBUG] Dados que serão inseridos:', {
+    prioridade: ticketInsertData.prioridade,
+    prioridade_type: typeof ticketInsertData.prioridade,
+    ticket_completo: JSON.stringify(ticketInsertData)
+  });
   
   // Adicionar categoria apenas se fornecida
   if (ticketData.categoria) {
