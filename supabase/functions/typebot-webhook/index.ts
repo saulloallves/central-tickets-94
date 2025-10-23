@@ -470,27 +470,6 @@ Deno.serve(async (req) => {
       equipe_nome: analysisResult.equipe_responsavel
     });
 
-    // Normalizar prioridade ANTES de criar ticket
-    const validPriorities = ['baixo', 'medio', 'alto', 'imediato', 'crise'];
-    let normalizedPriority = analysisResult.prioridade || 'baixo';
-    
-    if (!validPriorities.includes(normalizedPriority)) {
-      console.warn(`⚠️ NORMALIZING PRIORITY "${normalizedPriority}" before ticket creation`);
-      const priorityMap: Record<string, string> = {
-        'urgente': 'imediato',
-        'alta': 'alto',
-        'media': 'medio',
-        'baixa': 'baixo',
-        'posso_esperar': 'baixo',
-        'padrao_24h': 'baixo',
-        'ainda_hoje': 'medio',
-        'hoje_18h': 'medio',
-        'ate_1_hora': 'alto'
-      };
-      normalizedPriority = priorityMap[normalizedPriority] || 'baixo';
-      console.log(`✅ Normalized priority to: "${normalizedPriority}"`);
-    }
-
     // UUID validation is handled by ticket-creator
     console.log('✅ Unidade ID validado:', unidade.id, '(tipo:', typeof unidade.id, ')');
 
@@ -499,7 +478,7 @@ Deno.serve(async (req) => {
       titulo: analysisResult.titulo,
       descricao_problema: message,
       categoria: analysisResult.categoria,
-      prioridade: normalizedPriority,
+      prioridade: analysisResult.prioridade || 'baixo',
       unidade_id: unidade.id,
       equipe_responsavel_id: equipeResponsavelId,
       franqueado_id: franqueadoId,
