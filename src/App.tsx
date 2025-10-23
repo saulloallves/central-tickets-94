@@ -79,7 +79,7 @@ const App = () => (
         <Sonner />
         <TestNotifications />
         <BrowserRouter>
-          <ConditionalNotificationListener />
+          <ConditionalNotificationListener /> 
           <PWAInstallPrompt />
           <AutoCacheCleaner />
           <Suspense fallback={<LoadingSpinner />}>
