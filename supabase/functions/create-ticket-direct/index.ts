@@ -1,6 +1,4 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { classifyTicket, classifyTeamOnly } from '../typebot-webhook/ai-classifier.ts';
-import { getActiveTeams, findTeamByNameDirect } from '../typebot-webhook/ticket-creator.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -17,6 +15,282 @@ interface DirectTicketRequest {
   categoria?: string;
   franqueado_id?: string;
 }
+
+// ========================================
+// HELPER FUNCTIONS (copiadas de typebot-webhook)
+// ========================================
+
+async function getActiveTeams(supabase: any) {
+  const { data: equipes, error: equipesError } = await supabase
+    .from('equipes')
+    .select('id, nome, introducao, descricao')
+    .eq('ativo', true)
+    .order('nome');
+
+  if (equipesError) {
+    console.error('Error fetching teams:', equipesError);
+    return [];
+  }
+
+  return equipes || [];
+}
+
+async function findTeamByNameDirect(supabase: any, teamName: string) {
+  const cleanTeamName = teamName.replace(/:\s*[A-Z]$/, '').trim();
+  
+  // First try exact match with original name
+  let { data: equipe } = await supabase
+    .from('equipes')
+    .select('id, nome')
+    .eq('ativo', true)
+    .ilike('nome', teamName)
+    .maybeSingle();
+  
+  // Try exact match with cleaned name
+  if (!equipe) {
+    const { data: equipeClean } = await supabase
+      .from('equipes')
+      .select('id, nome')
+      .eq('ativo', true)
+      .ilike('nome', cleanTeamName)
+      .maybeSingle();
+    
+    equipe = equipeClean;
+  }
+  
+  // If not found, try partial match with cleaned name
+  if (!equipe) {
+    const { data: equipes } = await supabase
+      .from('equipes')
+      .select('id, nome')
+      .eq('ativo', true)
+      .ilike('nome', `%${cleanTeamName}%`)
+      .limit(1);
+    
+    equipe = equipes?.[0] || null;
+  }
+  
+  return equipe;
+}
+
+async function openAIRequest(path: string, payload: any) {
+  const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
+  if (!openaiApiKey) {
+    throw new Error('OPENAI_API_KEY not configured');
+  }
+
+  const response = await fetch(`https://api.openai.com/v1/${path}`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openaiApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return response;
+}
+
+async function classifyTeamOnly(
+  supabase: any, 
+  message: string, 
+  equipes: any[], 
+  existingData: any = {}
+): Promise<{ equipe_responsavel: string | null; justificativa: string; } | null> {
+  const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
+  if (!openaiApiKey || !equipes || equipes.length === 0) {
+    return null;
+  }
+
+  try {
+    console.log('Iniciando análise IA apenas para equipe...');
+    
+    const { data: aiSettings } = await supabase
+      .from('faq_ai_settings')
+      .select('*')
+      .eq('ativo', true)
+      .maybeSingle();
+
+    const modelToUse = aiSettings?.modelo_classificacao || 'gpt-4o-mini';
+    
+    const equipesInfo = equipes.map(e => 
+      `- ${e.nome}: ${e.descricao || 'Sem descrição'} (Introdução: ${e.introducao || 'N/A'})`
+    ).join('\n');
+
+    const existingInfo = Object.keys(existingData).length > 0 ? 
+      `\nDados já definidos: ${JSON.stringify(existingData, null, 2)}` : '';
+
+    const prompt = `Você é um especialista em classificação de tickets de suporte.
+
+Analise a descrição do problema e determine APENAS qual equipe é mais adequada para resolver este ticket.
+
+Descrição do problema: "${message}"${existingInfo}
+
+Equipes disponíveis:
+${equipesInfo}
+
+IMPORTANTE: Se você NÃO TIVER CERTEZA sobre qual equipe escolher, ou se o problema não se encaixar claramente em nenhuma equipe específica, escolha "Concierge Operação". Esta equipe está preparada para analisar e redirecionar tickets incertos.
+
+Responda APENAS com um JSON válido no formato:
+{
+  "equipe_responsavel": "nome_da_equipe_escolhida",
+  "justificativa": "explicação de 1-2 frases do porquê desta equipe",
+  "confianca": "alta, media ou baixa"
+}
+
+Escolha a equipe que melhor se adequa ao problema descrito. Use "Concierge Operação" quando em dúvida.`;
+
+    const response = await openAIRequest('chat/completions', {
+      model: modelToUse,
+      messages: [
+        { role: 'system', content: 'Você é um especialista em classificação de tickets. Responda apenas com JSON válido.' },
+        { role: 'user', content: prompt }
+      ],
+      max_completion_tokens: 300,
+    });
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content;
+
+    if (!content) {
+      throw new Error('Resposta vazia da IA');
+    }
+
+    const result = JSON.parse(content.trim());
+    
+    // Se a IA não retornou equipe ou está com baixa confiança, usar Concierge Operação
+    if (!result.equipe_responsavel || result.confianca === 'baixa') {
+      console.log('IA incerta ou sem equipe - direcionando para Concierge Operação');
+      return {
+        equipe_responsavel: 'Concierge Operação',
+        justificativa: result.justificativa || 'Ticket requer análise adicional para direcionamento correto'
+      };
+    }
+
+    console.log('Resultado da classificação de equipe:', result);
+    return result;
+
+  } catch (error) {
+    console.error('Erro na classificação de equipe por IA:', error);
+    return {
+      equipe_responsavel: 'Concierge Operação',
+      justificativa: 'Erro na classificação automática - requer análise manual'
+    };
+  }
+}
+
+async function classifyTicket(
+  supabase: any,
+  message: string, 
+  equipes: any[]
+): Promise<{ prioridade: string; titulo: string; equipe_responsavel: string | null; justificativa: string; } | null> {
+  const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
+  if (!openaiApiKey || !equipes || equipes.length === 0) {
+    return null;
+  }
+
+  try {
+    console.log('Iniciando análise IA completa...');
+    
+    const { data: aiSettings } = await supabase
+      .from('faq_ai_settings')
+      .select('*')
+      .eq('ativo', true)
+      .maybeSingle();
+
+    const modelToUse = aiSettings?.modelo_classificacao || 'gpt-4o-mini';
+    
+    const equipesInfo = equipes.map(e => 
+      `- ${e.nome}: ${e.descricao || e.introducao || 'Sem descrição'}`
+    ).join('\n');
+
+    const prompt = `Você é um especialista em classificação de tickets de suporte.
+
+Analise este ticket e forneça:
+
+1. TÍTULO: Crie um título DESCRITIVO de exatamente 3 palavras que resuma o problema.
+2. PRIORIDADE: baixo, medio, alto, imediato, crise
+3. EQUIPE: Escolha a melhor equipe ou use "Concierge Operação" se não tiver certeza.
+
+Descrição do problema: "${message}"
+
+Equipes disponíveis:
+${equipesInfo}
+
+Responda APENAS com JSON válido:
+{
+  "prioridade": "baixo|medio|alto|imediato|crise",
+  "titulo": "Título de 3 palavras",
+  "equipe_responsavel": "nome_da_equipe",
+  "justificativa": "Breve explicação",
+  "confianca": "alta|media|baixa"
+}`;
+
+    const response = await openAIRequest('chat/completions', {
+      model: modelToUse,
+      messages: [
+        { role: 'system', content: 'Você é um especialista em classificação de tickets. Responda apenas com JSON válido.' },
+        { role: 'user', content: prompt }
+      ],
+      max_tokens: 500,
+      temperature: 0.1,
+    });
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content;
+
+    if (!content) {
+      throw new Error('Resposta vazia da IA');
+    }
+
+    let cleanedContent = content.trim();
+    if (content.includes('```json')) {
+      cleanedContent = content.replace(/```json\s*/g, '').replace(/```\s*$/g, '').trim();
+    } else if (content.includes('```')) {
+      cleanedContent = content.replace(/```\s*/g, '').trim();
+    }
+
+    const result = JSON.parse(cleanedContent);
+    
+    // Validar e normalizar prioridade
+    const validPriorities = ['baixo', 'medio', 'alto', 'imediato', 'crise'];
+    if (!validPriorities.includes(result.prioridade)) {
+      console.warn(`⚠️ Prioridade inválida "${result.prioridade}", usando "baixo"`);
+      result.prioridade = 'baixo';
+    }
+
+    // Garantir título com 3 palavras
+    let titulo = 'Novo Ticket';
+    if (result.titulo) {
+      const cleanTitle = result.titulo.trim().replace(/[.,!?;:"']+/g, '');
+      const words = cleanTitle.split(/\s+/).filter(word => word.length > 0);
+      titulo = words.slice(0, 3).join(' ');
+    }
+
+    // Se baixa confiança, usar Concierge Operação
+    let equipeNome = result.equipe_responsavel;
+    if (!equipeNome || result.confianca === 'baixa') {
+      equipeNome = 'Concierge Operação';
+    }
+
+    console.log('✅ IA classificou:', { prioridade: result.prioridade, titulo, equipe: equipeNome });
+
+    return {
+      prioridade: result.prioridade,
+      titulo,
+      equipe_responsavel: equipeNome,
+      justificativa: result.justificativa || 'Análise automática'
+    };
+
+  } catch (error) {
+    console.error('Erro na classificação por IA:', error);
+    return null;
+  }
+}
+
+// ========================================
+// MAIN HANDLER
+// ========================================
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
@@ -36,6 +310,8 @@ Deno.serve(async (req) => {
       titulo: body.titulo,
       codigo_grupo: body.codigo_grupo,
       prioridade: body.prioridade,
+      equipe_id: body.equipe_id,
+      equipe_nome: body.equipe_nome,
     });
 
     // Validate required fields
@@ -97,7 +373,7 @@ Deno.serve(async (req) => {
     // Se forneceu nome da equipe, buscar UUID
     if (body.equipe_nome && !equipe_responsavel_id) {
       console.log('[create-ticket-direct] 🔍 Buscando equipe por nome:', body.equipe_nome);
-      const equipeEncontrada = await findTeamByNameDirect(body.equipe_nome);
+      const equipeEncontrada = await findTeamByNameDirect(supabase, body.equipe_nome);
       if (equipeEncontrada) {
         equipe_responsavel_id = equipeEncontrada.id;
         console.log('[create-ticket-direct] ✅ Equipe encontrada:', equipeEncontrada.nome);
@@ -111,7 +387,7 @@ Deno.serve(async (req) => {
       console.log('[create-ticket-direct] 🤖 Iniciando classificação por IA...');
       
       // Buscar equipes disponíveis
-      const equipes = await getActiveTeams();
+      const equipes = await getActiveTeams(supabase);
       
       if (equipes && equipes.length > 0) {
         
@@ -119,7 +395,7 @@ Deno.serve(async (req) => {
         if (!temPrioridade && !equipe_responsavel_id) {
           console.log('[create-ticket-direct] 📊 IA vai classificar: PRIORIDADE + EQUIPE');
           
-          const aiResult = await classifyTicket(body.descricao_problema, equipes);
+          const aiResult = await classifyTicket(supabase, body.descricao_problema, equipes);
           
           if (aiResult) {
             prioridade = aiResult.prioridade;
@@ -127,7 +403,7 @@ Deno.serve(async (req) => {
             
             // Buscar UUID da equipe pelo nome retornado
             if (aiResult.equipe_responsavel) {
-              const equipeEncontrada = await findTeamByNameDirect(aiResult.equipe_responsavel);
+              const equipeEncontrada = await findTeamByNameDirect(supabase, aiResult.equipe_responsavel);
               if (equipeEncontrada) {
                 equipe_responsavel_id = equipeEncontrada.id;
               }
@@ -152,13 +428,14 @@ Deno.serve(async (req) => {
           };
           
           const teamResult = await classifyTeamOnly(
+            supabase,
             body.descricao_problema, 
             equipes, 
             existingData
           );
           
           if (teamResult && teamResult.equipe_responsavel) {
-            const equipeEncontrada = await findTeamByNameDirect(teamResult.equipe_responsavel);
+            const equipeEncontrada = await findTeamByNameDirect(supabase, teamResult.equipe_responsavel);
             if (equipeEncontrada) {
               equipe_responsavel_id = equipeEncontrada.id;
               console.log('[create-ticket-direct] ✅ IA definiu equipe:', equipeEncontrada.nome);
@@ -170,7 +447,7 @@ Deno.serve(async (req) => {
         else if (!temPrioridade && equipe_responsavel_id) {
           console.log('[create-ticket-direct] 📊 IA vai classificar apenas: PRIORIDADE');
           
-          const aiResult = await classifyTicket(body.descricao_problema, equipes);
+          const aiResult = await classifyTicket(supabase, body.descricao_problema, equipes);
           
           if (aiResult) {
             prioridade = aiResult.prioridade;
