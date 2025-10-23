@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from './use-toast';
@@ -12,11 +13,17 @@ declare global {
 
 export const useOneSignal = () => {
   const { user } = useAuth();
+  const location = useLocation();
   const [isInitialized, setIsInitialized] = useState(false);
   const [playerId, setPlayerId] = useState<string | null>(null);
   const [isSubscribed, setIsSubscribed] = useState(false);
 
   useEffect(() => {
+    // Não inicializar OneSignal em rotas mobile (públicas)
+    if (location.pathname.startsWith('/mobile')) {
+      return;
+    }
+    
     if (!user) return;
 
     // Wait for OneSignal to be ready
