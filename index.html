@@ -2,23 +2,33 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/icons/icon-192x192.png">
+    <link rel="icon" type="image/png" href="/icons/icon-192x192.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Central de Tickets</title>
-    <meta name="description" content="Sistema completo de gestão de tickets com IA">
+    <meta
+      name="description"
+      content="Sistema completo de gestão de tickets com IA"
+    />
     <meta name="author" content="Cresci & Perdi" />
-    
+
     <!-- Meta tags para embed -->
-    <meta http-equiv="Content-Security-Policy" content="frame-ancestors 'self' https://fluxoapi.contatocrescieperdi.com.br https://*.typebot.io https://*.vercel.app;">
-    
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="frame-ancestors 'self' https://fluxoapi.contatocrescieperdi.com.br https://*.typebot.io https://*.vercel.app;"
+    />
+
     <!-- OneSignal SDK -->
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script
+      src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js"
+      defer
+    ></script>
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];
-      OneSignalDeferred.push(async function(OneSignal) {
+      OneSignalDeferred.push(async function (OneSignal) {
         await OneSignal.init({
           appId: "23de91fb-41d4-499d-a367-d863ffe4fdbe",
-          safari_web_id: "web.onesignal.auto.2473987d-7114-4e84-8494-f768208d432f",
+          safari_web_id:
+            "web.onesignal.auto.2473987d-7114-4e84-8494-f768208d432f",
           notifyButton: {
             enable: true,
           },
@@ -27,33 +37,49 @@
     </script>
 
     <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#7ab8d6">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="Central Tickets">
-    <meta name="application-name" content="Central de Tickets">
-    <meta name="msapplication-TileColor" content="#7ab8d6">
-    <meta name="msapplication-tap-highlight" content="no">
+    <meta name="theme-color" content="#7ab8d6" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Central Tickets" />
+    <meta name="application-name" content="Central de Tickets" />
+    <meta name="msapplication-TileColor" content="#7ab8d6" />
+    <meta name="msapplication-tap-highlight" content="no" />
 
     <!-- Manifest -->
-    <link rel="manifest" href="/manifest.json?v=3">
+    <link rel="manifest" href="/manifest.json?v=3" />
 
     <!-- Apple Touch Icons -->
-    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
-    
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+
     <!-- Favicon -->
-    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png">
-    <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png">
-    <link rel="shortcut icon" href="/icons/icon-original.png">
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="192x192"
+      href="/icons/icon-192x192.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="512x512"
+      href="/icons/icon-512x512.png"
+    />
+    <link rel="shortcut icon" href="/icons/icon-original.png" />
 
     <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
 
     <meta property="og:title" content="Sistema de Tickets" />
-    <meta property="og:description" content="Sistema completo de gestão de tickets com IA" />
+    <meta
+      property="og:description"
+      content="Sistema completo de gestão de tickets com IA"
+    />
     <meta property="og:type" content="website" />
   </head>
 
@@ -65,7 +91,7 @@
     <script>
       // Adicionar classe CSS quando estiver em iframe
       if (window !== window.top) {
-        document.documentElement.classList.add('in-iframe');
+        document.documentElement.classList.add("in-iframe");
       }
     </script>
   </body>
