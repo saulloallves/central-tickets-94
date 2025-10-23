@@ -484,6 +484,7 @@ Deno.serve(async (req) => {
       prioridade: prioridade || 'baixo',
       status: 'aberto',
       data_abertura: new Date().toISOString(),
+      canal_origem: 'typebot',
     };
 
     // Add optional fields if provided
