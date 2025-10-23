@@ -93,6 +93,8 @@ export const useMobileUnitTickets = () => {
   }, [codigoGrupo]);
 
   // Setup realtime para tickets
+  const updateTimeoutRef = useRef<NodeJS.Timeout>();
+  
   const setupRealtime = useCallback(() => {
     if (!unidade?.id) return;
 
@@ -112,15 +114,54 @@ export const useMobileUnitTickets = () => {
           table: 'tickets',
           filter: `unidade_id=eq.${unidade.id}`
         },
-        (payload) => {
+        async (payload) => {
           console.log('📡 Ticket change:', payload.eventType);
-          fetchData();
+          
+          if (payload.eventType === 'INSERT') {
+            // Buscar apenas o ticket novo com equipes
+            const { data } = await supabase
+              .from('tickets')
+              .select(`
+                *,
+                equipes!tickets_equipe_responsavel_id_fkey(id, nome)
+              `)
+              .eq('id', payload.new.id)
+              .single();
+            
+            if (data) {
+              setTickets(prev => [data as Ticket, ...prev]);
+            }
+          } 
+          else if (payload.eventType === 'UPDATE') {
+            // Debounce para agrupar múltiplos updates
+            if (updateTimeoutRef.current) {
+              clearTimeout(updateTimeoutRef.current);
+            }
+            
+            updateTimeoutRef.current = setTimeout(async () => {
+              const { data } = await supabase
+                .from('tickets')
+                .select(`
+                  *,
+                  equipes!tickets_equipe_responsavel_id_fkey(id, nome)
+                `)
+                .eq('id', payload.new.id)
+                .single();
+              
+              if (data) {
+                setTickets(prev => prev.map(t => t.id === data.id ? data as Ticket : t));
+              }
+            }, 300);
+          }
+          else if (payload.eventType === 'DELETE') {
+            setTickets(prev => prev.filter(t => t.id !== payload.old.id));
+          }
         }
       )
       .subscribe();
 
     channelRef.current = channel;
-  }, [unidade?.id, fetchData]);
+  }, [unidade?.id]);
 
   useEffect(() => {
     fetchData().then(() => {
@@ -131,8 +172,11 @@ export const useMobileUnitTickets = () => {
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
       }
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
     };
-  }, [fetchData, setupRealtime]);
+  }, [unidade?.id]);
 
   const ticketsAbertos = tickets.filter(t => t.status !== 'concluido');
   const ticketsFechados = tickets.filter(t => t.status === 'concluido');
