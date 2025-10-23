@@ -229,6 +229,9 @@ verify_jwt = true
 [functions.chat-rag-v4]
 verify_jwt = false
 
+[functions.create-ticket-direct]
+verify_jwt = false
+
 [db]
 port = 54322
 shadow_port = 54320
