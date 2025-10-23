@@ -45,15 +45,6 @@ export function MobileTicketCard({ ticket, onClick }: MobileTicketCardProps) {
     }
   };
 
-  const getPriorityIcon = (prioridade: string) => {
-    switch (prioridade) {
-      case 'crise': return '🔴';
-      case 'imediato': return '🟠';
-      case 'alto': return '🟡';
-      default: return '';
-    }
-  };
-
   const statusMap: Record<string, string> = {
     'aberto': 'Aberto',
     'em_atendimento': 'Em Atendimento',
@@ -87,7 +78,7 @@ export function MobileTicketCard({ ticket, onClick }: MobileTicketCardProps) {
       {/* Info */}
       <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
         <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full ${getPriorityColor(ticket.prioridade)}`}>
-          {getPriorityIcon(ticket.prioridade)} {ticket.prioridade}
+          {ticket.prioridade}
         </span>
         
         {ticket.status_sla === 'vencido' && (
