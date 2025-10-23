@@ -232,7 +232,7 @@ Responda APENAS com JSON válido:
         { role: 'system', content: 'Você é um especialista em classificação de tickets. Responda apenas com JSON válido.' },
         { role: 'user', content: prompt }
       ],
-      max_tokens: 500,
+      max_completion_tokens: 500,
       temperature: 0.1,
     });
 
