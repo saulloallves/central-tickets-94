@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+// Using native Deno.serve (no import needed)
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -22,7 +22,7 @@ interface AttachmentFile {
   caption?: string;
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });

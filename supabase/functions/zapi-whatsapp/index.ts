@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+// Using native Deno.serve (no import needed)
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0';
 import { corsHeaders } from './utils.ts';
 import { ZAPIMessage, ConversationMessageData } from './types.ts';
@@ -371,7 +371,7 @@ Sua mensagem foi adicionada ao histórico do atendimento.`;
   };
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   console.log(`${req.method} ${req.url}`);
   console.log('Headers:', Object.fromEntries(req.headers.entries()));
   console.log('User-Agent:', req.headers.get('user-agent'));
