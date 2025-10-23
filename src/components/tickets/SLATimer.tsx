@@ -8,6 +8,7 @@ interface SLATimerProps {
   onSLAExpired?: (ticketId: string) => void;
   slaMinutosTotais?: number;
   dataAbertura?: string;
+  slaMinutosRestantes?: number; // Valor pré-calculado do banco
 }
 
 export const SLATimer = ({ 
@@ -17,7 +18,8 @@ export const SLATimer = ({
   slaPausadoHorario = false,
   onSLAExpired,
   slaMinutosTotais,
-  dataAbertura
+  dataAbertura,
+  slaMinutosRestantes
 }: SLATimerProps) => {
   const [timeRemaining, setTimeRemaining] = useState<{
     hours: number;
@@ -44,29 +46,38 @@ export const SLATimer = ({
         return;
       }
 
-      const now = new Date();
-      let deadline = new Date(dataLimiteSla);
-      
-      // 🔍 VALIDAÇÃO: Verificar se data_limite_sla está consistente com sla_minutos_totais
-      if (slaMinutosTotais && dataAbertura) {
-        const abertura = new Date(dataAbertura);
-        const limiteEsperado = new Date(abertura.getTime() + (slaMinutosTotais * 60000));
-        const diffMinutos = Math.abs((deadline.getTime() - limiteEsperado.getTime()) / 60000);
-        
-        // Se diferença > 2 minutos, há inconsistência - usar sla_minutos_totais como fonte da verdade
-        if (diffMinutos > 2) {
-          console.warn(`⚠️ SLA inconsistente no ticket ${ticketId}:`, {
-            limiteAtual: deadline.toISOString(),
-            limiteEsperado: limiteEsperado.toISOString(),
-            diferenca: `${diffMinutos.toFixed(1)} min`,
-            sla_minutos_totais: slaMinutosTotais
+      // ✅ PRIORIZAR: sla_minutos_restantes do banco (considera horário comercial + pausas)
+      if (slaMinutosRestantes !== undefined && slaMinutosRestantes !== null) {
+        if (slaMinutosRestantes <= 0) {
+          // SLA vencido
+          const minutosVencidos = Math.abs(slaMinutosRestantes);
+          setTimeRemaining({
+            hours: Math.floor(minutosVencidos / 60),
+            minutes: minutosVencidos % 60,
+            seconds: 0,
+            isOverdue: true,
+            isPaused: false
           });
           
-          // Usar o limite esperado baseado em sla_minutos_totais
-          deadline = limiteEsperado;
+          if (onSLAExpired) {
+            onSLAExpired(ticketId);
+          }
+        } else {
+          // SLA ativo
+          setTimeRemaining({
+            hours: Math.floor(slaMinutosRestantes / 60),
+            minutes: slaMinutosRestantes % 60,
+            seconds: 0,
+            isOverdue: false,
+            isPaused: false
+          });
         }
+        return;
       }
-      
+
+      // ⚠️ FALLBACK: cálculo baseado em data_limite_sla (NÃO considera horário comercial)
+      const now = new Date();
+      const deadline = new Date(dataLimiteSla);
       const diffMs = deadline.getTime() - now.getTime();
 
       if (diffMs < 0) {
@@ -97,7 +108,7 @@ export const SLATimer = ({
     const interval = setInterval(calculateTime, 1000);
 
     return () => clearInterval(interval);
-  }, [ticketId, dataLimiteSla, status, slaPausadoHorario, onSLAExpired, slaMinutosTotais, dataAbertura]);
+  }, [ticketId, dataLimiteSla, status, slaPausadoHorario, onSLAExpired, slaMinutosTotais, dataAbertura, slaMinutosRestantes]);
 
   if (!dataLimiteSla || status === 'concluido') {
     return null;

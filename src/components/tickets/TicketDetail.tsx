@@ -1027,6 +1027,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
               slaPausadoHorario={ticket.sla_pausado_horario || false}
               slaMinutosTotais={ticket.sla_minutos_totais}
               dataAbertura={ticket.data_abertura}
+              slaMinutosRestantes={ticket.sla_minutos_restantes}
             />
             {ticket.criado_em && (
               <div className="text-xs text-muted-foreground flex items-center gap-1">
@@ -1238,6 +1239,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
             slaPausadoHorario={ticket.sla_pausado_horario || false}
             slaMinutosTotais={ticket.sla_minutos_totais}
             dataAbertura={ticket.data_abertura}
+            slaMinutosRestantes={ticket.sla_minutos_restantes}
           />
         </div>
       </div>

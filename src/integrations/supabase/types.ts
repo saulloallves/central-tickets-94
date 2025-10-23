@@ -4356,6 +4356,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      calcular_data_limite_com_minutos_uteis: {
+        Args: { p_data_inicio: string; p_minutos_uteis: number }
+        Returns: string
+      }
       calcular_data_limite_sla: {
         Args: { p_data_abertura: string; p_prioridade: string }
         Returns: string
