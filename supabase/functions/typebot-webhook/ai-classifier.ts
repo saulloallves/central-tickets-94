@@ -293,7 +293,7 @@ REGRAS CRÍTICAS:
               case 'alta':
                 aiResult.prioridade = 'alto';
                 break;
-              case 'urgente':
+              case 'imediato':
                 aiResult.prioridade = 'imediato';
                 break;
             }

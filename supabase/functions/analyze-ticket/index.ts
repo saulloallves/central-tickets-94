@@ -275,7 +275,7 @@ CRÍTICO: Use APENAS estas 5 prioridades: baixo, medio, alto, imediato, crise
           case 'alta':
             analysis.prioridade = 'alto';
             break;
-          case 'urgente':
+          case 'imediato':
             analysis.prioridade = 'imediato';
             break;
           default:

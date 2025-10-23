@@ -510,7 +510,6 @@ function formatDisplayValue(key: string, value: any): string {
       'alto': 'Alto',
       'imediato': 'Imediato',
       'crise': 'Crise',
-      'urgente': 'Urgente',
       'alta': 'Alta',
       'media': 'Média',
       'baixa': 'Baixa',
