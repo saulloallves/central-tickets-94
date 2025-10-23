@@ -135,11 +135,13 @@ Deno.serve(async (req) => {
 
     // Add initial message
     const { error: messageError } = await supabase
-      .from('ticket_messages')
+      .from('ticket_mensagens')
       .insert([{
         ticket_id: ticket.id,
         mensagem: body.descricao_problema,
-        origem: 'sistema',
+        direcao: 'entrada',
+        canal: 'sistema',
+        anexos: [],
         created_at: new Date().toISOString(),
       }]);
 
