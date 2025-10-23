@@ -7,7 +7,10 @@
     <title>Central de Tickets</title>
     <meta name="description" content="Sistema completo de gestão de tickets com IA">
     <meta name="author" content="Cresci & Perdi" />
-
+    
+    <!-- Meta tags para embed -->
+    <meta http-equiv="Content-Security-Policy" content="frame-ancestors 'self' https://fluxoapi.contatocrescieperdi.com.br https://*.typebot.io https://*.vercel.app;">
+    
     <!-- OneSignal SDK -->
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <script>
@@ -57,5 +60,13 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+
+    <!-- Script para detectar se está em iframe -->
+    <script>
+      // Adicionar classe CSS quando estiver em iframe
+      if (window !== window.top) {
+        document.documentElement.classList.add('in-iframe');
+      }
+    </script>
   </body>
 </html>
