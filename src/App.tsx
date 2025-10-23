@@ -8,7 +8,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "./components/ProtectedRouteSimple";
 import LoadingSpinner from "./components/LoadingSpinner";
-import { GlobalNotificationListener } from "./components/GlobalNotificationListener";
+import { ConditionalNotificationListener } from "./components/ConditionalNotificationListener";
 import { PWAInstallPrompt } from "./components/PWAInstallPrompt";
 import { AutoCacheCleaner } from "./components/AutoCacheCleaner";
 import { supabase } from '@/integrations/supabase/client';
@@ -79,7 +79,7 @@ const App = () => (
         <Sonner />
         <TestNotifications />
         <BrowserRouter>
-          <GlobalNotificationListener />
+          <ConditionalNotificationListener />
           <PWAInstallPrompt />
           <AutoCacheCleaner />
           <Suspense fallback={<LoadingSpinner />}>

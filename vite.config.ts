@@ -22,6 +22,7 @@ export default defineConfig(({ mode }) => ({
         cleanupOutdatedCaches: true,
         skipWaiting: false,
         clientsClaim: false,
+        navigateFallbackDenylist: [/^\/mobile/], // Não cachear rotas mobile
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
