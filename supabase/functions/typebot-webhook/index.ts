@@ -71,6 +71,26 @@ Deno.serve(async (req) => {
       titulo
     } = body;
 
+    // Normalizar prioridade do payload IMEDIATAMENTE
+    const validPriorities = ['baixo', 'medio', 'alto', 'imediato', 'crise'];
+    let prioridadeNormalizada = prioridade;
+    if (prioridade && !validPriorities.includes(prioridade)) {
+      console.warn(`⚠️ INVALID PRIORITY from payload: "${prioridade}" - normalizing`);
+      const priorityMap: Record<string, string> = {
+        'urgente': 'imediato',
+        'alta': 'alto',
+        'media': 'medio',
+        'baixa': 'baixo',
+        'posso_esperar': 'baixo',
+        'padrao_24h': 'baixo',
+        'ainda_hoje': 'medio',
+        'hoje_18h': 'medio',
+        'ate_1_hora': 'alto'
+      };
+      prioridadeNormalizada = priorityMap[prioridade] || 'baixo';
+      console.log(`✅ Normalized payload priority from "${prioridade}" to "${prioridadeNormalizada}"`);
+    }
+
     // Helper function to validate URL
     const isValidUrl = (string: string): boolean => {
       try {
@@ -317,7 +337,7 @@ Deno.serve(async (req) => {
         // Usar dados fornecidos diretamente
         analysisResult = {
           categoria: categoria || 'outro',
-          prioridade: prioridade || 'baixo',
+          prioridade: prioridadeNormalizada || 'baixo',
           titulo: titulo || generateFallbackTitle(message),
           equipe_responsavel: equipeEncontrada.nome,
           justificativa: 'Equipe especificada diretamente no payload'
@@ -328,7 +348,7 @@ Deno.serve(async (req) => {
         
         const existingData = {
           categoria: categoria || undefined,
-          prioridade: prioridade || undefined,
+          prioridade: prioridadeNormalizada || undefined,
           titulo: titulo || undefined
         };
         
@@ -344,7 +364,7 @@ Deno.serve(async (req) => {
           
           analysisResult = {
             categoria: categoria || 'outro',
-            prioridade: prioridade || 'baixo', 
+            prioridade: prioridadeNormalizada || 'baixo', 
             titulo: titulo || generateFallbackTitle(message),
             equipe_responsavel: teamClassification.equipe_responsavel,
             justificativa: teamClassification.justificativa
@@ -354,7 +374,7 @@ Deno.serve(async (req) => {
           const fallback = applyIntelligentFallback(message, equipes);
           analysisResult = {
             categoria: categoria || fallback.categoria,
-            prioridade: prioridade || 'baixo',
+            prioridade: prioridadeNormalizada || 'baixo',
             titulo: titulo || generateFallbackTitle(message),
             equipe_responsavel: fallback.equipeId ? equipes.find(e => e.id === fallback.equipeId)?.nome || null : null,
             justificativa: 'Equipe definida por fallback inteligente'
@@ -368,7 +388,7 @@ Deno.serve(async (req) => {
       
       const existingData = {
         categoria: categoria || undefined,
-        prioridade: prioridade || undefined,
+        prioridade: prioridadeNormalizada || undefined,
         titulo: titulo || undefined
       };
       
@@ -384,7 +404,7 @@ Deno.serve(async (req) => {
         
         analysisResult = {
           categoria: categoria || 'outro',
-          prioridade: prioridade || 'baixo',
+          prioridade: prioridadeNormalizada || 'baixo',
           titulo: titulo || generateFallbackTitle(message),
           equipe_responsavel: teamClassification.equipe_responsavel,
           justificativa: teamClassification.justificativa
@@ -394,7 +414,7 @@ Deno.serve(async (req) => {
         const fallback = applyIntelligentFallback(message, equipes);
         analysisResult = {
           categoria: categoria || fallback.categoria,
-          prioridade: prioridade || 'baixo',
+          prioridade: prioridadeNormalizada || 'baixo',
           titulo: titulo || generateFallbackTitle(message),
           equipe_responsavel: fallback.equipeId ? equipes.find(e => e.id === fallback.equipeId)?.nome || null : null,
           justificativa: 'Equipe definida por fallback inteligente'
