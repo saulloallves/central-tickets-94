@@ -5,7 +5,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useMobileTicketMessages } from '@/hooks/useMobileTicketMessages';
 import { useReopenTicket } from '@/hooks/useReopenTicket';
 import { MobileChatBubble } from '@/components/mobile/MobileChatBubble';
-import { MobileConciergeButton } from '@/components/mobile/MobileConciergeButton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -34,7 +33,6 @@ export default function TicketChat() {
   const [attachments, setAttachments] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isReopening, setIsReopening] = useState(false);
-  const [idGrupoBranco, setIdGrupoBranco] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -56,20 +54,6 @@ export default function TicketChat() {
 
         if (error) throw error;
         setTicket(data);
-
-        // Buscar id_grupo_branco para o botão Concierge
-        if (codigoGrupo) {
-          const { data: atendenteData } = await supabase
-            .from('atendente_unidades')
-            .select('id_grupo_branco')
-            .eq('codigo_grupo', codigoGrupo)
-            .eq('ativo', true)
-            .maybeSingle();
-          
-          if (atendenteData?.id_grupo_branco) {
-            setIdGrupoBranco(atendenteData.id_grupo_branco);
-          }
-        }
       } catch (error) {
         console.error('Erro ao buscar ticket:', error);
       } finally {
@@ -78,7 +62,7 @@ export default function TicketChat() {
     };
 
     fetchTicket();
-  }, [ticketId, codigoGrupo]);
+  }, [ticketId]);
 
   const handleReopenTicket = async () => {
     if (!senhaWeb) {
@@ -302,14 +286,6 @@ export default function TicketChat() {
         )}
         <div ref={messagesEndRef} />
       </div>
-
-      {/* Botão Falar com Concierge */}
-      {ticket.status !== 'concluido' && idGrupoBranco && codigoGrupo && (
-        <MobileConciergeButton 
-          codigoGrupo={codigoGrupo} 
-          idGrupoBranco={idGrupoBranco} 
-        />
-      )}
 
       {/* Input Fixo */}
       <div className="sticky bottom-0 bg-background border-t p-2 safe-area-bottom">
