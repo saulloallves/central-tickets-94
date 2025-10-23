@@ -178,7 +178,7 @@ Analise este ticket e forneça:
 2. PRIORIDADE (OBRIGATÓRIO escolher uma): baixo, medio, alto, imediato, crise
    - baixo: dúvidas, solicitações, problemas menores
    - medio: problemas importantes mas não bloqueiam trabalho
-   - alto: problemas urgentes que afetam produtividade  
+   - alto: problemas importantes que afetam produtividade  
    - imediato: problemas críticos que impedem funcionamento
    - crise: problemas que afetam múltiplas unidades
 

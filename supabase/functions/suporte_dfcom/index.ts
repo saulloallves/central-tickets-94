@@ -43,7 +43,7 @@ serve(async (req: Request) => {
 
     const payload = {
       phone,
-      message: "⚫ *Suporte Imediato - DFCom*\n\n🚀 Para suporte técnico imediato com nossa equipe DFCom, você será direcionado para atendimento especializado.\n\n📞 Nossa equipe está pronta para resolver questões técnicas urgentes.\n\n👇 Selecione uma das opções abaixo:",
+      message: "⚫ *Suporte Imediato - DFCom*\n\n🚀 Para suporte técnico imediato com nossa equipe DFCom, você será direcionado para atendimento especializado.\n\n📞 Nossa equipe está pronta para resolver questões técnicas de alta prioridade.\n\n👇 Selecione uma das opções abaixo:",
       buttonList: {
         buttons: [
           { id: "falar_com_dfcom", label: "🛠️ Falar com DFCom" },
