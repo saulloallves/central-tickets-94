@@ -289,7 +289,6 @@ REGRAS CRÍTICAS:
               case 'hoje_18h':
                 aiResult.prioridade = 'medio';
                 break;
-              case 'urgente':
               case 'ate_1_hora':
               case 'alta':
                 aiResult.prioridade = 'alto';
