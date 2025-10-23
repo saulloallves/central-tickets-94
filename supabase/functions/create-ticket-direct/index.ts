@@ -1,4 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { classifyTicket, classifyTeamOnly } from '../typebot-webhook/ai-classifier.ts';
+import { getActiveTeams, findTeamByNameDirect } from '../typebot-webhook/ticket-creator.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -6,10 +8,11 @@ const corsHeaders = {
 };
 
 interface DirectTicketRequest {
-  titulo: string;
+  titulo?: string;
   descricao_problema: string;
   codigo_grupo: string;
   equipe_id?: string;
+  equipe_nome?: string;
   prioridade?: 'baixo' | 'medio' | 'alto' | 'imediato' | 'crise';
   categoria?: string;
   franqueado_id?: string;
@@ -36,11 +39,11 @@ Deno.serve(async (req) => {
     });
 
     // Validate required fields
-    if (!body.titulo || !body.descricao_problema || !body.codigo_grupo) {
+    if (!body.descricao_problema || !body.codigo_grupo) {
       return new Response(
         JSON.stringify({
           success: false,
-          error: 'Campos obrigatórios: titulo, descricao_problema, codigo_grupo',
+          error: 'Campos obrigatórios: descricao_problema, codigo_grupo',
         }),
         {
           status: 400,
@@ -76,29 +79,139 @@ Deno.serve(async (req) => {
       codigo_grupo: unidade.codigo_grupo,
     });
 
-    // Validate priority if provided
-    const validPriorities = ['baixo', 'medio', 'alto', 'imediato', 'crise'];
-    const prioridade = body.prioridade && validPriorities.includes(body.prioridade)
-      ? body.prioridade
-      : 'baixo';
+    // Inicializar variáveis de classificação
+    let titulo = body.titulo;
+    let prioridade = body.prioridade;
+    let equipe_responsavel_id = body.equipe_id;
 
-    if (body.prioridade && !validPriorities.includes(body.prioridade)) {
-      console.warn(`[create-ticket-direct] Invalid priority "${body.prioridade}", using "baixo"`);
+    // DECISÃO: Precisa usar IA?
+    const temPrioridade = !!body.prioridade;
+    const temEquipe = !!(body.equipe_id || body.equipe_nome);
+
+    console.log('[create-ticket-direct] 🧠 Decisão de classificação:', {
+      tem_prioridade: temPrioridade,
+      tem_equipe: temEquipe,
+      vai_usar_ia: !temPrioridade || !temEquipe
+    });
+
+    // Se forneceu nome da equipe, buscar UUID
+    if (body.equipe_nome && !equipe_responsavel_id) {
+      console.log('[create-ticket-direct] 🔍 Buscando equipe por nome:', body.equipe_nome);
+      const equipeEncontrada = await findTeamByNameDirect(body.equipe_nome);
+      if (equipeEncontrada) {
+        equipe_responsavel_id = equipeEncontrada.id;
+        console.log('[create-ticket-direct] ✅ Equipe encontrada:', equipeEncontrada.nome);
+      } else {
+        console.warn('[create-ticket-direct] ⚠️ Equipe não encontrada:', body.equipe_nome);
+      }
+    }
+
+    // CLASSIFICAÇÃO CONDICIONAL POR IA
+    if (!temPrioridade || !equipe_responsavel_id) {
+      console.log('[create-ticket-direct] 🤖 Iniciando classificação por IA...');
+      
+      // Buscar equipes disponíveis
+      const equipes = await getActiveTeams();
+      
+      if (equipes && equipes.length > 0) {
+        
+        // CENÁRIO 1: Falta tudo (prioridade E equipe)
+        if (!temPrioridade && !equipe_responsavel_id) {
+          console.log('[create-ticket-direct] 📊 IA vai classificar: PRIORIDADE + EQUIPE');
+          
+          const aiResult = await classifyTicket(body.descricao_problema, equipes);
+          
+          if (aiResult) {
+            prioridade = aiResult.prioridade;
+            if (!titulo) titulo = aiResult.titulo;
+            
+            // Buscar UUID da equipe pelo nome retornado
+            if (aiResult.equipe_responsavel) {
+              const equipeEncontrada = await findTeamByNameDirect(aiResult.equipe_responsavel);
+              if (equipeEncontrada) {
+                equipe_responsavel_id = equipeEncontrada.id;
+              }
+            }
+            
+            console.log('[create-ticket-direct] ✅ IA classificou:', {
+              titulo,
+              prioridade,
+              equipe: aiResult.equipe_responsavel,
+              justificativa: aiResult.justificativa
+            });
+          }
+        }
+        
+        // CENÁRIO 2: Tem prioridade, falta só equipe
+        else if (temPrioridade && !equipe_responsavel_id) {
+          console.log('[create-ticket-direct] 📊 IA vai classificar apenas: EQUIPE');
+          
+          const existingData = {
+            prioridade: body.prioridade,
+            titulo: body.titulo
+          };
+          
+          const teamResult = await classifyTeamOnly(
+            body.descricao_problema, 
+            equipes, 
+            existingData
+          );
+          
+          if (teamResult && teamResult.equipe_responsavel) {
+            const equipeEncontrada = await findTeamByNameDirect(teamResult.equipe_responsavel);
+            if (equipeEncontrada) {
+              equipe_responsavel_id = equipeEncontrada.id;
+              console.log('[create-ticket-direct] ✅ IA definiu equipe:', equipeEncontrada.nome);
+            }
+          }
+        }
+        
+        // CENÁRIO 3: Tem equipe, falta só prioridade
+        else if (!temPrioridade && equipe_responsavel_id) {
+          console.log('[create-ticket-direct] 📊 IA vai classificar apenas: PRIORIDADE');
+          
+          const aiResult = await classifyTicket(body.descricao_problema, equipes);
+          
+          if (aiResult) {
+            prioridade = aiResult.prioridade;
+            if (!titulo) titulo = aiResult.titulo;
+            
+            console.log('[create-ticket-direct] ✅ IA definiu prioridade:', prioridade);
+          }
+        }
+        
+      } else {
+        console.warn('[create-ticket-direct] ⚠️ Nenhuma equipe ativa encontrada');
+      }
+      
+      // Fallbacks se IA falhar
+      if (!prioridade) {
+        prioridade = 'baixo';
+        console.log('[create-ticket-direct] ⚠️ Fallback: prioridade = baixo');
+      }
+      
+      if (!titulo) {
+        titulo = body.descricao_problema.split(' ').slice(0, 3).join(' ');
+        console.log('[create-ticket-direct] ⚠️ Fallback: titulo gerado');
+      }
+      
+    } else {
+      console.log('[create-ticket-direct] 📝 Modo direto: usando dados fornecidos (SEM IA)');
     }
 
     // Prepare ticket data
     const ticketData: any = {
-      titulo: body.titulo,
+      titulo: titulo || 'Novo Ticket',
       descricao_problema: body.descricao_problema,
       unidade_id: unidade.id,
-      prioridade: prioridade,
+      prioridade: prioridade || 'baixo',
       status: 'aberto',
       data_abertura: new Date().toISOString(),
     };
 
     // Add optional fields if provided
-    if (body.equipe_id) {
-      ticketData.equipe_id = body.equipe_id;
+    if (equipe_responsavel_id) {
+      ticketData.equipe_responsavel_id = equipe_responsavel_id;
     }
     if (body.categoria) {
       ticketData.categoria = body.categoria;
