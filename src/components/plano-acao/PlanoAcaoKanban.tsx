@@ -108,7 +108,7 @@ const SortablePlanoCard = memo(({ plano, isSelected, onSelect }: SortablePlanoCa
         isSelected && 'ring-2 ring-primary'
       )}
     >
-      <Card className="hover:shadow-md">
+      <Card className="hover:shadow-lg border-2 shadow-sm bg-card">
         <CardContent className="p-3 space-y-2">
           <div className="flex items-start justify-between gap-2">
             <p className="font-semibold text-sm line-clamp-2">
