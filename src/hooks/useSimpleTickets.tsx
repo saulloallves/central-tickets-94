@@ -68,7 +68,15 @@ export const useSimpleTickets = (filters: TicketFilters) => {
       }
 
       console.log(`✅ [FASE 2] Tickets fetched from view: ${(data || []).length}`);
-      setTickets((data || []) as unknown as Ticket[]);
+      
+      // ✅ Map calculated values to display fields
+      const mappedTickets = (data || []).map(ticket => ({
+        ...ticket,
+        status_sla: ticket.status_sla_calculado,  // Use calculated value
+        is_overdue: ticket.is_overdue_calculated   // Use calculated flag
+      }));
+      
+      setTickets(mappedTickets as unknown as Ticket[]);
     } catch (error) {
       console.error('❌ [FASE 2] Error in fetchTickets:', error);
     } finally {
