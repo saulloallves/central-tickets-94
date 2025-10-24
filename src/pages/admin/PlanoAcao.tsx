@@ -72,27 +72,6 @@ export default function PlanoAcaoPage() {
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-5 gap-4">
-        {['aberto', 'pendente', 'em_andamento', 'reaberto', 'concluido'].map((status) => {
-          const count = planos.filter(p => p.status_frnq === status).length;
-          const labels: Record<string, string> = {
-            aberto: 'Abertos',
-            pendente: 'Pendentes',
-            em_andamento: 'Em Andamento',
-            reaberto: 'Reabertos',
-            concluido: 'Concluídos'
-          };
-          
-          return (
-            <div key={status} className="p-4 border rounded-lg">
-              <p className="text-sm text-muted-foreground">{labels[status]}</p>
-              <p className="text-2xl font-bold">{count}</p>
-            </div>
-          );
-        })}
-      </div>
-
       {/* Kanban */}
       <PlanoAcaoKanban
         planos={planos}
