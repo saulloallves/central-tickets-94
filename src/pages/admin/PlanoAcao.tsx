@@ -21,7 +21,7 @@ export default function PlanoAcaoPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto p-6 space-y-6">
+      <div className="w-full h-full p-6 space-y-6">
         <div className="flex items-center justify-between">
           <Skeleton className="h-10 w-64" />
           <Skeleton className="h-10 w-32" />
@@ -36,7 +36,7 @@ export default function PlanoAcaoPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="w-full h-full p-6 space-y-6 overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
