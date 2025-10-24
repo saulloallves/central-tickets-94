@@ -60,6 +60,14 @@ const COLUMN_COLORS = {
   concluido: 'border-border bg-background'
 };
 
+const ICON_COLORS = {
+  aberto: 'text-blue-500',
+  pendente: 'text-yellow-500',
+  em_andamento: 'text-orange-500',
+  reaberto: 'text-red-500',
+  concluido: 'text-green-500'
+};
+
 const getCategoryEmoji = (categoria: string | null) => {
   if (!categoria) return '📋';
   const match = categoria.match(/^([\u{1F300}-\u{1F9FF}])/u);
@@ -165,7 +173,7 @@ const KanbanColumn = ({ status, planos, selectedPlanoId, onPlanoSelect }: Kanban
     >
       <div className="p-3 border-b flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Icon className="h-4 w-4" />
+          <Icon className={cn("h-4 w-4", ICON_COLORS[status])} />
           <span className="font-semibold text-sm">{COLUMN_STATUS[status]}</span>
         </div>
         <Badge variant="secondary">{planos.length}</Badge>
