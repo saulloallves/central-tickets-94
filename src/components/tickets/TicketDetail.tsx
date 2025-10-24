@@ -1407,8 +1407,8 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
             const displayName = isFranqueado 
               ? (ticket.franqueados?.name || 'Franqueado')
               : isSuporte 
-                ? profileName 
-                : 'Sistema';
+                ? (profileName || 'Colaborador')
+                : 'Sistema Automático';
                         
                         return (
                           <div key={message.id} className="flex gap-3 p-3 bg-muted/20 rounded-lg">

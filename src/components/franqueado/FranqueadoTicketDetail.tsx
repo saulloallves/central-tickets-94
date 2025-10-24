@@ -22,6 +22,9 @@ interface TicketMessage {
   created_at: string;
   usuario_id: string;
   anexos: any;
+  profiles?: {
+    nome_completo: string | null;
+  };
 }
 
 interface TicketData {
@@ -95,11 +98,14 @@ export function FranqueadoTicketDetail({ ticketId, onClose }: FranqueadoTicketDe
         setTicket(ticketData as any);
 
         // Buscar mensagens do ticket
-        const { data: messagesData, error: messagesError } = await supabase
-          .from('ticket_mensagens')
-          .select('*')
-          .eq('ticket_id', ticketId)
-          .order('created_at', { ascending: true });
+    const { data: messagesData, error: messagesError } = await supabase
+      .from('ticket_mensagens')
+      .select(`
+        *,
+        profiles:usuario_id (nome_completo)
+      `)
+      .eq('ticket_id', ticketId)
+      .order('created_at', { ascending: true });
 
         if (messagesError) {
           console.error('Erro ao buscar mensagens:', messagesError);
@@ -439,19 +445,27 @@ export function FranqueadoTicketDetail({ ticketId, onClose }: FranqueadoTicketDe
       {/* Messages */}
       <ScrollArea className="flex-1 p-4">
         <div className="space-y-4">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex ${message.direcao === 'saida' ? 'justify-end' : 'justify-start'}`}
-            >
+          {messages.map((message) => {
+            const senderName = message.direcao === 'entrada' 
+              ? 'Você' 
+              : (message.profiles?.nome_completo || 'Suporte Cresci & Perdi');
+            
+            return (
               <div
-                className={`max-w-[80%] rounded-lg p-3 ${
-                  message.direcao === 'saida'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted'
-                }`}
+                key={message.id}
+                className={`flex ${message.direcao === 'saida' ? 'justify-end' : 'justify-start'}`}
               >
-                <p className="text-sm whitespace-pre-line break-words">{message.mensagem}</p>
+                <div
+                  className={`max-w-[80%] rounded-lg p-3 ${
+                    message.direcao === 'saida'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted'
+                  }`}
+                >
+                  <div className="text-xs opacity-70 mb-1">
+                    {senderName}
+                  </div>
+                  <p className="text-sm whitespace-pre-line break-words">{message.mensagem}</p>
                 
                 {/* Render anexos */}
                 {message.anexos && Array.isArray(message.anexos) && message.anexos.length > 0 && (
@@ -514,7 +528,8 @@ export function FranqueadoTicketDetail({ ticketId, onClose }: FranqueadoTicketDe
                 </p>
               </div>
             </div>
-          ))}
+          );
+          })}
           <div ref={messagesEndRef} />
         </div>
       </ScrollArea>
