@@ -4681,7 +4681,7 @@ export type Database = {
           pausados: number
         }[]
       }
-      process_overdue_slas: { Args: never; Returns: number }
+      process_overdue_slas: { Args: never; Returns: Json }
       reabrir_ticket: {
         Args: { p_sla_minutos?: number; p_ticket_id: string }
         Returns: Json
