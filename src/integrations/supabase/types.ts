@@ -2524,6 +2524,69 @@ export type Database = {
           },
         ]
       }
+      plano_acao: {
+        Row: {
+          acoes: string | null
+          categoria: string | null
+          codigo_grupo: number | null
+          created_at: string | null
+          descricao: string | null
+          descricao_andamento: string | null
+          descricao_nao_entendi: string | null
+          desscricao_nao_consegui_realizar: string | null
+          gpt: string | null
+          id: string
+          nome_completo: string | null
+          prazo: string | null
+          responsavel_local: string | null
+          setor: string | null
+          status: string | null
+          status_frnq: string | null
+          titulo: string | null
+          upload: string | null
+        }
+        Insert: {
+          acoes?: string | null
+          categoria?: string | null
+          codigo_grupo?: number | null
+          created_at?: string | null
+          descricao?: string | null
+          descricao_andamento?: string | null
+          descricao_nao_entendi?: string | null
+          desscricao_nao_consegui_realizar?: string | null
+          gpt?: string | null
+          id?: string
+          nome_completo?: string | null
+          prazo?: string | null
+          responsavel_local?: string | null
+          setor?: string | null
+          status?: string | null
+          status_frnq?: string | null
+          titulo?: string | null
+          upload?: string | null
+        }
+        Update: {
+          acoes?: string | null
+          categoria?: string | null
+          codigo_grupo?: number | null
+          created_at?: string | null
+          descricao?: string | null
+          descricao_andamento?: string | null
+          descricao_nao_entendi?: string | null
+          desscricao_nao_consegui_realizar?: string | null
+          gpt?: string | null
+          id?: string
+          nome_completo?: string | null
+          prazo?: string | null
+          responsavel_local?: string | null
+          setor?: string | null
+          status?: string | null
+          status_frnq?: string | null
+          titulo?: string | null
+          upload?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
