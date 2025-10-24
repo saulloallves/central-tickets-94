@@ -139,10 +139,6 @@ const SortablePlanoCard = memo(({ plano, isSelected, onSelect }: SortablePlanoCa
               <span>{plano.prazo}</span>
             </div>
           )}
-
-          <Badge variant="outline" className="text-xs">
-            {plano.categoria?.replace(/^[\u{1F300}-\u{1F9FF}]\s*/u, '') || 'Sem categoria'}
-          </Badge>
         </CardContent>
       </Card>
     </div>
