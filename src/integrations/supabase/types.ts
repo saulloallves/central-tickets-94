@@ -2365,13 +2365,17 @@ export type Database = {
           attempts: number
           created_at: string
           id: string
+          message: string | null
           payload: Json
+          processed: boolean | null
           processed_at: string | null
           scheduled_at: string
           sent_to_whatsapp: boolean | null
           status: string
           ticket_id: string | null
+          title: string | null
           type: string
+          unidade_id: string | null
         }
         Insert: {
           alert_category?: string | null
@@ -2379,13 +2383,17 @@ export type Database = {
           attempts?: number
           created_at?: string
           id?: string
+          message?: string | null
           payload?: Json
+          processed?: boolean | null
           processed_at?: string | null
           scheduled_at?: string
           sent_to_whatsapp?: boolean | null
           status?: string
           ticket_id?: string | null
+          title?: string | null
           type: string
+          unidade_id?: string | null
         }
         Update: {
           alert_category?: string | null
@@ -2393,13 +2401,17 @@ export type Database = {
           attempts?: number
           created_at?: string
           id?: string
+          message?: string | null
           payload?: Json
+          processed?: boolean | null
           processed_at?: string | null
           scheduled_at?: string
           sent_to_whatsapp?: boolean | null
           status?: string
           ticket_id?: string | null
+          title?: string | null
           type?: string
+          unidade_id?: string | null
         }
         Relationships: [
           {
@@ -2442,6 +2454,20 @@ export type Database = {
             columns: ["ticket_id"]
             isOneToOne: false
             referencedRelation: "tickets_with_sla_info"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_queue_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "atendente_unidades"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_queue_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "atendente_unidades_validation"
             referencedColumns: ["id"]
           },
         ]

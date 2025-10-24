@@ -9,6 +9,7 @@ import { AtendentesDashboard } from './AtendentesDashboard';
 import { AtendentesTable } from './AtendentesTable';
 import { AtendentesUnidadesConfig } from './AtendentesUnidadesConfig';
 import { EmergencySettingsTab } from '../configuracoes/EmergencySettingsTab';
+import { GruposDiagnosticoPage } from './GruposDiagnosticoPage';
 import LoadingSpinner from '../LoadingSpinner';
 
 export const AtendentesManagement = () => {
@@ -129,6 +130,10 @@ export const AtendentesManagement = () => {
             <Settings className="mr-2 h-4 w-4" />
             Configuração por Unidade
           </TabsTrigger>
+          <TabsTrigger value="diagnostico">
+            <AlertTriangle className="mr-2 h-4 w-4" />
+            Diagnóstico de Grupos
+          </TabsTrigger>
           <TabsTrigger value="emergencia">
             <AlertTriangle className="mr-2 h-4 w-4" />
             Protocolo de Emergência
@@ -146,6 +151,10 @@ export const AtendentesManagement = () => {
 
         <TabsContent value="unidades">
           <AtendentesUnidadesConfig />
+        </TabsContent>
+
+        <TabsContent value="diagnostico">
+          <GruposDiagnosticoPage />
         </TabsContent>
 
         <TabsContent value="emergencia">
