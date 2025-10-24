@@ -53,11 +53,11 @@ const COLUMN_ICONS = {
 };
 
 const COLUMN_COLORS = {
-  aberto: 'border-blue-500/50 bg-blue-500/5',
-  pendente: 'border-yellow-500/50 bg-yellow-500/5',
-  em_andamento: 'border-orange-500/50 bg-orange-500/5',
-  reaberto: 'border-red-500/50 bg-red-500/5',
-  concluido: 'border-green-500/50 bg-green-500/5'
+  aberto: 'border-border bg-background',
+  pendente: 'border-border bg-background',
+  em_andamento: 'border-border bg-background',
+  reaberto: 'border-border bg-background',
+  concluido: 'border-border bg-background'
 };
 
 const getCategoryEmoji = (categoria: string | null) => {
