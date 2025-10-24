@@ -39,6 +39,7 @@ const Configuracoes = lazy(() => import("./pages/admin/Configuracoes"));
 const Logs = lazy(() => import("./pages/admin/Logs"));
 const Profile = lazy(() => import("./pages/admin/Profile"));
 const Governanca = lazy(() => import("./pages/admin/Governanca"));
+const PlanoAcao = lazy(() => import("./pages/admin/PlanoAcao"));
 
 // Franqueado pages
 const FranqueadoLayout = lazy(() => import("./pages/FranqueadoLayout"));
@@ -125,6 +126,13 @@ const App = () => (
                 <ProtectedRoute>
                   <AdminLayout>
                     <Atendimentos />
+                  </AdminLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/plano-acao" element={
+                <ProtectedRoute>
+                  <AdminLayout>
+                    <PlanoAcao />
                   </AdminLayout>
                 </ProtectedRoute>
               } />
