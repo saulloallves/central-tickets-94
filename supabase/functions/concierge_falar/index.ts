@@ -95,6 +95,22 @@ serve(async (req) => {
 
     if (unidadeError || !atendenteUnidade) {
       console.error("❌ Unidade não encontrada:", unidadeError);
+      console.log(`📞 Phone recebido: "${phone}" (tipo: ${typeof phone})`);
+      console.log(`📋 chatName: "${body.chatName || 'N/A'}"`);
+      
+      // Criar notificação de alerta para admins sobre grupo não cadastrado
+      try {
+        await supabase.from('notifications_queue').insert({
+          type: 'alert',
+          title: '⚠️ Grupo sem cadastro tentou usar o bot',
+          message: `Grupo "${body.chatName || phone}" (ID: ${phone}) tentou acionar o concierge mas não está cadastrado na tabela atendente_unidades.`,
+          unidade_id: null,
+          created_at: new Date().toISOString()
+        });
+      } catch (notifError) {
+        console.error("❌ Erro ao criar notificação:", notifError);
+      }
+      
       return new Response(JSON.stringify({ error: "Unidade não encontrada" }), {
         headers: { "Content-Type": "application/json", ...corsHeaders },
         status: 404,
