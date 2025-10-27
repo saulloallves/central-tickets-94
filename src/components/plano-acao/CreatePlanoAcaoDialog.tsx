@@ -250,6 +250,7 @@ export const CreatePlanoAcaoDialog: React.FC<CreatePlanoAcaoDialogProps> = ({
             formData={formData}
             registroGerado={formData.registroGerado}
             unidadeNome={formData.unidadeNome}
+            onValidationChange={(isValid) => handleValidationChange(11, isValid)}
           />
         );
       

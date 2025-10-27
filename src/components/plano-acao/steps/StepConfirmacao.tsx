@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { CheckCircle2, Building2, User, Calendar, AlertCircle } from 'lucide-react';
 
 interface StepConfirmacaoProps {
@@ -16,9 +16,14 @@ interface StepConfirmacaoProps {
   };
   registroGerado: string;
   unidadeNome?: string;
+  onValidationChange: (isValid: boolean) => void;
 }
 
-export const StepConfirmacao: React.FC<StepConfirmacaoProps> = ({ formData, registroGerado, unidadeNome }) => {
+export const StepConfirmacao: React.FC<StepConfirmacaoProps> = ({ formData, registroGerado, unidadeNome, onValidationChange }) => {
+  useEffect(() => {
+    // Step de confirmação é sempre válido pois o usuário já preencheu todos os dados
+    onValidationChange(true);
+  }, [onValidationChange]);
   return (
     <div className="space-y-6 py-6">
       <div className="space-y-2 text-center">
