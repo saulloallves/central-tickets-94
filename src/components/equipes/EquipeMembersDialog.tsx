@@ -233,7 +233,7 @@ export function EquipeMembersDialog({ equipeId, equipeNome, open, onOpenChange, 
   return (
     <TooltipProvider>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
@@ -241,7 +241,7 @@ export function EquipeMembersDialog({ equipeId, equipeNome, open, onOpenChange, 
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-6 max-h-[calc(90vh-120px)] overflow-y-auto pr-2">
           {/* Add Member Form - Only for non-collaborators */}
           {!isCollaborator && (
             <div className="border rounded-lg p-4">
