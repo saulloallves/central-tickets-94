@@ -25,8 +25,11 @@ export default function PlanoAcaoPage() {
   };
 
   const handleEditPlano = () => {
-    setEditingPlano(selectedPlano);
-    setEditDialogOpen(true);
+    if (selectedPlano) {
+      setEditingPlano(selectedPlano);
+      setSelectedPlano(null);
+      setEditDialogOpen(true);
+    }
   };
 
   if (loading) {

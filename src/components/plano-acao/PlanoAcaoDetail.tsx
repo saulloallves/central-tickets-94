@@ -75,10 +75,7 @@ export const PlanoAcaoDetail = ({ plano, isOpen, onClose, onEdit }: PlanoAcaoDet
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => {
-                  onClose();
-                  onEdit();
-                }}
+                onClick={onEdit}
               >
                 <Pencil className="h-4 w-4 mr-2" />
                 Editar Plano
