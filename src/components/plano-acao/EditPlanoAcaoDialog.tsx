@@ -37,6 +37,7 @@ export const EditPlanoAcaoDialog: React.FC<EditPlanoAcaoDialogProps> = ({
     setor: '',
     descricao: '',
     acoes: '',
+    gpt: '',
     status: '',
     prazo: '',
     responsavel_local: '',
@@ -61,6 +62,7 @@ export const EditPlanoAcaoDialog: React.FC<EditPlanoAcaoDialogProps> = ({
         setor: setorNormalizado,
         descricao: plano.descricao || '',
         acoes: plano.acoes || '',
+        gpt: plano.gpt || '',
         status: plano.status || '',
         prazo: plano.prazo || '',
         responsavel_local: plano.responsavel_local || '',
@@ -277,6 +279,21 @@ export const EditPlanoAcaoDialog: React.FC<EditPlanoAcaoDialogProps> = ({
                       rows={4}
                       required
                     />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="gpt">Arquivo Gerado pela IA</Label>
+                    <Textarea
+                      id="gpt"
+                      value={formData.gpt}
+                      onChange={(e) => setFormData({ ...formData, gpt: e.target.value })}
+                      placeholder="Conteúdo gerado pela IA..."
+                      rows={6}
+                      className="font-mono text-sm"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      📄 Este campo contém o documento/análise gerada pela IA
+                    </p>
                   </div>
                 </CardContent>
               </Card>
