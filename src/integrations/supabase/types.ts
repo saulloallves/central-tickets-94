@@ -4540,7 +4540,13 @@ export type Database = {
         }
         Returns: string
       }
-      decrementar_sla_minutos: { Args: never; Returns: Json }
+      decrementar_sla_minutos: {
+        Args: never
+        Returns: {
+          tickets_atualizados: number
+          tickets_vencidos: number
+        }[]
+      }
       fix_missing_colaborador_roles: { Args: never; Returns: undefined }
       fix_missing_franqueado_roles: { Args: never; Returns: undefined }
       force_delete_user: { Args: { uid: string }; Returns: undefined }
@@ -4773,7 +4779,12 @@ export type Database = {
           pausados: number
         }[]
       }
-      process_overdue_slas: { Args: never; Returns: Json }
+      process_overdue_slas: {
+        Args: never
+        Returns: {
+          notificacoes_criadas: number
+        }[]
+      }
       reabrir_ticket: {
         Args: { p_sla_minutos?: number; p_ticket_id: string }
         Returns: Json
