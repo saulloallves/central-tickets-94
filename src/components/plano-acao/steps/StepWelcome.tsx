@@ -37,7 +37,7 @@ export const StepWelcome: React.FC<StepWelcomeProps> = ({ onNext, onCancel }) =>
           size="lg"
           className="min-w-[200px]"
         >
-          🟢 Iniciar Novo Plano
+          Iniciar Novo Plano
         </Button>
         <Button
           onClick={onCancel}
