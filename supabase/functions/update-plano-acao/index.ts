@@ -13,6 +13,7 @@ interface UpdatePlanoInput {
   setor?: string;
   descricao?: string;
   acoes?: string;
+  gpt?: string;
   status?: string;
   prazo?: string;
   responsavel_local?: string;
