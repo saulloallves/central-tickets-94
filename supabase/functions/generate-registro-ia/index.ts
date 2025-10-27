@@ -36,7 +36,7 @@ serve(async (req) => {
     // Buscar informações da unidade
     const { data: unidade, error: unidadeError } = await supabase
       .from('unidades')
-      .select('fantasy_name, grupo')
+      .select('fantasy_name, grupo, codigo_grupo')
       .eq('codigo_grupo', codigo_grupo)
       .single();
 
@@ -47,6 +47,9 @@ serve(async (req) => {
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Determinar nome da unidade (fallback: grupo se fantasy_name estiver vazio)
+    const nomeUnidade = unidade.fantasy_name || unidade.grupo || 'Unidade Desconhecida';
 
     // Formatar data em PT-BR
     const formatDate = (date: Date): string => {
@@ -128,7 +131,7 @@ Se o relato for muito curto, expanda de forma coerente para manter o nível inst
 
 data atual: ${dataFormatada}
 
-UNIDADE: ${unidade.fantasy_name} (${codigo_grupo})
+UNIDADE: ${nomeUnidade} (${codigo_grupo})
 PESSOA QUE ESTÁ ABRINDO O REGISTRO:
 NOME: ${nome_completo}
 SETOR: ${setor}
