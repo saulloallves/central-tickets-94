@@ -92,10 +92,14 @@ Deno.serve(async (req) => {
       } else {
         console.log('✅ Unidade encontrada:', unidade.grupo);
         
+        // Load message template
+        const template = await loadMessageTemplate(supabase);
+        
         // Send WhatsApp notification
         whatsappEnviado = await sendWhatsAppNotification(
           unidade as UnidadeWhatsApp,
-          plano
+          plano,
+          template
         );
       }
     }
@@ -190,9 +194,33 @@ async function gerarCodigoPlano(
   return codigoPlano;
 }
 
+async function loadMessageTemplate(supabase: any): Promise<string | null> {
+  try {
+    console.log('📄 Carregando template de mensagem...');
+    const { data, error } = await supabase
+      .from('message_templates')
+      .select('template_content')
+      .eq('template_key', 'plano_acao_criado')
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (error || !data) {
+      console.log('⚠️ Template não encontrado no banco, usando padrão');
+      return null;
+    }
+
+    console.log('✅ Template carregado do banco');
+    return data.template_content;
+  } catch (error) {
+    console.error('❌ Erro ao carregar template:', error);
+    return null;
+  }
+}
+
 async function sendWhatsAppNotification(
   unidade: UnidadeWhatsApp,
-  plano: any
+  plano: any,
+  template: string | null
 ): Promise<boolean> {
   try {
     console.log('📱 Preparando envio de notificação WhatsApp...');
@@ -206,7 +234,7 @@ async function sendWhatsAppNotification(
     }
 
     // Build message
-    const mensagem = buildMensagem(plano, unidade);
+    const mensagem = buildMensagem(plano, unidade, template);
     console.log('📝 Mensagem construída:', mensagem);
 
     // Send via Z-API
@@ -241,19 +269,30 @@ async function sendWhatsAppNotification(
   }
 }
 
-function buildMensagem(plano: any, unidade: UnidadeWhatsApp): string {
-  return `⚙️ Novo Plano de Ação Operacional Registrado!
+function buildMensagem(plano: any, unidade: UnidadeWhatsApp, template?: string | null): string {
+  // Template padrão (fallback)
+  const defaultTemplate = `⚙️ Novo Plano de Ação Operacional Registrado!
 
-📋 Código: *${plano.codigo_plano}*
+📋 Código: *{{codigo_plano}}*
 
-📍 Unidade: Cresci e Perdi ${unidade.grupo}
+📍 Unidade: Cresci e Perdi {{unidade_nome}}
 
-🧩 Área: ${plano.categoria || 'Não especificada'}
+🧩 Área: {{categoria}}
 
-📅 Prazo: ${plano.prazo || 'Não definido'}
+📅 Prazo: {{prazo}}
 
-👤 Responsável local: ${plano.responsavel_local || 'Não definido'}
+👤 Responsável local: {{responsavel_local}}
 
 Para visualizar e confirmar o andamento, acesse:
 👉 GiraBot.com > Plano de Ação`;
+
+  const mensagemTemplate = template || defaultTemplate;
+
+  // Replace variables
+  return mensagemTemplate
+    .replace(/\{\{codigo_plano\}\}/g, plano.codigo_plano || 'N/A')
+    .replace(/\{\{unidade_nome\}\}/g, unidade.grupo || 'N/A')
+    .replace(/\{\{categoria\}\}/g, plano.categoria || 'Não especificada')
+    .replace(/\{\{prazo\}\}/g, plano.prazo || 'Não definido')
+    .replace(/\{\{responsavel_local\}\}/g, plano.responsavel_local || 'Não definido');
 }
