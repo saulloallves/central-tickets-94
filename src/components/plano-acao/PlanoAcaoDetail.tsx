@@ -17,10 +17,13 @@ import {
   MessageSquare,
   AlertCircle,
   CheckCircle,
-  HelpCircle
+  HelpCircle,
+  File,
+  Music
 } from 'lucide-react';
 import type { PlanoAcao } from '@/hooks/usePlanoAcao';
 import { formatDistanceToNowInSaoPaulo } from '@/lib/date-utils';
+import { ImageModal } from '@/components/ui/image-modal';
 
 interface PlanoAcaoDetailProps {
   plano: PlanoAcao | null;
@@ -30,6 +33,18 @@ interface PlanoAcaoDetailProps {
 
 export const PlanoAcaoDetail = ({ plano, isOpen, onClose }: PlanoAcaoDetailProps) => {
   if (!plano) return null;
+
+  // Detectar tipo de arquivo
+  const getFileType = (url: string) => {
+    const lowerUrl = url.toLowerCase();
+    if (lowerUrl.match(/\.(jpg|jpeg|png|webp)$/)) return 'image';
+    if (lowerUrl.match(/\.pdf$/)) return 'pdf';
+    if (lowerUrl.match(/\.(mp3|wav)$/)) return 'audio';
+    return 'unknown';
+  };
+
+  const fileType = plano.upload ? getFileType(plano.upload) : null;
+  const fileName = plano.upload ? decodeURIComponent(plano.upload.split('/').pop() || 'arquivo') : 'arquivo';
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -200,20 +215,69 @@ export const PlanoAcaoDetail = ({ plano, isOpen, onClose }: PlanoAcaoDetailProps
               <Card>
                 <CardHeader>
                   <CardTitle className="text-sm flex items-center gap-2">
-                    <ImageIcon className="h-4 w-4" />
+                    {fileType === 'image' && <ImageIcon className="h-4 w-4" />}
+                    {fileType === 'pdf' && <File className="h-4 w-4" />}
+                    {fileType === 'audio' && <Music className="h-4 w-4" />}
+                    {!fileType && <FileText className="h-4 w-4" />}
                     Evidências
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <a 
-                    href={plano.upload} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-primary hover:underline flex items-center gap-2"
-                  >
-                    <ImageIcon className="h-4 w-4" />
-                    Ver arquivo anexado
-                  </a>
+                <CardContent className="space-y-3">
+                  {fileType === 'image' && (
+                    <ImageModal src={plano.upload} alt="Evidência do plano de ação">
+                      <div className="cursor-pointer group">
+                        <img 
+                          src={plano.upload} 
+                          alt="Evidência" 
+                          className="w-full max-w-sm rounded-lg border group-hover:opacity-90 transition-opacity"
+                        />
+                        <p className="text-xs text-muted-foreground mt-2 text-center">
+                          Clique para ampliar
+                        </p>
+                      </div>
+                    </ImageModal>
+                  )}
+
+                  {fileType === 'pdf' && (
+                    <a 
+                      href={plano.upload} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-3 border rounded-lg hover:bg-accent transition-colors"
+                    >
+                      <File className="h-8 w-8 text-red-500" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">Documento PDF</p>
+                        <p className="text-xs text-muted-foreground">{fileName}</p>
+                      </div>
+                      <span className="text-xs text-primary">Abrir →</span>
+                    </a>
+                  )}
+
+                  {fileType === 'audio' && (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Music className="h-4 w-4 text-primary" />
+                        <p className="text-sm font-medium">{fileName}</p>
+                      </div>
+                      <audio controls className="w-full">
+                        <source src={plano.upload} />
+                        Seu navegador não suporta o elemento de áudio.
+                      </audio>
+                    </div>
+                  )}
+
+                  {fileType === 'unknown' && (
+                    <a 
+                      href={plano.upload} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline flex items-center gap-2"
+                    >
+                      <FileText className="h-4 w-4" />
+                      Ver arquivo anexado
+                    </a>
+                  )}
                 </CardContent>
               </Card>
             )}

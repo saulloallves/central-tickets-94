@@ -1,7 +1,9 @@
 import React from 'react';
-import { Upload, FileText, X } from 'lucide-react';
+import { Upload, FileText, X, Loader2 } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface StepAnexosProps {
   value: string;
@@ -10,27 +12,80 @@ interface StepAnexosProps {
 
 export const StepAnexos: React.FC<StepAnexosProps> = ({ value, onChange }) => {
   const [fileName, setFileName] = React.useState('');
+  const [uploading, setUploading] = React.useState(false);
+  const { toast } = useToast();
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      // Validar tipo de arquivo
-      const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf', 'audio/mpeg', 'audio/wav'];
-      if (!validTypes.includes(file.type)) {
-        alert('Tipo de arquivo não permitido. Permitidos: Imagem, PDF, Áudio');
-        return;
+    if (!file) return;
+
+    // Validar tipo de arquivo
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf', 'audio/mpeg', 'audio/wav'];
+    if (!validTypes.includes(file.type)) {
+      toast({
+        title: 'Tipo de arquivo não permitido',
+        description: 'Permitidos: Imagem (JPG, PNG, WEBP), PDF, Áudio (MP3, WAV)',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Validar tamanho (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: 'Arquivo muito grande',
+        description: 'Tamanho máximo: 10MB',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      setUploading(true);
+
+      // Obter usuário autenticado
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('Usuário não autenticado');
       }
 
-      // Validar tamanho (10MB)
-      if (file.size > 10 * 1024 * 1024) {
-        alert('Arquivo muito grande. Máximo: 10MB');
-        return;
-      }
+      // Gerar nome único para o arquivo
+      const timestamp = Date.now();
+      const fileExtension = file.name.split('.').pop();
+      const filePath = `${user.id}/${timestamp}_${file.name}`;
+
+      // Fazer upload para Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('plano-acao-uploads')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) throw error;
+
+      // Obter URL pública
+      const { data: { publicUrl } } = supabase.storage
+        .from('plano-acao-uploads')
+        .getPublicUrl(data.path);
 
       setFileName(file.name);
-      // Aqui você implementaria o upload para Supabase Storage
-      // Por enquanto, apenas salvamos o nome
-      onChange(`temp_upload_${file.name}`);
+      onChange(publicUrl);
+
+      toast({
+        title: 'Upload realizado com sucesso',
+        description: `Arquivo ${file.name} enviado`,
+      });
+
+    } catch (error: any) {
+      console.error('Erro no upload:', error);
+      toast({
+        title: 'Erro no upload',
+        description: error.message || 'Não foi possível enviar o arquivo',
+        variant: 'destructive'
+      });
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -59,11 +114,25 @@ export const StepAnexos: React.FC<StepAnexosProps> = ({ value, onChange }) => {
       <div className="max-w-md mx-auto">
         {!value ? (
           <div className="space-y-2">
-            <Label htmlFor="upload" className="cursor-pointer">
-              <div className="border-2 border-dashed rounded-lg p-8 text-center hover:border-primary hover:bg-primary/5 transition-colors">
-                <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-sm font-medium mb-1">Clique para fazer upload</p>
-                <p className="text-xs text-muted-foreground">ou arraste e solte aqui</p>
+            <Label htmlFor="upload" className={uploading ? 'cursor-not-allowed' : 'cursor-pointer'}>
+              <div className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                uploading 
+                  ? 'border-muted bg-muted/20' 
+                  : 'hover:border-primary hover:bg-primary/5'
+              }`}>
+                {uploading ? (
+                  <>
+                    <Loader2 className="h-12 w-12 mx-auto mb-4 text-primary animate-spin" />
+                    <p className="text-sm font-medium mb-1">Enviando arquivo...</p>
+                    <p className="text-xs text-muted-foreground">Por favor, aguarde</p>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-sm font-medium mb-1">Clique para fazer upload</p>
+                    <p className="text-xs text-muted-foreground">ou arraste e solte aqui</p>
+                  </>
+                )}
               </div>
             </Label>
             <input
@@ -72,6 +141,7 @@ export const StepAnexos: React.FC<StepAnexosProps> = ({ value, onChange }) => {
               className="hidden"
               accept="image/jpeg,image/png,image/webp,application/pdf,audio/mpeg,audio/wav"
               onChange={handleFileChange}
+              disabled={uploading}
             />
           </div>
         ) : (
