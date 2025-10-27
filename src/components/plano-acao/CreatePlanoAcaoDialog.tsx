@@ -260,7 +260,13 @@ export const CreatePlanoAcaoDialog: React.FC<CreatePlanoAcaoDialogProps> = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      if (!isOpen) {
+        handleClose();
+      } else {
+        onOpenChange(isOpen);
+      }
+    }}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto scrollbar-hide">
         <DialogHeader>
           <DialogTitle>Novo Plano de Ação Operacional</DialogTitle>
