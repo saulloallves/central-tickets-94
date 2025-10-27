@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { ClipboardCheck, RefreshCw, Filter } from 'lucide-react';
+import { ClipboardCheck, RefreshCw, Filter, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PlanoAcaoKanban } from '@/components/plano-acao/PlanoAcaoKanban';
 import { PlanoAcaoDetail } from '@/components/plano-acao/PlanoAcaoDetail';
+import { CreatePlanoAcaoDialog } from '@/components/plano-acao/CreatePlanoAcaoDialog';
 import { usePlanoAcao, type PlanoAcao } from '@/hooks/usePlanoAcao';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -10,6 +11,7 @@ export default function PlanoAcaoPage() {
   const { planos, loading, updateStatusFrnq, refetch } = usePlanoAcao();
   const [selectedPlano, setSelectedPlano] = useState<PlanoAcao | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   const handleChangeStatus = async (planoId: string, newStatus: string) => {
     return await updateStatusFrnq(planoId, newStatus);
@@ -53,6 +55,14 @@ export default function PlanoAcaoPage() {
 
         <div className="flex items-center gap-2">
           <Button
+            onClick={() => setCreateDialogOpen(true)}
+            size="sm"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Plano
+          </Button>
+
+          <Button
             variant="outline"
             size="sm"
             onClick={() => setShowFilters(!showFilters)}
@@ -85,6 +95,13 @@ export default function PlanoAcaoPage() {
         plano={selectedPlano}
         isOpen={!!selectedPlano}
         onClose={() => setSelectedPlano(null)}
+      />
+
+      {/* Modal de Criação */}
+      <CreatePlanoAcaoDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        onSuccess={refetch}
       />
     </div>
   );

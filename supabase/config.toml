@@ -232,6 +232,9 @@ verify_jwt = false
 [functions.create-plano-acao]
 verify_jwt = false
 
+[functions.generate-registro-ia]
+verify_jwt = false
+
 [functions.create-ticket-direct]
 verify_jwt = false
 
