@@ -127,10 +127,38 @@ export const usePlanoAcao = () => {
     };
   }, []);
 
+  const updatePlano = async (id: string, data: Partial<PlanoAcao>) => {
+    try {
+      const { data: result, error } = await supabase.functions.invoke(
+        'update-plano-acao',
+        { body: { id, ...data } }
+      );
+      
+      if (error) throw error;
+      
+      toast({
+        title: 'Plano atualizado',
+        description: 'As alterações foram salvas e notificação enviada.'
+      });
+      
+      await fetchPlanos();
+      return true;
+    } catch (error: any) {
+      console.error('Error updating plano:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao atualizar',
+        description: error.message
+      });
+      return false;
+    }
+  };
+
   return {
     planos,
     loading,
     updateStatusFrnq,
+    updatePlano,
     refetch: fetchPlanos
   };
 };

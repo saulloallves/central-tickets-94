@@ -3,15 +3,18 @@ import { ClipboardCheck, RefreshCw, Filter, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PlanoAcaoKanban } from '@/components/plano-acao/PlanoAcaoKanban';
 import { PlanoAcaoDetail } from '@/components/plano-acao/PlanoAcaoDetail';
+import { EditPlanoAcaoDialog } from '@/components/plano-acao/EditPlanoAcaoDialog';
 import { CreatePlanoAcaoDialog } from '@/components/plano-acao/CreatePlanoAcaoDialog';
 import { usePlanoAcao, type PlanoAcao } from '@/hooks/usePlanoAcao';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function PlanoAcaoPage() {
-  const { planos, loading, updateStatusFrnq, refetch } = usePlanoAcao();
+  const { planos, loading, updateStatusFrnq, updatePlano, refetch } = usePlanoAcao();
   const [selectedPlano, setSelectedPlano] = useState<PlanoAcao | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingPlano, setEditingPlano] = useState<PlanoAcao | null>(null);
 
   const handleChangeStatus = async (planoId: string, newStatus: string) => {
     return await updateStatusFrnq(planoId, newStatus);
@@ -19,6 +22,11 @@ export default function PlanoAcaoPage() {
 
   const handlePlanoSelect = (plano: PlanoAcao) => {
     setSelectedPlano(plano);
+  };
+
+  const handleEditPlano = () => {
+    setEditingPlano(selectedPlano);
+    setEditDialogOpen(true);
   };
 
   if (loading) {
@@ -95,6 +103,16 @@ export default function PlanoAcaoPage() {
         plano={selectedPlano}
         isOpen={!!selectedPlano}
         onClose={() => setSelectedPlano(null)}
+        onEdit={handleEditPlano}
+      />
+
+      {/* Modal de Edição */}
+      <EditPlanoAcaoDialog
+        plano={editingPlano}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onSuccess={refetch}
+        onUpdate={updatePlano}
       />
 
       {/* Modal de Criação */}

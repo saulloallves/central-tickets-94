@@ -7,6 +7,7 @@ import {
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   Building2, 
@@ -19,7 +20,8 @@ import {
   CheckCircle,
   HelpCircle,
   File,
-  Music
+  Music,
+  Pencil
 } from 'lucide-react';
 import type { PlanoAcao } from '@/hooks/usePlanoAcao';
 import { formatDistanceToNowInSaoPaulo, formatDateBR } from '@/lib/date-utils';
@@ -29,9 +31,10 @@ interface PlanoAcaoDetailProps {
   plano: PlanoAcao | null;
   isOpen: boolean;
   onClose: () => void;
+  onEdit?: () => void;
 }
 
-export const PlanoAcaoDetail = ({ plano, isOpen, onClose }: PlanoAcaoDetailProps) => {
+export const PlanoAcaoDetail = ({ plano, isOpen, onClose, onEdit }: PlanoAcaoDetailProps) => {
   if (!plano) return null;
 
   // Detectar tipo de arquivo
@@ -61,12 +64,27 @@ export const PlanoAcaoDetail = ({ plano, isOpen, onClose }: PlanoAcaoDetailProps
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <span className="text-2xl">
-              {plano.categoria?.match(/^([\u{1F300}-\u{1F9FF}])/u)?.[1] || '📋'}
-            </span>
-            <span>{plano.titulo || 'Plano de Ação'}</span>
-          </DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="flex items-center gap-2">
+              <span className="text-2xl">
+                {plano.categoria?.match(/^([\u{1F300}-\u{1F9FF}])/u)?.[1] || '📋'}
+              </span>
+              <span>{plano.titulo || 'Plano de Ação'}</span>
+            </DialogTitle>
+            {onEdit && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  onClose();
+                  onEdit();
+                }}
+              >
+                <Pencil className="h-4 w-4 mr-2" />
+                Editar Plano
+              </Button>
+            )}
+          </div>
         </DialogHeader>
 
         <ScrollArea className="max-h-[calc(90vh-100px)]">
