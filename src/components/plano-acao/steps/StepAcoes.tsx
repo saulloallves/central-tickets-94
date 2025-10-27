@@ -9,12 +9,11 @@ interface StepAcoesProps {
   onValidationChange: (isValid: boolean) => void;
 }
 
-const MAX_CHARS = 1000;
 const MIN_CHARS = 50;
 
 export const StepAcoes: React.FC<StepAcoesProps> = ({ value, onChange, onValidationChange }) => {
   const charCount = value.length;
-  const isValid = charCount >= MIN_CHARS && charCount <= MAX_CHARS;
+  const isValid = charCount >= MIN_CHARS;
 
   React.useEffect(() => {
     onValidationChange(isValid);
@@ -42,17 +41,13 @@ export const StepAcoes: React.FC<StepAcoesProps> = ({ value, onChange, onValidat
           value={value}
           onChange={(e) => onChange(e.target.value)}
           rows={6}
-          maxLength={MAX_CHARS}
         />
         <div className="flex justify-between text-xs text-muted-foreground">
           <span>
             {charCount < MIN_CHARS && `Mínimo: ${MIN_CHARS} caracteres`}
-            {charCount >= MIN_CHARS && charCount <= MAX_CHARS && '✓ Válido'}
-            {charCount > MAX_CHARS && 'Máximo excedido'}
+            {charCount >= MIN_CHARS && '✓ Válido'}
           </span>
-          <span className={charCount > MAX_CHARS ? 'text-destructive' : ''}>
-            {charCount} / {MAX_CHARS}
-          </span>
+          <span>{charCount} caracteres</span>
         </div>
       </div>
     </div>
