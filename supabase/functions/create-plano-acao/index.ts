@@ -288,11 +288,26 @@ Para visualizar e confirmar o andamento, acesse:
 
   const mensagemTemplate = template || defaultTemplate;
 
+  // Formatar data para PT-BR (DD/MM/YYYY)
+  const formatarData = (dataISO: string | null): string => {
+    if (!dataISO) return 'Não definido';
+    
+    try {
+      const data = new Date(dataISO);
+      const dia = String(data.getDate()).padStart(2, '0');
+      const mes = String(data.getMonth() + 1).padStart(2, '0');
+      const ano = data.getFullYear();
+      return `${dia}/${mes}/${ano}`;
+    } catch {
+      return dataISO;
+    }
+  };
+
   // Replace variables
   return mensagemTemplate
     .replace(/\{\{codigo_plano\}\}/g, plano.codigo_plano || 'N/A')
     .replace(/\{\{unidade_nome\}\}/g, unidade.grupo || 'N/A')
     .replace(/\{\{categoria\}\}/g, plano.categoria || 'Não especificada')
-    .replace(/\{\{prazo\}\}/g, plano.prazo || 'Não definido')
+    .replace(/\{\{prazo\}\}/g, formatarData(plano.prazo))
     .replace(/\{\{responsavel_local\}\}/g, plano.responsavel_local || 'Não definido');
 }
