@@ -26,9 +26,12 @@ export default function PlanoAcaoPage() {
 
   const handleEditPlano = () => {
     if (selectedPlano) {
-      setEditingPlano(selectedPlano);
-      setSelectedPlano(null);
+      // Salvar referência antes de limpar para evitar perda de dados
+      const planoParaEditar = selectedPlano;
+      setEditingPlano(planoParaEditar);
       setEditDialogOpen(true);
+      // Aguardar próximo render para fechar o modal de detalhes
+      setTimeout(() => setSelectedPlano(null), 0);
     }
   };
 

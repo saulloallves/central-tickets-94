@@ -84,7 +84,7 @@ export const PlanoAcaoDetail = ({ plano, isOpen, onClose, onEdit }: PlanoAcaoDet
           </div>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[calc(90vh-100px)]">
+        <ScrollArea className="max-h-[calc(90vh-180px)] overflow-y-auto pr-4">
           <div className="space-y-4 p-1">
             
             {/* Informações Básicas */}
