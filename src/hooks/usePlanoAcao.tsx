@@ -125,6 +125,7 @@ export const usePlanoAcao = () => {
     return () => {
       supabase.removeChannel(channel);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const updatePlano = async (id: string, data: Partial<PlanoAcao>) => {
