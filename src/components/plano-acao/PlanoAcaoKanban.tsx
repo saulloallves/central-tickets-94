@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import type { PlanoAcao } from '@/hooks/usePlanoAcao';
+import { formatDateBR } from '@/lib/date-utils';
 
 interface PlanoAcaoKanbanProps {
   planos: PlanoAcao[];
@@ -60,6 +61,21 @@ const getCategoryEmoji = (categoria: string | null) => {
   return match ? match[1] : '📋';
 };
 
+// Helper function to format date consistently
+const formatPrazo = (prazo: string | null): string => {
+  if (!prazo) return '-';
+  
+  // Se já está no formato dd/MM/yyyy, retorna direto
+  if (prazo.includes('/')) return prazo;
+  
+  // Se está no formato ISO (yyyy-MM-dd), converte para formato BR
+  try {
+    return formatDateBR(prazo);
+  } catch {
+    return prazo; // Fallback: retorna como veio
+  }
+};
+
 interface PlanoCardProps {
   plano: PlanoAcao;
   isSelected: boolean;
@@ -103,7 +119,7 @@ const PlanoCard = memo(({ plano, isSelected, onSelect }: PlanoCardProps) => {
           {plano.prazo && (
             <div className="flex items-center gap-1 text-xs">
               <Calendar className="h-3 w-3" />
-              <span>{plano.prazo}</span>
+              <span>{formatPrazo(plano.prazo)}</span>
             </div>
           )}
         </CardContent>

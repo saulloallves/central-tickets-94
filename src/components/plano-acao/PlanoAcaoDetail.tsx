@@ -22,7 +22,7 @@ import {
   Music
 } from 'lucide-react';
 import type { PlanoAcao } from '@/hooks/usePlanoAcao';
-import { formatDistanceToNowInSaoPaulo } from '@/lib/date-utils';
+import { formatDistanceToNowInSaoPaulo, formatDateBR } from '@/lib/date-utils';
 import { ImageModal } from '@/components/ui/image-modal';
 
 interface PlanoAcaoDetailProps {
@@ -41,6 +41,17 @@ export const PlanoAcaoDetail = ({ plano, isOpen, onClose }: PlanoAcaoDetailProps
     if (lowerUrl.match(/\.pdf$/)) return 'pdf';
     if (lowerUrl.match(/\.(mp3|wav)$/)) return 'audio';
     return 'unknown';
+  };
+
+  // Formatar prazo
+  const formatPrazo = (prazo: string | null): string => {
+    if (!prazo) return 'Não definido';
+    if (prazo.includes('/')) return prazo;
+    try {
+      return formatDateBR(prazo);
+    } catch {
+      return prazo;
+    }
   };
 
   const fileType = plano.upload ? getFileType(plano.upload) : null;
@@ -90,7 +101,7 @@ export const PlanoAcaoDetail = ({ plano, isOpen, onClose }: PlanoAcaoDetailProps
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <div>
                       <p className="text-xs text-muted-foreground">Prazo</p>
-                      <p className="font-medium">{plano.prazo || 'Não definido'}</p>
+                      <p className="font-medium">{formatPrazo(plano.prazo)}</p>
                     </div>
                   </div>
 
