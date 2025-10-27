@@ -43,9 +43,10 @@ export const EditPlanoAcaoDialog: React.FC<EditPlanoAcaoDialogProps> = ({
     upload: '',
   });
 
-  // Pré-preencher formulário quando plano muda
+  // Pré-preencher formulário quando plano muda ou modal abre
   useEffect(() => {
-    if (plano) {
+    if (plano && open) {
+      console.log('🔄 Carregando dados do plano para edição:', plano);
       setFormData({
         titulo: plano.titulo || '',
         categoria: plano.categoria || '',
@@ -58,7 +59,7 @@ export const EditPlanoAcaoDialog: React.FC<EditPlanoAcaoDialogProps> = ({
         upload: plano.upload || '',
       });
     }
-  }, [plano]);
+  }, [plano, open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
