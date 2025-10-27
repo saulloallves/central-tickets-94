@@ -47,10 +47,18 @@ export const EditPlanoAcaoDialog: React.FC<EditPlanoAcaoDialogProps> = ({
   useEffect(() => {
     if (plano && open) {
       console.log('🔄 Carregando dados do plano para edição:', plano);
+      
+      // Normalizar categoria e setor antes de preencher
+      const categoriaNormalizada = normalizeCategoriaValue(plano.categoria || '');
+      const setorNormalizado = normalizeSetorValue(plano.setor || '');
+      
+      console.log('📝 Categoria original:', plano.categoria, '→ Normalizada:', categoriaNormalizada);
+      console.log('📝 Setor original:', plano.setor, '→ Normalizado:', setorNormalizado);
+      
       setFormData({
         titulo: plano.titulo || '',
-        categoria: plano.categoria || '',
-        setor: plano.setor || '',
+        categoria: categoriaNormalizada,
+        setor: setorNormalizado,
         descricao: plano.descricao || '',
         acoes: plano.acoes || '',
         status: plano.status || '',
@@ -96,29 +104,61 @@ export const EditPlanoAcaoDialog: React.FC<EditPlanoAcaoDialogProps> = ({
 
   if (!plano) return null;
 
-  const categorias = [
-    '🏪 Operacional',
-    '📊 Gestão',
-    '💰 Financeiro',
-    '🎯 Comercial',
-    '👥 Pessoas',
-    '🔧 Manutenção',
-    '📱 Tecnologia',
-    '🏥 Segurança',
+  // Opções de categorias com mapeamento de valores
+  const categoriasOptions = [
+    { value: 'Operacional', label: '🏪 Operacional' },
+    { value: 'Gestão', label: '📊 Gestão' },
+    { value: 'Financeiro', label: '💰 Financeiro' },
+    { value: 'Comercial', label: '🎯 Comercial' },
+    { value: 'Pessoas', label: '👥 Pessoas' },
+    { value: 'Manutenção', label: '🔧 Manutenção' },
+    { value: 'Tecnologia', label: '📱 Tecnologia' },
+    { value: 'Segurança', label: '🏥 Segurança' },
   ];
 
-  const setores = [
-    'Operacional',
-    'Atendimento',
-    'Vendas',
-    'Marketing',
-    'Financeiro',
-    'RH',
-    'TI',
-    'Manutenção',
-    'Limpeza',
-    'Segurança',
+  // Opções de setores com todas as variações possíveis
+  const setoresOptions = [
+    { value: 'Operacional', label: 'Operacional' },
+    { value: 'Atendimento', label: 'Atendimento' },
+    { value: 'Atendimento ao Franqueado', label: 'Atendimento ao Franqueado' },
+    { value: 'Vendas', label: 'Vendas' },
+    { value: 'Marketing', label: 'Marketing' },
+    { value: 'Financeiro', label: 'Financeiro' },
+    { value: 'RH', label: 'RH' },
+    { value: 'TI', label: 'TI' },
+    { value: 'Manutenção', label: 'Manutenção' },
+    { value: 'Limpeza', label: 'Limpeza' },
+    { value: 'Segurança', label: 'Segurança' },
   ];
+
+  // Função para normalizar valor da categoria (remover emoji)
+  const normalizeCategoriaValue = (value: string): string => {
+    if (!value) return '';
+    
+    // Tentar match exato primeiro
+    const exact = categoriasOptions.find(opt => opt.value === value || opt.label === value);
+    if (exact) return exact.value;
+    
+    // Se não encontrar, remover emoji e tentar novamente
+    const cleanValue = value.replace(/[^\w\sÀ-ÿ]/gi, '').trim();
+    const partial = categoriasOptions.find(opt => 
+      opt.value.toLowerCase() === cleanValue.toLowerCase() ||
+      opt.label.replace(/[^\w\sÀ-ÿ]/gi, '').trim().toLowerCase() === cleanValue.toLowerCase()
+    );
+    
+    return partial?.value || value;
+  };
+
+  // Função para normalizar valor do setor
+  const normalizeSetorValue = (value: string): string => {
+    if (!value) return '';
+    
+    // Tentar match exato primeiro
+    const exact = setoresOptions.find(opt => opt.value === value);
+    if (exact) return exact.value;
+    
+    return value;
+  };
 
   const statusOptions = [
     'Pendente',
@@ -139,7 +179,7 @@ export const EditPlanoAcaoDialog: React.FC<EditPlanoAcaoDialogProps> = ({
         </DialogHeader>
 
         <form onSubmit={handleSubmit}>
-          <ScrollArea className="max-h-[calc(90vh-180px)] pr-4">
+          <ScrollArea className="max-h-[calc(90vh-180px)] overflow-y-auto pr-4">
             <div className="space-y-6">
               {/* Código do Plano (Read-only) */}
               {plano.codigo_plano && (
@@ -168,9 +208,9 @@ export const EditPlanoAcaoDialog: React.FC<EditPlanoAcaoDialogProps> = ({
                           <SelectValue placeholder="Selecione a categoria" />
                         </SelectTrigger>
                         <SelectContent>
-                          {categorias.map((cat) => (
-                            <SelectItem key={cat} value={cat}>
-                              {cat}
+                          {categoriasOptions.map((cat) => (
+                            <SelectItem key={cat.value} value={cat.value}>
+                              {cat.label}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -187,9 +227,9 @@ export const EditPlanoAcaoDialog: React.FC<EditPlanoAcaoDialogProps> = ({
                           <SelectValue placeholder="Selecione o setor" />
                         </SelectTrigger>
                         <SelectContent>
-                          {setores.map((setor) => (
-                            <SelectItem key={setor} value={setor}>
-                              {setor}
+                          {setoresOptions.map((setor) => (
+                            <SelectItem key={setor.value} value={setor.value}>
+                              {setor.label}
                             </SelectItem>
                           ))}
                         </SelectContent>
