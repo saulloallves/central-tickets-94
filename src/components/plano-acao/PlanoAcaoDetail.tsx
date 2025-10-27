@@ -78,6 +78,15 @@ export const PlanoAcaoDetail = ({ plano, isOpen, onClose }: PlanoAcaoDetailProps
                 <CardTitle className="text-sm">Informações Básicas</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
+                {plano.codigo_plano && (
+                  <div className="bg-primary/10 border border-primary/20 rounded-lg p-3">
+                    <p className="text-xs text-muted-foreground mb-1">Código do Plano</p>
+                    <p className="text-lg font-mono font-bold text-primary">
+                      {plano.codigo_plano}
+                    </p>
+                  </div>
+                )}
+                
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex items-center gap-2">
                     <Building2 className="h-4 w-4 text-muted-foreground" />

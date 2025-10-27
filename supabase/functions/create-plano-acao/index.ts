@@ -48,12 +48,17 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    // Gerar código sequencial
+    console.log('🔢 Gerando código do plano...');
+    const codigoPlano = await gerarCodigoPlano(supabase, planoData.codigo_grupo);
+
     // Create Plano de Ação
     console.log('💾 Criando plano de ação no banco...');
     const { data: plano, error: planoError } = await supabase
       .from('plano_acao')
       .insert({
         ...planoData,
+        codigo_plano: codigoPlano,
         status_frnq: 'aberto'
       })
       .select()
@@ -101,6 +106,7 @@ Deno.serve(async (req) => {
         success: true,
         message: 'Plano de ação criado com sucesso',
         plano_id: plano.id,
+        codigo_plano: plano.codigo_plano,
         whatsapp_enviado: whatsappEnviado,
         resposta: 'Plano de ação Enviado'
       }),
@@ -145,6 +151,43 @@ function validateInput(data: any): PlanoAcaoInput {
     gpt: data.gpt || null,
     titulo: data.titulo || null
   };
+}
+
+async function gerarCodigoPlano(
+  supabase: any,
+  codigoGrupo: string
+): Promise<string> {
+  console.log('🔍 Buscando último código para unidade:', codigoGrupo);
+  
+  // Buscar o último código da unidade
+  const { data: ultimoPlano, error } = await supabase
+    .from('plano_acao')
+    .select('codigo_plano')
+    .eq('codigo_grupo', codigoGrupo)
+    .not('codigo_plano', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  let proximoSequencial = 1;
+
+  if (!error && ultimoPlano?.codigo_plano) {
+    console.log('📋 Último código encontrado:', ultimoPlano.codigo_plano);
+    // Extrair o sequencial do código (PA-1659-0012 → 0012)
+    const match = ultimoPlano.codigo_plano.match(/PA-\d+-(\d+)$/);
+    if (match) {
+      proximoSequencial = parseInt(match[1], 10) + 1;
+    }
+  } else {
+    console.log('📋 Nenhum código anterior, iniciando em 0001');
+  }
+
+  // Formatar com 4 dígitos: 0001, 0002, etc
+  const sequencialFormatado = proximoSequencial.toString().padStart(4, '0');
+  const codigoPlano = `PA-${codigoGrupo}-${sequencialFormatado}`;
+  
+  console.log('✅ Código gerado:', codigoPlano);
+  return codigoPlano;
 }
 
 async function sendWhatsAppNotification(
@@ -200,6 +243,8 @@ async function sendWhatsAppNotification(
 
 function buildMensagem(plano: any, unidade: UnidadeWhatsApp): string {
   return `⚙️ Novo Plano de Ação Operacional Registrado!
+
+📋 Código: *${plano.codigo_plano}*
 
 📍 Unidade: Cresci e Perdi ${unidade.grupo}
 

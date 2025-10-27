@@ -2529,6 +2529,7 @@ export type Database = {
           acoes: string | null
           categoria: string | null
           codigo_grupo: number | null
+          codigo_plano: string | null
           created_at: string | null
           descricao: string | null
           descricao_andamento: string | null
@@ -2549,6 +2550,7 @@ export type Database = {
           acoes?: string | null
           categoria?: string | null
           codigo_grupo?: number | null
+          codigo_plano?: string | null
           created_at?: string | null
           descricao?: string | null
           descricao_andamento?: string | null
@@ -2569,6 +2571,7 @@ export type Database = {
           acoes?: string | null
           categoria?: string | null
           codigo_grupo?: number | null
+          codigo_plano?: string | null
           created_at?: string | null
           descricao?: string | null
           descricao_andamento?: string | null

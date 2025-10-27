@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 export interface PlanoAcao {
   id: string;
   codigo_grupo: number;
+  codigo_plano?: string;
   titulo: string | null;
   descricao: string | null;
   acoes: string | null;

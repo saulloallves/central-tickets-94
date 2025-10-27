@@ -93,6 +93,12 @@ const PlanoCard = memo(({ plano, isSelected, onSelect }: PlanoCardProps) => {
     >
       <Card className="hover:shadow-lg border border-slate-300 dark:border-slate-700 shadow-sm bg-card">
         <CardContent className="p-3 space-y-2">
+          {plano.codigo_plano && (
+            <div className="text-xs font-mono text-primary font-semibold">
+              {plano.codigo_plano}
+            </div>
+          )}
+          
           <div className="flex items-start justify-between gap-2">
             <p className="font-semibold text-sm line-clamp-2">
               {plano.titulo || 'Sem título'}

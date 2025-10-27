@@ -133,9 +133,10 @@ export const CreatePlanoAcaoDialog: React.FC<CreatePlanoAcaoDialogProps> = ({
         return;
       }
 
+      const codigo = data?.codigo_plano;
       toast({
         title: 'Plano de ação criado!',
-        description: 'O plano foi criado com sucesso e notificações foram enviadas.',
+        description: codigo ? `Código: ${codigo}` : 'O plano foi criado com sucesso e notificações foram enviadas.',
       });
 
       handleClose();
