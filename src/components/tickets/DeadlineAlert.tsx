@@ -44,16 +44,16 @@ export const DeadlineAlert = () => {
   if (!showAlert) return null;
 
   return (
-    <Alert className="border-amber-500 bg-amber-50 dark:bg-amber-950/30 animate-in slide-in-from-top-2 duration-500">
-      <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-500" />
-      <AlertDescription className="flex items-center justify-between gap-4 ml-2">
-        <div className="flex items-center gap-2 flex-1">
-          <Clock className="h-4 w-4 text-amber-600 dark:text-amber-500" />
-          <span className="font-semibold text-amber-900 dark:text-amber-100">
+    <Alert className="border-amber-500 bg-amber-50 dark:bg-amber-950/30 animate-in slide-in-from-top-2 duration-500 p-4 md:p-5">
+      <AlertTriangle className="h-6 w-6 md:h-7 md:w-7 text-amber-600 dark:text-amber-500" />
+      <AlertDescription className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4 ml-2">
+        <div className="flex items-center gap-3 flex-1">
+          <Clock className="h-5 w-5 md:h-6 md:w-6 text-amber-600 dark:text-amber-500" />
+          <span className="text-base md:text-lg font-bold text-amber-900 dark:text-amber-100">
             ⚠️ ATENÇÃO: Todos os tickets precisam ser resolvidos até as 18h!
           </span>
         </div>
-        <div className="text-sm text-amber-700 dark:text-amber-300 font-medium whitespace-nowrap">
+        <div className="text-base md:text-lg text-amber-700 dark:text-amber-300 font-bold whitespace-nowrap ml-8 md:ml-0">
           Tempo restante: {timeRemaining}
         </div>
       </AlertDescription>
