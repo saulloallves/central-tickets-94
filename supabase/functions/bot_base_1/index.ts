@@ -124,7 +124,7 @@ async function checkGroupInWhatsappTable(groupId: string): Promise<{
 
     const { data, error } = await supabaseAdmin
       .from("unidades_whatsapp")
-      .select("codigo_grupo, nome_grupo")
+      .select("codigo_grupo, grupo")
       .eq("id_grupo_branco", groupId)
       .maybeSingle();
 
@@ -134,11 +134,11 @@ async function checkGroupInWhatsappTable(groupId: string): Promise<{
     }
 
     if (data) {
-      console.log(`✅ Grupo encontrado em unidades_whatsapp: ${data.nome_grupo} (código: ${data.codigo_grupo})`);
+      console.log(`✅ Grupo encontrado em unidades_whatsapp: ${data.grupo} (código: ${data.codigo_grupo})`);
       return {
         exists: true,
         codigoGrupo: data.codigo_grupo,
-        nomeGrupo: data.nome_grupo,
+        nomeGrupo: data.grupo,
       };
     }
 
