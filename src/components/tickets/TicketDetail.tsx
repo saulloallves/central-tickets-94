@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, Clock, User, Building, Tag, AlertTriangle, MessageSquare, Send, Paperclip, Zap, Sparkles, Copy, Bot, Phone, Users, FileText, Settings, Play, Check, ExternalLink, Image, Video, File, Download, ChevronDown, RotateCcw, Link, Unlink, Mail } from 'lucide-react';
+import { X, Clock, User, Building, Tag, AlertTriangle, MessageSquare, Send, Paperclip, Zap, Sparkles, Copy, Bot, Phone, Users, FileText, Settings, Play, Check, ExternalLink, Image, Video, File, Download, ChevronDown, ChevronUp, RotateCcw, Link, Unlink, Mail } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -58,6 +58,7 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
   const [linkedCrisis, setLinkedCrisis] = useState<any>(null);
   const [activeCrises, setActiveCrises] = useState<any[]>([]);
   const [isLoadingCrisis, setIsLoadingCrisis] = useState(false);
+  const [isTextareaExpanded, setIsTextareaExpanded] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const { messages, sendMessage, loading: messagesLoading, refetch: refetchMessages } = useTicketMessages(ticketId);
@@ -1600,23 +1601,39 @@ export const TicketDetail = ({ ticketId, onClose }: TicketDetailProps) => {
                         <Paperclip className="h-4 w-4" />
                       </Button>
                       
-                      <Textarea
-                        placeholder="Digite sua mensagem..."
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        onKeyPress={(e) => {
-                          if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            if (isFormatted) {
-                              handleSendMessage();
-                            } else {
-                              handleFormatMessage();
+                      <div className="relative flex-1">
+                        <Textarea
+                          placeholder="Digite sua mensagem..."
+                          value={newMessage}
+                          onChange={(e) => setNewMessage(e.target.value)}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              if (isFormatted) {
+                                handleSendMessage();
+                              } else {
+                                handleFormatMessage();
+                              }
                             }
-                          }
-                        }}
-                        className="flex-1 min-h-[60px] resize-none"
-                        disabled={messagesLoading || isUploadingAttachments}
-                      />
+                          }}
+                          className={`flex-1 resize-none transition-all duration-300 pr-8 ${isTextareaExpanded ? 'min-h-[200px]' : 'min-h-[60px]'}`}
+                          disabled={messagesLoading || isUploadingAttachments}
+                        />
+                        
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setIsTextareaExpanded(!isTextareaExpanded)}
+                          className="absolute top-1 right-1 h-6 w-6 hover:bg-muted"
+                          title={isTextareaExpanded ? "Recolher" : "Expandir área de texto"}
+                        >
+                          {isTextareaExpanded ? (
+                            <ChevronDown className="h-3 w-3" />
+                          ) : (
+                            <ChevronUp className="h-3 w-3" />
+                          )}
+                        </Button>
+                      </div>
                       
                       {!isFormatted ? (
                         <Button
