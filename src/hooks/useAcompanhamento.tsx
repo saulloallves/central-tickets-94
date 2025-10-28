@@ -75,7 +75,7 @@ export function useAcompanhamento() {
             table: 'unidades_acompanhamento'
           },
           () => {
-            fetchAcompanhamentos();
+            silentRefetch();
           }
         )
         .subscribe();
@@ -88,6 +88,41 @@ export function useAcompanhamento() {
       toast.error('Erro ao carregar acompanhamentos');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const silentRefetch = async () => {
+    try {
+      // Fetch acompanhamentos without loading state
+      const { data: acompanhamentosData, error: acompanhamentosError } = await supabase
+        .from('unidades_acompanhamento' as any)
+        .select('*')
+        .eq('em_acompanhamento', true)
+        .order('created_at', { ascending: false });
+
+      if (acompanhamentosError) throw acompanhamentosError;
+
+      // Fetch unidades data
+      const codigosGrupo = (acompanhamentosData as any[])?.map((a: any) => a.codigo_grupo) || [];
+      const { data: unidadesData, error: unidadesError } = await supabase
+        .from('unidades')
+        .select('id, grupo, codigo_grupo, fantasy_name, cidade, estado')
+        .in('codigo_grupo', codigosGrupo);
+
+      if (unidadesError) throw unidadesError;
+
+      // Combine data
+      const combined = (acompanhamentosData as any[])?.map((acomp: any) => {
+        const unidade = unidadesData?.find((u: any) => u.codigo_grupo === acomp.codigo_grupo);
+        return {
+          ...acomp,
+          unidade
+        } as Acompanhamento;
+      }) || [];
+
+      setAcompanhamentos(combined);
+    } catch (error) {
+      console.error('Error in silent refetch:', error);
     }
   };
 
@@ -135,7 +170,7 @@ export function useAcompanhamento() {
       if (insertError) throw insertError;
 
       toast.success('Unidade adicionada ao acompanhamento');
-      await fetchAcompanhamentos();
+      await silentRefetch();
       return true;
     } catch (error) {
       console.error('Error adding unidade:', error);
@@ -147,7 +182,7 @@ export function useAcompanhamento() {
   const agendarReuniao = async (
     acompanhamentoId: string,
     reuniaoData: string,
-    responsavelId: string,
+    responsavelId: string | null,
     responsavelNome: string
   ) => {
     try {
@@ -165,7 +200,7 @@ export function useAcompanhamento() {
       if (error) throw error;
 
       toast.success('Reunião agendada com sucesso');
-      await fetchAcompanhamentos();
+      await silentRefetch();
       return true;
     } catch (error) {
       console.error('Error scheduling meeting:', error);
@@ -186,7 +221,7 @@ export function useAcompanhamento() {
 
       if (error) throw error;
 
-      await fetchAcompanhamentos();
+      await silentRefetch();
       return true;
     } catch (error) {
       console.error('Error updating status:', error);
@@ -208,7 +243,7 @@ export function useAcompanhamento() {
       if (error) throw error;
 
       toast.success('Reunião confirmada');
-      await fetchAcompanhamentos();
+      await silentRefetch();
       return true;
     } catch (error) {
       console.error('Error confirming meeting:', error);
@@ -232,7 +267,7 @@ export function useAcompanhamento() {
       if (error) throw error;
 
       toast.success('Acompanhamento finalizado');
-      await fetchAcompanhamentos();
+      await silentRefetch();
       return true;
     } catch (error) {
       console.error('Error finalizing acompanhamento:', error);

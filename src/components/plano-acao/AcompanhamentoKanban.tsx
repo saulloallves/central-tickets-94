@@ -127,10 +127,16 @@ export const AcompanhamentoKanban: React.FC<AcompanhamentoKanbanProps> = ({
 
     return {
       em_acompanhamento: acompanhamentos.filter(a => a.status === 'em_acompanhamento'),
-      reuniao_agendada: acompanhamentos.filter(a => a.status === 'reuniao_agendada'),
+      reuniao_agendada: acompanhamentos.filter(a => {
+        if (a.status !== 'reuniao_agendada' || !a.reuniao_inicial_data) return false;
+        const reuniaoDate = new Date(a.reuniao_inicial_data);
+        reuniaoDate.setHours(0, 0, 0, 0);
+        return reuniaoDate < tomorrow;
+      }),
       proximas_reunioes: acompanhamentos.filter(a => {
         if (a.status !== 'reuniao_agendada' || !a.reuniao_inicial_data) return false;
         const reuniaoDate = new Date(a.reuniao_inicial_data);
+        reuniaoDate.setHours(0, 0, 0, 0);
         return reuniaoDate >= tomorrow;
       }),
       reunioes_dia: acompanhamentos.filter(a => {
