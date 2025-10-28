@@ -36,7 +36,7 @@ export default function TicketChat() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const { messages, loading: messagesLoading, sending, sendMessage } = useMobileTicketMessages(ticketId!);
+  const { messages, loading: messagesLoading, sending, sendMessage, refetch } = useMobileTicketMessages(ticketId!);
   const { reopenTicket } = useReopenTicket();
 
   const scrollToBottom = () => {
@@ -181,6 +181,10 @@ export default function TicketChat() {
       if (success) {
         setNewMessage('');
         setAttachments([]);
+        
+        // ✅ Atualizar mensagens imediatamente após envio
+        await refetch();
+        
         toast({
           title: 'Mensagem enviada',
           description: 'Sua mensagem foi enviada com sucesso'
