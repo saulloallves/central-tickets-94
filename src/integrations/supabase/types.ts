@@ -3704,6 +3704,85 @@ export type Database = {
         }
         Relationships: []
       }
+      unidades_acompanhamento: {
+        Row: {
+          codigo_grupo: string
+          created_at: string | null
+          em_acompanhamento: boolean | null
+          finalizado_em: string | null
+          id: string
+          observacoes: string | null
+          plano_acao_id: string | null
+          responsavel_reuniao_id: string | null
+          responsavel_reuniao_nome: string | null
+          reuniao_confirmada: boolean | null
+          reuniao_inicial_data: string | null
+          reuniao_link_zoom: string | null
+          reuniao_proxima_data: string | null
+          status: string
+          unidade_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          codigo_grupo: string
+          created_at?: string | null
+          em_acompanhamento?: boolean | null
+          finalizado_em?: string | null
+          id?: string
+          observacoes?: string | null
+          plano_acao_id?: string | null
+          responsavel_reuniao_id?: string | null
+          responsavel_reuniao_nome?: string | null
+          reuniao_confirmada?: boolean | null
+          reuniao_inicial_data?: string | null
+          reuniao_link_zoom?: string | null
+          reuniao_proxima_data?: string | null
+          status?: string
+          unidade_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          codigo_grupo?: string
+          created_at?: string | null
+          em_acompanhamento?: boolean | null
+          finalizado_em?: string | null
+          id?: string
+          observacoes?: string | null
+          plano_acao_id?: string | null
+          responsavel_reuniao_id?: string | null
+          responsavel_reuniao_nome?: string | null
+          reuniao_confirmada?: boolean | null
+          reuniao_inicial_data?: string | null
+          reuniao_link_zoom?: string | null
+          reuniao_proxima_data?: string | null
+          status?: string
+          unidade_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unidades_acompanhamento_plano_acao_id_fkey"
+            columns: ["plano_acao_id"]
+            isOneToOne: false
+            referencedRelation: "plano_acao"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "unidades_acompanhamento_responsavel_reuniao_id_fkey"
+            columns: ["responsavel_reuniao_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "unidades_acompanhamento_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       unidades_whatsapp: {
         Row: {
           codigo_grupo: string | null

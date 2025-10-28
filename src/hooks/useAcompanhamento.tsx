@@ -130,44 +130,50 @@ export function useAcompanhamento() {
     fetchAcompanhamentos();
   }, []);
 
-  const addUnidade = async (codigoGrupo: string) => {
+  const addUnidade = async (codigoGrupo: string, observacoes?: string) => {
     try {
       // Verificar se a unidade existe
       const { data: unidade, error: unidadeError } = await supabase
         .from('unidades')
-        .select('id, codigo_grupo, grupo')
+        .select('id')
         .eq('codigo_grupo', codigoGrupo)
-        .single();
+        .maybeSingle();
 
-      if (unidadeError || !unidade) {
+      if (unidadeError) throw unidadeError;
+      if (!unidade) {
         toast.error('Unidade não encontrada');
         return false;
       }
 
-      // Verificar se já está em acompanhamento
-      const { data: existing } = await supabase
+      // Verificar se já existe acompanhamento ativo
+      const { data: existingAcomp, error: existingError } = await supabase
         .from('unidades_acompanhamento' as any)
         .select('id')
         .eq('codigo_grupo', codigoGrupo)
         .eq('em_acompanhamento', true)
-        .single();
+        .maybeSingle();
 
-      if (existing) {
-        toast.error('Unidade já está em acompanhamento');
+      if (existingError) throw existingError;
+
+      if (existingAcomp) {
+        toast.error('Já existe um acompanhamento ativo para esta unidade');
         return false;
       }
 
-      // Adicionar ao acompanhamento
-      const { error: insertError } = await supabase
-        .from('unidades_acompanhamento' as any)
-        .insert({
-          unidade_id: unidade.id,
-          codigo_grupo: codigoGrupo,
-          status: 'em_acompanhamento',
-          em_acompanhamento: true
-        });
+      // Chamar edge function para adicionar e notificar
+      const { data, error } = await supabase.functions.invoke(
+        'iniciar-acompanhamento',
+        {
+          body: {
+            codigo_grupo: codigoGrupo,
+            observacoes: observacoes
+          }
+        }
+      );
 
-      if (insertError) throw insertError;
+      if (error || !data?.success) {
+        throw new Error(data?.error || 'Erro ao iniciar acompanhamento');
+      }
 
       toast.success('Unidade adicionada ao acompanhamento');
       await silentRefetch();
@@ -260,17 +266,19 @@ export function useAcompanhamento() {
 
   const finalizarAcompanhamento = async (acompanhamentoId: string) => {
     try {
-      const { error } = await supabase
-        .from('unidades_acompanhamento' as any)
-        .update({
-          em_acompanhamento: false,
-          status: 'plano_criado',
-          finalizado_em: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', acompanhamentoId);
+      const { data, error } = await supabase.functions.invoke(
+        'finalizar-acompanhamento',
+        {
+          body: {
+            acompanhamento_id: acompanhamentoId,
+            plano_acao_id: null
+          }
+        }
+      );
 
-      if (error) throw error;
+      if (error || !data?.success) {
+        throw new Error(data?.error || 'Erro ao finalizar acompanhamento');
+      }
 
       toast.success('Acompanhamento finalizado');
       await silentRefetch();
