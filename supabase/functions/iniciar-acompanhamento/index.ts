@@ -32,11 +32,27 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // 1. Inserir registro de acompanhamento
+    // 1. Buscar ID da unidade
+    console.log('🔍 Buscando ID da unidade...');
+    const { data: unidadeData, error: unidadeError } = await supabase
+      .from('unidades')
+      .select('id')
+      .eq('codigo_grupo', codigo_grupo)
+      .single();
+
+    if (unidadeError || !unidadeData) {
+      console.error('❌ Unidade não encontrada:', codigo_grupo);
+      throw new Error(`Unidade ${codigo_grupo} não encontrada`);
+    }
+
+    console.log('✅ Unidade encontrada:', unidadeData.id);
+
+    // 2. Inserir registro de acompanhamento
     console.log('📝 Criando registro de acompanhamento para:', codigo_grupo);
     const { data: acompanhamento, error: insertError } = await supabase
       .from('unidades_acompanhamento')
       .insert({
+        unidade_id: unidadeData.id,
         codigo_grupo,
         status: 'em_acompanhamento',
         observacoes,
@@ -53,7 +69,7 @@ Deno.serve(async (req) => {
 
     console.log('✅ Acompanhamento criado:', acompanhamento.id);
 
-    // 2. Buscar dados da unidade
+    // 3. Buscar dados da unidade
     console.log('🔍 Buscando dados da unidade...');
     const { data: unidadeWhatsapp } = await supabase
       .from('unidades_whatsapp')
@@ -69,7 +85,7 @@ Deno.serve(async (req) => {
 
     const unidadeNome = unidade?.fantasy_name || `Unidade ${codigo_grupo}`;
 
-    // 3. Carregar template
+    // 4. Carregar template
     console.log('📄 Carregando template acompanhamento_iniciado...');
     const { data: template } = await supabase
       .from('message_templates')
@@ -80,7 +96,7 @@ Deno.serve(async (req) => {
 
     let whatsappEnviado = false;
 
-    // 4. Enviar WhatsApp se grupo existe e template está ativo
+    // 5. Enviar WhatsApp se grupo existe e template está ativo
     if (unidadeWhatsapp?.id_grupo_branco && template?.template_content) {
       console.log('📱 Preparando envio WhatsApp para grupo:', unidadeWhatsapp.id_grupo_branco);
 
