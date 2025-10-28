@@ -92,72 +92,22 @@ export const useMobileTicketMessages = (ticketId: string) => {
     }
   }, [ticketId, fetchMessages]);
 
-  // Setup realtime
+  // Setup polling (realtime não funciona sem autenticação)
   useEffect(() => {
-    console.log('🔄 [MOBILE MESSAGES] Setting up realtime for ticket:', ticketId);
+    console.log('🔄 [MOBILE MESSAGES] Setting up polling for ticket:', ticketId);
     
+    // Busca inicial
     fetchMessages();
 
-    // Limpar canal existente primeiro
-    if (channelRef.current) {
-      console.log('🧹 [MOBILE MESSAGES] Cleaning up existing channel');
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
-    }
-
-    const channel = supabase
-      .channel(`mobile-ticket-messages-${ticketId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'ticket_mensagens',
-          filter: `ticket_id=eq.${ticketId}`
-        },
-        (payload) => {
-          console.log('📨 [MOBILE MESSAGES] Message change:', payload.eventType, payload);
-          
-          if (payload.eventType === 'INSERT') {
-            setMessages(prev => {
-              // Evitar duplicatas
-              if (prev.some(m => m.id === payload.new.id)) {
-                console.log('⚠️ [MOBILE MESSAGES] Mensagem duplicada ignorada');
-                return prev;
-              }
-              console.log('➕ [MOBILE MESSAGES] Nova mensagem adicionada');
-              return [...prev, payload.new as TicketMessage];
-            });
-          } else if (payload.eventType === 'UPDATE') {
-            setMessages(prev => prev.map(msg => 
-              msg.id === payload.new.id ? payload.new as TicketMessage : msg
-            ));
-          } else if (payload.eventType === 'DELETE') {
-            setMessages(prev => prev.filter(msg => msg.id !== payload.old.id));
-          }
-        }
-      )
-      .subscribe((status) => {
-        console.log('📡 [MOBILE MESSAGES] Realtime status:', status);
-        if (status === 'SUBSCRIBED') {
-          console.log('✅ [MOBILE MESSAGES] Successfully subscribed to realtime');
-        } else if (status === 'CHANNEL_ERROR') {
-          console.error('❌ [MOBILE MESSAGES] Channel error');
-        } else if (status === 'TIMED_OUT') {
-          console.error('⏱️ [MOBILE MESSAGES] Subscription timed out');
-        } else if (status === 'CLOSED') {
-          console.log('🚪 [MOBILE MESSAGES] Channel closed');
-        }
-      });
-
-    channelRef.current = channel;
+    // Polling a cada 3 segundos
+    const intervalId = setInterval(() => {
+      console.log('🔄 [POLLING] Fetching messages...');
+      fetchMessages();
+    }, 3000);
 
     return () => {
-      console.log('🧹 [MOBILE MESSAGES] Cleanup - removing channel');
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
+      console.log('🧹 [POLLING] Cleanup - clearing interval');
+      clearInterval(intervalId);
     };
   }, [ticketId, fetchMessages]);
 
