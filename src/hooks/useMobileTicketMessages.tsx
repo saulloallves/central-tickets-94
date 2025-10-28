@@ -94,7 +94,16 @@ export const useMobileTicketMessages = (ticketId: string) => {
 
   // Setup realtime
   useEffect(() => {
+    console.log('🔄 [MOBILE MESSAGES] Setting up realtime for ticket:', ticketId);
+    
     fetchMessages();
+
+    // Limpar canal existente primeiro
+    if (channelRef.current) {
+      console.log('🧹 [MOBILE MESSAGES] Cleaning up existing channel');
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
 
     const channel = supabase
       .channel(`mobile-ticket-messages-${ticketId}`)
@@ -107,10 +116,18 @@ export const useMobileTicketMessages = (ticketId: string) => {
           filter: `ticket_id=eq.${ticketId}`
         },
         (payload) => {
-          console.log('📨 Message change:', payload.eventType);
+          console.log('📨 [MOBILE MESSAGES] Message change:', payload.eventType, payload);
           
           if (payload.eventType === 'INSERT') {
-            setMessages(prev => [...prev, payload.new as TicketMessage]);
+            setMessages(prev => {
+              // Evitar duplicatas
+              if (prev.some(m => m.id === payload.new.id)) {
+                console.log('⚠️ [MOBILE MESSAGES] Mensagem duplicada ignorada');
+                return prev;
+              }
+              console.log('➕ [MOBILE MESSAGES] Nova mensagem adicionada');
+              return [...prev, payload.new as TicketMessage];
+            });
           } else if (payload.eventType === 'UPDATE') {
             setMessages(prev => prev.map(msg => 
               msg.id === payload.new.id ? payload.new as TicketMessage : msg
@@ -120,16 +137,29 @@ export const useMobileTicketMessages = (ticketId: string) => {
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('📡 [MOBILE MESSAGES] Realtime status:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ [MOBILE MESSAGES] Successfully subscribed to realtime');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('❌ [MOBILE MESSAGES] Channel error');
+        } else if (status === 'TIMED_OUT') {
+          console.error('⏱️ [MOBILE MESSAGES] Subscription timed out');
+        } else if (status === 'CLOSED') {
+          console.log('🚪 [MOBILE MESSAGES] Channel closed');
+        }
+      });
 
     channelRef.current = channel;
 
     return () => {
+      console.log('🧹 [MOBILE MESSAGES] Cleanup - removing channel');
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
       }
     };
-  }, [ticketId]);
+  }, [ticketId, fetchMessages]);
 
   return {
     messages,
