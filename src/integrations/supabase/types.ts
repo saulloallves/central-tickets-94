@@ -2360,6 +2360,7 @@ export type Database = {
       }
       notifications_queue: {
         Row: {
+          acompanhamento_id: string | null
           alert_category: string | null
           alert_level: string | null
           attempts: number
@@ -2378,6 +2379,7 @@ export type Database = {
           unidade_id: string | null
         }
         Insert: {
+          acompanhamento_id?: string | null
           alert_category?: string | null
           alert_level?: string | null
           attempts?: number
@@ -2396,6 +2398,7 @@ export type Database = {
           unidade_id?: string | null
         }
         Update: {
+          acompanhamento_id?: string | null
           alert_category?: string | null
           alert_level?: string | null
           attempts?: number
@@ -2433,6 +2436,13 @@ export type Database = {
             columns: ["ticket_id"]
             isOneToOne: false
             referencedRelation: "tickets_with_sla_info"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_queue_acompanhamento_id_fkey"
+            columns: ["acompanhamento_id"]
+            isOneToOne: false
+            referencedRelation: "unidades_acompanhamento"
             referencedColumns: ["id"]
           },
           {
