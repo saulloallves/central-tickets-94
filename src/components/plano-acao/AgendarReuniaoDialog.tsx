@@ -17,7 +17,7 @@ interface AgendarReuniaoDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   acompanhamento: Acompanhamento | null;
-  onAgendar: (acompanhamentoId: string, data: string, responsavelId: string, responsavelNome: string) => Promise<boolean>;
+  onAgendar: (acompanhamentoId: string, data: string, responsavelId: string | null, responsavelNome: string) => Promise<boolean>;
 }
 
 export function AgendarReuniaoDialog({
@@ -40,7 +40,7 @@ export function AgendarReuniaoDialog({
     const success = await onAgendar(
       acompanhamento.id,
       dataHoraCompleta,
-      '', // responsavelId pode ser implementado depois com seleção de usuários
+      null, // responsavelId pode ser implementado depois com seleção de usuários
       responsavelNome.trim()
     );
     setLoading(false);
