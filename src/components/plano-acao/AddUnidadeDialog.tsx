@@ -148,12 +148,10 @@ export function AddUnidadeDialog({ open, onOpenChange, onAdd }: AddUnidadeDialog
                     <CheckCircle2 className="h-4 w-4" />
                     Unidade encontrada
                   </div>
-                  {unidadeInfo.fantasy_name && (
-                    <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-500">
-                      <Building2 className="h-3 w-3" />
-                      {unidadeInfo.fantasy_name}
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-500">
+                    <Building2 className="h-3 w-3" />
+                    {unidadeInfo.fantasy_name || unidadeInfo.grupo || `Unidade ${unidadeInfo.codigo_grupo}`}
+                  </div>
                   {(unidadeInfo.cidade || unidadeInfo.estado) && (
                     <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-500">
                       <MapPin className="h-3 w-3" />
