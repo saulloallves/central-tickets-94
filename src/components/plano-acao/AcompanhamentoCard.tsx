@@ -43,7 +43,7 @@ export const AcompanhamentoCard = React.memo(function AcompanhamentoCard({
             <Building2 className="h-4 w-4 text-primary flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <h4 className="font-semibold text-sm truncate">
-                {acompanhamento.unidade?.fantasy_name || acompanhamento.codigo_grupo}
+                {acompanhamento.unidade?.fantasy_name?.trim() || 'Unidade ' + acompanhamento.codigo_grupo}
               </h4>
               <p className="text-xs text-muted-foreground">
                 Código: {acompanhamento.codigo_grupo}
