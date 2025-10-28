@@ -16,6 +16,7 @@ import { TicketsKanban } from '@/components/tickets/TicketsKanban';
 import { CreateTicketDialog } from '@/components/tickets/CreateTicketDialog';
 import { TicketDetail } from '@/components/tickets/TicketDetail';
 import { CrisisBanner } from '@/components/tickets/CrisisBanner';
+import { DeadlineAlert } from '@/components/tickets/DeadlineAlert';
 import { NotificationButton } from '@/components/notifications/NotificationButton';
 import { useTicketsEdgeFunctions } from '@/hooks/useTicketsEdgeFunctions';
 import { BulkAnalysisDialog } from '@/components/tickets/BulkAnalysisDialog';
@@ -153,6 +154,9 @@ const Tickets = () => {
       <div className="w-full p-3 md:p-6 space-y-3 md:space-y-4">
         {/* Banner de Crises */}
         <CrisisBanner />
+        
+        {/* Alerta de Deadline 18h */}
+        <DeadlineAlert />
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
