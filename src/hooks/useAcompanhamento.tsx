@@ -186,18 +186,21 @@ export function useAcompanhamento() {
     responsavelNome: string
   ) => {
     try {
-      const { error } = await supabase
-        .from('unidades_acompanhamento' as any)
-        .update({
-          reuniao_inicial_data: reuniaoData,
-          responsavel_reuniao_id: responsavelId,
-          responsavel_reuniao_nome: responsavelNome,
-          status: 'reuniao_agendada',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', acompanhamentoId);
+      const { data, error } = await supabase.functions.invoke(
+        'agendar-reuniao-acompanhamento',
+        {
+          body: {
+            acompanhamento_id: acompanhamentoId,
+            reuniao_data: reuniaoData,
+            responsavel_nome: responsavelNome,
+            reuniao_link_zoom: null
+          }
+        }
+      );
 
-      if (error) throw error;
+      if (error || !data?.success) {
+        throw new Error(data?.error || 'Erro ao agendar reunião');
+      }
 
       toast.success('Reunião agendada com sucesso');
       await silentRefetch();
@@ -232,15 +235,18 @@ export function useAcompanhamento() {
 
   const confirmarReuniao = async (acompanhamentoId: string) => {
     try {
-      const { error } = await supabase
-        .from('unidades_acompanhamento' as any)
-        .update({
-          reuniao_confirmada: true,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', acompanhamentoId);
+      const { data, error } = await supabase.functions.invoke(
+        'confirmar-reuniao-acompanhamento',
+        {
+          body: {
+            acompanhamento_id: acompanhamentoId
+          }
+        }
+      );
 
-      if (error) throw error;
+      if (error || !data?.success) {
+        throw new Error(data?.error || 'Erro ao confirmar reunião');
+      }
 
       toast.success('Reunião confirmada');
       await silentRefetch();

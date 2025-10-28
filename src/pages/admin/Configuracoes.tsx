@@ -9,6 +9,7 @@ import KnowledgeHubTab from "@/components/configuracoes/KnowledgeHubTab";
 import { RelatoriosTab } from "@/components/configuracoes/RelatoriosTab";
 import { NotificacoesTab } from "@/components/configuracoes/NotificacoesTab";
 import { AutoApprovalsTab } from "@/components/configuracoes/AutoApprovalsTab";
+import { AcompanhamentoTemplatesTab } from "@/components/configuracoes/AcompanhamentoTemplatesTab";
 
 import { LogoSettings } from "@/components/configuracoes/LogoSettingsTab";
 
@@ -75,6 +76,10 @@ export default function Configuracoes() {
               <Bell className="h-4 w-4" />
               Notificações
             </TabsTrigger>
+            <TabsTrigger value="acompanhamento-templates" className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
+              Templates Acompanhamento
+            </TabsTrigger>
             <TabsTrigger value="relatorios" className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4" />
               Relatórios
@@ -127,6 +132,23 @@ export default function Configuracoes() {
 
           <TabsContent value="notificacoes" className="space-y-6 animate-fade-in">
             <NotificacoesTab />
+          </TabsContent>
+
+          <TabsContent value="acompanhamento-templates" className="space-y-6 animate-fade-in">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5" />
+                  Templates de Acompanhamento
+                </CardTitle>
+                <CardDescription>
+                  Configure as mensagens automáticas do processo de acompanhamento
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AcompanhamentoTemplatesTab />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="relatorios" className="space-y-6 animate-fade-in">

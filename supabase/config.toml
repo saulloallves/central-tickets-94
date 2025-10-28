@@ -238,6 +238,18 @@ verify_jwt = false
 [functions.create-ticket-direct]
 verify_jwt = false
 
+[functions.iniciar-acompanhamento]
+verify_jwt = false
+
+[functions.agendar-reuniao-acompanhamento]
+verify_jwt = false
+
+[functions.confirmar-reuniao-acompanhamento]
+verify_jwt = false
+
+[functions.finalizar-acompanhamento]
+verify_jwt = false
+
 [db]
 port = 54322
 shadow_port = 54320
