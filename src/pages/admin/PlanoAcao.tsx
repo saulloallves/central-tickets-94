@@ -209,7 +209,12 @@ export default function PlanoAcaoPage() {
       {/* Modal de Agendar Reunião */}
       <AgendarReuniaoDialog
         open={agendarReuniaoDialogOpen}
-        onOpenChange={setAgendarReuniaoDialogOpen}
+        onOpenChange={(open) => {
+          setAgendarReuniaoDialogOpen(open);
+          if (!open) {
+            setSelectedAcompanhamento(null);
+          }
+        }}
         acompanhamento={selectedAcompanhamento}
         onAgendar={agendarReuniao}
       />
