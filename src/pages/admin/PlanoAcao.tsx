@@ -7,6 +7,7 @@ import { PlanoAcaoDetail } from '@/components/plano-acao/PlanoAcaoDetail';
 import { EditPlanoAcaoDialog } from '@/components/plano-acao/EditPlanoAcaoDialog';
 import { CreatePlanoAcaoDialog } from '@/components/plano-acao/CreatePlanoAcaoDialog';
 import { AcompanhamentoKanban } from '@/components/plano-acao/AcompanhamentoKanban';
+import { AcompanhamentoDetail } from '@/components/plano-acao/AcompanhamentoDetail';
 import { AddUnidadeDialog } from '@/components/plano-acao/AddUnidadeDialog';
 import { AgendarReuniaoDialog } from '@/components/plano-acao/AgendarReuniaoDialog';
 import { usePlanoAcao, type PlanoAcao } from '@/hooks/usePlanoAcao';
@@ -15,7 +16,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export default function PlanoAcaoPage() {
   const { planos, loading, updateStatusFrnq, updatePlano, refetch } = usePlanoAcao();
-  const { acompanhamentos, loading: loadingAcomp, addUnidade, agendarReuniao, refetch: refetchAcomp } = useAcompanhamento();
+  const { 
+    acompanhamentos, 
+    loading: loadingAcomp, 
+    addUnidade, 
+    agendarReuniao, 
+    confirmarReuniao,
+    finalizarAcompanhamento,
+    refetch: refetchAcomp 
+  } = useAcompanhamento();
   
   const [activeTab, setActiveTab] = useState('acompanhamento');
   const [selectedPlano, setSelectedPlano] = useState<PlanoAcao | null>(null);
@@ -185,6 +194,16 @@ export default function PlanoAcaoPage() {
         open={addUnidadeDialogOpen}
         onOpenChange={setAddUnidadeDialogOpen}
         onAdd={addUnidade}
+      />
+
+      {/* Modal de Detalhes do Acompanhamento */}
+      <AcompanhamentoDetail
+        acompanhamento={selectedAcompanhamento}
+        isOpen={!!selectedAcompanhamento}
+        onClose={() => setSelectedAcompanhamento(null)}
+        onAgendarReuniao={handleAgendarReuniao}
+        onConfirmarReuniao={confirmarReuniao}
+        onFinalizarAcompanhamento={finalizarAcompanhamento}
       />
 
       {/* Modal de Agendar Reunião */}
