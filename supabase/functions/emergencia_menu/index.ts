@@ -288,6 +288,23 @@ serve(async (req: Request) => {
 
     console.log(`✅ Unidade encontrada:`, JSON.stringify(unidade));
 
+    // Buscar números de emergência configurados
+    const { data: settingsData } = await supabase
+      .from('system_settings')
+      .select('setting_value')
+      .eq('setting_key', 'emergency_numbers')
+      .maybeSingle();
+
+    let emergencyNumbers = [];
+    if (settingsData?.setting_value) {
+      try {
+        emergencyNumbers = JSON.parse(settingsData.setting_value);
+        console.log(`📋 ${emergencyNumbers.length} números de emergência configurados`);
+      } catch (e) {
+        console.error('❌ Erro ao parsear números de emergência:', e);
+      }
+    }
+
     // Buscar atendente correto via atendente_unidades com join
     const { data: atendenteUnidade } = await supabase
       .from('atendente_unidades')
@@ -368,15 +385,32 @@ serve(async (req: Request) => {
     const { instanceId, instanceToken, clientToken, baseUrl } = await loadZAPIConfig();
     const headers = { "Content-Type": "application/json", "Client-Token": clientToken };
 
-    // 1. Adicionar concierge no grupo
-    console.log(`📞 Adicionando concierge ${conciergePhone} ao grupo ${phone}`);
+    // Montar lista completa de números para adicionar e mencionar
+    const phonesToAdd = emergencyNumbers.map((num: any) => num.phone);
+    const phonesToMention = [...phonesToAdd];
+
+    // Adicionar concierge à lista
+    if (conciergePhone) {
+      let formattedPhone = String(conciergePhone).replace(/\D/g, '');
+      if (!formattedPhone.startsWith('55') && formattedPhone.length === 11) {
+        formattedPhone = '55' + formattedPhone;
+      }
+      phonesToAdd.push(formattedPhone);
+      phonesToMention.push(formattedPhone);
+      console.log(`📞 Concierge da unidade: ${formattedPhone}`);
+    }
+
+    console.log(`👥 Total de participantes a adicionar: ${phonesToAdd.length}`);
+
+    // 1. Adicionar TODOS os participantes ao grupo
+    console.log(`📞 Adicionando ${phonesToAdd.length} participantes ao grupo ${phone}`);
     const addParticipantUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}/add-participant`;
     const addParticipantRes = await fetch(addParticipantUrl, {
       method: "POST",
       headers,
       body: JSON.stringify({
         groupId: phone,
-        phones: [conciergePhone]
+        phones: phonesToAdd
       }),
     });
 
@@ -398,16 +432,17 @@ serve(async (req: Request) => {
     const addAdminData = await addAdminRes.json();
     console.log("✅ Resultado add-admin:", addAdminData);
 
-    // 3. Enviar mensagem com mention e botão
-    console.log(`💬 Enviando mensagem de emergência com mention`);
+    // 3. Enviar mensagem com mentions de TODOS
+    console.log(`💬 Enviando mensagem de emergência com ${phonesToMention.length} mentions`);
+    const mentionText = phonesToMention.map(p => `@${p}`).join(' ');
     const sendTextUrl = `${baseUrl}/instances/${instanceId}/token/${instanceToken}/send-text`;
     const sendTextRes = await fetch(sendTextUrl, {
       method: "POST",
       headers,
       body: JSON.stringify({
         phone: phone,
-        message: `🚨 *PROTOCOLO EMERGÊNCIA* 🚨\n\nAdicionamos @${conciergePhone} para auxiliar sua unidade\n\n*De maneira direta, nos informe o ocorrido para que possamos auxiliar com mais rapidez.*`,
-        mentioned: [conciergePhone],
+        message: `🚨 *PROTOCOLO EMERGÊNCIA* 🚨\n\nAdicionamos ${mentionText} para auxiliar sua unidade\n\n*De maneira direta, nos informe o ocorrido para que possamos auxiliar com mais rapidez.*`,
+        mentioned: phonesToMention,
         buttonList: {
           buttons: [
             {
@@ -425,7 +460,9 @@ serve(async (req: Request) => {
     return new Response(JSON.stringify({ 
       success: true,
       chamado_id: chamado.id,
+      participants_added: phonesToAdd.length,
       concierge_adicionado: conciergeName,
+      emergency_numbers_added: emergencyNumbers.length,
       message: "Emergência ativada com sucesso"
     }), {
       headers: { "Content-Type": "application/json", ...corsHeaders },
