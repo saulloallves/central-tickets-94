@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { Plus, Search, FileText, AlertTriangle, Database, TrendingUp, Shield, CheckCircle, Bot, Sparkles, Settings, FileUp, FilePlus, X, Info, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from '@/components/ui/pagination';
@@ -48,6 +49,9 @@ const KnowledgeHubTab = () => {
   const [analysisResult, setAnalysisResult] = useState(null);
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [availableCategories, setAvailableCategories] = useState([]);
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [confirmChecked, setConfirmChecked] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const [newDocument, setNewDocument] = useState({
     titulo: '',
     conteudo: '',
@@ -150,6 +154,36 @@ const KnowledgeHubTab = () => {
     const results = await runAudit();
     if (results) {
       setAuditResults(results);
+    }
+  };
+
+  const handleResetKnowledgeBase = async () => {
+    if (!confirmChecked) {
+      const { toast } = await import('sonner');
+      toast.error("Por favor, confirme que entende que esta ação é irreversível");
+      return;
+    }
+
+    setResetting(true);
+    
+    try {
+      const { toast } = await import('sonner');
+      const { data, error } = await supabase.functions.invoke('kb-reset-database');
+      
+      if (error) throw error;
+
+      toast.success(`Base de conhecimento resetada! ${data.totalDeleted} registros deletados`);
+      setResetDialogOpen(false);
+      setConfirmChecked(false);
+      
+      // Recarregar documentos
+      await applyFilters(1);
+    } catch (error) {
+      const { toast } = await import('sonner');
+      console.error('Erro ao resetar base:', error);
+      toast.error('Erro ao resetar base de conhecimento');
+    } finally {
+      setResetting(false);
     }
   };
   // Apply filters and fetch documents with pagination
@@ -306,7 +340,13 @@ const KnowledgeHubTab = () => {
               </CardDescription>
             </div>
             <div className="flex gap-2">
-              
+              <Button 
+                onClick={() => setResetDialogOpen(true)}
+                variant="destructive"
+                size="sm"
+              >
+                🗑️ Resetar Base
+              </Button>
               <Button onClick={handleRunAudit} variant="outline">
                 🔍 Auditoria
               </Button>
@@ -928,6 +968,54 @@ const KnowledgeHubTab = () => {
             </div>
           </DialogContent>
         </Dialog>}
+
+      {/* Dialog de Reset */}
+      <AlertDialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>⚠️ Resetar Base de Conhecimento</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-4">
+              <p className="font-semibold text-destructive">
+                Esta ação irá deletar PERMANENTEMENTE:
+              </p>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                <li>Todas as aprovações automáticas ({stats.total || 0} registros)</li>
+                <li>Todas as sugestões de conhecimento</li>
+                <li>Todos os artigos</li>
+                <li>Todos os documentos RAG ({stats.total} documentos)</li>
+              </ul>
+              <p className="text-sm font-semibold">
+                Esta operação não pode ser desfeita!
+              </p>
+              <div className="flex items-center space-x-2 pt-4">
+                <Checkbox 
+                  id="confirm-reset" 
+                  checked={confirmChecked}
+                  onCheckedChange={(checked) => setConfirmChecked(checked === true)}
+                />
+                <label
+                  htmlFor="confirm-reset"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Entendo que esta ação é irreversível
+                </label>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setConfirmChecked(false)}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleResetKnowledgeBase}
+              disabled={!confirmChecked || resetting}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {resetting ? "Deletando..." : "Confirmar Reset"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>;
 };
 export default KnowledgeHubTab;
