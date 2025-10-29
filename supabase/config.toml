@@ -250,6 +250,9 @@ verify_jwt = false
 [functions.finalizar-acompanhamento]
 verify_jwt = false
 
+[functions.kb-reset-database]
+verify_jwt = true
+
 [db]
 port = 54322
 shadow_port = 54320

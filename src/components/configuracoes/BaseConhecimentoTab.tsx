@@ -10,6 +10,17 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
   Plus, 
   Search, 
@@ -60,6 +71,9 @@ export function BaseConhecimentoTab() {
   const [filterUsadoPelaIA, setFilterUsadoPelaIA] = useState<string>('all');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingArticle, setEditingArticle] = useState<any>(null);
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [confirmChecked, setConfirmChecked] = useState(false);
+  const [resetting, setResetting] = useState(false);
   
   const [newArticle, setNewArticle] = useState({
     titulo: '',
@@ -144,6 +158,36 @@ export function BaseConhecimentoTab() {
     return tipoObj.icon;
   };
 
+  const handleResetKnowledgeBase = async () => {
+    if (!confirmChecked) {
+      const { toast } = await import('sonner');
+      toast.error("Por favor, confirme que entende que esta ação é irreversível");
+      return;
+    }
+
+    setResetting(true);
+    
+    try {
+      const { toast } = await import('sonner');
+      const { data, error } = await supabase.functions.invoke('kb-reset-database');
+      
+      if (error) throw error;
+
+      toast.success(`Base de conhecimento resetada! ${data.totalDeleted} registros deletados`);
+      setResetDialogOpen(false);
+      setConfirmChecked(false);
+      
+      // Recarregar artigos
+      await fetchArticles();
+    } catch (error) {
+      const { toast } = await import('sonner');
+      console.error('Erro ao resetar base:', error);
+      toast.error('Erro ao resetar base de conhecimento');
+    } finally {
+      setResetting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Alert className="border-primary/20 bg-primary/5">
@@ -168,14 +212,22 @@ export function BaseConhecimentoTab() {
               </CardDescription>
             </div>
             
-            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
-                  Novo Artigo
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl">
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => setResetDialogOpen(true)}
+                variant="destructive"
+                size="sm"
+              >
+                🗑️ Resetar Base
+              </Button>
+              <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="flex items-center gap-2">
+                    <Plus className="h-4 w-4" />
+                    Novo Artigo
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
                 <DialogHeader>
                   <DialogTitle>Criar Novo Artigo</DialogTitle>
                   <DialogDescription>
@@ -280,6 +332,7 @@ export function BaseConhecimentoTab() {
                 </div>
               </DialogContent>
             </Dialog>
+            </div>
           </div>
         </CardHeader>
         
@@ -528,6 +581,54 @@ export function BaseConhecimentoTab() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Dialog de Reset */}
+      <AlertDialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>⚠️ Resetar Base de Conhecimento</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-4">
+              <p className="font-semibold text-destructive">
+                Esta ação irá deletar PERMANENTEMENTE:
+              </p>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                <li>Todas as aprovações automáticas</li>
+                <li>Todas as sugestões de conhecimento</li>
+                <li>Todos os artigos</li>
+                <li>Todos os documentos RAG</li>
+              </ul>
+              <p className="text-sm font-semibold">
+                Total de registros que serão deletados: centenas ou milhares
+              </p>
+              <div className="flex items-center space-x-2 pt-4">
+                <Checkbox 
+                  id="confirm-reset" 
+                  checked={confirmChecked}
+                  onCheckedChange={(checked) => setConfirmChecked(checked === true)}
+                />
+                <label
+                  htmlFor="confirm-reset"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Entendo que esta ação é irreversível
+                </label>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setConfirmChecked(false)}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleResetKnowledgeBase}
+              disabled={!confirmChecked || resetting}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {resetting ? "Deletando..." : "Confirmar Reset"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
