@@ -1,7 +1,4 @@
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0';
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -18,7 +15,10 @@ Deno.serve(async (req) => {
   }
 
   try {
-    console.log('Iniciando auditoria da base de conhecimento...');
+    const body = await req.json().catch(() => ({}));
+    const source = body?.source || 'manual';
+    
+    console.log(`Iniciando auditoria da base de conhecimento (fonte: ${source})...`);
     
     const inconsistencias = [];
 
@@ -108,7 +108,29 @@ Deno.serve(async (req) => {
       });
     }
 
-    // 4. Estatísticas gerais - calcular manualmente
+    // 4. Documentos próximos ao vencimento (7 dias)
+    const dataAlerta = new Date();
+    dataAlerta.setDate(dataAlerta.getDate() + 7);
+    
+    const { data: proximosVencimento } = await supabase
+      .from('documentos')
+      .select('id, titulo, valido_ate')
+      .eq('status', 'ativo')
+      .eq('tipo', 'temporario')
+      .gt('valido_ate', new Date().toISOString())
+      .lt('valido_ate', dataAlerta.toISOString());
+
+    if (proximosVencimento?.length > 0) {
+      inconsistencias.push({
+        tipo: 'proximos_vencimento',
+        count: proximosVencimento.length,
+        detalhes: proximosVencimento,
+        acao_sugerida: 'Revisar e estender prazo se necessário',
+        criticidade: 'media'
+      });
+    }
+
+    // 5. Estatísticas gerais - calcular manualmente
     const { data: allDocs } = await supabase
       .from('documentos')
       .select('status, tipo');

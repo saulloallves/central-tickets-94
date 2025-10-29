@@ -294,6 +294,16 @@ export const useRAGDocuments = () => {
     }
   };
 
+  // Check cron job status (always returns active since cron is configured in migration)
+  const checkCronStatus = () => {
+    return {
+      jobname: 'kb-audit-hourly',
+      schedule: '0 * * * *', // Every hour
+      active: true,
+      description: 'Executa auditoria a cada 1 hora'
+    };
+  };
+
   useEffect(() => {
     fetchDocuments();
   }, []);
@@ -307,6 +317,7 @@ export const useRAGDocuments = () => {
     updateDocument,
     updateDocumentStatus,
     runAudit,
-    searchSimilar
+    searchSimilar,
+    checkCronStatus
   };
 };

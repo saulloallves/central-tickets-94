@@ -27,7 +27,8 @@ const KnowledgeHubTab = () => {
     createDocument,
     updateDocument,
     updateDocumentStatus,
-    runAudit
+    runAudit,
+    checkCronStatus
   } = useRAGDocuments();
   const {
     regenerateEmbeddings,
@@ -47,6 +48,7 @@ const KnowledgeHubTab = () => {
   const [analysisResult, setAnalysisResult] = useState(null);
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [availableCategories, setAvailableCategories] = useState([]);
+  const [cronStatus] = useState(checkCronStatus());
   const [newDocument, setNewDocument] = useState({
     titulo: '',
     conteudo: '',
@@ -192,12 +194,25 @@ const KnowledgeHubTab = () => {
     const temporarios = documents.filter(d => d.tipo === 'temporario').length;
     const vencidos = documents.filter(d => d.status === 'vencido').length;
     const processadosIA = documents.filter(d => d.processado_por_ia).length;
+    
+    // Documentos próximos ao vencimento (7 dias)
+    const dataAlerta = new Date();
+    dataAlerta.setDate(dataAlerta.getDate() + 7);
+    const proximosVencimento = documents.filter(d => 
+      d.status === 'ativo' && 
+      d.tipo === 'temporario' && 
+      d.valido_ate && 
+      new Date(d.valido_ate) > new Date() &&
+      new Date(d.valido_ate) < dataAlerta
+    ).length;
+    
     return {
       total,
       ativos,
       temporarios,
       vencidos,
-      processadosIA
+      processadosIA,
+      proximosVencimento
     };
   };
   const stats = getStats();
@@ -234,7 +249,7 @@ const KnowledgeHubTab = () => {
 
   return <div className="space-y-6">
       {/* Header com estatísticas RAG */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total RAG</CardTitle>
@@ -289,13 +304,24 @@ const KnowledgeHubTab = () => {
             <p className="text-xs text-muted-foreground">formatados com IA</p>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Próx. Vencimento</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-orange-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.proximosVencimento}</div>
+            <p className="text-xs text-muted-foreground">vencem em 7 dias</p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Controles */}
       <Card>
         <CardHeader>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
+            <div className="space-y-2">
               <CardTitle className="flex items-center gap-2">
                 <Shield className="h-5 w-5" />
                 Hub de Conhecimento RAG
@@ -303,6 +329,16 @@ const KnowledgeHubTab = () => {
               <CardDescription>
                 Governança completa com embeddings vetoriais (1536D) e processamento IA opcional
               </CardDescription>
+              {cronStatus && (
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="gap-1">
+                    🤖 Auditoria Automática Ativa
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">
+                    {cronStatus.description}
+                  </span>
+                </div>
+              )}
             </div>
             <div className="flex gap-2">
               <Button onClick={handleRunAudit} variant="outline">

@@ -4589,6 +4589,15 @@ export type Database = {
         Args: { email_check: string }
         Returns: boolean
       }
+      check_kb_audit_cron_status: {
+        Args: never
+        Returns: {
+          active: boolean
+          jobname: string
+          last_run: string
+          schedule: string
+        }[]
+      }
       cleanup_all_users_except_current: { Args: never; Returns: Json }
       cleanup_old_notifications: { Args: never; Returns: undefined }
       cleanup_orphaned_crises: { Args: never; Returns: undefined }
