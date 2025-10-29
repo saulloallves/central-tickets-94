@@ -4641,13 +4641,7 @@ export type Database = {
         }
         Returns: string
       }
-      decrementar_sla_minutos: {
-        Args: never
-        Returns: {
-          tickets_atualizados: number
-          tickets_vencidos: number
-        }[]
-      }
+      decrementar_sla_minutos: { Args: never; Returns: Json }
       fix_missing_colaborador_roles: { Args: never; Returns: undefined }
       fix_missing_franqueado_roles: { Args: never; Returns: undefined }
       force_delete_user: { Args: { uid: string }; Returns: undefined }
