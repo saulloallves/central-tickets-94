@@ -138,13 +138,13 @@ Analise e forneça:
 
 1. TÍTULO: Crie um título DESCRITIVO de exatamente 3 palavras que resuma o problema principal.
 2. PRIORIDADE: Use a matriz ITIL acima para classificar (baixo, medio, alto, imediato, crise)
-3. EQUIPE SUGERIDA: Retorne o UUID da equipe mais adequada${settings.load_balancing?.enabled ? ' (considere capacidade)' : ''}
+3. EQUIPE: Retorne o UUID da equipe mais adequada${settings.load_balancing?.enabled ? ' (considere capacidade)' : ''}
 
 Responda APENAS em JSON válido:
 {
   "prioridade": "uma_das_5_opcoes",
   "titulo": "Título de 3 palavras",
-  "equipe_sugerida": "UUID_da_equipe",
+  "equipe_id": "UUID_da_equipe",
   "justificativa": "Explicação baseada na matriz ITIL e especialidades",
   "confianca": "alta|media|baixa",
   "emergency_detected": true|false
@@ -152,7 +152,9 @@ Responda APENAS em JSON válido:
 
 REGRAS CRÍTICAS:
 - Use APENAS: baixo, medio, alto, imediato, crise
-- Retorne UUID completo da equipe
+- Retorne UUID EXATO de uma das equipes listadas acima no campo "equipe_id"
+- NÃO invente UUIDs - use apenas os listados
+- Se em dúvida, use: 2c080fb5-51e6-47dd-a59e-13c3d73bd8b2 (Concierge Operação)
 - Base-se na matriz ITIL fornecida
 - Detecte palavras de emergência se listadas
 `;

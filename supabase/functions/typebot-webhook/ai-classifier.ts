@@ -50,8 +50,8 @@ export async function classifyTeamOnly(message: string, equipes: any[], existing
     const modelToUse = aiSettings?.modelo_classificacao || 'gpt-4o-mini';
     
     const equipesInfo = equipes.map(e => 
-      `- ${e.nome}: ${e.descricao || 'Sem descrição'} (Introdução: ${e.introducao || 'N/A'})`
-    ).join('\n');
+      `- ID: ${e.id} | Nome: ${e.nome}\n  Descrição: ${e.descricao || 'Sem descrição'}\n  Especialidade: ${e.introducao || 'N/A'}`
+    ).join('\n\n');
 
     const existingInfo = Object.keys(existingData).length > 0 ? 
       `\nDados já definidos: ${JSON.stringify(existingData, null, 2)}` : '';
@@ -65,18 +65,19 @@ Descrição do problema: "${message}"${existingInfo}
 Equipes disponíveis:
 ${equipesInfo}
 
-CRÍTICO: Use EXATAMENTE um dos nomes das equipes da lista acima.
-- NÃO invente nomes de equipes
-- NÃO combine nomes de equipes diferentes
-- NÃO abrevie nomes de equipes
-- Se tiver dúvida entre duas equipes, escolha a mais específica
-- Se NÃO TIVER CERTEZA, escolha "Concierge Operação"
+CRÍTICO: 
+- Use o UUID EXATO de uma das equipes listadas acima no campo "equipe_id"
+- NÃO invente UUIDs
+- NÃO use nomes, use apenas UUIDs
+- Se tiver dúvida, use: ${CONCIERGE_OPERACAO_ID} (Concierge Operação)
+- Se NÃO TIVER CERTEZA, use: ${CONCIERGE_OPERACAO_ID}
 
-IMPORTANTE: Se você NÃO TIVER CERTEZA sobre qual equipe escolher, ou se o problema não se encaixar claramente em nenhuma equipe específica, escolha "Concierge Operação". Esta equipe está preparada para analisar e redirecionar tickets incertos.
+IMPORTANTE: Se você NÃO TIVER CERTEZA sobre qual equipe escolher, ou se o problema não se encaixar claramente em nenhuma equipe específica, use o UUID: ${CONCIERGE_OPERACAO_ID}. Esta é a equipe Concierge Operação que está preparada para analisar e redirecionar tickets incertos.
 
 Responda APENAS com um JSON válido no formato:
 {
-  "equipe_responsavel": "nome_da_equipe_escolhida",
+  "equipe_id": "UUID_da_equipe_escolhida",
+  "equipe_nome": "nome_da_equipe_para_referência",
   "justificativa": "explicação de 1-2 frases do porquê desta equipe",
   "confianca": "alta, media ou baixa"
 }
@@ -101,17 +102,34 @@ Escolha a equipe que melhor se adequa ao problema descrito. Use "Concierge Opera
 
     const result = JSON.parse(content.trim());
     
-    // Se a IA não retornou equipe ou está com baixa confiança, usar Concierge Operação
-    if (!result.equipe_responsavel || result.confianca === 'baixa') {
+    // Se a IA não retornou UUID ou está com baixa confiança, usar Concierge Operação
+    if (!result.equipe_id || result.confianca === 'baixa') {
       console.log('IA incerta ou sem equipe - direcionando para Concierge Operação');
       return {
-        equipe_responsavel: 'Concierge Operação',
+        equipe_id: CONCIERGE_OPERACAO_ID,
+        equipe_nome: 'Concierge Operação',
         justificativa: result.justificativa || 'Ticket requer análise adicional para direcionamento correto'
       };
     }
 
-    console.log('Resultado da classificação de equipe:', result);
-    return result;
+    // Validar se o UUID existe na lista de equipes
+    const equipeValida = equipes.find(e => String(e.id) === String(result.equipe_id));
+
+    if (!equipeValida) {
+      console.warn(`⚠️ IA retornou UUID inválido: ${result.equipe_id}`);
+      return {
+        equipe_id: CONCIERGE_OPERACAO_ID,
+        equipe_nome: 'Concierge Operação',
+        justificativa: 'UUID inválido - redirecionando para análise manual'
+      };
+    }
+
+    console.log('✅ Equipe validada:', equipeValida.nome);
+    return {
+      equipe_id: result.equipe_id,
+      equipe_nome: equipeValida.nome,
+      justificativa: result.justificativa
+    };
 
   } catch (error) {
     console.error('Erro na classificação de equipe por IA:', error);
@@ -320,46 +338,44 @@ REGRAS CRÍTICAS:
             titulo = words.slice(0, 3).join(' ');
           }
           
-          // Se a IA não sugeriu equipe ou está com baixa confiança, usar Concierge Operação
-          let equipeId = aiResult.equipe_sugerida;
+          // Processar equipe sugerida (pode ser equipe_sugerida ou equipe_id dependendo do prompt)
+          let equipeId = aiResult.equipe_sugerida || aiResult.equipe_id;
           
           // Debug: log de todas as equipes disponíveis
           console.log('🔍 Equipes disponíveis:', equipes.map(e => ({ id: e.id, nome: e.nome })));
           console.log('🔍 ID sugerido pela IA:', equipeId);
-          console.log('🔍 Tipo do ID sugerido:', typeof equipeId);
           console.log('🔍 Confiança:', aiResult.confianca);
           
+          // Validar UUID ou usar Concierge se confiança baixa
           if (!equipeId || equipeId === 'null' || aiResult.confianca === 'baixa') {
             console.log('IA incerta sobre equipe - direcionando para Concierge Operação');
             equipeId = CONCIERGE_OPERACAO_ID;
           }
           
-          // Buscar nome da equipe pelo ID (garantir que ambos sejam strings)
-          let equipeNome: string | null = null;
+          // Buscar nome da equipe pelo ID e validar
           const equipeIdString = String(equipeId);
-          
           const equipeEncontrada = equipes.find(e => String(e.id) === equipeIdString);
+          
+          let equipeNome: string;
           
           if (equipeEncontrada) {
             equipeNome = equipeEncontrada.nome;
-            console.log(`✅ Equipe encontrada: ${equipeNome} (ID: ${equipeId})`);
+            console.log(`✅ Equipe validada: ${equipeNome} (ID: ${equipeId})`);
           } else {
-            // Fallback para Concierge Operação se equipe não encontrada
-            console.log(`⚠️ Equipe ${equipeId} não encontrada na lista. Usando Concierge Operação.`);
+            // UUID inválido - fallback para Concierge Operação
+            console.warn(`⚠️ UUID inválido retornado pela IA: ${equipeId}`);
             const concierge = equipes.find(e => String(e.id) === String(CONCIERGE_OPERACAO_ID));
             equipeNome = concierge ? concierge.nome : 'Concierge Operação';
-            console.log(`⚠️ Fallback definido como: ${equipeNome}`);
+            equipeId = CONCIERGE_OPERACAO_ID;
+            console.log(`⚠️ Fallback: ${equipeNome} (ID: ${equipeId})`);
           }
           
-          // GARANTIR que nunca retornamos um UUID
-          const equipeResponsavelFinal = equipeNome || 'Concierge Operação';
-          
-          console.log(`📋 Retornando equipe_responsavel: ${equipeResponsavelFinal}`);
+          console.log(`📋 Retornando equipe_responsavel: ${equipeNome}`);
           
           return {
             prioridade: aiResult.prioridade || 'baixo',
             titulo: titulo,
-            equipe_responsavel: equipeResponsavelFinal,
+            equipe_responsavel: equipeNome,
             justificativa: aiResult.justificativa || 'Análise automática'
           };
           
