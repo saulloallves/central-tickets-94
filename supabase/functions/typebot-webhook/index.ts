@@ -395,25 +395,46 @@ Deno.serve(async (req) => {
       const teamClassification = await classifyTeamOnly(message, equipes, existingData);
       
       if (teamClassification) {
-        // Buscar equipe sugerida pela IA
-        const equipeEncontrada = await findTeamByNameDirect(teamClassification.equipe_responsavel);
-        if (equipeEncontrada) {
-          equipeResponsavelId = equipeEncontrada.id;
-          console.log('✅ Equipe definida pela IA:', equipeEncontrada.nome);
-        }
+        // FASE 3: Validar se o nome sugerido existe na lista de equipes
+        const equipeNaLista = equipes.find(e => 
+          e.nome.toLowerCase() === teamClassification.equipe_responsavel?.toLowerCase()
+        );
         
-        analysisResult = {
-          categoria: categoria || 'outro',
-          prioridade: prioridadeNormalizada || 'baixo',
-          titulo: titulo || generateFallbackTitle(message),
-          equipe_responsavel: teamClassification.equipe_responsavel,
-          justificativa: teamClassification.justificativa
-        };
+        if (!equipeNaLista) {
+          console.warn('⚠️ IA sugeriu equipe que não existe:', teamClassification.equipe_responsavel);
+          console.warn('⚠️ Aplicando fallback inteligente...');
+          
+          const fallback = applyIntelligentFallback(message, equipes);
+          equipeResponsavelId = fallback.equipeId;
+          
+          analysisResult = {
+            categoria: categoria || 'outro',
+            prioridade: prioridadeNormalizada || 'baixo',
+            titulo: titulo || generateFallbackTitle(message),
+            equipe_responsavel: equipes.find(e => e.id === fallback.equipeId)?.nome || 'Concierge Operação',
+            justificativa: 'Equipe definida por fallback (IA sugeriu equipe inexistente)'
+          };
+        } else {
+          // Buscar equipe sugerida pela IA
+          const equipeEncontrada = await findTeamByNameDirect(teamClassification.equipe_responsavel);
+          if (equipeEncontrada) {
+            equipeResponsavelId = equipeEncontrada.id;
+            console.log('✅ Equipe definida pela IA:', equipeEncontrada.nome);
+          }
+          
+          analysisResult = {
+            categoria: categoria || 'outro',
+            prioridade: prioridadeNormalizada || 'baixo',
+            titulo: titulo || generateFallbackTitle(message),
+            equipe_responsavel: teamClassification.equipe_responsavel,
+            justificativa: teamClassification.justificativa
+          };
+        }
       } else {
         // Fallback se IA falhou
         const fallback = applyIntelligentFallback(message, equipes);
         analysisResult = {
-          categoria: categoria || fallback.categoria,
+          categoria: categoria || 'outro',
           prioridade: prioridadeNormalizada || 'baixo',
           titulo: titulo || generateFallbackTitle(message),
           equipe_responsavel: fallback.equipeId ? equipes.find(e => e.id === fallback.equipeId)?.nome || null : null,
@@ -455,12 +476,47 @@ Deno.serve(async (req) => {
         const fallback = applyIntelligentFallback(message, equipes);
         
         if (!analysisResult.categoria) {
-          analysisResult.categoria = fallback.categoria;
+          analysisResult.categoria = 'outro';
         }
         if (!equipeResponsavelId) {
           equipeResponsavelId = fallback.equipeId;
         }
       }
+    }
+
+    // FASE 1: VALIDAÇÃO FINAL - Garantir que TODO ticket tenha uma equipe
+    if (!equipeResponsavelId) {
+      console.warn('⚠️ FALLBACK CRÍTICO: Nenhuma equipe definida, usando equipe padrão');
+      
+      // Buscar equipe "Atendimento ao Franqueado" como padrão
+      const equipeDefault = equipes.find(e => 
+        e.nome.toLowerCase().includes('atendimento') && 
+        e.nome.toLowerCase().includes('franqueado')
+      );
+      
+      if (equipeDefault) {
+        equipeResponsavelId = equipeDefault.id;
+        console.log('✅ Usando equipe padrão:', equipeDefault.nome);
+      } else {
+        // Se até a padrão não existir, usar a primeira equipe ativa
+        equipeResponsavelId = equipes[0]?.id;
+        console.error('❌ CRÍTICO: Usando primeira equipe disponível:', equipes[0]?.nome);
+      }
+    }
+
+    // FASE 4: Logging detalhado antes de criar ticket
+    console.log('🎯 [CRIAÇÃO DE TICKET] Validação final:', {
+      titulo: analysisResult.titulo,
+      equipe_id: equipeResponsavelId,
+      equipe_nome: analysisResult.equipe_responsavel,
+      tem_equipe: !!equipeResponsavelId,
+      categoria: analysisResult.categoria,
+      prioridade: analysisResult.prioridade
+    });
+
+    // CRÍTICO: Não permitir criação sem equipe
+    if (!equipeResponsavelId) {
+      throw new Error('VALIDAÇÃO FALHOU: Ticket não pode ser criado sem equipe responsável');
     }
 
     console.log('Resultado final da classificação:', {

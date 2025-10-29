@@ -65,6 +65,13 @@ Descrição do problema: "${message}"${existingInfo}
 Equipes disponíveis:
 ${equipesInfo}
 
+CRÍTICO: Use EXATAMENTE um dos nomes das equipes da lista acima.
+- NÃO invente nomes de equipes
+- NÃO combine nomes de equipes diferentes
+- NÃO abrevie nomes de equipes
+- Se tiver dúvida entre duas equipes, escolha a mais específica
+- Se NÃO TIVER CERTEZA, escolha "Concierge Operação"
+
 IMPORTANTE: Se você NÃO TIVER CERTEZA sobre qual equipe escolher, ou se o problema não se encaixar claramente em nenhuma equipe específica, escolha "Concierge Operação". Esta equipe está preparada para analisar e redirecionar tickets incertos.
 
 Responda APENAS com um JSON válido no formato:
@@ -191,6 +198,8 @@ ${equipesDisponiveis}
 
 CRÍTICO: 
 - Retorne o ID completo (UUID) da equipe no campo "equipe_sugerida"
+- Use EXATAMENTE o UUID de uma das equipes listadas acima
+- NÃO invente ou combine UUIDs
 - Se NÃO tiver certeza, use o ID: ${CONCIERGE_OPERACAO_ID} (Concierge Operação)
 
 ANÁLISE: "${message}"
