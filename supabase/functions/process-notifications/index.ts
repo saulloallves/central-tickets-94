@@ -892,8 +892,16 @@ Deno.serve(async (req) => {
     let destinoFinal: string = '';
 
     // Get destination number based on new source configuration system
-    console.log('🎯 About to call getDestinationNumber with:', { type, ticketExists: !!ticket, ticketId: ticket?.id });
-    const customDestination = await getDestinationNumber(supabase, type, ticket);
+    // Types that don't need destination lookup (they provide it in payload)
+    const skipDestinationLookup = ['crisis_broadcast'];
+
+    let customDestination = null;
+    if (!skipDestinationLookup.includes(type)) {
+      console.log('🎯 About to call getDestinationNumber with:', { type, ticketExists: !!ticket, ticketId: ticket?.id });
+      customDestination = await getDestinationNumber(supabase, type, ticket);
+    } else {
+      console.log(`⏭️ Skipping getDestinationNumber for type: ${type} (uses payload destination)`);
+    }
 
     switch (type) {
       case 'ticket_created':
