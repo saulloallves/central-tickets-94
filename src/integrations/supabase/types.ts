@@ -3322,6 +3322,7 @@ export type Database = {
           data_limite_sla: string | null
           descricao_problema: string
           equipe_responsavel_id: string | null
+          escalonado_em: string | null
           escalonado_para: string | null
           escalonamento_nivel: number
           franqueado_id: string | null
@@ -3370,6 +3371,7 @@ export type Database = {
           data_limite_sla?: string | null
           descricao_problema: string
           equipe_responsavel_id?: string | null
+          escalonado_em?: string | null
           escalonado_para?: string | null
           escalonamento_nivel?: number
           franqueado_id?: string | null
@@ -3418,6 +3420,7 @@ export type Database = {
           data_limite_sla?: string | null
           descricao_problema?: string
           equipe_responsavel_id?: string | null
+          escalonado_em?: string | null
           escalonado_para?: string | null
           escalonamento_nivel?: number
           franqueado_id?: string | null
@@ -4881,6 +4884,7 @@ export type Database = {
         Args: never
         Returns: {
           notificacoes_criadas: number
+          tickets_escalonados: number
         }[]
       }
       reabrir_ticket: {

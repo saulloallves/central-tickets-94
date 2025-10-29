@@ -1290,23 +1290,10 @@ Deno.serve(async (req) => {
           throw new Error(errorMsg);
         }
         
-        // First, escalate the ticket automatically if not already concluded
+        // Escalonamento agora é feito pela função process_overdue_slas() no sla-processor
+        // Aqui apenas enviamos a notificação
         if (ticket.status !== 'concluido') {
-          console.log(`🔼 Auto-escalating ticket ${ticket.codigo_ticket} due to SLA breach`);
-          
-          const { error: escalationError } = await supabase
-            .from('tickets')
-            .update({ 
-              status: 'escalonado',
-              escalonamento_nivel: (ticket.escalonamento_nivel || 0) + 1,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', ticket.id);
-
-          if (escalationError) {
-            console.error('❌ Error escalating ticket:', escalationError);
-          } else {
-            console.log(`✅ Ticket ${ticket.codigo_ticket} successfully escalated`);
+          console.log(`🔔 Sending SLA breach notification for ticket ${ticket.codigo_ticket}`);
             
             // Log the escalation action
             await supabase
