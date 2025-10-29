@@ -41,24 +41,43 @@ export const TicketDetailModal = ({ ticketCode, open, onOpenChange }: TicketDeta
           *,
           unidades(grupo),
           equipes(nome),
-          profiles:criado_por(nome),
+          profiles:criado_por(nome_completo),
           ticket_mensagens(
             id,
             mensagem,
             direcao,
             created_at,
-            profiles:usuario_id(nome)
+            profiles:usuario_id(nome_completo)
           )
         `)
         .eq('codigo_ticket', ticketCode)
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro Supabase ao buscar ticket:', {
+          codigo: ticketCode,
+          error: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+        throw error;
+      }
 
-      console.log('Ticket detalhado:', data);
+      if (!data) {
+        console.warn('⚠️ Ticket não encontrado:', ticketCode);
+        setTicket(null);
+        return;
+      }
+
+      console.log('✅ Ticket carregado:', data.codigo_ticket);
       setTicket(data);
-    } catch (error) {
-      console.error('Erro ao carregar ticket:', error);
+    } catch (error: any) {
+      console.error('❌ Erro crítico ao carregar ticket:', {
+        codigo: ticketCode,
+        message: error.message,
+        stack: error.stack
+      });
+      setTicket(null);
     } finally {
       setLoading(false);
     }
@@ -203,7 +222,7 @@ export const TicketDetailModal = ({ ticketCode, open, onOpenChange }: TicketDeta
                         >
                           <div className="flex items-center justify-between mb-1">
                             <span className="text-xs font-medium">
-                              {msg.direcao === 'entrada' ? 'Franqueado' : msg.profiles?.nome || 'Suporte'}
+                              {msg.direcao === 'entrada' ? 'Franqueado' : msg.profiles?.nome_completo || 'Suporte'}
                             </span>
                             <span className="text-xs text-muted-foreground">
                               {format(new Date(msg.created_at), "dd/MM HH:mm", { locale: ptBR })}
@@ -229,8 +248,24 @@ export const TicketDetailModal = ({ ticketCode, open, onOpenChange }: TicketDeta
             </div>
           </ScrollArea>
         ) : (
-          <div className="flex items-center justify-center py-12 text-muted-foreground">
-            Ticket não encontrado
+          <div className="flex flex-col items-center justify-center py-12 text-center space-y-3">
+            <AlertCircle className="h-12 w-12 text-destructive/50" />
+            <div>
+              <p className="text-muted-foreground font-medium">
+                Ticket não encontrado
+              </p>
+              {ticketCode && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  Código: <code className="bg-muted px-2 py-0.5 rounded">{ticketCode}</code>
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground mt-2">
+                O ticket pode ter sido excluído ou você não tem permissão para visualizá-lo.
+              </p>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
+              Fechar
+            </Button>
           </div>
         )}
       </DialogContent>
