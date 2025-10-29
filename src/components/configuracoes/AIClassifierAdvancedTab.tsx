@@ -265,65 +265,6 @@ export function AIClassifierAdvancedTab() {
 
   return (
     <div className="space-y-6">
-      {/* Header com Métricas */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Target className="h-4 w-4 text-primary" />
-              <div>
-                <p className="text-sm font-medium">Precisão</p>
-                <p className="text-2xl font-bold text-primary">
-                  {metrics ? Math.round(metrics.accuracy_rate * 100) : 100}%
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-emerald-500" />
-              <div>
-                <p className="text-sm font-medium">Tickets Classificados</p>
-                <p className="text-2xl font-bold text-emerald-500">
-                  {metrics?.total_tickets_classified || 0}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-blue-500" />
-              <div>
-                <p className="text-sm font-medium">SLA Compliance</p>
-                <p className="text-2xl font-bold text-blue-500">
-                  {metrics ? Math.round(metrics.sla_compliance_rate * 100) : 0}%
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Zap className="h-4 w-4 text-amber-500" />
-              <div>
-                <p className="text-sm font-medium">Tempo Médio (min)</p>
-                <p className="text-2xl font-bold text-amber-500">
-                  {metrics?.average_response_time || 0}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
       {/* Configurações Principais */}
       <Card>
         <CardHeader>
