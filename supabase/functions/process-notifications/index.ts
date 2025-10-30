@@ -1316,17 +1316,16 @@ Deno.serve(async (req) => {
         if (ticket.status !== 'concluido') {
           console.log(`🔔 Sending SLA breach notification for ticket ${ticket.codigo_ticket}`);
             
-            // Log the escalation action
-            await supabase
-              .from('escalation_logs')
-              .insert({
-                ticket_id: ticket.id,
-                event_type: 'auto_escalation',
-                message: `Ticket automatically escalated due to SLA breach at ${new Date().toISOString()}`,
-                to_level: (ticket.escalonamento_nivel || 0) + 1,
-                canal: 'system'
-              });
-          }
+          // Log the escalation action
+          await supabase
+            .from('escalation_logs')
+            .insert({
+              ticket_id: ticket.id,
+              event_type: 'auto_escalation',
+              message: `Ticket automatically escalated due to SLA breach at ${new Date().toISOString()}`,
+              to_level: (ticket.escalonamento_nivel || 0) + 1,
+              canal: 'system'
+            });
         }
         
         console.log(`\n🎯 ===== DETECTANDO DESTINO PARA SLA BREACH =====`);
