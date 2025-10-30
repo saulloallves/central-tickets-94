@@ -2395,6 +2395,7 @@ export type Database = {
           alert_level: string | null
           attempts: number
           created_at: string
+          destination: string | null
           id: string
           message: string | null
           payload: Json
@@ -2414,6 +2415,7 @@ export type Database = {
           alert_level?: string | null
           attempts?: number
           created_at?: string
+          destination?: string | null
           id?: string
           message?: string | null
           payload?: Json
@@ -2433,6 +2435,7 @@ export type Database = {
           alert_level?: string | null
           attempts?: number
           created_at?: string
+          destination?: string | null
           id?: string
           message?: string | null
           payload?: Json
