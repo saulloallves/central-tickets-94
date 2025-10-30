@@ -1246,6 +1246,8 @@ export type Database = {
           max_tokens: number
           max_tokens_chat: number | null
           max_tokens_classificacao: number | null
+          max_tokens_rerank: number | null
+          max_tokens_resposta: number | null
           max_tokens_sugestao: number | null
           modelo: string
           modelo_analise: string | null
@@ -1301,6 +1303,8 @@ export type Database = {
           max_tokens?: number
           max_tokens_chat?: number | null
           max_tokens_classificacao?: number | null
+          max_tokens_rerank?: number | null
+          max_tokens_resposta?: number | null
           max_tokens_sugestao?: number | null
           modelo?: string
           modelo_analise?: string | null
@@ -1356,6 +1360,8 @@ export type Database = {
           max_tokens?: number
           max_tokens_chat?: number | null
           max_tokens_classificacao?: number | null
+          max_tokens_rerank?: number | null
+          max_tokens_resposta?: number | null
           max_tokens_sugestao?: number | null
           modelo?: string
           modelo_analise?: string | null

@@ -56,6 +56,16 @@ export async function rerankComLLM(docs: any[], pergunta: string) {
   try {
     console.log('🧠 Re-ranking com LLM otimizado...');
     
+    // Buscar configuração de max_tokens para reranking
+    const { data: settingsData } = await supabase
+      .from('faq_ai_settings')
+      .select('max_tokens_rerank')
+      .eq('ativo', true)
+      .single();
+
+    const maxTokensRerank = settingsData?.max_tokens_rerank || 1000;
+    console.log(`⚙️ Max tokens rerank: ${maxTokensRerank}`);
+    
     const docsParaAnalise = docs.map((doc, idx) => 
       `ID: ${doc.id}\nTítulo: ${doc.titulo}\nCategoria: ${doc.categoria || 'N/A'}\nConteúdo: ${JSON.stringify(doc.conteudo).substring(0, 800)}`
     ).join('\n\n---\n\n');
@@ -91,7 +101,7 @@ Retorne APENAS um JSON válido:
     const response = await openAI('chat/completions', {
       model: 'gpt-4.1-2025-04-14',
       messages: [{ role: 'user', content: prompt }],
-      max_completion_tokens: 1000,
+      max_completion_tokens: maxTokensRerank,
       response_format: { type: 'json_object' }
     });
 
@@ -164,12 +174,15 @@ export async function gerarRespostaComContexto(docs: any[], pergunta: string, co
       }).join('\n');
     }
 
-    // Buscar prompt configurável da tabela faq_ai_settings
+    // Buscar prompt e max_tokens configuráveis da tabela faq_ai_settings
     const { data: settingsData } = await supabase
       .from('faq_ai_settings')
-      .select('prompt_zapi_whatsapp')
+      .select('prompt_zapi_whatsapp, max_tokens_resposta')
       .eq('ativo', true)
       .single();
+
+    const maxTokensResposta = settingsData?.max_tokens_resposta || 1000;
+    console.log(`⚙️ Max tokens resposta: ${maxTokensResposta}`);
 
     const systemMessage = settingsData?.prompt_zapi_whatsapp || `Você é um assistente virtual amigável da Cresci & Perdi (brechó/marketplace de roupas usadas)! 😊
 
@@ -227,7 +240,7 @@ Responda com base nas informações do contexto, considerando o histórico da co
         { role: 'system', content: systemMessage },
         { role: 'user', content: userMessage }
       ],
-      max_completion_tokens: 1000
+      max_completion_tokens: maxTokensResposta
     });
 
     if (!response.ok) {
