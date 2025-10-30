@@ -209,6 +209,19 @@ async function getNumberFromColumn(
 // Legacy fallback for when no source configuration is found
 function getLegacyDestination(type: string, ticket: any): string | null {
   console.log(`🔙 Using legacy destination for type: ${type}`);
+  
+  // ✅ GUARD: crisis_broadcast não usa legacy destination
+  if (type === 'crisis_broadcast') {
+    console.log(`⚠️ crisis_broadcast não utiliza legacy destination (destino vem no payload)`);
+    return null;
+  }
+  
+  // ✅ GUARD: Se não tem ticket, não pode acessar dados do ticket
+  if (!ticket) {
+    console.log(`⚠️ No ticket data available for type: ${type}`);
+    return null;
+  }
+  
   console.log(`📞 Available id_grupo_branco: ${ticket.unidades?.id_grupo_branco}`);
   
   switch (type) {
