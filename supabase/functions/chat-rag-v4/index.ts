@@ -70,7 +70,10 @@ async function handleWhatsAppMode(zapiPayload: ZAPIMessage, supabase: any) {
   }
 
   // ✅ DEDUPLICATION CHECK: Verify if messageId was already processed
-  const messageId = zapiPayload.messageId;
+  // Use 'id' field from Z-API webhook (not 'messageId')
+  const messageId = zapiPayload.id || zapiPayload.messageId;
+  console.log(`📨 Recebido messageId: ${messageId}`);
+  
   if (messageId) {
     const { data: alreadyProcessed } = await supabase
       .from('chat_rag_processed_messages')
@@ -92,6 +95,8 @@ async function handleWhatsAppMode(zapiPayload: ZAPIMessage, supabase: any) {
     } else {
       console.log(`✅ NOVA mensagem: ${messageId}`);
     }
+  } else {
+    console.warn('⚠️ Webhook sem messageId - não é possível deduplicar');
   }
 
   // Skip messages from the bot itself (prevent self-response loop)
@@ -165,20 +170,23 @@ async function handleWhatsAppMode(zapiPayload: ZAPIMessage, supabase: any) {
 
   // ✅ MARK as processed to prevent duplication
   if (sent && messageId) {
-    await supabase
+    console.log(`🔒 Registrando messageId ${messageId} como processado...`);
+    const { error: insertError } = await supabase
       .from('chat_rag_processed_messages')
       .insert({
         message_id: messageId,
         instance_id: zapiPayload.instanceId || 'chat-rag-v4-whatsapp',
         contact_phone: zapiPayload.phone,
         processed_at: new Date().toISOString()
-      })
-      .catch((err: Error) => {
-        // Log error but DON'T fail the processing
-        console.error('⚠️ Falha ao marcar mensagem como processada:', err);
       });
     
-    console.log(`🔒 messageId ${messageId} marcado como processado`);
+    if (insertError) {
+      console.error('❌ ERRO ao marcar como processada:', insertError);
+    } else {
+      console.log(`✅ messageId ${messageId} registrado com sucesso`);
+    }
+  } else {
+    console.warn(`⚠️ Não registrado: sent=${sent}, messageId=${messageId}`);
   }
 
   // Save AI response in whatsapp_conversas
