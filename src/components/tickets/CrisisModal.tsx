@@ -303,20 +303,33 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
     try {
       const unidadeIds = [...new Set(tickets.map(t => t.unidade_id))];
 
-      const { data: unidades, error: unidadesError } = await supabase
+      // Buscar TODAS as unidades e filtrar depois
+      const { data: todasUnidades, error: unidadesError } = await supabase
         .from('unidades')
         .select('id, id_grupo_branco, grupo')
-        .in('id', unidadeIds)
-        .not('id_grupo_branco', 'is', null);
+        .in('id', unidadeIds);
 
       if (unidadesError) throw unidadesError;
 
-      const grupos = unidades?.map(u => u.id_grupo_branco).filter(Boolean) || [];
+      // Filtrar unidades COM grupo WhatsApp
+      const unidadesComGrupo = todasUnidades?.filter(u => u.id_grupo_branco) || [];
+      const unidadesSemGrupo = todasUnidades?.filter(u => !u.id_grupo_branco) || [];
+
+      // Log para debug
+      console.log(`📊 Unidades COM grupo: ${unidadesComGrupo.length}`);
+      console.log(`⚠️ Unidades SEM grupo: ${unidadesSemGrupo.length}`);
+      if (unidadesSemGrupo.length > 0) {
+        console.warn('Unidades sem grupo WhatsApp:', unidadesSemGrupo.map(u => u.grupo));
+      }
+
+      const grupos = unidadesComGrupo.map(u => u.id_grupo_branco);
 
       if (grupos.length === 0) {
         toast({
-          title: "Aviso",
-          description: "Nenhum grupo WhatsApp encontrado para as unidades desta crise",
+          title: "❌ Erro",
+          description: unidadesSemGrupo.length > 0 
+            ? `Nenhuma mensagem enviada. ${unidadesSemGrupo.length} unidade(s) sem grupo WhatsApp configurado: ${unidadesSemGrupo.map(u => u.grupo).join(', ')}`
+            : "Nenhum grupo WhatsApp encontrado para as unidades desta crise",
           variant: "destructive"
         });
         return;
@@ -337,7 +350,7 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
         `🚨 *CRISE ATIVA* 🚨\n\n🎫 *Ticket:* {{codigo_ticket}}\n🏢 *Unidade:* {{unidade_id}}\n\n💥 *Motivo:*\n{{motivo}}\n\n⏰ *Informado em:* {{timestamp}}\n\n_Mensagem enviada automaticamente pelo sistema de gerenciamento de crises_`;
 
       const firstTicket = tickets[0];
-      const unidadeNome = unidades?.find(u => u.id === firstTicket?.unidade_id)?.grupo || 'N/A';
+      const unidadeNome = unidadesComGrupo?.find(u => u.id === firstTicket?.unidade_id)?.grupo || 'N/A';
       
       const formattedMessage = messageTemplate
         .replace('{{codigo_ticket}}', firstTicket?.titulo || firstTicket?.codigo_ticket || 'N/A')
@@ -345,34 +358,66 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
         .replace('{{motivo}}', broadcastMessage)
         .replace('{{timestamp}}', new Date().toLocaleString('pt-BR'));
 
+      // Usar Promise.allSettled para continuar mesmo com falhas individuais
       const promises = grupos.map(async (grupo) => {
-        const { error } = await supabase.functions.invoke('process-notifications', {
-          body: {
-            ticketId: null,
-            type: 'crisis_broadcast',
-            payload: {
-              phone: grupo,
-              message: formattedMessage,
-              crise_id: crisis.id
+        try {
+          const { error } = await supabase.functions.invoke('process-notifications', {
+            body: {
+              ticketId: null,
+              type: 'crisis_broadcast',
+              payload: {
+                phone: grupo,
+                message: formattedMessage,
+                crise_id: crisis.id
+              }
             }
-          }
-        });
+          });
 
-        if (error) {
-          console.error('Erro ao enviar mensagem para grupo:', grupo, error);
-          throw error;
+          if (error) {
+            console.error('❌ Erro ao enviar para grupo:', grupo, error);
+            return { success: false, grupo, error: error.message };
+          }
+
+          console.log('✅ Mensagem enviada para grupo:', grupo);
+          return { success: true, grupo };
+        } catch (err: any) {
+          console.error('❌ Exceção ao enviar para grupo:', grupo, err);
+          return { success: false, grupo, error: err.message };
         }
       });
 
-      await Promise.all(promises);
+      const results = await Promise.allSettled(promises);
+      const successCount = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
+      const failedCount = results.length - successCount;
 
+      // Verificar se pelo menos 1 grupo recebeu
+      if (successCount === 0) {
+        toast({
+          title: "❌ Erro Total",
+          description: unidadesSemGrupo.length > 0 
+            ? `Nenhuma mensagem enviada. ${unidadesSemGrupo.length} unidade(s) sem grupo WhatsApp configurado.`
+            : "Nenhuma mensagem foi enviada. Verifique a configuração dos grupos.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Salvar registro com detalhes dos resultados
       const { error: saveError } = await supabase
         .from('crise_mensagens')
         .insert({
           crise_id: crisis.id,
           mensagem: broadcastMessage,
           total_grupos: grupos.length,
-          grupos_destinatarios: grupos
+          grupos_destinatarios: grupos,
+          metadata: {
+            success_count: successCount,
+            failed_count: failedCount,
+            unidades_sem_grupo: unidadesSemGrupo.map(u => ({
+              id: u.id,
+              nome: u.grupo
+            }))
+          }
         });
 
       if (saveError) {
@@ -381,11 +426,31 @@ export function CrisisModal({ crisis, isOpen, onClose }: CrisisModalProps) {
 
       await fetchCrisisMessages();
 
-      toast({
-        title: "✅ Mensagem Enviada com Sucesso!",
-        description: `Mensagem: "${broadcastMessage.substring(0, 50)}${broadcastMessage.length > 50 ? '...' : ''}" enviada para ${grupos.length} grupo(s) WhatsApp`,
-        variant: "default"
-      });
+      // Feedback detalhado ao usuário
+      if (failedCount > 0) {
+        toast({
+          title: "⚠️ Envio Parcial",
+          description: `Mensagem enviada para ${successCount} de ${grupos.length} grupo(s). ${failedCount} falha(s) detectada(s).`,
+          variant: "default"
+        });
+      } else {
+        toast({
+          title: "✅ Mensagem Enviada com Sucesso!",
+          description: `Mensagem enviada para ${grupos.length} grupo(s) WhatsApp`,
+          variant: "default"
+        });
+      }
+
+      // Aviso adicional sobre unidades sem grupo
+      if (unidadesSemGrupo.length > 0) {
+        setTimeout(() => {
+          toast({
+            title: "ℹ️ Aviso",
+            description: `${unidadesSemGrupo.length} unidade(s) não receberam a mensagem por falta de grupo WhatsApp configurado: ${unidadesSemGrupo.map(u => u.grupo).join(', ')}`,
+            variant: "default"
+          });
+        }, 1500);
+      }
 
       setBroadcastMessage('');
     } catch (error) {
