@@ -487,6 +487,30 @@ export type Database = {
           },
         ]
       }
+      chat_rag_processed_messages: {
+        Row: {
+          contact_phone: string
+          created_at: string | null
+          instance_id: string
+          message_id: string
+          processed_at: string | null
+        }
+        Insert: {
+          contact_phone: string
+          created_at?: string | null
+          instance_id: string
+          message_id: string
+          processed_at?: string | null
+        }
+        Update: {
+          contact_phone?: string
+          created_at?: string | null
+          instance_id?: string
+          message_id?: string
+          processed_at?: string | null
+        }
+        Relationships: []
+      }
       colaboradores: {
         Row: {
           aceitou_termos: boolean
@@ -4609,6 +4633,7 @@ export type Database = {
       }
       cleanup_all_users_except_current: { Args: never; Returns: Json }
       cleanup_old_notifications: { Args: never; Returns: undefined }
+      cleanup_old_processed_messages: { Args: never; Returns: undefined }
       cleanup_orphaned_crises: { Args: never; Returns: undefined }
       cleanup_unconfirmed_access_requests: { Args: never; Returns: number }
       corrigir_tickets_sla_vencido: {

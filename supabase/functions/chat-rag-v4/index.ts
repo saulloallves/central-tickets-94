@@ -69,6 +69,31 @@ async function handleWhatsAppMode(zapiPayload: ZAPIMessage, supabase: any) {
     );
   }
 
+  // ✅ DEDUPLICATION CHECK: Verify if messageId was already processed
+  const messageId = zapiPayload.messageId;
+  if (messageId) {
+    const { data: alreadyProcessed } = await supabase
+      .from('chat_rag_processed_messages')
+      .select('message_id, processed_at')
+      .eq('message_id', messageId)
+      .maybeSingle();
+
+    if (alreadyProcessed) {
+      console.log(`⏭️ DUPLICADO: messageId ${messageId} já processado em ${alreadyProcessed.processed_at}`);
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          skipped: true, 
+          reason: 'Duplicate message already processed',
+          original_processing: alreadyProcessed.processed_at
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } else {
+      console.log(`✅ NOVA mensagem: ${messageId}`);
+    }
+  }
+
   // Skip messages from the bot itself (prevent self-response loop)
   if (zapiPayload.fromMe || zapiPayload.phone === zapiPayload.connectedPhone) {
     console.log(`⚠️ Skipping message: sent from bot itself (phone: ${zapiPayload.phone}, connected: ${zapiPayload.connectedPhone})`);
@@ -137,6 +162,24 @@ async function handleWhatsAppMode(zapiPayload: ZAPIMessage, supabase: any) {
 
   // Send response via Z-API
   const sent = await zapiClient.sendMessage(zapiPayload.phone, resposta);
+
+  // ✅ MARK as processed to prevent duplication
+  if (sent && messageId) {
+    await supabase
+      .from('chat_rag_processed_messages')
+      .insert({
+        message_id: messageId,
+        instance_id: zapiPayload.instanceId || 'chat-rag-v4-whatsapp',
+        contact_phone: zapiPayload.phone,
+        processed_at: new Date().toISOString()
+      })
+      .catch((err: Error) => {
+        // Log error but DON'T fail the processing
+        console.error('⚠️ Falha ao marcar mensagem como processada:', err);
+      });
+    
+    console.log(`🔒 messageId ${messageId} marcado como processado`);
+  }
 
   // Save AI response in whatsapp_conversas
   if (sent) {
