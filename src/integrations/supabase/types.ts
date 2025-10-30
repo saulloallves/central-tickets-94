@@ -2795,6 +2795,30 @@ export type Database = {
         }
         Relationships: []
       }
+      system_logs: {
+        Row: {
+          created_at: string | null
+          id: string
+          level: string
+          message: string
+          metadata: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          level: string
+          message: string
+          metadata?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          level?: string
+          message?: string
+          metadata?: Json | null
+        }
+        Relationships: []
+      }
       system_settings: {
         Row: {
           created_at: string
