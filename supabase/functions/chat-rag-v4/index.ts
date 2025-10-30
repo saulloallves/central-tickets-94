@@ -69,6 +69,15 @@ async function handleWhatsAppMode(zapiPayload: ZAPIMessage, supabase: any) {
     );
   }
 
+  // Skip messages from the bot itself (prevent self-response loop)
+  if (zapiPayload.fromMe || zapiPayload.phone === zapiPayload.connectedPhone) {
+    console.log(`⚠️ Skipping message: sent from bot itself (phone: ${zapiPayload.phone}, connected: ${zapiPayload.connectedPhone})`);
+    return new Response(
+      JSON.stringify({ success: true, skipped: true, reason: 'Message from bot itself' }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
   // Create user message data
   const userMessageData: ConversationMessageData = {
     id: zapiPayload.messageId || crypto.randomUUID(),
