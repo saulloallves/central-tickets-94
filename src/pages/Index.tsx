@@ -58,13 +58,13 @@ const Index = () => {
                 <SystemLogo />
               </div>
               <div className="text-left">
-                <AnimatedText 
-                  text="Central de Tickets"
-                  as="h1"
-                  className="text-3xl font-bold text-white"
-                  startDelay={100}
-                  wordDelay={80}
-                />
+              <AnimatedText 
+                text="Central GiraBot"
+                as="h1"
+                className="text-3xl font-bold text-white"
+                startDelay={100}
+                wordDelay={80}
+              />
                 <div className="slide-in-up" style={{ animationDelay: '300ms' }}>
                   <p className="text-white/60">Gestão Inteligente de Tickets</p>
                 </div>

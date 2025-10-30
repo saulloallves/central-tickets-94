@@ -313,7 +313,7 @@ const Auth = () => {
           <CardHeader className="text-center pb-6">
             <div className="flex items-center justify-center gap-2 mb-4">
               <SystemLogo />
-              <span className="text-xl font-bold">Central de Tickets</span>
+              <span className="text-xl font-bold">Central GiraBot</span>
             </div>
             <CardTitle className="text-2xl font-bold text-primary">Confirme seu Email</CardTitle>
             <CardDescription>Enviamos um link de confirmação</CardDescription>
@@ -360,7 +360,7 @@ const Auth = () => {
           <CardHeader className="text-center pb-6">
             <div className="flex items-center justify-center gap-2 mb-4">
               <SystemLogo />
-              <span className="text-xl font-bold">Central de Tickets</span>
+              <span className="text-xl font-bold">Central GiraBot</span>
             </div>
             <CardTitle className="text-2xl font-bold text-primary">Solicitação em Análise!</CardTitle>
             <CardDescription>Sua solicitação está sendo avaliada</CardDescription>
@@ -406,7 +406,7 @@ const Auth = () => {
           <CardHeader className="text-center pb-6">
             <div className="flex items-center justify-center gap-2 mb-4">
               <SystemLogo />
-              <span className="text-xl font-bold">Central de Tickets</span>
+              <span className="text-xl font-bold">Central GiraBot</span>
             </div>
             <CardTitle className="text-2xl font-bold text-primary">Redefinir Senha</CardTitle>
             <CardDescription>Digite seu email para receber o link de redefinição</CardDescription>
@@ -465,7 +465,7 @@ const Auth = () => {
           <div className="flex items-center gap-3 mb-8">
             <SystemLogo />
             <div>
-              <h1 className="text-2xl font-bold text-white">Central de Tickets</h1>
+              <h1 className="text-2xl font-bold text-white">Central GiraBot</h1>
               <p className="text-white/60 text-sm">Gestão Inteligente de Tickets</p>
             </div>
           </div>

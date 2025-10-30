@@ -83,7 +83,7 @@ const ResetPassword = () => {
               <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
                 <ClipboardList className="h-4 w-4 text-white" />
               </div>
-              <span className="text-xl font-bold">Central de Tickets</span>
+              <span className="text-xl font-bold">Central GiraBot</span>
             </div>
             <CardTitle className="text-2xl font-bold text-destructive">Link Inválido</CardTitle>
             <CardDescription>O link de redefinição é inválido ou expirou</CardDescription>
@@ -116,7 +116,7 @@ const ResetPassword = () => {
             <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
               <ClipboardList className="h-4 w-4 text-white" />
             </div>
-            <span className="text-xl font-bold">Central de Tickets</span>
+            <span className="text-xl font-bold">Central GiraBot</span>
           </div>
           <CardTitle className="text-2xl font-bold text-primary">Nova Senha</CardTitle>
           <CardDescription>Defina sua nova senha de acesso</CardDescription>
