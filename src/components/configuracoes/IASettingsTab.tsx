@@ -51,6 +51,8 @@ interface AISettings {
   max_tokens_chat: number;
   max_tokens_sugestao: number;
   max_tokens_classificacao: number;
+  max_tokens_rerank?: number;
+  max_tokens_resposta?: number;
   
   // Configurações de comportamento
   auto_classificacao: boolean;
@@ -185,6 +187,8 @@ INSTRUÇÕES:
   max_tokens_chat: 800,
   max_tokens_sugestao: 1000,
   max_tokens_classificacao: 500,
+  max_tokens_rerank: 1000,
+  max_tokens_resposta: 1000,
   ativo: true
 };
 
@@ -448,6 +452,8 @@ export function IASettingsTab() {
           max_tokens_chat: data.max_tokens_chat || defaultSettings.max_tokens_chat,
           max_tokens_sugestao: data.max_tokens_sugestao || defaultSettings.max_tokens_sugestao,
           max_tokens_classificacao: data.max_tokens_classificacao || defaultSettings.max_tokens_classificacao,
+          max_tokens_rerank: data.max_tokens_rerank || defaultSettings.max_tokens_rerank,
+          max_tokens_resposta: data.max_tokens_resposta || defaultSettings.max_tokens_resposta,
           ativo: data.ativo ?? defaultSettings.ativo
         };
         console.log('Loaded settings from DB:', fetchedSettings);
@@ -1090,6 +1096,43 @@ export function IASettingsTab() {
                   </div>
                 </DialogContent>
               </Dialog>
+            </div>
+
+            {/* Configurações de Max Tokens RAG v4 */}
+            <div className="mt-6 p-4 border border-border rounded-lg bg-muted/30">
+              <h4 className="font-semibold text-sm text-muted-foreground mb-4">🔢 Configuração de Tokens - Chat RAG v4</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="max_tokens_rerank">Max Tokens Re-ranking</Label>
+                  <Input
+                    id="max_tokens_rerank"
+                    type="number"
+                    min={100}
+                    max={4000}
+                    value={settings.max_tokens_rerank || 1000}
+                    onChange={(e) => setSettings(prev => ({...prev, max_tokens_rerank: parseInt(e.target.value) || 1000}))}
+                    className="max-w-xs"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Limite de tokens para re-ranking de documentos (padrão: 1000)
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="max_tokens_resposta">Max Tokens Resposta</Label>
+                  <Input
+                    id="max_tokens_resposta"
+                    type="number"
+                    min={100}
+                    max={4000}
+                    value={settings.max_tokens_resposta || 1000}
+                    onChange={(e) => setSettings(prev => ({...prev, max_tokens_resposta: parseInt(e.target.value) || 1000}))}
+                    className="max-w-xs"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Limite de tokens para geração de resposta (padrão: 1000)
+                  </p>
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 gap-4 mt-4">
